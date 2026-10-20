@@ -52,14 +52,14 @@ function Row({ row }: { row: SheetRow }) {
           <MessageCircleQuestion size={14} className="record-link-icon" aria-hidden />
           {q.title}
         </span>
-        <StatusLabel status={q.status} />
+        <StatusLabel kind="question" status={q.status} />
       </button>
     )
   }
 
   const rec = artifacts[row.id]
   if (!rec) return null
-  const status: ReactNode = rec.data.status !== BASELINE_ARTIFACT_STATUS ? <StatusLabel status={rec.data.status} /> : <span />
+  const status: ReactNode = rec.data.status !== BASELINE_ARTIFACT_STATUS ? <StatusLabel kind="artifact" status={rec.data.status} /> : <span />
   const go = (spot: SourceSpot) => guarded(() => open.artifact(row.id, spot.region))
   const [first] = row.spots
   if (row.spots.length <= 1) {

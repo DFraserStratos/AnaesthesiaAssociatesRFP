@@ -1,7 +1,8 @@
-import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Settings } from 'lucide-react'
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { isOpenQuestion, type CatalogueEvent } from '../shared/types.ts'
+import { isOpenQuestion } from '../shared/statuses.ts'
+import type { CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
 import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
@@ -15,6 +16,7 @@ import { ArtifactsView } from './views/ArtifactsView.tsx'
 import { BoardView } from './views/BoardView.tsx'
 import { OutlineView } from './views/OutlineView.tsx'
 import { QuestionsView } from './views/QuestionsView.tsx'
+import { SettingsView } from './views/SettingsView.tsx'
 
 export function App() {
   const status = useCatalogue((s) => s.status)
@@ -79,6 +81,7 @@ export function App() {
             <Route path="/artifacts/:id" element={<ArtifactPage />} />
             <Route path="/questions" element={<QuestionsView />} />
             <Route path="/outline" element={<OutlineView />} />
+            <Route path="/settings" element={<SettingsView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
         )}
@@ -106,7 +109,7 @@ function Masthead({ connected }: { connected: boolean }) {
   useEffect(() => {
     document.title = project ? `${project} · Requirements board` : 'Requirements board'
   }, [project])
-  const openCount = index.questions.filter(isOpenQuestion).length
+  const openCount = index.questions.filter((q) => isOpenQuestion(index.config, q)).length
   const errors = issues.filter((i) => i.severity === 'error').length
   const warnings = issues.length - errors
 
@@ -156,6 +159,9 @@ function Masthead({ connected }: { connected: boolean }) {
           {errors ? `${errors} error${errors > 1 ? 's' : ''}` : 'Checks pass'}
           {warnings > 0 && <span className="mono">· {warnings} note{warnings > 1 ? 's' : ''}</span>}
         </button>
+        <NavLink className="btn icon ghost settings-link" to="/settings" title="Settings" aria-label="Settings">
+          <Settings size={16} />
+        </NavLink>
       </div>
       {showIssues && <ChecksPanel anchor={checksRef} onClose={() => setShowIssues(false)} />}
     </header>

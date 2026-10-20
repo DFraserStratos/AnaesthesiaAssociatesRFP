@@ -37,7 +37,7 @@ id: US-01.1.1
 type: story
 parent: FT-01.1
 title: Two Lists per anaesthetist per day
-status: Proposed
+status: 4
 components:
   - Scheduling Engine
 sources:
@@ -73,7 +73,7 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `type` | `epic`, `feature` or `story`. Cannot change. |
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
 | `title` | Short name, sentence case. |
-| `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Verify`, `Retired` (meanings in `README.md`). Where a requirement came from is not a status: that is `sources`. |
+| `status` | A status code from `statuses` in `board.config.json`: a whole number from 1 (`status: 4`). **The number means whatever `board.config.json` says it means** (label, help, tone, role, settle) and differs between projects: never infer a status from its number, look it up in the config (or the board's Settings page). This project's list is in `README.md`. Labels, help, colour and order are config, so renaming a status touches no file. Where a requirement came from is not a status: that is `sources`. |
 | `components` | Should list one or more of the `components` in `board.config.json` (an empty list is a warning; with none configured, any name is accepted). |
 | `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop #3"` (a file in `notes/`, at a numbered point), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. Each source opens the artifact spot it cites (see Sources below); one that looks like a citation but resolves to nothing is a `check` warning. |
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
@@ -125,8 +125,8 @@ When adding links (by hand or by an agent):
 - Link a phrase when another item **defines** the rule, concept or behaviour it names. US-06.2.1's
   "RVG code in the anaesthetist's prepaid set" is defined by US-06.1.1, so it links there.
 - Link the most specific item (a story over its feature over its epic). Don't link an item to
-  itself, its own parent or epic, or its own children. Don't link to a Retired item, and don't edit
-  Retired items.
+  itself, its own parent or epic, or its own children. Don't link to a retired item, and don't edit
+  retired items.
 - Link the first mention in each section only, and keep it to about four text links per item.
 - Leave everyday domain nouns (Booking, List, Procedure, Contract, anaesthetist) unlinked unless
   the sentence relies on the specific rule a particular item states.
@@ -177,7 +177,7 @@ reader** after ` · ` or in brackets:
 id: OQ-06
 kind: question
 title: Base units on RVG code or on Contract
-status: Proposed
+status: 1
 owner: Donald
 affects:
   - US-04.2.3
@@ -195,7 +195,7 @@ Recommendation: base units live on the RVG code master ...
 
 `kind` is `question` (a decision or fact that blocks or shapes requirements) or `missing-source`
 (an item whose origin is unknown; resolve it by adding the item's source, then answer it with where it
-came from). A file with no `kind` reads as `question`. `status` is `Open`, `Confirm`, `Proposed` or `Answered`. `affects` lists item IDs
+came from). A file with no `kind` reads as `question`. `status` is a number from `questionStatuses` in `board.config.json` (look it up there; the answered one has role `answered`). `affects` lists item IDs
 that must exist. The body is the question (which cannot itself contain a `## Answer` line);
 `## Answer` holds the answer once there is one.
 
@@ -316,15 +316,39 @@ Every field is optional; with no file the board runs on neutral defaults.
   "project": { "name": "Acme ordering", "locale": "en-GB" },
   "components": [{ "name": "Order engine", "code": "ORD" }, { "name": "Customer app" }],
   "screenshotApps": [{ "key": "web", "label": "Web", "viewport": "desktop" }, { "key": "phone", "label": "Phone", "viewport": "mobile" }],
-  "statuses": { "Proposed": { "help": "Needs sign-off from Acme" }, "Confirmed": { "label": "Agreed", "help": "Agreed with Acme" } },
+  "statuses": [
+    { "code": "proposed", "label": "Proposed", "help": "Needs sign-off from Acme", "tone": "neutral", "role": "default" },
+    { "code": "open", "label": "Open", "help": "Waiting on an open question", "tone": "amber", "role": "waiting" },
+    { "code": "agreed", "label": "Agreed", "help": "Agreed with Acme", "tone": "green", "settle": true },
+    { "code": "retired", "label": "Retired", "help": "No longer wanted", "tone": "hatched", "role": "retired" }
+  ],
+  "questionStatuses": [
+    { "code": "open", "label": "Open", "heading": "Open", "help": "Waiting for an answer", "tone": "amber", "role": "default" },
+    { "code": "answered", "label": "Answered", "heading": "Answered", "help": "Settled", "tone": "green", "role": "answered" }
+  ],
   "questionKinds": { "missing-source": { "help": "..." } },
   "capture": { "recipes": "capture/recipes", "report": "capture/REPORT.md", "steps": "capture/steps.ts", "apps": { "web": { "url": "http://localhost:3000", "setupRoute": "/", "hideCss": "" } } }
 }
 ```
 
 `components` and `screenshotApps` are the lists the check holds items to (empty: anything goes).
-`statuses` and `questionKinds` change only the wording beside a value (`label`, `help`), never the
-values themselves. `capture` is described in the board's README. A malformed entry is a `check`
+`statuses` (items) and `questionStatuses` (questions) are ordered lists; each entry is
+`{ code, label, help, tone, role?, settle?, heading? }`. `code` is a whole number from 1, unique within its list. A file stores the `code`; the label, help,
+colour (`tone`: neutral, amber, olive, green, forest, sand or hatched) and order are config, so
+renaming or recolouring a status touches no file. `heading` (questions only) is the section title on
+the Questions tab. Roles replace name checks. Item roles: `default` (new items start here; no pill
+on cards), `waiting` (waiting on an open question; answering it pre-selects the first `settle`
+status) and `retired` (hidden unless Retired is shown, struck through, skipped by the check and the
+linking tools). `settle: true` marks the statuses offered when a question is answered. Question
+roles: `default` and `answered`. There must be exactly one default and one retired item status and
+at least one `settle`; one default and one answered question status. The board's Settings page
+(`/settings`, the gear at the right of the masthead) edits these lists (label, help, heading, tone,
+role, settle, order, add, remove) and writes the file; a status in use or holding a required role
+can't be removed, and a new status takes the next free number, fixed once saved (the number
+shows only in a quiet "No." column). To change a code across the files use
+`npm --prefix requirements-board run statuses:recode -- --items old=new,... --questions old=new,...` (it rewrites only `status:` lines and the board's history journal, and records
+the run in `status-recodes.json` so diffs across it read a pure relabel as no change). `questionKinds`
+changes only the wording beside a kind (`help`). `capture` is described in the board's README. A malformed entry is a `check`
 error and is left at its default.
 
 ## Rules the tools enforce
@@ -339,7 +363,7 @@ anchors match (a text, a simple selector, a node, a quote, a heading) and its bo
 artifact, an item's `artifacts` and any `AR-` link name an artifact and spot that exist,
 every `cited_as` entry is well formed and claimed once, and (as warnings) a source that looks like a
 citation resolves to an artifact spot that exists (Sources above), a `swimlane` sits only on a story and names a lane in `board-layout.json`; a
-relation listed on both cards or twice; a link or relation to a Retired item; a bare ID, or a link
+relation listed on both cards or twice; a link or relation to a retired item; a bare ID, or a link
 to a question, that names nothing (questions can be deleted, so this never blocks a delete). The board refuses a save that would add
 an error. A file that fails to parse, or whose `id:` differs from its file name, is left out of the board and
 listed under Checks until fixed; its ID stays reserved, so nothing new is ever written
@@ -347,7 +371,7 @@ over it.
 
 ## Conventions
 
-- **No deletes for items.** Retire an item by setting `status: Retired`; the ID stays taken.
+- **No deletes for items.** Retire an item by setting its status to the one with role `retired` (6 here); the ID stays taken.
 - **No deletes for artifacts.** Replace one by setting `status: Superseded` and `superseded_by`;
   the ID stays taken. The board never creates artifacts and never changes their files or
   regions, only their details: add them and change those as files (the `add-artifact` skill, or
@@ -358,9 +382,9 @@ over it.
   new question, so prefer answering one that was simply settled.
 - **New IDs**: next free number under the parent (the board assigns them). By hand: look at the
   highest sibling ID and add one.
-- **Answering a question**: set `status: Answered`, add `## Answer`, then move the affected items
-  off `Open`: to `Confirmed` where the answer settles them, to `Verify` where the item still needs
-  checking with whoever signs off (the board offers this for every item the question affects, whatever its status).
+- **Answering a question**: set the question to the status with role `answered` (4 here), add `## Answer`, then move the affected items
+  off the `waiting` status: to a `settle` status where the answer settles them (Agreed 4 here), or to Verify (3 here) where the item still needs
+  checking with whoever signs off. Never the final sign-off status (Confirmed 5 here: that is AA's sign-off, set only on explicit say-so) (the board offers this for every item the question affects, whatever its status).
 - Keep the serialised shape (key order, block lists, blank line after the fence) so diffs stay
   small; the board rewrites files in exactly this shape.
 - CSV for Miro or a spreadsheet: `npm run export:csv` writes `requirements.csv` and

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
+import type { BoardConfig } from '../shared/config.ts'
+import { isAnswered, statusCodes } from '../shared/statuses.ts'
 import type { Question, QuestionKind, QuestionStatus } from '../shared/types.ts'
-import { QUESTION_GROUP_ORDER } from './vocab.ts'
 
 /**
  * The Outstanding items list's filters. They live here rather than in the view so the question
@@ -34,16 +35,16 @@ export function questionFilter(q: Question, f: QuestionFilters): boolean {
   return words.every((w) => hay.includes(w))
 }
 
-/** The groups the list shows, in order: status order, Answered only when shown. */
-export const shownGroups = (f: QuestionFilters): QuestionStatus[] => QUESTION_GROUP_ORDER.filter((s) => f.showAnswered || s !== 'Answered')
+/** The groups the list shows, in order: the config's status order, the answered one only when shown. */
+export const shownGroups = (c: BoardConfig, f: QuestionFilters): QuestionStatus[] => statusCodes(c, 'question').filter((s) => f.showAnswered || !isAnswered(c, { status: s }))
 
 /**
  * The questions in the order the list shows them, for stepping through in a sheet. `anchor` keeps
  * the open question where it stood when it was opened: answer an Open one and it still sits among
  * the Open ones, so Previous and Next go to its old neighbours rather than into Answered.
  */
-export function questionWalk(questions: readonly Question[], f: QuestionFilters, anchor?: { id: string; status: QuestionStatus }): Question[] {
+export function questionWalk(c: BoardConfig, questions: readonly Question[], f: QuestionFilters, anchor?: { id: string; status: QuestionStatus }): Question[] {
   const groupOf = (q: Question) => (anchor && q.id === anchor.id ? anchor.status : q.status)
   const shown = questions.filter((q) => questionFilter(q, f))
-  return shownGroups(f).flatMap((status) => shown.filter((q) => groupOf(q) === status))
+  return shownGroups(c, f).flatMap((status) => shown.filter((q) => groupOf(q) === status))
 }

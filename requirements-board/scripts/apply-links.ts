@@ -23,10 +23,10 @@ const files = readdirSync(dir)
   .sort()
 const proposals: Proposal[] = files.flatMap((f) => (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { accepted?: Proposal[] }).accepted ?? [])
 
-const { items, questions } = loadCatalogue()
+const { items, questions, config } = loadCatalogue()
 const itemList = Object.values(items).map((r) => r.data)
 const questionList = Object.values(questions).map((r) => r.data)
-const { changed, outcomes } = applyProposals(itemList, questionList, proposals)
+const { changed, outcomes } = applyProposals(itemList, questionList, proposals, config)
 
 const check = (list: Item[]) => checkCatalogue({ items: list, questions: questionList, fileExists: fileExistsIn(REQUIREMENTS_DIR), lanes: readLayout().layout.lanes, config: readConfig().config })
 const before = new Set(check(itemList).map(issueKey))

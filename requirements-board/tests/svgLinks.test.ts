@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_CONFIG } from '../shared/config.ts'
 import type { ArtifactRec, Item, Question } from '../shared/types.ts'
 import { findRanges } from '../src/artifacts/find.ts'
 import { anchorElements } from '../src/artifacts/regionsDom.ts'
@@ -66,12 +67,12 @@ describe('linking record IDs in a drawing', () => {
 })
 
 describe('the catalogue resolver', () => {
-  const item = { id: 'US-06.1.1', title: 'Prepaid set', status: 'Proposed' } as Item
-  const gone = { id: 'FT-06.2', title: 'Old feature', status: 'Retired' } as Item
-  const question = { id: 'OQ-47', title: 'Payables approval', status: 'Open' } as Question
+  const item = { id: 'US-06.1.1', title: 'Prepaid set', status: '1' } as Item
+  const gone = { id: 'FT-06.2', title: 'Old feature', status: '5' } as Item
+  const question = { id: 'OQ-47', title: 'Payables approval', status: '1' } as Question
   const art = (id: string, title: string, status = 'Current') => ({ data: { id, title, status } }) as unknown as ArtifactRec
   const r = catalogueResolver(
-    { byId: new Map([[item.id, item], [gone.id, gone]]), questions: [question] },
+    { byId: new Map([[item.id, item], [gone.id, gone]]), questions: [question], config: DEFAULT_CONFIG },
     { 'AR-01': art('AR-01', 'Price rules'), 'AR-24': art('AR-24', 'Billing flow') },
     'AR-24',
   )

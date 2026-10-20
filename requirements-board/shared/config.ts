@@ -1,11 +1,12 @@
 /**
  * The project's own vocabulary, read from `board.config.json` in the requirements folder: its
- * name, the component list, which apps screenshots come from, the wording beside each status,
- * and how screenshots are captured. Everything here is optional; with no file the board runs on
- * neutral defaults and accepts any component or screenshot app. Statuses, question statuses and
- * item types are behaviour, not vocabulary, so a project can reword them but not add or remove one.
+ * name, the component list, which apps screenshots come from, its item and question statuses
+ * (see `statuses.ts`), and how screenshots are captured. Everything here is optional; with no
+ * file the board runs on neutral defaults and accepts any component or screenshot app. Item types
+ * and question kinds are behaviour, not vocabulary, so a project can reword a kind but not add one.
  */
-import { ITEM_STATUSES, QUESTION_KINDS, VIEWPORTS, type ItemStatus, type QuestionKind, type Viewport } from './types.ts'
+import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, parseStatusList, type StatusDef } from './statuses.ts'
+import { QUESTION_KINDS, VIEWPORTS, type QuestionKind, type Viewport } from './types.ts'
 
 export const CONFIG_FILE = 'board.config.json'
 
@@ -64,7 +65,10 @@ export interface BoardConfig {
   components: ComponentDef[]
   /** Empty: any app is accepted, and screenshots group by viewport. */
   screenshotApps: ScreenshotApp[]
-  statuses: Partial<Record<ItemStatus, Wording>>
+  /** Item statuses in menu order: code, label, help, tone, role. */
+  statuses: StatusDef[]
+  /** Question statuses in group order. */
+  questionStatuses: StatusDef[]
   questionKinds: Partial<Record<QuestionKind, Wording>>
   capture: CaptureConfig | null
 }
@@ -73,19 +77,10 @@ export const DEFAULT_CONFIG: BoardConfig = {
   project: { name: '' },
   components: [],
   screenshotApps: [],
-  statuses: {},
+  statuses: DEFAULT_ITEM_STATUSES,
+  questionStatuses: DEFAULT_QUESTION_STATUSES,
   questionKinds: {},
   capture: null,
-}
-
-/** What each item status means when the project does not say. */
-export const DEFAULT_STATUS_HELP: Record<ItemStatus, string> = {
-  Proposed: 'Needs sign-off',
-  Open: 'Waiting on an open question',
-  Verify: 'Question answered, the whole item still to check',
-  Confirmed: 'Agreed',
-  Future: 'Kept, but deferred',
-  Retired: 'No longer wanted, kept for traceability',
 }
 
 export const DEFAULT_KIND_HELP: Record<QuestionKind, string> = {
@@ -93,8 +88,6 @@ export const DEFAULT_KIND_HELP: Record<QuestionKind, string> = {
   'missing-source': 'A requirement with no known origin: add its source (a document page, a note in notes/, or Q&A) to the item',
 }
 
-export const statusLabelIn = (c: BoardConfig, s: string) => c.statuses[s as ItemStatus]?.label ?? s
-export const statusHelpIn = (c: BoardConfig, s: ItemStatus) => c.statuses[s]?.help ?? DEFAULT_STATUS_HELP[s]
 export const kindHelpIn = (c: BoardConfig, k: QuestionKind) => c.questionKinds[k]?.help ?? DEFAULT_KIND_HELP[k]
 export const componentCodeIn = (c: BoardConfig, name: string) => c.components.find((d) => d.name === name)?.code ?? name.slice(0, 3).toUpperCase()
 export const componentNames = (c: BoardConfig) => c.components.map((d) => d.name)
@@ -117,7 +110,7 @@ export function parseConfig(text: string): { config: BoardConfig; problems: stri
     return { config: DEFAULT_CONFIG, problems: [`${CONFIG_FILE} is not valid JSON (${(e as Error).message})`] }
   }
   if (!isObj(raw)) return { config: DEFAULT_CONFIG, problems: [`${CONFIG_FILE} must hold an object`] }
-  const config: BoardConfig = { project: { name: '' }, components: [], screenshotApps: [], statuses: {}, questionKinds: {}, capture: null }
+  const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {} }
 
   if (isObj(raw.project)) {
     config.project.name = str(raw.project.name) ?? ''
@@ -155,7 +148,8 @@ export function parseConfig(text: string): { config: BoardConfig; problems: stri
     }
   } else if (raw.screenshotApps !== undefined) problems.push('screenshotApps must be a list')
 
-  config.statuses = wordings(raw.statuses, ITEM_STATUSES, 'statuses', problems)
+  config.statuses = parseStatusList(raw.statuses, 'item', 'statuses', problems)
+  config.questionStatuses = parseStatusList(raw.questionStatuses, 'question', 'questionStatuses', problems)
   config.questionKinds = wordings(raw.questionKinds, QUESTION_KINDS, 'questionKinds', problems)
   config.capture = raw.capture === undefined ? null : capture(raw.capture, config.screenshotApps, problems)
   return { config, problems }

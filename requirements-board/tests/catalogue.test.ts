@@ -16,7 +16,7 @@ const item = (over: Partial<Item>): Item => ({
   type: 'story',
   parent: 'FT-01.1',
   title: 'A story',
-  status: 'Proposed',
+  status: '1',
   components: ['Core'],
   sources: [],
   order: 1,
@@ -34,7 +34,7 @@ const item = (over: Partial<Item>): Item => ({
 const epic = item({ id: 'EP-01', type: 'epic', parent: null })
 const feature = item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01' })
 const question = (over: Partial<Question>): Question => ({
-  id: 'OQ-01', kind: 'question', title: 'Q', status: 'Open', owner: 'Client', affects: ['US-01.1.1'], sources: [], question: 'Why?', answer: '', extra: {}, ...over,
+  id: 'OQ-01', kind: 'question', title: 'Q', status: '1', owner: 'Client', affects: ['US-01.1.1'], sources: [], question: 'Why?', answer: '', extra: {}, ...over,
 })
 
 /** The project's own catalogue, if this copy of the board has one yet (a fresh install may not). */
@@ -165,8 +165,8 @@ describe('catalogue files', () => {
     const story = (id: string, over: Partial<Item> = {}) => item({ id, sources: ['S'], ...over })
     const messages = (items: Item[], questions: Question[] = []) =>
       checkCatalogue({ items: [epic, feature, ...items], questions }).map((i) => `${i.severity} ${i.id} ${i.message}`)
-    const retired = story('US-01.1.9', { status: 'Retired' })
-    const q = { id: 'OQ-01', kind: 'question', title: 'Q', affects: ['US-01.1.1'], owner: '', status: 'Open', sources: [], question: 'See [the story](US-01.1.1).', answer: '', extra: {} } as Question
+    const retired = story('US-01.1.9', { status: '5' })
+    const q = { id: 'OQ-01', kind: 'question', title: 'Q', affects: ['US-01.1.1'], owner: '', status: '1', sources: [], question: 'See [the story](US-01.1.1).', answer: '', extra: {} } as Question
 
     const ok = messages([story('US-01.1.1', { related: ['US-01.1.2'], description: 'Uses [the other](US-01.1.2), see OQ-01 and `US-09.9.9`.' }), story('US-01.1.2')], [q])
     expect(ok.filter((m) => m.includes('related') || m.includes('the text'))).toEqual([])

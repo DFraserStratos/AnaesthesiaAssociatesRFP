@@ -67,10 +67,10 @@ Node 24: agent shells default to an older Node, so prefix commands with
 3. **Pick the items to re-grade.** Run `node CU/tools/regrade-ids.mjs <sha>`. It keeps:
    - items changed in substance or added (`req-changes.mjs` `substance()`). It ignores changes only
      to `artifacts:`, `related:`, `sources:`, `order:`, `swimlane:`, `images:` or link markup; a
-     status change counts;
+     a real status change counts (for example Proposed to Agreed, looked up in `REQ/board.config.json`: status files hold numbers), but a pure recode or relabel does not: statuses are normalised through `REQ/status-recodes.json` before diffing;
    - the `affects` of questions changed in substance.
 
-   It drops Retired, Future and Future Work items, and reports the counts and the share of in-scope
+   It drops retired items and the Future Work lane, plus features whose live stories are all in Future Work, and reports the counts and the share of in-scope
    items. Tell the user the counts.
 4. **Read the change logs.** Read the files in `changeLogsAdded` and skim the diffs you need
    (`plan-state.mjs --to <sha> --diff <IDs>`). Then write `changeNotes`: **at most about 40 lines**,
@@ -102,7 +102,7 @@ Node 24: agent shells default to an older Node, so prefix commands with
    - `epics`: the parsed JSON from step 1;
    - `reuseMaps`: `!prototypeCodeChanged`;
    - `runDelta`: `domainModelChanged`;
-   - `runReverse`: true if any changed item is now Retired or Future;
+   - `runReverse`: true if any changed item is now retired or has moved to the Future Work lane;
    - `runThemes`: true only if you re-grade more than about 40% of in-scope items.
 3. Check the DM ids before merging. Compare the delta file's index with the committed one
    (`git diff CU/analysis/domain-model-delta.md`). If continuing deltas changed number, map them back
@@ -291,7 +291,7 @@ Rules to keep when re-planning:
   "create" row, because Phase 14's baseline sweep gives every live story a recipe.
 - An item the phase builds only in part stays `partial`, and its reason names the later phase that
   finishes it. Phase 44's final sweep leaves no reason naming a later phase.
-- When a phase removes a screen that a Retired or Future item's recipe shoots, that recipe becomes
+- When a phase removes a screen that a retired or Future Work item's recipe shoots, that recipe becomes
   `absent`.
 - Shot `name`s stay stable when a recipe is re-pointed. Rename a shot only when the old name
   describes retired behaviour; the runner deletes the old generated image, so nothing goes stale.

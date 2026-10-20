@@ -1,7 +1,7 @@
 import { Check, ChevronDown } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { statusHelpIn } from '../../shared/config.ts'
-import { ITEM_STATUSES, type ItemStatus } from '../../shared/types.ts'
+import { isRetiredStatus, statusHelp, statusLabel } from '../../shared/statuses.ts'
+import type { ItemStatus } from '../../shared/types.ts'
 import { useConfig } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 import { StatusLabel } from './bits.tsx'
@@ -51,7 +51,7 @@ export function StatusPicker({ status, onPick, busy = false }: { status: ItemSta
         className="status-pick-btn"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Status: ${status}. Change status`}
+        aria-label={`Status: ${statusLabel(config, 'item', status)}. Change status`}
         title="Change status"
         disabled={busy}
         onClick={() => (open ? close() : setOpen(true))}
@@ -62,16 +62,16 @@ export function StatusPicker({ status, onPick, busy = false }: { status: ItemSta
           }
         }}
       >
-        <StatusLabel item status={status}>
+        <StatusLabel kind="item" status={status}>
           <ChevronDown size={12} strokeWidth={2.4} aria-hidden />
         </StatusLabel>
       </button>
       {open && (
         <div ref={menu} className="status-menu" role="menu" aria-label="Status" onKeyDown={onMenuKey}>
-          {ITEM_STATUSES.map((s) => (
-            <button key={s} type="button" role="menuitemradio" aria-checked={s === status} className={s === 'Retired' ? 'retire' : undefined} onClick={() => pick(s)}>
-              <StatusLabel item status={s} />
-              <span className="status-menu-help">{statusHelpIn(config, s)}</span>
+          {config.statuses.map(({ code: s }) => (
+            <button key={s} type="button" role="menuitemradio" aria-checked={s === status} className={isRetiredStatus(config, s) ? 'retire' : undefined} onClick={() => pick(s)}>
+              <StatusLabel kind="item" status={s} />
+              <span className="status-menu-help">{statusHelp(config, 'item', s)}</span>
               {s === status && <Check size={15} strokeWidth={2.4} className="status-menu-check" aria-hidden />}
             </button>
           ))}

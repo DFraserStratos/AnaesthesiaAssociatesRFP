@@ -85,7 +85,7 @@ function ArtifactChangeRow({ change: c, rec }: { change: FieldChange; rec: Artif
     case 'status':
       return (
         <p className="hist-row">
-          <span className="hist-field">Status</span> <StatusLabel status={String(c.from)} /> to <StatusLabel status={String(c.to)} />
+          <span className="hist-field">Status</span> <StatusLabel kind="artifact" status={String(c.from)} /> to <StatusLabel kind="artifact" status={String(c.to)} />
         </p>
       )
     case 'kind':

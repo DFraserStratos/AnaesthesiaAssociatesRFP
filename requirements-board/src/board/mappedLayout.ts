@@ -6,7 +6,7 @@
  * in that lane. Pure and deterministic, like `autoLayout`, and also the source
  * of the geometry a drag is hit-tested against (`dropTarget`).
  */
-import { canParent, laneOf, liveFirst, type Move } from '../../shared/move.ts'
+import { canParent, laneOf, liveFirst, type Move, type RetiredTest } from '../../shared/move.ts'
 import { UNASSIGNED_LANE, type Item } from '../../shared/types.ts'
 import { CARD, COL_GAP, COL_PITCH, EPIC_GAP, FEATURE_Y, ROW_GAP, STACK_GAP, type Placement } from './autoLayout.ts'
 
@@ -76,6 +76,8 @@ export interface MappedOptions {
   collapsed?: ReadonlySet<string>
   /** Cards that take up room. Hidden stories are placed at the foot of their stack; hidden epics and features get no column. Defaults to all. */
   visible?: (it: Item) => boolean
+  /** Which cards are retired (drawn at the end of their stack). Defaults to the default config's. */
+  retired?: RetiredTest
 }
 
 export const laneKey = (lane: string | null) => lane ?? ''
@@ -95,9 +97,10 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
       kids.set(it.parent, list)
     } else orphans.push(it) // parent missing or of the wrong type (bad data): still drawn, in a column of their own
   }
-  epics.sort(liveFirst)
-  for (const list of kids.values()) list.sort(liveFirst)
-  orphans.sort(liveFirst)
+  const order = liveFirst(opts.retired)
+  epics.sort(order)
+  for (const list of kids.values()) list.sort(order)
+  orphans.sort(order)
 
   const out: MappedLayout = { placements: {}, collapsed: new Set(), lanes: [], columns: [], epics: [], adds: [], stacks: new Map(), width: 0, height: 0 }
 

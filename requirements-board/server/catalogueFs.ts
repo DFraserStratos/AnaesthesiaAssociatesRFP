@@ -9,6 +9,7 @@ import { checkCatalogue } from '../shared/check.ts'
 import { ParseError, lintArtifact, lintFrontmatter, lintItem, lintQuestion, parseArtifact, parseItem, parseQuestion, revOf, serialiseArtifact, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { compareIds } from '../shared/ids.ts'
 import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
+import { RECODES_FILE, parseRecodes, type Recode } from '../shared/statuses.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
 import { artifactInfo } from './artifactFiles.ts'
 
@@ -110,6 +111,34 @@ export function readConfig(root = REQUIREMENTS_DIR): { config: BoardConfig; prob
     return { config: DEFAULT_CONFIG, problems: [] }
   }
   return parseConfig(text)
+}
+
+/** The recorded status recodes (`status-recodes.json`); none when the file is absent. */
+export function readRecodes(root = REQUIREMENTS_DIR): Recode[] {
+  try {
+    return parseRecodes(readFileSync(join(root, RECODES_FILE), 'utf8'))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * JSON as the config file is laid out by hand: two-space indent, and any array or object that
+ * fits on one line (within `width`) kept there, `{ "a": 1 }` style.
+ */
+export function formatJson(value: unknown, width = 160): string {
+  const flat = (v: unknown): string =>
+    Array.isArray(v) ? `[${v.map(flat).join(', ')}]` : v && typeof v === 'object' ? (Object.keys(v).length ? `{ ${Object.entries(v).map(([k, x]) => `${JSON.stringify(k)}: ${flat(x)}`).join(', ')} }` : '{}') : JSON.stringify(v)
+  const out = (v: unknown, ind: string, top: boolean): string => {
+    if (!v || typeof v !== 'object') return JSON.stringify(v)
+    const one = flat(v)
+    if (!top && ind.length + one.length <= width) return one
+    const inner = ind + '  '
+    return Array.isArray(v)
+      ? `[\n${v.map((x) => inner + out(x, inner, false)).join(',\n')}\n${ind}]`
+      : `{\n${Object.entries(v).map(([k, x]) => `${inner}${JSON.stringify(k)}: ${out(x, inner, false)}`).join(',\n')}\n${ind}}`
+  }
+  return out(value, '', true) + '\n'
 }
 
 export function fileExistsIn(root: string) {

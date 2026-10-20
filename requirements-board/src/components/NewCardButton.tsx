@@ -2,6 +2,7 @@ import { MessageCircleQuestion, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { kindHelpIn } from '../../shared/config.ts'
+import { defaultStatus } from '../../shared/statuses.ts'
 import { ITEM_TYPES, PARENT_TYPES, QUESTION_KINDS, TYPE_LABEL, type Item, type ItemType, type QuestionKind } from '../../shared/types.ts'
 import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, isRetiredOrUnder, useCatalogue, useConfig, useIndex, type Index } from '../store.ts'
@@ -114,11 +115,11 @@ function NewCardPop({ draft, setDraft, onClose, index }: { draft: Draft; setDraf
     try {
       const title = draft.title.trim()
       if (draft.kind === 'question') {
-        const rec = await createQuestion({ kind: draft.questionKind, title, status: 'Open', affects: draft.affects })
+        const rec = await createQuestion({ kind: draft.questionKind, title, status: defaultStatus(config, 'question'), affects: draft.affects })
         onClose()
         open.question(rec.data.id, { edit: true })
       } else {
-        const rec = await createItem({ type: draft.kind, parent: needsParent ? draft.parent : null, title, status: 'Proposed' })
+        const rec = await createItem({ type: draft.kind, parent: needsParent ? draft.parent : null, title, status: defaultStatus(config, 'item') })
         onClose()
         open.item(rec.data.id, { edit: true })
       }

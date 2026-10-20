@@ -7,11 +7,9 @@ import {
   ARTIFACT_EXTENSIONS,
   ARTIFACT_KINDS,
   ARTIFACT_STATUSES,
-  ITEM_STATUSES,
   PARENT_TYPES,
   ITEM_TYPES,
   QUESTION_KINDS,
-  QUESTION_STATUSES,
   VIEWPORTS,
   artifactFormat,
   linesOfRegionId,
@@ -29,6 +27,7 @@ import {
 import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
 import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
 import { appKeys, componentNames, DEFAULT_CONFIG, type BoardConfig } from './config.ts'
+import { isAnswered, isRetired, statusCodes } from './statuses.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
 export const ID_PATTERNS = {
@@ -73,6 +72,9 @@ export interface CheckInput {
 export function checkCatalogue({ items, questions, fileExists, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
   const issues: Issue[] = []
   const components = componentNames(config)
+  const itemCodes = statusCodes(config, 'item')
+  const questionCodes = statusCodes(config, 'question')
+  const retired = (it: Item) => isRetired(config, it)
   const apps = appKeys(config)
   const unknownComponent = (c: string) => components.length > 0 && !components.includes(c)
   const err = (id: string, message: string) => issues.push({ severity: 'error', id, message })
@@ -91,12 +93,12 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
     if (!ID_PATTERNS[it.type].test(it.id)) err(it.id, `ID ${it.id} does not match the ${it.type} pattern`)
     if (!it.title.trim()) err(it.id, 'title is empty')
-    if (!ITEM_STATUSES.includes(it.status)) err(it.id, `status "${it.status}" is not one of ${ITEM_STATUSES.join(', ')}`)
+    if (!itemCodes.includes(it.status)) err(it.id, `status "${it.status}" is not one of ${itemCodes.join(', ')} (statuses in board.config.json)`)
     for (const c of it.components) {
       if (unknownComponent(c)) err(it.id, `component "${c}" is not in the vocabulary (board.config.json)`)
     }
     if (it.components.length === 0) warn(it.id, 'no component')
-    if (it.sources.length === 0 && it.status !== 'Retired') warn(it.id, 'no source')
+    if (it.sources.length === 0 && !retired(it)) warn(it.id, 'no source')
 
     if (it.type === 'epic') {
       if (it.parent) err(it.id, 'an epic has no parent')
@@ -144,7 +146,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       else if (isQuestionId(r)) err(it.id, `related lists ${r}, an outstanding item; list the item under its affects instead`)
       else if (!byId.has(r)) err(it.id, `related lists ${r}, which does not exist`)
       else {
-        if (byId.get(r)!.status === 'Retired' && it.status !== 'Retired') warn(it.id, `related lists ${r}, which is retired`)
+        if (retired(byId.get(r)!) && !retired(it)) warn(it.id, `related lists ${r}, which is retired`)
         if (pairs.has(`${r}|${it.id}`)) warn(it.id, `related lists ${r}, which already lists this item; keep it on one side`)
         pairs.add(`${it.id}|${r}`)
       }
@@ -274,7 +276,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       }
       const problem = artifactRefProblem(ref)
       if (problem) err(it.id, `artifacts lists ${ref}: ${problem}`)
-      else if (it.status !== 'Retired' && artById.get(parseArtifactRef(ref).id)!.status === 'Superseded') {
+      else if (!retired(it) && artById.get(parseArtifactRef(ref).id)!.status === 'Superseded') {
         const by = artById.get(parseArtifactRef(ref).id)!.supersededBy
         warn(it.id, `artifacts lists ${ref}, which is superseded${by ? ` by ${by}` : ''}`)
       }
@@ -297,21 +299,21 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       } else if (!byId.has(m.id)) {
         if (m.bare) warn(id, `the text mentions ${m.id}, which does not exist`)
         else fail(id, `the text links to ${m.id}, which does not exist`)
-      } else if (live && !m.bare && byId.get(m.id)!.status === 'Retired') warn(id, `the text links to ${m.id}, which is retired`)
+      } else if (live && !m.bare && retired(byId.get(m.id)!)) warn(id, `the text links to ${m.id}, which is retired`)
     }
   }
-  for (const it of items) linksIn(it.id, itemTexts(it), it.status !== 'Retired')
+  for (const it of items) linksIn(it.id, itemTexts(it), !retired(it))
   for (const a of artifacts) linksIn(a.id, [a.description], a.status !== 'Superseded', true)
-  for (const q of questions) linksIn(q.id, [q.question, q.answer], q.status !== 'Answered')
+  for (const q of questions) linksIn(q.id, [q.question, q.answer], !isAnswered(config, q))
 
   for (const q of questions) {
     if (!ID_PATTERNS.question.test(q.id)) err(q.id, `ID ${q.id} does not match OQ-nn`)
     if (!QUESTION_KINDS.includes(q.kind)) err(q.id, `kind "${q.kind}" is not one of ${QUESTION_KINDS.join(', ')}`)
     if (!q.title.trim()) err(q.id, 'title is empty')
-    if (!QUESTION_STATUSES.includes(q.status)) err(q.id, `status "${q.status}" is not one of ${QUESTION_STATUSES.join(', ')}`)
+    if (!questionCodes.includes(q.status)) err(q.id, `status "${q.status}" is not one of ${questionCodes.join(', ')} (questionStatuses in board.config.json)`)
     for (const a of q.affects) if (!byId.has(a)) err(q.id, `affects ${a}, which does not exist`)
     if (q.affects.length === 0) warn(q.id, 'affects no items')
-    if (q.status === 'Answered' && !q.answer.trim()) warn(q.id, 'answered but the answer is empty')
+    if (isAnswered(config, q) && !q.answer.trim()) warn(q.id, 'answered but the answer is empty')
   }
 
   // Sources open the artifact spot they cite (shared/sources.ts). Only warnings: a source line never blocks a save.

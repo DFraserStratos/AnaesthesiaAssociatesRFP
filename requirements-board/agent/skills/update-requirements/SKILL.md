@@ -26,8 +26,10 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   requirements folder: the catalogue, its notes, artifacts and change logs all live there). Paths
   below are relative to the repo root.
 - Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
-- Who signs requirements off: AA, the client. The project's own wording for each status is in
-  `REQ/board.config.json` (`statuses`).
+- Who signs requirements off: AA, the client. Files store status numbers (`status: 4`), which mean only what `REQ/board.config.json` says
+  (`statuses`, `questionStatuses`): look them up there, never infer one from its number. Items: 1 Proposed (default),
+  2 Open (waiting), 3 Verify (settle), 4 Agreed (settle; agreed with Greg), 5 Confirmed (signed off by AA, final;
+  never set without AA's explicit sign-off), 6 Retired. Questions: 1 Open (default), 2 Confirm, 3 Proposed, 4 Answered.
 - Out of bounds for this skill: the prototype and its build plan (`aa-prototype/`, `docs/prototype-build/`).
 - Follow-on skill: `update-build-plan`, which reads the change log once the user has committed it.
 - Shape precedent for a note: the newest meeting note in `REQ/notes/` (for example
@@ -64,10 +66,11 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 2. **Repo changes:** `git diff <ref> --name-status -- REQ`
    and `git status --porcelain -- REQ` (for untracked files).
    `<ref>` is HEAD unless the user names one. Board answers live in `REQ/questions/*.md`. The board may
-   also have changed the statuses of affected items: keep those changes.
+   also have changed the statuses of affected items: keep those changes. A file whose only change is a
+   status recoded per `REQ/status-recodes.json` is not a change: ignore it.
 3. **Inventory the questions** changed in that diff: ID, title, status, answer. Flag every answer that
    defers to the evidence ("in the transcript", "see notes", "as discussed"), is partial, or is empty
-   while marked Answered.
+   while marked Answered (4).
 
 ## Stage 1: file the evidence (yourself)
 
@@ -110,7 +113,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   - "Other points".
   Points are numbered once across the whole note. Where sources disagree, keep both and flag it.
 - **Answers:** for each flagged question, draft the answer from the note and cite the points (`See Notes
-  <date> · <slug> #n`). Add the note to the question's `sources`, and set `status: Answered` per
+  <date> · <slug> #n`). Add the note to the question's `sources`, and set it to Answered (4) per
   SCHEMA.md. Do not rewrite an answer the user gave in full; add a "The meeting adds:" line only when the
   evidence materially extends it.
 - **Verifier (fresh):** checks every drafted answer and every note point against the raw source, and
@@ -133,8 +136,8 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
    - adds the note or question to `sources` in date order, quoted only when it contains `#` or `: `
      (`- "Notes 2026-10-01 · Client meeting #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
    - writes each source in a form that resolves (Ground rules), so it opens its spot;
-   - moves status per the answering convention (Confirmed where settled, Verify where it still needs
-     checking with whoever signs off, per "This repo");
+   - moves status per the answering convention (Agreed (4) where settled, Verify (3) where it still needs
+     checking with whoever signs off, per "This repo"; never Confirmed (5) without AA's explicit sign-off);
    - sets `components`;
    - creates stories or features with the next free ID under the right parent;
    - retires superseded items rather than deleting them;
@@ -145,7 +148,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
    - Is anything on the change list missing?
    - Is the shape and wording right per SCHEMA?
    - Do the existing acceptance criteria still hold?
-   - Are there links to Retired items?
+   - Are there links to retired items?
 4. **`domain-model.md`:** one agent plus a reviewer, if the model changed.
 5. **New questions:** add an OQ for each genuinely unresolved matter, with `affects` set to existing items.
 

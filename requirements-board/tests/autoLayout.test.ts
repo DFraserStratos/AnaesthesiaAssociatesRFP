@@ -45,7 +45,7 @@ describe('autoLayout', () => {
   })
 
   it('keeps retired items at the end of their stack', () => {
-    const retired = items.map((i) => (i.id === 'US-01.1.1' ? { ...i, status: 'Retired' as const } : i))
+    const retired = items.map((i) => (i.id === 'US-01.1.1' ? { ...i, status: '5' as const } : i))
     const p = autoLayout(retired)
     const last = items.filter((i) => i.parent === 'FT-01.1').at(-1)!.id
     expect(p['US-01.1.1']!.y).toBeGreaterThan(p[last]!.y)

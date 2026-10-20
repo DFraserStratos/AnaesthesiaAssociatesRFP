@@ -1,23 +1,9 @@
-import { QUESTION_STATUSES, type ArtifactKind, type ArtifactStatus, type ItemStatus, type ItemType, type QuestionKind, type QuestionStatus } from '../shared/types.ts'
+import type { ArtifactKind, ArtifactStatus, ItemType, QuestionKind } from '../shared/types.ts'
+import type { Tone } from '../shared/statuses.ts'
 import { plainText } from '../shared/links.ts'
-
-/** The baseline status: most items sit here, so a card only carries a pill when its status differs. */
-export const BASELINE_STATUS: ItemStatus = 'Proposed'
-
-/** CSS class suffix per status; colours live in styles.css tokens. */
-export const statusClass = (s: string) => `st-${s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/-$/, '')}`
 
 /** CSS class that sets the type colour tokens (--ty, --ty-ink, --ty-tint). */
 export const typeClass = (t: ItemType) => `ty-${t}`
-
-/** Outstanding items are grouped by status in the vocabulary's own order, so a new status can never drop out of the view. */
-export const QUESTION_GROUP_ORDER: readonly QuestionStatus[] = QUESTION_STATUSES
-export const QUESTION_GROUP_LABEL: Record<QuestionStatus, string> = {
-  Open: 'Open',
-  Confirm: 'Awaiting confirmation',
-  Proposed: 'Recommendation proposed',
-  Answered: 'Answered',
-}
 
 export const KIND_LABEL: Record<QuestionKind, string> = { question: 'Question', 'missing-source': 'Missing source' }
 
@@ -48,6 +34,9 @@ export const ARTIFACT_KIND_PLURAL: Record<ArtifactKind, string> = {
 
 /** Current is the baseline: an artifact carries a pill only when it is a draft or has been replaced. */
 export const BASELINE_ARTIFACT_STATUS: ArtifactStatus = 'Current'
+/** Artifact statuses are fixed (not project config); each takes a status tone. Superseded is struck through like a retired card. */
+export const ARTIFACT_STATUS_TONE: Record<ArtifactStatus, Tone> = { Draft: 'amber', Current: 'green', Superseded: 'hatched' }
+export const artifactStatusClass = (s: ArtifactStatus) => `tone-${ARTIFACT_STATUS_TONE[s] ?? 'neutral'}`
 export const ARTIFACT_STATUS_HELP: Record<ArtifactStatus, string> = {
   Draft: 'Still being worked on',
   Current: 'The version to go by',

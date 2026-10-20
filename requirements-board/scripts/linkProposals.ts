@@ -4,6 +4,8 @@
  * whatever the agents said, and skipped with a reason when it no longer fits the text.
  */
 import { isQuestionId, isRecordId, itemLinkTargets } from '../shared/links.ts'
+import { DEFAULT_CONFIG, type BoardConfig } from '../shared/config.ts'
+import { isRetired } from '../shared/statuses.ts'
 import type { Item, Question } from '../shared/types.ts'
 
 export const LINK_FIELDS = ['description', 'acceptance', 'technical', 'notes'] as const
@@ -48,7 +50,7 @@ export function anchorPositions(md: string, anchor: string): number[] {
 const linksTo = (md: string, id: string) => new RegExp(`\\]\\(\\s*${id.replace(/\./g, '\\.')}\\s*\\)`).test(md)
 
 /** Apply every proposal it can, in order. Returns the changed items (copies) and what happened to each proposal. */
-export function applyProposals(items: Item[], questions: Question[], proposals: Proposal[]): { changed: Map<string, Item>; outcomes: Outcome[] } {
+export function applyProposals(items: Item[], questions: Question[], proposals: Proposal[], config: BoardConfig = DEFAULT_CONFIG): { changed: Map<string, Item>; outcomes: Outcome[] } {
   const byId = new Map(items.map((i) => [i.id, i]))
   const qIds = new Set(questions.map((q) => q.id))
   const changed = new Map<string, Item>()
@@ -61,7 +63,7 @@ export function applyProposals(items: Item[], questions: Question[], proposals: 
   const isFamily = (a: string, b: string) => lineage(a).has(b) || lineage(b).has(a)
   const liveItem = (id: string) => {
     const it = byId.get(id)
-    return it && it.status !== 'Retired' ? it : undefined
+    return it && !isRetired(config, it) ? it : undefined
   }
 
   const outcomes: Outcome[] = []
@@ -70,7 +72,7 @@ export function applyProposals(items: Item[], questions: Question[], proposals: 
   for (const p of proposals) {
     if (p.kind === 'inline') {
       const it = current(p.item)
-      if (!it || it.status === 'Retired') {
+      if (!it || isRetired(config, it)) {
         skip(p, `${p.item} is not a live item`)
         continue
       }
@@ -101,7 +103,7 @@ export function applyProposals(items: Item[], questions: Question[], proposals: 
       outcomes.push({ proposal: p, skipped: null })
     } else {
       const from = current(p.from)
-      if (!from || from.status === 'Retired' || !liveItem(p.to)) {
+      if (!from || isRetired(config, from) || !liveItem(p.to)) {
         skip(p, `${p.from} and ${p.to} must both be live items`)
         continue
       }

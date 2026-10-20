@@ -7,8 +7,9 @@ import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
 import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
-import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type Artifact, type ArtifactRec, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
+import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { DEFAULT_CONFIG, componentNames, type BoardConfig } from '../shared/config.ts'
+import { isOpenQuestion, isRetired, statusCodes, type StatusDef } from '../shared/statuses.ts'
 import { ApiError, api } from './api.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
@@ -40,6 +41,8 @@ interface CatalogueState {
   load: () => Promise<void>
   applyEvent: (e: CatalogueEvent) => void
   saveItem: (item: Item, baseRev?: string) => Promise<Rev<Item>>
+  /** Replace the item and/or question status lists in board.config.json (the Settings page). */
+  saveStatuses: (patch: { statuses?: StatusDef[]; questionStatuses?: StatusDef[] }) => Promise<void>
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => Promise<Rev<Item>>
   saveQuestion: (q: Question, baseRev?: string) => Promise<Rev<Question>>
   createQuestion: (partial: Partial<Question>) => Promise<Rev<Question>>
@@ -108,6 +111,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         else delete positions[id]
       }
       set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, config: snap.config ?? DEFAULT_CONFIG, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
+      dropUnknownStatuses(get().config)
     } catch (e) {
       set({ status: 'error', error: (e as Error).message })
     }
@@ -142,6 +146,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       if (JSON.stringify(next) !== JSON.stringify(s.layout)) set({ layout: next })
     } else if (e.kind === 'config') {
       set({ config: e.config })
+      dropUnknownStatuses(e.config)
     } else {
       set({ issues: e.issues })
     }
@@ -151,6 +156,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const rec = await api.putItem(item, baseRev)
     set({ items: { ...get().items, [rec.data.id]: rec } })
     return rec
+  },
+  async saveStatuses(patch) {
+    const config = await api.putConfig(patch)
+    set({ config })
+    dropUnknownStatuses(config)
   },
   async createItem(partial) {
     const rec = await api.createItem(partial)
@@ -425,9 +435,11 @@ export interface Index {
   relatedFrom: Map<string, string[]>
   /** Items whose text links to or mentions this one, in ID order. */
   mentionedBy: Map<string, string[]>
+  /** The config the index was built under: what each status means (which is retired, which answered). */
+  config: BoardConfig
 }
 
-export function buildIndex(itemRecs: Record<string, Rev<Item>>, questionRecs: Record<string, Rev<Question>>): Index {
+export function buildIndex(itemRecs: Record<string, Rev<Item>>, questionRecs: Record<string, Rev<Question>>, config: BoardConfig = DEFAULT_CONFIG): Index {
   const items = Object.values(itemRecs).map((r) => r.data)
   const byId = new Map(items.map((i) => [i.id, i]))
   const children = new Map<string, Item[]>()
@@ -465,7 +477,7 @@ export function buildIndex(itemRecs: Record<string, Rev<Item>>, questionRecs: Re
     for (const r of it.related) if (r !== it.id) push(relatedFrom, r, it.id)
     for (const t of itemLinkTargets(it)) if (t !== it.id && !isArtifactId(t)) push(mentionedBy, t, it.id)
   }
-  return { items, byId, children, epics, questionsFor, questions, relatedFrom, mentionedBy }
+  return { items, byId, children, epics, questionsFor, questions, relatedFrom, mentionedBy, config }
 }
 
 /**
@@ -500,14 +512,15 @@ export function useComponents(): string[] {
 export function useIndex(): Index {
   const items = useCatalogue((s) => s.items)
   const questions = useCatalogue((s) => s.questions)
-  return useMemo(() => buildIndex(items, questions), [items, questions])
+  const config = useCatalogue((s) => s.config)
+  return useMemo(() => buildIndex(items, questions, config), [items, questions, config])
 }
 
-/** Is the item Retired, or does it sit under a Retired card? Either way it is hidden with retired cards. */
+/** Is the item retired, or does it sit under a retired card? Either way it is hidden with retired cards. */
 export function isRetiredOrUnder(index: Index, it: Item): boolean {
   const seen = new Set<string>()
   for (let cur: Item | undefined = it; cur && !seen.has(cur.id); cur = cur.parent ? index.byId.get(cur.parent) : undefined) {
-    if (cur.status === 'Retired') return true
+    if (isRetired(index.config, cur)) return true
     seen.add(cur.id)
   }
   return false
@@ -581,7 +594,7 @@ export function descendantsOf(index: Index, id: string): Item[] {
   return out
 }
 
-export const openQuestionsFor = (index: Index, id: string) => (index.questionsFor.get(id) ?? []).filter(isOpenQuestion)
+export const openQuestionsFor = (index: Index, id: string) => (index.questionsFor.get(id) ?? []).filter((q) => isOpenQuestion(index.config, q))
 
 /* --------------------------------------------------------------- view prefs */
 
@@ -641,6 +654,13 @@ export const useView = create<ViewState>((set, get) => ({
     get().set({ search: '', statuses: [], components: [], types: [], onlyWithQuestions: false })
   },
 }))
+
+/** A saved status filter naming a status the config no longer has (renamed or removed) would hide every card: drop it. */
+function dropUnknownStatuses(config: BoardConfig) {
+  const v = useView.getState()
+  const known = new Set(statusCodes(config, 'item'))
+  if (v.statuses.some((s) => !known.has(s))) v.set({ statuses: v.statuses.filter((s) => known.has(s)) })
+}
 
 export const filtersActive = (v: ViewPrefs) =>
   !!v.search.trim() || v.statuses.length > 0 || v.components.length > 0 || v.types.length > 0 || v.onlyWithQuestions

@@ -23,14 +23,16 @@
   --danger-tint: #fbece8;
   --warn-tint: #fdf4e3;
 
-  --st-confirmed: #2f7d4f;
-  /* Proposed is the baseline (most items), so it takes the calm neutral. */
-  --st-proposed: #5b6b73;
-  --st-future: #8a7a66;
-  --st-open: #c0851b;
-  /* Verify sits between Open (amber) and Confirmed (green): answered, not yet signed off. */
-  --st-verify: #7c8a1e;
-  --st-retired: #9aa6ab;
+  /* Status tones: the swatches a project's statuses pick from (board.config.json). The default
+     status takes the calm neutral; olive sits between amber (waiting) and green (agreed); forest,
+     deeper than green, is for final sign-off; hatched is for retired. */
+  --tone-neutral: #5b6b73;
+  --tone-amber: #c0851b;
+  --tone-olive: #7c8a1e;
+  --tone-green: #2f7d4f;
+  --tone-forest: #1b5a3c;
+  --tone-sand: #8a7a66;
+  --tone-hatched: #9aa6ab;
 
   /* Work item types, after Azure DevOps: epic orange, feature purple, story blue.
      --ty is the accent (rules, icons), --ty-ink the text-safe shade, --ty-tint the fill. */
@@ -200,7 +202,7 @@ button {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--st-confirmed);
+  background: var(--tone-green);
 }
 .live-dot.off {
   background: var(--ink-4);
@@ -431,35 +433,38 @@ button.chip:hover {
   box-shadow: 0 0 0 2px var(--teal);
 }
 
-.st-confirmed,
-.st-answered {
-  --sc: var(--st-confirmed);
-  --sbg: #e5f2ea;
-  --sink: #22613b;
-}
-.st-proposed {
-  --sc: var(--st-proposed);
+.tone-neutral {
+  --sc: var(--tone-neutral);
   --sbg: #eceff0;
   --sink: #46545b;
 }
-.st-future {
-  --sc: var(--st-future);
-  --sbg: #efebe5;
-  --sink: #64553f;
-}
-.st-open,
-.st-confirm {
-  --sc: var(--st-open);
+.tone-amber {
+  --sc: var(--tone-amber);
   --sbg: #fbefd9;
   --sink: #7d530a;
 }
-.st-verify {
-  --sc: var(--st-verify);
+.tone-olive {
+  --sc: var(--tone-olive);
   --sbg: #eff2dc;
   --sink: #4f5a0f;
 }
-.st-retired {
-  --sc: var(--st-retired);
+.tone-green {
+  --sc: var(--tone-green);
+  --sbg: #e5f2ea;
+  --sink: #22613b;
+}
+.tone-forest {
+  --sc: var(--tone-forest);
+  --sbg: #d6e9dd;
+  --sink: #13452d;
+}
+.tone-sand {
+  --sc: var(--tone-sand);
+  --sbg: #efebe5;
+  --sink: #64553f;
+}
+.tone-hatched {
+  --sc: var(--tone-hatched);
   --sbg: repeating-linear-gradient(135deg, #eef1f2 0 3px, #f8f9f9 3px 6px);
   --sink: #5f6e74;
 }
@@ -484,22 +489,6 @@ button.chip:hover {
   --ty: var(--ty-artifact);
   --ty-ink: var(--ty-artifact-ink);
   --ty-tint: var(--ty-artifact-tint);
-}
-/* Artifact statuses: Current is the baseline and goes unmarked; Draft is still moving; Superseded is kept, struck through like Retired. */
-.st-draft {
-  --sc: var(--st-open);
-  --sbg: #fbefd9;
-  --sink: #7d530a;
-}
-.st-current {
-  --sc: var(--st-confirmed);
-  --sbg: #e5f2ea;
-  --sink: #22613b;
-}
-.st-superseded {
-  --sc: var(--st-retired);
-  --sbg: repeating-linear-gradient(135deg, #eef1f2 0 3px, #f8f9f9 3px 6px);
-  --sink: #5f6e74;
 }
 .type-icon {
   flex: none;
@@ -1049,7 +1038,7 @@ button.seg:focus-visible {
 .card.is-faded {
   opacity: 0.12;
 }
-.card.st-retired {
+.card.is-retired {
   background: repeating-linear-gradient(135deg, #f4f6f6 0 6px, #fbfcfc 6px 12px);
   border-top-color: var(--rule-strong);
   color: var(--ink-3);
@@ -1172,7 +1161,7 @@ button.seg:focus-visible {
   border-color: color-mix(in srgb, var(--sc) 40%, var(--card));
   border-top-color: var(--ty);
 }
-.zoom-overview .card.story.st-retired {
+.zoom-overview .card.story.is-retired {
   background: repeating-linear-gradient(135deg, #dfe4e6 0 10px, #f4f6f6 10px 20px);
 }
 .zoom-overview .card.story > *,
@@ -1394,7 +1383,7 @@ button.seg:focus-visible {
 .tree-row.feature .t-title {
   font-weight: 600;
 }
-.tree-row.st-retired .t-title {
+.tree-row.is-retired .t-title {
   color: var(--ink-3);
   text-decoration: line-through;
   text-decoration-color: var(--ink-4);
@@ -1715,7 +1704,7 @@ mark {
   vertical-align: -1px;
 }
 .record-link-icon {
-  color: var(--st-open);
+  color: var(--tone-amber);
 }
 .prose a.record-link.retired {
   color: var(--ink-3);
@@ -1749,7 +1738,7 @@ mark {
 .oq-card {
   text-align: left;
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--st-open) 35%, var(--rule));
+  border: 1px solid color-mix(in srgb, var(--tone-amber) 35%, var(--rule));
   background: var(--warn-tint);
   border-radius: 6px;
   padding: 10px 12px;
@@ -1757,7 +1746,7 @@ mark {
   margin-bottom: 8px;
 }
 .oq-card:hover {
-  border-color: var(--st-open);
+  border-color: var(--tone-amber);
 }
 .oq-card .oq-top {
   display: flex;
@@ -1850,7 +1839,7 @@ mark {
   gap: 10px;
   font-size: 13px;
   background: var(--warn-tint);
-  border: 1px solid color-mix(in srgb, var(--st-open) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone-amber) 40%, transparent);
 }
 .banner.error {
   background: var(--danger-tint);
@@ -2039,7 +2028,7 @@ mark {
 .answer-flow {
   margin-top: 16px;
   padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--st-confirmed) 40%, var(--rule));
+  border: 1px solid color-mix(in srgb, var(--tone-green) 40%, var(--rule));
   background: #eef6f1;
   border-radius: 8px;
 }
@@ -2595,20 +2584,20 @@ mark {
   background: var(--ink-4);
 }
 .uncommitted {
-  --hist-trace: var(--st-open);
+  --hist-trace: var(--tone-amber);
 }
 .uncommitted .hist-mark::after {
-  border-color: var(--st-open);
+  border-color: var(--tone-amber);
 }
 .uncommitted.src-board .hist-mark::after {
-  background: var(--st-open);
+  background: var(--tone-amber);
 }
 .hist-pending-label {
   display: block !important;
   padding: 2px 0 6px calc(var(--hist-gutter) + 28px);
   font-size: 12px;
   font-weight: 600;
-  color: color-mix(in srgb, var(--st-open) 70%, var(--ink));
+  color: color-mix(in srgb, var(--tone-amber) 70%, var(--ink));
 }
 .hist-body {
   grid-column: 3;
@@ -2691,7 +2680,7 @@ mark {
   font-size: 12.5px;
 }
 .hist-counts .add {
-  color: var(--st-confirmed);
+  color: var(--tone-green);
   font-weight: 600;
 }
 .hist-counts .del {
@@ -2745,7 +2734,7 @@ mark {
   color: var(--ink-2);
 }
 .hist-diff .add {
-  background: color-mix(in srgb, var(--st-confirmed) 10%, var(--card));
+  background: color-mix(in srgb, var(--tone-green) 10%, var(--card));
 }
 .hist-diff .del {
   background: var(--danger-tint);
@@ -2791,7 +2780,7 @@ mark {
   background: linear-gradient(var(--hist-trace), var(--hist-trace)) no-repeat calc(var(--hist-gutter) + 17px) 0 / 2px 100%;
 }
 .hist-pending-label {
-  --hist-trace: var(--st-open);
+  --hist-trace: var(--tone-amber);
 }
 .hist-list > .hist-day:first-child {
   background: none;
@@ -3579,7 +3568,7 @@ mark {
   padding: 7px 12px;
   border-radius: 999px;
   background: var(--warn-tint);
-  border: 1px solid color-mix(in srgb, var(--st-open) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone-amber) 35%, transparent);
   color: #7d530a;
   font-size: 13px;
   box-shadow: var(--shadow-tag);
@@ -4057,4 +4046,176 @@ mark {
 .find-hit.is-current {
   background: #f8cf6a;
   box-shadow: 0 0 0 2px #c0851b;
+}
+
+/* Settings: each status list is a table. Column heads say once what every field is; a row reads
+   left to right as the stored number, the pill as it will show, then its name (the heavier field)
+   and what it means (the lighter one). */
+.page-inner.settings {
+  max-width: 1240px;
+}
+.settings-section {
+  margin-bottom: 40px;
+}
+.status-table {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+}
+.status-tr {
+  display: grid;
+  /* Fixed widths: every row is its own grid, so only fixed tracks line up under the column heads. */
+  grid-template-columns: 28px 132px 170px minmax(200px, 1fr) 150px 112px 104px 92px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+}
+.status-table.question .status-tr {
+  grid-template-columns: 28px 132px 150px 180px minmax(180px, 1fr) 150px 112px 92px;
+}
+.status-tr + .status-tr {
+  border-top: 1px solid var(--rule);
+}
+.status-th {
+  white-space: nowrap;
+  padding-top: 10px;
+  padding-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.status-tr.fresh {
+  background: var(--teal-tint);
+}
+.status-tr .center {
+  justify-self: center;
+}
+.status-no {
+  justify-self: end;
+  font-size: 12px;
+  color: var(--ink-4);
+}
+.status-shows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.status-shows .status {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-used {
+  font-size: 11px;
+  color: var(--ink-3);
+  padding-left: 2px;
+}
+.status-tr .input,
+.status-tr .select {
+  width: 100%;
+}
+/* The name is the status; what it means is its explanation: weight and ink say which is which. */
+.input.status-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+.input.status-help {
+  color: var(--ink-2);
+}
+.input.status-help::placeholder,
+.input.status-name::placeholder {
+  font-weight: 400;
+  color: var(--ink-4);
+}
+.tone-swatches {
+  display: flex;
+  gap: 4px;
+}
+.tone-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--sc) 55%, transparent);
+  background: var(--sbg);
+  box-shadow: inset 0 0 0 4px var(--sbg), inset 0 0 0 9px var(--sc);
+  cursor: pointer;
+  padding: 0;
+}
+.tone-swatch[aria-checked='true'] {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.tone-swatch:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.status-settle {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal);
+}
+.status-tools {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+}
+.settings-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin: 10px 2px 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.settings-legend > div {
+  display: flex;
+  gap: 6px;
+}
+.settings-legend dt {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.settings-legend dd {
+  margin: 0;
+}
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.settings-actions .spacer {
+  flex: 1;
+}
+.settings .banner {
+  margin: 12px 0 0;
+}
+.settings-problems {
+  display: block;
+  padding-left: 28px;
+}
+/* Narrow: each status becomes a small block, the column heads gone, so each field says what it is. */
+@media (max-width: 1000px) {
+  .status-th {
+    display: none;
+  }
+  .status-tr,
+  .status-table.question .status-tr {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: start;
+  }
+  .status-tr > :nth-child(n + 2) {
+    grid-column: 2;
+  }
+  .status-tr .center,
+  .status-tools {
+    justify-self: start;
+  }
+}
+.settings-link.active {
+  color: var(--teal);
 }

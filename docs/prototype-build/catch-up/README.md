@@ -33,7 +33,7 @@ Catalogue snapshot: `60e2d1e` (2026-10-08).
 ## How it was made
 
 1. **Gap analysis** (`tools/workflow-gap-analysis.js`, Sonnet): six agents mapped the prototype code; one
-   compared the data model; one reviewer per epic graded every in-scope item (272; Retired and Future
+   compared the data model; one reviewer per epic graded every in-scope item (272; retired items and the Future Work lane
    excluded) against the maps and the code; a separate adversarial verifier re-checked each epic's
    gradings from scratch (34 corrected); a reverse check looked for retired or superseded behaviour;
    a themes agent wrote the summary. `tools/assemble-gaps.mjs` then built `gaps.json`,
@@ -63,7 +63,7 @@ The tools the second skill drives, all run from the repo root:
 | Tool | What it does |
 |---|---|
 | `tools/plan-state.mjs [--to <ref>] [--coverage] [--diff [IDs]]` | Baseline, what changed since (items, questions, notes and change logs added, domain model; rename-aware via `tools/req-changes.mjs`, tested by `npm run test:plan-state`), built and in-progress phases, coverage check; `--diff` is the phase drift check. |
-| `tools/regrade-ids.mjs <ref> [--ids-only]` | The items to re-grade: changed in substance (not just links, sources, artifacts, order, swimlane or images) or added, plus the `affects` of changed questions, less Retired and Future; with the counts and the share of in-scope items. |
+| `tools/regrade-ids.mjs <ref> [--ids-only]` | The items to re-grade: changed in substance (not just links, sources, artifacts, order, swimlane or images) or added, plus the `affects` of changed questions, less retired items and the Future Work lane; with the counts and the share of in-scope items. |
 | `tools/build-args.mjs [ID ...]` | The `epics` args for the gap-analysis workflow (all in-scope items, or just those IDs). |
 | `tools/workflow-gap-analysis.js` | Sonnet reviewers + adversarial verifiers; `reuseMaps`, `runDelta`, `runReverse`, `runThemes` switches for partial re-runs. |
 | `tools/assemble-gaps.mjs <journal> <commit> <date> [--merge]` | Builds `gaps.json`, `GAP-ANALYSIS.md`, `epics/`, `tools/units.json` from a run; `--merge` keeps earlier gradings for items not re-run. |

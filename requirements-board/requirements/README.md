@@ -50,18 +50,24 @@ item you are editing changes on disk, the board asks whether to keep yours or lo
 
 **IDs.** `EP-nn` epic, `FT-nn.m` feature under epic nn, `US-nn.m.k` story under feature nn.m
 (`US-nn.0.k` for a story directly under an epic). IDs are stable; retire an item by setting status
-to `Retired` rather than deleting it.
+to the Retired status rather than deleting it.
 
 **Status.**
 
-| Status | Meaning |
-| --- | --- |
-| Confirmed | Stated in the 2026-09 meeting notes, diagrams, or Donald's Q&A answers. |
-| Proposed | Not yet confirmed with AA: carried from the RFP, or a recommendation to fill a gap. The sources say which. Needs sign-off. |
-| Future | RFP scope that does not reflect current reality (hospital integrations). Kept, deferred. |
-| Open | Depends on an open question. |
-| Verify | Its open question is answered, but the item as a whole still needs checking with AA before it is Confirmed. |
-| Retired | No longer wanted. Kept for traceability. |
+Files store a status code, a whole number (`status: 4`); labels, help, colour, role and order live in
+`board.config.json` (`statuses`, edited on the board's Settings page). **A number means only what
+that config says**: never infer a status from its number, and look it up before reading or setting one.
+This project's table: Scope is carried by the Mapped board's swim lanes
+(e.g. Future Work), not by a status.
+
+| Number | Label | Meaning |
+| --- | --- | --- |
+| 1 | Proposed | The default. Not yet agreed with AA: carried from the RFP, or a recommendation to fill a gap. The sources say which. Needs agreement. |
+| 2 | Open | Depends on an open question. |
+| 3 | Verify | Its open question is answered, but the item as a whole still needs checking with AA. |
+| 4 | Agreed | Agreed with Greg (meeting notes, diagrams, Q&A answers), not yet signed off by AA. |
+| 5 | Confirmed | Signed off by AA: the final requirements. Never set by an agent or the answer flow without explicit AA sign-off. |
+| 6 | Retired | No longer wanted. Kept for traceability. |
 
 **Component.** Scheduling Engine · Billing/Invoice Engine · Anaesthetist App (mobile + web) ·
 Admin App · Xero Integration · Health Integration · Master Data · Cross-cutting. The list (and each
@@ -78,10 +84,10 @@ An item with no known source has an empty list and a `missing-source` outstandin
 2. Run `npm run check` if you edited files by hand. The board checks on every save.
 3. If the change alters the model (an entity, a rule, a superseded RFP reading), update
    `domain-model.md` too, including the "What changed since the RFP" table.
-4. When an open question is answered, set its status to `Answered`, add `## Answer`, and move each
-   affected item off `Open`: to `Confirmed` if the answer settles it, or to `Verify` if the item still
-   needs checking with AA. When you answer, the board offers Verify or Confirmed for every item the
-   question affects, whatever its status.
+4. When an open question is answered, set its status to Answered (4), add `## Answer`, and move each
+   affected item off Open (2): to Agreed (4) if the answer settles it, or to Verify (3) if the item still
+   needs checking with AA (never Confirmed (5): that is AA's sign-off). When you answer, the board offers
+   the settle statuses for every item the question affects, whatever its status.
 
 ## Miro
 

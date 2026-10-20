@@ -1,15 +1,16 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { useLocation } from 'react-router-dom'
-import { kindHelpIn, statusHelpIn, statusLabelIn } from '../../shared/config.ts'
+import { kindHelpIn } from '../../shared/config.ts'
 import { tidyText } from '../../shared/files.ts'
-import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type ItemStatus, type Question, type QuestionStatus, type Rev } from '../../shared/types.ts'
+import { isAnswered, isRetired, roleCode, settleTargets, statusClasses, statusHelp, statusLabel, waitingStatus } from '../../shared/statuses.ts'
+import { QUESTION_KINDS, type Item, type ItemStatus, type Question, type QuestionStatus, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { questionWalk, useQuestionFilters } from '../questionWalk.ts'
 import { sourceRow, useSourceIndex } from '../sourceRows.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useConfig, useIndex, type Index } from '../store.ts'
-import { KIND_LABEL, statusClass } from '../vocab.ts'
+import { KIND_LABEL } from '../vocab.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
 import { CopyLink, ItemName, StatusLabel } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
@@ -34,10 +35,11 @@ export function QuestionModal({ id }: { id: string }) {
   const adoptQuestion = useCatalogue((s) => s.adoptQuestion)
   const deleteQuestion = useCatalogue((s) => s.deleteQuestion)
   const index = useIndex()
+  const config = useConfig()
   const open = useOpen()
   /** Where this question sat in the list when it was opened: answering it doesn't move it for stepping. */
   const [anchorStatus] = useState(() => rec?.data.status)
-  /** The items to offer a new status (Verify or Confirmed) after the question is answered. */
+  /** The items to offer a new status (one of the settle statuses) after the question is answered. */
   const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const ed = useEditableRecord<Question>({
     key: `question:${id}`,
@@ -48,8 +50,8 @@ export function QuestionModal({ id }: { id: string }) {
     startEditing: useEditOnOpen(id),
     // However the save came (button or Cmd+S), answering it offers to settle the items it affects.
     onSaved: (next, before) => {
-      if (before.data.status === 'Answered' || next.data.status !== 'Answered') return
-      const live = next.data.affects.map((a) => index.byId.get(a)).filter((it): it is Item => !!it && it.status !== 'Retired')
+      if (isAnswered(config, before.data) || !isAnswered(config, next.data)) return
+      const live = next.data.affects.map((a) => index.byId.get(a)).filter((it): it is Item => !!it && !isRetired(config, it))
       if (live.length) setFlipOffer(live)
     },
   })
@@ -68,7 +70,7 @@ export function QuestionModal({ id }: { id: string }) {
   }
 
   const startEdit = (answering = false) => {
-    ed.startEdit(answering ? (d) => ({ ...d, status: 'Answered' }) : undefined)
+    ed.startEdit(answering ? (d) => ({ ...d, status: roleCode(config, 'question', 'answered')! }) : undefined)
     if (answering) setTimeout(() => answerRef.current?.focus(), 30)
   }
 
@@ -116,7 +118,7 @@ export function QuestionModal({ id }: { id: string }) {
       : null)
 
   return (
-    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} confirm={confirm}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${q.id} ${q.title}`} statusClass={statusClasses(config, 'question', q.status)} confirm={confirm}>
       <div className="sheet-head">
         <nav className="crumbs">
           <button className="crumb" onClick={() => ed.leave(open.close)}>
@@ -146,7 +148,7 @@ export function QuestionModal({ id }: { id: string }) {
             <button className="btn" onClick={() => startEdit()}>
               <Pencil size={15} /> Edit
             </button>
-            {q.status !== 'Answered' && (
+            {!isAnswered(config, q) && (
               <button className="btn primary" onClick={() => startEdit(true)}>
                 <MessageSquareReply size={15} /> Answer
               </button>
@@ -165,9 +167,10 @@ export function QuestionModal({ id }: { id: string }) {
 function QuestionStepper({ id, anchorStatus, leave }: { id: string; anchorStatus: QuestionStatus; leave: (go: () => void) => void }) {
   const open = useOpen()
   const index = useIndex()
+  const config = useConfig()
   const filters = useQuestionFilters()
   const onList = useLocation().pathname === '/questions'
-  const walk = useMemo(() => questionWalk(index.questions, filters, { id, status: anchorStatus }), [index, filters, id, anchorStatus])
+  const walk = useMemo(() => questionWalk(config, index.questions, filters, { id, status: anchorStatus }), [config, index, filters, id, anchorStatus])
   const at = walk.findIndex((q) => q.id === id)
   if (!onList || at < 0) return null
   const prev = at > 0 ? walk[at - 1] : undefined
@@ -200,7 +203,7 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
       </div>
       <h2>{q.title}</h2>
       <div className="meta-row">
-        <StatusLabel status={q.status} />
+        <StatusLabel kind="question" status={q.status} />
         {q.owner && <span className="chip">Owner · {q.owner}</span>}
       </div>
       <Prose text={q.question} />
@@ -224,7 +227,7 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
                 <button className="btn ghost" style={{ justifyContent: 'flex-start', height: 'auto', padding: '2px 4px', whiteSpace: 'normal', textAlign: 'left', minWidth: 0 }} onClick={() => open.item(a)} disabled={!it}>
                   {it ? <ItemName item={it} /> : `Missing item ${a}`}
                 </button>
-                {it && <StatusLabel item status={it.status} />}
+                {it && <StatusLabel kind="item" status={it.status} />}
                 {it && (
                   <button className="btn sm ghost" onClick={() => open.showOnBoard(a)} title="Show on board">
                     <MapIcon size={14} />
@@ -247,17 +250,20 @@ function QuestionSources({ sources }: { sources: string[] }) {
   return <ArtifactRowsSection title="Sources" rows={rows} className="sources-section" />
 }
 
-/** Where an answer can take an item: answered but still to verify, or settled outright. The item's own status is the third choice. */
-const SETTLE_TARGETS = ['Verify', 'Confirmed'] as const satisfies readonly ItemStatus[]
-const choicesFor = (it: Item): ItemStatus[] => ((SETTLE_TARGETS as readonly ItemStatus[]).includes(it.status) ? [...SETTLE_TARGETS] : [it.status, ...SETTLE_TARGETS])
+/** Where an answer can take an item: the project's settle statuses (`settle` in board.config.json). The item's own status is the other choice. */
+const choicesFor = (targets: ItemStatus[], it: Item): ItemStatus[] => (targets.includes(it.status) ? targets : [it.status, ...targets])
+
+/** "A", "A or B", "A, B or C". */
+const orList = (words: string[]) => (words.length < 2 ? (words[0] ?? '') : `${words.slice(0, -1).join(', ')} or ${words.at(-1)}`)
 
 function FlipOffer({ items, question, onDone }: { items: Item[]; question: Question; onDone: () => void }) {
   const config = useConfig()
   const saveItem = useCatalogue((s) => s.saveItem)
   const records = useCatalogue((s) => s.items)
-  // An Open item was waiting on this answer, but an answer rarely settles a whole item, so it starts at
-  // Verify rather than Confirmed. Any other item keeps its status unless picked.
-  const [choice, setChoice] = useState<Record<string, ItemStatus>>(() => Object.fromEntries(items.map((i) => [i.id, i.status === 'Open' ? 'Verify' : i.status])))
+  const targets = settleTargets(config)
+  // An item waiting on this answer moves on, but an answer rarely settles a whole item, so it starts at
+  // the first settle status (the least final). Any other item keeps its status unless picked.
+  const [choice, setChoice] = useState<Record<string, ItemStatus>>(() => Object.fromEntries(items.map((i) => [i.id, i.status === waitingStatus(config) ? targets[0]! : i.status])))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const moving = items.flatMap((it) => {
@@ -282,23 +288,23 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
   return (
     <div className="answer-flow" role="region" aria-label="Update affected items">
       <h4>
-        <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--st-confirmed)' }} /> {question.title} is answered
+        <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--tone-green)' }} /> {question.title} is answered
       </h4>
-      <p>Where does the answer leave the items it affects? Verify if an item still needs checking, Confirmed if the answer settles it.</p>
+      <p>Where does the answer leave the items it affects? Pick {orList(targets.map((s) => statusLabel(config, 'item', s)))} for each (hover for what each means), or keep its status.</p>
       {items.map((it) => (
         <div key={it.id} className="settle-row">
           <ItemName item={it} />
           <div className="settle-choices" role="group" aria-label={`Status for ${it.title}`}>
-            {choicesFor(it).map((s) => (
+            {choicesFor(targets, it).map((s) => (
               <button
                 key={s}
                 type="button"
                 className="status-toggle"
                 aria-pressed={choice[it.id] === s}
-                title={s === it.status ? `Keep as ${statusLabelIn(config, s)}` : statusHelpIn(config, s)}
+                title={s === it.status ? `Keep as ${statusLabel(config, 'item', s)}` : statusHelp(config, 'item', s)}
                 onClick={() => setChoice((c) => ({ ...c, [it.id]: s }))}
               >
-                <StatusLabel item status={s} />
+                <StatusLabel kind="item" status={s} />
               </button>
             ))}
           </div>
@@ -319,6 +325,7 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
 
 function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: Partial<Question>) => void; index: Index; answerRef: RefObject<HTMLTextAreaElement> }) {
   const owners = useMemo(() => [...new Set(index.questions.map((q) => q.owner).filter(Boolean))].sort(), [index])
+  const config = useConfig()
   return (
     <>
       <div className="sheet-id">
@@ -327,7 +334,7 @@ function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: 
       </div>
       <label className="field" style={{ marginTop: 8 }}>
         <span>Title</span>
-        <input className="input title-input" value={draft.title} onChange={(e) => set({ title: e.target.value })} autoFocus={draft.status !== 'Answered'} />
+        <input className="input title-input" value={draft.title} onChange={(e) => set({ title: e.target.value })} autoFocus={!isAnswered(config, draft)} />
       </label>
       <label className="field">
         <span>Kind</span>
@@ -343,8 +350,10 @@ function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: 
         <label className="field">
           <span>Status</span>
           <select className="select" value={draft.status} onChange={(e) => set({ status: e.target.value as Question['status'] })}>
-            {QUESTION_STATUSES.map((s) => (
-              <option key={s}>{s}</option>
+            {config.questionStatuses.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.label}
+              </option>
             ))}
           </select>
         </label>

@@ -13,11 +13,11 @@ test.describe.configure({ mode: 'serial' })
 
 const base = { kind: 'question', owner: '', sources: [], extra: {}, affects: [], question: 'Is this settled?', answer: '' } as const
 const questions: Question[] = [
-  { ...base, id: 'OQ-01', title: 'First open', status: 'Open', affects: [], sources: [] },
-  { ...base, id: 'OQ-02', title: 'Long answered', status: 'Answered', answer: 'Yes.', affects: [], sources: [] },
-  { ...base, id: 'OQ-03', title: 'Second open', status: 'Open', affects: [], sources: [] },
-  { ...base, id: 'OQ-04', title: 'Third open', status: 'Open', affects: [], sources: [] },
-  { ...base, id: 'OQ-05', title: 'Needs confirming', status: 'Confirm', affects: [], sources: [] },
+  { ...base, id: 'OQ-01', title: 'First open', status: '1', affects: [], sources: [] },
+  { ...base, id: 'OQ-02', title: 'Long answered', status: '4', answer: 'Yes.', affects: [], sources: [] },
+  { ...base, id: 'OQ-03', title: 'Second open', status: '1', affects: [], sources: [] },
+  { ...base, id: 'OQ-04', title: 'Third open', status: '1', affects: [], sources: [] },
+  { ...base, id: 'OQ-05', title: 'Needs confirming', status: '2', affects: [], sources: [] },
 ]
 
 test.beforeEach(async ({ page, request }) => {

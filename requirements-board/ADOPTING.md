@@ -36,8 +36,17 @@ README ("Project config"). Ask the user for anything you can't infer:
 - `project.name`: shown beside the board's name and in the browser tab. `project.locale` is optional.
 - `components`: the system's areas, each with a three-letter `code`. Leave the list empty to accept
   any component until the areas are settled.
-- `statuses`: help text that names who signs requirements off, e.g.
-  `{ "Proposed": { "help": "Needs sign-off from <client>" }, "Verify": { "help": "Question answered, the whole item still to check with <client>" }, "Confirmed": { "help": "Agreed with <client>" } }`.
+- `statuses` and `questionStatuses`: ordered lists of `{ code, label, help, tone, role?, settle? }`
+  (format in `SCHEMA.md`). Keep the defaults (items 1 Proposed, 2 Open, 3 Verify, 4 Confirmed, 5 Retired;
+  questions 1 Open, 2 Confirm, 3 Proposed, 4 Answered) or define the project's own, with help text that names
+  who signs requirements off, e.g. `{ "code": 1, "label": "Proposed", "help": "Needs sign-off from <client>", "tone": "neutral", "role": "default" }`.
+  Codes are whole numbers from 1, unique per list. A number means only what this config says: files store
+  `status: 4`, so agents must look it up here (or on the Settings page) and never infer it. Behaviour
+  comes from roles and `settle`, never from a code.
+  The lists can also be edited later on the board's Settings page. To renumber a status in an
+  existing catalogue, run `npm --prefix requirements-board run statuses:recode -- --items old=new,...
+  --questions old=new,...` (add `--dry-run` first): it rewrites only the `status:` lines and the board's
+  history, and records the run in `requirements/status-recodes.json` so diffs read a pure relabel as no change.
 - `questionKinds["missing-source"].help`: the kinds of source this project cites.
 - `screenshotApps` and `capture`: only if the project has an app to screenshot (step 6).
 

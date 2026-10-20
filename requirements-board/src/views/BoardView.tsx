@@ -13,7 +13,8 @@ import {
 import { Filter, LayoutGrid, Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
-import { ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
+import { isRetiredStatus, retiredTest } from '../../shared/statuses.ts'
+import { ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
 import { BoardMinimap } from '../board/BoardMinimap.tsx'
 import { BoardSearch } from '../board/BoardSearch.tsx'
 import { autoLayout, CARD, COL_GAP, EPIC_GAP, STACK_GAP } from '../board/autoLayout.ts'
@@ -31,7 +32,7 @@ import { PanelResizer, readPanel, writePanel } from '../components/PanelResizer.
 import { ItemModal } from '../components/ItemModal.tsx'
 import { rankMatches } from '../itemSearch.ts'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useComponents, useIndex, useView, type BoardMode, type Index } from '../store.ts'
+import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useComponents, useConfig, useIndex, useView, type BoardMode, type Index } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
@@ -92,6 +93,7 @@ function lineageOf(index: Index, id: string): Set<string> {
 
 function Board({ mode }: { mode: BoardMode }) {
   const index = useIndex()
+  const retired = useMemo(() => retiredTest(index.config), [index.config])
   const positions = useCatalogue((s) => s.layout.positions)
   const lanes = useCatalogue((s) => s.layout.lanes)
   const firstLane = useCatalogue((s) => firstLaneName(s.layout))
@@ -177,10 +179,10 @@ function Board({ mode }: { mode: BoardMode }) {
   const visible = useCallback((it: Item) => isShown(it, { index, showRetired: view.showRetired, selected }), [index, view.showRetired, selected])
   // The index as shown: retired cards (unless the toggle is on) are out of every count and every arrow-key step.
   const shown = useMemo(() => shownIndex(index, view.showRetired, selected), [index, view.showRetired, selected])
-  const laneOpts = useMemo(() => ({ lanes, firstLane, collapsed: collapsedLanes, visible }), [lanes, firstLane, collapsedLanes, visible])
-  const previewItems = useMemo(() => (target ? applyMove(index.items, target) : index.items), [index.items, target])
+  const laneOpts = useMemo(() => ({ lanes, firstLane, collapsed: collapsedLanes, visible, retired }), [lanes, firstLane, collapsedLanes, visible, retired])
+  const previewItems = useMemo(() => (target ? applyMove(index.items, target, retired) : index.items), [index.items, target, retired])
   const map = useMemo(() => (mapped ? mappedLayout(previewItems, laneOpts) : null), [mapped, previewItems, laneOpts])
-  const freeform = useMemo(() => (mapped ? null : autoLayout(index.items)), [mapped, index.items])
+  const freeform = useMemo(() => (mapped ? null : autoLayout(index.items, retired)), [mapped, index.items, retired])
   const auto = map?.placements ?? freeform!
   const lineage = useMemo(() => (selected && index.byId.has(selected) ? lineageOf(index, selected) : null), [index, selected])
   const filtering = filtersActive(view)
@@ -275,7 +277,7 @@ function Board({ mode }: { mode: BoardMode }) {
     if (!drag) return
     dragRef.current = null
     // Anywhere invalid (a feature over a lane, a story over the backbone) snaps back.
-    const changes = drag.target ? planMove(index.items, drag.target) : []
+    const changes = drag.target ? planMove(index.items, drag.target, retired) : []
     if (changes.length) void moveItems(changes, { label: `Move ${drag.item.title}` })
     setTarget(null)
     setResetTick((n) => n + 1)
@@ -685,6 +687,7 @@ function TidyAsk({ moved, onConfirm, onCancel }: { moved: number; onConfirm: () 
 function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
   const view = useView()
   const components = useComponents()
+  const config = useConfig()
   const ref = useDismiss<HTMLDivElement>(onClose, anchor)
   const toggle = <T extends string>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   return (
@@ -692,9 +695,9 @@ function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElemen
       <h4>Status</h4>
       <div className="chip-row">
         {/* Retired is offered only while retired cards are on show (or still picked, so it can be cleared). */}
-        {ITEM_STATUSES.filter((s) => s !== 'Retired' || view.showRetired || view.statuses.includes(s)).map((s) => (
+        {config.statuses.map((d) => d.code).filter((s) => !isRetiredStatus(config, s) || view.showRetired || view.statuses.includes(s)).map((s) => (
           <button key={s} className="status-toggle" aria-pressed={view.statuses.includes(s)} onClick={() => view.set({ statuses: toggle(view.statuses, s) })}>
-            <StatusLabel item status={s} />
+            <StatusLabel kind="item" status={s} />
           </button>
         ))}
       </div>

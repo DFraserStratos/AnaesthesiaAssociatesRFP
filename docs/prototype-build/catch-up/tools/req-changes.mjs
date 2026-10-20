@@ -6,6 +6,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { RECODES, loadRecodes, normaliseStatus } from './scope.mjs'
 
 export const LAYOUTS = [
   { root: 'requirements-board/requirements', items: 'stories', questions: 'questions', notes: 'notes', changes: 'changes', domainModel: 'domain-model.md' },
@@ -79,8 +80,11 @@ export function requirementChanges({ cwd, from, to = null, layouts = LAYOUTS }) 
 // board lanes and screenshots. An item that changed only in these needs no re-grading.
 export const COSMETIC_FIELDS = ['artifacts', 'related', 'sources', 'order', 'swimlane', 'images']
 
-/** An item or question's text with cosmetic front-matter fields and link markup taken out. */
-export function substance(text) {
+/**
+ * An item or question's text with cosmetic front-matter fields and link markup taken out. Its status
+ * reads as today's code (`recodes`, from scope.mjs `loadRecodes`), so a recode alone is no change.
+ */
+export function substance(text, recodes = [], kind = 'item') {
   if (text == null) return null
   const m = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/)
   const fm = m ? m[1] : ''
@@ -90,12 +94,12 @@ export function substance(text) {
     const key = line.match(/^([A-Za-z_]+):/)
     if (key) skip = COSMETIC_FIELDS.includes(key[1])
     return !skip
-  })
+  }).map(line => line.replace(/^status:\s*(.*?)\s*$/, (_, v) => `status: ${normaliseStatus(recodes, kind, v.replace(/^(['"])(.*)\1$/, '$2'))}`))
   const unlink = s => s.replace(/\[([^\]]*)\]\((?![a-z]+:\/\/)[^)]*\)/g, '$1')
   return `${kept.join('\n')}\n---\n${unlink(body)}`.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim()
 }
 
-/** True when a changed entry from requirementChanges() differs in substance (status included). */
+/** True when a changed entry from requirementChanges() differs in substance (a real status move included; a recode is not). */
 export function changedInSubstance({ cwd, from, to = null, entry }) {
   if (entry.change !== 'M') return true
   const show = (ref, file) => {
@@ -103,5 +107,11 @@ export function changedInSubstance({ cwd, from, to = null, entry }) {
   }
   const before = show(from, entry.was ?? entry.file)
   const after = to ? show(to, entry.file) : (() => { try { return fs.readFileSync(path.join(cwd, entry.file), 'utf8') } catch { return null } })()
-  return substance(before) !== substance(after)
+  // The newest recode list covers every older baseline: read it from the target side, else the working tree.
+  const recodes = (() => {
+    const text = to ? show(to, RECODES) : null
+    try { return text ? JSON.parse(text) : loadRecodes(cwd) } catch { return [] }
+  })()
+  const kind = /^(OQ|MS)-/.test(entry.id) ? 'question' : 'item'
+  return substance(before, recodes, kind) !== substance(after, recodes, kind)
 }

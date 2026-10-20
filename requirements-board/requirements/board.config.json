@@ -1,8 +1,5 @@
 {
-  "project": {
-    "name": "Anaesthesia Associates",
-    "locale": "en-NZ"
-  },
+  "project": { "name": "Anaesthesia Associates", "locale": "en-NZ" },
   "components": [
     { "name": "Scheduling Engine", "code": "SCH" },
     { "name": "Billing/Invoice Engine", "code": "BIL" },
@@ -19,14 +16,21 @@
     { "key": "mobile", "label": "Mobile", "viewport": "mobile" },
     { "key": "simulator", "label": "Simulator", "viewport": "desktop" }
   ],
-  "statuses": {
-    "Proposed": { "help": "Needs sign-off from AA" },
-    "Verify": { "help": "Question answered, the whole item still to check with AA" },
-    "Confirmed": { "help": "Agreed with AA" }
-  },
-  "questionKinds": {
-    "missing-source": { "help": "A requirement with no known origin: add its source (RFP page, a note in notes/, or Q&A) to the item" }
-  },
+  "statuses": [
+    { "code": 1, "label": "Proposed", "help": "Needs agreement with AA", "tone": "neutral", "role": "default" },
+    { "code": 2, "label": "Open", "help": "Waiting on an open question", "tone": "amber", "role": "waiting" },
+    { "code": 3, "label": "Verify", "help": "Question answered, the whole item still to check with AA", "tone": "olive", "settle": true },
+    { "code": 4, "label": "Agreed", "help": "Agreed with Greg, not yet signed off by AA", "tone": "green", "settle": true },
+    { "code": 5, "label": "Confirmed", "help": "Signed off by AA: the final requirements", "tone": "forest", "settle": true },
+    { "code": 6, "label": "Retired", "help": "No longer wanted, kept for traceability", "tone": "hatched", "role": "retired" }
+  ],
+  "questionStatuses": [
+    { "code": 1, "label": "Open", "heading": "Open", "help": "Waiting for an answer", "tone": "amber", "role": "default" },
+    { "code": 2, "label": "Confirm", "heading": "Awaiting confirmation", "help": "An answer is written, waiting for the owner to confirm it", "tone": "amber" },
+    { "code": 3, "label": "Proposed", "heading": "Recommendation proposed", "help": "A recommendation is written, waiting for a decision", "tone": "neutral" },
+    { "code": 4, "label": "Answered", "heading": "Answered", "help": "Settled: the answer stands", "tone": "green", "role": "answered" }
+  ],
+  "questionKinds": { "missing-source": { "help": "A requirement with no known origin: add its source (RFP page, a note in notes/, or Q&A) to the item" } },
   "capture": {
     "recipes": "capture/recipes",
     "report": "capture/REPORT.md",

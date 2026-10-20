@@ -10,8 +10,14 @@
  * already inside its new slot (a drop back in place, or a lane change that
  * needs no reorder) keeps its `order`, so no other file is rewritten.
  */
+import { DEFAULT_CONFIG } from './config.ts'
 import { compareSiblings } from './ids.ts'
+import { retiredTest } from './statuses.ts'
 import { PARENT_TYPES, type Item } from './types.ts'
+
+/** Is a card retired? The board passes its config's (`retiredTest(config)`); unset, the default config's. */
+export type RetiredTest = (it: Item) => boolean
+const DEFAULT_RETIRED: RetiredTest = retiredTest(DEFAULT_CONFIG)
 
 export interface Move {
   id: string
@@ -32,7 +38,10 @@ export interface Change {
 }
 
 /** Live cards first, retired ones at the end of each stack: the order the board draws them in. */
-export const liveFirst = (a: Item, b: Item) => Number(a.status === 'Retired') - Number(b.status === 'Retired') || compareSiblings(a, b)
+export const liveFirst =
+  (retired: RetiredTest = DEFAULT_RETIRED) =>
+  (a: Item, b: Item) =>
+    Number(retired(a)) - Number(retired(b)) || compareSiblings(a, b)
 
 /** The lane a card is drawn in. Only stories sit in lanes. */
 export const laneOf = (it: Item): string | null => (it.type === 'story' ? it.swimlane : null)
@@ -44,13 +53,13 @@ export function canParent(it: Item, parent: Item | null): boolean {
 }
 
 /** The cards a slot index counts among at the destination, in drawing order. */
-function peersAt(items: Item[], it: Item, parent: string | null, lane: string | null): Item[] {
+function peersAt(items: Item[], it: Item, parent: string | null, lane: string | null, retired: RetiredTest): Item[] {
   return items
     .filter((o) => o.id !== it.id && o.parent === parent && (it.type === 'epic' ? o.type === 'epic' : it.type === 'feature' ? o.type === 'feature' : o.type === 'story' && o.swimlane === lane))
-    .sort(liveFirst)
+    .sort(liveFirst(retired))
 }
 
-export function planMove(items: Item[], move: Move): Change[] {
+export function planMove(items: Item[], move: Move, retired: RetiredTest = DEFAULT_RETIRED): Change[] {
   const byId = new Map(items.map((i) => [i.id, i]))
   const it = byId.get(move.id)
   if (!it) return []
@@ -61,7 +70,7 @@ export function planMove(items: Item[], move: Move): Change[] {
 
   // Everything else under the destination parent, in file order; the moved card goes in beside its peer.
   const siblings = items.filter((o) => o.id !== it.id && o.parent === move.parent && (move.parent !== null || o.type === 'epic')).sort(compareSiblings)
-  const peers = peersAt(items, it, move.parent, lane)
+  const peers = peersAt(items, it, move.parent, lane, retired)
   const index = Math.max(0, Math.min(Math.floor(move.index), peers.length))
   // Any position between the peer above and the peer below looks the same on the board.
   const lo = index > 0 ? siblings.indexOf(peers[index - 1]!) + 1 : 0
@@ -123,7 +132,7 @@ export function driftFrom(items: Item[], changes: Change[]): string | null {
 }
 
 /** The catalogue as it would be after `move`: the board's live drag preview. */
-export const applyMove = (items: Item[], move: Move): Item[] => applyChanges(items, planMove(items, move))
+export const applyMove = (items: Item[], move: Move, retired?: RetiredTest): Item[] => applyChanges(items, planMove(items, move, retired))
 
 /* ------------------------------------------------------------------ lanes */
 

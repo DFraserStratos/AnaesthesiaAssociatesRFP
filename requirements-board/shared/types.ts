@@ -14,11 +14,9 @@ export const TYPE_LABEL: Record<ItemType, string> = { epic: 'Epic', feature: 'Fe
 /** What an item of this type may sit under: a feature under an epic, a story under a feature or straight under an epic. */
 export const PARENT_TYPES: Record<ItemType, readonly ItemType[]> = { epic: [], feature: ['epic'], story: ['feature', 'epic'] }
 
-export const ITEM_STATUSES = ['Proposed', 'Open', 'Verify', 'Confirmed', 'Future', 'Retired'] as const
-export type ItemStatus = (typeof ITEM_STATUSES)[number]
-
-export const QUESTION_STATUSES = ['Open', 'Confirm', 'Proposed', 'Answered'] as const
-export type QuestionStatus = (typeof QUESTION_STATUSES)[number]
+/** A status code from the project's config (`statuses.ts`): what it means and how it shows live there. */
+export type ItemStatus = string
+export type QuestionStatus = string
 
 /** What an outstanding item asks for: a decision (`question`) or where a requirement came from (`missing-source`). */
 export const QUESTION_KINDS = ['question', 'missing-source'] as const
@@ -121,10 +119,6 @@ export type CatalogueEvent =
   | { kind: 'layout'; layout: Layout }
   | { kind: 'config'; config: BoardConfig }
   | { kind: 'issues'; issues: Issue[] }
-
-export function isOpenQuestion(q: Question): boolean {
-  return q.status !== 'Answered'
-}
 
 /* -------------------------------------------------------------- artifacts */
 

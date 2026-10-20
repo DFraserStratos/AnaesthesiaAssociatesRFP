@@ -14,7 +14,7 @@ only as quiet text beside the board's name (`project.name` in `board.config.json
   bottom right of the item sheet, in tooltips, and searchable, but never as a label.
 - **Every mark earns its place.** If a detail doesn't help someone decide or act at a glance, it
   moves into the item sheet or goes. Cards carry the least; the sheet carries the rest.
-- **Show only what's worth noticing.** Baseline states stay unmarked (a Proposed status, the baseline,
+- **Show only what's worth noticing.** Baseline states stay unmarked (the default-role status, the baseline,
   shows no pill on a card). A mark should mean "look at this".
 - **Hierarchy by colour and size together.** Epic, feature and story must read differently from
   across the room: colour says the type, size says the level.
@@ -35,10 +35,12 @@ classes). Artifacts took indigo because it is clear of every type, every status,
 and above all the red highlight box, which must stay the one red mark on an artifact. Always pair an item's title with its `TypeIcon` (or use `ItemName`) outside its own sheet.
 
 **Status is always a labelled pill, never an item's main colour.** The type owns the card's colour;
-status is a small tinted pill (`StatusLabel`). No status colour may share a hue with a type:
-Future was moved off purple for this reason. Proposed, the baseline, takes the calm neutral grey
-(`BASELINE_STATUS` in `src/vocab.ts`). Verify (answered, still to check) takes olive, between Open's
-amber and Confirmed's green. Where an item came from is its sources, never its status.
+status is a small tinted pill (`StatusLabel`). No status colour may share a hue with a type.
+Colour is a status's `tone` from `board.config.json`: neutral, amber, olive, green, forest, sand or
+hatched. The default-role status (Proposed here), the baseline, takes the calm neutral grey. Verify
+(answered, still to check) takes olive, between Open's amber and Agreed's green; Confirmed (AA's
+final sign-off) takes the deeper forest green, so Agreed and Confirmed read as steps of one family.
+Where an item came from is its sources, never its status. Scope is a swim lane, not a status.
 
 **Sizes carry level.** Epics are wide bars spanning their features; features are taller cards
 (168px); stories are compact (112px). Keep features visibly taller than stories.
@@ -55,7 +57,7 @@ UI copy (use a middot, a comma or "to").
 - Top line: the title. No ID, no component codes.
 - Description excerpt below (always on features and epics; stories show it when zoomed in).
 - Bottom left: open-question badge and screenshot badge; epics also show their item count.
-- Bottom right: status pill, only when the status is not the Proposed baseline.
+- Bottom right: status pill, only when the status is not the default one.
 - Semantic zoom keeps cards readable: far out shows bigger titles only; the overview shows epic
   names large and stories as status-tinted blocks.
 
@@ -277,6 +279,19 @@ edits only their details (below), never the file, its highlights or the links to
 - **History** is the card's time column; a new version of the file is a "File updated" disclosure
   over a before and after, side by side or swiped (a teal handle over the two), or as a source diff
   for a text file.
+
+## Settings
+
+The gear at the right of the masthead opens `/settings`: each status list (items, then questions) is a
+table, so the column heads say once what every field is: No., Shows as, Name, Group heading
+(questions), What it means, Colour, Role, After an answer (items). One line per status, read left to
+right. The stored number sits in a quiet mono "No." gutter, never as a label. "Shows as" is the real
+pill with how many cards or questions use it. The name field is the heavier one (semibold, full ink)
+and what it means the lighter one (regular, secondary ink), so the status and its explanation never
+read alike. A legend under each table says what each role does. A new status takes the next free
+number, fixed once saved, and its row is tinted teal until then. A status in use or holding a
+required role can't be removed. Teal for the actions (Save, Add); no crimson, no status colour
+except in the pills and swatches. Below 1000px the table stacks, one block per status.
 
 ## Before shipping a visual change
 

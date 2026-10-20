@@ -90,7 +90,7 @@ artifacts:
 ```
 
 Link the most specific item (a story over its feature over its epic), and the spot that shows what
-the item says (or the whole artifact when the item is about all of it). Don't link Retired items.
+the item says (or the whole artifact when the item is about all of it). Don't link retired items (the status with role `retired`).
 A text link works too, inside a description or answer: `[the pricing steps](AR-01#price-rules)`.
 Insert the lines as text; don't re-save other people's files through a formatter. Always use this
 block form, one link per line, never the inline `artifacts: [AR-07#rate-lookup]`: the board writes

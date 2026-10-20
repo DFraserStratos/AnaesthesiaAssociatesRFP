@@ -100,7 +100,7 @@ describe('planMove', () => {
   })
 
   it('keeps retired cards at the end: the slot counts live cards first', () => {
-    const withRetired = items.map((i) => (i.id === 'US-01.2.1' ? { ...i, status: 'Retired' as const } : i))
+    const withRetired = items.map((i) => (i.id === 'US-01.2.1' ? { ...i, status: '5' as const } : i))
     const after = applyMove(withRetired, { id: 'US-01.1.1', parent: 'FT-01.2', index: 1, swimlane: null })
     // Live peers were [US-01.2.2]; index 1 goes after it, the retired card keeps its place.
     expect(orderOf(after, 'FT-01.2')).toEqual(['US-01.2.1', 'US-01.2.2', 'US-01.1.1'])

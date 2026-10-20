@@ -37,7 +37,7 @@ const CTX = `You are one agent updating the "requirements catch-up" build plan o
 - The catalogue has moved to ${C7}; the changed items are already re-graded. What changed: ${args.changeNotes}
   Item diffs: node ${CU}/tools/plan-state.mjs --to ${C7} --diff <IDs> (rename-aware; never a plain git diff of the catalogue folder).
 - Built phases (frozen; follow-up work goes to a later phase): ${[...BUILT].join(', ') || 'none'}.${PARTLY.length ? `\n- Partly built phases (their built part is frozen; only the unbuilt part may change): ${PARTLY.map(p => `${p.num}: ${p.note}`).join('; ')}.` : ''}
-- Standing rules: Future and Retired items are excluded; anything not demoable through normal use gets a screen-contextual demo-trigger button; phases are numbered upward, each one focused session (two at most) with one coherent deliverable, leaving the app green; phases run back to back and agents test themselves (ROADMAP.md "Owner review: agents test themselves").
+- Standing rules: The Future Work lane and retired items are excluded; anything not demoable through normal use gets a screen-contextual demo-trigger button; phases are numbered upward, each one focused session (two at most) with one coherent deliverable, leaving the app green; phases run back to back and agents test themselves (ROADMAP.md "Owner review: agents test themselves").
 - Only write the files you are told to write. Never commit.`
 
 const PHASE = {
@@ -92,14 +92,14 @@ const coverage = o => {
   const unknown = [...seen.keys()].filter(k => !UNITS.includes(k))
   return { ok: !missing.length && !dupes.length, missing, dupes, unknown }
 }
-const covText = c => `Missing (in no phase and not parked): ${c.missing.join(', ') || 'none'}\nIn more than one place: ${c.dupes.join('; ') || 'none'}\nNo longer units (now Matches, Retired or Future: remove them from covers, or keep them only on a built phase): ${c.unknown.join(', ') || 'none'}`
+const covText = c => `Missing (in no phase and not parked): ${c.missing.join(', ') || 'none'}\nIn more than one place: ${c.dupes.join('; ') || 'none'}\nNo longer units (now Matches, retired or Future Work: remove them from covers, or keep them only on a built phase): ${c.unknown.join(', ') || 'none'}`
 
 const ROADMAP_FILE = `${ROOT}/${CU}/ROADMAP.md`
 const guidance = `How to update:
 - Read ROADMAP.md, plan.json, the change logs, the changed catalogue items (plan-state --diff above) and the re-graded gaps.json entries for the changed items (query by id).
 - Keep the plan stable: change only what the catalogue changes require. Keep phase numbers; add new phases at the end of their track with the next free number, or a letter suffix (27a) if order matters more.
 - Answered questions and owner decisions: the phase that planned a default now builds the answer; record it in ROADMAP's decisions table (mark superseded rows and say by what) and drop the default; add a row, with a built default from its Recommendation, for each new open question that gates an unbuilt phase.
-- New gaps go to the best-fitting unbuilt phase or a new phase. Items now Matches, Retired or Future leave covers (note any code the phase must remove).
+- New gaps go to the best-fitting unbuilt phase or a new phase. Items now Matches, retired or Future Work leave covers (note any code the phase must remove).
 - Re-check dependencies, ordering, estimates, milestones and the parked list.
 - Every unit below must be in exactly one phase's covers or parked.
 ${TIERS}

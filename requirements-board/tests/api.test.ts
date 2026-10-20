@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parseItem, serialiseItem } from '../shared/files.ts'
 import type { CatalogueEvent, Item, Rev } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
-import { itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
+import { configPath, itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
+import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, type StatusDef } from '../shared/statuses.ts'
 import type { ServerResponse } from 'node:http'
 import { serveAsset } from '../server/cataloguePlugin.ts'
 import { item, question } from './fixtures.ts'
@@ -67,7 +68,7 @@ describe('creating', () => {
   it('makes an epic with the next free number and no parent', () => {
     writeItem(item({ id: 'EP-03', type: 'epic' }), root)
     const rec = call(api(), 'POST', '/api/items', { type: 'epic', title: 'New epic' }) as Rev<Item>
-    expect(rec.data).toMatchObject({ id: 'EP-04', parent: null, status: 'Proposed', title: 'New epic' })
+    expect(rec.data).toMatchObject({ id: 'EP-04', parent: null, status: '1', title: 'New epic' })
     expect(existsSync(itemPath('EP-04', root))).toBe(true)
   })
 
@@ -87,7 +88,7 @@ describe('creating', () => {
   it('defaults a new card: last among its siblings, its parent’s components, Proposed', () => {
     writeItem(item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', order: 2, components: ['Admin Console'] }), root)
     const rec = call(api(), 'POST', '/api/items', { type: 'story', parent: 'FT-01.2', title: 'First' }) as Rev<Item>
-    expect(rec.data).toMatchObject({ id: 'US-01.2.1', order: 1, components: ['Admin Console'], status: 'Proposed' })
+    expect(rec.data).toMatchObject({ id: 'US-01.2.1', order: 1, components: ['Admin Console'], status: '1' })
     const next = call(api(), 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'Third' }) as Rev<Item>
     expect(next.data).toMatchObject({ id: 'US-01.1.3', order: 3 })
   })
@@ -141,7 +142,7 @@ describe('saving', () => {
     call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, extra: { type: 'epic', status: 'Bogus', owner: 'kept' } }, baseRev: r.rev })
     const onDisk = parseItem(readFileSync(itemPath('US-01.1.2', root), 'utf8'))
     expect(onDisk.type).toBe('story')
-    expect(onDisk.status).toBe('Proposed')
+    expect(onDisk.status).toBe('1')
     expect(onDisk.extra).toEqual({ owner: 'kept' })
   })
 
@@ -437,5 +438,48 @@ describe('deleting an item', () => {
     expect(status(() => del(a, 'US-01.1.2', ['US-01.1.2'], 'stale'))).toBe(409)
     expect(status(() => call(a, 'DELETE', '/api/items/US-09.9.9', { baseRev: 'x', ids: ['US-09.9.9'] }))).toBe(404)
     expect(existsSync(itemPath('US-01.1.2', root))).toBe(true)
+  })
+})
+
+describe('the status settings', () => {
+  const put = (a: ReturnType<typeof api>, body: unknown) => call(a, 'PUT', '/api/config', body)
+  const renamed: StatusDef[] = DEFAULT_ITEM_STATUSES.map((d) => (d.code === '1' ? { ...d, label: 'Draft', help: 'Not agreed yet' } : d))
+
+  it('rewrites only the status lists, keeping the rest of the file, and tells the clients', () => {
+    writeFileSync(configPath(root), JSON.stringify({ project: { name: 'Acme' }, components: [{ name: 'Core', code: 'COR' }] }, null, 2))
+    const a = api()
+    put(a, { statuses: renamed })
+    const file = JSON.parse(readFileSync(configPath(root), 'utf8'))
+    expect(file.project).toEqual({ name: 'Acme' })
+    expect(file.components).toEqual([{ name: 'Core', code: 'COR' }])
+    expect(file.statuses[0]).toEqual({ code: 1, label: 'Draft', help: 'Not agreed yet', tone: 'neutral', role: 'default' })
+    expect(file.questionStatuses).toBeUndefined()
+    expect(a.getState().config.statuses[0]!.label).toBe('Draft')
+    expect(events.some((e) => e.kind === 'config')).toBe(true)
+    // A rename touches no card.
+    expect(parseItem(readFileSync(itemPath('EP-01', root), 'utf8')).status).toBe('1')
+    // A code is written as a bare number, not a quoted string.
+    expect(readFileSync(itemPath('EP-01', root), 'utf8')).toMatch(/^status: 1$/m)
+  })
+
+  it('keeps short entries on one line', () => {
+    put(api(), { questionStatuses: DEFAULT_QUESTION_STATUSES })
+    const text = readFileSync(configPath(root), 'utf8')
+    expect(text).toContain('{ "code": 1, "label": "Open", "heading": "Open", "help": "Waiting for an answer", "tone": "amber", "role": "default" }')
+  })
+
+  it('refuses a list that breaks the rules, or drops a status still in use', () => {
+    const a = api()
+    expect(status(() => put(a, { statuses: renamed.filter((d) => d.role !== 'retired') }))).toBe(422)
+    expect(status(() => put(a, { statuses: renamed.filter((d) => d.code !== '1').map((d) => (d.code === '2' ? { ...d, role: 'default' } : d)) }))).toBe(422)
+    expect(status(() => put(a, { questionStatuses: DEFAULT_QUESTION_STATUSES.filter((d) => d.code !== '2') }))).toBe(200)
+    expect(existsSync(configPath(root))).toBe(true)
+  })
+
+  it('starts new cards and questions at the default role, whatever its code', () => {
+    const a = api()
+    put(a, { statuses: [{ code: '9', label: 'Idea', help: '', tone: 'sand', role: 'default' }, ...DEFAULT_ITEM_STATUSES.map((d) => (d.role === 'default' ? { ...d, role: undefined } : d))] })
+    const rec = call(a, 'POST', '/api/items', { type: 'epic', title: 'New' }) as Rev<Item>
+    expect(rec.data.status).toBe('9')
   })
 })

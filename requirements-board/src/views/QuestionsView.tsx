@@ -1,14 +1,16 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useOpen } from '../nav.ts'
-import { isRetiredOrUnder, useCatalogue, useIndex, useView } from '../store.ts'
+import { isRetiredOrUnder, useCatalogue, useConfig, useIndex, useView } from '../store.ts'
+import { defaultStatus, statusClasses, statusHeading } from '../../shared/statuses.ts'
 import { QUESTION_KINDS, type QuestionKind } from '../../shared/types.ts'
 import { questionFilter, shownGroups, useQuestionFilters } from '../questionWalk.ts'
-import { KIND_LABEL, QUESTION_GROUP_LABEL, statusClass, typeClass } from '../vocab.ts'
+import { KIND_LABEL, typeClass } from '../vocab.ts'
 import { Highlight, TypeIcon } from '../components/bits.tsx'
 
 export function QuestionsView() {
   const index = useIndex()
+  const config = useConfig()
   const showRetired = useView((s) => s.showRetired)
   const open = useOpen()
   const createQuestion = useCatalogue((s) => s.createQuestion)
@@ -17,7 +19,7 @@ export function QuestionsView() {
 
   const owners = useMemo(() => [...new Set(index.questions.map((q) => q.owner).filter(Boolean))].sort(), [index])
   const shown = index.questions.filter((q) => questionFilter(q, filters))
-  const groups = shownGroups(filters)
+  const groups = shownGroups(config, filters)
     .map((status) => ({ status, list: shown.filter((q) => q.status === status) }))
     .filter((g) => g.list.length)
 
@@ -31,7 +33,7 @@ export function QuestionsView() {
     setBusy(true)
     setAddError(null)
     try {
-      const rec = await createQuestion({ kind: 'question', title: newTitle.trim(), status: 'Open' })
+      const rec = await createQuestion({ kind: 'question', title: newTitle.trim(), status: defaultStatus(config, 'question') })
       setAdding(false)
       setNewTitle('')
       open.question(rec.data.id, { edit: true })
@@ -116,7 +118,7 @@ export function QuestionsView() {
         {groups.map(({ status, list }) => (
           <section key={status} className="group">
             <h2 className="group-head">
-              {QUESTION_GROUP_LABEL[status]} <span className="mono">{list.length}</span>
+              {statusHeading(config, status)} <span className="mono">{list.length}</span>
             </h2>
             <div className="sheet-list">
               {list.map((q) => (
@@ -124,7 +126,7 @@ export function QuestionsView() {
                   key={q.id}
                   role="button"
                   tabIndex={0}
-                  className={`q-row ${statusClass(q.status)}`}
+                  className={`q-row ${statusClasses(config, 'question', q.status)}`}
                   onClick={() => open.question(q.id)}
                   onKeyDown={(e) => {
                     if (e.target !== e.currentTarget) return // a chip inside the row handles its own keys

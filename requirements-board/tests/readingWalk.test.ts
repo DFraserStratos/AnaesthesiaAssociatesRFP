@@ -10,7 +10,7 @@ const items: Item[] = [
   item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', order: 2 }),
   item({ id: 'US-01.2.1', parent: 'FT-01.2' }),
   item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01', order: 1 }),
-  item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: 'Retired' }),
+  item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '5' }),
   item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1 }),
   item({ id: 'US-09.1.1', parent: 'FT-09.1' }),
 ]

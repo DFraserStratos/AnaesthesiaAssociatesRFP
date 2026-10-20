@@ -13,7 +13,7 @@ import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
 test.describe.configure({ mode: 'serial' })
 
 const SOURCES = ['Test spec p.1 · Introduction', 'Notes 2026-01-02 · Fixture meeting #2 #3', 'Typed decision 2026-01-03 · Donald']
-const question: Question = { id: 'OQ-01', kind: 'question', title: 'Which totals?', status: 'Open', owner: '', question: 'Which totals count?', answer: '', affects: ['US-01.1.1'], sources: ['Notes 2026-01-02 · Fixture meeting #1'], extra: {} }
+const question: Question = { id: 'OQ-01', kind: 'question', title: 'Which totals?', status: '1', owner: '', question: 'Which totals count?', answer: '', affects: ['US-01.1.1'], sources: ['Notes 2026-01-02 · Fixture meeting #1'], extra: {} }
 
 test.beforeEach(async ({ page, request }) => {
   writeFixture()

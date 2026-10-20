@@ -18,7 +18,7 @@ export const item = (over: Partial<Item> & Pick<Item, 'id'>): Item => ({
   type: 'story',
   parent: null,
   title: `Title of ${over.id}`,
-  status: 'Proposed',
+  status: '1',
   components: ['Core'],
   sources: [],
   order: 1,
@@ -37,7 +37,7 @@ export const item = (over: Partial<Item> & Pick<Item, 'id'>): Item => ({
 export const question = (over: Partial<Question> & Pick<Question, 'id'>): Question => ({
   kind: 'question',
   title: `Question ${over.id}`,
-  status: 'Open',
+  status: '1',
   owner: 'Client',
   affects: [],
   sources: [],

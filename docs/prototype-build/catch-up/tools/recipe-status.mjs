@@ -6,10 +6,12 @@
 //   --check   exit 1 unless every unbuilt phase doc has a "## Catalogue screenshots" section that names
 //             each story it covers (and each feature it covers that has no stories), and its kick-off
 //             prompt runs the capture step
-// Stories are listed under a covered epic or feature. Retired and Future items are skipped. A story
+// Stories are listed under a covered epic or feature. Out-of-scope items (scope.mjs) are skipped. A story
 // with no recipe is marked "none": the phase must create it (see ROADMAP.md, "Catalogue screenshots").
 import fs from 'node:fs'
 import path from 'node:path'
+import { loadRecodes, loadStatuses, outOfScopeRule } from './scope.mjs'
+
 
 const ROOT = process.cwd()
 const CU = path.join(ROOT, 'docs/prototype-build/catch-up')
@@ -24,13 +26,17 @@ const wanted = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--p
 const plan = JSON.parse(fs.readFileSync(planFile, 'utf8'))
 const progress = fs.readFileSync(path.join(ROOT, 'docs/prototype-build/PROGRESS.md'), 'utf8')
 
-const status = {}
-for (const f of fs.readdirSync(REQ)) {
-  const m = fs.readFileSync(path.join(REQ, f), 'utf8').match(/^status:\s*(.*)$/m)
-  status[f.replace(/\.md$/, '')] = m ? m[1].trim() : ''
+const catalogue = {}
+for (const f of fs.readdirSync(REQ).filter(f => f.endsWith('.md'))) {
+  const head = fs.readFileSync(path.join(REQ, f), 'utf8').split('\n---')[0]
+  const g = k => (head.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')) || [])[1]?.trim().replace(/^"|"$/g, '')
+  const id = f.replace(/\.md$/, '')
+  catalogue[id] = { id, parent: g('parent'), status: g('status') ?? '', swimlane: g('swimlane') }
 }
-const live = id => id in status && !/^(Retired|Future)$/i.test(status[id])
-const ids = Object.keys(status)
+// Live: in scope by the shared rule (scope.mjs: not retired, not in the Future Work lane).
+const outOfScope = outOfScopeRule(catalogue, loadRecodes(ROOT), loadStatuses(ROOT).retired)
+const live = id => id in catalogue && !outOfScope(id)
+const ids = Object.keys(catalogue)
 const childrenOf = id => ids.filter(x => x !== id && x.slice(3).startsWith(id.slice(3) + '.'))
 const recipe = id => {
   const f = path.join(RECIPES, `${id}.json`)

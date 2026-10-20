@@ -88,16 +88,16 @@ describe('mappedLayout', () => {
   })
 
   it('keeps hidden (retired) cards at the foot of their stack, out of the lane height', () => {
-    const retired = base.map((i) => (i.id === 'US-01.1.1' ? { ...i, status: 'Retired' as const } : i))
+    const retired = base.map((i) => (i.id === 'US-01.1.1' ? { ...i, status: '5' as const } : i))
     const shown = mappedLayout(retired, { lanes: [] })
-    const hidden = mappedLayout(retired, { lanes: [], visible: (i: Item) => i.status !== 'Retired' })
+    const hidden = mappedLayout(retired, { lanes: [], visible: (i: Item) => i.status !== '5' })
     expect(hidden.placements['US-01.1.1']!.y).toBeGreaterThan(hidden.placements['US-01.1.2']!.y)
     expect(hidden.lanes[0]!.count).toBe(shown.lanes[0]!.count - 1)
   })
 
   it('gives a hidden (retired) feature no column and no add slot', () => {
-    const retired = base.map((i) => (i.id === 'FT-01.2' ? { ...i, status: 'Retired' as const } : i))
-    const visible = (i: Item) => i.status !== 'Retired' && retired.find((p) => p.id === i.parent)?.status !== 'Retired'
+    const retired = base.map((i) => (i.id === 'FT-01.2' ? { ...i, status: '5' as const } : i))
+    const visible = (i: Item) => i.status !== '5' && retired.find((p) => p.id === i.parent)?.status !== '5'
     const shown = mappedLayout(retired, { lanes: [] })
     const hidden = mappedLayout(retired, { lanes: [], visible })
     expect(hidden.columns.some((c) => c.parent === 'FT-01.2')).toBe(false)

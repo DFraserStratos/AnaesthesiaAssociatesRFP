@@ -14,8 +14,8 @@ test.describe.configure({ mode: 'serial' })
 
 const base = { kind: 'question', owner: '', sources: [], extra: {}, affects: ['FT-01.2'] } as const
 const questions: Question[] = [
-  { ...base, id: 'OQ-01', title: 'Still open', status: 'Open', question: 'Is this settled?', answer: '', affects: ['FT-01.2'], sources: [] },
-  { ...base, id: 'OQ-02', title: 'Already answered', status: 'Answered', question: 'Was this settled?', answer: 'Yes.', affects: ['FT-01.2'], sources: [] },
+  { ...base, id: 'OQ-01', title: 'Still open', status: '1', question: 'Is this settled?', answer: '', affects: ['FT-01.2'], sources: [] },
+  { ...base, id: 'OQ-02', title: 'Already answered', status: '4', question: 'Was this settled?', answer: 'Yes.', affects: ['FT-01.2'], sources: [] },
 ]
 const fileOf = (id: string) => join(FIXTURE_DIR, 'questions', `${id}.md`)
 

@@ -161,7 +161,7 @@ export function ChangeRow({ change: c, index, firstLane }: { change: FieldChange
     case 'status':
       return (
         <p className="hist-row">
-          <span className="hist-field">Status</span> <StatusLabel item status={String(c.from)} /> to <StatusLabel item status={String(c.to)} />
+          <span className="hist-field">Status</span> <StatusLabel kind="item" status={String(c.from)} /> to <StatusLabel kind="item" status={String(c.to)} />
         </p>
       )
     case 'parent':

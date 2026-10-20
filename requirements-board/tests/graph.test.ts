@@ -9,7 +9,7 @@ const items: Item[] = [
   item({ id: 'EP-01', type: 'epic' }),
   item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01' }),
   item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1 }),
-  item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: 'Retired' }),
+  item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '5' }),
   item({ id: 'US-01.0.1', parent: 'EP-01', order: 2 }),
 ]
 const recs = Object.fromEntries(items.map((i): [string, Rev<Item>] => [i.id, { data: i, rev: 'r' }]))
@@ -73,7 +73,7 @@ describe('board graph', () => {
   })
 
   it('hides a live card under a retired one with it', () => {
-    const under: Item[] = [...items.map((i) => (i.id === 'FT-01.1' ? { ...i, status: 'Retired' as const } : i))]
+    const under: Item[] = [...items.map((i) => (i.id === 'FT-01.1' ? { ...i, status: '5' as const } : i))]
     const idx = buildIndex(Object.fromEntries(under.map((i): [string, Rev<Item>] => [i.id, { data: i, rev: 'r' }])), {})
     const g = input({ index: idx, auto: autoLayout(under) })
     const node = (gi: GraphInput) => buildNodes(gi, countDescendants(idx)).find((n) => n.id === 'US-01.1.1')!

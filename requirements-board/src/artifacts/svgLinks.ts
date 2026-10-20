@@ -6,6 +6,8 @@
  * doesn't have stays plain text.
  */
 import { idMentions, isArtifactId, isQuestionId } from '../../shared/links.ts'
+import type { BoardConfig } from '../../shared/config.ts'
+import { isRetired, statusLabel } from '../../shared/statuses.ts'
 import type { ArtifactRec, Item, Question } from '../../shared/types.ts'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
@@ -33,7 +35,7 @@ export type ResolveLink = (id: string) => DiagramLink | null
  * page (the hrefs are where a new tab goes, as in Markdown), another artifact its own page. The
  * drawing's own ID is left plain.
  */
-export function catalogueResolver(index: { byId: Map<string, Item>; questions: Question[] }, artifacts: Record<string, ArtifactRec>, selfId?: string): ResolveLink {
+export function catalogueResolver(index: { byId: Map<string, Item>; questions: Question[]; config: BoardConfig }, artifacts: Record<string, ArtifactRec>, selfId?: string): ResolveLink {
   const questions = new Map(index.questions.map((q) => [q.id, q]))
   return (id) => {
     if (id === selfId) return null
@@ -41,9 +43,11 @@ export function catalogueResolver(index: { byId: Map<string, Item>; questions: Q
       const a = artifacts[id]?.data
       return a ? { href: `#/artifacts/${encodeURIComponent(id)}`, title: a.title, tip: `${a.title} · ${a.status}`, retired: a.status === 'Superseded' } : null
     }
-    const rec = isQuestionId(id) ? questions.get(id) : index.byId.get(id)
+    const question = isQuestionId(id)
+    const rec = question ? questions.get(id) : index.byId.get(id)
     if (!rec) return null
-    return { href: `#/board?${isQuestionId(id) ? 'question' : 'item'}=${encodeURIComponent(id)}`, title: rec.title, tip: `${rec.title} · ${rec.status}`, retired: rec.status === 'Retired' }
+    const tip = `${rec.title} · ${statusLabel(index.config, question ? 'question' : 'item', rec.status)}`
+    return { href: `#/board?${question ? 'question' : 'item'}=${encodeURIComponent(id)}`, title: rec.title, tip, retired: !question && isRetired(index.config, rec) }
   }
 }
 

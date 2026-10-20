@@ -82,7 +82,7 @@ Check every CORE item (description, acceptance criteria, technical discussion, n
 - contradicts-other-item: two items in the pack (or a core item and a linked item summary) say incompatible things.
 - answer-not-reflected: an Answered question in the pack says X and the item says otherwise. Open questions are never a basis for a finding.
 - internal-contradiction: the item's own description and acceptance criteria disagree.
-- status-wrong: a Confirmed item whose rule the rulings say is pending or open, or similar.
+- status-wrong: an agreed or confirmed item whose rule the rulings say is pending or open, or similar.
 Do NOT flag: style, missing links, wording preferences, things merely not mentioned, or anything a Fixed ruling (F-) or the project rules below explicitly allow or require.
 ${HOUSE_TEXT}
 
@@ -129,14 +129,14 @@ const VERIFY_SCHEMA = {
   required: ['verified', 'dropped', 'newQuestions'],
 }
 
-const SIZES = `Size: large = what the system does changes (a rule's meaning), the same fix spans several items, a status moves off Confirmed, or a diagram needs redrawing; medium = out-of-date or contradicting wording in one item that would change what someone builds; small = retired terms, names, titles, stale sources or phrasing that does not change meaning.`
+const SIZES = `Size: large = what the system does changes (a rule's meaning), the same fix spans several items, a status moves off agreed or confirmed, or a diagram needs redrawing; medium = out-of-date or contradicting wording in one item that would change what someone builds; small = retired terms, names, titles, stale sources or phrasing that does not change meaning.`
 
 const EDIT_RULES = `How to write edits (they will be shown to ${OWNER} for approval, then applied mechanically by exact string replacement):
 - "old" must be copied exactly from the current file (Read it) and occur exactly once; keep it as short as uniqueness allows (a sentence or paragraph, not the whole file).
 - Fix the meaning, not the style. Keep the item's voice, the ${REQ}/SCHEMA.md house style and its sections. Do not rewrite text that is fine.
 - Where a fix rests on a ruling, add that ruling's source to the item's sources in date order, in full catalogue form (the rulings header maps its cite shorthand to the full "Notes <date> · <words>" form). Quote a source only if it contains "#" or ": ".
-- A rule that is now pending (a Conflict settled as pending, any open OQ) is described as pending with its OQ, and a Confirmed status on it moves to Verify.
-- Never edit Retired items, notes/, changes/, reference/, or question answers. If a fix needs a decision the rulings do not make, put it in newQuestions instead of editing.${HOUSE_TEXT}`
+- A rule that is now pending (a Conflict settled as pending, any open OQ) is described as pending with its OQ, and a settled or signed-off status on it moves to the Verify status (look up numbers in board.config.json; never infer from a number).
+- Never edit retired items, notes/, changes/, reference/, or question answers. If a fix needs a decision the rulings do not make, put it in newQuestions instead of editing.${HOUSE_TEXT}`
 
 const verifyPrompt = (label, findings) => `You verify drift findings that cheap reviewers raised about a requirements catalogue, and draft exact fixes for the real ones. Read-only: do not edit any file; return proposed edits only.
 

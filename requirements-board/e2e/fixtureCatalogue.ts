@@ -27,7 +27,7 @@ export const FIXTURE_CONFIG = {
 
 /** 2 epics x 4 features x 3 stories; each feature's first story is in MVP. */
 export function fixtureItems(): Item[] {
-  const base = { status: 'Proposed', components: ['Core'], sources: ['Fixture'], images: [], description: '', acceptance: '', technical: '', notes: '', extra: {}, swimlane: null } as const
+  const base = { status: '1', components: ['Core'], sources: ['Fixture'], images: [], description: '', acceptance: '', technical: '', notes: '', extra: {}, swimlane: null } as const
   const out: Item[] = []
   for (let e = 1; e <= 2; e++) {
     const ep = `EP-0${e}`

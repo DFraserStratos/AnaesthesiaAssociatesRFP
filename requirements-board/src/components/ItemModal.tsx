@@ -3,12 +3,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
-import { ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { defaultStatus, isRetired, isRetiredStatus, roleCode, statusClasses } from '../../shared/statuses.ts'
+import { TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
-import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useComponents, useIndex, useShownIndex, useView, type Index } from '../store.ts'
+import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useComponents, useConfig, useIndex, useShownIndex, useView, type Index } from '../store.ts'
 import { sheetArtifacts, useSourceIndex } from '../sourceRows.ts'
-import { statusClass } from '../vocab.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
 import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
@@ -27,6 +27,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   const saveItem = useCatalogue((s) => s.saveItem)
   const adoptItem = useCatalogue((s) => s.adoptItem)
   const index = useIndex()
+  const config = useConfig()
   // Siblings and children as shown: retired cards drop out unless the Retired toggle is on (this card always stays).
   const shown = useShownIndex(id)
   const open = useOpen()
@@ -88,7 +89,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     if (!rec) return
     setAskRetire(false)
     try {
-      await saveItem({ ...rec.data, status: 'Retired' }, rec.rev)
+      await saveItem({ ...rec.data, status: roleCode(config, 'item', 'retired')! }, rec.rev)
     } catch (e) {
       if (e instanceof ApiError && e.current) adoptItem(e.current as Rev<Item>)
       ed.setError((e as Error).message)
@@ -98,7 +99,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   const [statusBusy, setStatusBusy] = useState(false)
   const changeStatus = async (status: ItemStatus) => {
     if (!rec) return
-    if (status === 'Retired') return setAskRetire(true)
+    if (isRetiredStatus(config, status)) return setAskRetire(true)
     setStatusBusy(true)
     ed.setError(null)
     try {
@@ -163,7 +164,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
         : null)
 
   return (
-    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm} docked={docked}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClasses(config, 'item', item.status)} confirm={confirm} docked={docked}>
       <SheetHead item={rec.data} index={shown} leave={ed.leave} />
       <EditBanners ed={ed} noun="item" />
       <div className="sheet-body">
@@ -184,7 +185,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
             <button className="btn ghost" onClick={() => setView('history')}>
               <History size={15} /> History
             </button>
-            {item.status !== 'Retired' && (
+            {!isRetired(config, item) && (
               <button className="btn ghost danger" onClick={() => setAskRetire(true)}>
                 <Archive size={15} /> Retire
               </button>
@@ -324,7 +325,7 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
               <button key={q.id} className="oq-card" title={q.id} onClick={() => open.question(q.id)}>
                 <div className="oq-top">
                   <strong>{q.title}</strong>
-                  <StatusLabel status={q.status} />
+                  <StatusLabel kind="question" status={q.status} />
                 </div>
                 <p>{plainText(q.question)}</p>
                 {via && (
@@ -426,18 +427,19 @@ function linkedQuestions(index: Index, item: Item): { q: Question; via?: Item }[
 function Related({ item, index }: { item: Item; index: Index }) {
   const open = useOpen()
   const showRetired = useView((s) => s.showRetired)
+  const config = useConfig()
   const { related, mentionedIn } = useMemo(() => {
     const all = relatedFor(index, item)
-    const shown = (r: Item) => showRetired || r.status !== 'Retired'
+    const shown = (r: Item) => showRetired || !isRetired(config, r)
     return { related: all.related.filter(shown), mentionedIn: all.mentionedIn.filter(shown) }
-  }, [index, item, showRetired])
+  }, [index, item, showRetired, config])
   if (!related.length && !mentionedIn.length) return null
   const row = (r: Item) => (
-    <button key={r.id} className={`link-row ${statusClass(r.status)}`} onClick={() => open.item(r.id)}>
-      <span style={r.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
+    <button key={r.id} className={`link-row ${statusClasses(config, 'item', r.status)}`} onClick={() => open.item(r.id)}>
+      <span style={isRetired(config, r) ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
         <ItemName item={r} />
       </span>
-      <StatusLabel item status={r.status} />
+      <StatusLabel kind="item" status={r.status} />
     </button>
   )
   return (
@@ -475,6 +477,7 @@ function ArtifactLinks({ item }: { item: Item }) {
 
 function Children({ item, children }: { item: Item; children: Item[] }) {
   const open = useOpen()
+  const config = useConfig()
   const createItem = useCatalogue((s) => s.createItem)
   const [adding, setAdding] = useState<ItemType | null>(null)
   const [title, setTitle] = useState('')
@@ -486,7 +489,7 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
     setBusy(true)
     setError(null)
     try {
-      const rec = await createItem({ type: adding, parent: item.id, title: title.trim(), status: 'Proposed' })
+      const rec = await createItem({ type: adding, parent: item.id, title: title.trim(), status: defaultStatus(config, 'item') })
       open.item(rec.data.id, { edit: true })
     } catch (e) {
       setError((e as Error).message)
@@ -496,7 +499,7 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
   }
   const label = item.type === 'epic' ? 'Features and stories' : 'Stories'
   // Nothing new goes under a retired card.
-  const retired = item.status === 'Retired'
+  const retired = isRetired(config, item)
   if (retired && children.length === 0) return null
 
   return (
@@ -548,11 +551,11 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
       {children.length > 0 && (
         <div className="link-list">
           {children.map((c) => (
-            <button key={c.id} className={`link-row ${statusClass(c.status)}`} onClick={() => open.item(c.id)}>
-              <span style={c.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
+            <button key={c.id} className={`link-row ${statusClasses(config, 'item', c.status)}`} onClick={() => open.item(c.id)}>
+              <span style={isRetired(config, c) ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
                 <ItemName item={c} />
               </span>
-              <StatusLabel item status={c.status} />
+              <StatusLabel kind="item" status={c.status} />
             </button>
           ))}
         </div>
@@ -565,6 +568,7 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
 
 function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) => void; index: Index }) {
   const components = useComponents()
+  const config = useConfig()
   const lanes = useCatalogue((s) => s.layout.lanes)
   const firstLane = useCatalogue((s) => firstLaneName(s.layout))
   // A name no lane has (a hand edit) stays selectable, so opening Edit never silently drops it.
@@ -579,9 +583,9 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
         <label className="field">
           <span>Status</span>
           <select className="select" value={draft.status} onChange={(e) => set({ status: e.target.value as Item['status'] })}>
-            {ITEM_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
+            {config.statuses.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.label}
               </option>
             ))}
           </select>

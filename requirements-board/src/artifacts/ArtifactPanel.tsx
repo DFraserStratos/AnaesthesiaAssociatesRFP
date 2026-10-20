@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isArtifactDate } from '../../shared/check.ts'
 import { tidyText } from '../../shared/files.ts'
+import { isRetired, statusClasses } from '../../shared/statuses.ts'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, type Artifact, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item } from '../../shared/types.ts'
 import { autoSpots, linkCount, namedSpots, spotName, useArtifactIndex, type ArtifactLink, type Spot } from '../artifactIndex.ts'
 import { ArtifactRowsSection } from '../components/ArtifactRows.tsx'
@@ -20,8 +21,8 @@ import { Prose } from '../components/Prose.tsx'
 import { useEditableRecord } from '../components/useEditableRecord.ts'
 import { artifactUrl, useOpen } from '../nav.ts'
 import { sourceRow, useSourceIndex } from '../sourceRows.ts'
-import { useCatalogue, useComponents, useView } from '../store.ts'
-import { ARTIFACT_KIND_LABEL, ARTIFACT_STATUS_HELP, BASELINE_ARTIFACT_STATUS, artifactDate, statusClass } from '../vocab.ts'
+import { useCatalogue, useComponents, useConfig, useView } from '../store.ts'
+import { ARTIFACT_KIND_LABEL, ARTIFACT_STATUS_HELP, BASELINE_ARTIFACT_STATUS, artifactDate } from '../vocab.ts'
 import { ArtifactHistory } from './ArtifactHistory.tsx'
 
 export type PanelTab = 'spots' | 'linked' | 'details' | 'history'
@@ -103,7 +104,7 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
               {artifactDate(a.date)}
             </time>
           )}
-          {a.status !== BASELINE_ARTIFACT_STATUS && <StatusLabel status={a.status} />}
+          {a.status !== BASELINE_ARTIFACT_STATUS && <StatusLabel kind="artifact" status={a.status} />}
           {superseder && (
             <button className="superseded-by" onClick={() => ed.leave(() => open.artifact(superseder.data.id))}>
               by {superseder.data.title}
@@ -345,14 +346,15 @@ function SpotRow({ rec, s, active, used, onSpot, onPreview, children }: { rec: A
 function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: ArtifactLink[]; asked: { question: { id: string; title: string; status: string }; region: string | null }[]; onSpot: (id: string | null) => void }) {
   const open = useOpen()
   const showRetired = useView((s) => s.showRetired)
-  const shown = links.filter((l) => showRetired || l.item.status !== 'Retired')
+  const config = useConfig()
+  const shown = links.filter((l) => showRetired || !isRetired(config, l.item))
   const listed = shown.filter((l) => l.via === 'field')
   const mentioned = shown.filter((l) => l.via === 'text' && !listed.some((x) => x.item.id === l.item.id && x.region === l.region))
   if (!shown.length && !asked.length) return <p className="empty-note">No card links here yet. Link one from its file: <code>artifacts: [{rec.data.id}]</code>, or to a spot, <code>{rec.data.id}#spot</code>.</p>
   const row = (l: ArtifactLink) => (
-    <div key={`${l.item.id}|${l.region}`} className={`link-row linked-row ${statusClass(l.item.status)}`}>
+    <div key={`${l.item.id}|${l.region}`} className={`link-row linked-row ${statusClasses(config, 'item', l.item.status)}`}>
       <button className="linked-item" onClick={() => open.item(l.item.id)} title={l.item.id}>
-        <span style={l.item.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
+        <span style={isRetired(config, l.item) ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
           <ItemName item={l.item as Item} />
         </span>
       </button>
@@ -364,7 +366,7 @@ function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: Artifa
       ) : (
         <span />
       )}
-      <StatusLabel item status={l.item.status} />
+      <StatusLabel kind="item" status={l.item.status} />
     </div>
   )
   return (
@@ -385,7 +387,7 @@ function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: Artifa
           <h4 className="related-sub">Outstanding items</h4>
           <div className="link-list">
             {asked.map(({ question: q, region }) => (
-              <div key={`${q.id}|${region}`} className={`link-row linked-row ${statusClass(q.status)}`}>
+              <div key={`${q.id}|${region}`} className={`link-row linked-row ${statusClasses(config, 'question', q.status)}`}>
                 <button className="linked-item" onClick={() => open.question(q.id)} title={q.id}>
                   {q.title}
                 </button>
@@ -397,7 +399,7 @@ function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: Artifa
                 ) : (
                   <span />
                 )}
-                <StatusLabel status={q.status} />
+                <StatusLabel kind="question" status={q.status} />
               </div>
             ))}
           </div>

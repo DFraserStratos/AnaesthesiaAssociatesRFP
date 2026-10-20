@@ -247,7 +247,7 @@ ${bad ? `<div class="card stat" style="color:var(--large)"><b>${bad}</b>with an 
 <button id="accSmall">Accept all small</button>
 <button id="copy" class="primary">Copy decisions</button><button id="save">Save decisions file</button>
 <span class="prog" id="prog"></span></div></div>
-${section('large', 'A rule changes meaning, the fix spans several items, a status moves off Confirmed, or a diagram needs redrawing.')}
+${section('large', 'A rule changes meaning, the fix spans several items, a status moves off agreed or confirmed, or a diagram needs redrawing.')}
 ${section('medium', 'Out-of-date or contradicting wording in one item that would change what someone builds.')}
 ${section('small', 'Retired terms, names, stale sources and phrasing. Collapsed by topic.')}
 ${questions.length ? `<section id="sec-q"><h2>New questions</h2><p class="sub">Things the reviewers found unsettled. Accepting adds an open question; it never changes a requirement.</p>${qCards}</section>` : ''}

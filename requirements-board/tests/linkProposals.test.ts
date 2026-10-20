@@ -7,8 +7,8 @@ const epic = item({ id: 'EP-06', type: 'epic' })
 const feature = item({ id: 'FT-06.2', type: 'feature', parent: 'EP-06' })
 const detect = item({ id: 'US-06.2.1', parent: 'FT-06.2', description: "Flags a Order whose product code is in the customer's prepaid set. The prepaid set is per customer." })
 const tick = item({ id: 'US-06.1.1', parent: 'EP-06', description: 'Tick codes.' })
-const retired = item({ id: 'US-06.1.9', parent: 'EP-06', status: 'Retired' })
-const q = { id: 'OQ-25', kind: 'question', title: 'Q', affects: [], owner: '', status: 'Open', sources: [], question: '', answer: '', extra: {} } as Question
+const retired = item({ id: 'US-06.1.9', parent: 'EP-06', status: '5' })
+const q = { id: 'OQ-25', kind: 'question', title: 'Q', affects: [], owner: '', status: '1', sources: [], question: '', answer: '', extra: {} } as Question
 const items = [epic, feature, detect, tick, retired]
 
 const run = (proposals: Proposal[]) => applyProposals(items, [q], proposals)

@@ -2,6 +2,7 @@ import { MessageCircleQuestion } from 'lucide-react'
 import { useMemo, type MouseEvent, type ReactNode } from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import { idMentions, isArtifactHref, isIdHref, isQuestionId } from '../../shared/links.ts'
+import { isRetired, statusLabel } from '../../shared/statuses.ts'
 import { parseArtifactRef, type ArtifactRec, type Item, type Question } from '../../shared/types.ts'
 import { spotName } from '../artifactIndex.ts'
 import { guarded, useOpen } from '../nav.ts'
@@ -105,14 +106,14 @@ function RecordLink({ id, index, bare, text }: { id: string; index: Index; bare:
     )
   }
   const question = isQuestionId(id)
-  const status = rec.status
+  const status = statusLabel(index.config, question ? 'question' : 'item', rec.status)
   const go = (e: MouseEvent) => {
     // A modified click opens the link in a new tab, as any link would.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
     e.preventDefault()
     guarded(() => (question ? open.question(id) : open.item(id)))
   }
-  const cls = ['record-link', bare ? 'bare' : '', bare && !question ? typeClass((rec as Item).type) : '', status === 'Retired' ? 'retired' : ''].filter(Boolean).join(' ')
+  const cls = ['record-link', bare ? 'bare' : '', bare && !question ? typeClass((rec as Item).type) : '', !question && isRetired(index.config, rec as Item) ? 'retired' : ''].filter(Boolean).join(' ')
   return (
     <a className={cls} href={`#/board?${question ? 'question' : 'item'}=${encodeURIComponent(id)}`} onClick={go} title={bare ? `${id} · ${status}` : `${rec.title} · ${status}`}>
       {bare ? (

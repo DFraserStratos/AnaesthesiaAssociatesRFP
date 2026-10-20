@@ -3,7 +3,7 @@
 The prototype was built in July 2026 against the original RFP (phases 00 to 13, see
 [../ROADMAP.md](../ROADMAP.md)). The requirements catalogue is now the source of truth and has moved
 a long way from the RFP. This catch-up brings the prototype up to the catalogue as at commit
-**`60e2d1e`**. Future and Retired items are out; retired behaviour the prototype still has is removed
+**`60e2d1e`**. Future Work lane and retired items are out; retired behaviour the prototype still has is removed
 or reworked. The plan was updated on 2026-10-01 for the AA meeting with Greg
 ([change log](../../../requirements-board/requirements/changes/2026-10-01-requirements-update.md)),
 on 2026-10-03 for the three 2026-10-02 meetings with Greg (change logs:
@@ -303,7 +303,7 @@ Demo         44 demo guide rewrite & final sweep
     (20a, 21, 24, 31, 39b).
   - 44 runs last.
 - **Contracts and Schedule are independent from 17 until 33.** Contracts go first because the track
-  is mostly Confirmed and carries the S3, S4 and S5 money beats.
+  is mostly Agreed (4) or Confirmed (5) and carries the S3, S4 and S5 money beats.
 - **Vocabulary.** Booking, not Card; move or reassign, never swap; never "timesheet". Per OQ-64,
   "slot" never reaches app copy (say session, AM or PM); Slot stays a code and planning word. A
   List's states are DRAFT (a Draft List, no anaesthetist), ACTIVE, SUBMITTED and AUTHORISED; never
@@ -592,8 +592,8 @@ PROGRESS.md entry:
    their current recipes.
 2. **Recipes the phase broke.** Any other recipe whose route, id, text or selector the phase changed
    is updated to the new screen, keeping its shot `name`s (rename a shot only when the old name
-   describes retired behaviour; the runner deletes the old generated image). A Retired or Future item whose screen the
-   phase removes gets `status: absent` with the reason "Retired: removed in Phase NN" (or "Future").
+   describes retired behaviour; the runner deletes the old generated image). A retired or Future Work item whose screen the
+   phase removes gets `status: absent` with the reason "Retired: removed in Phase NN" (or "Future Work lane").
    Add `data-shot` hooks rather than brittle selectors, and move hooks with the code they follow.
    Stage a per-screen demo trigger with the runner's `trigger` step (added in Phase 14, because shots
    hide the harness bar that holds the "Demo actions" menu); on the PWA, open its Demo sheet instead.
@@ -626,7 +626,7 @@ are never touched while updating the plan.
 
 ### Confirm before building
 
-These phases carry unresolved open questions (OQ) or Open/Verify items. Each checks them at its drift
+These phases carry unresolved open questions (OQ) or `open`/`verify` items. Each checks them at its drift
 check, and if they are still open builds the owner-decision default (D26 to D41) or the recommended
 reading and labels it provisional in the UI.
 

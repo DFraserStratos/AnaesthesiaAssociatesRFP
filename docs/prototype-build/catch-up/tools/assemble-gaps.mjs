@@ -4,6 +4,8 @@
 // cover keep their entry from the existing gaps.json.
 import fs from 'node:fs'
 import path from 'node:path'
+import { loadRecodes, loadStatuses, normaliseStatus, outOfScopeRule } from './scope.mjs'
+
 
 const [journalPath, commit, date] = process.argv.slice(2)
 const MERGE = process.argv.includes('--merge')
@@ -29,20 +31,23 @@ const readFm = file => {
   const g = k => { const m = fm.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')); return m ? m[1].trim().replace(/^"|"$/g, '') : null }
   return { fm, g }
 }
+const recodes = loadRecodes()
+const statuses = loadStatuses()
 const items = {}
 for (const f of fs.readdirSync(path.join(CAT, 'stories')).filter(f => f.endsWith('.md'))) {
   const { g } = readFm(path.join(CAT, 'stories', f))
-  items[g('id')] = { id: g('id'), type: g('type'), parent: g('parent'), title: g('title'), status: g('status'), swimlane: g('swimlane') }
+  items[g('id')] = { id: g('id'), type: g('type'), parent: g('parent'), title: g('title'), status: normaliseStatus(recodes, 'item', g('status')), swimlane: g('swimlane') }
 }
 const oqs = {}
 for (const f of fs.readdirSync(path.join(CAT, 'questions')).filter(f => f.endsWith('.md'))) {
   const { fm, g } = readFm(path.join(CAT, 'questions', f))
   const affects = [...fm.matchAll(/^\s+-\s*(\S+)\s*$/gm)].map(m => m[1]).filter(a => items[a])
-  oqs[g('id')] = { id: g('id'), title: g('title'), status: g('status'), affects }
+  oqs[g('id')] = { id: g('id'), title: g('title'), status: normaliseStatus(recodes, 'question', g('status')), affects }
 }
 const epicOf = id => { let x = items[id]; while (x && x.parent) x = items[x.parent]; return x ? x.id : null }
-const openOqs = id => Object.values(oqs).filter(o => o.status !== 'Answered' && o.affects.includes(id)).map(o => o.id)
-const excluded = it => ['Retired', 'Future'].includes(it.status) || it.swimlane === 'Future Work' || ['Retired', 'Future'].includes(items[epicOf(it.id)].status)
+const openOqs = id => Object.values(oqs).filter(o => o.status !== statuses.answered && o.affects.includes(id)).map(o => o.id)
+const outOfScope = outOfScopeRule(items, recodes, statuses.retired)
+const excluded = it => outOfScope(it.id)
 
 const epicIds = Object.values(items).filter(i => i.type === 'epic').map(i => i.id).sort()
 const inScope = e => Object.values(items).filter(i => epicOf(i.id) === e && !excluded(i)).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
@@ -61,9 +66,9 @@ for (const e of epicIds) {
     if (!x && reviewed.has(meta.id)) { x = { ...reviewed.get(meta.id), verify_outcome: 'unverified', original_verdict: reviewed.get(meta.id).verdict, verify_note: 'Verifier did not return this item.' }; problems.push(`${meta.id} unverified`) }
     if (!x && prevItem.has(meta.id)) x = prevItem.get(meta.id)
     if (!x) { problems.push(`${meta.id} not graded`); return null }
-    return { ...x, epic: e, title: meta.title, type: meta.type, status: meta.status, open_questions: openOqs(meta.id), file: `stories/${meta.id}.md` }
+    return { ...x, epic: e, title: meta.title, type: meta.type, status: statuses.label('item', meta.status), open_questions: openOqs(meta.id), file: `stories/${meta.id}.md` }
   }).filter(Boolean)
-  epics.push({ id: e, title: items[e].title, status: items[e].status, observations: v?.epic_observations || r?.epic_observations || prevEpic.get(e)?.observations || '', items: list })
+  epics.push({ id: e, title: items[e].title, status: statuses.label('item', items[e].status), observations: v?.epic_observations || r?.epic_observations || prevEpic.get(e)?.observations || '', items: list })
 }
 const delta = get('verify:domain-model') || get('delta:domain-model') || (prev && { deltas: prev.dataModelDeltas, summary: prev.deltaSummary })
 const reverse = get('verify:reverse') || get('reverse-check') || (prev && { findings: prev.reverseFindings, summary: prev.reverseSummary })
@@ -74,7 +79,7 @@ const GAP = new Set(['Contradicts', 'Partial', 'Missing'])
 const allItems = epics.flatMap(e => e.items)
 const count = list => Object.fromEntries(VERDICTS.map(v => [v, list.filter(i => i.verdict === v).length]))
 const counts = count(allItems)
-const excludedList = Object.values(items).filter(excluded).map(i => ({ id: i.id, title: i.title, status: i.status, swimlane: i.swimlane || undefined }))
+const excludedList = Object.values(items).filter(excluded).map(i => ({ id: i.id, title: i.title, status: statuses.label('item', i.status), swimlane: i.swimlane || undefined }))
 
 const gaps = {
   generated: date, catalogue_commit: commit,
@@ -104,7 +109,7 @@ const vOrder = Object.fromEntries(VERDICTS.map((v, i) => [v, i]))
 
 const md = []
 md.push('# Requirements catch-up · Gap analysis', '')
-md.push(`Catalogue snapshot \`${commit.slice(0, 7)}\` · generated ${date} · ${allItems.length} in-scope items (${excludedList.length} Retired or Future excluded)`, '')
+md.push(`Catalogue snapshot \`${commit.slice(0, 7)}\` · generated ${date} · ${allItems.length} in-scope items (${excludedList.length} retired or Future Work excluded)`, '')
 md.push(`**Method.** ${gaps.method} Supporting analysis: [prototype maps](analysis/), [data-model delta](analysis/domain-model-delta.md), [reverse check](analysis/reverse-check.md). Machine-readable data: [gaps.json](gaps.json). The development plan built from this is in [ROADMAP.md](ROADMAP.md) and [index.html](index.html).`, '')
 md.push('**Verdicts.** Matches: the prototype demonstrates the requirement as now written. Partial: present but missing rules or acceptance criteria. Contradicts: implemented, but some behaviour now differs from the requirement. Missing: nothing represents it. OutOfScope: cannot be shown in a front-end demo, even with a demo button. Grouping: an epic or feature with no rules of its own. Sizes are for a Claude Code session: S under an hour, M a few hours, L about a session, XL more.', '')
 
@@ -178,7 +183,7 @@ for (const e of epics) {
   if (grp.length) md.push(`**Grouping only (${grp.length}):** ${grp.map(i => link(i.id)).join(', ')}`, '')
 }
 
-md.push('## Excluded from this analysis', '', 'Retired and Future items (and stories in the Future Work lane) were not graded. The reverse check above covers retired behaviour the prototype still has.', '')
+md.push('## Excluded from this analysis', '', 'Retired items, stories in the Future Work lane and features whose live stories are all there were not graded. The reverse check above covers retired behaviour the prototype still has.', '')
 md.push(excludedList.map(i => `${link(i.id)} ${esc(i.title)} (${i.status}${i.swimlane ? `, ${i.swimlane}` : ''})`).join(' · '), '')
 
 md.push('<a id="verification-log"></a>', '', '## Verification log', '')

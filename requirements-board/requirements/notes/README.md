@@ -58,4 +58,4 @@ Several at once: `#2 #16`.
 
 An item with no source gets an outstanding item of kind `missing-source` in `questions/` that
 affects it. To resolve one: find or file the note, add the source to the item, then set the
-outstanding item to `Answered` with a line saying where it came from.
+outstanding item to its Answered status (4 here; see `board.config.json`) with a line saying where it came from.

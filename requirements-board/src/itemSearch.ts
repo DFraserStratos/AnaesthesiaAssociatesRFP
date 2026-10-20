@@ -3,13 +3,17 @@
  * its ID, or the title of the epic or feature it sits under. Kept free of
  * React so the node tests can import it.
  */
+import type { BoardConfig } from '../shared/config.ts'
 import { plainText } from '../shared/links.ts'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
+import { isRetired } from '../shared/statuses.ts'
 import type { Item, ItemType } from '../shared/types.ts'
 
 export interface SearchIndex {
   items: Item[]
   byId: Map<string, Item>
+  /** Says which status is retired. */
+  config: BoardConfig
 }
 
 export interface SearchOptions {
@@ -70,7 +74,7 @@ function treeOrder(list: Item[], index: SearchIndex): Item[] {
 export function searchItems(index: SearchIndex, query: string, opts: SearchOptions = {}): Item[] {
   const { types, includeRetired = false, limit = 60 } = opts
   const exclude = new Set(opts.exclude ?? [])
-  const pool = index.items.filter((it) => (!types || types.includes(it.type)) && !exclude.has(it.id) && (includeRetired || it.status !== 'Retired'))
+  const pool = index.items.filter((it) => (!types || types.includes(it.type)) && !exclude.has(it.id) && (includeRetired || !isRetired(index.config, it)))
   const q = query.trim().toLowerCase()
   if (!q) return treeOrder(pool, index).slice(0, limit)
   const qWords = words(q)

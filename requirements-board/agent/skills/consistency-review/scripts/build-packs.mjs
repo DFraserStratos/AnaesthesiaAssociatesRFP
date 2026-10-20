@@ -16,6 +16,19 @@ const repo = path.resolve(a.repo)
 const out = path.resolve(a.out)
 const REQ_REL = a.req.replace(/\/+$/, '')
 const REQ = path.join(repo, REQ_REL)
+// Which status numbers mean answered and retired: the roles in the board's config (statuses.ts defaults without one).
+// A number means nothing by itself, so packs show statuses by label.
+const roleCode = (list, role, fallback) => String((Array.isArray(list) ? list.find((d) => d?.role === role)?.code : undefined) ?? fallback)
+const labelOf = (list, code) => (Array.isArray(list) ? list.find((d) => String(d?.code) === String(code))?.label : undefined) ?? String(code)
+const boardConfig = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(REQ, 'board.config.json'), 'utf8'))
+  } catch {
+    return {}
+  }
+})()
+const ANSWERED = roleCode(boardConfig.questionStatuses, 'answered', 4)
+const RETIRED = roleCode(boardConfig.statuses, 'retired', 5)
 // yaml is a dependency of the board app, which sits one level above its catalogue folder
 const require = createRequire(path.join(REQ, '..', 'package.json'))
 const YAML = require('yaml')
@@ -91,8 +104,8 @@ const summary = (it) => {
   return first.length > 700 ? first.slice(0, 700) + ' …' : first
 }
 function questionBlock(q) {
-  if (q.status === 'Answered') return `### ${q.id} (Answered, may define a rule) · ${q.title}\nFile: ${q.file}\n\n${q.body}\n`
-  return `### ${q.id} (${q.status}: NOT a ruling, never a basis for an edit) · ${q.title}\n`
+  if (String(q.status) === ANSWERED) return `### ${q.id} (answered, may define a rule) · ${q.title}\nFile: ${q.file}\n\n${q.body}\n`
+  return `### ${q.id} (${labelOf(boardConfig.questionStatuses, q.status)}: NOT a ruling, never a basis for an edit) · ${q.title}\n`
 }
 function pack(title, coreIds) {
   const core = new Set(coreIds)
@@ -105,7 +118,7 @@ function pack(title, coreIds) {
     out.push('\n## Linked items outside this pack (summary only; full file at the path given)\n')
     for (const n of [...neighbours].sort()) {
       const it = items[n]
-      out.push(`- **${n}** · ${it.title} · ${it.status} · parent ${it.parent ?? '-'} · ${it.file}\n  ${summary(it)}`)
+      out.push(`- **${n}** · ${it.title} · ${labelOf(boardConfig.statuses, it.status)} · parent ${it.parent ?? '-'} · ${it.file}\n  ${summary(it)}`)
     }
   }
   const qs = [...new Set(coreIds.flatMap((id) => qAffecting[id] ?? []))].sort()
@@ -131,7 +144,7 @@ function pack(title, coreIds) {
 
 fs.mkdirSync(path.join(out, 'packs'), { recursive: true })
 fs.mkdirSync(path.join(out, 'artifact-packs'), { recursive: true })
-const live = (id) => items[id].status !== 'Retired'
+const live = (id) => String(items[id].status) !== RETIRED
 const childrenOf = (id) => Object.values(items).filter((x) => x.parent === id && live(x.id)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((x) => x.id)
 const units = []
 for (const ep of Object.keys(items).filter((id) => /^EP-/.test(id) && live(id)).sort()) {
@@ -185,7 +198,7 @@ const index = {
   diagrams: diagramIds.map((a) => ({ id: a, title: artifacts[a].title, pack: path.join(out, 'artifact-packs', `${a}.md`), svg: artifacts[a].src ? `${REQ_REL}/${artifacts[a].src}` : null })),
   notes: notes.map((n) => `${REQ_REL}/notes/${n}`),
   changes: fs.readdirSync(path.join(REQ, 'changes')).filter((f) => /^\d{4}-/.test(f)).sort().map((f) => `${REQ_REL}/changes/${f}`),
-  answeredQuestions: Object.values(questions).filter((q) => q.status === 'Answered').map((q) => q.id).sort(),
+  answeredQuestions: Object.values(questions).filter((q) => String(q.status) === ANSWERED).map((q) => q.id).sort(),
   topics: topicsFrom(a.rulings ?? path.join(out, 'rulings.md')),
   counts: { items: Object.keys(items).length, live: Object.keys(items).filter(live).length, questions: Object.keys(questions).length },
 }

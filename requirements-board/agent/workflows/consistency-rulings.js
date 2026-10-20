@@ -82,7 +82,7 @@ ${TOPICS.length ? `\nSuggested topics (use these names where they fit): ${TOPICS
 Rules:
 - Quote verbatim; never invent a citation. Use the note's numbered points (#n) in cites where the rule sits under one.
 - Fill "replaces" whenever the source says something changed, was dropped, renamed, or no longer holds; this is the most important field.
-- Open questions are NOT rulings. Only an answered question (status Answered with an ## Answer) defines a rule.`
+- Open questions are NOT rulings. Only an answered question (a question whose status has role `answered`, with an ## Answer) defines a rule.`
 
 const notePrompts = A.notes.map((n) => ({
   label: `note:${n.split('/').pop().replace('.md', '')}`,

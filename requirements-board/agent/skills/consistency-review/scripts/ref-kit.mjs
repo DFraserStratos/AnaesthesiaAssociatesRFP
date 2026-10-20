@@ -97,6 +97,9 @@ export function loadRulings(file) {
 // reqDir: the catalogue folder (absolute, or relative to the working directory)
 export function makeResolver(reqDir, rulingsFile) {
   const REQ = path.resolve(reqDir)
+  // A status is a number whose label lives in board.config.json: show the label.
+  const config = (() => { try { return JSON.parse(fs.readFileSync(path.join(REQ, 'board.config.json'), 'utf8')) } catch { return {} } })()
+  const statusName = (list, code) => (code === '' || code == null ? '' : ((Array.isArray(list) ? list.find((d) => String(d?.code) === String(code))?.label : undefined) ?? String(code)))
   const { rulings, shorthand, logLabels } = loadRulings(rulingsFile)
   const shorts = Object.keys(shorthand)
   const shortRe = new RegExp('^(?:' + (shorts.length ? shorts.slice().sort((a, b) => b.length - a.length).join('|') : '(?!)') + ')')
@@ -131,7 +134,7 @@ export function makeResolver(reqDir, rulingsFile) {
   const cache = {}
   const itemRef = (id) => {
     const md = readMd(path.join(REQ, 'stories', id + '.md'))
-    return md ? { id, title: md.fm.title ?? id, type: md.fm.type ?? ({ EP: 'epic', FT: 'feature', US: 'story' }[id.slice(0, 2)]), status: md.fm.status ?? '', parent: md.fm.parent, md } : null
+    return md ? { id, title: md.fm.title ?? id, type: md.fm.type ?? ({ EP: 'epic', FT: 'feature', US: 'story' }[id.slice(0, 2)]), status: statusName(config.statuses, md.fm.status ?? ''), parent: md.fm.parent, md } : null
   }
   const pointsOf = (s) => {
     const out = []
@@ -155,7 +158,7 @@ export function makeResolver(reqDir, rulingsFile) {
       const md = readMd(path.join(REQ, 'questions', m[1] + '.md')); if (!md) return null
       const [q, ...rest] = md.body.split(/\n## Answer\s*\n/)
       const ans = rest.join('\n').split(/\n## /)[0]
-      return { k: 'q', id: m[1], title: md.fm.title ?? m[1], status: md.fm.status ?? '', question: trim(plain(q), 600), answer: ans.trim() ? trim(plain(ans), 700) : '' }
+      return { k: 'q', id: m[1], title: md.fm.title ?? m[1], status: statusName(config.questionStatuses, md.fm.status ?? ''), question: trim(plain(q), 600), answer: ans.trim() ? trim(plain(ans), 700) : '' }
     }
     if ((m = key.match(/^(AR-\d+)(?:#(.+))?$/))) {
       const md = readMd(path.join(REQ, 'artifacts', m[1] + '.md')); if (!md) return null

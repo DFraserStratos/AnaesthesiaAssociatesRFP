@@ -89,3 +89,31 @@ test('substance ignores evidence links, order, lanes, images and link markup, bu
   assert.notEqual(substance(a), substance(a.replace('Verify', 'Confirmed')))
   assert.notEqual(substance(a), substance(a.replace('for detail', 'for the detail')))
 })
+
+test('substance reads a recoded status as today\'s code: a relabel is no change, a real move is', async () => {
+  const { substance } = await import('./req-changes.mjs')
+  const recodes = [{ date: '2026-10-20', items: { Confirmed: '4', Future: '1', Proposed: '1' }, questions: { Answered: '4' } }]
+  const old = '---\nid: US-1\nstatus: Confirmed\n---\nText.\n'
+  assert.equal(substance(old, recodes), substance(old.replace('Confirmed', '4'), recodes))
+  assert.equal(substance(old.replace('Confirmed', 'Future'), recodes), substance(old.replace('Confirmed', '1'), recodes))
+  assert.notEqual(substance(old.replace('Confirmed', 'Proposed'), recodes), substance(old.replace('Confirmed', '4'), recodes))
+  const q = '---\nid: OQ-1\nstatus: Answered\n---\nWhy?\n'
+  assert.equal(substance(q, recodes, 'question'), substance(q.replace('Answered', '4'), recodes, 'question'))
+})
+
+test('the scope rule drops retired items, the Future Work lane and features whose live stories are all there', async () => {
+  const { outOfScopeRule } = await import('./scope.mjs')
+  const recodes = [{ date: 'd', items: { Retired: '6' }, questions: {} }]
+  const items = {
+    'EP-01': { id: 'EP-01', parent: null, status: '1' },
+    'FT-01.1': { id: 'FT-01.1', parent: 'EP-01', status: '1' },
+    'US-01.1.1': { id: 'US-01.1.1', parent: 'FT-01.1', status: '1', swimlane: 'Future Work' },
+    'US-01.1.2': { id: 'US-01.1.2', parent: 'FT-01.1', status: 'Retired' },
+    'FT-01.2': { id: 'FT-01.2', parent: 'EP-01', status: '4' },
+    'US-01.2.1': { id: 'US-01.2.1', parent: 'FT-01.2', status: '4' },
+    'EP-02': { id: 'EP-02', parent: null, status: '6' },
+    'US-02.0.1': { id: 'US-02.0.1', parent: 'EP-02', status: '4' },
+  }
+  const out = outOfScopeRule(items, recodes, '6')
+  assert.deepEqual(Object.keys(items).filter(out), ['FT-01.1', 'US-01.1.1', 'US-01.1.2', 'EP-02', 'US-02.0.1'])
+})

@@ -43,7 +43,7 @@ const SHAPES = `Proposal shapes (JSON):
 
 const RULES = `The linking rules are the "## Links" section of ${REQUIREMENTS}/SCHEMA.md. Read it and follow it exactly. In short:
 - Inline link: a phrase naming a rule, concept or behaviour that another item DEFINES. Link the shortest natural phrase; never propose rewording.
-- Target the most specific item (story over feature over epic). Never the item itself, its own parent or epic, or its own children. Never a Retired item (the index lists only live items).
+- Target the most specific item (story over feature over epic). Never the item itself, its own parent or epic, or its own children. Never a retired item (the status with role `retired`; the index lists only live items).
 - First mention per field only; one link per target per field; about four text links per item at most. An item with nothing worth linking gets nothing.
 - Leave everyday domain nouns (the project's core records and roles, as named in its domain model) unlinked unless the sentence relies on the specific rule one item states.
 - related: items coupled in a way the text does not name (a setting and the rule that reads it, a UI story and its engine story, one step and the next). About four per item at most; siblings are not related just for being siblings. Skip it when either item's text already links the other.
@@ -99,7 +99,7 @@ ${RULES}
 Reject a proposal when any of these hold (and default to reject when unsure):
 - the anchor is not an exact, whole-word substring of that field at that occurrence, outside existing links and backticks (check with grep, mind apostrophes);
 - the target does not define what the phrase refers to, or a more specific item does;
-- the target is the item itself, its parent or epic, one of its children, or Retired;
+- the target is the item itself, its parent or epic, one of its children, or retired (the status with role `retired`);
 - it is a later mention when an earlier one in the same field could carry the link, or a second link to the same target in that field;
 - the phrase is an everyday domain noun used in passing;
 - a related pair the text already links, siblings with no real coupling, or a pair already listed (in either direction) in the index;

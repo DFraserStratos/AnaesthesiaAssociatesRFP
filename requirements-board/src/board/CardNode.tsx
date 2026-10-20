@@ -1,13 +1,16 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { ImageIcon, MessageCircleQuestion } from 'lucide-react'
 import { memo } from 'react'
+import { defaultStatus, statusClasses } from '../../shared/statuses.ts'
 import { TYPE_LABEL } from '../../shared/types.ts'
 import { StatusLabel } from '../components/bits.tsx'
-import { BASELINE_STATUS, excerpt, statusClass, typeClass } from '../vocab.ts'
+import { useConfig } from '../store.ts'
+import { excerpt, typeClass } from '../vocab.ts'
 import type { CardNodeType } from './cardData.ts'
 
 function CardNodeImpl({ data }: NodeProps<CardNodeType>) {
   const { item, w, h, openQuestions, childCount, tone } = data
+  const config = useConfig()
   // The handles sit outside .card so its borders never shift them off the geometry in `cardHandles`.
   return (
     <>
@@ -15,7 +18,7 @@ function CardNodeImpl({ data }: NodeProps<CardNodeType>) {
       <Handle type="target" position={Position.Left} id="l" isConnectable={false} />
       <Handle type="source" position={Position.Bottom} isConnectable={false} />
       <Handle type="source" position={Position.Left} id="ls" isConnectable={false} />
-      <div className={`card ${item.type} ${typeClass(item.type)} ${statusClass(item.status)} ${tone}`} style={{ width: w, height: h }} title={`${TYPE_LABEL[item.type]} ${item.id} · ${item.title}`}>
+      <div className={`card ${item.type} ${typeClass(item.type)} ${statusClasses(config, 'item', item.status)} ${tone}`} style={{ width: w, height: h }} title={`${TYPE_LABEL[item.type]} ${item.id} · ${item.title}`}>
         <p className="card-title">{item.title}</p>
         {item.description && <p className="card-excerpt">{excerpt(item.description, 220)}</p>}
         <div className="card-foot">
@@ -36,8 +39,8 @@ function CardNodeImpl({ data }: NodeProps<CardNodeType>) {
               {childCount} item{childCount === 1 ? '' : 's'}
             </span>
           )}
-          {/* Proposed is the baseline; a card only carries a pill when its status is worth noticing. */}
-          {item.status !== BASELINE_STATUS && <StatusLabel item status={item.status} />}
+          {/* The default status is the baseline; a card only carries a pill when its status is worth noticing. */}
+          {item.status !== defaultStatus(config, 'item') && <StatusLabel kind="item" status={item.status} />}
         </div>
       </div>
     </>

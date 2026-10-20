@@ -20,7 +20,7 @@ test.beforeEach(async ({ page, request }) => {
     .poll(async () => {
       const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
       const items = Object.values(snap.items).map((r) => r.data)
-      return items.length === fixtureItems().length && items.every((i) => i.status === 'Proposed')
+      return items.length === fixtureItems().length && items.every((i) => i.status === '1')
     })
     .toBe(true)
   await page.goto('/')
@@ -38,17 +38,17 @@ test('picking a status saves only the open card, and picking again saves it back
   const pill = page.locator('.sheet.docked .status-pick-btn')
   await pill.click()
   await expect(page.locator('.status-menu [aria-checked="true"]')).toContainText('Proposed')
-  await page.locator('.status-menu button', { hasText: 'Future' }).click()
-  await expect(pill).toHaveText('Future')
-  await expect.poll(() => onDisk('FT-01.2').status).toBe('Future')
+  await page.locator('.status-menu button', { hasText: 'Verify' }).click()
+  await expect(pill).toHaveText('Verify')
+  await expect.poll(() => onDisk('FT-01.2').status).toBe('3')
 
   await pill.click()
   await page.locator('.status-menu button', { hasText: 'Proposed' }).click()
   await expect(pill).toHaveText('Proposed')
-  await expect.poll(() => onDisk('FT-01.2').status).toBe('Proposed')
+  await expect.poll(() => onDisk('FT-01.2').status).toBe('1')
 
   expect(puts).toEqual(['PUT /api/items/FT-01.2', 'PUT /api/items/FT-01.2'])
-  expect(onDisk('EP-01').status).toBe('Proposed')
+  expect(onDisk('EP-01').status).toBe('1')
 })
 
 test('keyboard: arrows walk the menu, Esc puts it away and leaves the panel open', async ({ page }) => {
@@ -70,5 +70,5 @@ test('Retired asks first, and Keep it leaves the card as it was', async ({ page 
   await expect(page.locator('.sheet-veil')).toContainText('Retire this item?')
   await page.locator('.sheet-veil .btn.primary').click()
   await expect(page.locator('.sheet-veil')).toHaveCount(0)
-  expect(onDisk('FT-01.2').status).toBe('Proposed')
+  expect(onDisk('FT-01.2').status).toBe('1')
 })

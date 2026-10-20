@@ -5,7 +5,7 @@
  * Epics wrap into bands (shelves on the wall) so the whole map fits a screen
  * instead of one very long strip. Pure and deterministic.
  */
-import { compareSiblings } from '../../shared/ids.ts'
+import { liveFirst, type RetiredTest } from '../../shared/move.ts'
 import type { Item, ItemType } from '../../shared/types.ts'
 
 export const CARD: Record<ItemType, { w: number; h: number }> = {
@@ -31,10 +31,9 @@ export interface Placement {
   h: number
 }
 
-/** Live items first, retired ones at the end of each stack, so toggling Retired never reflows the rest. */
-const liveFirst = (a: Item, b: Item) => Number(a.status === 'Retired') - Number(b.status === 'Retired') || compareSiblings(a, b)
-
-export function autoLayout(items: Item[]): Record<string, Placement> {
+/** Live items first, retired ones at the end of each stack (`liveFirst`), so toggling Retired never reflows the rest. */
+export function autoLayout(items: Item[], retired?: RetiredTest): Record<string, Placement> {
+  const order = liveFirst(retired)
   const byId = new Map(items.map((i) => [i.id, i]))
   const kids = new Map<string, Item[]>()
   const epics: Item[] = []
@@ -47,7 +46,7 @@ export function autoLayout(items: Item[]): Record<string, Placement> {
       kids.set(it.parent, list)
     } else orphans.push(it)
   }
-  epics.sort(liveFirst)
+  epics.sort(order)
 
   const out: Record<string, Placement> = {}
   const stack = (list: Item[], x: number, y0: number) => {
@@ -56,7 +55,7 @@ export function autoLayout(items: Item[]): Record<string, Placement> {
       out[s.id] = { x, y, w: CARD.story.w, h: CARD.story.h }
       y += CARD.story.h + STACK_GAP
       // Anything nested deeper than the map expects (bad data) still gets a spot.
-      const deeper = (kids.get(s.id) ?? []).sort(liveFirst)
+      const deeper = (kids.get(s.id) ?? []).sort(order)
       if (deeper.length) y = stack(deeper, x, y)
     }
     return y
@@ -66,7 +65,7 @@ export function autoLayout(items: Item[]): Record<string, Placement> {
   let top = 0
   let bandBottom = 0
   for (const epic of epics) {
-    const children = (kids.get(epic.id) ?? []).sort(liveFirst)
+    const children = (kids.get(epic.id) ?? []).sort(order)
     const features = children.filter((c) => c.type !== 'story')
     const direct = children.filter((c) => c.type === 'story')
     const cols = Math.max(1, features.length + (direct.length ? 1 : 0))
@@ -80,13 +79,13 @@ export function autoLayout(items: Item[]): Record<string, Placement> {
     let cx = x
     for (const f of features) {
       out[f.id] = { x: cx, y: top + FEATURE_Y, w: CARD.feature.w, h: CARD.feature.h }
-      bottom = Math.max(bottom, top + FEATURE_Y + CARD.feature.h, stack((kids.get(f.id) ?? []).sort(liveFirst), cx, top + STORY_Y))
+      bottom = Math.max(bottom, top + FEATURE_Y + CARD.feature.h, stack((kids.get(f.id) ?? []).sort(order), cx, top + STORY_Y))
       cx += COL_PITCH
     }
     if (direct.length) bottom = Math.max(bottom, stack(direct, cx, top + FEATURE_Y))
     bandBottom = Math.max(bandBottom, bottom)
     x += width + EPIC_GAP
   }
-  if (orphans.length) stack(orphans.sort(liveFirst), 0, bandBottom + BAND_GAP)
+  if (orphans.length) stack(orphans.sort(order), 0, bandBottom + BAND_GAP)
   return out
 }

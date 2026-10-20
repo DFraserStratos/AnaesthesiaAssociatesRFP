@@ -1,22 +1,23 @@
 /** Stepping order for the question sheet: the Outstanding items list as filtered, with the open question anchored. */
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_CONFIG } from '../shared/config.ts'
 import type { QuestionStatus } from '../shared/types.ts'
 import { questionWalk, type QuestionFilters } from '../src/questionWalk.ts'
 import { question } from './fixtures.ts'
 
 const all: QuestionFilters = { owner: '', kind: '', query: '', showAnswered: true }
 const statuses: Record<string, QuestionStatus> = {
-  'OQ-02': 'Answered',
-  'OQ-03': 'Open',
-  'OQ-05': 'Confirm',
-  'OQ-10': 'Open',
-  'OQ-12': 'Open',
-  'OQ-13': 'Answered', // just answered in the sheet
-  'OQ-17': 'Open',
-  'OQ-20': 'Proposed',
+  'OQ-02': '4',
+  'OQ-03': '1',
+  'OQ-05': '2',
+  'OQ-10': '1',
+  'OQ-12': '1',
+  'OQ-13': '4', // just answered in the sheet
+  'OQ-17': '1',
+  'OQ-20': '3',
 }
 const qs = Object.entries(statuses).map(([id, status]) => question({ id, status, owner: id === 'OQ-10' ? 'Sam' : 'Client' }))
-const ids = (f: QuestionFilters, anchor?: { id: string; status: QuestionStatus }) => questionWalk(qs, f, anchor).map((q) => q.id)
+const ids = (f: QuestionFilters, anchor?: { id: string; status: QuestionStatus }) => questionWalk(DEFAULT_CONFIG, qs, f, anchor).map((q) => q.id)
 
 describe('questionWalk', () => {
   it('follows the list: Open, Awaiting confirmation, Proposed, then Answered', () => {
@@ -33,13 +34,13 @@ describe('questionWalk', () => {
   })
 
   it('keeps a question just answered where it was opened, between its old Open neighbours', () => {
-    const walk = ids(all, { id: 'OQ-13', status: 'Open' })
+    const walk = ids(all, { id: 'OQ-13', status: '1' })
     const at = walk.indexOf('OQ-13')
     expect([walk[at - 1], walk[at + 1]]).toEqual(['OQ-12', 'OQ-17'])
     expect(walk.filter((id) => id === 'OQ-13')).toHaveLength(1)
   })
 
   it('keeps an anchored question in the walk even with Answered hidden', () => {
-    expect(ids({ ...all, showAnswered: false }, { id: 'OQ-13', status: 'Open' })).toContain('OQ-13')
+    expect(ids({ ...all, showAnswered: false }, { id: 'OQ-13', status: '1' })).toContain('OQ-13')
   })
 })

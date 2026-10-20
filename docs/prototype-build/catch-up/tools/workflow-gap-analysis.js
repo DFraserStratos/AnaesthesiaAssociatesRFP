@@ -24,7 +24,8 @@ const OPT = { reuseMaps: !!args.reuseMaps, runDelta: args.runDelta !== false, ru
 const EPICS = args.epics.map(e => ({
   ...e,
   items: e.items.map(s => { const [id, status, oq] = s.split('|'); return { id, status, type: id.startsWith('EP') ? 'epic' : id.startsWith('FT') ? 'feature' : 'story', title: '', oqs: oq ? oq.split(',') : [] } }),
-  excluded: e.excluded.map(s => { const [id, status, swimlane] = s.split('|'); return { id, status, swimlane, title: '' } }),
+  // build-args.mjs gives why each is out: retired, or out-of-scope (the Future Work lane).
+  excluded: e.excluded.map(s => { const [id, reason, swimlane] = s.split('|'); return { id, reason, swimlane, title: '' } }),
 }))
 const CAT = 'requirements-board/requirements'
 const AN = 'docs/prototype-build/catch-up/analysis'
@@ -184,7 +185,7 @@ const deltaJob = () => agent(
 
 TASK: data-model delta. Compare the entity/relationship/lifecycle model the requirements now describe with the model the prototype implements.
 ${STABLE_IDS}
-1. Read "requirements-board/requirements/domain-model.md" fully, then skim every epic and feature file in "${CAT}/stories/" (EP-*.md, FT-*.md) and the stories that define entities, statuses or lifecycles. Ignore items with status Retired or Future.
+1. Read "requirements-board/requirements/domain-model.md" fully, then skim every epic and feature file in "${CAT}/stories/" (EP-*.md, FT-*.md) and the stories that define entities, statuses or lifecycles. Ignore retired items (status 6, Retired) and items in the Future Work lane.
 2. Read the prototype's types and lifecycles: aa-prototype/src/domain (types, lifecycle, billing, integrations), the store shape in aa-prototype/src/store/appStore.ts and related slices, and the seed's shape in aa-prototype/src/domain/seed.
 3. List every structural difference: new entities, changed entities (fields, identity, cardinality), removed/renamed entities, relationships, lifecycle/status machines, and model-level rules (who owns what, what is derived vs stored). Skip cosmetic naming unless it changes meaning.
 These deltas decide the order of the rebuild (model changes ripple into store, seed and every screen), so be precise about impact and whether a delta must precede other work.
@@ -215,7 +216,7 @@ For EACH item: read the requirement (description, acceptance criteria, technical
 
 ${VERDICTS}
 
-Status handling: grade every item regardless of status (Confirmed, Proposed, Verify, Open). For Open/Verify items or items with unresolved questions, grade against the text as written and mention the uncertainty in summary.
+Status handling: grade every item regardless of status (1 Proposed, 2 Open, 3 Verify, 4 Agreed, 5 Confirmed; status files hold these numbers, defined in requirements-board/requirements/board.config.json). For Open or Verify items or items with unresolved questions, grade against the text as written and mention the uncertainty in summary.
 
 Return exactly one entry per item listed above (${items.length} items), same IDs. In epic_observations, note structural changes, dependencies on other epics, and any scripted demo beats (docs/demo-guide/03-demo-script.md) this epic's gaps would break or change.`
 
@@ -233,7 +234,7 @@ ${VERDICTS}
 How to attack each verdict:
 - Missing: search hard for an implementation the reviewer missed (other names, older RFP vocabulary, store actions, seed data, demo panel, shared components). If found, correct to Matches/Partial/Contradicts.
 - Partial / Contradicts: check every missing_or_wrong point against both the requirement text and the code (and, where the text is ambiguous, the passages its sources cite). Drop points that are not real; add points the reviewer missed. Decide whether Contradicts is really Partial (nothing wrong, only missing) or vice versa.
-- Matches: re-check EVERY Matches item whose status is Confirmed, and at least half of the rest. Look for acceptance criteria not satisfied or behaviour that has quietly changed. A false Matches hides work; treat it as seriously as a false gap.
+- Matches: re-check EVERY Matches item whose status is Agreed (4) or Confirmed (5), and at least half of the rest. Look for acceptance criteria not satisfied or behaviour that has quietly changed. A false Matches hides work; treat it as seriously as a false gap.
 - OutOfScope: challenge it: could a demo-trigger button represent it? If so, re-grade and propose the trigger.
 - Grouping: confirm the body states no rule of its own.
 Also sanity-check size, surfaces and demo_trigger.
@@ -251,9 +252,9 @@ ${READ_MAPS}
 
 Check four things:
 1. RetiredStillImplemented: these catalogue items are Retired; read each and find whether the prototype still implements or showcases the retired behaviour:
-${EPICS.flatMap(e => e.excluded).filter(x => x.status === 'Retired').map(x => `- ${x.id} ${x.title}`).join('\n')}
-2. FutureStillShowcased: these are Future / Future Work (not in current scope); does the prototype prominently showcase them in a way that would mislead a demo audience about current scope?
-${EPICS.flatMap(e => e.excluded).filter(x => x.status !== 'Retired').map(x => `- ${x.id} [${x.status}${x.swimlane ? ', ' + x.swimlane : ''}] ${x.title}`).join('\n')}
+${EPICS.flatMap(e => e.excluded).filter(x => x.reason === 'retired').map(x => `- ${x.id} ${x.title}`).join('\n')}
+2. FutureStillShowcased: these are in the Future Work lane (not in current scope); does the prototype prominently showcase them in a way that would mislead a demo audience about current scope?
+${EPICS.flatMap(e => e.excluded).filter(x => x.reason !== 'retired').map(x => `- ${x.id} [${x.reason}${x.swimlane ? ', ' + x.swimlane : ''}] ${x.title}`).join('\n')}
 3. DecisionSuperseded: read the Decisions log in docs/prototype-build/PROGRESS.md (the "## Decisions log" section, roughly lines 54 to 186) and the "Discovered for later" handoff list. For each ruling that the current catalogue now contradicts, record it: the prototype follows a reading that has since changed. Cite the catalogue item that supersedes it.
 4. UnbackedBehaviour: prototype business behaviour (rules, statuses, screens) that no in-scope catalogue item supports AND that conflicts with or would mislead against the catalogue. Demo-only simulators and presenter tooling are fine; do not list them unless they model an external system in a way the catalogue now contradicts.
 
@@ -262,7 +263,7 @@ Return the structured findings (verify_outcome and verify_note as "").`
 
 const verifyReversePrompt = draft => `${CTX}
 
-TASK: ADVERSARIAL VERIFIER for a reverse check (things the prototype does that are now wrong or unwanted). Try to refute each finding from the catalogue files and the code: is the retired/superseded behaviour really in the prototype? Does the catalogue really contradict the old decision (read the catalogue item cited, and look for other in-scope items that might support the prototype's behaviour)? Is the recommended action right? Correct or drop findings that do not survive, and ADD any the reverse checker clearly missed (retired items: ${EPICS.flatMap(e => e.excluded).filter(x => x.status === 'Retired').map(x => x.id).join(', ')}; the Decisions log is in docs/prototype-build/PROGRESS.md, "## Decisions log").
+TASK: ADVERSARIAL VERIFIER for a reverse check (things the prototype does that are now wrong or unwanted). Try to refute each finding from the catalogue files and the code: is the retired/superseded behaviour really in the prototype? Does the catalogue really contradict the old decision (read the catalogue item cited, and look for other in-scope items that might support the prototype's behaviour)? Is the recommended action right? Correct or drop findings that do not survive, and ADD any the reverse checker clearly missed (retired items: ${EPICS.flatMap(e => e.excluded).filter(x => x.reason === 'retired').map(x => x.id).join(', ')}; the Decisions log is in docs/prototype-build/PROGRESS.md, "## Decisions log").
 
 ${READ_MAPS}
 
@@ -273,7 +274,7 @@ Return the final list. verify_outcome per finding: upheld | corrected | added (d
 
 const verifyDeltaPrompt = draft => `${CTX}
 
-TASK: ADVERSARIAL VERIFIER for a data-model delta (structural differences between the model the requirements describe and the prototype's model). For each delta, re-read the catalogue refs and the prototype refs and try to refute it: does the catalogue really say that (and is it in scope: not Retired/Future)? Does the prototype really lack/differ? Is the impact right? Correct or drop deltas that do not survive; ADD structural deltas the author missed (read "requirements-board/requirements/domain-model.md" and aa-prototype/src/domain types yourself).
+TASK: ADVERSARIAL VERIFIER for a data-model delta (structural differences between the model the requirements describe and the prototype's model). For each delta, re-read the catalogue refs and the prototype refs and try to refute it: does the catalogue really say that (and is it in scope: not retired or in the Future Work lane)? Does the prototype really lack/differ? Is the impact right? Correct or drop deltas that do not survive; ADD structural deltas the author missed (read "requirements-board/requirements/domain-model.md" and aa-prototype/src/domain types yourself).
 
 Draft deltas (JSON):
 ${JSON.stringify(draft)}
@@ -348,7 +349,7 @@ Write summary_md (Markdown, headings at ### level and below, about 1,000 to 1,80
 - Things to remove or rework (from the reverse check).
 - Demo impact: which scripted beats S1 to S5 (docs/demo-guide/03-demo-script.md; read it) break or change.
 - Demo-trigger buttons: the pattern the product owner asked for (screen-contextual buttons in the top control area), how many items need one, and the main clusters.
-- Uncertainty: where unresolved questions (OQ-nn) or Open/Verify statuses make a gap unsafe to build yet.
+- Uncertainty: where unresolved questions (OQ-nn) or Open (2) or Verify (3) statuses make a gap unsafe to build yet.
 Refer to items by ID only (links are added later). Also return themes as structured data.
 
 Verified item gradings:

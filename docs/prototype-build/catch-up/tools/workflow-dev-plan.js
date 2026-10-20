@@ -25,7 +25,7 @@ const CTX = `You are one agent planning the "requirements catch-up" of the Anaes
   - analysis/prototype-map-*.md: an index of the prototype's code (screens, store actions, domain types, seed, harness bar and demo controls).
   - analysis/domain-model-delta.md, analysis/reverse-check.md.
 - The product owner's rules for this plan:
-  1. Bring the prototype up to the current catalogue. Future and Retired items are excluded (and retired behaviour still in the prototype is removed or reworked, per the RV findings).
+  1. Bring the prototype up to the current catalogue. The Future Work lane and retired items are excluded (and retired behaviour still in the prototype is removed or reworked, per the RV findings).
   2. Anything that cannot be demoed through normal use (automatic, scheduled, backend, external-system events) gets a demo-trigger BUTTON in the control area at the top of the screen (the prototype's harness bar), shown ONLY on the screen where it is relevant. The PWA build (dist-pwa, no harness bar) needs an equivalent; check analysis/prototype-map-shell-demo-pwa.md.
   3. New phases are numbered from 14 (00 to 13 are done). Each phase is sized for one focused Claude Code session (at most two), with one coherent deliverable, like the original phases.
 - Project rules (CLAUDE.md, which you already have): mock backend only, store hooks + audited mutate(), determinism (demo clock, seeded RNG), bump PERSIST_VERSION on seed changes, pure billing maths with Vitest tests, design files in docs/design are authoritative (crimson identity only, teal the only action colour), no en/em dashes in app copy, finish green (npm run build, npm run build:pwa, npx vitest run), the demo guide (docs/demo-guide) mirrors scripted beats, agents never commit.
@@ -80,7 +80,7 @@ const planningGuidance = `Planning guidance:
 - An early foundation phase should build the screen-contextual demo-trigger mechanism in the harness bar (and its PWA equivalent) so later phases just register triggers.
 - Group remaining gaps by coherent deliverable and surface (a phase that touches one app area and one domain slice beats one that scatters), respecting dependencies between epics.
 - Fold the RV removals/reworks into the phase that touches that code, unless a clean-up phase is clearly better.
-- Settledness: Confirmed items first; Open/Verify items and items with unresolved OQs go later, or stay in their natural phase but are flagged "confirm before building" (list the OQs in blocked_by_oqs). Park only when there is no safe interim.
+- Settledness: Agreed (4) or Confirmed (5) items first; Open (2) and Verify (3) items and items with unresolved OQs go later, or stay in their natural phase but are flagged "confirm before building" (list the OQs in blocked_by_oqs). Park only when there is no safe interim.
 - The demo guide (docs/demo-guide, S1 to S5) must be updated where beats change: either inside each phase or in a closing demo phase that rewrites the run sheet; decide, and say so.
 - Every unit in the list below must appear in exactly one phase's covers or in parked. Matches/Grouping items are not units.
 Units to cover (${UNITS.length}): ${UNITS.join(', ')}`
@@ -116,7 +116,7 @@ TASK: you are an independent critic of the catch-up phase outline below (also wr
 - Ordering: does any phase depend on model/store work that lands later? Will the app stay green and demoable after every phase?
 - Sizing: is any phase more than two focused sessions of work given the gap sizes (gaps.json "size") and the code involved? Is any phase trivially small and better merged?
 - Coherence: does each phase have one deliverable a presenter could show?
-- Risk: is unsettled work (Open/Verify, unresolved OQs) placed where rework is cheap?
+- Risk: is unsettled work (Open (2) or Verify (3) status, unresolved OQs) placed where rework is cheap?
 - The demo-trigger mechanism, the PWA equivalent, removal of retired behaviour, and demo-guide updates: all planned?
 - Anything important in GAP-ANALYSIS.md's themes that the outline misses or under-weights.
 Return verdict "revise" only for issues that materially improve the plan.
@@ -198,7 +198,7 @@ Research before writing:
 1. Write "${ROOT}/${phaseFile(p)}" in the house style of the original phase docs, with these sections:
    - Title "# Phase ${p.num} · ${p.title}", then **Requirements covered:** every covered catalogue ID as a Markdown link to its file (relative from the phase doc: ../../../../requirements-board/requirements/stories/<ID>.md), plus DM-/RV- ids linking to ../analysis/domain-model-delta.md and ../analysis/reverse-check.md; **Depends on:**; **Estimated:**.
    - ## Goal
-   - ## Before you start: drift check (run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <the covered IDs and linked OQs, comma separated>; if an item changed, re-read it and adjust the work items; if an item is now Retired or Future, drop it and note that in PROGRESS.md). Name any unresolved OQs and what to do if still open (safe interim behaviour).
+   - ## Before you start: drift check (run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <the covered IDs and linked OQs, comma separated>; if an item changed, re-read it and adjust the work items; if an item is now retired or in the Future Work lane, drop it and note that in PROGRESS.md). Name any unresolved OQs and what to do if still open (safe interim behaviour).
    - ## Reference: design files, catalogue items, analysis files, and code entry points.
    - ## Work items: numbered, concrete, in build order; each names the files/store actions/seed structures to change and which catalogue acceptance criteria it satisfies. Model/store/seed first, then UI. Include PERSIST_VERSION bumps, Vitest tests for any domain or billing rule, and removal/rework of retired behaviour where covered.
    - ## Demo triggers: each screen-contextual harness-bar button this phase adds (label, screen, effect), plus the PWA equivalent where the screen is mobile.

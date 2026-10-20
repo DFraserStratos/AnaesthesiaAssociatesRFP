@@ -19,7 +19,8 @@
     "links:index": "node scripts/link-index.ts",
     "links:apply": "node scripts/apply-links.ts",
     "artifact:new": "node scripts/new-artifact.ts",
-    "source": "node scripts/resolve-source.ts"
+    "source": "node scripts/resolve-source.ts",
+    "statuses:recode": "node scripts/recode-statuses.ts"
   },
   "dependencies": {
     "@fontsource/hanken-grotesk": "^5.3.0",

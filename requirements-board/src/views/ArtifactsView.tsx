@@ -131,7 +131,7 @@ function Plate({ rec, ix, query }: { rec: ArtifactRec; ix: ArtifactIndex; query:
             {artifactDate(a.date)}
           </time>
         )}
-        {a.status !== BASELINE_ARTIFACT_STATUS && <StatusLabel status={a.status} />}
+        {a.status !== BASELINE_ARTIFACT_STATUS && <StatusLabel kind="artifact" status={a.status} />}
       </span>
     </button>
   )
@@ -157,7 +157,7 @@ function Row({ rec, ix, query }: { rec: ArtifactRec; ix: ArtifactIndex; query: s
       </span>
       {/* Right-aligned: what is only sometimes there (status, counts) to the left, the kind and date always in the same place at the edge. */}
       <span className="artifact-row-meta">
-        {a.status !== BASELINE_ARTIFACT_STATUS && <StatusLabel status={a.status} />}
+        {a.status !== BASELINE_ARTIFACT_STATUS && <StatusLabel kind="artifact" status={a.status} />}
         <Counts rec={rec} ix={ix} />
         <span className="artifact-row-kind">
           <ArtifactIcon kind={a.kind} size={13} />

@@ -315,7 +315,7 @@ const glanceSection = `
 <section>
   <h2>The gap at a glance</h2>
   <div class="rule"></div>
-  <p class="prose-p">Every in-scope epic, feature and story, graded against the running prototype and re-checked by an adversarial verifier. Retired and Future items are excluded (${esc((gaps.excluded ?? []).length)}). Plus ${esc((gaps.dataModelDeltas ?? []).length)} data-model deltas (DM) and ${esc((gaps.reverseFindings ?? []).length)} reverse-check findings (RV): behaviour the prototype still has that the catalogue has retired or superseded.</p>
+  <p class="prose-p">Every in-scope epic, feature and story, graded against the running prototype and re-checked by an adversarial verifier. Retired items and the Future Work lane are excluded (${esc((gaps.excluded ?? []).length)}). Plus ${esc((gaps.dataModelDeltas ?? []).length)} data-model deltas (DM) and ${esc((gaps.reverseFindings ?? []).length)} reverse-check findings (RV): behaviour the prototype still has that the catalogue has retired or superseded.</p>
   ${legend()}
   <div class="tscroll">
   <table class="scorecard epics">

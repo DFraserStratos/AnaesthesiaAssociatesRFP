@@ -8,7 +8,8 @@ import type { Node, NodeProps } from '@xyflow/react'
 import { Plus } from 'lucide-react'
 import { memo, useState } from 'react'
 import { guarded, useOpen } from '../nav.ts'
-import { useCatalogue } from '../store.ts'
+import { defaultStatus } from '../../shared/statuses.ts'
+import { useCatalogue, useConfig } from '../store.ts'
 
 export type LaneNodeType = Node<{ w: number; h: number }, 'lane'>
 export type AddNodeType = Node<{ w: number; parent: string; swimlane: string | null; label: string }, 'add'>
@@ -22,13 +23,14 @@ export const LaneNode = memo(function LaneNode({ data }: NodeProps<LaneNodeType>
 /** Makes an untitled story in this column and lane, then opens it in Edit (the same flow as the teal plus). */
 export const AddNode = memo(function AddNode({ data }: NodeProps<AddNodeType>) {
   const createItem = useCatalogue((s) => s.createItem)
+  const config = useConfig()
   const open = useOpen()
   const [busy, setBusy] = useState(false)
   const add = () =>
     guarded(async () => {
       setBusy(true)
       try {
-        const rec = await createItem({ type: 'story', parent: data.parent, swimlane: data.swimlane, title: 'Untitled', status: 'Proposed' })
+        const rec = await createItem({ type: 'story', parent: data.parent, swimlane: data.swimlane, title: 'Untitled', status: defaultStatus(config, 'item') })
         open.item(rec.data.id, { edit: true })
       } catch (e) {
         useCatalogue.setState({ moveError: `Story not created: ${(e as Error).message}` })

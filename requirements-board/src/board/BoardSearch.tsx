@@ -1,10 +1,10 @@
 import { Search } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { defaultStatus } from '../../shared/statuses.ts'
 import type { Item } from '../../shared/types.ts'
 import { Highlight, StatusLabel, TypeIcon } from '../components/bits.tsx'
 import { lineageTitles, matchContext } from '../itemSearch.ts'
-import type { Index } from '../store.ts'
-import { BASELINE_STATUS } from '../vocab.ts'
+import { useConfig, type Index } from '../store.ts'
 
 /** Rows shown at once: past this the list asks for another word rather than scrolling forever. */
 const SHOWN = 50
@@ -148,13 +148,14 @@ export function BoardSearch({
 function Row({ id, n, item, index, query, active, onPick }: { id: string; n: number; item: Item; index: Index; query: string; active: boolean; onPick: () => void }) {
   const context = matchContext(index, item, query)
   const lineage = lineageTitles(index, item)
+  const config = useConfig()
   return (
     <button id={id} data-row={n} type="button" role="option" tabIndex={-1} aria-selected={active} className={`search-row${active ? ' active' : ''}`} title={item.id} onMouseDown={(e) => e.preventDefault()} onClick={onPick}>
       <TypeIcon type={item.type} />
       <span className="search-row-name">
         <Highlight text={item.title} query={query} />
       </span>
-      {item.status !== BASELINE_STATUS ? <StatusLabel item status={item.status} /> : <span />}
+      {item.status !== defaultStatus(config, 'item') ? <StatusLabel kind="item" status={item.status} /> : <span />}
       {context ? (
         <span className="search-row-where">
           {context.label}: <Highlight text={context.text} query={query} />

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_CONFIG } from '../shared/config.ts'
 import type { Item } from '../shared/types.ts'
 import { matchContext, rankMatches, searchItems } from '../src/itemSearch.ts'
 import { item } from './fixtures.ts'
@@ -10,10 +11,10 @@ const items: Item[] = [
   item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', title: 'Settings', order: 2 }),
   item({ id: 'FT-02.1', type: 'feature', parent: 'EP-02', title: 'Settings', order: 1 }),
   item({ id: 'FT-02.2', type: 'feature', parent: 'EP-02', title: 'Invoice calendar sync', order: 2 }),
-  item({ id: 'FT-02.3', type: 'feature', parent: 'EP-02', title: 'Old invoices', status: 'Retired', order: 3 }),
+  item({ id: 'FT-02.3', type: 'feature', parent: 'EP-02', title: 'Old invoices', status: '5', order: 3 }),
   item({ id: 'US-01.1.1', parent: 'FT-01.1', title: 'Mark a day unavailable' }),
 ]
-const index = { items, byId: new Map(items.map((i) => [i.id, i])) }
+const index = { items, byId: new Map(items.map((i) => [i.id, i])), config: DEFAULT_CONFIG }
 const ids = (q: string, opts?: Parameters<typeof searchItems>[2]) => searchItems(index, q, opts).map((i) => i.id)
 
 describe('searchItems', () => {

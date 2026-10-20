@@ -15,6 +15,8 @@
  *   GET  /api/artifacts/:id/history  an artifact's timeline from git: its sidecar and its file
  *   PUT  /api/artifacts/:id      { record, baseRev }  its details only (title, kind, status, date, author,
  *                                area, sources, description); its file, regions and source stay as on disk
+ *   PUT  /api/config             { statuses?, questionStatuses? }  replaces those lists in board.config.json (the
+ *                                rest of the file is kept); 422 if a list breaks the rules or drops a status in use
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null }
  *                                positions are a patch (null restores the story-map place); lanes replace the
  *                                list; firstLane renames the implicit first lane (null: back to Unassigned)
@@ -23,11 +25,13 @@
  * ago is never overwritten), checks the record would survive a round trip,
  * and runs the integrity rules on exactly what will be written.
  */
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import { artifactRoundTripProblems, itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion, withArtifactDetails } from '../shared/files.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
-import { buildArtifactTimeline, buildTimeline } from '../shared/history.ts'
+import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/history.ts'
+import { defaultStatus, normaliseStatus, readStatusList, statusLabel, type StatusDef, type StatusKind } from '../shared/statuses.ts'
 import { parseArtifact } from '../shared/files.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
@@ -36,6 +40,8 @@ import {
   FileExistsError,
   artifactCheck,
   artifactSidecarPath,
+  configPath,
+  formatJson,
   deleteItemAssets,
   deleteItemFile,
   deleteQuestionFile,
@@ -51,8 +57,11 @@ import {
   readItemFile,
   readLayout,
   readQuestionFile,
+  readConfig,
+  readRecodes,
   takenIds,
   writeArtifact,
+  writeAtomic,
   writeItem,
   writeLayout,
   writeQuestion,
@@ -273,9 +282,13 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         gitHistory(itemPath(id, root)).catch(() => ({ versions: [], dirty: false, working: null })),
         gitDirty(layoutPath(root)),
         gitShots(root, id).catch(() => ({ commits: [], dirty: false })),
-      ]).then(([git, layoutDirty, shots]) => ({
-        entries: buildTimeline(journal.read(id), { ...git, layoutDirty, screenshots: shots.commits, screenshotsDirty: shots.dirty }),
-      }))
+      ]).then(([git, layoutDirty, shots]) => {
+        // Versions from before a status recode store the old value: compare as today's codes, so a relabel is no change.
+        const recodes = readRecodes(root)
+        const now = (it: Item): Item => ({ ...it, status: normaliseStatus(recodes, 'item', it.status) })
+        const diff = (a: Item, b: Item) => diffItems(now(a), now(b))
+        return { entries: buildTimeline(journal.read(id), { ...git, layoutDirty, screenshots: shots.commits, screenshotsDirty: shots.dirty }, diff) }
+      })
     }
 
     m = /^\/api\/items\/([^/]+)$/.exec(path)
@@ -371,7 +384,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
             throw new HttpError(422, (e as Error).message)
           }
           const item = prepareItem({
-            status: 'Proposed',
+            status: defaultStatus(state.config, 'item'),
             components: parent?.components ?? [],
             ...body,
             id,
@@ -414,7 +427,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         () => new Set([...takenIds(questionsDir(root)), ...Object.keys(state.questions)]),
         (taken) => {
           const q = prepareQuestion({
-            status: 'Open',
+            status: defaultStatus(state.config, 'question'),
             ...body,
             id: nextQuestionId(taken),
             title: String(body.title ?? '').trim() || 'Untitled question',
@@ -426,6 +439,45 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         },
         (q) => commitQuestion(q, true),
       )
+    }
+
+    if (path === '/api/config' && method === 'PUT') {
+      // Patch the file as it is on disk now: only the status lists change, every other setting stays as written.
+      let raw: Record<string, unknown> = {}
+      try {
+        raw = JSON.parse(readFileSync(configPath(root), 'utf8')) as Record<string, unknown>
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw new HttpError(422, 'board.config.json cannot be read; fix it on disk first')
+      }
+      const next = { ...raw }
+      const problems: string[] = []
+      const fields: [string, StatusKind, { status: string }[]][] = [
+        ['statuses', 'item', itemList()],
+        ['questionStatuses', 'question', questionList()],
+      ]
+      for (const [field, kind, records] of fields) {
+        if (body[field] === undefined) continue
+        const { list, problems: bad } = readStatusList(body[field], kind, field)
+        problems.push(...bad)
+        // A status still on a card can't go: its files would name a status the board no longer knows.
+        const kept = new Set(list.map((d) => d.code))
+        const dropped = new Map<string, number>()
+        for (const r of records) if (!kept.has(r.status)) dropped.set(r.status, (dropped.get(r.status) ?? 0) + 1)
+        for (const [code, n] of dropped) {
+          const was = (kind === 'item' ? state.config.statuses : state.config.questionStatuses).some((d) => d.code === code)
+          if (was) problems.push(`${field}: ${statusLabel(state.config, kind, code)} is still used by ${n} ${kind === 'item' ? 'item' : 'question'}${n === 1 ? '' : 's'}`)
+        }
+        next[field] = list.map(clean)
+      }
+      if (problems.length) throw new HttpError(422, problems.join('\n'))
+      writeAtomic(configPath(root), formatJson(next))
+      const read = readConfig(root)
+      state.config = read.config
+      state.parseIssues = [...state.parseIssues.filter((i) => i.id !== 'config'), ...read.problems.map((message) => ({ severity: 'error' as const, id: 'config', message }))]
+      refreshIssues()
+      emit({ kind: 'config', config: state.config })
+      emit({ kind: 'issues', issues: state.issues })
+      return state.config
     }
 
     if (path === '/api/layout' && method === 'PUT') {
@@ -504,3 +556,14 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 }
 
 export type CatalogueApi = ReturnType<typeof createCatalogueApi>
+
+/** A status as the config file holds it: its code a bare number, no empty fields. */
+function clean(d: StatusDef): Record<string, unknown> {
+  const out: Record<string, unknown> = { code: Number(d.code), label: d.label }
+  if (d.heading) out.heading = d.heading
+  out.help = d.help
+  out.tone = d.tone
+  if (d.role) out.role = d.role
+  if (d.settle) out.settle = true
+  return out
+}

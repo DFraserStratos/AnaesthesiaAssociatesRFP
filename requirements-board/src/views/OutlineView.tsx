@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronRight, ImageIcon, MessageCircleQuestion, Search } from 'lucide-react'
 import { useMemo, useState, type KeyboardEvent } from 'react'
+import { statusClasses } from '../../shared/statuses.ts'
 import type { Item } from '../../shared/types.ts'
 import { Glyph, Highlight, StatusLabel, TypeIcon } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
 import { descendantsOf, matchesFilters, openQuestionsFor, useShownIndex, useView, type Index } from '../store.ts'
-import { statusClass, typeClass } from '../vocab.ts'
+import { typeClass } from '../vocab.ts'
 
 const COLLAPSE_KEY = 'requirements-board:outline-collapsed'
 function readCollapsed(): Set<string> {
@@ -184,7 +185,7 @@ function OutlineRow({
       aria-expanded={hasKids ? !collapsed : undefined}
       tabIndex={tabbable ? 0 : -1}
       onFocus={onFocus}
-      className={`tree-row ${item.type} ${statusClass(item.status)}`} style={{ ['--depth' as string]: depth }} onClick={onOpen} onKeyDown={onKey}>
+      className={`tree-row ${item.type} ${statusClasses(index.config, 'item', item.status)}`} style={{ ['--depth' as string]: depth }} onClick={onOpen} onKeyDown={onKey}>
       <span
         className="twisty"
         onClick={(e) => {
@@ -215,7 +216,7 @@ function OutlineRow({
           <Glyph key={c} component={c} />
         ))}
       </span>
-      <StatusLabel item status={item.status} />
+      <StatusLabel kind="item" status={item.status} />
     </div>
   )
 }

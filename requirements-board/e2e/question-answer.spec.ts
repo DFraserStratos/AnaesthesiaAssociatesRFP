@@ -15,9 +15,9 @@ import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
 test.describe.configure({ mode: 'serial' })
 
 /** Two Open items, and one already Confirmed (an answer can still send it back to Verify). */
-const STARTING = { 'FT-01.2': 'Open', 'FT-01.3': 'Open', 'FT-01.4': 'Confirmed' } as const
+const STARTING = { 'FT-01.2': '2', 'FT-01.3': '2', 'FT-01.4': '4' } as const
 const AFFECTS = Object.keys(STARTING) as (keyof typeof STARTING)[]
-const question: Question = { id: 'OQ-01', kind: 'question', title: 'Still open', status: 'Open', owner: '', question: 'Is this settled?', answer: '', affects: AFFECTS, sources: [], extra: {} }
+const question: Question = { id: 'OQ-01', kind: 'question', title: 'Still open', status: '1', owner: '', question: 'Is this settled?', answer: '', affects: AFFECTS, sources: [], extra: {} }
 const onDisk = (id: string) => parseItem(readFileSync(join(FIXTURE_DIR, 'stories', `${id}.md`), 'utf8'))
 
 test.beforeEach(async ({ page, request }) => {
@@ -59,9 +59,9 @@ test('Open items start at Verify, a Confirmed one stays, and Update saves each p
   await row('Feature 1.4').getByRole('button', { name: 'Verify' }).click()
   await offer.getByRole('button', { name: 'Update 3 items' }).click()
   await expect(offer).toHaveCount(0)
-  await expect.poll(() => onDisk('FT-01.2').status).toBe('Verify')
-  expect(onDisk('FT-01.3').status).toBe('Confirmed')
-  expect(onDisk('FT-01.4').status).toBe('Verify')
+  await expect.poll(() => onDisk('FT-01.2').status).toBe('3')
+  expect(onDisk('FT-01.3').status).toBe('4')
+  expect(onDisk('FT-01.4').status).toBe('3')
 })
 
 test('an item kept at its own status is not saved, and nothing changed leaves nothing to update', async ({ page }) => {

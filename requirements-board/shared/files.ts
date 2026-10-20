@@ -266,11 +266,14 @@ const withExtra = (meta: Record<string, unknown>, extra: Record<string, unknown>
   return meta
 }
 
+/** A status code is a whole number: written bare (`status: 4`), not as a quoted string. */
+const statusValue = (s: string): string | number => (/^[1-9]\d*$/.test(s) ? Number(s) : s)
+
 export function serialiseItem(item: Item): string {
   const meta: Record<string, unknown> = { id: item.id, type: item.type }
   if (item.parent) meta.parent = item.parent
   meta.title = item.title
-  meta.status = item.status
+  meta.status = statusValue(item.status)
   meta.components = item.components
   meta.sources = item.sources
   meta.order = item.order
@@ -295,7 +298,7 @@ export function serialiseQuestion(q: Question): string {
     id: q.id,
     kind: q.kind,
     title: q.title,
-    status: q.status,
+    status: statusValue(q.status),
     owner: q.owner,
     affects: q.affects,
     sources: q.sources,

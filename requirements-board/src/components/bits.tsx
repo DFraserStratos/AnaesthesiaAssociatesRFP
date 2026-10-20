@@ -1,10 +1,11 @@
 import { Camera, FileText, MessagesSquare, Monitor, NotebookPen, PanelsTopLeft, Workflow } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { componentCodeIn, statusLabelIn } from '../../shared/config.ts'
-import { TYPE_LABEL, type Artifact, type ArtifactKind, type Item, type ItemType } from '../../shared/types.ts'
+import { componentCodeIn } from '../../shared/config.ts'
+import { statusClasses, statusLabel, type StatusKind } from '../../shared/statuses.ts'
+import { TYPE_LABEL, type Artifact, type ArtifactKind, type ArtifactStatus, type Item, type ItemType } from '../../shared/types.ts'
 import { recordUrl } from '../nav.ts'
 import { useConfig } from '../store.ts'
-import { ARTIFACT_KIND_LABEL, statusClass, typeClass } from '../vocab.ts'
+import { ARTIFACT_KIND_LABEL, artifactStatusClass, typeClass } from '../vocab.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
 export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number }) {
@@ -55,12 +56,13 @@ export function Lineage({ chain, onPick }: { chain: Item[]; onPick?: (id: string
   )
 }
 
-/** A status pill. `item` marks an item status, which the project may reword (`board.config.json`); question and artifact statuses show as stored. */
-export function StatusLabel({ status, item = false, className = '', children }: { status: string; item?: boolean; className?: string; children?: ReactNode }) {
+/** A status pill. Item and question statuses take their label and tone from the project's config (`board.config.json`); artifact statuses are fixed. */
+export function StatusLabel({ status, kind, className = '', children }: { status: string; kind: StatusKind | 'artifact'; className?: string; children?: ReactNode }) {
   const config = useConfig()
+  const artifact = kind === 'artifact'
   return (
-    <span className={`status ${statusClass(status)} ${className}`}>
-      {item ? statusLabelIn(config, status) : status}
+    <span className={`status ${artifact ? artifactStatusClass(status as ArtifactStatus) : statusClasses(config, kind, status)} ${className}`}>
+      {artifact ? status : statusLabel(config, kind, status)}
       {children}
     </span>
   )
