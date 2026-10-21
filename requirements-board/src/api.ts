@@ -9,6 +9,12 @@ export interface BatchChange {
   patch: Partial<Item>
 }
 
+/** VOICE.md as it is on disk, with the revision a save must start from; null when there is none. */
+export interface Voice {
+  text: string | null
+  rev: string | null
+}
+
 export class ApiError extends Error {
   status: number
   current?: Rev<unknown>
@@ -32,6 +38,9 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const api = {
   catalogue: () => call<CatalogueSnapshot>('GET', '/api/catalogue'),
+  voice: () => call<Voice>('GET', '/api/voice'),
+  /** Writes VOICE.md; refused with a 409 (and the file as it is now) if it changed on disk since baseRev. */
+  putVoice: (text: string, baseRev: string | null) => call<Voice>('PUT', '/api/voice', { text, baseRev }),
   putItem: (record: Item, baseRev?: string) => call<Rev<Item>>('PUT', `/api/items/${encodeURIComponent(record.id)}`, { record, baseRev }),
   /** The card's timeline, newest first: the dev server's change journal, backfilled from git. */
   itemHistory: (id: string) => call<{ entries: TimelineEntry[] }>('GET', `/api/items/${encodeURIComponent(id)}/history`),

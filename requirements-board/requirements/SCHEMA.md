@@ -16,6 +16,7 @@ requirements-board/requirements/
   notes/YYYY-MM-DD-<slug>.md                       meeting notes, Q&A: the evidence sources cite (see notes/README.md)
   changes/YYYY-MM-DD-<slug>.md                     one change log per requirements update (see changes/README.md)
   board-layout.json                                Freeform card positions and the Mapped board's lane list (written by the board)
+  VOICE.md                                         how requirements are written: the words, not the format (edited on Settings)
   board.config.json                                the project's vocabulary: name, components, screenshot apps, status wording, capture
   capture/                                         screenshot capture: recipes/<ID>.json, the report, project steps (optional)
   assets/<ID>/<name>.png                           screenshots for an item
@@ -72,7 +73,7 @@ About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 | `id` | `EP-nn` epic, `FT-nn.m` feature, `US-nn.m.k` story (`US-nn.0.k` for a story directly under an epic). Must match the file name. Never reused, never renumbered. |
 | `type` | `epic`, `feature` or `story`. Cannot change. |
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
-| `title` | Short name, sentence case. |
+| `title` | Short name, sentence case (`VOICE.md`). |
 | `status` | A status code from `statuses` in `board.config.json`: a whole number from 1 (`status: 4`). **The number means whatever `board.config.json` says it means** (label, help, tone, role, settle) and differs between projects: never infer a status from its number, look it up in the config (or the board's Settings page). This project's list is in `README.md`. Labels, help, colour and order are config, so renaming a status touches no file. Where a requirement came from is not a status: that is `sources`. |
 | `components` | Should list one or more of the `components` in `board.config.json` (an empty list is a warning; with none configured, any name is accepted). |
 | `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop #3"` (a file in `notes/`, at a numbered point), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. Each source opens the artifact spot it cites (see Sources below); one that looks like a citation but resolves to nothing is a `check` warning. |
@@ -82,9 +83,8 @@ About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 | `artifacts` | Optional: artifacts this item points at, as `AR-nn` (the whole artifact) or `AR-nn#spot` (a highlighted spot in it: a named region, a PDF page `p27`, a Markdown heading slug, or a line range `L27-33`). Shown on the item's sheet under Artifacts, and on the artifact's Linked tab. Each must exist (`check` errors otherwise); linking to a Superseded artifact warns. Agents add these; the board keeps them on every save. Omitted when empty. See Artifact file below. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is one of the `screenshotApps` keys in `board.config.json` and groups the board's gallery; a shot's `viewport` should match its app's. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the board's capture runner (`scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
-Body: the description (plain language: who or what acts and what happens, then why in its own
-paragraph, a blank line between paragraphs, bullets instead of long comma chains; not the "As a ...,
-I ..., so that ..." template), then up to three optional
+Body: the description, written in the catalogue's voice (`VOICE.md`: who or what acts and what
+happens, then why; not the "As a ..., I ..., so that ..." template), then up to three optional
 sections, written in this order: `## Acceptance criteria` (one criterion per list item, Given/When/Then
 where it helps), `## Technical discussion`, `## Notes`. Every type (epic, feature, story) may have
 them; an empty section is not written. The board reads the sections in any order, but writes them in

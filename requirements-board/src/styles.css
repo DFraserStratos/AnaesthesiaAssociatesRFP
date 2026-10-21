@@ -4258,6 +4258,61 @@ mark {
   width: 100%;
   text-transform: uppercase;
 }
+.voice-doc {
+  max-height: 420px;
+  overflow: auto;
+  padding: 4px 22px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+}
+.voice-doc .prose h2 {
+  margin: 16px 0 6px;
+  font-size: 14px;
+}
+.voice-doc .prose {
+  font-size: 13.5px;
+}
+.voice-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.voice-text {
+  width: 100%;
+  height: 520px;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  resize: none;
+}
+.voice-preview {
+  height: 520px;
+  max-height: none;
+}
+.voice-conflict {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.voice-conflict span {
+  flex: 1;
+}
+@media (max-width: 1000px) {
+  .voice-edit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.voice-doc .empty {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.settings-intro code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
 .settings-version {
   margin: 8px 2px 24px;
   font-size: 12px;

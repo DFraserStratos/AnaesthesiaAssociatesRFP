@@ -18,6 +18,7 @@ with AA's lead administrator, and the Q&A that followed.
 | --- | --- | --- |
 | `stories/`, `questions/` | The catalogue: one Markdown file per epic, feature, story (`stories/`) and outstanding item (`questions/`: open questions and missing sources). Format in `SCHEMA.md`. | Yes, this is the editing surface: in the Requirements Board or directly in the files. |
 | `domain-model.md` | Narrative: what changed since the RFP, entity model, recommended Contract structure, calculation rules, glossary. | Yes. |
+| `VOICE.md` | How requirements are written: the words, not the format. The skills follow it. | Yes: on the board's Settings page, or as a file. |
 | `notes/` | Meeting notes and Q&A behind the catalogue, one dated file each (`2026-09-24-source-notes.md` is the first). Conventions in `notes/README.md`. | Add new files; existing ones append only. |
 | `artifacts/` | Artifacts: one sidecar per diagram, transcript, note or document (`AR-nn.md`: name, kind, highlighted spots). Requirements link to them, or to a spot in one; the board's Artifacts tab shows them. Format in `SCHEMA.md`. | Yes, as files (agents, the `add-artifact` skill); the board edits only their details (name, kind, status, date, author, area, sources, description). |
 | `artifacts/files/` | The artifact files themselves: the diagrams drawn for the catalogue (`AR-nn.svg`), the meeting transcripts, the pricing model documents, NZSA RVG 2021 and its modifiers, the RFP PDF. | Add new files with the artifact; transcripts and documents are never rewritten. |

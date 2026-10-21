@@ -37,7 +37,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 
 ## Ground rules
 
-- Read `REQ/SCHEMA.md` and `REQ/notes/README.md` first: they are binding (item format, sources,
+- Read `REQ/SCHEMA.md`, `REQ/VOICE.md` (how requirements are written) and `REQ/notes/README.md` first: they are binding (item format, sources,
   statuses, the answering convention, IDs, no deletes). Then read the shape precedent named under
   "This repo": it is the shape the note this skill writes follows.
 - The catalogue is the source of truth. This is requirements work only: do not read or change anything
@@ -132,7 +132,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 2. **Editors (one per epic touched, in parallel):** no two agents edit the same file. Each agent creates
    new IDs only under its own epic. Moves between epics are done afterwards, one at a time. Each editor:
    - puts the decision in the requirement itself (description, acceptance criteria, technical discussion,
-     notes), in plain language and the SCHEMA house style;
+     notes), in the catalogue's voice (`REQ/VOICE.md`);
    - adds the note or question to `sources` in date order, quoted only when it contains `#` or `: `
      (`- "Notes 2026-10-01 · Client meeting #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
    - writes each source in a form that resolves (Ground rules), so it opens its spot;
@@ -146,7 +146,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
    - Does every edit match its source?
    - Is anything invented?
    - Is anything on the change list missing?
-   - Is the shape and wording right per SCHEMA?
+   - Is the shape right per SCHEMA, and the wording per VOICE.md?
    - Do the existing acceptance criteria still hold?
    - Are there links to retired items?
 4. **`domain-model.md`:** one agent plus a reviewer, if the model changed.

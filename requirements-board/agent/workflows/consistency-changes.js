@@ -133,7 +133,7 @@ const SIZES = `Size: large = what the system does changes (a rule's meaning), th
 
 const EDIT_RULES = `How to write edits (they will be shown to ${OWNER} for approval, then applied mechanically by exact string replacement):
 - "old" must be copied exactly from the current file (Read it) and occur exactly once; keep it as short as uniqueness allows (a sentence or paragraph, not the whole file).
-- Fix the meaning, not the style. Keep the item's voice, the ${REQ}/SCHEMA.md house style and its sections. Do not rewrite text that is fine.
+- Fix the meaning, not the style. Keep the catalogue's voice (${REQ}/VOICE.md), the ${REQ}/SCHEMA.md format and its sections. Do not rewrite text that is fine.
 - Where a fix rests on a ruling, add that ruling's source to the item's sources in date order, in full catalogue form (the rulings header maps its cite shorthand to the full "Notes <date> · <words>" form). Quote a source only if it contains "#" or ": ".
 - A rule that is now pending (a Conflict settled as pending, any open OQ) is described as pending with its OQ, and a settled or signed-off status on it moves to the Verify status (look up numbers in board.config.json; never infer from a number).
 - Never edit retired items, notes/, changes/, reference/, or question answers. If a fix needs a decision the rulings do not make, put it in newQuestions instead of editing.${HOUSE_TEXT}`

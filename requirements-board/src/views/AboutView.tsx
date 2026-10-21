@@ -377,6 +377,7 @@ const FOLDERS: [string, string][] = [
   ['notes/', 'What each meeting or decision said, filed by /update-requirements'],
   ['changes/', 'A change log per update: what changed and why'],
   ['artifacts/', 'A sidecar per artifact (AR-01), its file in artifacts/files/'],
+  ['VOICE.md', 'How requirements are written; the skills follow it (edit it in Settings)'],
   ['board.config.json', 'Board and project name, components and statuses (Settings edits it)'],
   ['board-layout.json', 'Swimlanes and any cards you placed by hand'],
   ['SCHEMA.md', 'The file format: read it before editing files by hand'],

@@ -32,7 +32,7 @@ import { artifactRoundTripProblems, itemRoundTripProblems, normaliseItem, normal
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
 import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/history.ts'
 import { defaultStatus, normaliseStatus, readStatusList, statusLabel, type StatusDef, type StatusKind } from '../shared/statuses.ts'
-import { parseArtifact } from '../shared/files.ts'
+import { parseArtifact, revOf } from '../shared/files.ts'
 import { parseConfig } from '../shared/config.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
@@ -114,6 +114,14 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   journal.screenshots(join(root, 'assets'), { offline: true })
 
   const itemList = () => Object.values(state.items).map((r) => r.data)
+  const readVoice = (): { text: string | null; rev: string | null } => {
+    try {
+      const text = readFileSync(join(root, 'VOICE.md'), 'utf8')
+      return { text, rev: revOf(text) }
+    } catch {
+      return { text: null, rev: null }
+    }
+  }
   const questionList = () => Object.values(state.questions).map((r) => r.data)
   const refreshIssues = () => {
     state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts, state.config)
@@ -440,6 +448,18 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         },
         (q) => commitQuestion(q, true),
       )
+    }
+
+    // How requirements are written (VOICE.md): read and edited on the Settings page, and by agents as a file.
+    if (path === '/api/voice' && method === 'GET') return readVoice()
+    if (path === '/api/voice' && method === 'PUT') {
+      const current = readVoice()
+      // Saved over what was shown only: an agent may have rewritten the file since.
+      if ((body.baseRev ?? null) !== current.rev) throw new HttpError(409, 'VOICE.md changed on disk since you opened it', { current: { data: current.text, rev: current.rev } })
+      if (typeof body.text !== 'string') throw new HttpError(400, 'text must be a string')
+      const text = body.text.endsWith('\n') ? body.text : `${body.text}\n`
+      writeAtomic(join(root, 'VOICE.md'), text)
+      return { text, rev: revOf(text) }
     }
 
     if (path === '/api/config' && method === 'PUT') {

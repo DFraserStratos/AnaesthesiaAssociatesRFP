@@ -190,8 +190,7 @@ stage 1 and adjust (a group with `topics: null` takes every topic no other group
 3. `node K/apply.mjs <run>/changes.json . --ids-file <run>/accepted-ids.txt --dry-run`, check every
    line is `ok`, then run it without `--dry-run`. Settle each `FAIL` by hand (read the file, make the
    intended edit).
-4. "Change it..." items: rewrite each edit by hand from the user's note, in the item's voice and the
-   SCHEMA house style, adding the ruling's source where the fix rests on one.
+4. "Change it..." items: rewrite each edit by hand from the user's note, in the catalogue's voice (`REQ/VOICE.md`) and SCHEMA's format, adding the ruling's source where the fix rests on one.
 5. Accepted questions: add each as the next free `REQ/questions/OQ-nn.md` (the default question status, `affects`,
    `sources`, `owner` per "This repo"), written the catalogue's way: `**Already settled:** ...`
    (when something is), `**Still to answer:**` (with the person to ask) and numbered bold questions,

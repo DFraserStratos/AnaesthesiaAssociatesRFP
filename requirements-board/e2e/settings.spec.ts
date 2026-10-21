@@ -3,7 +3,7 @@
  * The Settings page over the fixture catalogue (port 5182): statuses are renamed, added and
  * guarded there, and only board.config.json changes; no card file does.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 import { configPath } from '../server/catalogueFs.ts'
@@ -93,4 +93,32 @@ test('the About page explains the loop and lists the live statuses', async ({ pa
   await expect(page.locator('.loop-step')).toHaveCount(6)
   await expect(page.locator('.skill-card')).toHaveCount(7)
   await expect(page.locator('#about-board .about-statuses').first().locator('.status')).toHaveCount(DEFAULT_ITEM_STATUSES.length)
+})
+
+test('the writing voice is written and saved to VOICE.md, and a change on disk meanwhile is caught', async ({ page }) => {
+  const voicePath = join(FIXTURE_DIR, 'VOICE.md')
+  rmSync(voicePath, { force: true })
+  await page.reload()
+  const voice = page.locator('section[aria-label="Writing voice"]')
+  await expect(voice).toContainText('No VOICE.md yet')
+
+  await voice.getByRole('button', { name: 'Write it' }).click()
+  await voice.getByRole('textbox', { name: 'VOICE.md' }).fill('# How requirements are written\n\nShort sentences.')
+  await expect(voice.locator('.voice-preview')).toContainText('Short sentences.')
+  await voice.getByRole('button', { name: 'Save' }).click()
+  await expect(voice.getByRole('textbox', { name: 'VOICE.md' })).toBeHidden()
+  await expect(voice.locator('.voice-doc')).toContainText('Short sentences.')
+  expect(readFileSync(voicePath, 'utf8')).toBe('# How requirements are written\n\nShort sentences.\n')
+
+  // An agent rewrites the file while it is open for editing: saving offers theirs or keeps mine.
+  await voice.getByRole('button', { name: 'Edit' }).click()
+  await voice.getByRole('textbox', { name: 'VOICE.md' }).fill('# How requirements are written\n\nMine.')
+  writeFileSync(voicePath, '# How requirements are written\n\nTheirs.\n')
+  await voice.getByRole('button', { name: 'Save' }).click()
+  await expect(voice.getByRole('alert')).toContainText('changed on disk')
+  await voice.getByRole('button', { name: 'Keep mine' }).click()
+  await expect(voice.getByRole('textbox', { name: 'VOICE.md' })).toBeHidden()
+  await expect(voice.locator('.voice-doc')).toContainText('Mine.')
+  await expect.poll(() => readFileSync(voicePath, 'utf8')).toContain('Mine.')
+  rmSync(voicePath, { force: true })
 })

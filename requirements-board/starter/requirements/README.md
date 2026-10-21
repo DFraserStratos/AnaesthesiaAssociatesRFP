@@ -19,6 +19,7 @@ where the catalogue started (an RFP, a workshop, a set of notes).
 | `artifacts/` | One sidecar per diagram, transcript, note or document (`AR-nn.md`: name, kind, highlighted regions). Requirements link to them, or to a region in one. Format in `SCHEMA.md`. | As files (agents, the `add-artifact` skill); the board edits only their details. |
 | `artifacts/files/` | The artifact files themselves. | Add new files with the artifact; transcripts and documents are never rewritten. |
 | `changes/` | One change log per requirements update; `/update-build-plan` reads them. | Add new files. |
+| `VOICE.md` | How requirements are written: the words, not the format. The skills follow it. | Yes: on the board's Settings page, or as a file. |
 | `board.config.json` | Board and project name, components, statuses. | On the board's Settings page, or by hand. |
 | `board-layout.json` | The board's swimlanes and any card positions set by hand. | Through the board. |
 | `exports/` | `npm --prefix requirements-board run export:csv` output. Not committed. | No. |

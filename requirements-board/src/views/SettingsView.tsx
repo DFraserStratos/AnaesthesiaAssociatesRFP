@@ -1,6 +1,9 @@
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import Markdown from 'react-markdown'
 import { Link } from 'react-router-dom'
+import { ApiError, api, type Voice } from '../api.ts'
+import { MarkdownTextarea } from '../components/MarkdownTextarea.tsx'
 import { componentCodeIn, type ComponentDef, type ConfigPatch } from '../../shared/config.ts'
 import {
   ITEM_ROLES,
@@ -34,6 +37,7 @@ export function SettingsView() {
           </div>
         </div>
         <BoardSection />
+        <VoiceSection />
         <ComponentSection />
         <StatusSection kind="item" title="Item statuses" />
         <StatusSection kind="question" title="Question statuses" />
@@ -120,6 +124,109 @@ function BoardSection() {
         onDiscard={() => (setForm(saved), setError(null))}
         onSave={() => void save({ board: { name: form.board.trim() }, project: { name: form.project.trim(), ...(form.locale.trim() ? { locale: form.locale.trim() } : {}) } })}
       />
+    </section>
+  )
+}
+
+/**
+ * How requirements are written: `VOICE.md` in the requirements folder. The skills read it whenever
+ * they write or reword an item, so this is where a team tells the AI how to write. Shown as the file
+ * reads, and edited here or as the file. A save goes over the version that was shown only: if an
+ * agent rewrote the file meanwhile, the editor offers theirs or keeps yours.
+ */
+function VoiceSection() {
+  const [voice, setVoice] = useState<Voice | null>(null)
+  const [draft, setDraft] = useState<string | null>(null)
+  const [theirs, setTheirs] = useState<Voice | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    api.voice().then(setVoice, (e: Error) => setError(e.message))
+  }, [])
+  const editing = draft !== null
+  const dirty = editing && draft !== (voice?.text ?? '')
+
+  const save = async (baseRev: string | null) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const saved = await api.putVoice(draft ?? '', baseRev)
+      setVoice(saved)
+      setDraft(null)
+      setTheirs(null)
+    } catch (e) {
+      const current = e instanceof ApiError && e.status === 409 ? e.current : undefined
+      if (current) setTheirs({ text: (current.data as string | null) ?? null, rev: current.rev })
+      else setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const loadTheirs = () => {
+    if (!theirs) return
+    setVoice(theirs)
+    setDraft(theirs.text ?? '')
+    setTheirs(null)
+  }
+
+  return (
+    <section className="settings-section" aria-label="Writing voice">
+      <h2 className="group-head">Writing voice</h2>
+      <p className="settings-intro">
+        How requirements are written. Claude Code's skills read it whenever they write or reword a card, question or note, so write it the way your team writes. It is the file <code>requirements/VOICE.md</code>.
+      </p>
+      {voice && !editing && (
+        <div className="voice-doc">
+          {voice.text === null ? (
+            <p className="empty">No VOICE.md yet. Write one to say how requirements should be written.</p>
+          ) : (
+            <div className="prose">
+              <Markdown>{voice.text.replace(/^# .*\n+/, '')}</Markdown>
+            </div>
+          )}
+        </div>
+      )}
+      {editing && (
+        <div className="voice-edit">
+          <MarkdownTextarea className="input voice-text" value={draft} aria-label="VOICE.md" spellCheck autoFocus onChange={(e) => setDraft(e.target.value)} />
+          <div className="voice-doc voice-preview" aria-label="Preview">
+            <div className="prose">
+              <Markdown>{draft.replace(/^# .*\n+/, '')}</Markdown>
+            </div>
+          </div>
+        </div>
+      )}
+      {theirs && (
+        <div className="banner error voice-conflict" role="alert">
+          <span>VOICE.md changed on disk since you opened it, perhaps by an agent.</span>
+          <button type="button" className="btn ghost sm" onClick={loadTheirs}>
+            Load theirs
+          </button>
+          <button type="button" className="btn ghost sm" disabled={busy} onClick={() => void save(theirs.rev)}>
+            Keep mine
+          </button>
+        </div>
+      )}
+      {error && <div className="banner error">{error}</div>}
+      {voice && (
+        <div className="settings-actions">
+          <span className="spacer" />
+          {editing ? (
+            <>
+              <button type="button" className="btn ghost" disabled={busy} onClick={() => (setDraft(null), setTheirs(null), setError(null))}>
+                {dirty ? 'Discard changes' : 'Cancel'}
+              </button>
+              <button type="button" className="btn primary" disabled={!dirty || busy || !!theirs} onClick={() => void save(voice.rev)}>
+                {busy ? 'Saving…' : 'Save'}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn ghost" onClick={() => setDraft(voice.text ?? '# How requirements are written\n\n')}>
+              <Pencil size={14} /> {voice.text === null ? 'Write it' : 'Edit'}
+            </button>
+          )}
+        </div>
+      )}
     </section>
   )
 }
