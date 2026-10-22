@@ -1639,6 +1639,29 @@ mark {
   font-size: 14px;
   color: var(--ink-2);
 }
+.prose-table {
+  overflow-x: auto;
+  margin: 0 0 10px;
+}
+.prose-table:last-child {
+  margin-bottom: 0;
+}
+.prose table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--rule);
+  padding: 5px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+.prose th {
+  background: var(--card-soft);
+  font-weight: 600;
+}
 .notes {
   background: var(--card-soft);
   border: 1px solid var(--rule);

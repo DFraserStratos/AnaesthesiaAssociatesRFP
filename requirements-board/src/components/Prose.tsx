@@ -1,6 +1,7 @@
 import { MessageCircleQuestion } from 'lucide-react'
 import { useMemo, type MouseEvent, type ReactNode } from 'react'
-import Markdown, { type Components } from 'react-markdown'
+import Markdown, { type Components, type Options } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { idMentions, isArtifactHref, isIdHref, isQuestionId } from '../../shared/links.ts'
 import { isRetired, statusLabel } from '../../shared/statuses.ts'
 import { parseArtifactRef, type ArtifactRec, type Item, type Question } from '../../shared/types.ts'
@@ -12,17 +13,27 @@ import { ArtifactIcon, TypeIcon } from './bits.tsx'
 
 type Artifacts = Record<string, ArtifactRec>
 
-/** Markdown text, with links to other records (explicit `[text](ID)` or a bare ID) opening that record's sheet. */
+/** Markdown text (GFM, so tables render), with links to other records (explicit `[text](ID)` or a bare ID) opening that record's sheet. */
 export function Prose({ text, small }: { text: string; small?: boolean }) {
   const index = useIndex()
   const artifacts = useCatalogue((s) => s.artifacts)
-  const plugins = useMemo(() => [remarkRecordIds(index, artifacts)], [index, artifacts])
-  const components = useMemo(() => recordLinkComponents(index, artifacts), [index, artifacts])
+  // A single tilde ("~85 anaesthetists") is approximate, never strikethrough.
+  const plugins = useMemo((): Options['remarkPlugins'] => [[remarkGfm, { singleTilde: false }], remarkRecordIds(index, artifacts)], [index, artifacts])
+  const components = useMemo(() => ({ ...recordLinkComponents(index, artifacts), table: ProseTable }), [index, artifacts])
   return (
     <div className={`prose${small ? ' small' : ''}`}>
       <Markdown remarkPlugins={plugins} components={components}>
         {text}
       </Markdown>
+    </div>
+  )
+}
+
+/** A table scrolls sideways inside a narrow sheet rather than widening it. */
+function ProseTable({ children }: { children?: ReactNode }) {
+  return (
+    <div className="prose-table">
+      <table>{children}</table>
     </div>
   )
 }
