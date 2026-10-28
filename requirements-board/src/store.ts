@@ -11,6 +11,7 @@ import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type C
 import { DEFAULT_CONFIG, componentNames, type BoardConfig, type ConfigPatch } from '../shared/config.ts'
 import { isOpenQuestion, isRetired, statusCodes } from '../shared/statuses.ts'
 import { ApiError, api } from './api.ts'
+import { idMatch } from './itemSearch.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
 
@@ -672,7 +673,7 @@ export function matchesFilters(it: Item, v: ViewPrefs, index: Index): boolean {
   if (v.components.length && !it.components.some((c) => v.components.includes(c))) return false
   if (v.onlyWithQuestions && openQuestionsFor(index, it.id).length === 0) return false
   const q = v.search.trim().toLowerCase()
-  if (q) {
+  if (q && !idMatch(it.id, q)) {
     const hay = `${it.id} ${it.title} ${it.description} ${it.acceptance} ${it.technical} ${it.notes} ${it.sources.join(' ')}`.toLowerCase()
     if (!q.split(/\s+/).every((w) => hay.includes(w))) return false
   }

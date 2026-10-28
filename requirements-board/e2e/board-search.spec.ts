@@ -70,7 +70,8 @@ test('Cmd F works too, and Esc takes the board back to where it was', async ({ p
 test('with a card open, a found card lands clear of the panel and the list', async ({ page }) => {
   await page.locator('.react-flow__node[data-id="FT-01.2"]').click()
   await expect(page.locator('.sheet.docked h2')).toHaveText('Feature 1.2')
-  await page.keyboard.press('Control+f')
+  // With a card open Ctrl F finds in the card; / still searches the board.
+  await page.keyboard.press('/')
   await page.keyboard.type('story 2.3.3')
   await page.keyboard.press('ArrowDown')
   await expect(page.locator('.react-flow__node.peek')).toHaveAttribute('data-id', 'US-02.3.3')
@@ -85,4 +86,32 @@ test('with a card open, a found card lands clear of the panel and the list', asy
   // Esc from the search leaves the open card open.
   await page.keyboard.press('Escape')
   await expect(page.locator('.sheet.docked h2')).toHaveText('Feature 1.2')
+})
+
+test('a typed ID, prefix and zeros left off, lists that card first', async ({ page }) => {
+  await search(page).click()
+  await page.keyboard.type('2.1.1')
+  const rows = page.getByRole('listbox', { name: 'Cards that match' }).getByRole('option')
+  await expect(rows.nth(0)).toContainText('Story 2.1.1')
+  await page.keyboard.press('Enter')
+  expect(page.url()).toContain('item=US-02.1.1')
+})
+
+test('with a card open Ctrl F finds in the card; once it closes, on the board', async ({ page }) => {
+  await page.locator('.react-flow__node[data-id="FT-01.2"]').click()
+  await expect(page.locator('.sheet.docked h2')).toHaveText('Feature 1.2')
+  await page.keyboard.press('Control+f')
+  const find = page.getByRole('textbox', { name: 'Find in this card' })
+  await expect(find).toBeFocused()
+  await page.keyboard.type('feature 1.2')
+  await expect(page.locator('.card-find .search-count')).toHaveText(/^1 of \d+$/)
+  await expect(search(page)).toHaveValue('')
+  // Esc closes the find, not the card.
+  await page.keyboard.press('Escape')
+  await expect(find).toHaveCount(0)
+  await expect(page.locator('.sheet.docked h2')).toHaveText('Feature 1.2')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.sheet.docked')).toHaveCount(0)
+  await page.keyboard.press('Control+f')
+  await expect(search(page)).toBeFocused()
 })

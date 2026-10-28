@@ -385,7 +385,9 @@ function Board({ mode }: { mode: BoardMode }) {
       return
     }
     // Ctrl F (Cmd F on a Mac) finds on the board rather than in the page: most cards aren't in the page at all.
+    // While a card is open it finds in that card instead (CardFind); / still searches the board.
     const find = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && key === 'f'
+    if (find && selected) return
     if (find || (e.key === '/' && !typing)) {
       e.preventDefault()
       searchRef.current?.focus()

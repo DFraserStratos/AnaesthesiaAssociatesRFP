@@ -10,6 +10,7 @@ import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useComponents, useConfig, useIndex, useShownIndex, useView, type Index } from '../store.ts'
 import { sheetArtifacts, useSourceIndex } from '../sourceRows.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
+import { CardFind } from './CardFind.tsx'
 import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { HistoryView } from './HistoryView.tsx'
@@ -85,6 +86,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   }
   /** The body shows the card, or its history timeline (read mode only; a new card opens on the card). */
   const [view, setView] = useState<'card' | 'history'>('card')
+  const bodyRef = useRef<HTMLDivElement>(null)
   const retire = async () => {
     if (!rec) return
     setAskRetire(false)
@@ -167,7 +169,9 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClasses(config, 'item', item.status)} confirm={confirm} docked={docked}>
       <SheetHead item={rec.data} index={shown} leave={ed.leave} />
       <EditBanners ed={ed} noun="item" />
-      <div className="sheet-body">
+      {/* Ctrl F finds in the card while it is open; editing leaves it to the browser, which reads the fields. */}
+      <CardFind root={bodyRef} resetKey={`${id}:${view}`} disabled={ed.editing || !!confirm} />
+      <div ref={bodyRef} className="sheet-body">
         {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={shown} onStatus={(s) => void changeStatus(s)} statusBusy={statusBusy} />}
       </div>
       <footer className="sheet-foot">

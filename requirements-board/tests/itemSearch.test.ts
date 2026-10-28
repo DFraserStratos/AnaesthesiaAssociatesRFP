@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG } from '../shared/config.ts'
 import type { Item } from '../shared/types.ts'
-import { matchContext, rankMatches, searchItems } from '../src/itemSearch.ts'
+import { idMatch, matchContext, rankMatches, searchItems } from '../src/itemSearch.ts'
 import { item } from './fixtures.ts'
 
 const items: Item[] = [
@@ -17,7 +17,36 @@ const items: Item[] = [
 const index = { items, byId: new Map(items.map((i) => [i.id, i])), config: DEFAULT_CONFIG }
 const ids = (q: string, opts?: Parameters<typeof searchItems>[2]) => searchItems(index, q, opts).map((i) => i.id)
 
+describe('idMatch', () => {
+  it('reads an ID as people type it: prefix and leading zeros optional', () => {
+    for (const q of ['4.1.1', '04.1.1', 'us-4.1.1', 'US 04.1.1', 'us4.1.1', 'US-04.1.1']) expect(idMatch('US-04.1.1', q)).toBe('exact')
+    expect(idMatch('US-14.1.1', '4.1.1')).toBeNull()
+    expect(idMatch('FT-04.1', '4.1.1')).toBeNull()
+    expect(idMatch('US-04.1.1', '4.1')).toBe('under')
+    expect(idMatch('US-04.1.1', 'ft 4.1')).toBeNull()
+    expect(idMatch('FT-04.1', 'us-4.1')).toBeNull()
+    expect(idMatch('EP-04', '4')).toBe('exact')
+    expect(idMatch('US-04.1.1', 'calendar')).toBeNull()
+  })
+})
+
 describe('searchItems', () => {
+  it('puts the item a typed ID names first, then what sits under it', () => {
+    items.push(item({ id: 'US-11.1.1', parent: 'FT-01.1', title: 'Another story' }))
+    index.byId.set('US-11.1.1', items.at(-1)!)
+    try {
+      expect(ids('1.1.1')).toEqual(['US-01.1.1', 'US-11.1.1'])
+      expect(ids('us 1.1.1')[0]).toBe('US-01.1.1')
+      expect(ids('us-1.1.1')).toEqual(['US-01.1.1']) // no zero, so only the ID reading finds it
+      expect(ids('1.1')[0]).toBe('FT-01.1')
+      expect(ids('1.1')[1]).toBe('US-01.1.1')
+    } finally {
+      items.pop()
+      index.byId.delete('US-11.1.1')
+    }
+  })
+
+
   it('needs every word, in any order, across title, ID and lineage', () => {
     expect(ids('calendar availability')).toEqual(['FT-01.1', 'US-01.1.1']) // the story matches through its feature
     expect(ids('billing settings')).toEqual(['FT-02.1']) // the epic's title tells the two Settings apart

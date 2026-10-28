@@ -38,10 +38,31 @@ export function lineageTitles(index: SearchIndex, item: Item): string[] {
 
 const words = (s: string) => s.toLowerCase().split(/\s+/).filter(Boolean)
 
-/** Lower is better: the ID itself, then title starts with the query, word starts, substring, a lineage or ID match. */
+const ID_QUERY = /^(ep|ft|us)?[-\s]*(\d+(?:\.\d+)*)$/i
+const ITEM_ID = /^(EP|FT|US)-(\d+(?:\.\d+)*)$/i
+
+/**
+ * Does the query name this item by its ID, as people type IDs: the prefix optional and the
+ * leading zeros too, so `4.1.1`, `us 4.1.1` and `US-04.1.1` all name US-04.1.1. 'exact' for that
+ * item, 'under' for an item beneath it (`4.1` and US-04.1.3), null otherwise.
+ */
+export function idMatch(id: string, query: string): 'exact' | 'under' | null {
+  const q = ID_QUERY.exec(query.trim())
+  const it = ITEM_ID.exec(id)
+  if (!q || !it) return null
+  const qNums = q[2]!.split('.').map(Number)
+  const nums = it[2]!.split('.').map(Number)
+  if (qNums.length > nums.length || qNums.some((n, i) => n !== nums[i])) return null
+  if (qNums.length === nums.length) return !q[1] || q[1].toLowerCase() === it[1]!.toLowerCase() ? 'exact' : null
+  return q[1] ? null : 'under'
+}
+
+/** Lower is better: the ID itself, then what sits under it, then title starts with the query, word starts, substring, a lineage or ID match. */
 function rank(item: Item, query: string, qWords: string[]): number {
   const title = item.title.toLowerCase()
-  if (item.id.toLowerCase() === query) return 0
+  const byId = idMatch(item.id, query)
+  if (byId === 'exact') return 0
+  if (byId === 'under') return 0.5
   if (title.startsWith(query)) return 1
   const titleWords = words(title)
   if (qWords.every((w) => titleWords.some((t) => t.startsWith(w)))) return 2
@@ -81,7 +102,7 @@ export function searchItems(index: SearchIndex, query: string, opts: SearchOptio
   return pool
     .flatMap((it) => {
       const hay = `${it.title} ${it.id} ${lineageTitles(index, it).join(' ')}`.toLowerCase()
-      return qWords.every((w) => hay.includes(w)) ? [{ it, r: rank(it, q, qWords) }] : []
+      return idMatch(it.id, q) || qWords.every((w) => hay.includes(w)) ? [{ it, r: rank(it, q, qWords) }] : []
     })
     .sort((a, b) => a.r - b.r || compareIds(a.it.id, b.it.id))
     .slice(0, limit)
@@ -113,6 +134,7 @@ const CONTEXT_FIELDS = [
  * query word they lack, with a short plain-text excerpt around it. Null when the name explains it.
  */
 export function matchContext(index: SearchIndex, item: Item, query: string, span = 72): { label: string; text: string } | null {
+  if (idMatch(item.id, query)) return null
   const name = `${item.title} ${item.id} ${lineageTitles(index, item).join(' ')}`.toLowerCase()
   const missing = words(query.trim().toLowerCase()).filter((w) => !name.includes(w))
   if (!missing.length) return null

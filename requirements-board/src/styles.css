@@ -4057,6 +4057,27 @@ mark {
     transition: none;
   }
 }
+/* Find in the open card (Ctrl F): a bar under the card's head, its matches tinted as an artifact's find tints them. */
+.card-find {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px 6px 28px;
+  border-bottom: 1px solid var(--rule);
+}
+.card-find .search {
+  flex: 1;
+}
+.card-find .search .input {
+  width: 100%;
+}
+::highlight(card-find) {
+  background-color: #fdeab8;
+}
+::highlight(card-find-current) {
+  background-color: #f8cf6a;
+}
+
 /* A match is tinted as the board's search marks words; the current one is stronger and outlined. Never red: red is the highlight box. */
 .find-hit {
   position: absolute;
