@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 1082" width="1540" height="1082" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>Where the money goes</title>
+<rect x="0" y="0" width="1540" height="1082" rx="0" fill="#F3F6FA"/>
+<rect id="not-prepaid" x="20" y="20" width="450" height="982" rx="12" fill="#F1EDFD" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="42" y="64" font-size="28" font-weight="800" fill="#1B1B1F" text-anchor="start">Not prepaid</text>
+<text x="42" y="90" font-size="14" font-weight="400" fill="#55555E" text-anchor="start">Billed after the procedure, for example $100</text>
+<rect id="np-1" x="40" y="132" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="64" cy="156" r="12" fill="#3B8FD6"/>
+<text x="64" y="161.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="86" y="161" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedure done, List authorised</text>
+<text x="86" y="182" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The anaesthetist submits the List and the office</text>
+<text x="86" y="199" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">authorises it: only then does billing start.</text>
+<rect x="86.0" y="214" width="189.60000000000002" height="24" rx="12.0" fill="#E6E5EC" stroke="#C9C8D2" stroke-width="1.2"/>
+<text x="180.8" y="230.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Nothing in the books yet</text>
+<rect id="np-2" x="40" y="264" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="64" cy="288" r="12" fill="#3B8FD6"/>
+<text x="64" y="293.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="86" y="293" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Invoice pair raised</text>
+<text x="86" y="314" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A receivable from the billable party, linked to a</text>
+<text x="86" y="331" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">payable to the anaesthetist who did the List.</text>
+<rect x="85.99999999999999" y="346" width="99.9" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="135.95" y="362.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer +$100</text>
+<rect x="193.9" y="346" width="113.7" height="24" rx="12.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="250.75" y="362.32" font-size="12" font-weight="600" fill="#1D6B3B" text-anchor="middle">Dr Nick +$100</text>
+<rect id="np-3" x="40" y="396" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="64" cy="420" r="12" fill="#3B8FD6"/>
+<text x="64" y="425.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="86" y="425" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Paid into the trust account</text>
+<text x="86" y="446" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The billable party pays $100 into AA's trust bank</text>
+<text x="86" y="463" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">account, and the receivable is cleared.</text>
+<rect x="85.99999999999999" y="478" width="134.4" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="153.2" y="494.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">Trust bank +$100</text>
+<rect x="228.40000000000003" y="478" width="99.9" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="278.35" y="494.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer −$100</text>
+<rect id="owed-when-paid" x="40" y="530" width="410" height="58" rx="0" fill="none"/>
+<path d="M50 530 H40 V588 H50" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="56" y="552" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">AA owes the anaesthetist only what has been paid:</text>
+<text x="56" y="570" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">the payable waits for the money to come in.</text>
+<rect id="np-4" x="40" y="620" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="64" cy="644" r="12" fill="#3B8FD6"/>
+<text x="64" y="649.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="86" y="649" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Payable authorised</text>
+<text x="86" y="670" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The payable is authorised for what was received,</text>
+<text x="86" y="687" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">so it joins the next payables run.</text>
+<rect x="86.0" y="702" width="162.0" height="24" rx="12.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="167.0" y="718.32" font-size="12" font-weight="600" fill="#1D6B3B" text-anchor="middle">Dr Nick: $100 to pay</text>
+<rect id="np-5" x="40" y="752" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="64" cy="776" r="12" fill="#3B8FD6"/>
+<text x="64" y="781.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="86" y="781" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist paid</text>
+<text x="86" y="802" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The payables run pays Dr Nick out of the trust</text>
+<text x="86" y="819" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">account. Everything nets back to zero.</text>
+<rect x="85.99999999999999" y="834" width="134.4" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="153.2" y="850.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">Trust bank −$100</text>
+<rect x="228.4" y="834" width="113.7" height="24" rx="12.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="285.25" y="850.32" font-size="12" font-weight="600" fill="#1D6B3B" text-anchor="middle">Dr Nick −$100</text>
+<path d="M48 872 V945.0 H64" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="payables-open" x="64" y="898" width="386" height="94" rx="0" fill="none"/>
+<path d="M74 898 H64 V992 H74" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="80" y="920" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Still open</text>
+<text x="80" y="938" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">When the payables run happens (OQ-47) and when</text>
+<text x="80" y="956" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">the buyer-created tax invoice is raised (OQ-29).</text>
+<text x="80" y="974" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Applies to both flows.</text>
+<rect id="prepaid" x="490" y="20" width="450" height="982" rx="12" fill="#F1EDFD" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="512" y="64" font-size="28" font-weight="800" fill="#1B1B1F" text-anchor="start">Prepaid</text>
+<text x="512" y="90" font-size="14" font-weight="400" fill="#55555E" text-anchor="start">Invoiced before the procedure, for example $200</text>
+<rect id="pp-1" x="510" y="132" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="534" cy="156" r="12" fill="#3B8FD6"/>
+<text x="534" y="161.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="556" y="161" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Prepayment invoice approved</text>
+<text x="556" y="182" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The Booking is on a prepaid Contract. An admin</text>
+<text x="556" y="199" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">approves the invoice (a step AA can switch off).</text>
+<rect x="556.0" y="214" width="189.60000000000002" height="24" rx="12.0" fill="#E6E5EC" stroke="#C9C8D2" stroke-width="1.2"/>
+<text x="650.8" y="230.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Nothing in the books yet</text>
+<rect id="pp-2" x="510" y="264" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="534" cy="288" r="12" fill="#3B8FD6"/>
+<text x="534" y="293.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="556" y="293" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Pair to the AA Holding account</text>
+<text x="556" y="314" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A receivable from the payer, linked to a payable</text>
+<text x="556" y="331" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">to the AA Holding account, not the anaesthetist.</text>
+<rect x="556.0" y="346" width="99.9" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="605.95" y="362.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer +$200</text>
+<rect x="663.9" y="346" width="134.4" height="24" rx="12.0" fill="#F8D4E6" stroke="#E2A3C4" stroke-width="1.2"/>
+<text x="731.1" y="362.32" font-size="12" font-weight="600" fill="#93305F" text-anchor="middle">AA Holding +$200</text>
+<rect id="pp-3" x="510" y="396" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="534" cy="420" r="12" fill="#3B8FD6"/>
+<text x="534" y="425.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="556" y="425" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Paid into the trust account</text>
+<text x="556" y="446" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The payer pays $200 into the same trust bank</text>
+<text x="556" y="463" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">account. It waits there: no anaesthetist is paid.</text>
+<rect x="556.0" y="478" width="134.4" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="623.2" y="494.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">Trust bank +$200</text>
+<rect x="698.4" y="478" width="99.9" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="748.35" y="494.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer −$200</text>
+<rect id="release-trigger" x="510" y="530" width="410" height="76" rx="0" fill="none"/>
+<path d="M520 530 H510 V606 H520" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="526" y="552" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">The procedure is done. Which event releases the</text>
+<text x="526" y="570" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">money, the List authorised or the procedure</text>
+<text x="526" y="588" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">recorded, is still to confirm (OQ-125).</text>
+<rect id="pp-4" x="510" y="620" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="534" cy="644" r="12" fill="#3B8FD6"/>
+<text x="534" y="649.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="556" y="649" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Transfer to whoever did the List</text>
+<text x="556" y="670" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A journal transfer, not a payment: no money moves</text>
+<text x="556" y="687" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">in the bank. The debt moves to the anaesthetist.</text>
+<rect x="556.0" y="702" width="134.4" height="24" rx="12.0" fill="#F8D4E6" stroke="#E2A3C4" stroke-width="1.2"/>
+<text x="623.2" y="718.32" font-size="12" font-weight="600" fill="#93305F" text-anchor="middle">AA Holding −$200</text>
+<rect x="698.4" y="702" width="106.80000000000001" height="24" rx="12.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="751.8" y="718.32" font-size="12" font-weight="600" fill="#1D6B3B" text-anchor="middle">Dr Ben +$200</text>
+<rect id="pp-5" x="510" y="752" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="534" cy="776" r="12" fill="#3B8FD6"/>
+<text x="534" y="781.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="556" y="781" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist paid</text>
+<text x="556" y="802" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The payables run pays Dr Ben out of the trust</text>
+<text x="556" y="819" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">account, the same as any other payable.</text>
+<rect x="556.0" y="834" width="134.4" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="623.2" y="850.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">Trust bank −$200</text>
+<rect x="698.4" y="834" width="106.80000000000001" height="24" rx="12.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="751.8" y="850.32" font-size="12" font-weight="600" fill="#1D6B3B" text-anchor="middle">Dr Ben −$200</text>
+<rect id="cancellation" x="510" y="898" width="410" height="94" rx="0" fill="none"/>
+<path d="M520 898 H510 V992 H520" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="526" y="920" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Cancelled before the procedure</text>
+<text x="526" y="938" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Unpaid: the invoice is credited. Paid: refunded</text>
+<text x="526" y="956" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">in full from the AA Holding account. Both happen</text>
+<text x="526" y="974" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">automatically as part of the cancellation.</text>
+<rect id="books" x="960" y="20" width="560" height="982" rx="12" fill="#2E2E31" stroke="#55555C" stroke-width="1.2"/>
+<text x="984" y="64" font-size="28" font-weight="800" fill="#FFFFFF" text-anchor="start">Where the money sits</text>
+<text x="984" y="90" font-size="14" font-weight="400" fill="#D7D7DE" text-anchor="start">One trust bank account holds all of it. Control accounts hold</text>
+<text x="984" y="108" font-size="14" font-weight="400" fill="#D7D7DE" text-anchor="start">totals; their sub-ledgers hold the detail, and each sub-ledger</text>
+<text x="984" y="126" font-size="14" font-weight="400" fill="#D7D7DE" text-anchor="start">must add up to its control account.</text>
+<rect id="trust-bank" x="984" y="186" width="512" height="140" rx="10" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.4"/>
+<text x="1002" y="216" font-size="19" font-weight="800" fill="#1B1B1F" text-anchor="start">Trust account</text>
+<text x="1478" y="216" font-size="13.5" font-weight="500" fill="#2E2E36" text-anchor="end">AA's bank account</text>
+<text x="1002" y="242" font-size="13" font-weight="400" fill="#3A3A44" text-anchor="start">Every payment in and every payment out, prepaid or not.</text>
+<text x="1002" y="260" font-size="13" font-weight="400" fill="#3A3A44" text-anchor="start">Analysed out into who is due to be paid.</text>
+<rect x="1001.9999999999999" y="288" width="217.20000000000002" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="1110.6" y="304.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">In: from patients and payers</text>
+<rect x="1227.2" y="288" width="210.3" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="1332.3500000000001" y="304.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">Out: payables runs, refunds</text>
+<rect id="debtors" x="984" y="380" width="246.0" height="66" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<rect x="984" y="390" width="6" height="46" rx="3" fill="#F0A868"/>
+<text x="1004" y="408" font-size="16.5" font-weight="800" fill="#1B1B1F" text-anchor="start">Debtors control</text>
+<text x="1004" y="429" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Total owed to AA</text>
+<rect id="creditors" x="1250.0" y="380" width="246.0" height="66" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<rect x="1250.0" y="390" width="6" height="46" rx="3" fill="#8FCBA2"/>
+<text x="1270.0" y="408" font-size="16.5" font-weight="800" fill="#1B1B1F" text-anchor="start">Creditors control</text>
+<text x="1270.0" y="429" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Total AA owes</text>
+<path d="M1107.0 446 V504" stroke="#9A9AA4" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1373.0 446 V504" stroke="#9A9AA4" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="989" y="509" width="246.0" height="184" rx="10" fill="#45454B"/>
+<rect id="debtor-ledger" x="984" y="504" width="246.0" height="184" rx="10" fill="#3A3A40" stroke="#6A6A72" stroke-width="1.2"/>
+<text x="1000" y="531" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="start">Patients and payers</text>
+<rect x="996" y="544" width="222.0" height="28" rx="7" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1010" y="563" font-size="13.5" font-weight="600" fill="#9A4A0B" text-anchor="start">Patient 1</text>
+<rect x="996" y="578" width="222.0" height="28" rx="7" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1010" y="597" font-size="13.5" font-weight="600" fill="#9A4A0B" text-anchor="start">Patient 2</text>
+<rect x="996" y="612" width="222.0" height="28" rx="7" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1010" y="631" font-size="13.5" font-weight="600" fill="#9A4A0B" text-anchor="start">A payer, e.g. a guardian</text>
+<rect x="996" y="646" width="222.0" height="28" rx="7" fill="#4A4A50" stroke="#6A6A72" stroke-width="1.2"/>
+<text x="1010" y="665" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">… each patient or payer</text>
+<rect x="1255.0" y="509" width="246.0" height="184" rx="10" fill="#45454B"/>
+<rect id="creditor-ledger" x="1250.0" y="504" width="246.0" height="184" rx="10" fill="#3A3A40" stroke="#6A6A72" stroke-width="1.2"/>
+<text x="1266.0" y="531" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="start">Anaesthetists and AA Holding</text>
+<rect x="1262.0" y="544" width="192.0" height="28" rx="7" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="1276.0" y="563" font-size="13.5" font-weight="600" fill="#1D6B3B" text-anchor="start">Dr Nick</text>
+<rect x="1262.0" y="578" width="192.0" height="28" rx="7" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="1276.0" y="597" font-size="13.5" font-weight="600" fill="#1D6B3B" text-anchor="start">Dr Ben</text>
+<rect x="1262.0" y="612" width="192.0" height="28" rx="7" fill="#4A4A50" stroke="#6A6A72" stroke-width="1.2"/>
+<text x="1276.0" y="631" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">… each anaesthetist</text>
+<rect id="holding-row" x="1262.0" y="646" width="192.0" height="28" rx="7" fill="#F8D4E6" stroke="#E2A3C4" stroke-width="1.2"/>
+<text x="1276.0" y="665" font-size="13.5" font-weight="600" fill="#93305F" text-anchor="start">AA Holding account</text>
+<g id="transfer">
+<path d="M1456.0 660.0 C1478.0 660.0 1478.0 592.0 1463.0 592.0" stroke="#F3A3C8" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1456.0 592.0 l9 -5 l0 10 z" fill="#F3A3C8"/>
+</g>
+<rect id="holding-note" x="984" y="744" width="512" height="130" rx="0" fill="none"/>
+<path d="M994 744 H984 V874 H994" stroke="#A9A9B4" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1000" y="766" font-size="13.5" font-weight="700" fill="#D7D7DE" text-anchor="start" font-style="italic">AA Holding account</text>
+<text x="1000" y="784" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">A creditor beside the anaesthetists, a "fake anaesthetist": not a</text>
+<text x="1000" y="802" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">bank account and not a Xero ledger account. Its balance is every</text>
+<text x="1000" y="820" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">prepayment received for a procedure not yet done. It is never paid</text>
+<text x="1000" y="838" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">itself, and only the system moves money out of it: a transfer to</text>
+<text x="1000" y="856" font-size="13.5" font-weight="400" fill="#D7D7DE" text-anchor="start" font-style="italic">whoever did the List, or a refund.</text>
+<text x="984" y="930" font-size="12.5" font-weight="700" fill="#D7D7DE" text-anchor="start">Chips in the steps:</text>
+<rect x="1112.0" y="914" width="93.0" height="24" rx="12.0" fill="#D6EAF8" stroke="#8DB8DC" stroke-width="1.2"/>
+<text x="1158.5" y="930.32" font-size="12" font-weight="600" fill="#1B4F7A" text-anchor="middle">Trust bank</text>
+<rect x="1213.0" y="914" width="65.4" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1245.7" y="930.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Debtor</text>
+<rect x="1286.4" y="914" width="106.80000000000001" height="24" rx="12.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="1339.8000000000002" y="930.32" font-size="12" font-weight="600" fill="#1D6B3B" text-anchor="middle">Anaesthetist</text>
+<rect x="1401.2" y="914" width="93.0" height="24" rx="12.0" fill="#F8D4E6" stroke="#E2A3C4" stroke-width="1.2"/>
+<text x="1447.7" y="930.32" font-size="12" font-weight="600" fill="#93305F" text-anchor="middle">AA Holding</text>
+<text x="984" y="960" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">+ adds to what is held or owed, − takes it away.</text>
+<rect x="20" y="1022" width="1500" height="40" rx="10" fill="#FFF5C4" stroke="#EFD46A" stroke-width="1.2"/>
+<text x="770.0" y="1049" font-size="19" fill="#1B1B1F" text-anchor="middle"><tspan font-weight="800">Same trust account, same pairs:</tspan> a prepayment's payable waits with the AA Holding account until the procedure is done, then moves by transfer</text>
+</svg>

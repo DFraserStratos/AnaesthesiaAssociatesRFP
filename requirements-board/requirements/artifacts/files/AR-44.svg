@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 1036" width="1540" height="1036" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>Contract holder, billable party and payer</title>
+<rect x="0" y="0" width="1540" height="1036" rx="0" fill="#F3F6FA"/>
+<rect x="25" y="25" width="400" height="262" rx="10" fill="#D2EBDA"/>
+<rect id="term-holder" x="20" y="20" width="400" height="262" rx="10" fill="#E9F5EC" stroke="#8FCBA2" stroke-width="1.4"/>
+<rect x="20" y="30" width="6" height="242" rx="3" fill="#8FCBA2"/>
+<text x="44" y="58" font-size="24" font-weight="800" fill="#1B1B1F" text-anchor="start">Contract holder</text>
+<text x="44" y="84" font-size="15.5" font-weight="700" fill="#1D6B3B" text-anchor="start">Who the arrangement is with</text>
+<text x="44" y="112" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Sets how a procedure is priced and what</text>
+<text x="44" y="131" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">rules apply. Holds many Contracts.</text>
+<text x="44" y="168" font-size="11.5" font-weight="800" fill="#55555E" text-anchor="start">CAN BE</text>
+<rect x="44.0" y="178" width="82.79999999999998" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="85.39999999999999" y="194.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Hospital</text>
+<rect x="134.79999999999998" y="178" width="75.69999999999999" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="172.64999999999998" y="194.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Insurer</text>
+<rect x="218.49999999999997" y="178" width="139.59999999999997" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="288.29999999999995" y="194.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Surgeon or rooms</text>
+<rect x="44.0" y="210" width="111.19999999999999" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="99.6" y="226.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Anaesthetist</text>
+<rect x="163.2" y="210" width="40.199999999999996" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="183.29999999999998" y="226.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">AA</text>
+<text x="44" y="260" font-size="11.5" font-weight="800" fill="#55555E" text-anchor="start">KEPT ON</text>
+<text x="110" y="260" font-size="13.5" font-weight="400" fill="#1B1B1F" text-anchor="start">master data, with its Contracts</text>
+<rect x="575" y="25" width="400" height="262" rx="10" fill="#DCD3F7"/>
+<rect id="term-billable" x="570" y="20" width="400" height="262" rx="10" fill="#EEE9FC" stroke="#B9AAEE" stroke-width="1.4"/>
+<rect x="570" y="30" width="6" height="242" rx="3" fill="#B9AAEE"/>
+<text x="594" y="58" font-size="24" font-weight="800" fill="#1B1B1F" text-anchor="start">Billable party</text>
+<text x="594" y="84" font-size="15.5" font-weight="700" fill="#4B3A8C" text-anchor="start">Who receives the invoice</text>
+<text x="594" y="112" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Decided by each Procedure's Contract.</text>
+<text x="594" y="131" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Holds the invoice email, never the Contract.</text>
+<text x="594" y="168" font-size="11.5" font-weight="800" fill="#55555E" text-anchor="start">CAN BE</text>
+<rect x="594.0" y="178" width="82.79999999999998" height="24" rx="12.0" fill="#D3EFEC" stroke="#7CC6BE" stroke-width="1.2"/>
+<text x="635.4" y="194.32" font-size="12" font-weight="600" fill="#0D5F57" text-anchor="middle">Hospital</text>
+<rect x="684.8" y="178" width="75.69999999999999" height="24" rx="12.0" fill="#DDE3F4" stroke="#9AA9D6" stroke-width="1.2"/>
+<text x="722.65" y="194.32" font-size="12" font-weight="600" fill="#2E3F7A" text-anchor="middle">Insurer</text>
+<rect x="768.5" y="178" width="75.69999999999999" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="806.35" y="194.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="594.0" y="210" width="153.8" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="670.9" y="226.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Parent or guardian</text>
+<text x="594" y="260" font-size="11.5" font-weight="800" fill="#55555E" text-anchor="start">KEPT ON</text>
+<text x="660" y="260" font-size="13.5" font-weight="400" fill="#1B1B1F" text-anchor="start">a reference record, or the Booking</text>
+<rect x="1125" y="25" width="400" height="262" rx="10" fill="#F3D3E3"/>
+<rect id="term-payer" x="1120" y="20" width="400" height="262" rx="10" fill="#FCEAF2" stroke="#E2A3C4" stroke-width="1.4"/>
+<rect x="1120" y="30" width="6" height="242" rx="3" fill="#E2A3C4"/>
+<text x="1144" y="58" font-size="24" font-weight="800" fill="#1B1B1F" text-anchor="start">Payer on the Booking</text>
+<text x="1144" y="84" font-size="15.5" font-weight="700" fill="#93305F" text-anchor="start">Who pays if the holder doesn't</text>
+<text x="1144" y="112" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Every Booking names one. Prefilled from the</text>
+<text x="1144" y="131" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">patient; the office or anaesthetist can change it.</text>
+<text x="1144" y="168" font-size="11.5" font-weight="800" fill="#55555E" text-anchor="start">CAN BE</text>
+<rect x="1144.0" y="178" width="75.69999999999999" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1181.85" y="194.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="1227.7" y="178" width="153.8" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1304.6000000000001" y="194.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Parent or guardian</text>
+<text x="1144" y="228" font-size="11.5" font-weight="800" fill="#55555E" text-anchor="start">KEPT ON</text>
+<text x="1210" y="228" font-size="13.5" font-weight="400" fill="#1B1B1F" text-anchor="start">the Booking</text>
+<path d="M432 151.0 H551" stroke="#2E9E5B" stroke-width="2.4" stroke-linecap="round"/><path d="M549 144.0 L549 158.0 L560 151.0 z" fill="#2E9E5B"/>
+<text x="495.0" y="121.0" font-size="13.5" font-weight="700" fill="#1D6B3B" text-anchor="middle">holder is</text>
+<text x="495.0" y="138.0" font-size="13.5" font-weight="700" fill="#1D6B3B" text-anchor="middle">billed: Yes</text>
+<text x="495.0" y="175.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">its own billable</text>
+<text x="495.0" y="191.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">party record</text>
+<path d="M1108 151.0 H989" stroke="#F0A868" stroke-width="2.4" stroke-linecap="round"/><path d="M991 144.0 L991 158.0 L980 151.0 z" fill="#F0A868"/>
+<text x="1045.0" y="121.0" font-size="13.5" font-weight="700" fill="#9A4A0B" text-anchor="middle">holder is</text>
+<text x="1045.0" y="138.0" font-size="13.5" font-weight="700" fill="#9A4A0B" text-anchor="middle">billed: No</text>
+<text x="1045.0" y="175.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">the payer is</text>
+<text x="1045.0" y="191.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">billed instead</text>
+<path d="M42 287 V343.0 H60" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="note-holder-setting" x="60" y="314" width="360" height="58" rx="0" fill="none"/>
+<path d="M70 314 H60 V372 H70" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="76" y="336" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">A holder can be billed or not: it is a setting</text>
+<text x="76" y="354" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">on each holder, not fixed by its kind.</text>
+<path d="M592 287 V343.0 H610" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="note-no-first-party" x="610" y="314" width="360" height="58" rx="0" fill="none"/>
+<path d="M620 314 H610 V372 H620" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="626" y="336" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">“First party” and “third party” are no</text>
+<text x="626" y="354" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">longer used: the Contract decides.</text>
+<path d="M1142 287 V352.0 H1160" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="note-patient" x="1160" y="314" width="360" height="76" rx="0" fill="none"/>
+<path d="M1170 314 H1160 V390 H1170" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1176" y="336" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">The patient is the person treated (one record</text>
+<text x="1176" y="354" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">per NHI). They are billed only as the payer.</text>
+<text x="1176" y="372" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">A payer under 18 is a mild warning, not a block.</text>
+<rect id="decision" x="20" y="408" width="600" height="548" rx="12" fill="#2E2E31"/>
+<text x="46" y="454" font-size="27" font-weight="800" fill="#FFFFFF" text-anchor="start">For each Procedure</text>
+<text x="46" y="480" font-size="14" font-weight="400" fill="#D7D7DE" text-anchor="start">The office's main job at booking setup is to identify who pays.</text>
+<rect id="step-holder" x="46" y="504" width="548" height="50" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="70" cy="528" r="12" fill="#3B8FD6"/>
+<text x="70" y="533.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="92" y="533" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Pick the contract holder</text>
+<rect x="454" y="515" width="126" height="26" rx="6" fill="#D3EFEC" stroke="#7CC6BE" stroke-width="1.4"/>
+<text x="517.0" y="533" font-size="14" font-weight="600" fill="#1B1B1F" text-anchor="middle">Forte Health</text>
+<rect id="step-contract" x="46" y="564" width="548" height="50" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="70" cy="588" r="12" fill="#3B8FD6"/>
+<text x="70" y="593.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="92" y="593" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Then its Contract, and line</text>
+<rect x="400" y="575" width="180" height="26" rx="6" fill="#E6E5EC" stroke="#C7BAF0" stroke-width="1.4"/>
+<text x="490.0" y="593" font-size="14" font-weight="600" fill="#1B1B1F" text-anchor="middle">Southern Cross RVG</text>
+<rect id="step-question" x="46" y="624" width="548" height="57" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
+<circle cx="70" cy="648" r="12" fill="#3B8FD6"/>
+<text x="70" y="653.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="92" y="653" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Is the holder the billable party?</text>
+<text x="92" y="674" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A setting on the holder, carried by every Contract it holds.</text>
+<path d="M320.0 681 V697 H178.0 V715" stroke="#2E9E5B" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M320.0 697 H462.0 V715" stroke="#F0A868" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="188.0" y="713" font-size="13" font-weight="800" fill="#7FD6A0" text-anchor="start">Yes</text>
+<text x="472.0" y="713" font-size="13" font-weight="800" fill="#F7B983" text-anchor="start">No</text>
+<rect id="outcome-holder" x="46" y="717" width="264.0" height="132" rx="10" fill="#FFFFFF" stroke="#2E9E5B" stroke-width="2"/>
+<text x="62" y="745" font-size="16.5" font-weight="800" fill="#1B1B1F" text-anchor="start">Bill the holder</text>
+<text x="62" y="767" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Its billable party record:</text>
+<text x="62" y="784" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">a hospital, or an insurer that</text>
+<text x="62" y="801" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">is billed as holder.</text>
+<rect x="62.0" y="815" width="88" height="24" rx="12.0" fill="#D3EFEC" stroke="#7CC6BE" stroke-width="1.2"/>
+<text x="106" y="831.32" font-size="12" font-weight="600" fill="#0D5F57" text-anchor="middle">Hospital</text>
+<rect x="158.0" y="815" width="76" height="24" rx="12.0" fill="#DDE3F4" stroke="#9AA9D6" stroke-width="1.2"/>
+<text x="196" y="831.32" font-size="12" font-weight="600" fill="#2E3F7A" text-anchor="middle">Insurer</text>
+<rect id="outcome-payer" x="330.0" y="717" width="264.0" height="132" rx="10" fill="#FFFFFF" stroke="#F0A868" stroke-width="2"/>
+<text x="346.0" y="745" font-size="16.5" font-weight="800" fill="#1B1B1F" text-anchor="start">Bill the payer</text>
+<text x="346.0" y="767" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The person named on the</text>
+<text x="346.0" y="784" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Booking, prefilled from</text>
+<text x="346.0" y="801" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">the patient.</text>
+<rect x="346.0" y="815" width="76" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="384.0" y="831.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="430.0" y="815" width="140" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="500.0" y="831.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Parent or guardian</text>
+<text x="46" y="879" font-size="13" font-weight="400" fill="#D7D7DE" text-anchor="start">One invoice per billable party on the Booking. Splitting one fee</text>
+<text x="46" y="897" font-size="13" font-weight="400" fill="#D7D7DE" text-anchor="start">between two payers is an action on the Booking, not the Contract.</text>
+<rect id="arrangements" x="644" y="408" width="876" height="548" rx="12" fill="#F1EDFD" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="670" y="454" font-size="27" font-weight="800" fill="#1B1B1F" text-anchor="start">Typical arrangements</text>
+<text x="670" y="480" font-size="14" font-weight="400" fill="#55555E" text-anchor="start">There are no kinds of Contract: the holder's setting decides who is billed.</text>
+<rect x="670" y="504" width="824" height="32" rx="8" fill="#3D3D42" stroke="#55555C" stroke-width="1.2"/>
+<text x="684" y="525" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">Arrangement</text>
+<text x="944" y="525" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">Contract holder</text>
+<text x="1096" y="525" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">Holder billed?</text>
+<text x="1212" y="525" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">Billable party</text>
+<path d="M932 511 V529" stroke="#66666E" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 511 V529" stroke="#66666E" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 511 V529" stroke="#66666E" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="670" y="546" width="824" height="44" rx="7" fill="#FFFFFF" stroke="#DAD1F5" stroke-width="1.2"/>
+<path d="M932 553 V583" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 553 V583" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 553 V583" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="row-no-contract" x="670" y="546" width="824" height="44" fill="none"/>
+<text x="684" y="573" font-size="14.5" font-weight="600" fill="#1B1B1F" text-anchor="start">No contract (RVG)</text>
+<text x="918" y="573" font-size="12" font-weight="400" fill="#55555E" text-anchor="end" font-style="italic">the default</text>
+<text x="944" y="573" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">AA</text>
+<rect x="1096.0" y="556" width="48" height="24" rx="12.0" fill="#D9D9E0"/>
+<text x="1120" y="572.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">No</text>
+<rect x="1212.0" y="556" width="61.5" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1242.75" y="572.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer</text>
+<rect x="670" y="596" width="824" height="44" rx="7" fill="#FFFFFF" stroke="#DAD1F5" stroke-width="1.2"/>
+<path d="M932 603 V633" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 603 V633" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 603 V633" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="row-hospital-rvg" x="670" y="596" width="824" height="44" fill="none"/>
+<text x="684" y="623" font-size="14.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Hospital RVG Contract</text>
+<text x="944" y="623" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Hospital</text>
+<rect x="1096.0" y="606" width="52" height="24" rx="12.0" fill="#CDE8FA"/>
+<text x="1122" y="622.32" font-size="12" font-weight="600" fill="#1B5C8A" text-anchor="middle">Yes</text>
+<rect x="1212.0" y="606" width="82.79999999999998" height="24" rx="12.0" fill="#D3EFEC" stroke="#7CC6BE" stroke-width="1.2"/>
+<text x="1253.4" y="622.32" font-size="12" font-weight="600" fill="#0D5F57" text-anchor="middle">Hospital</text>
+<rect x="670" y="646" width="824" height="44" rx="7" fill="#FFFFFF" stroke="#DAD1F5" stroke-width="1.2"/>
+<path d="M932 653 V683" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 653 V683" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 653 V683" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="row-hospital-fixed" x="670" y="646" width="824" height="44" fill="none"/>
+<text x="684" y="673" font-size="14.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Hospital fixed-price Contract</text>
+<text x="944" y="673" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Hospital</text>
+<rect x="1096.0" y="656" width="52" height="24" rx="12.0" fill="#CDE8FA"/>
+<text x="1122" y="672.32" font-size="12" font-weight="600" fill="#1B5C8A" text-anchor="middle">Yes</text>
+<rect x="1212.0" y="656" width="82.79999999999998" height="24" rx="12.0" fill="#D3EFEC" stroke="#7CC6BE" stroke-width="1.2"/>
+<text x="1253.4" y="672.32" font-size="12" font-weight="600" fill="#0D5F57" text-anchor="middle">Hospital</text>
+<rect x="670" y="696" width="824" height="44" rx="7" fill="#FFFFFF" stroke="#DAD1F5" stroke-width="1.2"/>
+<path d="M932 703 V733" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 703 V733" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 703 V733" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="row-insurer" x="670" y="696" width="824" height="44" fill="none"/>
+<text x="684" y="723" font-size="14.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Insurer as holder</text>
+<text x="944" y="723" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Insurer</text>
+<rect x="1096.0" y="706" width="52" height="24" rx="12.0" fill="#CDE8FA"/>
+<text x="1122" y="722.32" font-size="12" font-weight="600" fill="#1B5C8A" text-anchor="middle">Yes</text>
+<rect x="1212.0" y="706" width="75.69999999999999" height="24" rx="12.0" fill="#DDE3F4" stroke="#9AA9D6" stroke-width="1.2"/>
+<text x="1249.85" y="722.32" font-size="12" font-weight="600" fill="#2E3F7A" text-anchor="middle">Insurer</text>
+<rect x="670" y="746" width="824" height="44" rx="7" fill="#FFFFFF" stroke="#DAD1F5" stroke-width="1.2"/>
+<path d="M932 753 V783" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 753 V783" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 753 V783" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="row-prepay" x="670" y="746" width="824" height="44" fill="none"/>
+<text x="684" y="773" font-size="14.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Anaesthetist's prepay list</text>
+<text x="944" y="773" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Anaesthetist</text>
+<rect x="1096.0" y="756" width="48" height="24" rx="12.0" fill="#D9D9E0"/>
+<text x="1120" y="772.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">No</text>
+<rect x="1212.0" y="756" width="61.5" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1242.75" y="772.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer</text>
+<rect x="670" y="796" width="824" height="44" rx="7" fill="#FFFFFF" stroke="#DAD1F5" stroke-width="1.2"/>
+<path d="M932 803 V833" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1084 803 V833" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1200 803 V833" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="row-surgeon" x="670" y="796" width="824" height="44" fill="none"/>
+<text x="684" y="823" font-size="14.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Surgeon's fixed-fee arrangement</text>
+<text x="944" y="823" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Surgeon or rooms</text>
+<rect x="1096.0" y="806" width="48" height="24" rx="12.0" fill="#D9D9E0"/>
+<text x="1120" y="822.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">No</text>
+<rect x="1212.0" y="806" width="61.5" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1242.75" y="822.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Payer</text>
+<rect id="note-aa" x="686" y="864" width="396.0" height="76" rx="0" fill="none"/>
+<path d="M696 864 H686 V940 H696" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="702" y="886" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">AA holds No contract (RVG) and is never billed,</text>
+<text x="702" y="904" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">so it bills the payer. Insured patients who claim</text>
+<text x="702" y="922" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">the money back themselves are billed under it.</text>
+<rect id="note-sxap" x="1098.0" y="864" width="396.0" height="76" rx="0" fill="none"/>
+<path d="M1108.0 864 H1098.0 V940 H1108.0" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1114.0" y="886" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">A code such as SXAP from the rooms or the</text>
+<text x="1114.0" y="904" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">hospital says the hospital is arranging cover</text>
+<text x="1114.0" y="922" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">and is the billable party.</text>
+<rect x="20" y="976" width="1500" height="40" rx="10" fill="#FFF5C4" stroke="#EFD46A" stroke-width="1.2"/>
+<text x="770.0" y="1003" font-size="19" fill="#1B1B1F" text-anchor="middle"><tspan font-weight="800">Contract holder:</tspan> who the deal is with<tspan dx="14">·</tspan><tspan dx="14" font-weight="800">Billable party:</tspan> who gets the invoice<tspan dx="14">·</tspan><tspan dx="14" font-weight="800">Payer:</tspan> on the Booking, billed when the holder is not</text>
+</svg>

@@ -209,7 +209,7 @@
 <text x="924.0" y="1114.14" font-size="11.5" font-weight="600" fill="#3C3C46" text-anchor="middle">Fixed price</text>
 <text x="1047.0" y="1115" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">$3,910</text>
 <text x="1194.0" y="1115" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">H3</text>
-<text x="466" y="1146" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Each line stands alone. How a surgeon arrangement is found for a Booking is open (OQ-105).</text>
+<text x="466" y="1146" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Each line stands alone. One Contract, linked to its surgeons by practitioner ID (OQ-105).</text>
 <rect id="how-the-office-chooses" x="1342" y="20" width="420" height="1165" rx="13" fill="#F1EDFD" stroke="#C7BAF0" stroke-width="1.2"/>
 <text x="1360" y="60" font-size="28" font-weight="800" fill="#1B1B1F" text-anchor="start">How the office chooses</text>
 <text x="1360" y="86" font-size="14" font-weight="400" fill="#55555E" text-anchor="start">At booking setup the office's main job is</text>

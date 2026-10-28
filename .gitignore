@@ -28,3 +28,6 @@ Thumbs.db
 
 # Planning scratch (PDF page extractions, etc.)
 tmp/
+
+# Discovery meeting recordings (large media, kept local)
+/docs/discovery-reference/Recordings/
