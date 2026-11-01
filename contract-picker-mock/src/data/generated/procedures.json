@@ -1,0 +1,3274 @@
+[
+ {
+  "id": "p1",
+  "section": "00 - Supervision",
+  "subgroup": "00 - General",
+  "name": "Provision of IV Sedation and/or Monitoring",
+  "rvg": "SP1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p2",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Adenoid Ablation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p3",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Adenoidectomy",
+  "rvg": "H2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p4",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Adenotonsillectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p5",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Biopsy of Lateral Border of Tongue",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p6",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Browlift",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p7",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Cautery of Turbinates",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p8",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Chin Augmentation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p9",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Coblation Adenoidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p10",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Coblation Adenotonsillectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p11",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Cochlear Implantation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p12",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Comprehensive Endoscopic Sinus Surgery",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p13",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Division Tongue Tie",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p14",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Endoscopic Coblation Adenoidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p15",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Endoscopic Inferior Turbinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p16",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Eustachian Tube Balloon Dilatation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p17",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Excise Multiple Lesions Head",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p18",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Excision of Skin Lesion Bridge of Nose",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p19",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "External Rhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p20",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "External Septorhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p21",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "External Septorhinoplasty Revision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p22",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Face Lift",
+  "rvg": "H3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p23",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Frenulectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p24",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Frenuloplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p25",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Functional Endoscopic Sinus Surgery",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p26",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Functional External Septorhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p27",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Malar Implants",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p28",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Mastoidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p29",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Meatoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p30",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Microlaryngoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p31",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Myringoplasty",
+  "rvg": "H2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p32",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Myringotomy with Ventilation Tube Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p33",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Open Rhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p34",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Open Septorhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p35",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Ossiculoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p36",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Otoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p37",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Parotidectomy",
+  "rvg": "H3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p38",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Pharyngoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p39",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Reduction Inferior Turbinates",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p40",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Rhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p41",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Septoplasty",
+  "rvg": "H2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p42",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Septorhinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p43",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Sphenoidotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p44",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Stapedectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p45",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Tongue Tie Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p46",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Tonsillectomy",
+  "rvg": "H2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p47",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Turbinoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p48",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Tympanoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p49",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Uvulectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p50",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Uvulopalatopharyngoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p51",
+  "section": "01 - Head",
+  "subgroup": "00 - General",
+  "name": "Uvulopalatoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p52",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Bimaxillary Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p53",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Bsso",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p54",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Bsso Surgery",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p55",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Dental Clearance",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p56",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Dental Extraction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p57",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Dental Fillings",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p58",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Dental Treatment",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p59",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Enucleation Lesion Mandible",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p60",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Extractions of Impacted Teeth",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p61",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Full Dental Treatment",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p62",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Genioplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p63",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Maxillary Advancement Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p64",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Sagittal Split Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p65",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Surgical Dental Extraction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p66",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Temporo Mandibular Joint Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p67",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "TMJ Arthroscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p68",
+  "section": "01 - Head",
+  "subgroup": "01 - Dental",
+  "name": "Wisdom Tooth Extraction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p69",
+  "section": "01 - Head",
+  "subgroup": "02 - Neurosurgery",
+  "name": "Craniotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p70",
+  "section": "01 - Head",
+  "subgroup": "02 - Neurosurgery",
+  "name": "Titanium Cranioplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p71",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Cataract Extraction with Intraocular Lens Implantation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p72",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Corneal Graft",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p73",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Dacryocystorhinostomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p74",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Ectropion Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p75",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Endoscopic Dacryocystorhinostomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p76",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Lower Eyelid Blepharoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p77",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Lower Eyelid Reduction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p78",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Macular Hole Vitrectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p79",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Medial Rectus Botox Injection",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p80",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Molteno Implant",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p81",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Nasolacrimal Duct Recanalisation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p82",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Nasolacrimal Duct Recanalisation with Stent",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p83",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Pterygium Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p84",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Refractive Lens Exchange",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p85",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Removal of Cyst from Eyelid",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p86",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Scleral Fixation of IOL",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p87",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Strabismus Surgery",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p88",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Trabeculectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p89",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Upper Eyelid Blepharoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p90",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Upper Lid Scar Revision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p91",
+  "section": "01 - Head",
+  "subgroup": "03 - Ocular",
+  "name": "Vitrectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p92",
+  "section": "02 - Neck (Non vascular)",
+  "subgroup": "00 - General",
+  "name": "Laryngectomy",
+  "rvg": "N4",
+  "baseUnits": "10-14"
+ },
+ {
+  "id": "p93",
+  "section": "02 - Neck (Non vascular)",
+  "subgroup": "00 - General",
+  "name": "Parathyroidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p94",
+  "section": "02 - Neck (Non vascular)",
+  "subgroup": "00 - General",
+  "name": "Submandibular Gland Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p95",
+  "section": "02 - Neck (Non vascular)",
+  "subgroup": "00 - General",
+  "name": "Thyroid Lobectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p96",
+  "section": "02 - Neck (Non vascular)",
+  "subgroup": "00 - General",
+  "name": "Thyroidectomy",
+  "rvg": "N3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p97",
+  "section": "02 - Neck (Non vascular)",
+  "subgroup": "00 - General",
+  "name": "Total Thyroidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p98",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Acromioplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p99",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Arthroscopic Shoulder Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p100",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Arthroscopic Shoulder Stabilization",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p101",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Brachioplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p102",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Carpal Tunnel Release",
+  "rvg": "UL1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p103",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Compartment Fasciectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p104",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Corrective Osteotomy Distal Radius",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p105",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Cubital Tunnel Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p106",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "De Quervain Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p107",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Decompression Ulnar Nerve",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p108",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Dorsal Extensor Compartment Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p109",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Dupuytren's Contracture Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p110",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Elbow Repair Medial Ligament",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p111",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Epicondylar Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p112",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Excision Biopsy Osteochondrona Wrist",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p113",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Excision Dorsal Wrist Ganglion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p114",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Fat Injection to Forearm",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p115",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Hand Surgery",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p116",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Little Finger Scar Revision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p117",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Metacarpal Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p118",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Removal of Screws Shoulder",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p119",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Rotator Cuff Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p120",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Scaphoid Orif",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p121",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Shoulder Arthroscopic Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p122",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Shoulder Arthroscopic Repair of Subscapular",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p123",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Shoulder Arthroscopic Repair Supraspinatus",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p124",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Shoulder Arthroscopic to Open Latarjet",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p125",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Shoulder Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p126",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Shoulder Hemi Arthroplasty Pyrocarbon Head",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p127",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Subacromial Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p128",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Tennis Elbow Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p129",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Thumb Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p130",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Thumb Trapeziectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p131",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Total Shoulder Replacement",
+  "rvg": "UL4",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p132",
+  "section": "03 - Upper Limb",
+  "subgroup": "00 - General",
+  "name": "Ulna Nerve Release",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p133",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Augmentation",
+  "rvg": "T2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p134",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Augmentation Revision - Implant Exchange",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p135",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Expander Implant Exchange",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p136",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Lump Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p137",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Reduction",
+  "rvg": "T2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p138",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Reduction with Lateral Liposuction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p139",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Breast Symmetrising Breast Reduction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p140",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Correction of Nipple Inversion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p141",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Gender-Affirming Breast Augmentation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p142",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Gender-Affirming Mastectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p143",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Gynaecomastia Surgery",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p144",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Hookwire Localization - Breast Lump",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p145",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "HWL Wle",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p146",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Lumpectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p147",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Mastectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p148",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Mastopexy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p149",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Microdochectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p150",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Modified Robertson Reduction Mammoplas",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p151",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Prosthesis Exchange",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p152",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Removal of Breast Implants",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p153",
+  "section": "04 - Thorax",
+  "subgroup": "01 - Breast",
+  "name": "Sentinel Lymph Node Biopsy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p154",
+  "section": "04 - Thorax",
+  "subgroup": "02 - Thoracic",
+  "name": "Excision Lesion Chest Wall",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p155",
+  "section": "04 - Thorax",
+  "subgroup": "02 - Thoracic",
+  "name": "Excision Lipoma Thoracic Back",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p156",
+  "section": "04 - Thorax",
+  "subgroup": "02 - Thoracic",
+  "name": "Lung Biopsy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p157",
+  "section": "04 - Thorax",
+  "subgroup": "02 - Thoracic",
+  "name": "Thymectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p158",
+  "section": "04 - Thorax",
+  "subgroup": "02 - Thoracic",
+  "name": "Upper Lobectomy VATS",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p159",
+  "section": "04 - Thorax",
+  "subgroup": "03 - Cardiac",
+  "name": "Aortic Valve Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p160",
+  "section": "04 - Thorax",
+  "subgroup": "03 - Cardiac",
+  "name": "Coronary Artery Bypass Grafting",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p161",
+  "section": "04 - Thorax",
+  "subgroup": "03 - Cardiac",
+  "name": "Mitral Valve Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p162",
+  "section": "04 - Thorax",
+  "subgroup": "03 - Cardiac",
+  "name": "Mitral Valve Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p163",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Anterior C-spine Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p164",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Disc Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p165",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Discectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p166",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Endoscopic Spinal Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p167",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Interspinous Stabiliser",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p168",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Laminectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p169",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Spinal Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p170",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Lumbar Discectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p171",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Spinal Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p172",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Spinal Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p173",
+  "section": "05 - Spine",
+  "subgroup": "00 - General",
+  "name": "Spinal Instrumentation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p174",
+  "section": "05 - Spine",
+  "subgroup": "01 - Cervical",
+  "name": "Anterior Cervical Discectomy and Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p175",
+  "section": "05 - Spine",
+  "subgroup": "01 - Cervical",
+  "name": "Cervical C6 / 7 Foraminotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p176",
+  "section": "05 - Spine",
+  "subgroup": "03 - Lumbar",
+  "name": "Lumbar Decompression",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p177",
+  "section": "05 - Spine",
+  "subgroup": "03 - Lumbar",
+  "name": "Lumbar Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p178",
+  "section": "05 - Spine",
+  "subgroup": "03 - Lumbar",
+  "name": "Lumbar Laminectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p179",
+  "section": "05 - Spine",
+  "subgroup": "03 - Lumbar",
+  "name": "Revision Lumbar Discectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p180",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Abdominal Scar Revision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p181",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Abdominoplasty",
+  "rvg": "A5",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p182",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Extended Abdominoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p183",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Incisional Hernia Repair",
+  "rvg": "A3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p184",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Inguinal Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p185",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Adhesiolysis",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p186",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Cholecystectomy",
+  "rvg": "A3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p187",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p188",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Inguinal Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p189",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Mesh Repair Inguinal Hernia",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p190",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Mesh Repair of Hernia",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p191",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparoscopic Splenectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p192",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Laparotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p193",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Lipoabdominoplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p194",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Liposuction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p195",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Lower Body Lift",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p196",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Mesh Repair Parastomal Hernia",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p197",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Open Inguinal Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p198",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Splenectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p199",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Supraumbilical Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p200",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Sutured Paraumbilical Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p201",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Umbilical Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p202",
+  "section": "06 - Abdomen",
+  "subgroup": "00 - General",
+  "name": "Ventral Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p203",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Adjust Gastric Band",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p204",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Epigastric Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p205",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Hiatus Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p206",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Fundoplication",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p207",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Gastric Banding",
+  "rvg": "A7",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p208",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Gastric Bypass",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p209",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Liver Resection",
+  "rvg": "A9",
+  "baseUnits": "16"
+ },
+ {
+  "id": "p210",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Nissen Fundoplication",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p211",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic One Anastomosis Gastric Bypass",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p212",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Roux-en-Y Gastric Bypass",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p213",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Laparoscopic Sleeve Gastrectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p214",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Nissen Fundoplication",
+  "rvg": "A7",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p215",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "One Anastomosis Gastric Bypass",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p216",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Paraoesophageal Hernia Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p217",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Peroral Endoscopic Myotomy (POEM)",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p218",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Removal of Gastric Band",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p219",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Sleeve Gastrectomy",
+  "rvg": "A7",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p220",
+  "section": "06 - Abdomen",
+  "subgroup": "01 - Upper GI",
+  "name": "Sleeve Gastrectomy to Roux-en-y Gastric Bypass",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p221",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Anal Sphincterotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p222",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Anal Stretch",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p223",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Closure of Stoma",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p224",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Colectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p225",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Colostomy Closure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p226",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Colostomy Formation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p227",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Drainage of Perianal Abscess",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p228",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Excisision and Drainage Anal Fissure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p229",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Fistula-in-ano",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p230",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Haemorrhoidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p231",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Haemorrhoidectomy, Biopsy, EUA Coloscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p232",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Haemorrhoidectomy, Injection Botox",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p233",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Haemorrhoidopexy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p234",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Hal-rar Haemorrhoidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p235",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Hartmann's Procedure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p236",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Hemicolectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p237",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Ileostomy Closure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p238",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Ileostomy Formation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p239",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Laparoscopic Appendicectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p240",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Laparoscopic Colostomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p241",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Laparoscopic Hemicolectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p242",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Lay Open Low Anal Fistula",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p243",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Low Anterior Resection",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p244",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Panproctocolectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p245",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Pilonidal Sinus Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p246",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Polypectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p247",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Proctoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p248",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Rectal Biopsy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p249",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Rectopexy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p250",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Reversal of Hartmann's Procedure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p251",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Seton Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p252",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Simple Bascom Procedure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p253",
+  "section": "06 - Abdomen",
+  "subgroup": "02 - Lower GI",
+  "name": "Subtotal Colectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p254",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Abdominal Hysterectomy",
+  "rvg": "A4",
+  "baseUnits": "6-8"
+ },
+ {
+  "id": "p255",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Diagnostic Laparoscopy",
+  "rvg": "A2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p256",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Hysterectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p257",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Colposacropexy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p258",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Colposuspension",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p259",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Excision of Stage 1-2 Endometriosis",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p260",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Hysterectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p261",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Oophorectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p262",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Ovarian Cystectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p263",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Salpingectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p264",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Salpingo-oophorectomy - Unilateral",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p265",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Tubal Ligation",
+  "rvg": "A2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p266",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopically Assisted Vaginal Hysterectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p267",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p268",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Lavh",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p269",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Myomectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p270",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Oophorectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p271",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Reversal Sterilization",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p272",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Staging Laparoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p273",
+  "section": "06 - Abdomen",
+  "subgroup": "03 - Gynae",
+  "name": "Vaginal Hysterectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p274",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Artificial Urinary Sphincter Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p275",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Barrigel Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p276",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Bladder Neck Incision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p277",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Circumcision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p278",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Cystoscopy",
+  "rvg": "P1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p279",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Epididymal Cyst Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p280",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Epididymectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p281",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Excision Hydrocoele",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p282",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Holmium Laser Enucleation of the Prostate",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p283",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Hydrocoele Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p284",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Hypospadias Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p285",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Insertion of Atoms",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p286",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Insertion of Infatable Penile Prosthesis (coloplast Ti",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p287",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Lap Varicocele Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p288",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Laparoscopic Pyeloplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p289",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Laparoscopic Radical Nephrectomy",
+  "rvg": "P6",
+  "baseUnits": "10"
+ },
+ {
+  "id": "p290",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Laparoscopic Second Stage Orchidopexy - D",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p291",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Optical Internal Urethrotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p292",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Orchidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p293",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Orchidopexy",
+  "rvg": "P2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p294",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Prostate Brachytherapy Seed Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p295",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Pubovagunal Sling",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p296",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Radical Prostatectomy",
+  "rvg": "P6",
+  "baseUnits": "10"
+ },
+ {
+  "id": "p297",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Robot-Assisted Laparoscopic Prostatectomy",
+  "rvg": "P6",
+  "baseUnits": "10"
+ },
+ {
+  "id": "p298",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Robot-Assisted Radical Prostatectomy",
+  "rvg": "P6",
+  "baseUnits": "10"
+ },
+ {
+  "id": "p299",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Scrotal Orchidectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p300",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Transperineal Prostate Biopsy",
+  "rvg": "P3",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p301",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Transurethral Resection of Bladder Tumour",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p302",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Transurethral Resection of Prostate",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p303",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "TVT Sling Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p304",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "TVT Sling Removal",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p305",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Ureteric Reimplant",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p306",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Ureteroscopic Laser Stone Extraction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p307",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Ureteroscopy",
+  "rvg": "P2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p308",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Urethroplasty",
+  "rvg": "P2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p309",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Vasectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p310",
+  "section": "07 - Perineum",
+  "subgroup": "01 - Urology",
+  "name": "Vasectomy Reversal",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p311",
+  "section": "07 - Perineum",
+  "subgroup": "02 - Obstetric",
+  "name": "Evacuation of Uterus",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p312",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Anterior Colporthaphy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p313",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Bartholins Cyst",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p314",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Birch Colposuspension",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p315",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Colposcopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p316",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Cystocoele Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p317",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Division of Hymen",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p318",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Endometrial Ablation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p319",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Endometrial Resection",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p320",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Excision Bartholins Cyst",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p321",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Fentons Procedure",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p322",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Hysteroscopy",
+  "rvg": "P1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p323",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Intrauterine Device Insertion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p324",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Labiaplasty",
+  "rvg": "P1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p325",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Laparoscopic Hysteroscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p326",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Levatorplasty",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p327",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Lletz",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p328",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Posterior Repair",
+  "rvg": "P2",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p329",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Rectocoele",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p330",
+  "section": "07 - Perineum",
+  "subgroup": "03 - Gynae",
+  "name": "Sling Colposuspension",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p331",
+  "section": "08 - Pelvic",
+  "subgroup": "00 - General",
+  "name": "Coccygectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p332",
+  "section": "08 - Pelvic",
+  "subgroup": "00 - General",
+  "name": "Excision of Coccyx",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p333",
+  "section": "09 - Vascular",
+  "subgroup": "00 - General",
+  "name": "Aorta Bi Illiac Aneurysm Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p334",
+  "section": "09 - Vascular",
+  "subgroup": "00 - General",
+  "name": "Carotid Endarterectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p335",
+  "section": "09 - Vascular",
+  "subgroup": "00 - General",
+  "name": "Endoluminal Repair A Aortic Aneurysm",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p336",
+  "section": "09 - Vascular",
+  "subgroup": "00 - General",
+  "name": "Open Aaa Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p337",
+  "section": "09 - Vascular",
+  "subgroup": "00 - General",
+  "name": "Varicose Vein Surgery",
+  "rvg": "V1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p338",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "1st Mtp Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p339",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "2nd and 3rd Weil Osteotomies",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p340",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "ACL Reconstruction Patella Tightrope",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p341",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Ankle Arthroscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p342",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Ankle Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p343",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Ankle Reconstruction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p344",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Ankle Removal of Metalware",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p345",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Ankle Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p346",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Anterior Cruciate Ligament Reconstruction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p347",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Anterior Cruciate Ligament Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p348",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Arthroscopic Meniscectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p349",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Bunionectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p350",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Decompression Archilles Tendon",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p351",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Direct Anterior Total Hip Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p352",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Gluteal Tendon Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p353",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Hallux Valgus Correction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p354",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Hamstring Avulsion Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p355",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Hip Arthroscopy",
+  "rvg": "LL1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p356",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Hip Replacement And",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p357",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Knee Arthroscopic Medial Meniscal Debrideme",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p358",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Knee Arthroscopic Medial Meniscectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p359",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Knee Arthroscopy",
+  "rvg": "LL1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p360",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Knee MUA",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p361",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Liposuction to Contour Deformity Knee",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p362",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Metatarsal Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p363",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Morton's Neuroma Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p364",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Open Debridement Patella Tendon",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p365",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Posterior Cruciate Ligament Reconstruction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p366",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Reduction of Hip Dislocation",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p367",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Revision Ankle Fusion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p368",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Revision Anterior Cruciate Ligament Reconstruction",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p369",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Revision Total Hip Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p370",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Revision Total Knee Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p371",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Tibial Osteotomy",
+  "rvg": "LL3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p372",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Total Ankle Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p373",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Total Hip Replacement",
+  "rvg": "LL4",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p374",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Total Knee Replacement",
+  "rvg": "LL4",
+  "baseUnits": "8"
+ },
+ {
+  "id": "p375",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Unicompartmental Knee Replacement",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p376",
+  "section": "10 - Lower Limb",
+  "subgroup": "00 - General",
+  "name": "Wle Melanoma Anterior Leg",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p377",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Colonoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p378",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Colonoscopy / Polypectomy Haemorrhoidectomy, Inj",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p379",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "ERCP",
+  "rvg": "E3",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p380",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Flexible Sigmoidoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p381",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Gastroscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p382",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Gastroscopy Sou-177507",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p383",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Oesphangoscopy Pharynoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p384",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "01 - Endoscopy",
+  "name": "Sigmoidoscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p385",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "02 - Cardiology",
+  "name": "Cardioversion",
+  "rvg": "C1",
+  "baseUnits": "4"
+ },
+ {
+  "id": "p386",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "03 - Radiology",
+  "name": "MRI",
+  "rvg": "R1",
+  "baseUnits": "5"
+ },
+ {
+  "id": "p387",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "03 - Radiology",
+  "name": "MRI Cardiac",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p388",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "04 - Miscellaneous",
+  "name": "ESWL (renal)",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p389",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "04 - Miscellaneous",
+  "name": "ESWL Kidney Stones",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p390",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "04 - Miscellaneous",
+  "name": "Extracorporeal Shock Wave Lithotripsy",
+  "rvg": "M2",
+  "baseUnits": "6"
+ },
+ {
+  "id": "p391",
+  "section": "11 - Anaesthesia in Remote Locations",
+  "subgroup": "04 - Miscellaneous",
+  "name": "Lithotripsy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p392",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Adhesiolysis",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p393",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Arthroscopy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p394",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Bone Biopsy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p395",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Botox Injection",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p396",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Dermabrasion",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p397",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Evacuation of Haematoma",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p398",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Excision Lipoma",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p399",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Excision Skin Tags",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p400",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Exploration Umbilical Port Site",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p401",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Fasciectomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p402",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Ganglion Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p403",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Ligament Repair",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p404",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Lipoma Excision",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p405",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Orif",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p406",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Osteotomy",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p407",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Removal of Cyst",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p408",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Tendon Transfer",
+  "rvg": null,
+  "baseUnits": null
+ },
+ {
+  "id": "p409",
+  "section": "99 - Needs Review / Unclassified",
+  "subgroup": "00 - Needs Review",
+  "name": "Tenolysis",
+  "rvg": null,
+  "baseUnits": null
+ }
+]

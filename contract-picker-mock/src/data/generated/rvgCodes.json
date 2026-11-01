@@ -1,0 +1,850 @@
+[
+ {
+  "code": "SP1",
+  "region": "Supervision",
+  "sub": null,
+  "description": "Provision of IV Sedation and/or Monitoring",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "H1",
+  "region": "Head",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision of Superficial Lesions, Myringotomies",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "H2",
+  "region": "Head",
+  "sub": null,
+  "description": "Simple but Invasive Procedures e.g. Adenoidectomy, Tonsillectomy, Myringoplasty, Ear canal, Septoplasty",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "H3",
+  "region": "Head",
+  "sub": null,
+  "description": "Moderate Procedures e.g. Endoscopic Sinus Surgery, Septo-rhinoplasty, Micro-laryngoscopy, Bronchoscopy, Parotidectomy, Face-lift, Orbital Reconstruction",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "H4",
+  "region": "Head",
+  "sub": null,
+  "description": "Complex Procedures e.g. Maxillary/Mandibular Osteotomy, Tumour Resection, Free Flap Placement",
+  "baseUnits": 10,
+  "maxUnits": 12
+ },
+ {
+  "code": "H5",
+  "region": "Head",
+  "sub": "Dental",
+  "description": "Dental Extractions/Dental Restorations",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "H6a",
+  "region": "Head",
+  "sub": "Ocular",
+  "description": "Ocular Procedure Under Local Anaesthetic or Eye Block or GA > 2yo",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "H6b",
+  "region": "Head",
+  "sub": "Ocular",
+  "description": "Ocular Procedure Under GA [YOUNGER than Aged TWO Years]",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "H7a",
+  "region": "Head",
+  "sub": "Neurosurgery",
+  "description": "Cranioplasty/Cerebrospinal fluid shunt procedures supine/lateral - Supine/lateral",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "H7b",
+  "region": "Head",
+  "sub": "Neurosurgery",
+  "description": "Cranioplasty/Cerebrospinal fluid shunt procedures supine/lateral - Prone/park bench/sitting",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "H8a",
+  "region": "Head",
+  "sub": "Neurosurgery",
+  "description": "Non-Vascular Open Intracranial/Spinal cord - Supine/lateral",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "H8b",
+  "region": "Head",
+  "sub": "Neurosurgery",
+  "description": "Non-Vascular Open Intracranial/Spinal cord - Prone/park bench/sitting",
+  "baseUnits": 14,
+  "maxUnits": null
+ },
+ {
+  "code": "H9a",
+  "region": "Head",
+  "sub": "Neurosurgery",
+  "description": "Vascular Open Intracranial/Spinal cord Procedures - Supine/lateral",
+  "baseUnits": 20,
+  "maxUnits": null
+ },
+ {
+  "code": "H9b",
+  "region": "Head",
+  "sub": "Neurosurgery",
+  "description": "Vascular Open Intracranial/Spinal cord Procedures - Prone/park bench/sitting",
+  "baseUnits": 22,
+  "maxUnits": null
+ },
+ {
+  "code": "N1",
+  "region": "Neck (Non vascular)",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision of Superficial Lesions",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "N2",
+  "region": "Neck (Non vascular)",
+  "sub": null,
+  "description": "Simple but Invasive Procedures e.g. Closure of Tracheostomy",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "N3",
+  "region": "Neck (Non vascular)",
+  "sub": null,
+  "description": "Moderate Procedures e.g. Thyroidectomy, Simple Neck Dissection (Not part of more extensive surgery)",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "N4",
+  "region": "Neck (Non vascular)",
+  "sub": null,
+  "description": "Significant Complex Procedures e.g. Laryngectomy, Carotid Endarterectomy, Tumour Resection +/- Neck Dissection, Free Flap Placement",
+  "baseUnits": 10,
+  "maxUnits": 14
+ },
+ {
+  "code": "UL1",
+  "region": "Upper Limb",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision Skin Lesions, Carpal Tunnel Release",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "UL2",
+  "region": "Upper Limb",
+  "sub": null,
+  "description": "Simple but Invasive Procedures e.g., Simple Tendon Transposition, Simple Nerve Transposition, Open Radius/Ulnar Surgery, straightforward removal of metal wear",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "UL3",
+  "region": "Upper Limb",
+  "sub": null,
+  "description": "Moderate Soft Tissue/Muscle/Nerve Procedures e.g. Rotator Cuff Surgery, Wrist Joint Replacement, Finger Joint Replacement/Fusion, Wrist Arthroscopy, complicated removal of metal wear",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "UL4",
+  "region": "Upper Limb",
+  "sub": null,
+  "description": "Major Bony/Joint Procedures e.g. Shoulder Replacement arthroplasty upper limb",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "T1",
+  "region": "Thorax",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision of Superficial Lesions (Shoulder/Chest/Back)",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "T2",
+  "region": "Thorax",
+  "sub": "Breast",
+  "description": "Minor Procedures e.g. Removal Simple Breast Lesion",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "T2",
+  "region": "Thorax",
+  "sub": "Breast",
+  "description": "Simple but Invasive Procedures e.g., Wide Local Excision Breast Lump, Breast Augmentation, Breast Reduction, Simple Mastectomy",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "T3",
+  "region": "Thorax",
+  "sub": "Breast",
+  "description": "Moderate Procedures e.g. Complex Mastectomy (includes axillary node surgery) dissection",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "T4",
+  "region": "Thorax",
+  "sub": "Breast",
+  "description": "Major Procedures e.g. TRAM Flap",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "T5a",
+  "region": "Thorax",
+  "sub": "Thoracic",
+  "description": "Mediastinoscopy",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "T5b",
+  "region": "Thorax",
+  "sub": "Thoracic",
+  "description": "Sympathectomy Lobectomy/Wedge Resection",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "T5c",
+  "region": "Thorax",
+  "sub": "Thoracic",
+  "description": "Pleurodesis/Simple Biopsy",
+  "baseUnits": 8,
+  "maxUnits": 10
+ },
+ {
+  "code": "T5d",
+  "region": "Thorax",
+  "sub": "Thoracic",
+  "description": "Lobectomy/Wedge Resection",
+  "baseUnits": 14,
+  "maxUnits": null
+ },
+ {
+  "code": "T5e",
+  "region": "Thorax",
+  "sub": "Thoracic",
+  "description": "Major Thoracic e.g. Pneumonectomy, Tracheal and/or Bronchial Reconstruction, Thoracoabdominal Procedures",
+  "baseUnits": 20,
+  "maxUnits": null
+ },
+ {
+  "code": "T6a",
+  "region": "Thorax",
+  "sub": "Cardiac",
+  "description": "Sternal Debridement or Chest Re-Opening (either OR or ICU)",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "T6b",
+  "region": "Thorax",
+  "sub": "Cardiac",
+  "description": "Less Complex Surgery e.g. CABG Only, Single Valve Replacement",
+  "baseUnits": 16,
+  "maxUnits": null
+ },
+ {
+  "code": "T6c",
+  "region": "Thorax",
+  "sub": "Cardiac",
+  "description": "More Complex Surgery e.g. Redo Case, Multiple Valve Replacement, CABG Plus Valve",
+  "baseUnits": 20,
+  "maxUnits": null
+ },
+ {
+  "code": "T6d",
+  "region": "Thorax",
+  "sub": "Cardiac",
+  "description": "Percutaneous Cardiac Surgery e.g. TAVI (NOT EP Ablations)",
+  "baseUnits": 15,
+  "maxUnits": null
+ },
+ {
+  "code": "T7a",
+  "region": "Thorax",
+  "sub": "TOE Use",
+  "description": "Insertion TOE + Limited Exam e.g. TOE During EP Procedures at Request of Cardiologist",
+  "baseUnits": 2,
+  "maxUnits": null
+ },
+ {
+  "code": "T7b",
+  "region": "Thorax",
+  "sub": "TOE Use",
+  "description": "Diagnostic TOE: Full Examination, Including Report [Nil Time Units ]",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "S1",
+  "region": "Spine",
+  "sub": null,
+  "description": "Removal of Spinal Hardware",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "S2",
+  "region": "Spine",
+  "sub": "Cervical",
+  "description": "Anterior Cervical Procedures e.g. Anterior Disc Fusion, Disc Replacement",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "S3a",
+  "region": "Spine",
+  "sub": "Cervical",
+  "description": "Posterior Cervical Procedures [1-2 levels] e.g. Foraminotomy",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "S3b",
+  "region": "Spine",
+  "sub": "Cervical",
+  "description": "Posterior Cervical Procedures [>2 levels or Front + Back]",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "S4",
+  "region": "Spine",
+  "sub": "Thoracic",
+  "description": "Intrathoracic Spinal Procedures",
+  "baseUnits": 16,
+  "maxUnits": null
+ },
+ {
+  "code": "S5",
+  "region": "Spine",
+  "sub": "Thoracic",
+  "description": "Extensive Thoracic/Lumbar Decompression and Fusion e.g. Scoliosis",
+  "baseUnits": 20,
+  "maxUnits": null
+ },
+ {
+  "code": "S6",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Discectomy/Decompression Procedures - [ 1-2 levels]",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "S7",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Minimally Invasive Lateral Lumbar Procedures",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "S8a",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Anterior Decompression/Fusion - Single Level",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "S8b",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Anterior Decompression/Fusion - Multiple Level",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "S9a",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Posterior Decompression/Fusion - Single Level",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "S9b",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Posterior Decompression/Fusion - Two Level",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "S9c",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Posterior Decompression/Fusion - Three + Level",
+  "baseUnits": 14,
+  "maxUnits": null
+ },
+ {
+  "code": "S10",
+  "region": "Spine",
+  "sub": "Lumbar",
+  "description": "Combined Anterior and Posterior Surgical Approach",
+  "baseUnits": 18,
+  "maxUnits": null
+ },
+ {
+  "code": "A1",
+  "region": "Abdomen",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision Of Skin Lesions, Egg Pick-up (Sedation)",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "A2",
+  "region": "Abdomen",
+  "sub": null,
+  "description": "Simple but Invasive Procedures e.g. Hernias (Open + Laparoscopic), Gynae: Diagnostic Laparoscopy, Tubal Ligation, Ovarian Egg Pick-up (GA)",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "A3",
+  "region": "Abdomen",
+  "sub": null,
+  "description": "Moderate Procedures e.g. Incisional Hernia Repair, Laparoscopic Cholecystectomy, Appendectomy, Ectopic Pregnancy",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "A4",
+  "region": "Abdomen",
+  "sub": null,
+  "description": "Gynae: Moderate/Major Procedures e.g. Endometriosis Surgery, Abdominal Hysterectomy (Open/Laparoscopic), Ovarian Surgery",
+  "baseUnits": 6,
+  "maxUnits": 8
+ },
+ {
+  "code": "A5",
+  "region": "Abdomen",
+  "sub": null,
+  "description": "Major Procedures e.g. Extensive Incisional Hernia Repair, Gynaecological Tumour Surgery, Extensive Liposuction, Abdominoplasty",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "A6",
+  "region": "Abdomen",
+  "sub": null,
+  "description": "Complex Procedures e.g. Phaeochromocytoma",
+  "baseUnits": 12,
+  "maxUnits": 14
+ },
+ {
+  "code": "A7",
+  "region": "Abdomen",
+  "sub": "Upper GI",
+  "description": "Major Laparoscopic Intraperitoneal Procedures e.g. Nissen Fundoplication, Gastric Banding, Sleeve Gastrectomy",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "A8",
+  "region": "Abdomen",
+  "sub": "Upper GI",
+  "description": "Major Open Procedure e.g. Gastric Bypass",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "A9",
+  "region": "Abdomen",
+  "sub": "Upper GI",
+  "description": "Complex Procedures e.g. Liver Resection, Whipple's",
+  "baseUnits": 16,
+  "maxUnits": null
+ },
+ {
+  "code": "A10",
+  "region": "Abdomen",
+  "sub": "Upper GI",
+  "description": "Oesophagectomy",
+  "baseUnits": 20,
+  "maxUnits": null
+ },
+ {
+  "code": "A11",
+  "region": "Abdomen",
+  "sub": "Lower GI",
+  "description": "Moderate Procedures e.g. Reversal Loop Ileostomy",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "A12",
+  "region": "Abdomen",
+  "sub": "Lower GI",
+  "description": "Major Procedures e.g. Bowel Resection [Single Section with Re-anastomosis] INCLUDES Open/Laparoscopic/Combined Technique",
+  "baseUnits": 8,
+  "maxUnits": 10
+ },
+ {
+  "code": "A13",
+  "region": "Abdomen",
+  "sub": "Lower GI",
+  "description": "Complex Procedures e.g. Extensive Bowel Resection - Extending into Upper Abdomen or Pelvis [APR], AND/OR Where an - ostomy is created; Open Abdominal Urological Procedures, Cystectomy",
+  "baseUnits": 12,
+  "maxUnits": 14
+ },
+ {
+  "code": "P1",
+  "region": "Perineum",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision Superficial Lesions, Excision Skin Tags, Banding Haemorrhoids, Circumcision (> 2 y.o.); Gynae: Cystoscopy, Hysteroscopy, D+C, Labiaplasty",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "P2",
+  "region": "Perineum",
+  "sub": null,
+  "description": "Simple but Invasive Procedures e.g. Circumcision (< 2 y.o.), Orchidopexy, Scrotal Surgery, Urethroplasty, Ureteroscopy, TURBT; Gynae: Anterior Repair, Posterior Repair, Sacrospinous Fixation",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "P3",
+  "region": "Perineum",
+  "sub": "Urology",
+  "description": "Minor Procedures e.g. Trans-perineal Prostate Procedures such as Rod Insertion or Prostate Biopsy",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "P4",
+  "region": "Perineum",
+  "sub": "Urology",
+  "description": "Moderate Surgery e.g. TURP",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "P5",
+  "region": "Perineum",
+  "sub": "Urology",
+  "description": "Major Surgery e.g. Percutaneous Nephrolithotomy",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "P6",
+  "region": "Perineum",
+  "sub": "Urology",
+  "description": "Complex Surgery: Prostatectomy (Radical/Robotic), Nephrectomy, Open Cystectomy",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "P6",
+  "region": "Perineum",
+  "sub": "Obstetric",
+  "description": "Obstetric Vaginal Procedures",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "P7",
+  "region": "Perineum",
+  "sub": "Obstetric",
+  "description": "Obstetric Epidural Pain Relief/Evacuation Of Uterus [Post-partum]",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "P8",
+  "region": "Perineum",
+  "sub": "Obstetric",
+  "description": "Caesarean Section (Spinal OR GA), Vaginal Birth under GA",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "PE1",
+  "region": "Pelvic",
+  "sub": null,
+  "description": "Minor Procedures e.g. Application Hip Spica",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "PE2",
+  "region": "Pelvic",
+  "sub": null,
+  "description": "Significant Procedures e.g. Open Pelvic Surgery",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "V1",
+  "region": "Vascular",
+  "sub": null,
+  "description": "Minor Procedure, e.g. Varicose Vein Surgery, Port Insertion",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "V2",
+  "region": "Vascular",
+  "sub": null,
+  "description": "Moderate Procedure, e.g. Infra-inguinal Arterial Surgery, Fistula Formation, other Non-aortic or Carotid Vascular Procedure",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "V3",
+  "region": "Vascular",
+  "sub": null,
+  "description": "Major Procedure, e.g. Fem-pop Bypass, Non-carotid Vascular Head and Neck Procedure",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "V4",
+  "region": "Vascular",
+  "sub": null,
+  "description": "Significant Procedure, e.g. Carotid Endarterectomy, Percutaneous Abdominal Vascular Procedure",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "V5",
+  "region": "Vascular",
+  "sub": null,
+  "description": "Complex Procedure, e.g. Open Abdominal Vascular Procedure",
+  "baseUnits": 20,
+  "maxUnits": null
+ },
+ {
+  "code": "LL1",
+  "region": "Lower Limb",
+  "sub": null,
+  "description": "Minor Procedures e.g. Excision Skin Lesions, Hip Arthroscopy, Knee Arthroscopy",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "LL2",
+  "region": "Lower Limb",
+  "sub": null,
+  "description": "Simple but Invasive Procedures e.g. Simple Tendon Transposition, Simple Nerve Transposition",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "LL3",
+  "region": "Lower Limb",
+  "sub": null,
+  "description": "Moderate Soft Tissue/Muscle/Nerve Procedures e.g. ACL Surgery, Femoral/Tibial Osteotomy, Alignment, Corrective Foot Surgery",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "LL4",
+  "region": "Lower Limb",
+  "sub": null,
+  "description": "Major Hip/Knee Joint Procedures e.g. Hip Replacement, Knee Replacement",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "LL5",
+  "region": "Lower Limb",
+  "sub": null,
+  "description": "Complex Hip/Knee Joint Procedures e.g. Bilateral Joint Replacements, Simple Joint Revision",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "LL6",
+  "region": "Lower Limb",
+  "sub": null,
+  "description": "Significant Hip/Knee Joint Revision Procedures e.g. Two Component Revisions, Acetabular Reconstruction + Bone Graft, Open Pelvic Surgery",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "E1",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Endoscopy",
+  "description": "Endoscopy Under Sedation [Gastroscopy, Colonoscopy - includes Sedation for Uncomplicated Biopsies]",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "E2",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Endoscopy",
+  "description": "Endoscopy Under General Anaesthesia [Gastroscopy, Colonoscopy]",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "E3",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Endoscopy",
+  "description": "Moderate Endoscopic Procedures e.g. ERCP, Oesophageal Stenting",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "C1",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Cardiology",
+  "description": "Minor Procedures e.g. Cardioversion, Sedation For TOE",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "C2",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Cardiology",
+  "description": "Cardiac Ablation - Right Heart, SVT Procedures",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "C3",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Cardiology",
+  "description": "Pulmonary Vein Isolation",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "C4",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Cardiology",
+  "description": "Extraction Of Cardiac Leads",
+  "baseUnits": 12,
+  "maxUnits": null
+ },
+ {
+  "code": "R1",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Radiology",
+  "description": "Diagnostic Radiology e.g., CT Scan, PET Scan, MRI",
+  "baseUnits": 5,
+  "maxUnits": null
+ },
+ {
+  "code": "R2",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Radiology",
+  "description": "Major Radiological Procedures e.g. Non-Cerebral Embolization, Non-Aortic Stenting",
+  "baseUnits": 6,
+  "maxUnits": 8
+ },
+ {
+  "code": "R3",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Radiology",
+  "description": "Significant Radiological Procedures e.g. Cerebral Embolization, Aortic Stenting",
+  "baseUnits": 10,
+  "maxUnits": null
+ },
+ {
+  "code": "M1",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Miscellaneous",
+  "description": "Minor Procedures e.g. Electroconvulsive Therapy",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "M2",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Miscellaneous",
+  "description": "Extracorporeal Shockwave Lithotripsy",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "M3",
+  "region": "Anaesthesia in Remote Locations",
+  "sub": "Miscellaneous",
+  "description": "Medical Transport - Preparation, Monitoring, Ventilator, Circulatory Support",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "CP1",
+  "region": "Pain Consultations and Procedures",
+  "sub": "Consultation",
+  "description": "LOW Complexity Decision Making",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "CP2",
+  "region": "Pain Consultations and Procedures",
+  "sub": "Consultation",
+  "description": "MEDIUM Complexity Decision Making",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "CP3",
+  "region": "Pain Consultations and Procedures",
+  "sub": "Consultation",
+  "description": "HIGH Complexity Decision Making",
+  "baseUnits": 8,
+  "maxUnits": null
+ },
+ {
+  "code": "CP4",
+  "region": "Pain Consultations and Procedures",
+  "sub": "Procedures",
+  "description": "Trigger Point Injections/Infusions",
+  "baseUnits": 4,
+  "maxUnits": null
+ },
+ {
+  "code": "CP5",
+  "region": "Pain Consultations and Procedures",
+  "sub": "Procedures",
+  "description": "Regional Blocks",
+  "baseUnits": 6,
+  "maxUnits": null
+ },
+ {
+  "code": "CP6",
+  "region": "Pain Consultations and Procedures",
+  "sub": "Procedures",
+  "description": "Spinal Procedures",
+  "baseUnits": 8,
+  "maxUnits": null
+ }
+]

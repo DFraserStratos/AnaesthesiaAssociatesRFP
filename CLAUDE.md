@@ -56,6 +56,10 @@ Not the place to edit requirements:
 
 - **The app** — `aa-prototype/` at the repo root. Never create a second prototype folder. Its
   `README.md` is the developer entry point: scripts, stack versions and a `src/` folder map.
+- **Contract picker mock** — `contract-picker-mock/` (port 5181, `npm run dev:picker`): a deliberate,
+  throwaway exception to the one-prototype rule. It is a single AA Admin booking screen comparing six (billable party first and price first)
+  ways of choosing a Contract, seeded from the real fee files, for stakeholder workshops. The prototype
+  conventions (store, demo clock, `PERSIST_VERSION`) do not apply to it; see its `README.md`.
 - **Requirements Board** — `requirements-board/`: a separate local dev tool (Vite + React, port
   5180) for reading, editing and arranging the future-state requirements catalogue in
   `requirements-board/requirements/` (format: `REQ/SCHEMA.md`). It is a **portable kit**: the app,
@@ -109,7 +113,7 @@ Not the place to edit requirements:
   the catalogue for the real system's requirements); its PDF is `REQ/artifacts/files/` (artifact
   AR-15). Our Stratos response PDF is artifact AR-36, also in `REQ/artifacts/files/` (sources cite it as
   `RFP response p.N`). Other evidence not cited by
-  the catalogue (contract fee schedules) is in `docs/discovery-reference/Data files/`.
+  the catalogue (contract fee schedules) is in `docs/discovery-reference/Contract Files/`.
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
 - **Assets** — `docs/assets/` (the AA logo).
 

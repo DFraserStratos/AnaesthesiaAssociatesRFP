@@ -1,0 +1,156 @@
+/*
+ * Trimmed from aa-prototype/src/theme/global.css: the self-hosted faces, base
+ * body styles, `.mono` and the two motions the mock uses. No Tailwind; every
+ * component reads src/theme/tokens.ts through inline styles, as the prototype does.
+ */
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/schibsted-grotesk-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/schibsted-grotesk-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/spline-sans-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/spline-sans-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-mono: 'Spline Sans Mono', ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Schibsted Grotesk', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 22px;
+  color: #172320;
+  background: #f6f8f7;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Data / numeric text: monospace with tabular figures (Design Language §03). */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.aa-slot:hover .aa-slot-value {
+  text-decoration: underline;
+  text-decoration-color: #c9d1ce;
+  text-underline-offset: 3px;
+}
+
+.aa-row:hover {
+  background: #edf1ef;
+}
+
+/* The row the arrow keys are on (Combo, RvgTypeahead): a teal ring, so it reads
+   over a selected row's tint too. */
+.aa-row[data-active='true'] {
+  background-color: #edf1ef;
+  outline: 2px solid #0d6e63;
+  outline-offset: -2px;
+}
+
+.aa-row:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(13, 110, 99, 0.3);
+}
+
+@keyframes aa-card-in {
+  from {
+    transform: translateX(103%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes aa-sheet-in {
+  from {
+    transform: translateY(103%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes aa-sheet-rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+  }
+}
+
+@keyframes aa-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
