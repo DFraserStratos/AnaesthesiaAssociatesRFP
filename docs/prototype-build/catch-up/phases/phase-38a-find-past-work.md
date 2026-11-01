@@ -88,13 +88,14 @@ new stored entity. The seed grows, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `d4db277`):
+1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `7cd7802`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-07.2,US-07.2.1,US-07.2.3,US-07.3.2,US-07.4.1,US-07.4.2,FT-07.4,US-03.1.6,US-03.1.7,EP-07,FT-03.1,US-03.1.1,US-03.1.4,US-12.2.1,US-02.5.5,FT-03.4,OQ-26,OQ-17,OQ-31,OQ-86
    ```
 
-   (This doc is current at `d4db277`. What changed since `60e2d1e`, already reflected: the edit window
+   (This doc is current at `7cd7802`; the 2026-11-02 update added only a link to US-03.1.6. What
+   changed from `60e2d1e` to `d4db277`, already reflected: the edit window
    to AUTHORISED and the "changed since submitted" reading (FT-07.2, US-07.2.1, US-07.2.3); the exit
    at AUTHORISED with invoices at once (US-07.4.1, FT-07.4, US-07.4.2); search on name, NHI or date
    instead of an archive and calendar (US-03.1.6, US-03.1.7); the removal of the "reason" from an
@@ -701,7 +702,7 @@ a bug had none), re-green and record the pass. Do not re-raise anything settled 
   number, and the screens worth a look (mobile `/mobile/lists` scrolled back, `/mobile/lists?q=Prentice`,
   web `/web/lists` and `/web/lists?day=2026-03-13`, Admin Review after an anaesthetist edit, as Dr Souter).
 - **Status row** for catch-up Phase 38a, and a phase entry with: the drift-check result (items changed or
-  not against `d4db277`; whether the Admin App, date of birth or invoice numbers came into scope); what was
+  not against `7cd7802`; whether the Admin App, date of birth or invoice numbers came into scope); what was
   built, with the name map for later phases (`editRefusal`'s new rule, `changedSinceSubmitted`,
   `hasLeftMainView`, `listProgress`, `LIST_PROGRESS_LABEL`, `parseBookingQuery`, `foldName`,
   `patientMatches`, `mainViewFor`, `lookbackBoundsFor`, `listsOnDayFor`, `listDaysFor`,

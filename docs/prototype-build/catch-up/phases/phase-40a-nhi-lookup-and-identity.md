@@ -104,7 +104,7 @@ external system, so it is built from the seed by a pure function and never persi
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `d4db277`;
+1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `7cd7802`;
    the tool is rename-aware, so never a plain git diff of the catalogue folder):
 
    ```
@@ -112,10 +112,11 @@ external system, so it is built from the seed by a pure function and never persi
    ```
 
    Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on the
-   Booking and the HPI CPN glossary row. (This doc is current at `d4db277`: neither covered item
-   changed and both are still **Proposed** with no OQ linked; OQ-49 is answered, so D11 is built, not
+   Booking and the HPI CPN glossary row. (This doc is current at `7cd7802`: neither covered item
+   changed and both are still **Proposed** with no OQ linked; the 28 October changes to the read-alongside
+   items (US-11.1.1, US-11.1.5, US-11.2.2, US-12.1.4, OQ-49) are 40's, 21's and 26's; OQ-49 is answered, so D11 is built, not
    a default; the add-booking form is as the Goal describes.)
-2. If an item changed after `d4db277`, re-read it in full and adjust the work items. Specifically:
+2. If an item changed after `7cd7802`, re-read it in full and adjust the work items. Specifically:
    - **NHI rule.** If the NHI stops being mandatory, or a blank or pending NHI becomes allowed again,
      stop and tell the owner: the form's validation and Save gate follow 40's required NHI.
    - **Refresh cadence.** If US-14.4.1 now asks for an automatic refresh on a schedule (the
@@ -174,7 +175,7 @@ external system, so it is built from the seed by a pure function and never persi
      Keycloak and Hub callout, and the Future-scope surface's path (`src/apps/demo/futureScope/`);
    - **38a:** the search field components on mobile and web and `parseBookingQuery`;
    - the current `PERSIST_VERSION`.
-6. Record the result (changed items against `d4db277`, the provisional reading, the real names) in
+6. Record the result (changed items against `7cd7802`, the provisional reading, the real names) in
    the PROGRESS entry.
 
 ## Reference
@@ -757,7 +758,7 @@ re-raise anything settled in the Decisions log.
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
-  - the drift-check result against `d4db277` (items changed or not; the refresh cadence, HPI CPN and
+  - the drift-check result against `7cd7802` (items changed or not; the refresh cadence, HPI CPN and
     NHI-rule checks; the provisional reading built; the real form names from 15b, 19, 20a, 21 and 40);
   - what was built, with the name map for later phases: `nhiEntryFeedback`; `src/domain/nhiRegister/`
     (`NhiRegisterPerson`, `buildNhiRegister`, `lookupOnRegister`, `registerDifferences`);

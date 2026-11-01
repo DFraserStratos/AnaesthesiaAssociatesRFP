@@ -12,8 +12,9 @@ replaces the ungated manual button, as US-10.2.7's work),
 [OQ-111](../../../../requirements-board/requirements/questions/OQ-111.md) (**open**, D53: whether
 anaesthetists are paid in Xero's payables run or by the new system with Xero only recording it; built
 to US-09.2.4 as written, the detection in one place),
-[US-06.5.1](../../../../requirements-board/requirements/stories/US-06.5.1.md) (27a's prepay holding
-account: its payables stay out of every run until 27a's second pair releases them),
+[US-06.5.1](../../../../requirements-board/requirements/stories/US-06.5.1.md) (27a's AA Holding
+account: a run never pays it; its prepayments reach a run only as the anaesthetist's payable that
+27a's journal transfer creates, [AR-52](../../../../requirements-board/requirements/artifacts/AR-52.md)),
 [US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md)
 (a payable is released when its receivable is paid, for exactly the amount received, "so it enters
 the next payables run (US-10.2.7)"; Phases 16 and 36 built the release, and this phase's cycle sits
@@ -31,7 +32,10 @@ own Procedure; Phase 39 raises the negative invoice this phase nets, whoever cre
 (bulk hospital remittance stays in Xero: a different "remittance", Phase 37's),
 [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md) (**Proposed**, owner AA's
 accountant: build to Greg's weekly ISO-week cycle; still for the accountant are who approves, whether
-approval is the same step as US-10.2.1's release, and how the 20th-of-the-month payment fits),
+approval is the same step as US-10.2.1's release, how the 20th-of-the-month payment fits, a balance
+check of the critical numbers before each run (Greg, 2026-10-28: "If they don't balance, stop") and
+one BCTI per weekly run (OQ-29). None changes the run: it is built as designed and labelled on the
+owner's review list),
 [OQ-71](../../../../requirements-board/requirements/questions/OQ-71.md) (**answered**
 2026-10-02, owner decision D21: a negative invoice with no later payment to net against is handled
 outside the system; AA settles it with the anaesthetist, so nothing is built for it),
@@ -47,6 +51,8 @@ to the room: "52 payment cycles in a year, each identifiable by week number... M
 maintenance day to make sure everything is right before payment on Tuesday"; build to it, keep it for
 the accountant) and `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` #12
 (OQ-71's answer), the diagrams
+[AR-52](../../../../requirements-board/requirements/artifacts/AR-52.md) region `payables-open`
+(payables run and BCTI timing still open),
 [AR-25](../../../../requirements-board/requirements/artifacts/AR-25.md) regions `payment-cycle`,
 `payables-run` and `payable-release`,
 [AR-24](../../../../requirements-board/requirements/artifacts/AR-24.md) region
@@ -57,8 +63,8 @@ of [domain-model.md](../../../../requirements-board/requirements/domain-model.md
 **Depends on:** 37 (the payables run is paid in Xero and the engine records each disbursement when
 Xero reports the bill paid, through `recordDisbursement`, the webhook, the poll and the outage queue)
 and 39 (credit in full and rebill and the credit note option, which raise the **negative invoice**
-to an anaesthetist already paid). By the roadmap order 27a (the prepay holding account, `isHeldPayable`
-and the second pair that releases a prepaid amount to the anaesthetist who did the List), 14 (the registry, `useDemoTriggerContext`, the
+to an anaesthetist already paid). By the roadmap order 27a (the AA Holding account, `isHeldPayable`
+and the journal transfer that makes a prepaid amount the payable of the anaesthetist who did the List), 14 (the registry, `useDemoTriggerContext`, the
 office actors), 15a (the `appSettings` slice), 16 (the payable equals the receivable, the `-P`
 number, `bctisFor` and the generalised history account builder), 22 (supplier and agent on
 documents), 26 (the anaesthetist profile: bank details, display-only, with `destinationMasked`,
@@ -135,10 +141,11 @@ anaesthetist can owe money back. The catalogue asks for four things (DM-25):
   the anaesthetist's ledger position (36's and 39's figures) with one caption saying AA settles it
   with the anaesthetist outside the system when no later payment comes. No carry-forward record, no
   recovery invoice, no age setting, no write-off. A cancelled prepayment is not this case (the money
-  is still in 27a's holding account and the anaesthetist has not been paid; Phase 41 refunds it).
-- **Holding-account payables stay out until released.** A prepaid Booking's collect payable is to
-  27a's holding account, not an anaesthetist: no run takes it (`runExclusionFor`, work item 3). Only
-  the second pair's payable, created at authorisation for whoever did the List, is a run line, once it
+  is still in 27a's AA Holding account and the anaesthetist has not been paid; Phase 41 refunds it).
+- **The AA Holding account is never paid by a run.** A prepaid Booking's collect payable is to
+  27a's AA Holding account, not an anaesthetist: no run takes it (`runExclusionFor`, work item 3).
+  Its prepayment reaches a run only as the anaesthetist's payable that 27a's journal transfer creates
+  for whoever did the List, an ordinary run line, once it
   is released like any payable.
 - **Where the payment is made** (OQ-111, D53, open): built as US-09.2.4 is written. The accountant
   pays the schedule in Xero and the engine records each payment (`recordDisbursement`,
@@ -152,8 +159,8 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot, commit d4db277 (the tool diffs from
-   the baseline in plan.json to the working tree, so it shows only what changed after d4db277):
+1. Run the drift check against the plan's catalogue snapshot, commit 7cd7802 (the tool diffs from
+   the baseline in plan.json to the working tree, so it shows only what changed after 7cd7802):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3
@@ -164,7 +171,7 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
    OQ-47, OQ-71, OQ-42, OQ-60, OQ-29 and OQ-77, and the domain-model lines on the internal ledger, the negative invoice and the remittance
    advice. If an item changed, re-read it and adjust the work items. If US-10.2.5, US-10.2.6 or
    US-10.2.7 is now Retired or Future, drop its work items and record that in the PROGRESS entry. At
-   d4db277 US-10.2.7 is **Proposed** (Greg's weekly cycle, built to), US-10.2.6 is **Verify**
+   7cd7802 US-10.2.7 is **Proposed** (Greg's weekly cycle, built to), US-10.2.6 is **Verify**
    (approver and its relation to the release open, OQ-47), US-10.2.5 is **Confirmed**, and FT-10.2 is
    **Matches** (read only: nothing here is built for it).
 2. **Questions** (each built as one setting or one store action, so a different answer stays
@@ -173,8 +180,11 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
      is a setting, `appSettings.paymentCycle` (`weekIdentity: 'isoWeek'`, `closeWeekday: 5`
      Friday, `checkWeekday: 1` Monday, `scheduleWeekday: 2` Tuesday), never a constant in code, and
      no settings screen. The office approves (one store action, `officeOnly`). No app copy says
-     "provisional" about the cycle; the open parts (approver, the 20th) go on the owner's review
-     list. If the accountant has since **changed the days or the identity**, set the setting and keep
+     "provisional" about the cycle; the open parts (approver, the 20th, the pre-run balance check, a BCTI per run) go on the owner's
+     review list. Greg's pre-run check ("all of these critical numbers balance. If they don't
+     balance, stop") and his one-BCTI-per-weekly-run idea are points for the accountant: neither
+     is built; the run stays as designed. (36's `ledgerChecks` already shows the ledger balanced at
+     the close snapshot.) If the accountant has since **changed the days or the identity**, set the setting and keep
      the code. If OQ-47 now says **the system approves on its own**, make approval a system action on
      the same store action (actor system, run at the close) and keep the button as its manual form.
      If it says **US-10.2.6 is the same step as US-10.2.1's release**, stop and tell the owner (it
@@ -194,9 +204,10 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
      invoices stay separate receivables, paid into a separate bank account, and never enter a run. If
      it is now answered "it nets", stop and tell the owner (it contradicts FT-10.3 and Greg's trust
      law point).
-   - **OQ-29 (one BCTI per receivable invoice, provisional).** A run line is one payable leg, so the
-     run follows whatever `bctiRecords` counts; nothing here counts BCTIs. If granularity flips to
-     one per procedure, the run is unaffected beyond its line labels.
+   - **OQ-29 (one BCTI per receivable invoice, provisional; Greg floated one per weekly run).** A run
+     line is one payable leg, so the run follows whatever `bctiRecords` counts; nothing here counts
+     BCTIs. If granularity flips (per procedure, or per run), the run is unaffected beyond its line
+     labels.
 3. **Prerequisite names.** Confirm Phases 36, 37 and 39 are DONE in PROGRESS.md and read their
    handoff notes. Note the exact current names (planned names first; use what shipped):
    - from **36**: `LedgerPair` (kinds `'procedure' | 'prePayment' | 'aaFee'`), `PayableLeg`
@@ -222,8 +233,8 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
      (37's plan adds none and names this phase's `runExclusionFor` as the place for any exclusion;
      if a `heldForBank` refusal did ship, it becomes `runExclusionFor`'s first reason, work item 3);
    - from **27a**: `HOLDING_ACCOUNT`, `isHeldPayable(accPay)` (true for a `holdingAccount` payee) in
-     `domain/billing/prepayHolding.ts`, and the transfer pair (`prepayLeg: 'transfer'`, whose payable is
-     to the anaesthetist). 27a made `payablesDue`, `runPayables` and `disbursePayable` skip a held
+     `domain/billing/prepayHolding.ts`, and the journal transfer's payable to the anaesthetist
+     (`PrepayTransfer`, the transfer pair `prepayLeg: 'transfer'`; use the names that shipped). 27a made `payablesDue`, `runPayables` and `disbursePayable` skip a held
      payable, and 36 promoted it to the ledger legs (note the tag 36 kept). 27a also removed the seeded
      prepayment's 16 Jul payout (it is held), so the seed has no payout for it;
    - from **39**: the **negative invoice to the anaesthetist** raised by every credit in full and by
@@ -318,7 +329,7 @@ read only the cited passages.
 - `docs/prototype-build/catch-up/epics/EP-10.md`: the header note, then the US-10.2.7, US-10.2.6 and
   US-10.2.5 sections.
 - `analysis/domain-model-delta.md` DM-25 (and DM-22 for the ledger it extends, DM-21 for the trust
-  holding account 27a adds, whose payables a run never takes).
+  AA Holding account 27a adds, which a run never pays).
 - `analysis/prototype-map-admin.md` section 7 (Billing monitor), `prototype-map-store-seed.md`
   sections 4 and 9 (billing slices, counters, the seeded history), `prototype-map-apps-mobile-web.md`
   (web Accounts) and `prototype-map-shell-demo-pwa.md` section 5.2 (the Xero sim pair detail).
@@ -457,8 +468,8 @@ check):
    - `runExclusionFor(input)`: why a leg or an anaesthetist is kept out of a run, as a
      `RunExclusionReason`. Its first reason is `'heldInHoldingAccount'`, from 27a's `isHeldPayable`
      (read through the ledger leg, as 36 carries it): a prepaid Booking's collect payable is to the
-     holding account and no run takes it, so the run, `payablesDue` and Xero agree; the second pair's
-     payable to the anaesthetist is an ordinary line once released. 26's bank details are display-only
+     AA Holding account and no run takes it, so the run, `payablesDue` and Xero agree; the payable
+     the journal transfer makes to the anaesthetist is an ordinary line once released. 26's bank details are display-only
      (a missing account is a Monday anomaly the office decides, never an exclusion). If 37 shipped a
      `heldForBank` refusal, that refusal becomes a further reason, so the run and Xero agree. It is
      the **one standing exclusion point**: any later standing hold is added here, not elsewhere; a
@@ -835,10 +846,12 @@ stand-in runs the office's weekly cycle".
   editing a run once approved (it is superseded, never edited).
 - **Netting the AA fee** against payables (OQ-60; Greg: never, under trust law; the fee stays a
   separate receivable).
-- **Refunds as a live action** (cancellation refunds from the holding account): Phase 41. A
-  cancelled prepayment is not a negative to net (the money is still in the holding account). This
-  phase nets any open negative whatever its credit note's cause; the holding account's hold-back is
+- **Refunds as a live action** (cancellation refunds from the AA Holding account): Phase 41. A
+  cancelled prepayment is not a negative to net (the money is still in the AA Holding account). This
+  phase nets any open negative whatever its credit note's cause; the AA Holding account's hold-back is
   27a's, read through `runExclusionFor`.
+- **A pre-run balance check and a BCTI per weekly run** (OQ-47, OQ-29, Greg 2026-10-28): points for
+  AA's accountant. Nothing is built; the run keeps the close snapshot and one BCTI per payable leg.
 - A real Xero batch payments API: the Xero side stays the simulation.
 - Changing what a BCTI is or how many there are (OQ-29), or the AA fee count (16).
 
@@ -856,9 +869,10 @@ The weekly cycle and the gate:
       rail (planned Friday 24 Jul, Monday 27 Jul, Tuesday 28 Jul), no provisional chip, an empty
       "Waiting for this week's run" ("Nothing is waiting for this week's run."), Close disabled with
       that sentence, and Week 29 at the top of the previous runs, Paid and tagged Seeded.
-- [ ] Holding account (27a): a paid prepayment (Nair) is not in the waiting table or any run, and
-      Close with nothing else waiting refuses. After Admin authorises that List, the second pair's
-      payable to Dr Souter appears in the waiting table once released and is paid by the next run.
+- [ ] AA Holding account (27a): a paid prepayment (Nair) is not in the waiting table or any run, and
+      Close with nothing else waiting refuses. After Admin authorises that List and the journal
+      transfer runs, the transferred payable to Dr Souter appears in the waiting table once released
+      and is paid by the next run; the account itself is never a line.
 - [ ] S4 Beat 5 path: Admin · Invoice for Hemi Walker's clean St George's sibling, **Payment
       received · half**: the waiting table shows one Dr Ropata BCTI at exactly half; on the Xero sim
       pair "Pay anaesthetist in Xero" is disabled "Not in an approved payment run yet".
@@ -1000,9 +1014,9 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run | absent ("Not built yet: catch-up Phase 39a builds this"), no shots | captured. Replace the stub. Stage it with the `stage-payment-week` bar action, choice "19 BCTIs and a credit after payout", on `/admin/billing`, then close, approve, send and run the week. Admin shot `remittance-advice` at `/admin/billing/payment-runs/<runId>/remittance/<anaesthetistId>`, highlight `[data-shot=remittance-advice]` (the week, the 19 BCTIs, the negative invoice netted as "-$X.XX", the net paid). Admin shot `payables-run-detail`, highlight `[data-shot=payables-run-detail]`. Web shots at `/web/accounts/remittances`: `web-remittances` (the table with week and signed netted amounts) and `web-remittance-sheet` (open a row, highlight `[data-shot=web-remittance-sheet]`). No shot of the no-later-payment case (outside the system, OQ-71). Mobile Balances is unchanged (a built default, logged for the owner) and has no shot. Captions in the catalogue's words: "The payment to the anaesthetist is the net total", "The remittance advice shows the negative invoice netted against the positive ones" |
-| [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent ("Not built yet: catch-up Phase 39a builds this"), no shots | captured. Replace the stub. Admin `/admin/billing` after `stage-payment-week` ("19 BCTIs") and Close the week: shot `approve-week` with a `closed` state highlighting `[data-shot=payment-cycle]` (the run Closed, "Approve week 30's BCTIs" enabled, "Run payables in Xero" disabled "Nothing scheduled to pay"), an `approved` state after clicking "Approve week 30's BCTIs" highlighting `[data-shot=payables-runs]` with the run's Approved pill, and a `paid` state after Send payment schedule and Run payables in Xero. Caption: "BCTIs not yet approved are not in the payment run" |
-| [US-10.2.7](../../../../requirements-board/requirements/stories/US-10.2.7.md) Weekly payment cycle | absent ("Not built yet: catch-up Phase 39a builds this"), no recipe file | captured. Create the recipe. Admin `/admin/billing`: shot `payment-cycle` with an `open` state (Week 30, the step rail with the planned Friday, Monday and Tuesday dates, highlight `[data-shot=payment-cycle]`), then after `stage-payment-week` ("19 BCTIs"), `stage-bank-mismatch` and Close the week an `anomaly` state highlighting `[data-shot=payment-cycle-anomalies]` (the "Receipt not on the bank download" anomaly), and a `held` state after "Hold out of this run" (the line under "Rolls into Week 31"). Admin shot `payment-schedule` on the run detail after approve and send, highlight `[data-shot=payment-schedule]`. Admin shot `payment-week` on the invoice whose payable was paid (S4 Beat 5's invoice after the week is run), highlight `[data-shot=payment-week]` ("Paid out in Week 30"). Captions in the catalogue's words: "Each accounting week is named by its ISO week number", "A payment is shown against the week number of the cycle it was paid in", "An anomaly that cannot be fixed is held out and rolled into the next cycle" |
+| [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run | absent, no shots | captured. Replace the stub. Stage with `stage-payment-week` ("19 BCTIs and a credit after payout") on `/admin/billing`, then close, approve, send and run. Admin `remittance-advice` (week, 19 BCTIs, negative netted as "-$X.XX", net paid) and `payables-run-detail`; web `/web/accounts/remittances` `web-remittances` and `web-remittance-sheet`. No no-later-payment shot (OQ-71); mobile unchanged. Captions: "The payment to the anaesthetist is the net total", "The remittance advice shows the negative invoice netted against the positive ones" |
+| [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent, no shots | captured. Replace the stub. `/admin/billing` after staging ("19 BCTIs") and Close: shot `approve-week`, states `closed` (Approve enabled, Run disabled), `approved` (run's Approved pill in `[data-shot=payables-runs]`) and `paid`, highlight `[data-shot=payment-cycle]`. Caption: "BCTIs not yet approved are not in the payment run" |
+| [US-10.2.7](../../../../requirements-board/requirements/stories/US-10.2.7.md) Weekly payment cycle | absent, no recipe file | captured. Create the recipe. `/admin/billing` shot `payment-cycle`, states `open` (Week 30, step rail with planned dates), `anomaly` (after staging, `stage-bank-mismatch` and Close, highlight `[data-shot=payment-cycle-anomalies]`) and `held` ("Rolls into Week 31"); `payment-schedule` on the run detail; `payment-week` ("Paid out in Week 30") on the paid invoice. Captions: "Each accounting week is named by its ISO week number", "A payment is shown against the week number of the cycle it was paid in", "An anomaly that cannot be fixed is held out and rolled into the next cycle" |
 | [US-10.2.3](../../../../requirements-board/requirements/stories/US-10.2.3.md) Reconcile back to the ledger | captured · `receipt-in-ledger` (web), `engine-link` (simulator) | no change here (Matches). Check in the `--dry` run that a receipt still shows against its payable once the weekly run reads the ledger |
 | [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent ("Bulk remittance and bank reconciliation stay in Xero by design ...") | Phase 37 owns it. No change here; the weekly cycle's bank-reconciliation step is shown under US-10.2.7, not here |
 
@@ -1074,7 +1088,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   `Math.random()`; the clock is never advanced by the cycle.
 - **The holding-account hold-back.** `runExclusionFor` is the only standing exclusion point and its
   first reason is 27a's `isHeldPayable`: no run, schedule, Xero payment or staged payout ever takes
-  a collect payable to the holding account, while the second pair's payable is an ordinary line;
+  a collect payable to the AA Holding account, while the journal transfer's payable is an ordinary line;
   netting reads every open negative whatever its credit note's cause; a missing bank account is a
   Monday anomaly, never an automatic exclusion. OQ-111: the detection of a payment stays in one place.
 - **Seed and persistence.** Backdrop weekly runs reproduce the seeded disbursements exactly and move
@@ -1088,7 +1102,8 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
   themselves"): the readings built for OQ-47's still-open parts (the office approves, as a step of
-  its own after the Monday checks; the 20th-of-the-month payment left to Phase 16's monthly fee run),
+  its own after the Monday checks; the 20th-of-the-month payment left to Phase 16's monthly fee run;
+  Greg's pre-run balance check and one BCTI per weekly run noted for the accountant, not built),
   OQ-111 (D53, open: built as US-09.2.4 reads, paid in Xero and recorded by the engine, detection in
   one place), the cycle's built defaults (the demo clock does not gate the steps, so a week can be closed early
   and its stamp says so; a held line rolls whole into the next week; approval refuses while an
@@ -1154,7 +1169,7 @@ review-and-fix pass (PROGRESS convention 18)**:
     account and the anaesthetist has not been paid), so 41's cancellation refund raises nothing for a
     run; a refund that ever follows a payout goes through 39's credit path and is netted here with no
     change. No payee repoint exists (D38), so a moved prepaid Booking never makes a run stale. 41
-    reads the same weekly cycle if it needs one for the holding account (OQ-47).
+    reads the same weekly cycle if it needs one for the AA Holding account (OQ-47).
   - For **16 / OQ-60**: the fee never nets against payables (Greg, trust law); `netNegatives` never
     sees a fee invoice, and the monthly fee run is not the weekly cycle. If AA's accountant ever says
     otherwise, `netNegatives` is the place.

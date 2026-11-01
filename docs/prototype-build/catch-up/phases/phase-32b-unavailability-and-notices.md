@@ -15,8 +15,8 @@ Also reworks, without closing them (each stays with its own phase):
 [US-13.8.1](../../../../requirements-board/requirements/stories/US-13.8.1.md) (Verify: the panel's place is our design) and [US-13.8.2](../../../../requirements-board/requirements/stories/US-13.8.2.md) (the pool and its sources; 32 and 32a),
 [US-13.7.2](../../../../requirements-board/requirements/stories/US-13.7.2.md) (the same tick as a to-do's Clear; 15a),
 [DM-41](../analysis/domain-model-delta.md#dm-41) (the Notification record, now with a resolved state).
-**Answered and built as answered (no provisional label):** [OQ-81](../../../../requirements-board/requirements/questions/OQ-81.md) part 3 (**D59**), [OQ-84](../../../../requirements-board/requirements/questions/OQ-84.md) (**D60**), [OQ-79](../../../../requirements-board/requirements/questions/OQ-79.md) (**D58**).
-**Open, built as the default:** [OQ-113](../../../../requirements-board/requirements/questions/OQ-113.md) (**D54**: the anaesthetist apps order colleagues by availability alone), [OQ-102](../../../../requirements-board/requirements/questions/OQ-102.md) (**D36**: the tier and pairing names stay the plain labels).
+**Answered and built as answered (no provisional label):** [OQ-81](../../../../requirements-board/requirements/questions/OQ-81.md) part 3 (**D59**), [OQ-84](../../../../requirements-board/requirements/questions/OQ-84.md) (**D60**), [OQ-79](../../../../requirements-board/requirements/questions/OQ-79.md) (**D58**), [OQ-113](../../../../requirements-board/requirements/questions/OQ-113.md) (**D54**: tiers and pairings order the office's finders only; the anaesthetist apps are availability-only).
+**Open, built as the default:** [OQ-102](../../../../requirements-board/requirements/questions/OQ-102.md) (**D36**: the tier and pairing names stay the plain labels).
 **Depends on:** Phase 32a (the `'bookingMoved'` notice kind and the pool row it posts; the single-Booking move). Through it: 32 (`listMoveActions.ts`, `MoveListSheet`, `notifications.ts` and the Admin pool card and page), 31 (Draft Lists, `detachListToDraft`, `assignDraftList`, `shared/scheduleTerms.ts`), 30 (conflicts), 29 (the Slot status master, `isOpenForBooking`), 28 (`moveListToSlotCore`, `reassignList`), 17 (`rankAnaesthetistCandidates`, the privacy boundary), 15a (`ClearWarningButton`, the To-do card), 14 (the trigger registry, stand-in badges). Phase 21 follows and shows the alerts at review.
 **Estimated:** 2 sessions. **Session 1** ends green at work item 6: unavailability never a conflict, the office's forced return or hand-on, no assign onto an unavailable session, the vacated-session choice on every path, the seed and the sickness trigger. **Session 2** builds items 7 to 11: resolvable notices, "Alert the office", the office's order, the triggers. Then the demo guide, the screenshots, the review pass and the PROGRESS entry. If session 2 runs long, cut the optional Admin side-nav count badge (item 8) first.
 
@@ -32,14 +32,14 @@ Follow up the built Schedule track (28 to 32) for the 19 October answers (D58, D
 
 ## Before you start: drift check
 
-Baseline `d4db277`.
+Baseline `7cd7802`.
 
-1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.8.3,US-03.6.3,US-01.5.2,US-01.5.4,US-01.5.5,US-01.6.3,US-01.4.1,US-01.4.3,US-13.6.4,US-13.8.1,US-13.8.2,US-13.7.2,OQ-79,OQ-81,OQ-84,OQ-102,OQ-113`, re-read what changed, adjust the work items, and drop and log anything now Retired or Future (if US-13.8.3 or US-03.6.3 went, stop and tell the owner).
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.8.3,US-03.6.3,US-01.5.2,US-01.5.4,US-01.5.5,US-01.6.3,US-01.4.1,US-01.4.3,US-13.6.4,US-13.8.1,US-13.8.2,US-13.7.2,OQ-79,OQ-81,OQ-84,OQ-102`, re-read what changed, adjust the work items, and drop and log anything now Retired or Future (if US-13.8.3 or US-03.6.3 went, stop and tell the owner).
 2. Confirm Phases 14 to 32a are DONE; read what 32 and 32a delivered, because this doc names some planned code: the `Notification` kind union and `postNotification` (32a adds `'bookingMoved'`), `notificationText`, `NOTIFICATION_POOL_RULE`, `moveListToOffice`, `pushListToSlot`, `markUnavailableAndMoveList`, `MoveListSheet`, `anaesthetistActor`, and 32a's pinned Souter Booking (reuse it for the alert shots).
 3. Run `grep -rn "'availability'\|availabilityCause\|VACATED_SESSION_DEFAULT\|requireOpen\|closedSession\|OQ-81\|OQ-84\|OQ-79" aa-prototype/src aa-prototype/visual` for every site to change. Read the current `PERSIST_VERSION` (25 at `d4db277` before 32a; bump by one from whatever it is now).
 4. Open questions and the defaults built (each goes on the PROGRESS owner list):
    - **Submit while an alert is open** (US-03.6.3, undecided): submit stays allowed; an alert never changes the submit rules, and the app says nothing about it.
-   - **OQ-113 / D54 and OQ-102 / D36** (open): the anaesthetist sheets stay availability-only and name-ordered; the office order uses the plain tier labels and "Preferred".
+   - **OQ-102 / D36** (open): the office order uses the plain tier labels and "Preferred". (OQ-113 / D54 is answered: the anaesthetist sheets are availability-only and name-ordered, no provisional label.)
    - **US-13.8.3's filter** is Claude's proposal: a "Show resolved" switch on the Notifications page and the rail card.
    - **No un-tick.** A resolved notice stays resolved (the catalogue has a tick and a filter, no re-open).
    - **The vacated question on marking unavailable.** The session being marked is the vacated one, so the control pre-selects the status being set and offers Free as the alternative. On any other move it pre-selects Free. Both are ordinary defaults, not labelled provisional.
@@ -125,6 +125,7 @@ The agent runs every item itself in the running app and reports it with evidence
 - [ ] Notifications (rail and page): active count; tick a notice and it leaves for every admin (reload as another persona); **Show resolved** brings it back with who and when; the count drops; the same tick shape as the To-do Clear.
 - [ ] Web and mobile as Dr Souter: **Alert the office** on a List and on a Booking with a note: the notice (with the note) is active in Admin, opens the List or Booking, and stays until ticked; submitting the List still works while it is open; PWA **Office resolves this alert** shows the resolved line.
 - [ ] No "slot", no en or em dashes, no crimson on controls; mobile at 390px; keyboard reaches the tick and the sheets.
+- [ ] Catalogue screenshots: the recipes below created or updated, broken ones re-pointed, a full `npm run capture` with no failed recipe, the covered items' shots checked by eye, `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -132,7 +133,7 @@ The agent runs every item itself in the running app and reports it with evidence
   - **Beat 3** (illness cover): rewrite. The sick anaesthetist's List is already in Draft Lists; Click: Draft Lists, Rutherford's returned List, Assign, pick Dr Sharma by name (tier order, Preferred pill); Say: "Sickness is never left as a flag. The List comes straight back to the office and is handed on from one screen"; Expected: the List on Sharma's row, Rutherford's AM Unavailable, no conflict. The closure conflicts stay on Conflicts for the Southern Cross rows.
   - **Beat 3a**: Simulate sickness now sends the List to Draft Lists or a colleague; drop the "Conflicts shows Anaesthetist unavailable" step and keep the closure move.
   - **Beat 3c**: the unavailable prompt gains the vacated-session choice; add an optional pointer: **Alert the office** on a Booking, then Admin **Notifications**: tick it, **Show resolved**.
-  - **Discovery points**: OQ-81 part 3, OQ-84 and OQ-79 are answered (remove them as open); add OQ-113 and OQ-102 (open ordering and names) and US-13.8.1's panel placement.
+  - **Discovery points**: OQ-81 part 3, OQ-84 and OQ-79 are answered (remove them as open); add OQ-102 (open names) and US-13.8.1's panel placement.
 - `02-workflows-and-handoffs.md` (Workflow 3 and the office sickness line near `:229` to `:246`): sickness returns or hands on; the vacated session is always asked; notices resolve by tick; alerts.
 - `01-personas-and-responsibilities.md`: the anaesthetist gains "alert the office about a Booking or List"; the office item 13 gains "tick notices resolved".
 - `04-presenter-cheat-sheet.md` (the OQ-84 and OQ-81 lines near `:309` to `:326`, the Demo actions line near `:253`): answered, not open; the two new triggers.
@@ -178,8 +179,8 @@ The standard pass (PROGRESS convention 18): three independent Opus reviewers (qu
 
 ## PROGRESS.md updates
 
-- **For the owner's review** (end of the phase entry; each with route and persona): the defaults in "Before you start" item 4 (submit while alerted, no un-tick, the vacated control pre-selected, the office hand-on posting no notice, SUBMITTED and AUTHORISED Lists), the "Show resolved" proposal (Admin, Notifications), the panel's place and count (US-13.8.1, Verify), the seeded Rutherford change (Admin, Draft Lists), the alert limit (one active per target), and OQ-113 and OQ-102 still open.
-- **Status row** for Phase 32b and a phase entry: the drift-check result against `d4db277`; the names 32 and 32a delivered that this used; what was built; `PERSIST_VERSION` from and to; the seed pins; the checklist with evidence; tests added; the review pass; the catalogue screenshot result with REPORT.md counts before and after.
+- **For the owner's review** (end of the phase entry; each with route and persona): the defaults in "Before you start" item 4 (submit while alerted, no un-tick, the vacated control pre-selected, the office hand-on posting no notice, SUBMITTED and AUTHORISED Lists), the "Show resolved" proposal (Admin, Notifications), the panel's place and count (US-13.8.1, Verify), the seeded Rutherford change (Admin, Draft Lists), the alert limit (one active per target), and OQ-102 still open.
+- **Status row** for Phase 32b and a phase entry: the drift-check result against `7cd7802`; the names 32 and 32a delivered that this used; what was built; `PERSIST_VERSION` from and to; the seed pins; the checklist with evidence; tests added; the review pass; the catalogue screenshot result with REPORT.md counts before and after.
 - **Decisions log:**
   1. **Unavailability is never a conflict (D59, OQ-81 part 3)**: supersedes Phase 30's office-recorded sickness keeping its conflict and Phase 31's reassign-from-a-closed-session; the office is forced to return or hand on.
   2. **No assign onto an unavailable session (D59, US-01.6.3)**: supersedes 31's accept-and-warn for a closed session.

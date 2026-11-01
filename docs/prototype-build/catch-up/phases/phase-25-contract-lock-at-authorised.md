@@ -1,14 +1,13 @@
 # Phase 25 · Contract versions, staged changes and the AUTHORISED lock
 
-**Requirements covered** (status and grade at catalogue `d4db277`):
+**Requirements covered** (status and grade at catalogue `7cd7802`):
 [US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) Stage Contract changes for review, then submit (Proposed; **Missing**: edits apply at once, with no staging, dashboard or effective-date submit; OQ-100 and D34: no upload),
-[US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) Contract prices effective from a date (Agreed; **Contradicts**: Phase 18 builds the dated version records; this phase builds the submit checks, the effective date and the relink by line key, with a prepaid Procedure keeping its price, D47),
+[US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) Contract prices effective from a date (Agreed; **Contradicts**: Phase 18 builds the dated version records; this phase builds the submit checks, the effective date and the relink by line key, with a prepaid Procedure keeping its price and a non-prepaid fixed price following the version on the procedure date, D47 answered),
 [US-04.1.3](../../../../requirements-board/requirements/stories/US-04.1.3.md) Contract audit and versioning (Agreed; Partial: Phase 18 keeps every version; this phase records each submit's line diff and lists each version with the invoices raised under it, so an older invoice is traced to its version and reproduced),
 [US-04.3.5](../../../../requirements-board/requirements/stories/US-04.3.5.md) Contract locked at AUTHORISED (Agreed; Partial: no snapshot. It holds the Contract version, the values on the Procedure and the price, rate and discount; AR-29 v6 has no layers and no price source),
 [US-07.3.1](../../../../requirements-board/requirements/stories/US-07.3.1.md) Authorise the List (Agreed; Partial: the lock and snapshot half; no partial release),
 [US-08.1.1](../../../../requirements-board/requirements/stories/US-08.1.1.md) Process an AUTHORISED List using each Procedure's locked Contract (Proposed; **Contradicts**: the engine re-resolves the Contract and the payer and prices from live masters; who is billed follows the locked Contract and the Booking's payer; merges the retired US-08.1.2),
 [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility (Proposed; Partial: keep the invoice's "recipe", clarified 2026-10-02),
-[US-12.1.1](../../../../requirements-board/requirements/stories/US-12.1.1.md) Dollar value per unit (Proposed; Partial: the unit value in force is copied into the snapshot; the anaesthetist's own edit is Phase 26's),
 [US-15.0.3](../../../../requirements-board/requirements/stories/US-15.0.3.md) Enter once (Proposed; Partial: the billing exception half);
 [DM-57](../analysis/domain-model-delta.md#dm-57) (Contract changes staged, reviewed on a dashboard and submitted as a new dated version),
 [DM-08](../analysis/domain-model-delta.md#dm-08) (a pricing snapshot per Procedure, written at authorise and read by the run and by regeneration),
@@ -18,7 +17,8 @@
 and changes none of its rules):
 [DM-42](../analysis/domain-model-delta.md#dm-42) (DM-06 merged into it on 2026-10-08: whoever submits
 a List did its procedures, so the List's anaesthetist at authorise is the **payee** stamped here; the
-moves are Phases 32 and 32a, and a moved prepaid Booking's payee repoint is Phase 41, D38);
+moves are Phases 32 and 32a; a moved prepaid Booking changes nothing, its payable staying with the AA
+Holding account until 27a's journal transfer, D38);
 [DM-43](../analysis/domain-model-delta.md#dm-43) and
 [DM-50](../analysis/domain-model-delta.md#dm-50) (the resolver's values, Phases 19 and 19a, and the one price precedence, Phase 24: the snapshot holds their output);
 [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) (Confirmed; Matches today
@@ -49,17 +49,17 @@ each version its own dated Contract record, so the snapshot names it by id. Ther
 **Joined on 2026-10-20:** staged changes (US-04.1.6, DM-57) and the version checks and relink by line key
 (US-04.2.10) came here from Phase 18, which keeps the version records and their helpers; 18's direct
 "New version" button and any in-place edit of a Contract's terms or lines become this phase's staged flow.
-US-12.1.1's unit value in force joins the snapshot (the profile edit stays in Phase 26).
+**Left on 2026-11-02:** US-12.1.1 (now Matches: the unit rate is the anaesthetist's own, never a shared list). No work here beyond the snapshot still recording the unit value in force; the anaesthetist's own edit is Phase 26's.
 
 **Answered and built as answered** (no provisional labels):
 [OQ-48](../../../../requirements-board/requirements/questions/OQ-48.md) (D45, extended 2026-10-16: the date of the procedure decides the Contract version in force; every change, a correction or a renewal, is a new version from a date the office chooses, never past, one future version at a time, correctable or withdrawable until it starts; Phase 18 built the lookup, this phase builds the checks),
 [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (No contract (RVG) is the one default; no hospital, insurer or procedure default Contract, so nothing to fall back to),
 [OQ-05](../../../../requirements-board/requirements/questions/OQ-05.md) (failure per Booking),
 [OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) (D17, superseded 2026-10-08: the Contract bills its holder's billable party when the holder pays AA, otherwise the payer on the Booking; the snapshot copies whichever was billed) and
-[OQ-91](../../../../requirements-board/requirements/questions/OQ-91.md) (D42: the office keeps the anaesthetists' first-party Contracts).
-**Open, built as their defaults and logged on the owner's review list:**
-[OQ-100](../../../../requirements-board/requirements/questions/OQ-100.md) (D34: no Contract schedule upload in the first release; every Contract edit is staged and reviewed on the dashboard, the second-person check on screen; [US-04.2.13](../../../../requirements-board/requirements/stories/US-04.2.13.md) is Future Work) and
-[OQ-104](../../../../requirements-board/requirements/questions/OQ-104.md) (D47: a prepaid Procedure keeps the price on its issued prepayment invoice and a new version does not relink it; the dashboard lists it; one constant, so following the procedure-date price is a small change).
+[OQ-91](../../../../requirements-board/requirements/questions/OQ-91.md) (D42: the office keeps the anaesthetists' first-party Contracts) and
+[OQ-104](../../../../requirements-board/requirements/questions/OQ-104.md) (D47, answered by Ben on 27 October: a prepaid Procedure keeps the price on its issued prepayment invoice and a new version does not relink it; the dashboard lists it; a non-prepaid fixed price follows the version on the procedure date, US-04.2.10).
+**Open, built as its default and logged on the owner's review list:**
+[OQ-100](../../../../requirements-board/requirements/questions/OQ-100.md) (D34: no Contract schedule upload in the first release; every Contract edit is staged and reviewed on the dashboard, the second-person check on screen; [US-04.2.13](../../../../requirements-board/requirements/stories/US-04.2.13.md) is Future Work).
 **Open, nearby, not blocking** (their defaults are built elsewhere; the snapshot records whatever was
 applied): [OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md) (D40: the time band
 and an anaesthetist discount on top of a line's fixed discount are still open; the snapshot copies
@@ -126,7 +126,7 @@ changed (lines added, altered and removed, values before and after; every versio
 and its invoices; nothing is deleted), and **relinks** un-invoiced Procedures dated on or after the
 start to the new version's line with the same line key, refreshing their values. Procedures with no
 matching line are listed for the office. A **prepaid** Procedure keeps the price on its issued
-prepayment invoice and is not relinked (D47, OQ-104's default). A Procedure already **locked at
+prepayment invoice and is not relinked (D47, OQ-104: answered). A Procedure already **locked at
 authorise** is not relinked either: the lock wins (DM-08; the v6 text is silent, so this is a built
 default, logged). Until it starts, the one future-dated version can be corrected (its start moved, the
 previous version's end moving with it) or withdrawn (the current version open-ended again, relinked
@@ -199,7 +199,7 @@ it for the owner.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d4db277` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
    never a plain `git diff` of the catalogue folder), and read it for this phase's items:
 
    ```
@@ -212,23 +212,23 @@ it for the owner.
      above, and in `domain-model.md` the Booking ("Billing fails per Booking"), the "Procedure billing
      context" table (`contractId`: "locked at AUTHORISED"), and the pricing section (the resolver,
      `price(procedure)`, the engine's rejections and the pricing snapshot bullet).
-   - At `d4db277`, relative to the plan's earlier baseline `d4db277`:
+   - At `7cd7802`, relative to the plan's earlier baseline `7cd7802`:
      - US-04.1.6 is new: the staged change, review dashboard and all-or-nothing submit. US-04.2.13
        (upload) is Future Work.
      - US-04.2.10 (now Agreed) is rewritten: versions from a date the office chooses, never past; the
        previous version ends the day before; relink by line key except a prepaid Procedure; one
        future-dated version, correctable or withdrawable until it starts. Its note says the v6 text
-       is silent on a Procedure already locked at authorise, and that prepaid keeping its price is the
-       build assumption (OQ-104).
+       is silent on a Procedure already locked at authorise; a prepaid Procedure keeping its price is
+       confirmed by Ben (OQ-104, 27 October) and a non-prepaid fixed price follows the procedure date.
      - US-04.1.3 (Agreed) adds the recorded line diff per submit; US-04.3.5 (Agreed) names the snapshot
        without layers or price source; US-07.3.1 (Agreed) says no partial release; US-08.1.1 says who is
-       billed follows the locked Contract and the Booking's payer; US-12.1.1 says "the Unit as specified
-       in the RVG".
-     - OQ-100 and OQ-104 are open (D34, D47: built as defaults); OQ-48 is answered.
+       billed follows the locked Contract and the Booking's payer; US-12.1.1 (now Matches, left the
+       covers) says the unit rate is the anaesthetist's own, per anaesthetist.
+     - OQ-100 is open (D34: built as its default); OQ-104 and OQ-48 are answered.
      - `domain-model.md`: the engine rejects a Booking when a typed price sits on a Contract that is not
        adjustable, when BTM is missing and no fixed price resolves, or when the Contract is not valid on
        the procedure date.
-   - If an item changed after `d4db277`, re-read it and adjust the work items before building. If
+   - If an item changed after `7cd7802`, re-read it and adjust the work items before building. If
      discovery names the fields to freeze, or a later design changes the snapshot, lock exactly those
      plus whatever the printed invoice and the payee need, inside `lock.ts`, and record the list in
      the Decisions log. If an item is now Retired or Future, drop it and say so in the PROGRESS entry.
@@ -485,15 +485,16 @@ C. **Relink by line key** (`domain/billing/relink.ts`, pure; called by B):
      the new version's line with the same line key and its Contract-derived values refresh through
      19a's starting-value helper; recorded BTM, the office override and the anaesthetist's typed price
      stay as entered), `unmatched` (no line with that key in the new version), `prepaid` (an issued
-     prepayment invoice, 20's interim flag until 27: keeps its price; one constant,
-     `PREPAID_KEEPS_PRICE`, so following the procedure-date price is a one-line change: OQ-104, D47)
+     prepayment invoice, 20's interim flag until 27: keeps its price, OQ-104 answered, D47; a
+     non-prepaid fixed price follows the new version like any other line value)
      and `locked` (on an AUTHORISED List: the lock wins, DM-08; listed, never relinked). Procedures
      dated before the start, invoiced ones and other Contracts' are untouched.
    - In the submit: apply `relink`, record on each Procedure where it came from (so a withdrawal can
      return it) and keep `unmatched` in a "To resolve" list on `masters`, which the dashboard and the
      Contracts screen show; the office clears one by choosing a line or Contract for that Procedure
      through 20's picker (until the List is AUTHORISED, D63).
-   - Tests: only the right Procedures move; matched values refresh and recorded BTM stays; unmatched is
+   - Tests: only the right Procedures move; a prepaid one keeps its invoiced price while a non-prepaid
+     fixed price takes the new line's; matched values refresh and recorded BTM stays; unmatched is
      listed; a withdrawal returns every relinked one; a new version with unchanged terms leaves 1's
      fixture figures unchanged.
 
@@ -626,7 +627,7 @@ E. **Trigger and seed** (end of session 1): `stageContractPriceReview(api)` in `
    - `priceBookingFromLock(lock)` and `invoiceDraftsFromLock(lock)` take the lock only, with no masters
      argument, so the signature proves the engine cannot read live data. `invoiceDraftsFromLock`
      groups by who is invoiced, applies the split (one invoice per party), 24's office override and
-     anaesthetist price lines, the pre-payment deduction lines, the line descriptions, the supplier
+     anaesthetist price lines, prepaid Procedures left off (D57, no deduction line), the line descriptions, the supplier
      block from `payee`, the addressee and patient lines, and the presentation, all from the lock.
      This replaces the live path in `buildInvoicesForBooking`.
    - `compareInvoice(stored, storedLines, draft)` returns `{ identical, differences[] }` over party,
@@ -948,8 +949,8 @@ held-back flags are Review flags).
 - Prepayment (Phase 27): a prepaid Procedure priced at the anaesthetist's own fixed price, locked, with
   nothing left to bill, and its invoice, ledger pair and draft Xero pair at generation. This phase only
   snapshots pre-payment already invoiced, as 20's interim flag left it.
-- Moving a List or a single Booking to whoever does it (US-01.4.6, Phases 32 and 32a) and repointing a
-  moved prepaid Booking's payee (US-06.5.4, D38, Phase 41). This phase only fixes the payee at
+- Moving a List or a single Booking to whoever does it (US-01.4.6, Phases 32 and 32a) (a moved prepaid
+  Booking changes nothing and no payee is repointed: US-06.5.4, D38). This phase only fixes the payee at
   authorise.
 - The Split action itself (22), the precedence and rejections (24), the resolver (19,
   19a), the modifiers (19b), who is billed (21): the snapshot copies their output.
@@ -967,8 +968,8 @@ held-back flags are Review flags).
   2026-10-02 note asks for the recipe, not a replay; the prototype keeps Contract versions (18) and
   locks billing only.
 - An anaesthetist-facing unit-value setting (26), hospital rename or edit (42): US-15.0.3's "change
-  once, shows everywhere" gaps for those entities belong there. US-12.1.1 is covered here only for the
-  snapshot of the unit value.
+  once, shows everywhere" gaps for those entities belong there. US-12.1.1 (Matches) is not covered here; the
+  snapshot only records the unit value.
 - Any change to per-Booking failure isolation (OQ-05 answered it as built) or to which date decides the
   price (OQ-48, built by Phase 18).
 
@@ -986,8 +987,8 @@ the owner (ROADMAP.md "Owner review: agents test themselves").
       keeps its price, locked at authorise) and do not block.
 - [ ] **Submit, all or nothing.** Effective from 1 Aug: the new version shows "Upcoming from 1 Aug", the
       previous one ends 31 Jul, the change summary lists the lines. Un-invoiced Health NZ Procedures
-      dated on or after 1 Aug now carry the new line's values; earlier, invoiced and prepaid ones are
-      untouched; a Procedure whose line was removed is in the To resolve list; a Procedure on an
+      dated on or after 1 Aug now carry the new line's values, a fixed price included; earlier, invoiced and
+      prepaid ones (they keep the invoiced price, Ben, OQ-104) are untouched; a Procedure whose line was removed is in the To resolve list; a Procedure on an
       AUTHORISED List is left locked.
 - [ ] **One future version, correct, withdraw.** Staging another change shows "second future-dated
       version" and blocks. Correct the upcoming version's start date: the previous version's end moves
@@ -1132,7 +1133,6 @@ what was built:
 | [US-07.3.1](../../../../requirements-board/requirements/stories/US-07.3.1.md) Authorise the List | captured · admin-authorise (confirm, authorised) | Stays captured. Re-shoot both states on `/admin/review/L-25490-2026-07-20-AM`: `confirm` notes the lock, `authorised` shows the banner plus the lock glyph and version in the CONTRACT column. Add `held-back-flag`: with COS ACC ended on 15 Jul, the Ropata Thu 16 Review shows Tuilagi's "Will be held back at billing" flag (`review-held-back-flag`) while authorise stays available. Keep the shot `name`s. |
 | [US-08.1.1](../../../../requirements-board/requirements/stories/US-08.1.1.md) Process an AUTHORISED List using each Procedure's locked Contract | captured · admin-authorise-list (confirm, authorised), admin-billing-run | Stays captured. Re-shoot `admin-authorise-list` on `/admin/review/L-34821-2026-07-20-AM` and `admin-billing-run` on `/admin/billing` (the caption says the row prices from the locked record). Add `admin-billing-supply-input`: the Tuilagi row with "Held back: none of this Booking's invoices was issued", the claim reference field and "Add and retry" (`billing-supply-input`), staged by the re-pointed `billing-failure` trigger. Keep the image order; the US-08.1.2 `admin-review-contracts` image's caption "Each procedure already carries its locked contract before billing" must be true of the shot. |
 | [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Captured. Re-shoot `admin-snapshot-invoice` on `/admin/invoices` with a caption that no longer says "fixed from the contract in force"; add `admin-locked-record` (`invoice-locked-record`: Contract, AA code, version, rate and discount, who is invoiced, payee, split) with a `regenerated` state after "Regenerate from locked data" ("identical"), shot after a patient address or unit-value edit. Drop the partial reason. |
-| [US-12.1.1](../../../../requirements-board/requirements/stories/US-12.1.1.md) Dollar value per unit | partial · admin-unit-value (list, edit) | No change here (Phase 26 owns it: the anaesthetist's own edit). The unit value locked at authorise shows in US-15.0.3's `admin-billing-exception`. |
 | [US-15.0.3](../../../../requirements-board/requirements/stories/US-15.0.3.md) Enter once | captured · web-entered-by-anaesthetist, admin-seen-by-office | Stays captured. Verify both still resolve on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`, `/admin/day/2026-07-21/bookings/BK0009`, `time-capture-track`). Add `admin-billing-exception`: after authorise and a unit-value edit, the locked Booking still shows its locked rate with `booking-lock-badge` while an ACTIVE Booking shows the new one. |
 
 **Recipes this phase breaks.**
@@ -1178,8 +1178,8 @@ Decisions log.
   future-dated version is refused; correct and withdraw leave the chain, the end dates and the relinked
   Procedures consistent; no screen calls a direct edit.
 - **Relink is exact.** Only un-invoiced, unlocked, non-prepaid Procedures dated on or after the start
-  move, by line key; recorded BTM and overrides stay; unmatched ones are listed; `PREPAID_KEEPS_PRICE`
-  is the one switch.
+  move, by line key; recorded BTM and overrides stay; unmatched ones are listed; a prepaid one keeps its invoiced
+  price while a non-prepaid fixed price follows the new line.
 - **The engine reads no live master.** `runBillingForList`, `retryBillingCase` and
   `regenerateInvoiceFromLock` take nothing from `state.masters` or live billing lines. The
   `priceBookingFromLock` signature has no masters argument. Try to find a path that still does (a
@@ -1226,12 +1226,10 @@ Decisions log.
   themselves"): the snapshot's field list (AR-29's draft list plus the invoice and payee fields; the
   catalogue still says "to be determined in discovery"), the rejection reading (a Contract not valid on
   the procedure date holds the Booking back rather than blocking authorise), the office relock for a
-  never-invoiced held-back Booking, the built defaults (no Contract upload, D34 and OQ-100; a prepaid
-  Procedure keeps its price through a new version, D47 and OQ-104; a Procedure locked at authorise is
-  not relinked; a withdrawn version stays on the chain; the demo trigger leaves the effective date
+  never-invoiced held-back Booking, the built defaults (no Contract upload, D34 and OQ-100; a Procedure locked at authorise is not relinked; a withdrawn version stays on the chain; the demo trigger leaves the effective date
   blank), anything logged rather than fixed, and the screens worth a look,
   each with its route and persona.
-- Status row for catch-up Phase 25, and a phase entry: the drift-check result against `d4db277`
+- Status row for catch-up Phase 25, and a phase entry: the drift-check result against `7cd7802`
   (including what 16 and 18 to 24 were found to provide, every live payee join and every live invoice
   print replaced, and any change to the fields to freeze), the snapshot's field list, the tests added,
   `PERSIST_VERSION` old to new, and the adversarial pass.
@@ -1260,7 +1258,7 @@ Decisions log.
     edits): one staged change per Contract, a review dashboard, all-or-nothing submit from a chosen date,
     never past, one future version, correct or withdraw until it starts; no upload (D34).
   - **Relink by line key** (US-04.2.10): un-invoiced, unlocked, non-prepaid Procedures dated on or after
-    the start move to the matching line; a prepaid one keeps its price (D47, `PREPAID_KEEPS_PRICE`); a
+    the start move to the matching line; a prepaid one keeps its price (D47 answered, OQ-104); a
     Procedure locked at authorise is not relinked (the v6 text is silent); unmatched ones are listed.
   - **Engine rejections are per Booking, not authorise blockers** (amends the earlier plan's
     `contractNotInForce` blocker and any handoff from 21 that expected one): the catalogue's "the
@@ -1274,7 +1272,7 @@ Decisions log.
 - **Handoff notes:**
   - 27: a prepaid Procedure's price (the anaesthetist's own fixed price, locked, nothing left to bill)
     goes into the snapshot through `buildBookingLock`, never a second builder
-    (`PREPAID_KEEPS_PRICE` in `relink.ts` is the one switch for D47); the lock's `prePaid` is replaced by that. Pre-payment cases still find their payee by the
+    (the prepaid rule is `relink.ts`'s, D47 answered); the lock's `prePaid` is replaced by that. Pre-payment cases still find their payee by the
     live join and print from live masters; 27 stamps a payee when it builds the prepayment record.
   - 32 and 32a: moving a List or a single Booking to whoever does it must land before authorise; after
     authorise the payee is locked and only a credit note and rebill (39) changes it.
@@ -1294,8 +1292,7 @@ Decisions log.
   - 39b and 42: there is no `masters.contractVersions` store; new Contract lines on a started version go
     through a staged change, and loads (developer-run, no upload, D34) append versions through 18's
     helpers.
-  - 41: repointing a moved prepaid Booking's payee (US-06.5.4, D38) changes the prepayment's payee,
-    never a lock.
+  - 41: a moved prepaid Booking changes nothing (no payee repoint, US-06.5.4, D38), never a lock.
   - 43: the generator writes locks for its AUTHORISED Lists through `buildBookingLock`.
   - 44: S4 Beat 3 and S5 Beat 4 as rewritten here.
 - **Catalogue screenshots.** The step's result: recipes created (US-04.1.6, US-04.2.10, US-04.1.3) and changed (US-04.3.5,

@@ -4,8 +4,8 @@
 [FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md) Record clinical billing data per Procedure (status 1; graded Contradicts; this phase closes its modifier half: the RVG code only where the Contract prices from RVG, start and finish times, BTM optional, received text never edited) ·
 [US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md) Choose optional modifiers, each with a short explanation (status 3; graded Contradicts) ·
 [US-03.3.8](../../../../requirements-board/requirements/stories/US-03.3.8.md) Age modifier from the patient's age (status 3; graded Partial) ·
-[US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Modifiers already included in base units (status 3; graded Contradicts) ·
-[US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier code master (status 3; graded Contradicts) ·
+[US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Modifiers already included in base units (status 4, Agreed; graded Contradicts) ·
+[US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier code master (status 4, Agreed; graded Contradicts) ·
 [DM-44](../analysis/domain-model-delta.md#dm-44) modifiers become per-Procedure records with explanations; age and included modifiers are pre-applied but not locked; ASA is just a modifier ·
 [RV-09](../analysis/reverse-check.md#rv-09-p1-absorbed-by-the-wrong-codes-and-struck-through-instead-of-shown-selected-at-0-units) P1 'absorbed' by the wrong codes and struck through instead of shown selected at 0 units ·
 [RV-22](../analysis/reverse-check.md#rv-22-asa-class-auto-seeds-modifier-units) the ASA class auto-seeds modifier units ·
@@ -15,9 +15,11 @@ Answered, built as answered: owner decision D43
 ([OQ-94](../../../../requirements-board/requirements/questions/OQ-94.md): P1 is included in every
 Neurosurgery code H7A to H9b, 'a' and 'b' alike, and every Spine code S1 to S10; superseded in part
 on 20 October: it is pre-applied, not locked).
-Open but narrowed, built as its default with pre-application one switchable rule: D29
-([OQ-95](../../../../requirements-board/requirements/questions/OQ-95.md): age bands and stacking; no
-modifier is locked (Donald, 20 October); whether anything is pre-applied at all is Ben's open doubt).
+Part answered, built as answered: D29 part 2
+([OQ-95](../../../../requirements-board/requirements/questions/OQ-95.md), Ben 27 October and Greg 28
+October): the age and zero-unit included modifiers are pre-applied, nothing else is pre-filled, no
+modifier is locked, and stacking is a policy matter with no limit. Still open, built as its default:
+part 1, the age bands.
 Backstop only, finished by Phase 21: the "short explanation for any modifier claimed" bullet of
 [US-03.6.1](../../../../requirements-board/requirements/stories/US-03.6.1.md) (Mark a Booking
 complete).
@@ -33,18 +35,18 @@ with base and modifier units, the RVG code type-ahead, the Procedure's optional 
 surfaces, "Mark complete" with no submit confirm step), 15b (ACTIVE for an assigned List), 15 (Booking
 vocabulary) and 14 (the trigger registry).
 **Estimated:** 2 sessions. Session 1: work items 1 to 8 (baseline, the generated RVG modifier table,
-model, the one modifier rule module, the pricing switch, store actions, the completion backstop, the
+model, the one modifier rule module, pricing reading it, store actions, the completion backstop, the
 seed migration and tests), ending green with every moved figure explained. Session 2: work items 9 to
 14 (the capture section on mobile, web and Admin, the modifier picker with the inline explanation,
 the units caption, the Admin Modifiers and RVG groups views, the S5 staging and copy sweep,
 Playwright, demo guide) and the review pass. If session 2 runs long, cut the Admin "Add AA modifier"
 sheet (item 12b) before any capture work; the model and store action stay.
 
-**Confirm before building.** D43 is answered and OQ-95 is narrowed by Donald's 20 October decision: no
-modifier is locked. Build it as decided, with no provisional label on the lock reading. What stays open
-is Ben's doubt whether anything should be pre-applied at all, plus the age band boundaries and stacking.
-Build D29's default, keep the age, included, band and stacking rules and the one on/off switch for
-pre-application in **one rule module** (item 4), and label the open part provisional in **one place**
+**Confirm before building.** D43 is answered and OQ-95 part 2 is answered (Ben, 27 October; US-05.1.4
+and US-05.1.5 Agreed): age and the zero-unit included modifiers are pre-applied and removable, nothing
+else is pre-filled, nothing is locked, stacking has no limit. Build it as answered, with no provisional
+label and no switch. What stays open is the age band boundaries (OQ-95 part 1). Build D29's default,
+keep the age and included rules in **one rule module** (item 4), and label the open part provisional in **one place**
 only: the header of the Admin Modifiers tab (item 12a).
 
 ## Goal
@@ -81,8 +83,7 @@ pick, 23's multi-procedure split and 25's snapshot read them.
     sub-codes), read from the CSV, shown selected **at 0 units**, so it cannot be added a second time
     (D43). The included modifier belongs to the **RVG group** (US-05.1.4, US-05.1.1), not to the
     procedure.
-  Pre-application is **one switchable rule** (Ben doubts it; D29): a single constant in the rule module
-  turns off both, leaving every modifier optional.
+  Nothing else is pre-filled (Ben, 27 October) and there is no switch.
 - **Every other modifier, ASA included, is optional** and needs a short explanation when claimed.
   US-03.3.4's criterion is "Given a modifier the anaesthetist claims, when they save, then it needs a
   short explanation", so claiming one opens its explanation field **inline, in the same sheet**, and
@@ -105,9 +106,9 @@ pick, 23's multi-procedure split and 25's snapshot read them.
   lists it against US-03.3.4 ("Combined M total can still be overridden by stepper"), but it is an
   adjustment on top of the itemised list, never a way to claim a modifier, and Phase 23 relies on it.
   Logged on the owner's review list.
-- **One place for the pricing model.** The modifier types, the age and included rules and their on/off
-  switch, the band and stacking rules and the M total live in `aa-prototype/src/domain/billing` (plus the generated seed
-  table), behind types the UI reads, so a v5 of the draft design, or OQ-95's answer, stays a contained
+- **One place for the pricing model.** The modifier types, the age and included rules
+  and the M total live in `aa-prototype/src/domain/billing` (plus the generated seed
+  table), behind types the UI reads, so a v5 of the draft design, or OQ-95 part 1's answer, stays a contained
   edit. The reference shape is the draft technical design v4: its Booking procedure fields
   ([AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md), region
   `booking-procedure-fields`: one `modifier_note`, required when modifier units are claimed) and its
@@ -130,17 +131,17 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
-   (the baseline is `d4db277`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the baseline is `7cd7802`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks, plus the "Procedure" (Modifiers bullet) and "RVG groups, procedure
    list and modifier master" sections of `requirements-board/requirements/domain-model.md`. If an item
    changed, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work
    and say so in the PROGRESS entry.
-2. Check the AR-34 files have not changed since `d4db277` (`git log -- "requirements-board/requirements/artifacts/files/NZSA RVG 2021 modifiers.md" "requirements-board/requirements/artifacts/files/NZSA RVG 2021 included modifiers.csv"`).
+2. Check the AR-34 files have not changed since `7cd7802` (`git log -- "requirements-board/requirements/artifacts/files/NZSA RVG 2021 modifiers.md" "requirements-board/requirements/artifacts/files/NZSA RVG 2021 included modifiers.csv"`).
    If they did, the generator (item 2) picks the change up; read the diff for new rows, new value
    shapes or a changed P1 list. US-05.1.5 asks for a spot-check against the PDF: compare five rows
    (PA3, A1, OB4, POC2a, NC2) with `NZSA RVG 2021.pdf` pages 12 and 13 (artifact AR-16) and record the
    result in PROGRESS. A disagreement is reported, never fixed by hand in the generated table.
-   Also check whether the draft pricing design has moved to a v5 since `d4db277` (`git log` on
+   Also check whether the draft pricing design has moved to a v5 since `7cd7802` (`git log` on
    `requirements-board/requirements/artifacts/AR-29.md`, `AR-30.md` and their files); if it has,
    re-read regions `booking-procedure-fields` (AR-29) and `booking-procedure` and `rvg-group` (AR-30)
    and adjust item 3's types in the one place.
@@ -152,9 +153,9 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 | Gate | Build | If answered differently |
 |---|---|---|
 | **D43 / OQ-94** (answered; superseded in part 20 Oct) | P1 pre-applied at 0 on every CSV code (Neurosurgery H7A to H9b, Spine S1 to S10 and sub-codes), read from the CSV, on the RVG group; selected, removable, never addable twice. No label | Not expected. A changed CSV is picked up by the generator |
-| **D29 / OQ-95** (open, narrowed 20 Oct: nothing locked) | Age in completed years on the procedure date; lower bounds inclusive as printed (0: A2, 1: A1, 2 to 69: none, 70 to 79: A1, 80+: A2); none on H6b and P2 (a data flag on the group); pre-applied and removable; bands: ASA (AS1, AS3, AS4) one at a time, BMI (OB1 to OB4) one, the highest applicable, pre-assessment PA1 to PA4 one with PA5 stacking (the 2026-07-27 reading carried forward), ASE stacks with an ASA code, everything else stacks; no ASA and no procedure-default pre-fill; one constant (`PRE_APPLY_MODIFIERS`) switches all pre-application off. One note on the Admin Modifiers tab: "Provisional · whether any modifier is pre-applied, the age bands, and which modifiers stack are still to confirm with AA (OQ-95)." | A different boundary, stacking or exclusion is a change to `AGE_BANDS`, `MODIFIER_BANDS`, the group flag or the switch in the one rule module (item 4) and its tests. If AA wants the ASA grade pre-filled after all, build it as a default of its own only on the owner's word: it reverses US-03.3.4's "Nothing else pre-filled" criterion; log it on the review list |
+| **D29 / OQ-95** (part 2 answered 27 and 28 Oct; part 1 open: the age bands) | Age in completed years on the procedure date; lower bounds inclusive as printed (0: A2, 1: A1, 2 to 69: none, 70 to 79: A1, 80+: A2); none on H6b and P2 (a data flag on the group); pre-applied and removable; **no stacking limit**: every modifier can be claimed alongside any other, only the same modifier never twice; no ASA and no procedure-default pre-fill, no switch. One note on the Admin Modifiers tab: "Provisional · the age bands are still to confirm with AA (OQ-95)." | A different boundary is a change to `AGE_BANDS` or the group flag in the one rule module (item 4) and its tests. If AA wants the ASA grade pre-filled after all, it reverses US-03.3.4's "Nothing else pre-filled" criterion and Ben's answer: build it only on the owner's word and log it on the review list |
 | **D39 / OQ-88** (open on the system code; two levels per the catalogue, built by 19) | The included modifier sits on the RVG group (US-05.1.4: "now belongs to the RVG group"), never on the procedure | Where the system code sits does not touch this phase. If the two levels were ever merged, `includedModifierIds` moves with the group record: one field |
-| **US-03.3.4, US-03.3.8, US-05.1.4, US-05.1.5** (status 3, OQ-95 still open on pre-application) | Build as written, pre-applied and removable | Adjust to the answer |
+| **US-03.3.4, US-03.3.8** (status 3) · **US-05.1.4, US-05.1.5** (status 4, Agreed) | Build as written, pre-applied and removable; US-03.3.4 and US-03.3.8 stay at Verify only for the age bands | Adjust to the answer |
 | **US-03.6.1** (Phase 21 finishes it) | Add only the explanation rule to completion | Phase 21 owns the procedure, Contract and holder-reference rules |
 
 5. Read what Phases 15a, 15b and 17 to 19a actually built (their PROGRESS entries), and follow their
@@ -360,9 +361,7 @@ test.
 
 4. **One modifier rule module**, `src/domain/billing/modifiers.ts`, replacing `modifierCodes.ts` and
    `modifierUnits.ts` (delete both; move what survives). This is the only place modifier units,
-   pre-application and bands are decided, and the one place OQ-95's answer changes.
-   - `PRE_APPLY_MODIFIERS = true` (D29, Ben's doubt): when false, `preAppliedModifiersFor` returns
-     nothing and every modifier is optional. The only switch; no setting UI.
+   pre-application and the age bands are decided, and the one place OQ-95 part 1's answer changes.
    - `AGE_BANDS` (D29): completed years on the procedure date, `{ from: 0, to: 0, code: 'A2' }, { from:
      1, to: 1, code: 'A1' }, { from: 70, to: 79, code: 'A1' }, { from: 80, code: 'A2' }`, with a comment
      quoting the printed rows and OQ-95. `ageInCompletedYears(dobISO, onISO)` is pure and string
@@ -374,9 +373,9 @@ test.
      each of the group's `includedModifierIds` at **0 units** with the detail "Included in the base
      units of {group code}". The age row carries its modifier's printed units and the detail "From the
      patient's age ({n}) on the procedure date". Both stay removable.
-   - `MODIFIER_BANDS` (D29, one table): ASA {AS1, AS3, AS4}, BMI {OB1 to OB4}, pre-assessment {PA1 to
-     PA4} (PA5 stacks, the 2026-07-27 reading), age {A1, A2}. ASE and every other code stack. Keyed by
-     printed code within the RVG source, so AA's own rows stack unless added to a band.
+   - **No bands, no stacking limit** (OQ-95 part 2: a policy matter): every modifier, ASA and BMI codes
+     included, can be claimed with any other. The old exclusive-band rule (`EXCLUSIVE_MODIFIER_GROUPS`,
+     `modifierBandOf`, the 2026-07-27 PA5 reading) is deleted and logged on the review list.
    - `claimRefusal(claim, ctx)`: unknown modifier; one already present, pre-applied or chosen ("P1 is
      already on this Procedure" or "A1 is already applied from the patient's age"; a modifier is never
      added twice); an explanation blank after trimming ("Add a short explanation for {code}.") or over
@@ -385,12 +384,10 @@ test.
      for {code} (RVG: {unitsAsPrinted})."); `units` given for a plain-number modifier. An age modifier
      the anaesthetist removed, or an included one, can be put back through `restoreModifier` (below)
      with no explanation; claiming it by hand while it is present is refused.
-   - `applyClaim(claims, claim, modifiers)`: adds or replaces the claim for that modifier, and removes a
-     band sibling (the band rule, as the old `toggleModifierCode` did), returning the claims and the
-     sibling it replaced (for the audit and the sheet's "Replaces OB2" line).
+   - `applyClaim(claims, claim, modifiers)`: adds or replaces the claim for that modifier.
    - `resolveModifiers({ claims, preApplied, start, modifiers })` returns `{ items: ProcedureModifier[],
      units }`: pre-applied rows first, then claims in claim order. A claim duplicating a pre-applied
-     modifier, or colliding with a band already taken (first wins), or unknown, is kept in `items` with
+     modifier, or unknown, is kept in `items` with
      `refused` set and adds nothing (the backstop for data that bypassed `applyClaim`: P1 is never
      counted twice). `units` is `start.units` (19a's starting modifier units) plus every unrefused
      item's units.
@@ -401,8 +398,7 @@ test.
      intent: age on each boundary (0, 1, 2, 69, 70, 79, 80) and none on a `noAgeModifier` group; P1
      pre-applied at 0 on a Spine group and on both an 'a' and a 'b' Neurosurgery group; none on a hip
      group; P1 claimable (2 units) on a hip group; a removed A1 or P1 stays off, adds nothing and
-     comes back through restore; `PRE_APPLY_MODIFIERS` false leaves nothing pre-applied; band swap; PA5
-     stacks with PA2; ASE stacks with AS3; a duplicate of a pre-applied P1 adds nothing (never twice);
+     comes back through restore; no ASA pre-fill; OB2, AS3 and PA2 claimed together all count; a duplicate of a pre-applied P1 adds nothing (never twice);
      the M total adds 19a's starting value; an unknown code is refused with its reason; a non-numeric
      modifier priced from its claim's units.
 
@@ -439,8 +435,7 @@ test.
    - `editProcedure` refuses a patch carrying `modifierClaims` or `removedModifierIds` (they change only through the actions
      above, so no claim is saved without its explanation) and calls `reconcileClaims` when a patch
      changes the code or group.
-   - Tests (`store/modifierActions.test.ts`): each refusal; a band swap replaces the sibling in one
-     audit entry; a claim on an AUTHORISED List is refused; the anaesthetist cannot claim on another
+   - Tests (`store/modifierActions.test.ts`): each refusal; a claim on an AUTHORISED List is refused; the anaesthetist cannot claim on another
      anaesthetist's List; removing a claim lowers M on the Admin Booking; removing the pre-applied A1 or P1 is audited and
      lowers M by the age units (P1 by 0), restoring it puts it back, and a claim of P1 while it is
      present is refused (never twice); an AA modifier added by the
@@ -511,13 +506,12 @@ test.
      a mist "Removed: {code}. Put back" line (`restoreModifier`) so a mis-tap is recoverable. Hooks
      `capture-modifier-applied` (replaces the earlier `capture-modifier-locked`).
    - **Claimed rows:** the mono code, the factor and "+2", the explanation in slate beneath, and Edit
-     and Remove as teal text actions. A refused row (a duplicate of a pre-applied modifier or a band clash
-     that bypassed the picker) shows its reason in the warn tint with Remove. A claim missing its
+     and Remove as teal text actions. A refused row (a duplicate of a pre-applied modifier that
+     bypassed the picker) shows its reason in the warn tint with Remove. A claim missing its
      explanation (seed or persisted data) shows the warn tint and "Add a short explanation" and is the
      control "Mark complete" scrolls to. Hooks `capture-modifier-claim`.
    - **"Add a modifier"** (teal text action) opens the picker. Nothing is shown pre-selected beyond the
-     pre-applied rows (US-03.3.4 "Nothing else pre-filled"). With `PRE_APPLY_MODIFIERS` off the
-     section shows claims only.
+     pre-applied rows (US-03.3.4 "Nothing else pre-filled").
    - Empty state with no pre-applied rows and no claims: "No modifiers. Add any that apply, each with a
      short reason."
    - The section caption: "Values from the NZSA RVG 2021 modifier table. Age, and any modifier the
@@ -537,8 +531,7 @@ test.
       "Claimed".
     - **Tapping a row expands it inline** in the same sheet: an "Explanation" field (one or two lines,
       placeholder "A short reason, as an insurer would ask", 200 characters), a "Units" stepper with
-      "RVG: 2 + Time" beside it when the printed value is not a plain number, a "Replaces OB2" line
-      when the band holds a sibling, and "Claim" (teal, disabled until the explanation has text) and
+      "RVG: 2 + Time" beside it when the printed value is not a plain number, and "Claim" (teal, disabled until the explanation has text) and
       "Cancel". Only "Claim" writes (`claimModifier`); the sheet then closes, or stays open for
       another on web. Nothing is lost on mobile: the pending claim lives in the sheet's local state
       until Claim or Cancel, so the per-tap write rule is kept for everything else.
@@ -557,11 +550,9 @@ test.
 12. **Admin, Master data.**
     - a. The "Modifier codes" tab becomes **"Modifiers"** (`masters-modifiers` hook). Columns: Code
       (mono), Block, Modifying factor, Units (mono, as printed), Priced as ("2" or "Entered at
-      capture"), Applied ("From age" for A1 and A2, "Optional" otherwise; P1 reads "Optional, or included by the RVG group"), Bands (neutral pill: "One
-      per ASA band"), Page. A second table, "AA's own", lists the AA rows (empty state: "None yet.
+      capture"), Applied ("From age" for A1 and A2, "Optional" otherwise; P1 reads "Optional, or included by the RVG group"), Page. A second table, "AA's own", lists the AA rows (empty state: "None yet.
       Vanessa's list loads here; the office can add one now."). The tab header carries the phase's one
-      provisional note as a `DemoBadge`: "Provisional · whether any modifier is pre-applied, the age bands, and
-      which modifiers stack are still to confirm with AA (OQ-95)." The subheading: "The
+      provisional note as a `DemoBadge`: "Provisional · the age bands are still to confirm with AA (OQ-95)." The subheading: "The
       NZSA RVG 2021 modifier table, as printed, plus AA's own."
     - b. **"Add AA modifier"** (teal) opens `AddAaModifierSheet` (code, factor, units) in
       `src/apps/admin/flows/`, a new member of the `Sheet` union, calling `addAaModifier`.
@@ -591,7 +582,7 @@ test.
     - Add specs: on mobile and web, Ellison shows A1 pre-applied with no other modifier, and Remove takes it off, with
       the "Put back" line restoring it; claiming ASA III
       opens the inline explanation, Claim stays disabled until text is typed, the claimed row shows the
-      explanation and M rises by 2 on the Admin Booking; the Spine Booking (marker) shows P1 selected at 0, removable, with P1 showing "Applied" in the picker and a second claim refused; a claim swapped OB2 to OB3 shows "Replaces OB2"; Mark complete with a
+      explanation and M rises by 2 on the Admin Booking; the Spine Booking (marker) shows P1 selected at 0, removable, with P1 showing "Applied" in the picker and a second claim refused; OB2 and ASA III claimed together both count; Mark complete with a
       seeded blank-explanation claim (a test-only store setup) scrolls to the claim; the Admin
       Modifiers tab lists 30 RVG rows and the provisional note.
     - Run `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`, all green.
@@ -638,7 +629,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 
 - [ ] Admin → Master data → Modifiers: 30 RVG rows in the printed order with units as printed (PA3
       "2 + Time", POC2a "4-6", PACU1 "As Per T1/T2"); no AS2, PO1 or PO2; AS3 is 2; A1 and A2 read
-      "From age"; the OQ-95 note (whether anything is pre-applied, the bands) shows here and nowhere else. No en or em dash in any row.
+      "From age"; the OQ-95 note (the age bands) shows here and nowhere else. No en or em dash in any row.
 - [ ] Add AA modifier (code AAX1, "Demo AA modifier", 1 unit): it appears under "AA's own" with an
       audit entry, and is claimable on a mobile Booking at once.
 - [ ] RVG groups: the 20 Neurosurgery and Spine groups show "P1 · 0" under Included modifiers; no
@@ -650,7 +641,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       now" her Admin Booking still reads $344.50 and 13 units (the `btmCapture.test.ts` pin).
 - [ ] Claim ASA III on Ellison: the inline explanation opens, Claim is disabled until text is typed,
       the claim saves with its explanation, and M on the Admin Booking rises by 2. Cancel discards a
-      half-made claim. Claim OB2 then OB3: "Replaces OB2" shows and only OB3 remains. Remove works at
+      half-made claim. Claim OB2 as well: both count, with no band swap. Remove works at
       once.
 - [ ] Try to claim A1 on Ellison while it is applied: the picker shows "Applied", no second A1. A patient
       outside the bands shows no age modifier; A1 or A2 can be claimed by hand there, with an explanation.
@@ -693,15 +684,14 @@ Patch these beats and lines, and the same sections of `master-demo-guide.html`, 
   - **S5 Beat 1**: Expected names the staged anaesthetist edits as "an ASA III modifier claimed with
     its explanation, then removed". **S5 Beat 4**: the Hemi Walker Health NZ figure if it moved.
   - **S5 discovery points**: "the demo-plausible modifier values" becomes "the RVG modifier table as
-    printed (values that are not plain numbers are entered at capture); whether anything is pre-applied, the age bands and stacking are still to confirm (OQ-95); no
-    ASA pre-fill; AA's own modifiers (Vanessa's list) not yet loaded".
+    printed (values that are not plain numbers are entered at capture); only the age and included modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are still to confirm (OQ-95); modifiers stack with no limit; AA's own modifiers (Vanessa's list) not yet loaded".
 - `02-workflows-and-handoffs.md`, Workflow 4 ("capture BTM and complete a Booking") steps 6 to 8: step 6 "She records ASA and any other
   applicable modifiers" becomes "The age modifier, and any modifier the procedure's base units
   include (P1 on Neurosurgery and Spine codes), are pre-applied and removable; she claims any other modifier
   that applies, ASA included, each with a short explanation"; step 7 ("prevents a positioning modifier
   if the base code already includes it") becomes "An included modifier shows at 0 units and cannot be
-  added twice"; step 8 (the segmented bands and "Also applies" chips) becomes the one-per-band rule
-  (ASA, BMI, pre-assessment) stated as provisional (OQ-95), with the picker's "Replaces" line.
+  added twice"; step 8 (the segmented bands and "Also applies" chips) becomes "modifiers stack with
+  no limit, each with its own reason; the same modifier is never added twice".
 - `01-personas-and-responsibilities.md`, Dr Souter's core action 4: "Record ASA, RVG code, ..."
   becomes "Record the procedure, start and handover times, any modifiers claimed with a short reason,
   notes and any allowed additional billing line".
@@ -709,7 +699,7 @@ Patch these beats and lines, and the same sections of `master-demo-guide.html`, 
   "Modifier values", its time-rounding line already dropped): "The RFP names example modifier
   ranges..." and "The prototype values are demo-plausible..." become the RVG table as printed, values
   not plain numbers entered at capture, and the pre-applied, removable age and included modifiers; the same-band
-  bullet becomes the band rule stated as provisional (OQ-95), with ASE stacking. In "Fee
+  bullet becomes "modifiers stack with no limit". In "Fee
   calculation", "Positioning cannot be charged again if the base code already includes it" becomes
   "P1 (non-supine positioning) is included, pre-applied at 0 (removable), on every Neurosurgery and Spine code, so it
   cannot be added twice; the age modifier is pre-applied from the date of birth, removable", and any
@@ -737,8 +727,8 @@ matches what was built:
 |---|---|---|
 | [US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md) optional modifiers with an explanation | captured · web-asa, mobile-asa (retired ASA-seeding captions); `images` also carry three merged US-03.3.5 entries | `captured`. Replace `asa` with `modifiers` on web and mobile at `BK0009`: states `applied` (highlight `capture-modifier-applied`; "Age is pre-applied and can be removed"), `claiming` (picker open, tap AS3; highlight `modifier-explanation`; "Claiming a modifier asks for a short explanation"), `claimed` (highlight `capture-modifier-claim`; "Each claimed modifier is itemised with its explanation"). No ASA-seeding caption survives. Remove the three US-03.3.5 entries from `images` only, and record it |
 | [US-03.3.8](../../../../requirements-board/requirements/stories/US-03.3.8.md) age modifier | none (create it) | Create, `captured`. `age-applied` on web and mobile at `BK0009` (Ellison, 72), highlight the A1 row (`capture-modifier-applied`); caption "A1 is applied from the patient's age and can be removed"; a second state `age-removed` (Remove tapped, "Put back" showing) |
-| [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) included modifiers | captured · admin-rvg-absorbs, web-/mobile-absorbed-positioning (hip and shoulder struck through: retired) | `captured`, re-pointed. Drop both old shots. Admin `rvg-included` (highlight `masters-rvg-included`; "P1 is included in every Neurosurgery and Spine group's base units"); web and mobile `included-applied` at the `includedModifierBooking` Booking, states `selected` (P1 at 0 units, removable; highlight the P1 row) and `not-addable` (picker open, P1 "Applied"; "An included modifier cannot be added twice") |
-| [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) modifier code master | partial · admin-modifier-codes (stale caption; VM1, TTE, PACU1, EAA1, POC, NC missing) | `captured`. Re-shoot `modifier-codes` on the Modifiers tab (`masters-modifiers`; click re-pointed to "Modifiers"): the 30 RVG rows as printed, the Applied column, "AA's own"; caption "The RVG modifier table as printed, plus AA's own"; add state `add-aa` (sheet open). Drop the partial reason; keep `partial` ("Vanessa's list not supplied; the office adds AA modifiers one by one") only if the review judges it material |
+| [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) included modifiers | captured · admin-rvg-absorbs, web-/mobile-absorbed-positioning (hip and shoulder struck through: retired) | `captured` (now Agreed), re-pointed. Drop both old shots. Admin `rvg-included` (highlight `masters-rvg-included`; "P1 is included in every Neurosurgery and Spine group's base units"); web and mobile `included-applied` at the `includedModifierBooking` Booking, states `selected` (P1 at 0 units, removable; highlight the P1 row) and `not-addable` (picker open, P1 "Applied"; "An included modifier cannot be added twice") |
+| [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) modifier code master | partial · admin-modifier-codes (stale caption; VM1, TTE, PACU1, EAA1, POC, NC missing) | `captured`. Re-shoot `modifier-codes` on the Modifiers tab (`masters-modifiers`; click re-pointed to "Modifiers"): the 30 RVG rows as printed, the Applied column, "AA's own"; caption "The RVG modifier table as printed, plus AA's own"; add state `add-aa` (sheet open); the tab's one provisional note reads "the age bands" only. Drop the partial reason; keep `partial` ("Vanessa's list not supplied; the office adds AA modifiers one by one") only if the review judges it material |
 | [FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md) clinical billing data | no recipe row | No change here: shown through its stories (US-03.3.1 and US-03.3.3 below, US-03.3.4) |
 | [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) | captured · web-rvg-picker, mobile-rvg-picker | No change here (Phases 19 and 20 own it); `--dry` after `AsaCard` leaves the `Pair`, re-point only selectors this phase moved |
 | [US-03.3.3](../../../../requirements-board/requirements/stories/US-03.3.3.md) | captured · web-times, mobile-times | No change here (not this phase's); `--dry` confirms `capture-times` is still found |
@@ -785,7 +775,7 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
 - **Every moved figure is explained.** The 19b parity case attributes every M change to the ASA
   values or the age rule and nothing else; B and T are identical; Ellison's $344.50 holds; the run
   sheet's figures match the app; no new RNG draw and the `asaDraw` kept.
-- **One modifier answer.** Only `modifiers.ts` decides pre-application, bands, refusals and the M total; every
+- **One modifier answer.** Only `modifiers.ts` decides pre-application, age bands, refusals and the M total; every
   fee-context assembler passes the same DOB, procedure date, group and master; `BtmBreakdown`'s
   `modifierItems` is what the UI, the caption and the audit read. No runtime path reads the generated
   rows except through the store master.
@@ -793,8 +783,7 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
   removable (removal stored in `removedModifierIds`, audited, restorable); nothing is locked and no
   lock glyph exists; none is ever counted twice (a duplicate claim adds nothing); a code or group
   change reconciles in the same commit; the age uses the List's date and the demo clock, never
-  `new Date()`; the D29 boundaries are tested on each edge; H6b and P2 suppress the age modifier;
-  `PRE_APPLY_MODIFIERS` off leaves everything optional and is the only switch.
+  `new Date()`; the D29 boundaries are tested on each edge; H6b and P2 suppress the age modifier.
 - **The table is the catalogue's.** The generated file equals the parse of AR-34's files (the drift
   test), values as printed, ids hidden, dashes normalised, and no hand-typed modifier row anywhere in
   `src/`. P1 is pre-applied on exactly the 20 CSV codes and on no hip or shoulder code.
@@ -803,9 +792,9 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
   backstop catches anything else; the pristine seed passes it.
 - **Nothing pre-filled.** No ASA seed, no procedure default, no "untickable default"; `asaClass`,
   `AsaCard`, `ASA_SEED_UNITS`, `absorbsModifierCodes`, 19's interim `includesModifierCodes`, the
-  strike-through and the "Includes positioning" caption are gone from code, tests and copy (RV-09, RV-22). The PA5 and ASE stacking
-  and the band swaps match D29's table.
-- **One provisional label** (OQ-95, the Admin Modifiers tab), none elsewhere. Plus the usual: teal-only
+  strike-through and the "Includes positioning" caption are gone from code, tests and copy (RV-09, RV-22). No stacking limit: no band rule,
+  no sibling swap, no "Replaces" line.
+- **One provisional label** (OQ-95 part 1, the age bands, on the Admin Modifiers tab), none elsewhere. Plus the usual: teal-only
   actions, no dashes in copy, mobile sheets not modals, `pwaPurity` green, every write audited and
   through `mutate()`, `PERSIST_VERSION` bumped once.
 - **No gold-plating.** No modifier loader, no RVG row editing, no warning rule, no body-area guidance,
@@ -814,16 +803,17 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): D29 built as OQ-95's default (completed years on the procedure date, lower bounds
-  inclusive, none on H6b and P2, the band and stacking table, ASE stacking, no ASA pre-fill), labelled
-  provisional on the Admin Modifiers tab; pre-application as one switch (`PRE_APPLY_MODIFIERS`, on);
-  removal of a pre-applied modifier stored as `removedModifierIds` with a "Put back" action, and no
-  explanation asked for a pre-applied one; A1 and A2 claimable by hand outside their bands, with an explanation; the explanation's 200
-  character limit; seeded AS1 and AS2 classes claiming nothing; the seeded explanation wording; the
-  starting modifier units added to (not replaced by) the itemised claims; the manual M adjustment kept;
-  AA's own list not loaded (one AA row can be added by the office); the PDF spot-check result; the
-  moved figures with before and after; and the screens worth a look, each with its route and persona
-  (Ellison's capture, the Spine Booking, the picker, the Admin Modifiers tab).
+  themselves"): D29's age bands built as OQ-95 part 1's default (completed years on the procedure date,
+  lower bounds inclusive, none on H6b and P2), labelled provisional on the Admin Modifiers tab; no
+  stacking limit (a policy matter: the 2026-07-27 one-per-band rule and its swap are gone, only the same
+  modifier is never added twice); no ASA pre-fill (settled, OQ-95 part 2); removal of a pre-applied
+  modifier stored as `removedModifierIds` with a "Put back" action, and no explanation asked for a
+  pre-applied one; A1 and A2 claimable by hand outside their bands, with an explanation; the
+  explanation's 200 character limit; seeded AS1 and AS2 classes claiming nothing; the seeded explanation
+  wording; the starting modifier units added to (not replaced by) the itemised claims; the manual M
+  adjustment kept; AA's own list not loaded (one AA row can be added by the office); the PDF spot-check
+  result; the moved figures with before and after; and the screens worth a look, each with its route and
+  persona (Ellison's capture, the Spine Booking, the picker, the Admin Modifiers tab).
 - **Catalogue screenshots result:** the recipe created (US-03.3.8), re-pointed (US-05.1.4), changed
   (US-03.3.4, US-05.1.5) and the broken ones fixed (US-03.3.5, US-05.2.3, US-13.4.1, and any US-05.1.1
   caption), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed)
@@ -836,14 +826,15 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
      own; codes are not keys. Supersedes the 2026-07-22 "table lives in `modifierCodes.ts`, values
      demo-plausible" entry and its PO1 and PO2 list.
   2. The 2026-07-22 "ASA seeding values" ruling is superseded (RV-22): the ASA grade is one optional
-     modifier with an explanation, nothing pre-filled (US-03.3.4; OQ-95 open).
+     modifier with an explanation, nothing pre-filled (US-03.3.4 and US-05.1.5, Agreed; OQ-95 part 2 answered).
   3. The absorbed-P1 ruling is superseded (RV-09, US-05.1.4, D43): P1 is included, pre-applied at 0 and removable, on the
      20 Neurosurgery and Spine codes from the CSV, on the RVG group; hip and shoulder codes include
      nothing. The 2026-10-02 "default modifiers, pre-filled and untickable" reading is superseded too.
   4. The 2026-07-23 A1 relabel for Ellison now stands as the pre-applied, removable age modifier from her date of
      birth; her fee is unchanged.
-  5. The 2026-07-27 band reading is carried forward as D29's default (ASA, BMI, pre-assessment with
-     PA5 stacking), in one rule module; the age band is now pre-applied (removable).
+  5. The 2026-07-27 band reading (one per ASA, BMI and pre-assessment band, PA5 stacking) is superseded:
+     no stacking limit (OQ-95 part 2; a policy matter). The age band is pre-applied (removable), its
+     boundaries D29's default, in one rule module.
   6. The 2026-07-28 modifier picker shape (segmented bands plus "Also applies" chips) is superseded by
      the itemised Modifiers section and the picker with the inline explanation.
   7. Modifiers are itemised records, pre-applied ones derived with removals stored (DM-44); no modifier is locked (D43 superseded in part, D29 narrowed, 20 October); the M total is 19a's starting value
@@ -859,8 +850,8 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
     zero modifiers"); a fixed price ignores modifiers for price.
   - 25: snapshots `modifierItems` (codes, units, explanations, origins) and the starting value's
     layer.
-  - 42: loads Vanessa's list and the RVG table from spreadsheets through the same `Modifier` shape and
-    the band table; edits AA rows.
+  - 42: loads Vanessa's list and the RVG table from spreadsheets through the same `Modifier` shape;
+    edits AA rows.
   - 43: the generator builds claims through `applyClaim`, with explanations, never a second shape.
-  - OQ-95's answer: a change to `AGE_BANDS`, `MODIFIER_BANDS`, the `noAgeModifier` flag or `PRE_APPLY_MODIFIERS`, and the
+  - OQ-95 part 1's answer (age bands): a change to `AGE_BANDS` or the `noAgeModifier` flag, and the
     provisional note.

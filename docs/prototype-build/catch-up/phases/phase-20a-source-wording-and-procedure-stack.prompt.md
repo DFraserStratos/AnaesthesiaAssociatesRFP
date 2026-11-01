@@ -18,7 +18,7 @@ Before doing anything else, read these in order:
 8. requirements-board/requirements/capture/ATLAS.md: the recipe format, routes, ids, hooks and overlays the screenshot recipes depend on (and the attachment hooks to remove).
 9. docs/prototype-build/catch-up/analysis/prototype-map-shared.md and prototype-map-admin.md, for the code entry points (the Booking detail, the capture block, Review and the Day drawer).
 
-Then do the drift check in the phase doc against the plan's baseline, catalogue commit d4db277:
+Then do the drift check in the phase doc against the plan's baseline, catalogue commit 7cd7802:
 - node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <the IDs in its step 1> (rename-aware; never a plain git diff of the catalogue folder); re-read any item that changed and adjust the work items as the doc says. If the received descriptions were Retired or moved to Future Work, or US-03.1.3 (attachments) was un-retired, stop and tell me;
 - OQ-103 is open: build its default (the invoice description starts as the Contract line's description, else a copy of the Booking's description, never an RVG group name, office-editable; the hospital-billed variant not built), labelled provisional in one place and logged for the owner; if it has been answered, build the answer instead;
 - confirm Phase 20 is DONE (stop if not) and note the names 18, 19, 19a and 20 actually used, and the current PERSIST_VERSION.

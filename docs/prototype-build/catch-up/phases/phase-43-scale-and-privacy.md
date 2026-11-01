@@ -9,9 +9,8 @@ Privacy and data minimisation (Proposed: the NHI stays in the clinical and ledge
 sent to Xero or any other finance platform, in any field; it never leaks through logs, error messages,
 monitoring or non-production data; failed hospital data shows only what is needed, with the raw payload
 under restricted access; non-production holds synthetic data only).
-Both are still Partial. At `d4db277` only their wording moved (the horizon is a setting; the NHI is "never
-sent to Xero or any other finance platform, in any field", Greg: "It could be more explicit than that").
-What changed a lot is the model the generator builds (work item 2).
+Both are still Partial and moved only in wording (the horizon is a setting; the NHI is "never sent to Xero
+or any other finance platform, in any field"). What changed is the model the generator builds (work item 2).
 Exercised at scale, owned by Phase 37:
 [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md)
 (processing monitor: "This list will get quite large"; Phase 37's grouped, sortable, filterable monitor
@@ -60,19 +59,22 @@ Answered question this phase builds:
 So Xero doesn't have NHI details. Xero will have an unique ID which allows transactions to link back to
 invoices in our system."). The leak scan's Xero area checks for the NHI **and** the other personal
 information Phase 16 keeps out of Xero (work item 13).
-**Owner decisions** ([ROADMAP.md](../ROADMAP.md) table, re-read at `d4db277`). None gates this phase;
+**Owner decisions** ([ROADMAP.md](../ROADMAP.md) table, re-read at `7cd7802`). None gates this phase;
 the generator follows what the decisions produced, as the earlier phases built it: D1 (the monthly
 AA-FEE invoice, 16); D11 (NHI mandatory, 33, 40); D26 (one RVG multi-procedure rule, no switch, 23); D32
 (a Contract may hold no lines, 18, 19a, 20); D33 (no procedure to match, the RVG code optional, 20, 21);
-D38 and D64 (prepaid is a Contract setting; the prepayment pair at admin approval, payable to the prepay
-holding account, a second pair at authorisation, 27, 27a); D39 (the RVG groups are the one master list,
+D30 and D38 (prepaid is a Contract setting, never editable; the prepayment pair at admin approval, payable to
+the AA Holding account, then a journal transfer to the anaesthetist at authorisation, 27, 27a); D57 (prepaid
+Procedures are left off the final invoice, nothing deducted; an all-prepaid Booking has no final invoice, 27);
+D35 (answered: the RVG group holds a starting figure and the published range, any value allowed with an
+out-of-range warning for the office, 19, 20); D39 (the RVG groups are the one master list,
 19); D40 and D50 (no time band, the per-Contract editable flag, 19a, 24); D42 (the office keeps the
 anaesthetists' price lists, 19a); D43 (P1 included, pre-applied and removable, 19b); D44 (preferences
 admin-only, 17); D45 (versions never backdated, 18, 25). Superseded and not built: D2, D3, D6, D12, D16,
 D17, D20, D37 (curated procedure lists and general procedures, price precedence, first-party prepaid
-sets, "no per-Booking override"). Open defaults the generated set inherits, never re-decided here: D28
-(insurance indication set to match the chosen Contract), D29 (age on the procedure date), D35 (the RVG
-group's starting figure; no generated base units out of range), D36 (tier names).
+sets, "no per-Booking override"). Defaults the generated set inherits, never re-decided here: D28
+(the insurer, a contract holder, and the approval number on the Booking; insurance never decides who is
+billed), D29 (age on the procedure date), D36 (tier names).
 **Depends on:** Phase 42 (every master editable and the controlled loader, so the generator reads the
 final master shapes), Phase 37 (the processing monitor, `billingMonitorView`, and the Xero sync queue the
 scan reads), Phase 36 (the ledger pair as the system of record, which the generated history must follow)
@@ -133,7 +135,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d4db277` (rename-aware; never
+1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware; never
    a plain `git diff` of the catalogue folder):
 
    ```
@@ -144,15 +146,16 @@ Two claims the prototype has so far only narrated become things a presenter can 
    recurring bookings, contract holders, Contracts and lines, No contract (RVG), the payer on the
    Booking, the NHI and the patient record.
 
-   At plan time (`60e2d1e..d4db277`) the covered items moved only in wording: US-15.0.4 names the
-   horizon as a setting (currently four months), US-15.0.6 says the NHI is never sent to Xero "in any
-   field". What changed is the model the generator builds (change logs of 2026-10-16 to 2026-10-20 and
-   the v6 technical design): RVG groups with no procedure list; contract holders with settings and
-   Contracts with or without standalone lines; one Contract per Procedure; the price, rate and discount
-   held on the Procedure; modifiers as records with age and P1 pre-applied and removable; a payer and a
-   mandatory NHI on every Booking (OQ-49 answered); prepaid as a Contract setting with the prepay holding
-   account. Work item 2 already reflects all of this; diff only for anything after `d4db277`.
-2. If an item changed since `d4db277`, re-read it in full and adjust the work items before building. If
+   At plan time the covered items moved only in wording: US-15.0.4 names the horizon as a setting
+   (currently four months), US-15.0.6 says the NHI is never sent to Xero "in any field". What changed is the
+   model the generator builds (the v6 technical design and the change logs to 2026-11-02): RVG groups with no
+   procedure list; contract holders (insurers among them, no insurer master) with settings and how their
+   invoices are delivered, and Contracts with or without standalone lines; one Contract per Procedure; the
+   price, rate and discount held on the Procedure; modifiers as records with age and P1 pre-applied and
+   removable; a payer with an email or postal address and a mandatory NHI on every Booking (OQ-49); prepaid as
+   a Contract setting, the AA Holding account and its journal transfer, prepaid Procedures left off final
+   invoices (D57). Work item 2 reflects all of this; diff only for anything after `7cd7802`.
+2. If an item changed since `7cd7802`, re-read it in full and adjust the work items before building. If
    an item is now Retired or Future, drop its work and say so in the PROGRESS entry:
    - **US-15.0.4** Retired or Future: drop work items 1 to 9. If its figures changed (anaesthetists,
      Slots, invoices per year), change the one `FULL_SCALE` constants block (work item 2) and every copy
@@ -164,7 +167,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
      that view hold up at scale and never adds a second authorise path.
    - **US-14.5.1** moved out of Future into scope: record it for Phase 44's handoff and apply work item
      11's restricted view to it only if the session has room.
-   - **A model item changed after `d4db277`**: the earlier phase that built it owns the change; the
+   - **A model item changed after `7cd7802`**: the earlier phase that built it owns the change; the
      generator follows what shipped, because it builds through the same module. Change nothing here
      except the integrity test that names the rule.
 3. **Open questions.** None blocks this phase. OQ-30 and OQ-49 are answered and built as answered. The
@@ -181,7 +184,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
    - **The 2026-10-20 model, as Phases 15 to 27a shipped it.** The generator calls these, never copies
      them, and imports them from `aa-prototype/src/domain/billing` and nowhere else: the Booking, the
      List and `ListState` (15, 15b, 31); tiers and private preferences (17, `store/officePrivate.ts`);
-     contract holders with settings (billed, billable party, prepaid), the one No contract (RVG) and
+     contract holders with settings (billed, billable party, how invoices are delivered), the one No contract (RVG) and
      Contracts as dated versions (18); RVG groups as one master list and the optional RVG code (19);
      standalone Contract lines, starting values filled onto the Procedure from the line or the group, and
      the anaesthetists' price-list Contracts (19a); the modifier master and modifier records with age
@@ -189,8 +192,8 @@ Two claims the prototype has so far only narrated become things a presenter can 
      received and the invoice description (20a); the payer on the Booking and the one "who is billed"
      function (21); the primary Procedure (23); the price, rate and discount held on the Procedure and
      their pure calculation (24); the pricing snapshot at authorise and the builders that invoice from it
-     (25); the anaesthetist profile (26); the prepayment lifecycle and the prepay holding account with its
-     second pair at authorisation (27, 27a).
+     (25); the anaesthetist profile (26); the prepayment lifecycle with prepaid Procedures left off the final
+     invoice (27); the AA Holding account and its journal transfer at authorise (27a).
    - Phase 16 (monthly AA-FEE invoice, the one BCTI count function, the Xero contact label helper, the Xero
      privacy scan in `xeroNhi.test.ts`); Phase 36 (`billing.ledger`, `LedgerPair`, builders, the Ledger
      screen and its imbalance indicator); Phase 37 (`billing.xeroQueue`, the pure `billingMonitorView`, its
@@ -410,18 +413,21 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        `officePrivacy.test.ts` stays green at full scale).
      - **Contract holders and Contracts** the Bookings draw on: the seed's holders and Contracts are kept;
        the generator adds a practice-sized set of synthetic holders (hospitals, surgeons' rooms, insurers,
-       each with its settings: billed or not, with a billable party) and Contracts as dated versions built
+       each with its settings: billed or not with a billable party, and how its invoices are delivered; there is
+       no insurer master) and Contracts as dated versions built
        through Phase 18's builders, at `linelessContractShare` with no lines and otherwise with standalone
        lines (Phase 19a: line key, holder reference code, description, default RVG code, fixed price or
        rate and discount, units). A year of history crosses the seeded Contract versions, so old Bookings
        price at the old version.
      - **Prepaid, a handful** (`prepaidShare`): a few of the 71 get a price-list Contract kept by the
-       office (an anaesthetist holder, Phase 19a, D42) flagged **prepaid** (Phase 18, D64), with a fixed
-       price on each line. Their prepaid Bookings have a payer who is a person (D23), the Procedure priced
-       at that line's price in full (kept through any Contract change), the prepayment invoice approved
-       with its pair to the prepay holding account and its draft Xero pair (Phase 27, D38), and, for
-       AUTHORISED history, the second pair that moves the amount to the anaesthetist who did the List
-       (Phase 27a). Forward prepaid Bookings leave their amount in the holding account. All through
+       office (an anaesthetist holder, Phase 19a, D42)        flagged **prepaid** (Phase 18, D30: never editable), with a fixed
+       price above zero on each line. Their prepaid Bookings have a person as payer, the Procedure priced
+       at that line's price in full (kept through any Contract change, D47), the prepayment invoice approved
+       with its pair to the AA Holding account and its draft Xero pair (Phase 27, D38), and, for
+       AUTHORISED history, the journal transfer (not a new invoice or payment) that moves the amount to the
+       anaesthetist who did the List (Phase 27a). Forward prepaid Bookings leave their amount in the AA
+       Holding account. The prepaid Procedure is left off its final invoice with nothing deducted, and an
+       all-prepaid Booking has no final invoice (D57). All through
        Phase 27 and 27a's pure builders, never store actions. Part-paid tracking, letters, refunds and
        credits (Phases 27 and 41) stay empty. Record the share in the Decisions log.
      - **Slots and Lists** across the horizon via Phase 28's generator with the extended
@@ -437,8 +443,8 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        the existing hospitals, surgeons, holders and Contracts, each Booking built as below.
      - **Each generated Booking and its Procedures** (forward and history alike), built through the
        shipped builders:
-       - a **patient with a valid NHI** and a **payer on the Booking** (Phase 21, US-11.2.2), prefilled
-         from the patient; below `guardianPayerAgeUnder` a synthetic guardian (a person billable party)
+       - a **patient with a valid NHI** and a **payer on the Booking** (Phase 21, US-11.2.2) with an email or
+         NZ Post postal address, prefilled from the patient; below `guardianPayerAgeUnder` a synthetic guardian (a person billable party)
          instead. No Booking is saved without an NHI and none is generated pending (OQ-49);
        - the Procedure's **description as received** (Phase 20a, DM-51), in its channel, drawn from the
          pool 20a seeded from AR-35, kept as written, and an **invoice description** copied from the line
@@ -454,13 +460,14 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
          contract (RVG) at `noContractShare` when another fits. There is no hospital, insurer or
          procedure default to fall back to, because none exists;
        - **who is billed** from Phase 21's one function: the holder's billable party when the holder is
-         billed, otherwise the payer on the Booking; the insurance indication and holder references set
-         to match the chosen Contract (D28), so billed history raises no review warning;
+         billed, otherwise the payer on the Booking; where the patient is insured, the insurer (a contract
+         holder) and approval number on the Booking (D28), so billed history raises no missing-approval or
+         review warning; insurance never decides who is billed;
        - **values held on the Procedure** (Phase 19a and 24): the starting values (price, rate, discount,
          base and modifier units) filled from the line or the RVG group, then priced by Phase 24's
          calculation: the held price if there is one, else BTM x rate x (1 - discount), the discount its
-         own invoice line. RVG base units at the group's starting figure, so nothing generated is out of
-         range (D35) and the office's out-of-range warning never fires. No typed price and no office
+         own invoice line. RVG base units at the group's starting figure, inside its published range where one is
+         held (D35), so the office's out-of-range warning never fires. No typed price and no office
          override, so the editable flag never comes into play;
        - **modifiers as records** (Phase 19b): the age modifier (A1, A2) from the patient's date of birth
          on the procedure date (D29) and P1 at 0 units on every Neurosurgery H7A to H9b and Spine S1 to
@@ -474,7 +481,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        built as above, then the **pricing snapshot per Procedure written at authorise** (Phase 25, DM-08:
        the Contract version and line in force, the values the engine priced from, BTM, price, the
        payer or billable party, the payee), then invoices priced only from the snapshot, one BCTI (ACCPAY)
-       per receivable invoice, ledger pairs, receipts and disbursements built with **the same pure
+       per receivable invoice (a prepaid Procedure is left off its final invoice, nothing deducted, D57), ledger pairs, receipts and disbursements built with **the same pure
        builders the billing run and ledger use** (never store actions: `mutate()` per record would copy
        the audit array each time and go quadratic). Disbursements follow Phase 39a's weekly ISO-week
        payment cycle through its builders. Invoices land at about `targetInvoicesPerYear`. The monthly
@@ -498,7 +505,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        nine new-format) against a used-set seeded with every existing NHI, so every NHI is valid and
        unique. Every patient carries a hidden internal id, in Phase 40's patient-record shape.
      - **Xero mirror**: one contact per billed party (payer, guardian, holder's billable party) and
-       organisation, plus the prepay holding account's, keyed on the hidden internal id and named by
+       organisation, plus the AA Holding account's creditor, keyed on the hidden internal id and named by
        Phase 16's label helper (no patient name, NHI or other personal information: OQ-30), an ACCREC and
        ACCPAY per ledger pair, payments and disbursements matching the ledger, and contacts archived by
        the same rule `eligibleArchiveContactIds` applies (fully paid and inactive past the window), so the
@@ -506,7 +513,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        full-scale state.
      - **Audit**: a compact, realistic trail per generated record, using exactly the action codes the
        runtime writes for the same steps (Booking create, Contract set, complete, List submit, authorise,
-       invoice, prepayment approved; a credit note where one is generated). US-13.5.2 lists invoices and
+       invoice, prepayment approved, the holding transfer; a credit note where one is generated). US-13.5.2 lists invoices and
        credit notes and leaves payments and disbursements to Xero, so they get an entry only if the
        runtime as shipped writes one, never an invented one. Correct actors and sources, clock timestamps
        from the record's own dates, sorted by `atISO`; then one newest entry `demo.fullScaleLoaded`
@@ -530,23 +537,24 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        16's count function over the generated invoices; `billingMonitorView` with Problems only returns
        exactly the generated problem Lists;
      - integrity, the model (checked against [AR-29 · Integrity rules](../../../../requirements-board/requirements/artifacts/AR-29.md#integrity-rules)
-       as the shipped module encodes them): every Booking has a payer and a patient with a valid NHI;
+       as the shipped module encodes them): every Booking has a payer (with an email or postal address) and a patient with a valid NHI;
        every Booking has exactly one primary Procedure; every Procedure has its description as received,
        an RVG code that exists in the group master where it has one, its age modifier where the age band
        applies and P1 on every Neurosurgery and Spine code, and exactly one Contract, which is No contract
        (RVG) or a candidate under Phase 20's rule on the List date (holder fits, version in force, a line
        for the Procedure or a Contract with no lines); no Procedure sits on a hospital, insurer or
        procedure default and no generated record carries a removed field (payment category, billing
-       route, `funderOverride`, a default-Contract flag, a Contract kind, a prepayment estimate or
-       deposit); who is billed equals Phase 21's function; no List is DRAFT with an anaesthetist and every
+       route, `funderOverride`, a default-Contract flag, a Contract kind, an insurer master, a prepayment
+       estimate or deposit); who is billed equals Phase 21's function; no List is DRAFT with an anaesthetist and every
        DRAFT List is a Draft List; every recurring booking projects through Phase 30's projection; every
-       prepaid Booking is on a Contract flagged prepaid with a person as payer;
+       prepaid Booking is on a Contract flagged prepaid (lines above zero) with a person as payer;
      - integrity, the money: every AUTHORISED Procedure has a pricing snapshot, and re-running Phase 24's
        calculation from the snapshot's values gives its stored price (parity); a prepaid Procedure is
        priced at its line's price; every invoice links to a Booking and a snapshot; every ledger pair
        balanced (disbursed at most authorised, authorised at most received, received at most due, Phase
-       36's invariants); the prepay holding account balances and nothing in it is paid out before its
-       List is AUTHORISED; every NHI valid and unique; no id collides with the seed; the next allocated
+       36's invariants); a prepaid Procedure is absent from its final invoice with nothing deducted; the AA Holding
+       account balances (each prepayment pair in, each AUTHORISED List's journal transfer out) and nothing
+       leaves it before its List is AUTHORISED; every NHI valid and unique; no id collides with the seed; the next allocated
        id of each kind is unused;
      - one-module: the source-scan test above (no Contract, line, resolver, pricing, snapshot or
        prepayment logic outside `domain/billing`);
@@ -896,13 +904,13 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       Lists look exactly as at demo scale. Assigned Lists read ACTIVE (never "DRAFT" or "Open"); the Day
       dashboard's Draft List strip shows a practice-sized handful.
 - [ ] A generated Booking at scale (open one on a generated anaesthetist's forward List, and one on a
-      billed List): it has a payer (the patient, or a guardian for a child); each Procedure shows the
+      billed List): it has a payer with an email or postal address (the patient, or a guardian for a child); each Procedure shows the
       three-part stack (description as received, RVG code where it has one, then the Contract: No contract
       (RVG) or a Contract whose holder fits the Booking, with its holder, who is invoiced and the pricing
       basis); its modifiers show the pre-applied age modifier and, on a Neurosurgery or Spine code, P1, both
       removable; no hospital or procedure default appears anywhere; the patient has a valid NHI. On the
       billed one the invoice's price equals the snapshot's. A prepaid Booking (find one by its prepaid
-      Contract) shows the line's price, and the prepay holding account in Admin is in balance.
+      Contract) shows the line's price and is left off its final invoice, and the AA Holding account in Admin is in balance.
 - [ ] The Admin recurring bookings list (Phase 30) shows the 71's recurring bookings; no "Permanent
       List" wording appears.
 - [ ] Invoices at scale: "Showing 1 to 50 of" about 28,000; next, last and first work; searching an
@@ -983,8 +991,8 @@ Patch in the same session, in `docs/demo-guide/` and the matching sections of `m
 The 2026-10-20 model changes (recurring bookings, holder-fit Contracts or No contract (RVG), the payer
 and NHI on the Booking, the stack, the snapshot, prepaid Contracts) break no beat this phase owns: the earlier phases patched
 theirs. In the "Full scale" aside, use only today's words (Booking, session, ACTIVE, Draft List, No
-contract (RVG), the payer; never "slot", "Permanent List", "default Contract", "procedure list",
-"estimate" or "deposit"); if the presenter opens a generated Booking, the expected line is "the same three-part
+contract (RVG), the payer, the AA Holding account; never "slot", "Permanent List", "default Contract",
+"procedure list", "insurer master", "prepay holding account", "estimate" or "deposit"); if the presenter opens a generated Booking, the expected line is "the same three-part
 stack and the same Contract rules at full size".
 
 Not a milestone phase; no full consistency read is required, but re-read every passage touched against the
@@ -1048,13 +1056,14 @@ anything settled in the Decisions log.
   procedure list or general procedure, its values held on the Procedure and its age and P1 modifiers
   pre-applied; no generated record carries a removed field (payment category, route, `funderOverride`,
   a Contract kind, an estimate or deposit); prepaid Bookings sit only on prepaid Contracts with a person
-  as payer and the holding account's pairs; tiers and preferences stay office-private.
+  as payer, the AA Holding account's pairs and journal transfers, and no prepaid Procedure on a final
+  invoice (D57); tiers and preferences stay office-private.
 - Integrity at scale: generated history went through the same pure builders as the billing run and the
   ledger (no parallel pricing code), every AUTHORISED Procedure has a pricing snapshot and its invoice
   prices only from it (parity with Phase 24's calculation), every ledger pair balances, the Ledger screen
   shows in balance, the Xero mirror matches the ledger, archiving follows the real rule; the AA-FEE run
   is monthly and its per-BCTI line uses Phase 16's one count function; disbursements follow Phase 39a's
-  weekly cycle; the holding account balances and pays out nothing before AUTHORISED; the generated audit uses only the runtime's own codes (no invented payment or
+  weekly cycle; the AA Holding account balances and transfers nothing before AUTHORISED; the generated audit uses only the runtime's own codes (no invented payment or
   disbursement entries); the Slots follow the horizon setting, not a constant.
 - Persistence: while paused nothing is serialised, not just not written; the pause is independent of the
   error latch; Reset resumes before it installs; a reload after loading returns the pristine seed; the PWA's
@@ -1093,7 +1102,7 @@ anything settled in the Decisions log.
   (Admin Day, Invoices, Audit and Billing monitor at full scale; a generated Booking's stack; the
   Matching raw-row sheet; the Data Inspector's Privacy checks).
 - A catch-up status row for Phase 43 and an entry `### Catch-up Phase 43 · Scale and privacy (date)`
-  (one per session if it runs over two): the drift-check result against `d4db277` (OQ-30 and OQ-49 answered and
+  (one per session if it runs over two): the drift-check result against `7cd7802` (OQ-30 and OQ-49 answered and
   built as answered), the shipped names used from Phases 14 to 42 (the model names in
   `domain/billing` above all), the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in
@@ -1110,7 +1119,8 @@ anything settled in the Decisions log.
     never a hospital, insurer or procedure default; a payer and a valid NHI on every Booking with who is
     billed from Phase 21's function; descriptions as received and modifier records; values held on the
     Procedure; the pricing snapshot at authorise; and a practice-sized handful of prepaid Bookings on
-    prepaid Contracts with the holding account's pairs (`prepaidShare`). Supersedes this plan's earlier
+    prepaid Contracts with the AA Holding account's pairs and journal transfers, their Procedures left off
+    final invoices (`prepaidShare`, D57). Supersedes this plan's earlier
     readings (curated procedures and general procedures, price precedence and source, "no prepaid set
     for the 71", first-party prepaid sets, Permanent List templates).
   - "Admin Day, Invoices and Audit page" (page sizes 30, 50 and 100). Replaces the Day grid's narrated

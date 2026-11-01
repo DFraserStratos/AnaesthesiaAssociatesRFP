@@ -4,7 +4,7 @@
 [US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure (Confirmed; graded Contradicts) ·
 [US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary (status 4; graded Partial; 16 October: Vanessa's "most expensive is the primary" and Greg's "just the first one in the list" read with US-03.2.3, no change to the rule) ·
 [FT-05.3](../../../../requirements-board/requirements/stories/FT-05.3.md) Multi-procedure rule, superseding the RFP split-billing rule (status 4, OQ-90 answered 2026-10-19; graded Contradicts) ·
-[US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule (status 4, OQ-90 answered; graded Contradicts; times are "start and finish", not "handover") ·
+[US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule (status 4, OQ-90 answered; graded Contradicts; times are "start and finish", not "handover"; new criterion 29 Oct: a prepaid primary left off the final invoice still anchors the rule, D57) ·
 [DM-15](../analysis/domain-model-delta.md#dm-15) multi-procedure rule: one primary flag, time on every Procedure, modifier units split above four, no Contract-specific ordinals ·
 [RV-08](../analysis/reverse-check.md#rv-08-additional-procedures-carry-no-modifier-share-the-above-four-split-is-missing) additional procedures carry no modifier share, the above-four split is missing (replaces RV-02, which left this phase).
 **Carried across without regression** (they Match today only through the old model, ROADMAP.md
@@ -15,6 +15,8 @@ replaces both mechanisms, so it re-proves the structure), and
 [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) each Procedure's units
 and dollars recorded (Matches; OQ-90 now names it), which must still match once shares are allocated.
 **Answered and built as answered:**
+D57 (OQ-116, answered 2026-10-29: prepaid Procedures are left off the final invoice and nothing is deducted;
+the rule ranks every Procedure, so a not-prepaid additional keeps its reduction; 27 builds the left-off test),
 [OQ-90](../../../../requirements-board/requirements/questions/OQ-90.md) (D26, answered 2026-10-19: the RVG default is the one system-wide
 rule for calculated Procedures, so there is no switch, no provisional label and no "price each
 Procedure alone" branch; Greg: pricing each alone is "not correct"; which Procedure is primary was
@@ -58,6 +60,11 @@ the Booking total, Review and invoices, the two triggers, copy sweep, Playwright
 review pass. Session 1 is the heavy one: it changes the fee engine's shape under every caller. If it
 overruns, finish items 1 to 6 and 8 green and carry item 7's store guards into session 2 with item 9,
 rather than splitting the engine rewire.
+
+**Updated 2026-11-02 (catalogue `7cd7802`).** US-05.3.1 gained a criterion and D57 answered OQ-116: the
+rule ranks all Procedures, prepaid or not, so a prepaid primary left off the final invoice still anchors it
+and the not-prepaid additional keeps its reduction. "Prepayment netting per Procedure" is gone from this
+phase; 27 builds the left-off test and this phase only guarantees the ranking ignores prepayment.
 
 **Re-planned 2026-10-20 (catalogue `d4db277`).** Since the 2026-10-08 plan: OQ-90 is answered (D26,
 2026-10-19): the RVG default is the one system-wide rule, so the provisional pill,
@@ -120,6 +127,10 @@ the RVG default multi-procedure rule, the one system-wide rule (D26, OQ-90 answe
   [AR-30#booking-procedure](../../../../requirements-board/requirements/artifacts/AR-30.md) (the primary flag is the catalogue's addition
   beside the draft's pricing fields: domain model, "`isPrimary` flag drives the multi-procedure
   rule").
+- **Prepayment never changes the ranking** (US-05.3.1's prepaid-primary criterion, D57). Roles,
+  participants and shares come from all the Booking's Procedures; a prepaid Procedure is ranked like any
+  other, and 27 later leaves it off the invoice without re-running the allocation. This phase's tests prove
+  the not-prepaid additional's fee is the same whether or not the primary is later left off.
 - **Visible everywhere it counts.** A seeded three-procedure Souter Booking carrying the domain
   model's worked example (AS3 2 + OB3 2 + ASE 2 + the pre-applied A1 1 = 7 modifier units) shows
   3 / 2 / 2 on the office Booking total, in Review and on invoice lines. Vitest worked examples cover
@@ -138,8 +149,8 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
 
 ## Before you start: drift check
 
-1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,OQ-15,OQ-62,OQ-90,OQ-89`
-   (the baseline is `d4db277`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,US-08.2.2,OQ-15,OQ-62,OQ-90,OQ-89,OQ-116`
+   (the drift-check baseline is `7cd7802`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks. Re-read the domain model's "Booking" and "Procedure" sections (the
    `isPrimary` bullet and the Modifiers bullet) and "3. Calculation rules" ("Units within a Booking",
    the 7 over 3 worked example, the CALCULATED note).
@@ -157,6 +168,7 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
 | Gate | Status |
 |---|---|
 | **OQ-90** (D26, answered 2026-10-19: the RVG default applies as the one system-wide rule) | Build it unlabelled. The rule applies to every Booking with more than one Procedure, to calculated Procedures only, as the Goal says, in one pure module. No switch, no provisional pill, no "price each Procedure alone" branch. If AA later changes who takes part (for example fixed-price Procedures share too): change `participantsOf` and its tests only. Log the participant reading on the "For the owner's review" list |
+| **D57** (OQ-116, answered 2026-10-29) | The allocation takes no input from prepayment: it ranks every Procedure. Do not build netting or a deduction line here; 27 removes them and leaves prepaid Procedures off the invoice |
 | **Which Procedure is primary** (not settled) | The first stays primary until someone changes it with Make primary. If AA rules (for example the most expensive, set at creation), only the creation default changes |
 
    Answered, so build the answer with no provisional label:
@@ -493,6 +505,9 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - Holt: the same total as before the phase, and the invoice still the figure item 1 pinned in
        `invoiceBuild.test.ts`.
      - A manual M adjustment on the primary is the total that splits.
+     - D57: with the primary marked prepaid, the not-prepaid additional Procedure's allocation and fee
+       are identical to the unprepaid case (no base, its T and its share), proving the rule ranks all
+       Procedures; 27 adds the left-off lines on top.
      - A single-Procedure Booking is unchanged (the parity fixture proves it at scale).
      - The structural refusals.
 
@@ -512,8 +527,7 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      Booking holds once item 7e lands).
    - `invoiceBuild.ts`:
      - `buildInvoicesForBooking` resolves every Procedure's Contract version first, then prices the
-       Booking once with `bookingFeeFor`, then keeps 21's grouping by billable party, 22's split and
-       prepayment netting per Procedure, and orders lines with `inDisplayOrder`;
+       Booking once with `bookingFeeFor`, then keeps 21's grouping by billable party and 22's split, and orders lines with `inDisplayOrder`;
      - 22's split applies to each Procedure's allocated fee. Each Procedure still has its own priced
        line under its own Contract, so the split shares stay keyed by Procedure and need no re-key
        (close 22's handoff), and Make primary does not move a share. Test a split on an additional
@@ -521,7 +535,9 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - grouping is unchanged, so the invoices, the ACCPAYs and `bctisFor`'s count are unchanged for
        every seeded Booking; assert that the three-procedure Booking yields one receivable and one BCTI;
      - a structural result is exception `noPrimaryProcedure`;
-     - `buildPrePaymentInvoiceForBooking` prices through the same engine until 27 replaces it.
+     - `buildPrePaymentInvoiceForBooking` prices through the same engine until 27 replaces it. The build
+        passes every Procedure to the engine whatever its prepaid state, so ranking and shares never
+        depend on prepayment (D57); 27 filters the lines afterwards;
    - `store/billingLineActions.ts` (both guards; they compute the ordinal from position today) and
      `seed/billing.ts` `contextFor`.
    - `shared/capture/feeContext.ts`:
@@ -833,6 +849,8 @@ trigger audit is the backstop).
   invoice after it is sent (a credit note then additional invoices: Phase 39).
 - The price precedence, the price source, the engine rejections and the anaesthetist's typed price or
   discount (Phase 24).
+- Leaving prepaid Procedures off the final invoice, and any deduction line (27, D57); this phase only
+  keeps the ranking independent of prepayment.
 - Locking `isPrimary`, the allocation and the base layer at AUTHORISED in the pricing snapshot
   (Phase 25). Until then a Contract edit re-prices unlocked Bookings.
 - Any change to how a Procedure selects its Contract beyond an added Procedure starting on the
@@ -884,6 +902,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Authorise the seeded List. One invoice to the payer on the Booking; its lines read "(B n + T n + M 3
       of 7 units)" and "(T n + M 2 of 7 units)", primary first, and each line's amount matches the Booking
       total row. The Xero simulator shows one ACCPAY for it.
+- [ ] Prepaid primary (D57): the Vitest case passes (the not-prepaid additional's fee is unchanged when the
+      primary is prepaid); the invoice left-off itself is checked in Phase 27.
 - [ ] S3 Beat 1 after a reset: Holt AA-2026-0002 is the figure item 1 pinned, with one invoice, and its
       additional line reads "Anaesthesia, additional procedure (T 2 units)". The bariatric Booking is
       still $2,800 + $950. The split pair 22 kept is unchanged.
@@ -970,7 +990,7 @@ ordinal or a Contract rule. FT-05.3 has a story (US-05.3.1), so it needs no reci
 |---|---|---|
 | [US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure | captured · web-primary-and-additional, mobile-primary-and-additional (stale caption "bills time units only") | Stays `captured`. Re-shoot both on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`, and the mobile route; confirm it is still ACTIVE) after adding a second procedure: highlight `procedure-primary-pill` on the first block and `procedure-additional-note` on the second. Keep the shot `name`s. Caption: "One Procedure is the primary, shown first; base units, and modifiers under the usual rule, anchor to it" |
 | [US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary | absent ("no control to make another procedure primary") | `captured`. New shots `web-make-primary` and `mobile-make-primary` on BK0009 after "Add another procedure", states `before` (the teal `make-primary` action), `sheet` (`MakePrimarySheet`, a bottom sheet on mobile, a dialog on web) and `moved` (the new primary on top with the Primary pill); `admin-make-primary` on the seeded three-procedure Booking (`SEED_MARKERS.multiProcedureBooking`). Caption: "Anyone with edit rights can set the primary Procedure, and it is shown first". Drop the absent reason |
-| [US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule | captured · web-additional-base, mobile-additional-base (stale caption "base units not charged and not editable"), plus the merged US-05.3.2 `additional-time` shots | Stays `captured`. Re-shoot both `additional-base` shots on BK0022 (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0022`, and the mobile route): highlight `units-row-b` of the additional block (0, "Base units are on the primary procedure"); re-check the `nth=1` selector and the `additional-time` shots, since the additional block loses its Modifiers section. Add `admin-modifier-split` on the seeded three-procedure Booking, highlight `booking-total-split` ("Primary · B + T + M 3 of 7", "Additional · T + M 2 of 7" twice, no provisional pill). Caption: "Modifier units above 4 split equally, the remainder to the primary". Anaesthetist shots show units and shares only |
+| [US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule | captured · web-additional-base, mobile-additional-base (stale caption "base units not charged and not editable"), plus the merged US-05.3.2 `additional-time` shots | Stays `captured`. Re-shoot both `additional-base` shots on BK0022 (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0022`, and the mobile route): highlight `units-row-b` of the additional block (0, "Base units are on the primary procedure"); re-check the `nth=1` selector and the `additional-time` shots, since the additional block loses its Modifiers section. Add `admin-modifier-split` on the seeded three-procedure Booking, highlight `booking-total-split` ("Primary · B + T + M 3 of 7", "Additional · T + M 2 of 7" twice, no provisional pill). Caption: "Modifier units above 4 split equally, the remainder to the primary". The prepaid-primary criterion is shown in Phase 27's shots, not here. Anaesthetist shots show units and shares only |
 | [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) Ledger tracks each Procedure's share | captured · admin-per-procedure | Stays `captured` (carried across). Re-shoot `admin-per-procedure` (`/admin/day/2026-07-20/bookings/BK0022`, highlight `booking-calculation`): rows read "Primary" and "Additional", primary first. Keep the caption "The Booking's fee broken down by Procedure, on the office view" |
 
 **Elsewhere.**
@@ -1046,6 +1066,8 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   Contract change, `reconcileClaims`) is still allowed.
 - **Rights.** The integration actor works on ACTIVE only; the anaesthetist on their own ACTIVE List and
   not on a completed Booking; the office on ACTIVE and SUBMITTED; AUTHORISED on nobody.
+- **Prepayment does not touch the ranking** (D57). Nothing in the allocation or `bookingFeeFor` reads a
+  prepaid flag; no netting or deduction line was built here.
 - **No figure moved that should not.** The parity fixture differs only for the new Booking. Holt is
   unchanged, bariatric $2,800 + $950 from its lines, and 22's split pair is unchanged. Invoice grouping
   and `bctisFor`'s counts are unchanged. The new seed draws nothing from the RNG or the patient pool,
@@ -1107,7 +1129,8 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
     shares as they are; a fixed-price Procedure stays out of the split.
   - 25 snapshots `isPrimary`, the allocation (role, calculated, share, split across) and the base
     layer at AUTHORISED.
-  - 27: a prepaid Procedure on the anaesthetist's own fixed-price Contract is fixed-price, so it keeps
+  - 27: leaves prepaid Procedures off the final invoice after this phase's ranking (D57; the
+    not-prepaid additional keeps its reduction, tested here at the engine); a prepaid Procedure on the anaesthetist's own fixed-price Contract is fixed-price, so it keeps
     the prepaid amount and takes no modifier share.
   - 31: the office's set-primary works on a Draft List's Bookings (`editRefusal` for DRAFT).
   - 33: re-point `feed-changes-primary` so the change lands as a matching row (not yet in 33's plan);

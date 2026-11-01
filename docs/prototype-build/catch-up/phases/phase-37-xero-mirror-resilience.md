@@ -6,7 +6,7 @@
 idempotency, alerting, a void made directly in Xero),
 [US-09.2.4](../../../../requirements-board/requirements/stories/US-09.2.4.md)
 (detect disbursement; gated by [OQ-111](../../../../requirements-board/requirements/questions/OQ-111.md),
-open: built as written under D53's default, see the drift check),
+open: built as written under D53's default, which the 28 October evidence supports; see the drift check),
 [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md)
 (bulk remittance stays in Xero),
 [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md)
@@ -82,11 +82,12 @@ record.
   "bill paid" webhook, or at the next reconciliation poll if the webhook goes missing. Only then does
   it record the disbursement against the payable leg, so "paid into AA" and "disbursed" stay two
   separately tracked states (US-09.2.4, US-10.1.2). The Admin Billing monitor's payables panel stays
-  as the office's view of what is due and what has gone out. OQ-111 is open (Greg may say payments are
+  as the office's view of what is due and what has gone out. OQ-111 is open, but on 28 October the evidence leans to Xero's payables run after a journal transfer, so the default stands (Greg may still say payments are
   made from the new system, with Xero only recording them): the detection lives in one place
   (`recordDisbursement`, work item 8), so that answer is a small change, and 39a's weekly run records
-  what it releases through the same function. Payables on the prepay holding account (27a) are never
-  paid before their release at authorisation: a bill is paid in Xero only when its payable leg is released.
+  what it releases through the same function. Payables on the AA Holding account (27a) are never paid by
+  the run: only 27a's journal transfer to the anaesthetist (at release) and Phase 41's refund move money out of the account, and
+  a bill is paid in Xero only once its payable leg has been transferred and released.
 - **Bulk remittance is left in Xero.** One hospital remittance pays several receivables in one action.
   Xero's (simulated) remittance add-on matches the lines by InvoiceNumber, and the engine learns each
   matched payment through the ordinary webhook. One line cannot be matched and stays in a "Xero bank
@@ -126,7 +127,7 @@ record.
 
    Read the hunks for EP-09, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
    US-10.2.1, US-10.2.3, US-10.2.4, US-08.3.2, FT-13.3, US-13.3.1, US-13.3.2, US-13.5.2, OQ-47 and the
-   domain-model lines on Xero, the payables run and bank reconciliation. At `d4db277` the Xero items
+   domain-model lines on Xero, the payables run and bank reconciliation. At `7cd7802` the Xero items
    are unchanged in substance since the plan was first written (only image order and one caption moved
    on US-09.1.1, US-09.2.1, US-09.3.1 and US-10.2.1); US-13.3.1, FT-13.3 and US-13.3.2 became
    Confirmed, and US-13.3.1 gained the restyle sentence and the Notes this phase builds.
@@ -427,10 +428,10 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
 8. **Disbursement detected from Xero** (US-09.2.4; D53's default for OQ-111, built as written):
    - One detection point: `recordDisbursement` (below) is the only code that records a disbursement,
      whoever paid (a Xero bill-paid webhook, the poll, and later 39a's weekly run). If OQ-111 is
-     answered "from the new system", only the caller changes. Holding-account payables (27a) are never
-     paid before release: a payable leg is payable only once released, so `payBillsInXero` and the
-     run skip an unreleased leg; add a test that a prepaid holding-account leg is not paid, and is
-     paid after authorisation releases it.
+     answered "from the new system", only the caller changes. AA Holding account payables (27a) are never
+     paid by the run: a payable leg is payable only once 27a's journal transfer has released it, so `payBillsInXero` and the
+     run skip an unreleased leg (the holding account itself is never a payee); add a test that a prepaid leg still in the holding account is not paid, and is
+     paid once the release has transferred it.
    - New `src/store/xeroSimActions.ts` holds the Xero-side simulated actions, each audited with a Xero
      actor (`{ who: 'Xero payables run (simulated)', role: 'office', source: 'demo' }` and similar):
      `payBillsInXero(api, actor, accPayIds, { webhook: 'deliver' | 'missed' })` pays
@@ -770,8 +771,7 @@ required".
 - Real Xero APIs, webhooks, signing keys or queues; real alerting (the alert is a banner and an audit
   row).
 - A payment day or weekly cycle (OQ-47): the payables run stays on demand (39a builds the weekly run).
-- Paying anaesthetists from the new system (the other reading of OQ-111), and any payout of holding-account
-  payables before their release.
+- Paying anaesthetists from the new system (the other reading of OQ-111), and any payout from the AA Holding account by the run (only 27a's transfer and 41's refund move money out).
 - A payment recorded against an invoice the engine has since credited (EP-09's ordering case), unless
   Phase 39 has already landed (work item 9): it needs Phase 39's credit notes; record it in the
   handoff for 39 or 44. Amendments beyond the one demo edit (a lowered total) are not modelled: no
@@ -846,9 +846,8 @@ item needs was authorised by an earlier one.
       Run reconciliation poll: the disbursement is recorded once, dated at the bill payment.
 - [ ] Billing monitor "Run payables in Xero" (badged Simulated Xero) pays every due bill and reports the
       disbursements recorded; its due total then reads zero.
-- [ ] Holding-account payable: a prepaid Booking's payable leg is not offered by Run payables in Xero and
-      "Pay anaesthetist in Xero" is disabled for it; after the List is authorised and the payable is
-      released, the run pays it and one disbursement is recorded.
+- [ ] AA Holding account payable: a prepaid Booking's payable leg is not offered by Run payables in Xero and
+      "Pay anaesthetist in Xero" is disabled for it; after 27a's release has transferred it, the run pays it and one disbursement is recorded.
 - [ ] Open an unpaid pair and "Void this invoice in Xero": the Xero sim shows Voided; the Admin invoice
       and Billing monitor show nothing yet. Run reconciliation poll: the divergence panel flags it, the
       invoice rail shows "Voided in Xero · flagged", the payment pickers no longer offer it. Resolve with
@@ -944,7 +943,7 @@ matches what was built:
 | [US-09.2.1](../../../../requirements-board/requirements/stories/US-09.2.1.md) Payment webhook | captured · simulator-payment-webhook[ready,applied] | captured, re-shot, plus `during-outage` (simulator, `/demo/xero/invoices/<pair>`: with the outage banner on, a payment lands in Xero and the engine shows a queued "Sync payment"). Keep the `ready` and `applied` states and the shot `name` |
 | [US-09.2.2](../../../../requirements-board/requirements/stories/US-09.2.2.md) Reconciliation poll | captured · simulator-reconciliation-poll | captured, re-shot, plus `poll-flags-void` (admin `/admin/billing`: after Void this invoice in Xero and Run reconciliation poll, the `billing-xero-divergence` panel flags "Voided in Xero" against "Receivable open") and `poll-flags-amended` (the $20.00 lower total). Caption in the catalogue's words: the poll catches what a webhook missed, and what was changed directly in Xero |
 | [US-09.2.3](../../../../requirements-board/requirements/stories/US-09.2.3.md) Idempotent webhook replay | captured · simulator-webhook-replay[first,replayed] | captured, re-shot. Check the replay still records one receipt. Add `restore-no-duplicate` (the queue after Restore Xero: a payment synced once, one receipt) |
-| [US-09.2.4](../../../../requirements-board/requirements/stories/US-09.2.4.md) Detect disbursement | captured · simulator-accpay-disbursed[awaiting,disbursed], admin-payables-run[due,run] | captured, re-shot (built as written, D53's default while OQ-111 is open: no provisional label on the shots). `accpay-disbursed`: `awaiting` shows "Paid in Xero" with the Billing Engine not yet detecting it; `disbursed` shows "disbursement recorded by webhook"; add `detected-by-poll` (Pay anaesthetist in Xero with Webhook missed, then Run reconciliation poll: the disbursement recorded once, dated at the bill payment). `payables-run` (admin `/admin/billing`): the button reads "Run payables in Xero" with its Simulated Xero badge; states `due` and `run`. Replaces the old engine-side payout shots |
+| [US-09.2.4](../../../../requirements-board/requirements/stories/US-09.2.4.md) Detect disbursement | captured · simulator-accpay-disbursed[awaiting,disbursed], admin-payables-run[due,run] | captured, re-shot (built as written, D53's default, which the 28 October evidence supports: no provisional label on the shots). `accpay-disbursed`: `awaiting` shows "Paid in Xero" with the Billing Engine not yet detecting it; `disbursed` shows "disbursement recorded by webhook"; add `detected-by-poll` (Pay anaesthetist in Xero with Webhook missed, then Run reconciliation poll: the disbursement recorded once, dated at the bill payment). `payables-run` (admin `/admin/billing`): the button reads "Run payables in Xero" with its Simulated Xero badge; states `due` and `run`. Replaces the old engine-side payout shots |
 | [US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md) Xero contacts | captured · simulator-contacts, simulator-pair-contact-ids | unchanged. Check only (the payer contact still exists once after an outage restore) |
 | [US-09.3.3](../../../../requirements-board/requirements/stories/US-09.3.3.md) Archive contacts | captured · admin-archive-settings, simulator-archived-contact | unchanged. Check only |
 | [US-09.3.4](../../../../requirements-board/requirements/stories/US-09.3.4.md) Reuse and unarchive contacts | captured · simulator-archived-contact-reused, simulator-contact-unarchived | unchanged. Check only |
@@ -1054,7 +1053,7 @@ amends (listed below).
   later phase), and the review pass.
 - **Decisions log:**
   - "The payables run happens in Xero; the engine detects each disbursement by bill-paid webhook or
-    poll" (US-09.2.4; D53's default while OQ-111 is open, the detection in one place). Amends the 2026-07-24 Phase 10 decision (5) (payables run as an unbadged office
+    poll" (US-09.2.4; D53's default, supported by the 28 October evidence while OQ-111 is open, the detection in one place). Amends the 2026-07-24 Phase 10 decision (5) (payables run as an unbadged office
     action): the Billing monitor keeps the panel as the office view, and its button is badged Simulated
     Xero. The 2026-07-29 "S3 invoice-local settlement" shortcut keeps its one click but now uses the
     Xero-side bill payment.

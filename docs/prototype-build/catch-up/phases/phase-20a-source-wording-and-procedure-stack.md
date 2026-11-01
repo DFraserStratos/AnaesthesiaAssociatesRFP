@@ -128,7 +128,7 @@ unchanged.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff since this plan's baseline (`d4db277`):
+1. Run the catalogue diff since this plan's baseline (`7cd7802`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.5.7,US-03.1.9,US-03.1.2,US-02.4.1,US-08.4.6,US-03.1.3,US-02.3.1,US-02.1.2,US-07.2.2,US-15.0.1,US-04.2.4,FT-03.1,FT-02.5,OQ-103,OQ-13
@@ -835,7 +835,7 @@ anything settled in the Decisions log, except the 2026-09-28 ruling this phase s
     27 paired as one Booking's rooms and hospital wording; any placement moved from the table.
   - "Add a description" on an existing Booking (built here, ahead of 35's amend flow), or cut.
 - **Status.** A catch-up status row for Phase 20a, DONE at the end.
-- **Phase entry:** the drift-check result against `d4db277` and the names reused from 18 to 20; both
+- **Phase entry:** the drift-check result against `7cd7802` and the names reused from 18 to 20; both
   inventory greps before and after with any accepted leftover; the placement table as built with each
   new Booking's id; the `PERSIST_VERSION` bump; the parity check; the checklist item by item with
   evidence; Vitest and Playwright counts before and after; the review pass.

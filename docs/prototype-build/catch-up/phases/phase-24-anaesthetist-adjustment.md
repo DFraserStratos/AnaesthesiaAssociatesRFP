@@ -2,20 +2,20 @@
 
 **Requirements covered:**
 [FT-05.2](../../../../requirements-board/requirements/stories/FT-05.2.md) Unit and fee calculation: one rule on the values held on the Procedure, the version in force on the procedure date, a refusal when no price can be worked out ·
-[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) Fixed fee schedule pricing: a held price is the price, BTM optional and kept for reference ·
+[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) Fixed fee schedule pricing: a held price is the price, BTM optional and kept for reference, never overridden by the anaesthetist ·
 [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) Fixed rate Contracts: the rate prices the whole Procedure, BTM required, changeable only where the Contract allows ·
 [US-05.4.3](../../../../requirements-board/requirements/stories/US-05.4.3.md) Fixed discount Contracts: the discount as its own invoice line, shown and not editable where the Contract does not allow ·
-[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) Contract pricing terms: the editable flag per Contract ·
-[FT-03.5](../../../../requirements-board/requirements/stories/FT-03.5.md) Anaesthetist adjustment ·
-[US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md) Apply an anaesthetist adjustment (no reason) ·
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) Contract pricing terms: the editable flag per Contract, which never covers a fixed price ·
+[FT-03.5](../../../../requirements-board/requirements/stories/FT-03.5.md) Anaesthetist adjustment: the flag, never on a fixed or prepaid price ·
+[US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md) Apply an anaesthetist adjustment (no reason; a fixed price read-only whatever the flag) ·
 [US-03.5.2](../../../../requirements-board/requirements/stories/US-03.5.2.md) BTM still recorded in full (optional on a fixed price) ·
 [FT-05.4](../../../../requirements-board/requirements/stories/FT-05.4.md) Changes to a Procedure's price ·
 [US-05.4.1](../../../../requirements-board/requirements/stories/US-05.4.1.md) Apply anaesthetist adjustment ·
-[US-05.4.2](../../../../requirements-board/requirements/stories/US-05.4.2.md) Office can change any price ·
+[US-05.4.2](../../../../requirements-board/requirements/stories/US-05.4.2.md) Office can change any price, fixed and prepaid included ·
 [DM-50](../analysis/domain-model-delta.md#dm-50) pricing is one rule on values held on the Procedure ·
-[DM-14](../analysis/domain-model-delta.md#dm-14) price changes are edits of those values, gated by the Contract's flag for the anaesthetist only ·
+[DM-14](../analysis/domain-model-delta.md#dm-14) price changes are edits of those values: the anaesthetist where the flag allows and the price is neither fixed nor prepaid, the office on any ·
 [RV-03](../analysis/reverse-check.md#rv-03-rate-x-time-billing-line-and-the-method-3-individual-arrangement-gate) the rate x time line and its Method 3 gate go ·
-[RV-04](../analysis/reverse-check.md#rv-04-anaesthetist-price-adjustment-reason-mandatory-offered-on-every-contract-no-per-contract-flag) the reasoned, always-offered adjustment is reworked ·
+[RV-04](../analysis/reverse-check.md#rv-04-anaesthetist-price-adjustment-reason-mandatory-offered-on-every-contract-no-per-contract-flag) the reasoned, always-offered adjustment is reworked (flag, not fixed, not prepaid) ·
 [RV-29](../analysis/reverse-check.md#rv-29-the-anaesthetists-booking-shows-no-calculation-units-or-price) the anaesthetist sees the price and calculation.
 
 **Carried across without regression, with parity tests:**
@@ -67,11 +67,15 @@ ordered steps are not adopted, FT-05.2):
 - Submission is **refused when no price can be worked out** (no price and no complete BTM); no silent
   BTM fallback survives.
 
-**Who may change them** (FT-03.5, US-03.5.1, US-05.4.1, US-04.2.2; OQ-107, D50 answered): the
-anaesthetist changes price, rate or discount only where the Contract's **editable** flag (18) allows;
-where not, the price shows read-only, no discount of their own is offered, a Contract discount shows
-as applied and not editable, and they change the Contract (20) or alert the office. **The office
-changes any price, rate or discount on any Contract** until AUTHORISED (US-05.4.2, FT-05.4; OQ-16).
+**Who may change them** (FT-03.5, US-03.5.1, US-05.4.1, US-04.2.2, US-05.2.5; OQ-107, D50 as narrowed
+by D65 and D30): the anaesthetist changes price, rate or discount only when **all three** hold: the
+Contract's **editable** flag (18) allows, the Procedure is **not on a fixed price** (a line's fixed
+price, whatever the flag, their own price list included: OQ-117), and it is **not on a prepaid
+Contract** (OQ-96; 18 refuses the flag on one). Otherwise the price shows read-only (no discount field
+on a fixed price; a Contract discount shown as applied and not editable), and they change the Contract
+(20) or alert the office. **The office changes any price, rate or discount on any Contract** until
+AUTHORISED, fixed and prepaid prices included, ignoring all three tests; the changed price is simply
+the price invoiced and raises no difference by itself (US-05.4.2, FT-05.4; OQ-16).
 **No reason anywhere** (priceOverride and its reason go, RV-04). Every change is audited and flagged
 at office review; the last change stands, neither side outranking the other.
 
@@ -82,7 +86,8 @@ ruling is superseded where the catalogue shows a price; log it for Donald.
 Aria Contract and its two Bookings are re-expressed on Aria's $26.50 fixed-rate lines. Other billing
 lines stay until 39b.
 
-A prepaid Procedure's price is 27's (OQ-96 open, D30).
+A prepaid Procedure's price is 27's prepaid amount, never the anaesthetist's to change (OQ-96, D30); this
+phase builds the not-prepaid test, 27 the amount.
 
 **Keep the pricing model in one place** in `aa-prototype/src/domain/billing` (beside 19a's lines and
 starting values) behind types the UI reads. Reference shape:
@@ -97,18 +102,19 @@ source).
 
 ## Before you start: drift check
 
-1. **Diff the catalogue** against the plan's baseline, catalogue commit `d4db277`:
+1. **Diff the catalogue** against the plan's baseline, catalogue commit `7cd7802`:
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.2,US-05.2.5,US-05.2.6,US-05.4.3,US-04.2.2,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-05.2.1,US-05.2.7,OQ-107,OQ-16,OQ-89,OQ-96
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.2,US-05.2.5,US-05.2.6,US-05.4.3,US-04.2.2,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-05.2.1,US-05.2.7,OQ-107,OQ-16,OQ-89,OQ-96,OQ-117
    ```
 
-   The plan already reflects d4db277: the one rule on Procedure values (FT-05.2), the per-Contract
-   editable flag with no reason (OQ-107 and D50, OQ-16), BTM optional on a fixed price (US-03.5.2,
-   US-05.2.5), the rate live on the line (US-05.2.6), the discount its own invoice line (US-05.4.3),
-   no time band (OQ-89, D40). OQ-96 is open (27's). Also read `domain-model.md`'s calculation rules and
-   the Contract and Procedure rows for price, rate, discount and editable. **If an item changed since
-   d4db277**, re-read it and adjust the work items; **if one is now Retired or Future**, drop it and say
+   The plan already reflects 7cd7802: the one rule on Procedure values (FT-05.2), the per-Contract
+   editable flag with no reason (OQ-107 and D50, OQ-16), narrowed so a fixed price is never the
+   anaesthetist's to change (OQ-117, D65) and a prepaid Contract is never editable (OQ-96, D30), BTM
+   optional on a fixed price (US-03.5.2, US-05.2.5), the rate live on the line (US-05.2.6), the discount
+   its own invoice line (US-05.4.3), no time band (OQ-89, D40). Also read `domain-model.md`'s calculation
+   rules and the Contract and Procedure rows for price, rate, discount and editable. **If an item changed
+   since 7cd7802**, re-read it and adjust the work items; **if one is now Retired or Future**, drop it and say
    so in the PROGRESS entry.
 2. **Read what 18 to 23 actually left** (PROGRESS entries and code), and name the real symbols:
    - 18: the Contract's editable setting (name and seeded values), `isDefault`, the version lookup,
@@ -122,7 +128,7 @@ source).
      flag; 20a: the "pricing basis" selector (planned `pricingBasisFor`); 21: the times-only-where-timed
      completion predicate; 22: the invoice discount line slot and the Split; 23: the Booking-level
      engine (planned `bookingFeeFor`) and where the RVG rule adjusts calculated Procedures.
-3. Grep for every `priceOverride` reader (9 non-test files at d4db277) and every seeded override; each
+3. Grep for every `priceOverride` reader (9 non-test files at 7cd7802) and every seeded override; each
    becomes a value on the Procedure (a fixed fee a price, a percent a discount; a dollar adjustment a
    price at the adjusted figure).
 4. Note the current `PERSIST_VERSION`.
@@ -214,8 +220,12 @@ no reason.
        predicate, extracted, not copied): "Record the start and finish times: this procedure has no
        price set." A fixed-rate Procedure needs BTM like any calculated one (US-05.2.6).
      - Nothing records where a value came from.
-   - **`anaesthetistMayChangePricing(contract)`** reads 18's editable setting; the only test of it.
-     27 adds the prepaid branch here (D30). A code comment names OQ-107 and OQ-96.
+   - **`anaesthetistMayChangePricing(procedure, contract, line)`**, the only test of it, three checks
+     in one function, each with its own test: (1) 18's editable flag is on; (2) the Procedure is not on
+     a fixed price, whatever the flag (the line's fixed price, so Dr Souter's own price list too: OQ-117,
+     D65); (3) the Contract is not prepaid (18's prepaid setting: OQ-96, D30). It returns the refusal
+     reason too, so the UI and store say which test failed. The office's change never calls it. A code
+     comment names OQ-107, OQ-117 and OQ-96. 27 supplies the prepaid amount as a held price.
    - **`contractVersionWarning`**: the Procedure's Contract version not in force on the procedure date
      gives a review warning (item 11), never a refusal or a fallback to No contract (RVG). Replace any
      18 or 21 interim that re-routes it.
@@ -256,9 +266,9 @@ no reason.
      minus the discount amount, in 22's discount slot; the lines reconcile to the total to the cent. A
      changed rate prints on the fee line ("12 units at $28.00"); a held price prints as the fee line.
      The old "Price override, {reason}" line goes.
-   - A billable-party group whose priced total is $0.00 before any prepayment deduction now raises an
-     invoice at $0.00, GST $0.00, headed "No charge", delivered like any other (22). A group netted to 0
-     only by a prepayment still raises none (27's). Test both.
+   - A billable-party group whose priced total is $0.00 now raises an
+     invoice at $0.00, GST $0.00, headed "No charge", delivered like any other (22). A group of only
+     prepaid Procedures still raises none: they are left off the final invoice (27's, D57). Test both.
    - A no-charge invoice raises no payable leg and no BCTI (16's count unchanged); its draft Xero ACCREC
      is $0.00. A picked reading: log it with the BCTI granularity point.
    - List any seeded group that prices at $0 today before switching (none expected).
@@ -298,14 +308,17 @@ no reason.
      held price), or `reset` (re-fills from the line through 19a's starting values).
    - **Anaesthetist:** `editRefusal` as 20 and 38a left it (their own List until AUTHORISED); refused
      where `anaesthetistMayChangePricing` is false: "{Contract} sets this price. Change the Contract or
-     alert the office."
-   - **Office:** any Contract, until AUTHORISED (D63). **Integration:** refused.
+     alert the office." (fixed and prepaid use the same sentence).
+   - **Office:** any Contract, fixed and prepaid prices included, until AUTHORISED (D63); the flag, the
+     fixed test and the prepaid test are all ignored, and the change raises no difference by itself.
+     **Integration:** refused.
    - No reason parameter. Range refusals as item 5. Audits `procedure.pricing` with the actor; the last
      write stands.
    - `ProcedurePatch` omits price, rate and discount and `editProcedure` refuses them at runtime, so no
      path bypasses the gate. Test it.
-   - **Tests** (`pricingActions.test.ts`): the rights matrix (anaesthetist on an editable and a
-     non-editable Contract, office on both, integration; ACTIVE, SUBMITTED, AUTHORISED); a price clears
+   - **Tests** (`pricingActions.test.ts`): the rights matrix (anaesthetist on an editable Contract, a
+     non-editable one, an editable Contract with a fixed-price line, a prepaid Contract; office on each,
+     fixed and prepaid included; integration; ACTIVE, SUBMITTED, AUTHORISED); a price clears
      the discount; a rate or discount clears the price; reset; the audit metas; last change stands
      (anaesthetist 10%, then office price $300.00, then the anaesthetist's rate on an editable Contract).
 9. **Anaesthetist price section** (mobile and the anaesthetist web app). `OverrideCard.tsx` is replaced
@@ -318,17 +331,18 @@ no reason.
      (prefilled) and "Discount %"; Price offers "Price $" (0 or more). **Save** is the teal action,
      committing on Save. At $0.00 or 100%: "Base, time and modifier units stay recorded. This gives a
      no-charge invoice." A "Reset to Contract values" link when the values differ from the line.
-   - **Not editable:** the same figures read-only, no inputs and no discount field, a Contract discount
-     shown as applied, and the caption "Set by {Contract}. To use a different price, change the Contract
-     or alert the office." linking to 20's Change Contract.
+   - **Not allowed** (flag off, a fixed price whatever the flag, or prepaid): the same figures
+     read-only, no inputs and no discount field, a Contract discount shown as applied, and the caption
+     "Set by {Contract}. To use a different price, change the Contract or alert the office." linking to
+     20's Change Contract. The `data-state` follows the failing test (item 9 hooks).
    - **No reason** field or copy anywhere. Delete "Adjustment and charge", "Percentage adjustments are
      set by the office.", "Adjustment $", "Charge $", "Charge amount $".
    - **Booking total:** `showBookingTotal` shows the total to the anaesthetist too; the web List table's
      Units and Fee columns stay, now consistent with the Booking detail.
    - Anchors: replace `'priceOverride'` with `'pricing'` in `BtmCaptureBlock`'s anchored set;
      `validationTarget` on the card. `BillingLinesCard` stays its `Pair` partner.
-   - Hooks: `data-shot="price-card"`, `data-state` `editable`, `fixed`, `discount-fixed`, `no-charge`,
-     `read-only` (a SUBMITTED or AUTHORISED List).
+   - Hooks: `data-shot="price-card"`, `data-state` `editable`, `fixed` (a fixed price or fixed rate, read-only), `discount-fixed`,
+     `no-charge`, `read-only` (a SUBMITTED or AUTHORISED List).
 10. **Office surfaces** (Admin; the office web Booking detail).
     - `PriceOverrideSheet` becomes `PricingSheet` ("Change price"): the same control as item 9 with
       no flag gate, writing `setProcedurePricing`; the button in `OfficeBillingSetup` reads "Change
@@ -347,14 +361,17 @@ no reason.
       force on {date}" (warn, item 3), and `noPrice` (warn).
     - The flags tile and "flags open" count pick them up; test in `reviewFlags.test.ts`.
 12. **Seed the beats** (`contracts.ts`, `bookings.ts`, `audit.ts`, `index.ts`; demo values labelled).
-    - **Editable values per D50**: confirm 18's seeded setting reads on for No contract (RVG), hospital
-      RVG Contracts and Dr Souter's price list, off for fixed-price hospital and rooms Contracts and
-      Aria; set any 18 left otherwise.
+    - **Editable values per D50, D65**: confirm 18's seeded setting reads on for No contract (RVG) and
+      hospital RVG Contracts, off for fixed-price hospital and rooms Contracts and Aria. **Dr Souter's
+      own price list** may stay flagged editable (the flag is what AA set) yet its fixed-price lines are
+      read-only to her: that is the demo of the fixed test, so keep it editable on and do not rely on the
+      flag to lock it; set any 18 left otherwise.
     - **Dr Souter's Mon 27 Jul ACTIVE List**, one Booking per state: the Aria fixed-rate Booking (rate
       read-only); a **10% discount line** Booking on a new demo Contract under an existing hospital or
       rooms holder, editable off, one line with discount 0.1 (`SEED_MARKERS.discountContract`,
-      `discountBooking`); a **fixed price read-only** Booking (a hospital fixed-price Contract if 18 or
-      19a seeded one, else Doyle's rooms fixed fee); a **No contract (RVG)** Booking, uncaptured, where
+      `discountBooking`); a **fixed price read-only** Booking on her **own price list** with the Contract's
+      editable flag on (`SEED_MARKERS.ownListFixedBooking`: she cannot change it whatever the flag,
+      OQ-117), beside a hospital fixed-price Contract Booking if 18 or 19a seeded one; a **No contract (RVG)** Booking, uncaptured, where
       she changes the price or discount (reuse one if 20 or 21 left one, else add one with a pinned
       patient; `SEED_MARKERS.pricingCaptureBooking`).
     - **The Review beat:** on Dr Morrison's Mon 20 Jul SUBMITTED List (S2 Beat 4), one completed No
@@ -366,7 +383,8 @@ no reason.
     - **Ids stay put:** new Bookings and Contracts after every existing one, pinned patients without
       `takePatient()`; the seed test asserts existing ids unchanged. Check S2 Beat 4's counts, any
       Review-count test and the US-07.2.3 recipe.
-    - **Seed tests:** no seeded anaesthetist change on a non-editable Contract; the discount Booking
+    - **Seed tests:** no seeded anaesthetist change on a non-editable Contract, a fixed price or a
+      prepaid Contract; the discount Booking
       prices at gross less 10% once captured; parity, Aria, S3 and S5 figures unchanged; the canvas
       unchanged.
     - Bump `PERSIST_VERSION` by one from session 1's value.
@@ -393,10 +411,11 @@ no reason.
 
 **No new button.** Everything is normal use:
 - **Dr Souter's Mon 27 Jul List** (mobile or web): the fixed-rate Aria Booking (rate read-only), the
-  10% discount line Booking (shown, not editable; its own invoice line), a fixed price read-only, and
-  No contract (RVG), where she changes the price or discount with no reason.
-- **Admin Review** (product): the office changes a fixed price on any Booking; the invoice shows the
-  new price and History records who. Dr Morrison's Mon 20 Jul List shows the discount flag.
+  10% discount line Booking (shown, not editable; its own invoice line), a fixed price on her own price
+  list (read-only to her though the Contract's flag is on), and No contract (RVG), where she changes the
+  price or discount with no reason.
+- **Admin Review** (product): the office changes a fixed price (and a prepaid one) on any Booking; the
+  invoice shows the new price, no difference is raised by itself, and History records who. Dr Morrison's Mon 20 Jul List shows the discount flag.
 - **The seeded $0 Procedure:** authorising its List raises a no-charge invoice.
 
 Register no trigger; add nothing to the Control Panel. **PWA:** no stand-in; the handset half is
@@ -406,7 +425,8 @@ discount and a no-charge Booking.
 ## Out of scope
 
 - The pricing snapshot at AUTHORISED and the relink to a revised line (25).
-- The prepaid price and its lock (27; OQ-96, D30): one more branch of `anaesthetistMayChangePricing`.
+- The prepaid amount, the second invoice or credit by hand and the hold on a Procedure's prepaid
+  price (27; OQ-96, D30). This phase builds only the not-prepaid test in the gate.
 - Removing the BillingLine entity and the other billing lines (39b, DM-46); a billing event credit.
 - Additional invoices and credit notes by hand (38b, 39).
 - The Contract's editable setting itself and its editor (18); lines and starting values (19a); the
@@ -441,10 +461,15 @@ The agent runs every item itself in the running app with evidence; none is hande
 - [ ] **Not editable.** The Aria Booking shows "Rate $26.50 a unit" read-only with the change-the-Contract
       caption and no discount field; the discount Booking shows 10% applied, not editable; the fixed
       price Booking shows the price read-only.
-- [ ] **Store gate.** On a non-editable Contract the anaesthetist's write is refused (unit-tested) and
-      the UI offers no input; `editProcedure` refuses the fields.
+- [ ] **Fixed price on her own list.** Dr Souter's own-price-list Booking (flag on, line a fixed price):
+      the price is read-only, no discount field, the change-the-Contract caption; her sibling calculated
+      line on the same list is editable.
+- [ ] **Store gate.** The anaesthetist's write is refused (unit-tested, one test each) on a non-editable
+      Contract, on a fixed price under an editable flag and on a prepaid Contract, and the UI offers no
+      input; `editProcedure` refuses the fields.
 - [ ] **Office any price.** Admin, Change price on the fixed-price Booking: set $2,650.00; the total,
-      Review and invoice show it; History records the office; no reason asked.
+      Review and invoice show it; History records the office; no reason asked. The same on a prepaid
+      Booking: the price changes, nothing is invoiced or credited by itself.
 - [ ] **Last change stands.** Anaesthetist sets 10%, office sets a price, the Booking shows the office's
       price; a later anaesthetist rate on an editable Contract replaces it.
 - [ ] **Review flags.** Admin, Review, Dr Morrison Mon 20 Jul: "Price changed by Dr Morrison" and the
@@ -478,8 +503,10 @@ In the same session as the change, patch `docs/demo-guide/` and the same section
 - **Session 2:**
   - **`04-presenter-cheat-sheet.md`:** "Fee calculation"'s "The anaesthetist Booking shows no units or
     fee" becomes "shows the price and its calculation; she changes price, rate or discount only where
-    the Contract allows"; "Contracts" gains "Each Contract carries a flag, set by AA, saying whether the
-    anaesthetist may change its pricing; the office can change any price; no reason, every change
+    the Contract allows and the price is not fixed or prepaid"; "Contracts" gains "Each Contract carries
+    a flag, set by AA, saying whether the anaesthetist may change its pricing, never a fixed price (her
+    own price list included) or a prepaid one; the office can change any price, fixed and prepaid
+    included; no reason, every change
     audited and flagged at review, the last change stands." Same change to `README.md` (~l.109).
   - **`02-workflows-and-handoffs.md`:** step 9 "shows no units or fee" becomes "shows the price and its
     calculation"; step 10 adds "Where the Contract allows she may change the price, rate or discount, no
@@ -503,20 +530,20 @@ shot and re-points US-04.2.2 and US-05.2.5 before this phase runs.
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md) Apply an anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (none, adjustment) | **Captured.** Move to `pricingCaptureBooking`; `price-card` web and mobile, states `editable` (Discount 10%, no reason), `fixed` (Aria, read-only, no discount field), `discount-fixed`. Captions: "Where the Contract allows, the anaesthetist changes price, rate or discount, no reason"; "Where it does not, the price shows read-only". Drop the partial reason. |
+| [US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md) Apply an anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (none, adjustment) | **Captured.** Move to `pricingCaptureBooking`; `price-card` web and mobile, states `editable` (Discount 10%, no reason), `fixed` (read-only, no discount field: Aria, and Dr Souter's own-list fixed price with the flag on, highlight the caption), `discount-fixed`. Captions: "Where the Contract allows, the anaesthetist changes price, rate or discount, no reason"; "A fixed price is read-only whatever the flag". Drop the partial reason. |
 | [US-03.5.2](../../../../requirements-board/requirements/stories/US-03.5.2.md) BTM still recorded in full | captured · web-full-discount, mobile-full-discount | Stays captured. On `pricingCaptureBooking` at 100%, highlight the units rows and `price-card` (`no-charge`); add an admin `fixed-price-units` state (the bariatric Booking with no times, still priced). Caption "Units stay recorded at a 100% discount; optional on a fixed price". Keep the shot `name`s. |
 | [US-05.2.1](../../../../requirements-board/requirements/stories/US-05.2.1.md) Per-unit pricing rate | captured · admin-unit-values, admin-card-fee | Carried across; `--dry` is the check (re-shoot `admin-card-fee` only if the card changed). |
 | [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) Tiered time units | captured · web-time-units, mobile-time-units | No change here (Phase 19a owns it). |
-| [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) Fixed fee schedule pricing | partial · admin-fixed-price | **Partial**, narrower. Re-shoot the bariatric Booking: "Fixed price $2,800.00" with BTM for reference; caption "A fixed price is the price; units optional, kept for reference"; partial reason "Raising an additional invoice or credit note by hand when the work differed is built in Phases 38b and 39." |
+| [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) Fixed fee schedule pricing | partial · admin-fixed-price | **Partial**, narrower. Re-shoot the bariatric Booking: "Fixed price $2,800.00" with BTM for reference; caption "A fixed price is the price; units optional, kept for reference; the anaesthetist cannot change it, the office can"; partial reason "Raising an additional invoice or credit note by hand when the work differed is built in Phases 38b and 39." |
 | [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) Fixed rate Contracts | captured · web-rate-time, mobile-rate-time (entry, added) | Stays captured as 19a left it (`fixed-rate`); add mobile `rate-fixed` on the Aria Booking (`price-card` `fixed`, the rate read-only), caption "Rate fixed for the anaesthetist where the Contract does not allow a change". If 19a did not rename the `rate-time` shots, replace them as its doc says. |
 | [US-05.2.7](../../../../requirements-board/requirements/stories/US-05.2.7.md) GST | captured · admin-invoice-gst | No change here (Phase 22 owns it); `--dry` is the check. |
-| [US-05.4.1](../../../../requirements-board/requirements/stories/US-05.4.1.md) Apply anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (entry, applied) | **Captured.** On `pricingCaptureBooking`: `entry` (Calculated, rate and Discount %), `applied` (the saved price with "12 units x $30.00 = $360.00" kept); admin `adjustment-review` on `discountedBooking` with the review flag. Caption "Changed rate, discount or price; the calculation is kept; no reason". Drop the partial reason. |
-| [US-05.4.2](../../../../requirements-board/requirements/stories/US-05.4.2.md) Office can change any price | captured · admin-price-override (entry, applied) | Stays captured. Re-point to `pricing-sheet` ("Change price") on the bariatric fixed-price Booking; `applied` shows the new price and History naming the office. Caption "The office can change any price, no reason; the last change stands". Keep the shot `name`s. |
+| [US-05.4.1](../../../../requirements-board/requirements/stories/US-05.4.1.md) Apply anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (entry, applied) | **Captured.** On `pricingCaptureBooking`: `entry` (Calculated, rate and Discount %), `applied` (the saved price with "12 units x $30.00 = $360.00" kept); admin `adjustment-review` on `discountedBooking` with the review flag. Caption "Changed rate, discount or price where allowed, never on a fixed price; the calculation is kept; no reason". Drop the partial reason. |
+| [US-05.4.2](../../../../requirements-board/requirements/stories/US-05.4.2.md) Office can change any price | captured · admin-price-override (entry, applied) | Stays captured. Re-point to `pricing-sheet` ("Change price") on the bariatric fixed-price Booking; `applied` shows the new price and History naming the office. Caption "The office can change any price, fixed and prepaid included, no reason; the last change stands". Keep the shot `name`s. |
 | [US-05.4.3](../../../../requirements-board/requirements/stories/US-05.4.3.md) Fixed discount Contracts | none (create it) | **Create, captured.** Mobile and web `discount-fixed` on `discountBooking` (`price-card`, 10% applied, not editable); admin `discount-invoice-line` on its invoice once captured and authorised (seed or recipe steps), highlight the "Discount 10%" line. Caption "A Contract's 10% discount, its own invoice line". |
-| [US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) Contract pricing terms | captured · admin-pricing-basis (type-1, type-2, type-3, rate-time) | **Captured.** Drop `rate-time`; keep 19a's `rvg`, `fixed-rate`, `fixed-price`; add `discount` (the discount Contract's line) and `editable` (`contract-editable-pill` on No contract (RVG) and on Aria). Caption "A line sets a price, rate or discount; a flag on each Contract says whether the anaesthetist may change them". Drop 19a's partial reason. |
+| [US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) Contract pricing terms | captured · admin-pricing-basis (type-1, type-2, type-3, rate-time) | **Captured.** Drop `rate-time`; keep 19a's `rvg`, `fixed-rate`, `fixed-price`; add `discount` (the discount Contract's line) and `editable` (`contract-editable-pill` on No contract (RVG) and on Aria). Caption "A line sets a price, rate or discount; a flag on each Contract says whether the anaesthetist may change them, never a fixed price". Drop 19a's partial reason. |
 | [FT-05.2](../../../../requirements-board/requirements/stories/FT-05.2.md) Unit and fee calculation | none | **Create, captured.** Admin `booking-total-lines` on a calculated Booking with a discount (gross, discount, total) and the fixed-price Booking. Caption "Price held, else units x rate less discount". |
 | [FT-05.4](../../../../requirements-board/requirements/stories/FT-05.4.md) Changes to a Procedure's price | none | **Create, captured.** Admin History on `discountedBooking` after an office price change: both entries, who and when. Caption "Every change audited; the last change stands". |
-| [FT-03.5](../../../../requirements-board/requirements/stories/FT-03.5.md) Anaesthetist adjustment | none | **Create, captured.** Mobile `price-card` pair: `editable` on No contract (RVG), `fixed` on Aria. Caption "A flag on each Contract decides". |
+| [FT-03.5](../../../../requirements-board/requirements/stories/FT-03.5.md) Anaesthetist adjustment | none | **Create, captured.** Mobile `price-card` pair: `editable` on No contract (RVG), `fixed` on Aria and on the own-list fixed price. Caption "A flag decides, never on a fixed price". |
 
 **Recipes this phase breaks.**
 - `US-03.3.7` (Retired, rate x time): set `absent` ("Retired. The rate x time line was removed in Phase
@@ -537,7 +564,7 @@ shot and re-points US-04.2.2 and US-05.2.5 before this phase runs.
 **ATLAS.md.** Seed data (Aria fixed rate, Fitzgerald's re-expressed Booking, the Mon 27 Jul state
 Bookings, the discount Contract, the discounted and no-charge Bookings), IDs (`fixedRateBooking`,
 `fixedRateCaptureBooking`, `fixedRateContract`, `pricingCaptureBooking`, `discountContract`,
-`discountBooking`, `discountedBooking`, `noChargeBooking`; the `rateTime*` and
+`discountBooking`, `discountedBooking`, `noChargeBooking`, `ownListFixedBooking`; the `rateTime*` and
 `individualArrangementContract` markers removed) and hooks (`price-card` and its states,
 `pricing-sheet`, `booking-total-lines`, `contract-editable-pill`; `capture-adjustment-and-charge`
 removed).
@@ -556,14 +583,16 @@ Decisions log settles.
   amount, each rounded once; W1 to W10 and G2 hold; the discount line reconciles to the cent.
 - **Refuses, never falls back.** No price and incomplete BTM is `noPrice` at completion, Review and the
   billing run; no silent BTM fallback; a Contract not in force warns with the held values.
-- **The gate is in the store.** The anaesthetist's write is refused on a non-editable Contract; the
-  office writes on any; `editProcedure` writes none of the three; no reason anywhere.
+- **The gate is in the store, three tests.** The anaesthetist's write is refused when the flag is off,
+  when the price is fixed (flag on, their own price list included) and when the Contract is prepaid,
+  each with its own test; the office writes on any, fixed and prepaid included, raising no difference;
+  `editProcedure` writes none of the three; no reason anywhere.
 - **Last change stands and is seen.** Each change audited with the actor and flagged at review; a price
   and a discount never coexist.
 - **What the anaesthetist sees.** The price and its calculation; read-only with no disabled inputs
   pretending where the Contract does not allow.
 - **No-charge.** $0 or 100% leaves BTM intact and raises a "No charge" invoice with no payable; a group
-  netted to 0 by a prepayment raises none.
+  of only prepaid Procedures raises none (left off the final invoice, D57).
 - **The rate x time line is gone everywhere**; other billing lines unchanged; Aria prices on $26.50.
 - **No regressions.** Parity identical apart from Aria; GST unchanged; `PERSIST_VERSION` bumped each
   session; generator and canvas untouched.
@@ -574,12 +603,15 @@ Decisions log settles.
   - the anaesthetist now sees the price, its calculation and the Booking total (RV-29, superseding his
     2026-09-28 ruling): Donald to confirm;
   - a held price and a discount never coexist (setting one clears the other);
+  - the anaesthetist's gate is the flag AND not a fixed price AND not prepaid (D65, D30), their own price
+    list's fixed lines read-only to her, and the office's change of a fixed or prepaid price raises no
+    difference by itself;
   - the review flag read from the audit, naming who changed the price last;
   - the no-charge invoice raises no payable and no BCTI, with a $0.00 Xero ACCREC;
   - each seeded Contract's editable value (Aria and the discount Contract off) and the demo discount
     Contract;
   - Fitzgerald's new Aria figure.
-- **Status row and phase entry:** the drift check against d4db277 (OQ-96 status); `PERSIST_VERSION`
+- **Status row and phase entry:** the drift check against 7cd7802 (OQ-96 and OQ-117 answered); `PERSIST_VERSION`
   from and to; the real names (`priceProcedure`, `anaesthetistMayChangePricing`, `setProcedurePricing`,
   `PriceCard`, `PricingSheet`); the Aria figures before and after; the parity result; tests added; the
   review pass; the catalogue screenshot result (`REPORT.md` counts before and after).
@@ -588,8 +620,10 @@ Decisions log settles.
   - **25:** snapshot the Procedure's price, rate and discount, the recorded BTM and the unit value in
     force, and the result; price only from the snapshot; "Regenerate from locked data" reproduces the
     discount line and the no-charge invoice; the relink refreshes the three values from the new line.
-  - **27:** the prepaid lock (OQ-96, D30) as one branch of `anaesthetistMayChangePricing`; the prepaid
-    amount is a held price; a group netted to 0 by the deduction raises no invoice.
+  - **27:** the prepaid test is already in `anaesthetistMayChangePricing` (OQ-96, D30); the prepaid
+    amount is a held price the office may change without a difference being raised by itself; any
+    difference is a second invoice or credit by hand; a group of only prepaid Procedures raises no
+    final invoice (D57, no deduction).
   - **36:** a no-charge invoice has a $0.00 receivable leg and no payable.
   - **38b and 39:** additional invoices and credit notes are free-form; a credit and rebill copies the
     discount line.

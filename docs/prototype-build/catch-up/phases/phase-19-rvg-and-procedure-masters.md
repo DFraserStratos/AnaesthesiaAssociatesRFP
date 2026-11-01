@@ -3,7 +3,7 @@
 **Requirements covered:**
 [FT-05.1](../../../../requirements-board/requirements/stories/FT-05.1.md) RVG groups and modifiers (status 4; Partial; the modifier half is Phase 19b's) ·
 [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG groups (status 4; Partial) ·
-[US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Anatomy headings and AA groups (status 3, with a Verify point; Partial) ·
+[US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Anatomy headings and AA groups (status 4, Agreed; Partial) ·
 [DM-13](../analysis/domain-model-delta.md#dm-13) the RVG group becomes the one master list (hidden key, duplicate codes, modifier units, AA groups); there is no procedure list ·
 [RV-10](../analysis/reverse-check.md#rv-10-ranged-base-code-is-hard-bounded-to-the-published-range) ranged base code hard-bounded to the published range.
 
@@ -15,19 +15,19 @@ reverse check renumbered it RV-10, and the id RV-04 now means the price-adjustme
 Modifiers stay 19b's; Contract lines and starting values filled onto the Procedure are 19a's; the
 Contract pick is 20's; the received wording is 20a's.
 
-**Decisions and questions.** **D3** ([OQ-56](../../../../requirements-board/requirements/questions/OQ-56.md),
-[OQ-32](../../../../requirements-board/requirements/questions/OQ-32.md)), answered: any base-unit value
+**Decisions and questions.** All answered; build them with no label. **D3** ([OQ-56](../../../../requirements-board/requirements/questions/OQ-56.md),
+[OQ-32](../../../../requirements-board/requirements/questions/OQ-32.md)): any base-unit value
 is accepted, and an out-of-range one raises an after-procedure warning for the office; no hard bound.
-**D39** ([OQ-88](../../../../requirements-board/requirements/questions/OQ-88.md)), answered: one list,
-each row with a hidden key. **D12** is superseded a second time ([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md)):
+**D39** ([OQ-88](../../../../requirements-board/requirements/questions/OQ-88.md)): one list,
+each row with a hidden key that is a unique identifier only, never shown, with no system code
+(settled 2026-10-28, US-05.1.1). **D12** is superseded a second time ([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md)):
 base units sit on the RVG group, a Contract line may state its own (19a), the anaesthetist may change
-them, and there is no procedure layer. Build all of these as answered, with no label. Still open, built
-as its default, with one provisional note: **D35**
-([OQ-101](../../../../requirements-board/requirements/questions/OQ-101.md): a row holds a starting
-figure plus the published range where the guide prints one). OQ-103 no longer gates this phase (the
-general procedure is gone). Open and not built: a human-readable system code on each row
-(US-05.1.1's note, "we'll come back to it"): default none beyond the hidden id, with code and
-description searchable; log it.
+them, and there is no procedure layer. **D35**
+([OQ-101](../../../../requirements-board/requirements/questions/OQ-101.md), answered 2026-10-29): a row
+holds a starting figure plus the published range where the guide prints one, and the range is shown to
+the anaesthetist when choosing the value. OQ-103 no longer gates this phase (the general procedure is
+gone). Unresolved and not built: Greg's question whether the modifier list is the same thing as the RVG
+groups (US-05.1.1 note; 19b's).
 
 **Depends on:** Phase 15a (the warning routine, Warning records, the office to-do list, the warning
 triangle and the "Raise sample warnings" trigger) and Phase 18 (holders, dated Contracts, the fee
@@ -40,7 +40,7 @@ on every capture path, copy sweep, warning sample, shots, demo guide) and the re
 session 2 runs long, cut the Admin "Retired" filter before any capture path.
 
 **Owner review.** Agents test themselves (ROADMAP.md "Owner review: agents test themselves"): no
-plan-approval stop. D35 is built as its default and logged on the phase's "For the owner's review" list.
+plan-approval stop. Choices made without a catalogue ruling are logged on the phase's "For the owner's review" list.
 
 ## Goal
 
@@ -53,7 +53,7 @@ groups, before 19a adds Contract lines and 19b the modifiers.
   not unique (the guide prints two T2s and two P6s, and the same code may sit on several rows with
   different base units), a **description**, the **anatomy heading** as the guide prints it (Head,
   Neurosurgery, Upper limb and so on), **base units** (a whole number above 0, the starting figure), the
-  **published range** beside it where the guide prints one (H4 10 to 12; D35), and **modifier units**
+  **published range** beside it where the guide prints one (H4 10 to 12; D35), held and shown to the anaesthetist when choosing the value, and **modifier units**
   (0 by default, held quietly: only the Admin edit sheet shows it, since "the user never interacts
   with it"). No procedure list, no general procedure, no body-section picker, no tabs.
 - **Office maintenance** in Admin Master data: add, edit, retire and restore rows, every change audited.
@@ -85,23 +85,16 @@ figure (item 5).
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d4db277` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.1,US-05.1.1,US-05.1.3,US-05.1.6,US-03.3.1,FT-04.3,US-04.2.4,US-05.1.4,US-13.7.1,OQ-56,OQ-62,OQ-88,OQ-99,OQ-101,OQ-106
    ```
 
-   At plan time (2026-10-20, `60e2d1e..d4db277`) these moved: FT-05.1 retitled "RVG groups and
-   modifiers" (no procedure list; each group with its anatomy heading; found by type-ahead);
-   US-05.1.1 (hidden key, anatomy heading, type-ahead criterion; system code still open; Greg keeps
-   modifier units quietly); US-05.1.3 retitled "Anatomy headings and AA groups" (prepaid RVG group and
-   tabs gone; Verify: whether the heading browses or filters, since the 14 October picker is
-   type-ahead only); US-05.1.6 Retired; US-03.3.1 retitled "Choose the RVG code, with starting
-   units" (RVG code optional); OQ-88 answered; OQ-62 and OQ-06 updated; OQ-101 still open; OQ-103
-   no longer relevant; OQ-106 new (not this phase's). The plan already reflects all of this; diff
-   only for anything after `d4db277`.
-2. If an item changed after `d4db277`, re-read it whole and adjust the work items. If one is now
+   The plan already reflects the catalogue at `7cd7802` (US-05.1.1's range criterion and the settled
+   system code, US-05.1.3 Agreed, OQ-101 answered); diff only for anything after it.
+2. If an item changed after `7cd7802`, re-read it whole and adjust the work items. If one is now
    Retired or Future, drop its work and say so in the PROGRESS entry.
 3. Read `requirements-board/requirements/domain-model.md` "RVG groups and modifier master", the
    "Base units come from the RVG code" row of §1 and §3's resolver block.
@@ -116,9 +109,9 @@ figure (item 5).
 | Gate | Build | If answered differently |
 |---|---|---|
 | **D3 / OQ-56, D39 / OQ-88, OQ-62** (answered) | As Goal. No label | Not expected |
-| **D35 / OQ-101** (open) | `baseUnits` is the starting figure (the range's lower bound unless AA sets another), with `baseUnitsRange { min, max }` beside it where the guide prints one. One "Provisional" note on the Admin RVG groups tab | If only the figure is kept, drop the range field; the warning then compares with the figure. One field in the module |
-| **System code** (open, US-05.1.1 note) | None beyond the hidden id; code and description searchable | If a code is wanted, one field on the row and the sheet; record it |
-| **US-05.1.3 Verify** (does the anatomy heading browse or filter) | A label on each row, in the Admin table (grouped under it) and in the type-ahead; no browse, no filter, no tags across groups | If it browses, add the chip row to the picker in the module's helper and `CodePickerSheet` only |
+| **D35 / OQ-101** (answered) | `baseUnits` is the starting figure (the range's lower bound unless AA sets another), with `baseUnitsRange { min, max }` beside it where the guide prints one; the range is shown to the anaesthetist when choosing. No label | Not expected |
+| **System code** (D39, settled) | None: the hidden id is a unique identifier only, never shown; code and description searchable | Not expected |
+| **US-05.1.3** (Agreed) | The anatomy heading is a label on each row as the guide prints it, in the Admin table (grouped under it) and in the type-ahead; no browse, no filter, no tags across groups | Not expected |
 
 7. Read what 15a, 15b, 17 and 18 built (their PROGRESS entries). Confirm from 15a: how a warning rule
    is registered (rule file, `WARNING_RULES`, `WarningRuleId`, a `WarningFacts` field, the
@@ -127,7 +120,7 @@ figure (item 5).
    sample Bookings (including `multiWarning`). From 18: the `feeParity.test.ts` harness and its
    `__parity__/` fixture, where 18 put the pricing model's types, and what shape `ContractPrice` (fixed
    prices keyed by RVG code) has after 18. File names below are as at the plan; re-grep.
-8. Record the current `PERSIST_VERSION` (25 at `d4db277`; earlier phases may have bumped it).
+8. Record the current `PERSIST_VERSION` (25 at plan time; earlier phases may have bumped it).
 
 ## Reference
 
@@ -135,8 +128,7 @@ figure (item 5).
 anatomy (`docs/design/Admin Review.dc.html`) and the existing Master data tabs and edit sheets
 (`ContractEditSheet`, `AddHolidaySheet`). The type-ahead is the picker sheet of `docs/design/Mobile App.dc.html`
 screen 3 (and its web twin) with the search box leading; tokens, pills and the warn tint come from
-`Design Language.dc.html`. Teal is the only action colour. The anatomy heading, "Retired" and
-"Provisional" markers are neutral pills, never crimson.
+`Design Language.dc.html`. Teal is the only action colour. The anatomy heading and "Retired" markers are neutral pills, never crimson.
 
 **Catalogue.** The files linked above, plus
 [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) (the anaesthetist's pick, closed by 20),
@@ -335,8 +327,7 @@ meta. Every rule is a pure function with a Vitest test.
    never shown); row Edit opens the same sheet; Retire and Restore are row actions; an "Active" or "All"
    filter greys retired rows. Duplicate-code rows sit side by side, told apart by description and
    units. Subheading: "The NZSA RVG 2021 groups AA prices from, plus AA's own. Demo-sized; the full
-   set loads at go-live." One `DemoBadge`: "Provisional · a starting figure with the published range
-   beside it (OQ-101)." Every write shows in the audit viewer. `data-shot` hooks: `masters-rvg-groups`,
+   set loads at go-live." Every write shows in the audit viewer. `data-shot` hooks: `masters-rvg-groups`,
    `rvg-group-sheet`.
 
 9. **The RVG code type-ahead, mobile, web and Admin (shared)** (US-05.1.1, US-05.1.3).
@@ -370,8 +361,7 @@ meta. Every rule is a pure function with a Vitest test.
 10. **Copy and label sweep.** Search `src/` for "RVG codes" (the Admin tab), "view only" on that tab,
     "Procedure code", "Search code or name", "No codes match", "anatomical", "between {min} and
     {max}", "needs a selected unit value" and "Add an RVG base code", and update each. No en or em
-    dashes (ranges use "to"). The only provisional label is the note in item 8, a `DemoBadge`, never
-    crimson. No "slot".
+    dashes (ranges use "to"). No provisional label anywhere (OQ-101 is answered). No "slot".
 
 11. **Warning sample** (see Demo triggers): add this rule's entry to 15a's `WARNING_SAMPLES`, in 15a's
     entry shape, never in an app folder, and update 15a's "1 rule registered" message and registry
@@ -426,7 +416,7 @@ owner (ROADMAP.md "Owner review: agents test themselves").
 
 - [ ] Admin → Master data → RVG groups: rows sit under their anatomy headings; H4 shows "10 · range
       10 to 12"; both T2s and both P6s show as separate rows with their own description and units;
-      search "H1" lists every H1 row. The OQ-101 note shows here only.
+      search "H1" lists every H1 row.
 - [ ] Add group ("Brow lift", Head, base 5): saves, audited, no marker; a base of 0 and a range that
       does not hold the figure are each refused. Retire it: gone from the picker, an existing
       Procedure on it still prices; Restore brings it back.
@@ -504,7 +494,7 @@ Retired: no recipe row.
 |---|---|---|
 | [FT-05.1](../../../../requirements-board/requirements/stories/FT-05.1.md) RVG groups and modifiers | captured · admin-rvg-codes | Stays `captured`, re-pointed: `rvg-groups` (the RVG groups tab, `masters-rvg-groups`, anatomy headings visible, an AA row among them; caption "RVG groups as published, with their anatomy heading, plus AA's own") and a mobile `type-ahead` shot (caption "Find an RVG code by typing; each row shows its description and base units"). The modifier half stays 19b's |
 | [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG groups | captured · admin-rvg-codes | Stays `captured`. `rvg-groups` on the tab (highlight the Code, Description and Base units columns and two rows sharing one code; caption "Each RVG group has a code, description and base units above 0; the same code can sit on several rows"), an `add-group` state with `RvgGroupSheet` open (caption "AA can add its own groups and set their base units"), and `type-ahead` on web and mobile with "H1" typed (highlight the rows' base units; caption "Typing H1 lists every H1 row"). The old caption goes |
-| [US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Anatomy headings and AA groups | partial · admin-rvg-sites, web-code-picker, mobile-code-picker ("grouped by anatomical site") | `captured`, the old partial reason ("codes cannot be selected as a set", AA groups) dropped (prepaid groups are gone from the catalogue). `rvg-sites` as the tab's anatomy-heading groups with an AA group beside the published ones (caption "RVG groups under the guide's anatomy headings, with AA's own beside them"); `code-picker` on web and mobile with the anatomy label on each row (caption "Each row carries its anatomy heading"). Keep the shot names. Leave the Verify point (does the heading browse or filter) in the caption: not built |
+| [US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Anatomy headings and AA groups | partial · admin-rvg-sites, web-code-picker, mobile-code-picker ("grouped by anatomical site") | `captured`, the old partial reason ("codes cannot be selected as a set", AA groups) dropped (prepaid groups are gone from the catalogue). `rvg-sites` as the tab's anatomy-heading groups with an AA group beside the published ones (caption "RVG groups under the guide's anatomy headings, with AA's own beside them"); `code-picker` on web and mobile with the anatomy label on each row (caption "Each row carries its anatomy heading"). Keep the shot names. The heading is a label only, as the catalogue agrees |
 | [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Included modifiers | captured · admin-rvg-absorbs, web-absorbed-positioning, mobile-absorbed-positioning | No change here (Phase 19b owns it); only the recipe repair below |
 | [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier master | partial · admin-modifier-codes | No change here (Phase 19b owns it) |
 
@@ -571,9 +561,8 @@ bug), re-greens, and records the pass. Do not re-raise anything settled in the D
 
 ## PROGRESS.md updates
 
-- **For the owner's review** (end of the phase entry): D35 built as a starting figure (the lower
-  bound) with the range beside it, a ranged row never blocking completion; no system code beyond the
-  hidden id; the anatomy heading as a label only (no browse, no filter, no tags); modifier units held
+- **For the owner's review** (end of the phase entry): the starting figure set to the range's lower
+  bound, a ranged row never blocking completion; the anatomy heading as a label only (no browse, no filter, no tags); modifier units held
   on the row and shown only on the Admin edit sheet; the AA rows made for the legacy codes (each
   listed, since no published row matched); the mild warning strength; the demo-sized seed; anything
   logged rather than fixed; and the screens worth a look, each with its route and persona.
@@ -608,4 +597,4 @@ bug), re-greens, and records the pass. Do not re-raise anything settled in the D
     groups. 21 owns completion rules for an absent RVG code. 25 snapshots `baseSource`, `baseLayer`,
     the starting value and the recorded value. 42 loads groups from spreadsheets (AR-29
     `data-loading`), including the full NZSA set.
-  - OQ-101 and the system code outcomes are module and `MasterData.tsx` changes (see the gate table).
+  - 20 shows the range when the Contract pick leaves the base units to the anaesthetist; 19 holds it.

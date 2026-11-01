@@ -1,18 +1,18 @@
 # Phase 20 · One Contract per Procedure
 
 **Requirements covered:**
-[EP-04](../../../../requirements-board/requirements/stories/EP-04.md) (Contradicts: the route half and "the Contract decides who is billed"; the payer on the Booking lands in 21, the lock in 25),
+[EP-04](../../../../requirements-board/requirements/stories/EP-04.md) (Contradicts: the route half and "the Contract decides who is billed", the holder an insurer or a hospital paying AA itself; the payer on the Booking lands in 21, the lock in 25),
 [FT-04.3](../../../../requirements-board/requirements/stories/FT-04.3.md) (Contradicts: holder, then Contract, then line; No contract (RVG) first; the RVG-code reverse lookup),
 [US-04.3.1](../../../../requirements-board/requirements/stories/US-04.3.1.md) (Contradicts: exactly one Contract and, where it has lines, one line),
-[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) (Contradicts: Contracts not lines, No contract (RVG) first, then the hospital's, then surgeons' or rooms' and the anaesthetist's own; valid on the date, holder fit, no line test; start from the holder; composite search; the reverse lookup),
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) (Contradicts: Contracts not lines, No contract (RVG) first, then the hospital's, then the Booking's surgeon's (by practitioner ID, one Contract linked to several surgeons) and the anaesthetist's own; valid on the date, holder fit, no line test; start from the holder; composite search; the reverse lookup),
 [US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) (Contradicts: one No contract (RVG), held by AA, always first; nothing derived from the List's hospital),
 [US-04.3.4](../../../../requirements-board/requirements/stories/US-04.3.4.md) (Contradicts: the office identifies who pays at setup, mandatory, with a "Needs a Contract" list; the line and RVG code may be left; a prepaid Contract starts prepayment, interim here; matching a hospital row is 33's),
 [FT-03.4](../../../../requirements-board/requirements/stories/FT-03.4.md) (Contradicts: the anaesthetist changes the Contract and RVG code until AUTHORISED, the last change standing; office approval lands in 21),
 [US-03.4.1](../../../../requirements-board/requirements/stories/US-03.4.1.md) (Contradicts: no reason, price, rate and discount reset, audited and flagged, the pre-approval falls-through case),
 [US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md) (Partial: each added Procedure picks its own Contract),
-[US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) (Contradicts: the RVG code optional, filled from the line's default code, starting values reset on a Contract change; the type-ahead and out-of-range warning are 19's, the fill 19a's);
+[US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) (Contradicts: the RVG code optional, filled from the line's default code, a ranged code's range shown, starting values reset on a Contract change; the type-ahead and out-of-range warning are 19's, the fill 19a's);
 [DM-10](../analysis/domain-model-delta.md#dm-10) (each Procedure selects one Contract and, where it has lines, one line at booking setup; the route and billing-time resolution go; DM-37's audit-derived change flag is merged into it);
-[RV-18](../analysis/reverse-check.md) (the route and payment-category part; Type 1/2/3 went in 18).
+[RV-18](../analysis/reverse-check.md) (the route and payment-category part; Type 1/2/3 went in 18) and the Insurer route of RV-39 (18 folds the Insurer master into insurer holders; the route that read it goes here).
 **Left this phase on 2026-10-08:** DM-12 (the insurance indication on the Booking, now 21's); DM-37
 (merged into DM-10, still built here); RV-27 (the feed and PDF route stamp simply goes with the route);
 US-03.1.2 (seeing the Contract on each Procedure, now 20a's). **Left on 2026-10-20:** RV-08 (renumbered:
@@ -41,7 +41,7 @@ held by AA, and the no-line Contracts that replaced the default Type 1s (with th
 resolver still in place); 19's RVG groups and the optional RVG code picked by type-ahead; 19a's
 standalone lines (line key, holder code, description, default RVG code, price, rate, discount,
 units), its fill and reset of the Procedure's starting values, the anaesthetists' price-list Contracts
-(Dr Souter's flagged prepaid) and the rooms-held surgeon Contracts (D48); 19b's pre-applied modifiers;
+(Dr Souter's flagged prepaid) and the surgeon Contracts linked by practitioner ID (D48); 19b's pre-applied modifiers;
 38a's edit window (the anaesthetist edits ACTIVE and SUBMITTED Lists, AUTHORISED immutable) and its
 "changed since submitted" cue. Also 15b (Copy gone, ACTIVE), 15a (the warning routine, the
 `prepaymentUnpaid` rule, `WARNING_SAMPLES`), 15 (Booking vocabulary) and 14 (the trigger registry).
@@ -56,8 +56,8 @@ and line; the line and RVG code may be left for the anaesthetist; completion nee
 D63 ([OQ-26](../../../../requirements-board/requirements/questions/OQ-26.md), OQ-17: the anaesthetist may
 change until AUTHORISED, the last change stands, 38a builds the window); D12 as superseded on 2026-10-16
 (OQ-88, OQ-62: no procedure list, general procedure or picker tabs; the procedure is the text received);
-D3 (any base units; the line's units else the RVG row's, then the Procedure's own); D17
-([OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md): the Contract bills its holder when
+D3 and D35 ([OQ-101](../../../../requirements-board/requirements/questions/OQ-101.md): any base units, the line's else the RVG row's, then the Procedure's own; the RVG row's published range shown beside the value); D17
+([OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md): the Contract bills its holder, an insurer or a hospital among them, when
 the holder is billed, else the payer on the Booking, 21); D2 as extended on 2026-10-16
 ([OQ-55](../../../../requirements-board/requirements/questions/OQ-55.md): `Procedure.insurerId` goes as a
 route; the Booking's insurer and approval number are 21's); D45
@@ -65,12 +65,7 @@ route; the Booking's insurer and approval number are 21's); D45
 ([OQ-91](../../../../requirements-board/requirements/questions/OQ-91.md): the office keeps price-list
 Contracts; an anaesthetist sees only their own); D23 ([OQ-73](../../../../requirements-board/requirements/questions/OQ-73.md):
 prepayment only where a person pays).
-**Open, build the default (logged on the "For the owner's review" list, one provisional caption):**
-D48 [OQ-105](../../../../requirements-board/requirements/questions/OQ-105.md) (a surgeon's fixed-price
-arrangement is a rooms-held Contract linked to the surgeons it covers, offered on their Bookings after
-the hospital's, picked by the office); D49 [OQ-106](../../../../requirements-board/requirements/questions/OQ-106.md)
-(No contract (RVG) has no lines: picking it ends the pick). D28's open part (OQ-93: the Booking's insurer
-does not narrow the list) is 21's default; here insurer holders simply fit every Booking.
+D48 ([OQ-105](../../../../requirements-board/requirements/questions/OQ-105.md): a surgeon's arrangement is one Contract linked to one or more surgeons by practitioner ID, offered on a Booking with any of them whichever anaesthetist; no rooms filter); D49 ([OQ-106](../../../../requirements-board/requirements/questions/OQ-106.md): No contract (RVG) has no lines, so picking it ends the pick). **Open, build the default:** D28's open part (OQ-93: the Booking's insurer does not narrow the list) is 21's default; here insurer holders simply fit every Booking. Nothing in this phase is provisional.
 **Pricing model in one place:** the candidate rules, the line step, the reverse lookup, the reset on a
 change and the interim who-is-billed and prepayment live in `aa-prototype/src/domain/billing` (plus the
 seed), behind types the UI reads. Reference shape (technical design v6):
@@ -107,7 +102,7 @@ One picker on mobile, web and Admin (FT-04.3, US-04.3.2; D16, D32):
 
 - **No contract (RVG) first, always**, under any search, holder filter or miss; found by its default
   setting, never by name; no line step (D49).
-- Then **Contracts, not lines**: the hospital's, then surgeons' or rooms' (D48), then the Booking's own
+- Then **Contracts, not lines**: the hospital's, then the Booking's surgeon's (by practitioner ID; one Contract linked to several surgeons, D48), then the Booking's own
   anaesthetist's, then insurers', each valid on the procedure date and whose holder fits the Booking,
   with no test for a line, under holder headings.
 - One composite search (AA code, holder codes, Contract and holder names) and "Start from a holder".
@@ -118,7 +113,7 @@ One picker on mobile, web and Admin (FT-04.3, US-04.3.2; D16, D32):
 The RVG code (US-03.3.1) is optional and only meaningful where the Contract prices from RVG; picking a
 line fills it from the line's default code. Starting values fill through 19a and reset on any Contract or
 line change: price, rate, discount and starting units become the new Contract's, anything entered
-before is cleared (US-03.4.1), and any base value is accepted (D3).
+before is cleared (US-03.4.1), and any base value is accepted, the RVG group's published range shown beside it (D3, D35).
 
 Per D63 the anaesthetist may change the Contract, line and RVG code until the List is AUTHORISED (FT-03.4,
 US-03.4.1; 38a's window), with no reason, audited and flagged at office review, the last change
@@ -151,23 +146,17 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and open questions against the plan's baseline,
-   catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
+   catalogue commit `7cd7802` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-04,FT-04.3,US-04.3.1,US-04.3.2,US-04.3.3,US-04.3.4,FT-03.4,US-03.4.1,US-03.2.3,US-03.3.1,US-04.1.4,US-04.1.5,US-04.2.1,US-04.2.4,US-04.2.10,US-04.2.11,US-04.2.14,US-05.1.1,US-07.2.1,US-07.2.2,US-11.2.2,US-11.4.3,US-03.5.1,US-03.6.1,US-15.0.1,FT-06.2,OQ-26,OQ-48,OQ-55,OQ-66,OQ-67,OQ-73,OQ-78,OQ-91,OQ-93,OQ-98,OQ-99,OQ-105,OQ-106
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-04,FT-04.3,US-04.3.1,US-04.3.2,US-04.3.3,US-04.3.4,FT-03.4,US-03.4.1,US-03.2.3,US-03.3.1,US-04.1.4,US-04.1.5,US-04.2.1,US-04.2.4,US-04.2.10,US-04.2.11,US-04.2.14,US-05.1.1,US-07.2.1,US-07.2.2,US-11.2.2,US-11.4.3,US-03.5.1,US-03.6.1,US-15.0.1,FT-06.2,OQ-26,OQ-48,OQ-55,OQ-66,OQ-67,OQ-73,OQ-78,OQ-91,OQ-93,OQ-98,OQ-99
    ```
 
-   At the plan update (2026-10-20, `60e2d1e..d4db277`) the changes that touch this phase were: the
-   procedure master, two tabs and general procedure went (OQ-88); FT-04.3, US-04.3.2 and US-04.3.4
-   were rewritten around holder, then Contract, then line, Contracts not lines, and the reverse lookup;
-   US-04.3.3 is held by AA; US-04.3.1 gained the line; FT-03.4 and US-03.4.1 moved the window to
-   AUTHORISED and the reset to price, rate and discount; US-03.3.1 became "Choose the RVG code, with
-   starting units"; OQ-98 and OQ-99 were answered; OQ-105 and OQ-106 are new and open; OQ-103 no longer
-   gates this phase. The plan reflects all of this; diff only for anything after `d4db277`.
-2. If an item changed since `d4db277`, re-read it and adjust the work items. If one is now Retired or
-   Future, drop it and record that in the PROGRESS entry. **If OQ-105 or OQ-106 has been answered**,
-   build the answer and drop its part of the provisional caption (item 11). **If OQ-93's open part is
-   answered** (the insurer narrows the list), apply it in item 3's fit and log it.
+   The plan reflects the catalogue at `7cd7802` (OQ-101, OQ-105 and OQ-106 answered; US-04.3.2's
+   surgeon-by-practitioner-ID criteria; US-03.3.1 showing the range); diff only for anything after it.
+2. If an item changed since `7cd7802`, re-read it and adjust the work items. If one is now Retired or
+   Future, drop it and record that in the PROGRESS entry. **If OQ-93's open part is answered** (the
+   insurer narrows the list), apply it in item 3's fit and log it.
 3. **Confirm what 15a, 15b, 18, 19, 19a, 19b and 38a delivered** (their PROGRESS entries):
    - 15a and 15b: the `prepaymentUnpaid` rule's input (`facts.prepaymentStatus`); `WARNING_SAMPLES` and
      its prepayment sample (`store/warningSamples.ts` stages it through the category this phase
@@ -181,8 +170,8 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
      type-ahead component and the out-of-range warning rule.
    - 19a: lines (holder code, description, default RVG code and how it is keyed, price, rate, discount,
      units), the line reference on the Procedure (if it added one), the fill and reset helper, the
-     price-list Contracts (Souter's prepaid, its Rhinoplasty $1,200 line), the rooms-held surgeon
-     Contracts, how the S3 fixed-rate and fixed-price Contracts were carried across (US-05.2.6), and
+     price-list Contracts (Souter's prepaid, its Rhinoplasty $1,200 line), the surgeon Contracts
+     linked by practitioner ID, how the S3 fixed-rate and fixed-price Contracts were carried across (US-05.2.6), and
      whether any Christchurch Eye Surgery-held line carries `HNZCATall` (item 8 seeds one if not).
    - 19b: the helper that pre-applies age and included modifiers.
    - 38a: `editRefusal` for SUBMITTED, the "changed since submitted" cue, and whether a late edit
@@ -304,12 +293,12 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
      - **No contract (RVG)** first, found by 18's default setting (never by name), under any query,
        holder filter or miss (US-04.3.3).
      - **A Contract is a candidate** when it has a version in force on the procedure date and is not
-       retired (D45), and **its holder fits**: a hospital holder is the List's hospital; a surgeon or
-       rooms holder is the Booking's surgeon or rooms linked to that surgeon (D48's default); a holder
-       with a practitioner link fits only that anaesthetist's or surgeon's Bookings (D42: never a
-       colleague's price list); an insurer (or ACC) fits every Booking (D28's default). **No test for
+       retired (D45), and **its holder fits**: a hospital holder is the List's hospital; a holder
+       linked to surgeons fits a Booking whose surgeon's practitioner ID is any of them, whichever
+       anaesthetist holds it (D48; no rooms filter); a holder linked to an anaesthetist fits only that
+       anaesthetist's Bookings (D42: never a colleague's price list); an insurer (or ACC) fits every Booking (D28's default). **No test for
        a line** (D32).
-     - **Order:** hospital's, then surgeons' or rooms', then the anaesthetist's own (heading reads
+     - **Order:** hospital's, then the surgeon's, then the anaesthetist's own (heading reads
        their name), then insurers'; Contracts by name within each holder. Insurers last is a reading
        (the catalogue names only the first three): log it.
      - **Search** wraps 18's `contractMatchesQuery` (with 19a's line holder codes added) over the
@@ -339,7 +328,7 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
    - Tests: a St George's Contract is never offered on a Southern Cross List; No contract (RVG) first
      under a query, a holder filter and a miss; a no-line Contract is offered (no line test); validity
      on the procedure date (a version ending the day before is out); each holder kind's fit (hospital,
-     rooms linked to the surgeon, anaesthetist A's Booking never offers B's price list, insurer
+     one Contract linked to surgeons S and T offered on S's and on T's Booking whichever anaesthetist, not on U's, anaesthetist A's Booking never offers B's price list, insurer
      everywhere); the order; AA-code, holder-code (`HNZCATall` on a Christchurch Eye Surgery List,
      nothing on a Southern Cross List) and name search; start from a holder; `linesFor` with and
      without an RVG code; the reverse lookup; `applyContractChange` (values from the line, from the RVG
@@ -483,9 +472,6 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
       RVG code, the price where fixed), with search, the Procedure's RVG code matches first, and "Back
       to Contracts". The office may choose "Leave the line for the anaesthetist" (D33). No contract
       (RVG) and no-line Contracts skip it.
-    - **The one provisional caption** (D48, D49), office view only, a mist line at the foot: "Provisional
-      · surgeons' fixed prices held by their rooms, and No contract (RVG) without routine procedure
-      lines, are still to confirm with AA". Nowhere else.
     - The anaesthetist's rows are the office's (pricing basis and who is invoiced are 20a's); their list
       never holds a colleague's price list. The selected row carries a teal tick. Picking calls
       `setProcedureContract` (or sets a creation form's pick) and shows any refusal verbatim. Empty
@@ -494,7 +480,7 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
 12. **The Contract on the Procedure and the anaesthetist's change (US-03.4.1, FT-03.4, US-03.3.1):**
     - A Contract row (name, AA code, the line's description once chosen, teal "Change") replaces the
       route chip in `BtmCaptureBlock` and the route control in `EditProcedureSheet`; 19's RVG code row
-      stays beside it. A lined Contract with no line shows "Choose a line" (teal), which opens the line
+      stays beside it, showing the RVG group's published range beside a ranged code's base value (US-03.3.1, D35; any value accepted). A lined Contract with no line shows "Choose a line" (teal), which opens the line
       step with the Procedure's RVG code matches first.
     - The anaesthetist changes the Contract, line and RVG code on their own ACTIVE and SUBMITTED Lists,
       with no reason; AUTHORISED is read-only. Caption: "The office sees any change to the Contract at
@@ -547,7 +533,7 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
 17. **Invoice wording:** `PaymentCategoryNote` becomes a note from one pure helper,
     `patientInvoiceNote(booking, invoiceKind)`: a Booking requiring prepayment (item 7) gives today's
     prepayment wording; otherwise "Payment is due on receipt of this invoice." The insured-reimbursement
-    wording loses its trigger and is retired until 21 (US-11.4.2); Phase 22 rebuilds the layout.
+    wording loses its trigger and goes (US-11.4.2 Retired); Phase 22 rebuilds the layout.
 18. **Shots and demo surfaces:** update `visual/mobile-interactions.spec.ts`, `admin-phase06.spec.ts`
     and `admin-phase07.spec.ts`, keeping `data-shot="procedure-contract"`; add shots of the Contract
     step, the line step, a holder code and an RVG code typed, the "Needs a Contract" card and the
@@ -578,7 +564,7 @@ stage and clear.
 
 - The payer on the Booking replacing the `billablePartyId` override; the insurer and approval number
   on the Booking with their review cues (OQ-93, D28); the child-payer warning; holder references;
-  completion's full list; office approval of Contract changes at review; US-11.4.2's wording. All 21.
+  completion's full list; office approval of Contract changes at review. All 21.
 - The source descriptions, the invoice description from the line and the Contract stack on every
   booking screen: 20a.
 - The edit window itself and the "changed since submitted" cue: 38a.
@@ -601,8 +587,7 @@ the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Reset. Admin Day shows the "Needs a Contract" card with the seeded Booking. Fire MSG-STG-1001:
       Sarah Mitchell's Booking on Souter Tue 28 Jul St George's AM arrives with no Contract and joins the
       card. Open it, pick holder, Contract and line: it leaves the card.
-- [ ] Open the picker on any Procedure: No contract (RVG) first; then the hospital's, surgeons' or
-      rooms', the anaesthetist's own and insurers' Contracts under holder headings; no "None". On a
+- [ ] Open the picker on any Procedure: No contract (RVG) first; then the hospital's, the surgeon's, the anaesthetist's own and insurers' Contracts under holder headings; no "None". On a
       Southern Cross List no St George's Contract shows; a no-line Contract shows.
 - [ ] Pick a Contract with lines: the line step opens; with the Procedure's RVG code set, matching lines
       come first. As the office, "Leave the line for the anaesthetist": the Booking does not join the
@@ -613,6 +598,11 @@ the owner (ROADMAP.md "Owner review: agents test themselves").
       `HNZCAT` finds nothing.
 - [ ] Type an RVG code a seeded line carries as its default: its lines show under their Contracts;
       picking one sets Contract, line and RVG code.
+- [ ] A Contract linked to two surgeons (Merivale's, as 19a seeded): it is offered on a Booking with
+      either surgeon, whichever anaesthetist holds it, and not on another surgeon's; no rooms filter.
+      The picker shows no "provisional" caption.
+- [ ] RVG code with a published range: the range shows beside the base value; a value outside it is
+      accepted (19's warning).
 - [ ] "Start from a holder": pick Southern Cross; only its Contracts remain, No contract (RVG) first.
 - [ ] As Dr Souter, mobile then web, on an ACTIVE List: change a Procedure's Contract with no reason
       asked. Price, rate, discount and starting units reset, the "Changed by you" pill shows, and
@@ -717,13 +707,13 @@ owned elsewhere say so. Shots are Admin unless an app is named.
 | [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) | partial · admin-price-rows | No change here (Phase 19a owns it) beyond `--dry` |
 | [US-04.2.8](../../../../requirements-board/requirements/stories/US-04.2.8.md) | absent | No change here (Phase 22 owns it); reword "follows the billing route" to "follows the Contract" |
 | [US-04.3.1](../../../../requirements-board/requirements/stories/US-04.3.1.md) | partial · admin-procedure-contract | `captured`. Re-shoot the office Booking detail's Contract row (name, AA code, holder, line) and "Billed to", no Route, Category or Insurer; add `refused` (Mark complete with no Contract: "Choose a Contract for this procedure."). Caption "Every Procedure carries exactly one Contract and, where it has lines, one line". Drop the reason |
-| [US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) | partial · admin-contract-picker | `captured`. `contract-picker` states: `default` (No contract (RVG) first, holder sections, AA codes, the provisional caption), `aa-code`, `holder-code` (`HNZCAT` on the CES cataract Booking), `holder` (from Southern Cross), `lines` (a Contract's line step) and `rvg-code` (the reverse lookup); add `web-contract-picker` and `mobile-contract-picker` for the anaesthetist. Caption "No contract (RVG) first, then the Contracts that fit this Booking, by holder". Drop the reason |
-| [US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) | partial · admin-default-contract, web-default-contract, mobile-default-contract | Stays `partial`, reason "The payer named on the Booking arrives with Phase 21; until then No contract (RVG) bills the patient or the Booking's existing guardian override." **Replace the default-hospital captions:** re-point all three at the picker with No contract (RVG) the highlighted first row (rename to `no-contract-first`), plus `billed` on the `procedure-contract` row (office). Captions "No contract (RVG) is always first" and "No contract (RVG) bills the patient or whoever pays for them" |
+| [US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) | partial · admin-contract-picker | `captured`. `contract-picker` states: `default` (No contract (RVG) first, holder sections, AA codes), `surgeon` (a Contract linked to several surgeons offered on a Booking with any of them, whichever anaesthetist, its holder heading highlighted), `aa-code`, `holder-code` (`HNZCAT` on the CES cataract Booking), `holder` (from Southern Cross), `lines` (a Contract's line step) and `rvg-code` (the reverse lookup); add `web-contract-picker` and `mobile-contract-picker` for the anaesthetist. Caption "No contract (RVG) first, then the Contracts that fit this Booking, by holder". Drop the reason |
+| [US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) | partial · admin-default-contract, web-default-contract, mobile-default-contract | Stays `partial`, reason "The payer named on the Booking arrives with Phase 21; until then No contract (RVG) bills the patient or the Booking's existing guardian override." **Replace the default-hospital captions:** re-point all three at the picker with No contract (RVG) the highlighted first row (rename to `no-contract-first`), plus `billed` on the `procedure-contract` row (office). The row shows no routine lines under it (OQ-106). Captions "No contract (RVG) is always first" and "No contract (RVG) bills the patient or whoever pays for them" |
 | [US-04.3.4](../../../../requirements-board/requirements/stories/US-04.3.4.md) | captured · admin-billing-setup[summary,edit] | Stays `captured`. Re-caption `edit` ("Contract and payer", no route or insurer) and re-point its highlights; add `setup` (the phone-advice Contract row) and `needs-contract` (the Admin Day card). Captions "The office sets who pays when the Booking is created" and "Bookings without a Contract wait on the office's list" |
 | [US-04.3.5](../../../../requirements-board/requirements/stories/US-04.3.5.md) | captured · admin-contract-before, admin-locked-contract | No change here (Phase 25 owns it); re-check the billing-setup highlights with `--dry` |
 | [US-03.4.1](../../../../requirements-board/requirements/stories/US-03.4.1.md) | partial · web-edit-operation, mobile-edit-operation | `captured`. **Replace "Edit operation: billing route, insurer and reference".** Re-shoot `edit-operation` on web and mobile on a SUBMITTED List (Contract row with teal "Change"); add `changed` (the pill and the reset notice) and Admin `contract-changed-flag` (Review, Morrison Mon 20). Captions "Change the Contract until the office authorises the list, no reason needed" and "Every change is audited and flagged for the office". Drop the reason |
 | [US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md) | partial · web-add-procedure[before,added], mobile-add-procedure[before,added] | `captured`. Re-shoot both apps; `added` shows procedure 2 with its own Contract row after its own pick. Drop the reason |
-| [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) | captured · web-rvg-picker, mobile-rvg-picker[closed,open,search] | Stays `captured` (19 owns the type-ahead shots). Add `line-default` (a line picked, its default RVG code filled) and `reset` (after a Contract change, the reset values) on web and mobile. Caption "The RVG code is optional and fills from the Contract line" |
+| [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) | captured · web-rvg-picker, mobile-rvg-picker[closed,open,search] | Stays `captured` (19 owns the type-ahead shots). Add `line-default` (a line picked, its default RVG code filled), `reset` (after a Contract change, the reset values) and `range` (a ranged code with its published range beside the base value, any value accepted) on web and mobile. Caption "The RVG code is optional and fills from the Contract line" |
 
 **Recipes this phase breaks.**
 - `US-06.3.5` (re-check on change): its `after` state clicks "Self-funded" in the billing setup; the
@@ -732,8 +722,7 @@ owned elsewhere say so. Shots are Admin unless an app is named.
   "deposit"; Phase 27 re-shoots it.
 - `US-07.2.2`: the `edit` state's "choosing the route and Contract" caption and the Route column.
   Re-caption and re-point; the button keeps its name.
-- `US-11.4.2`: the reimbursement wording is retired until 21 (item 17): set `partial`, reason "The
-  reimbursement wording returns with Phase 21's Contract-holder flag".
+- `US-11.4.2`: Retired (no insurer master); 18 marked its recipe `absent`. Leave it absent.
 - `US-04.3.1` to `US-04.3.5` and `US-03.4.1` use `[data-shot=office-billing-setup-1]`, "Edit billing
   setup", `label:has-text("Governing contract")` and `[data-testid=procedure-header] >> text="Edit"`:
   reconcile with the table.
@@ -768,7 +757,7 @@ re-raise anything settled in the Decisions log except the rulings this phase sup
   are the card, the completion refusal and `noContract`.
 - **The candidate rule matches US-04.3.2:** No contract (RVG) first under every query, filter and miss,
   found by its setting; Contracts not lines; no line test; valid on the date; holder fit (hospital,
-  rooms linked to the surgeon, the Booking's own anaesthetist or surgeon for a practitioner-linked
+  a Contract linked to several surgeons found by each one's practitioner ID whichever anaesthetist, no rooms filter, the Booking's own anaesthetist for a practitioner-linked
   holder, insurers everywhere); the order; search inside the candidates only; the line step and the
   reverse lookup; the store refuses any non-candidate; no flat select; one rule in `domain/billing`.
 - **No procedure leftovers:** no procedure pick, tabs or general procedure anywhere.
@@ -786,20 +775,20 @@ re-raise anything settled in the Decisions log except the rulings this phase sup
   order unchanged.
 - **Privacy of price lists:** an anaesthetist never sees a colleague's in any picker, search, review or
   audit view they can reach.
-- **One provisional caption** (D48, D49), office picker only; none for answered questions.
+- **No provisional labels:** D35, D48 and D49 are answered; no caption, label or default note for them anywhere.
 - **Leftovers:** the item 9 greps; `contractIneffective` kept for S4 Beat 3 and Phase 25.
 
 ## PROGRESS.md updates
 
-- **For the owner's review** (end of the phase entry): the D48 and D49 defaults built; the readings
+- **For the owner's review** (end of the phase entry): the readings
   below; anything logged rather than fixed; and the screens worth a look with route and persona (the
   picker's two steps on Admin, web and mobile; the reverse lookup; the "Needs a Contract" card; the
   phone-advice Contract row; the Morrison review flag; a change after submit).
 - **Catalogue screenshots result:** the recipes changed, the `REPORT.md` counts (captured, partial,
-  absent, failed) before and after, and the reasons handed on (US-11.4.2, US-04.3.3, US-04.1.5 and
+  absent, failed) before and after, and the reasons handed on (US-04.3.3, US-04.1.5 and
   US-04.2.1 to 21; US-04.2.8 to 22; US-04.2.2 to 24; US-04.1.3, US-04.1.6 and US-04.2.10 to 25).
-- Status row and a phase entry: the drift-check result against `d4db277`; D16, D32, D33, D63, D12, D3,
-  D17, D2, D45, D42, D23 and OQ-78 built as answered; the D48 and D49 defaults; what 15a, 15b, 18, 19,
+- Status row and a phase entry: the drift-check result against `7cd7802`; D16, D32, D33, D63, D12, D3,
+  D17, D2, D45, D42, D23, D35, D48, D49 and OQ-78 built as answered; what 15a, 15b, 18, 19,
   19a, 19b and 38a provided; the session split; the adversarial pass; the tests added (selection,
   search, holder fit, lines, reverse lookup, reset, parity, store guard, audit-derived flag, prepayment
   interim); `PERSIST_VERSION` old to new; the broken recipes; and the handoffs: 20a (the stack reads
@@ -823,7 +812,6 @@ re-raise anything settled in the Decisions log except the rulings this phase sup
     nothing; an office change clears the change flag until 21; the insured-reimbursement wording is
     retired until 21; the interim who-is-billed reads 18's `routeCounterpartyForHolder`, so the Doyle
     Bookings keep today's counterparty until 21.
-  - **Open, built as defaults (one caption):** D48 (OQ-105), D49 (OQ-106).
   - **Interims, with the phases that replace them:** who is billed with the `billablePartyId` override
     (21), `funderOverride` as the split (22), prepayment from the prepaid Contract with
     `prepaymentDetail` and the seeded deposit (27).

@@ -1,8 +1,7 @@
 # Phase 42 · Reference data and controlled loads
 
 **Requirements covered:**
-[US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) Maintain reference tables (status 4; closes the rows Phases 17, 18, 19, 19b, 29 and 30 did not: hospital retire, insurers, the master public-holiday calendar, and one consistent pattern across every master, which now lists contract holders; its "recurring bookings" row is Phase 30's rename and editor, refitted here. A Contract change is a new dated version, never an edit in place (25's staged review). Greg would call these master data, not reference tables (2026-10-02 #39): the app says "Master data" only) ·
-[US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md) Insurer master data (status 4; graded Contradicts at `60e2d1e` because flipping the direct-claims flag minted a protected default Type 1, which Phase 18 removes. Here: add, rename, retire and reinstate. An insurer that accepts direct claims is a holder AA invoices; the flag creates **no** Contract and only pre-fills "is billed" on a new insurer holder (D55, OQ-114). Its Contracts, most of them plain RVG Contracts with no lines, offered by the Booking's context (OQ-98), sit under its holder (Phase 18). The cover split is a Booking action (Phase 22), never on the insurer row) ·
+[US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) Maintain reference tables (status 4; closes the rows Phases 17, 18, 19, 19b, 29 and 30 did not: hospital retire, the master public-holiday calendar, and one consistent pattern across every master, which now lists contract holders, insurers among them (Greg 2026-10-28: insurers are "just an instance of contract holders"; no insurer master); its "recurring bookings" row is Phase 30's rename and editor, refitted here. A Contract change is a new dated version, never an edit in place (25's staged review). Greg would call these master data, not reference tables (2026-10-02 #39): the app says "Master data" only) ·
 [US-13.4.2](../../../../requirements-board/requirements/stories/US-13.4.2.md) Clean-cut start, not a full migration (status 4; unchanged in substance) ·
 [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) Reference data loaded at cutover (status 1; retitled 2026-10-16 and 2026-10-20: a one-off data load, expected to cover hospitals, surgeons and rooms, RVG groups with base units, modifiers, contract holders, Contracts and their lines, and anaesthetists; exactly what is loaded, and from what source, is not yet clear; **no procedure list**; seeded once by a developer, then changed by hand; the Solutions Plus names paragraph is gone; repeatable so a test system can be wiped and reloaded; AR-29 `data-loading` has AA preparing every master in AA-defined templates) ·
 [DM-38](../analysis/domain-model-delta.md#dm-38) Reference data: a master public-holiday calendar and spreadsheet-loaded masters, the Contract schedule upload Future Work (the statutory calendar and the seed loads; Phase 30 built the hospital-calendar half and the recurring-booking rename, Phase 31 the recurring clash that becomes a Draft List).
@@ -10,7 +9,7 @@ Also touches, without closing:
 [FT-13.4](../../../../requirements-board/requirements/stories/FT-13.4.md) (the feature; its RFP-response ETL migration is narrowed to the clean cut),
 [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) (RVG groups, the one master list with a hidden key and no procedure list; a load target, Phase 19 built them),
 [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) (Verify; "Admins load the modifier list as master data": the RVG table from AR-34's files plus AA's own, Phase 19b built it; AA's rows become loadable, editable and retirable here),
-[US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md), [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) and [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (contract holders, Contract lines and the anaesthetists' own fixed-price Contracts become load targets; Phases 18 and 19a built them),
+[US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md), [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) and [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (contract holders, insurers among them, each with a delivery setting and a practitioner link, Contract lines and the anaesthetists' own fixed-price Contracts become load targets; Phases 18 and 19a built them),
 [US-04.2.13](../../../../requirements-board/requirements/stories/US-04.2.13.md) (Future Work: the Contract schedule upload is **not** built; the seed load is separate from it, D34),
 [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) (Confirmed; the RVG time tiers, held as data by 19a, become editable here; a part interval always rounds up),
 [US-01.5.1](../../../../requirements-board/requirements/stories/US-01.5.1.md) (Confirmed; each hospital keeps its own calendar, and public holidays move out of it),
@@ -18,7 +17,7 @@ Also touches, without closing:
 **Left this phase on 2026-10-08:** [US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md) and
 [FT-04.4](../../../../requirements-board/requirements/stories/FT-04.4.md) (Retired: there are no default RVG Contracts) and
 [US-04.2.12](../../../../requirements-board/requirements/stories/US-04.2.12.md) (Retired: the Contract has no payment setting;
-the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md) (Retired: there is no procedure list, so nothing here loads or maintains procedures or general procedures). **Joined:** none; [US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) (Phase 25's staged Contract changes) is the review every Contract edit made on these screens goes through. No RV finding is closed here.
+the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md) (Retired: there is no procedure list, so nothing here loads or maintains procedures or general procedures). **Left this phase on 2026-10-28:** [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md) (Retired: there is no insurer master and no direct-claims flag; insurers are contract holders, edited in 18's holder panel and loaded by the holders sheet here). **Joined:** none; [US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) (Phase 25's staged Contract changes) is the review every Contract edit made on these screens goes through. No RV finding is closed here.
 
 **Decisions and questions** (ROADMAP.md owner decisions table, as re-read on 2026-10-20):
 - **D34** ([OQ-100](../../../../requirements-board/requirements/questions/OQ-100.md), still open; Greg's position moved to header and lines, a staged
@@ -28,22 +27,22 @@ the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](.
   Future Work). This phase builds the loader as a demo stand-in for the developer's one-off seed (work
   items 4 to 10 and 13) and the office maintains every master by hand. It builds no check of its own:
   the earlier "Checked by" mark and its provisional note are gone. Logged on the owner's review list.
-- **D55** ([OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), open): built as its default. The insurer's direct-claims flag
-  pre-fills "is billed" when the office creates the insurer's contract holder (18's
-  `holderBilledDefault`) and does nothing else: it creates no Contract, and the holder's setting
-  decides who is billed. Logged on the owner's review list.
+- **D55** ([OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), answered in part 2026-10-28): built as
+  answered. Insurers are contract holders like any other: no insurer master, no direct-claims flag, no
+  pre-fill. Each holder carries how its invoices are delivered (18; 22 reads it), and the holders
+  sheet loads it. **Open:** what outputs exist beyond email and portal; built as those two (email the
+  default) and logged on the owner's review list.
 - **Answered, and built as answered (no label):**
   - **D12 superseded** ([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md), with [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md)): base units live on the **RVG
     group** and a **Contract line** may override them; there is no procedure list and no default RVG
     Contract. So the RVG groups sheet loads group figures and the Contract lines sheet line figures.
   - **D16**: a loaded Contract's code comes from 18's `nextAaCode`, never the sheet.
   - **D17 superseded**: who is billed is the contract holder's setting, so the holders sheet loads
-    "Holder is billed" and its billable party; nothing on the insurer or hospital row decides it.
-  - **D18 superseded**: the split is a Booking action (Phase 22); neither the insurer row nor the
-    Contracts sheet carries a split or share.
-  - **D2 superseded**: an insurer is reached through its contract holder and the **insurance
-    indication** on the Booking (OQ-93, Phase 21), which never decides who is billed. The insurer
-    retire blockers count both.
+    "Holder is billed" and its billable party; nothing on the hospital row decides it.
+  - **D18 superseded**: the split is a Booking action (Phase 22); no sheet
+    carries a split or share.
+  - **D2 superseded**: an insurer is a contract holder, and the **insurance indication** on the
+    Booking (OQ-93, Phase 21) never decides who is billed.
   - **D32** ([OQ-98](../../../../requirements-board/requirements/questions/OQ-98.md), answered): a Contract row with no lines loads as a plain RVG
     Contract of its holder, offered by the Booking's context with no test for a line.
   - **D42** (OQ-91): the office keeps the anaesthetists' own fixed-price Contracts, so a first-party
@@ -56,7 +55,7 @@ the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](.
   - **US-13.4.3's re-load question is answered by its text**: seeded once by a developer, then changed
     by hand on screen, repeatable so a test system can be wiped and reloaded. So there is **no office
     "Load from spreadsheet" action**; the loader lives only in a demo-badged **Seed load** view.
-- **Still open, followed as their owning phases built them (no label here):** D35 (OQ-101: an RVG
+- **Answered, followed as their owning phases built them (no label here):** D35 (OQ-101: an RVG
   group row carries a starting figure and an optional published range; 19) and D11 (OQ-49, NHI: not a
   master). "Whether calendar schedules join the list" is still unclear: the calendars (public and
   hospital holidays) load, and recurring bookings stay hand-made, logged for the owner. What the
@@ -69,8 +68,7 @@ groups, hospital contact email, `editHospital`, `isPlausibleEmail`, the `apps/ad
 split and the `?view=` search param), Phase 18 (the contract-holder master `ContractHolder` with
 `createContractHolder`, `editContractHolder`, `retireContractHolder` and `validateHolder`; the Contract
 as dated versions with `createContract`, `createContractVersion`, `retireContract`, `termsLocked` and
-the AA code from `nextAaCode`; the one stored No contract (RVG); `createHospital` and
-`setInsurerDirectClaims` minting no Contract; the organisations master kept behind holders; the
+the AA code from `nextAaCode`; the one stored No contract (RVG); `createHospital` minting no Contract; insurers as holders with the delivery setting and the practitioner link to one anaesthetist or one or more surgeons, and no insurer master; the organisations master kept behind holders; the
 "Contract holders" tab and `ContractHolderPanel`), Phase 19 (`RvgGroup` with its hidden id, `createRvgGroup` and its refusal sentences, retire and restore, the "RVG groups" tab, `RvgGroupSheet` and the RVG code type-ahead; there is no procedure list), Phase 19a (`ContractLine` with `lineKey`, `referenceCode` and `defaultRvgKey`, `validateContractLine`, `addContractLine`,
 `editContractLine` and `removeContractLine`; plain RVG Contracts; the first-party Contracts with
 `ownFixedPriceFor`; `masters.rvgTimeRule` with `validateRvgTimeRule`, `describeTimeRule` and
@@ -100,7 +98,7 @@ Go-live views, the triggers, the shots and the demo guide (items 11 to 19).
 heavy (twelve loader specs, the planner refactor and the holiday migration). If session 1 runs long,
 end it green after item 7 and start session 2 with items 8 to 10; do not drop a covered target.
 Within session 2, trim in this order if needed, and log each trim for Phase 44: the RVG time rule
-editor (19a's read-only panel stays), the Insurers "Contracts" link-through (keep the count), the
+editor (19a's read-only panel stays), the
 collapsible `LoadResultBanner` (keep it static), the public-holiday "Lists affected" column, then
 Organisations retire.
 
@@ -117,20 +115,15 @@ US-13.4.3 now describes, and the clean cut:
   hospital's linked contract holder while the holder's name still equals the old hospital name, so
   "change once, reflected everywhere" holds. There is no hospital default Contract to rename (18
   removed them; OQ-78).
-- **Insurers** can be **created, renamed, retired and reinstated**, each with the
-  accepts-direct-claims flag, which **creates no Contract** (US-11.4.1's wrong behaviour is gone
-  since 18) and only pre-fills "is billed" when the office sets the insurer up as a contract holder
-  (D55). An insurer's Contracts sit under its contract holder (18): most are plain RVG Contracts
-  with no lines, billed to the insurer (D32) and offered by the Booking's context (20). The Insurers
-  view counts and links to them, and the insurer sheet offers "Set up as a contract holder" into 18's
-  holder panel, prefilled. Special rates are Contract lines (19a); the cover split is a Booking
-  action (22). None of these is a field on the insurer row.
+- **Insurers are contract holders** (FT-11.4 and US-11.4.1 Retired 2026-10-28). There is no Insurers
+  view, flag or master list here, and nothing pre-fills "is billed". An insurer is kept in 18's holder
+  panel and loaded by the holders sheet.
 - A **master public-holiday calendar**. One row per statutory or regional holiday, applying to every
   hospital unless a hospital is listed as open that day. The seeded per-hospital Labour Day and
   Canterbury Anniversary rows migrate into it, so each hospital's own calendar holds only its own
   closures (US-13.4.1, US-01.5.1). Public holidays raise conflicts through 30's derived rule.
-- **Retire, never delete, anything referenced by identity.** Hospitals, surgeons, rooms, groups,
-  insurers and organisations retire with a stated reason when nothing upcoming depends on them
+- **Retire, never delete, anything referenced by identity.** Hospitals, surgeons, rooms, groups
+  and organisations retire with a stated reason when nothing upcoming depends on them
   (18 already retires contract holders and Contracts, 19 RVG groups, 29 statuses, 30
   recurring bookings). AA's own modifiers become editable and retirable here (19b's handoff); the RVG
   table's rows stay as printed. Pickers stop offering retired records, and every existing reference
@@ -147,7 +140,7 @@ US-13.4.3 now describes, and the clean cut:
   loader with a spec per master: hospitals; hospital holidays and public holidays (the calendars, so a
   test system loads the same way again); surgeons' rooms; surgeons; anaesthetists; **RVG groups with
   their base units** (no procedure list, so no general procedures); AA's own modifiers; **contract
-  holders** (kind, "is billed", practitioner link); **Contracts** with their settings (editable,
+  holders** (kind, "is billed", delivery setting, practitioner link to one anaesthetist or one or more surgeons); **Contracts** with their settings (editable,
   prepaid; no kinds) and **standalone Contract lines** (line key, default RVG code, price, rate,
   discount, units; a blank cell is not set and 0 is zero); and the Contract event fees 39b added. A
   load is checked first: every row is validated with the same rules as the manual add, and a result
@@ -204,13 +197,14 @@ here is mobile, so there is no PWA stand-in.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d4db277` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.4.1,US-11.4.1,US-13.4.2,US-13.4.3,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.4,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,US-04.1.6,OQ-100,OQ-114,OQ-98,OQ-88,OQ-101,OQ-93
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.4.1,US-13.4.2,US-13.4.3,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.4,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,US-04.1.6,OQ-100,OQ-114,OQ-98,OQ-88,OQ-101,OQ-93
    ```
 
+   At the 2026-10-28 update (`d4db277..7cd7802`) US-11.4.1 went Retired (no insurer master, flag or pre-fill) and US-13.4.1 now lists contract holders, insurers among them; the plan already reflects both.
    At the 2026-10-20 update (`60e2d1e..d4db277`) these moved, and the plan already reflects them:
    US-13.4.1 (contract holders listed; a Contract change is a new dated version), US-11.4.1 (the
    insurer is a holder AA invoices; a line-less Contract is offered by Booking context, OQ-98),
@@ -228,7 +222,7 @@ here is mobile, so there is no PWA stand-in.
    data": the RVG table plus Vanessa's list); US-05.2.2 (a part interval always rounds up); US-01.3.2
    (recurring bookings; a clash becomes a Draft List); US-04.4.2, FT-04.4 and US-04.2.12 Retired;
    US-04.2.13 added in the Future Work lane; OQ-100 added; OQ-62 and OQ-78 answered. Diff only for
-   anything after `d4db277`. If a covered item is now Retired or Future, drop it from this phase and
+   anything after `7cd7802`. If a covered item is now Retired or Future, drop it from this phase and
    say so in the PROGRESS entry. Watch in particular for:
    - **OQ-100 (D34).** If the schedule upload is answered "in the first release", it is still not this
      phase's: record it for the owner and Phase 44 (it needs its own phase: format, delta or full
@@ -244,8 +238,9 @@ here is mobile, so there is no PWA stand-in.
      data and go-live" section. A new target joins the loader only if its master already exists;
      otherwise note it for Phase 44.
    - **The master calendar's scope** (national vs regional, or per-hospital opt-in rather than
-     opt-out). This phase builds "applies to every hospital unless listed as open".   - **OQ-114 (D55).** If the insurer's flag is answered as the same thing as "is billed", or as
-     information only, change the holder panel's pre-fill and the Insurers copy only.
+     opt-out). This phase builds "applies to every hospital unless listed as open".
+   - **OQ-114 (D55).** Answered in part: delivery is a holder setting, email or portal. If the other
+     outputs get named, extend the holders sheet's Delivery column only.
    - **OQ-98 (answered), OQ-88 (answered), OQ-101.** The loader follows whatever 18, 19 and 19a built
      for them; if one was re-built, re-shape the matching sheet's columns to it before building.
 2. **Where loaded base units land (D12 superseded, answered).** Base units live on the RVG group
@@ -264,7 +259,7 @@ here is mobile, so there is no PWA stand-in.
      - the view ids in `?view=` and the `NAV` shape (17, 18's "Contract holders", 19's "RVG groups", 19b's modifiers view, 29, 30);
      - the `SurgeonRoom`, `SurgeonGroup` and `Surgeon` fields and the HPI CPN normaliser, shape check
        and duplicate check (17);
-     - `ContractHolder` (`kind` and its link field, `practitioner`, `billsHolder`, `billablePartyRef`,
+     - `ContractHolder` (`kind` and its link field, the practitioner link, the delivery setting, `billsHolder`, `billablePartyRef`,
        `retiredAtISO`), `validateHolder`, `createContractHolder`, `retireContractHolder`; `Contract`
        (`aaCode`, `holderId`, `editable`, `prepaid`, `effectiveFromISO`, `effectiveToISO`, `reviewDateISO`,
        `previousVersionId`, `retiredAtISO`), `createContract` and its validator, `nextAaCode`,
@@ -294,8 +289,8 @@ here is mobile, so there is no PWA stand-in.
      last mapped at that commit), or as those phases planned them.
    - Record the seed's flagged-List set today (List ids with a `holiday` conflict, by cause), so the
      public-holiday migration can prove the set does not move (work item 3).
-   - Grep every picker that offers hospitals, surgeons, rooms, groups, insurers or contract holders
-     (`grep -rn "masters.hospitals\|masters.surgeons\|masters.insurers\|surgeonRooms\|surgeonGroups\|contractHolders" src --include=*.tsx`)
+   - Grep every picker that offers hospitals, surgeons, rooms, groups or contract holders
+     (`grep -rn "masters.hospitals\|masters.surgeons\|surgeonRooms\|surgeonGroups\|contractHolders" src --include=*.tsx`)
      and list them, including 18's holder-link picker, 20's Contract picker (which must hide Contracts
      whose holder is retired) and 21's insurance-indication picker. Work item 16 routes each one
      through the active-only selectors.
@@ -307,8 +302,7 @@ here is mobile, so there is no PWA stand-in.
      the generation path, `conflictFactsFor`, the recurring-booking projection, the conflict preview
      and the Draft List assignment warning. List them; work item 2 routes each through
      `closuresIndex`, so no reader silently loses Labour Day when the per-hospital rows go.
-   - Grep for stored copies of a master's name (a contract holder named after its hospital or
-     insurer, a `hospitalName` on a record). List them; work item 5 handles the linked holder, and
+   - Grep for stored copies of a master's name (a contract holder named after its hospital, a `hospitalName` on a record). List them; work item 5 handles the linked holder, and
      anything else is noted for the reviewers.
    - Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 at plan time, after 15a's first
      session; 15a to 41 will have bumped it) and bump it by one from whatever it is now.
@@ -316,7 +310,7 @@ here is mobile, so there is no PWA stand-in.
      fuller modifier list, contract overrides and surgeons' rooms list (US-13.4.3's note). If any has
      landed, model the matching sample's columns on its headers (still saved as CSV), but keep every
      fixture row demo-plausible: no real figure is loaded into the seed.
-4. **Owner decisions.** D34 and D55 gate this phase (above). The rest shape it and are answered: D12,
+4. **Owner decisions.** D34 gates this phase (above). The rest shape it and are answered (D55 in part): D12,
    D16, D17, D18, D2, D25 and D14, D32 (OQ-98), D42 (OQ-91) and D45 (OQ-48).
 
 ## Reference
@@ -342,16 +336,14 @@ procedure list and modifier master", "Surgeon, surgeons' room, preferences and p
 "Recurring booking" entries. Evidence: `npm --prefix requirements-board run source -- --item US-13.4.3 --text`
 (the 2026-09-29 points 27, 28, 30 and 31; the 2026-10-02 review points 10, 40 and 77; the 2026-10-07
 meeting points 42 and 62, Greg: "They can just type it in by hand. It's such a rare event"; the
-Pricing model documents v6 points 9 and 48), and the same for US-11.4.1 and OQ-100. Change log
+Pricing model documents v6 points 9 and 48), and the same for US-13.4.1 (the 2026-10-28 note, points 3 and 40) and OQ-100. Change log
 `requirements-board/requirements/changes/2026-10-07-requirements-update.md` (the US-13.4.3, US-11.4.1,
 US-04.2.13 and OQ-100 rows) and `2026-10-16-requirements-update.md` (the US-11.4.1 and US-13.4.3 rows).
 
 **Analysis:**
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: the master data theme, the "Oversight/NFR"
-  demo-trigger line, and the EP-13 and EP-11 tables.
-- `docs/prototype-build/catch-up/epics/EP-13.md` (US-13.4.1, 13.4.2, 13.4.3) and `epics/EP-11.md`
-  (US-11.4.1: Contradicts, size M; the minting is 18's to remove, add, edit and retire are this
-  phase's, the indication is 21's).
+  demo-trigger line, and the EP-13 table.
+- `docs/prototype-build/catch-up/epics/EP-13.md` (US-13.4.1, 13.4.2, 13.4.3).
 - `analysis/domain-model-delta.md` DM-38 (and DM-48, DM-49, DM-13, DM-09, DM-43 and DM-44 for the
   load targets; DM-12 for the insurance indication).
 - `analysis/prototype-map-admin.md` section 9 (Master data), `prototype-map-store-seed.md`
@@ -359,10 +351,9 @@ US-04.2.13 and OQ-100 rows) and `2026-10-16-requirements-update.md` (the US-11.4
   registry and the PWA closure).
 
 **Code entry points (as at `60e2d1e`; use the names 17 to 34 chose where they differ):**
-- `aa-prototype/src/domain/types.ts`: `Hospital` (:155), `Surgeon` (:160), `Insurer` (:166),
-  `PermanentList` (:585, 30's `RecurringBooking`), `HospitalHoliday` (:612), and the types 17, 18,
+- `aa-prototype/src/domain/types.ts`: `Hospital` (:155), `Surgeon` (:160),   `PermanentList` (:585, 30's `RecurringBooking`), `HospitalHoliday` (:612), and the types 17, 18,
   19, 19a and 19b added (rooms, groups, holders, Contracts, RVG groups, lines, modifiers).
-- `aa-prototype/src/domain/seed/cast.ts`: `HOSP`, `HOSPITALS`, `INS`, `INSURERS`;
+- `aa-prototype/src/domain/seed/cast.ts`: `HOSP`, `HOSPITALS`;
   `domain/seed/availabilityAndHolidays.ts`: `HOSPITAL_HOLIDAYS` (:58, a `flatMap` over `HOSPITALS`
   that writes Labour Day Mon 26 Oct and Canterbury Anniversary Day Fri 13 Nov per hospital, plus 30's
   `HH900` closure); `domain/seed/index.ts`: `SeedMasters` and `buildSeed` (holidays at :363 and
@@ -373,15 +364,14 @@ US-04.2.13 and OQ-100 rows) and `2026-10-16-requirements-update.md` (the US-11.4
 - `aa-prototype/src/domain/conflicts.ts` (30): `conflictFactsFor`, `expectedConflicts`,
   `describeConflict`, `reconcileAllConflicts`; `src/store/conflictReconcile.ts` (30), called only
   from `mutate.ts`.
-- `aa-prototype/src/store/mastersActions.ts`: `createHospital` (:45), `setInsurerDirectClaims`
-  (:102, minting nothing after 18), `addAnaesthetist` (:241), `addHospitalHoliday` (:320), 17's
+- `aa-prototype/src/store/mastersActions.ts`: `createHospital` (:45), `addAnaesthetist` (:241), `addHospitalHoliday` (:320), 17's
   `editHospital`, and 30's `editHospitalHoliday` and `deleteHospitalHoliday`.
   `src/store/surgeonActions.ts` (17), `contractActions.ts` and `contractHolderActions.ts` (18, 19a),
   `rvgMasterActions.ts` (19), 19b's modifier actions.
 - `aa-prototype/src/store/mutate.ts`: `ID_FORMATS` (:61), `allocateId` (:100), `MutationMeta`
   (:116). `src/store/appStore.ts`: `AppState`, `PERSIST_VERSION` (:136, 16).
 - `aa-prototype/src/apps/admin/screens/MasterData.tsx` and 17's `apps/admin/screens/masters/`
-  (`NAV` at :41, `InsurersView` at :364, `HospitalsView` at :275, `PermanentListsView` at :244,
+  (`NAV` at :41, `HospitalsView` at :275, `PermanentListsView` at :244,
   `ListStatusesView` at :453 at `60e2d1e`); sheets in `apps/admin/flows/` (`HolidaySheet`,
   `EditHospitalSheet`, `SurgeonEditSheet`, `SurgeonRoomSheet`, `SurgeonGroupSheet`,
   `ContractHolderPanel`, `ContractEditSheet`, `RvgGroupSheet`, 19b's modifier
@@ -403,7 +393,7 @@ Build in this order: types, pure rules, seed, store, then screens. **Session 1 e
 green.**
 
 1. **Types** (`src/domain/types.ts`; DM-38, US-13.4.1, US-11.4.1):
-   - `Hospital`, `Surgeon`, `SurgeonRoom`, `SurgeonGroup` and `Insurer` gain
+   - `Hospital`, `Surgeon`, `SurgeonRoom` and `SurgeonGroup` gain
      `retiredAtISO?: IsoDate` and `retiredReason?: string`. Anaesthetists keep their existing
      `active` flag ("Inactive"); say so in the Decisions log rather than migrating it. The
      organisations master 18 keeps behind holders (`masters.organisations`, whatever 18 named its
@@ -420,7 +410,7 @@ green.**
    - `ListConflict` (30) gains `publicHolidayId?: PublicHolidayId`. The cause key for a public
      holiday is `publicHoliday:<id>`, alongside 30's `holiday:<holidayId>`.
    - `allocateId` kinds in `ID_FORMATS`: `publicHoliday` (`PHN`, pad 3; the seed uses `PH001`),
-     `insurer` (`INN`, pad 3), `masterLoad` (`ML`, pad 3) and `goLiveBatch` (`GL`, pad 2). Room,
+     `masterLoad` (`ML`, pad 3) and `goLiveBatch` (`GL`, pad 2). Room,
      surgeon, surgeon group, holder, Contract, line, RVG group and modifier kinds exist
      from 17 to 19b; add one only where a phase did not.
    - `store/demoActors.ts` gains `SEED_LOAD_ACTOR` (`{ who: 'Developer seed load (simulated)', role: 'office', source: 'office' }`,
@@ -446,9 +436,6 @@ green.**
        count it too).
      - **AA rooms** (31's `locationType: 'aaRooms'` row): never retired ("AA rooms is built in and
        cannot be retired."), as 31's handoff asks.
-     - **insurer:** an active contract holder linked to it; upcoming non-AUTHORISED Bookings whose
-       insurance indication (21) names it. The direct-claims flag is no blocker: it creates and holds
-       nothing.
      - **AA modifier:** none; a retired modifier stays on Procedures that claimed it and leaves the
        picker (19b's picker reads `activeOnly`).
      There is no protected default Contract to except: No contract (RVG) has no holder and is never
@@ -493,8 +480,7 @@ green.**
      public holiday after. Only the cause key changes (`holiday:HH001` to `publicHoliday:PH001`).
      Regenerate the golden canvas fixture's conflicts column only, and assert that the flagged-id set
      equals the baseline from the drift check.
-   - Insurers: the seed keeps nib and AIA Health. More insurers are added by hand in the demo (the
-     checklist's Southern Health Cover), so the seed does not grow.
+   - Insurers: 18 seeds them as contract holders of kind Insurer; this phase adds none.
    - Seed tests: the public holidays are present and sorted; no hospital holiday is named Labour Day
      or Canterbury Anniversary Day; the flagged set is unchanged; two builds deep-equal.
    - Bump `PERSIST_VERSION` by one, with a comment line ("Phase 42: master public-holiday calendar
@@ -539,22 +525,15 @@ green.**
      `validateHolder` and Contract create validator, 19b's AA-modifier rules), never copy them. The
      store actions call them too, so a rejected row's reason is word for word the refusal the Add sheet
      shows. A parity test drives both paths for each refusal.
-5. **Store: hospitals, insurers and retirement** (`src/store/mastersActions.ts`, 17's
-   `surgeonActions.ts`; US-13.4.1, US-11.4.1). Every action is office only, goes through `mutate()`
+5. **Store: hospitals and retirement** (`src/store/mastersActions.ts`, 17's
+   `surgeonActions.ts`; US-13.4.1). Every action is office only, goes through `mutate()`
    with before and after metas, and takes its timestamps from the demo clock.
-   - `createInsurer(api, actor, { name, acceptsDirectClaims })` refuses a blank or duplicate name
-     (case-insensitive) and audits `insurer.create`. It **creates no Contract and no holder**: an
-     insurer's Contracts are set up under Contract holders (18). It takes no cover-split, rate or
-     funding field (US-11.4.1: special rates are Contracts; the split is a Booking action, 22).
-   - `editInsurer(api, actor, id, { name })` refuses a blank or duplicate name, and audits
-     `insurer.update`. The direct-claims flag stays on `setInsurerDirectClaims` (minting nothing since
-     18), which now also refuses a retired insurer.
-   - **Renames follow through.** `editHospital` (17), `editInsurer`, and 17's surgeon, room and group
+   - **Renames follow through.** `editHospital` (17) and 17's surgeon, room and group
      edits also rename the linked contract holder when its name still equals the old name, in the same
      commit, audited `contractHolder.update`. A holder the office has renamed by hand is left alone.
      Raised invoices and 25's snapshots keep their names.
    - `retireMaster(api, actor, kind, id, reason)` and `reinstateMaster(api, actor, kind, id)` for
-     `hospital | surgeon | surgeonRoom | surgeonGroup | insurer | organisation | aaModifier`:
+     `hospital | surgeon | surgeonRoom | surgeonGroup | organisation | aaModifier`:
      - retire refuses `notFound`, `alreadyRetired`, `reasonRequired`, `inUse` with
        `retireBlockers`' sentences joined, and (for `aaModifier`) an RVG-table row ("RVG modifiers
        are as printed and cannot be retired.");
@@ -571,10 +550,9 @@ green.**
      retired id ("St George's is retired"). The exception is when the value is unchanged, so editing
      an old List at a retired hospital still saves.
    - Tests (extend `mastersActions.test.ts`, `surgeonActions.test.ts` and 19b's modifier tests): the
-     anaesthetist actor is refused everywhere; each refusal; `createInsurer` with direct claims on
-     creates no Contract and no holder; the rename follow-through with a generated and a hand-edited
-     holder name; each kind's retire blockers and reinstate (nib, linked to an active holder, is
-     refused; an insurer named by an upcoming insurance indication is refused); a retired hospital
+     anaesthetist actor is refused everywhere; each refusal; the rename follow-through with a generated and a hand-edited
+     holder name; each kind's retire blockers and reinstate (a hospital linked to an active holder is
+     refused); a retired hospital
      refused by the List and Booking write paths but tolerated when unchanged; an RVG modifier refused
      by edit and retire.
 6. **Store: the public-holiday calendar and the RVG time rule** (`src/store/mastersActions.ts`, 19's
@@ -679,8 +657,9 @@ green.**
      - **contract holders** (US-04.1.5; [AR-29 · Contract holder fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-holder-fields),
        [AR-30 · Contract holder](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-holder)):
        Name, Kind (Insurer, Hospital, Surgeon or rooms, Anaesthetist; the built-in AA holder is never
-       loaded), Linked to (the insurer, hospital, room or group by name), Practitioner (an
-       anaesthetist or a surgeon by HPI CPN; required for an anaesthetist holder), Holder is billed
+       loaded; an insurer is a holder like any other), Linked to (hospital, room or group by name; an insurer needs none), Practitioner (exactly one
+       anaesthetist by HPI CPN, required for an anaesthetist holder; or one or more surgeons by HPI CPN
+       separated by ";"), Delivery (Email or Portal; blank is Email, D55), Holder is billed
        (Yes or No), Billable party (a name; required when billed). No rule ties billing to the kind,
        except that an anaesthetist holder is never billed. 18's `validateHolder` sentences; AA rooms
        is never a holder's hospital (31), so a row linked to it is rejected with the rule 18 and 31
@@ -689,8 +668,8 @@ green.**
        [AR-30 · Contract](../../../../requirements-board/requirements/artifacts/AR-30.md#contract)): Name,
        Holder (an existing holder's name, or one on the same batch's holders sheet), Valid from, Valid
        to, Review date, Editable, Prepaid (the settings that replace kinds; Yes or No), Invoice
-       layout, Delivery method, Portal name (22's fields, optional where 22's `defaultInvoicingFor`
-       gives a default). 18's create validator with 22's field rules (any combination column follows
+       layout (22's field, optional where 22's `defaultInvoicingFor` gives a default; delivery is the
+       holder's setting, not a Contract column). 18's create validator with 22's field rules (any combination column follows
        19a: combinations are lines of their own). The AA code is never read from the sheet: 18's
        `nextAaCode` makes it at commit (D16). Refused: a row with no holder ("Every Contract needs a
        holder. No contract (RVG) is built in and is never loaded."), an unknown or retired holder,
@@ -717,7 +696,7 @@ green.**
        type. A Contract with event fees and no lines follows 39b's rule (its picker never offers a
        Contract on event fees alone), so the Contracts sheet's "Plain RVG: no lines" note uses 19a's
        plain RVG predicate as 39b left it, never a count of lines alone. Built only if 39b is DONE.
-     Insurers, surgeon groups, recurring bookings, availability statuses, preferences and priority
+     Surgeon groups, recurring bookings, availability statuses, preferences and priority
      tiers, body sections and the RVG modifier table have no sheet (not on US-13.4.3's or AR-29's
      lists, or built from AR-34's files); they are maintained by hand or as printed. Dates are ISO `YYYY-MM-DD` or
      `d/m/yyyy` (both parsed, and anything else rejected with "Date must be a real date, for example
@@ -750,9 +729,10 @@ green.**
        Vanessa's list will hold, with demo units); rejected, a code clashing with an AA row, a
        non-numeric unit, a blank factor;
      - `contract-holders.csv`: valid, a hospital holder billed to its hospital, a rooms holder not
-       billed, and Dr Ngata's first-party holder with her practitioner link (use a seeded anaesthetist
+       billed, an insurer holder with delivery Portal, a surgeon holder linked to two surgeons, and Dr Ngata's first-party holder with her practitioner link (use a seeded anaesthetist
        who has no own Contract yet); rejected, a billed holder with no billable party, an anaesthetist
-       holder marked billed or with no practitioner, an unknown linked record;
+       holder marked billed, with no practitioner or with two, an unknown delivery value, an unknown
+       practitioner HPI CPN, an unknown linked record;
      - `contracts.csv`: valid, a plain RVG Contract for the new hospital holder (no lines), a
        fixed-price rooms Contract (not editable) and the first-party Contract (prepaid); rejected, a
        blank holder, a retired holder, a Valid to before Valid from, a Contract name already held by
@@ -866,10 +846,10 @@ green.**
     - The groups:
       - People and places: Anaesthetists (seeded: anaesthetists), Hospitals & holidays (seeded:
         hospitals, hospital holidays), Surgeons (seeded: surgeons), Surgeons' rooms (seeded: rooms),
-        Surgeon groups, Insurers, and Organisations (18's surviving master);
+        Surgeon groups and Organisations (18's surviving master);
       - Schedule: Recurring bookings (30's view and id), Availability statuses (29's), Public
         holidays (seeded: public holidays);
-      - Billing: Contract holders (18; seeded: contract holders), Contracts (seeded: Contracts, Contract lines, Contract event fees; edits open 25's staged flow), RVG groups (19, with 19a's time rule
+      - Billing: Contract holders (18, insurers among them; seeded: contract holders), Contracts (seeded: Contracts, Contract lines, Contract event fees; edits open 25's staged flow), RVG groups (19, with 19a's time rule
         panel; seeded: RVG groups), Modifiers (19b; seeded: modifiers);
       - Settings: Xero & archiving;
       - Go-live: Seed load, Go-live load (both demo-badged).
@@ -897,7 +877,7 @@ green.**
       - surgeons;
       - surgeon groups;
       - surgeons' rooms;
-      - insurers;
+      - contract holders, insurers among them;
       - anaesthetists;
       - availability statuses (the catalogue's "Slot availability statuses");
       - recurring bookings;
@@ -910,23 +890,8 @@ green.**
       view's `seeded`. No office view renders a load action (asserted).
     - MasterData publishes the current view with `useDemoTriggerContext('masters.view', view)`; add the
       key to `DemoContextValues`.
-12. **Insurers, Hospitals & holidays, Public holidays, Modifiers, the time rule and the Contract edit flow**
-    (US-11.4.1, US-13.4.1, DM-38, US-05.1.5, US-05.2.2):
-    - **Insurers** (rebuilt):
-      - a table with columns Name, Accepts direct claims (Yes / No), Contracts (count of active
-        Contracts held by holders linked to the insurer, linking to Contracts filtered by those
-        holders), and Status;
-    - "Add insurer" and a row "Edit" open `InsurerSheet` (name, and an "Accepts direct claims"
-      switch, with the caption "Turning this on creates no Contract. It only pre-fills Holder is
-      billed when you set the insurer up as a contract holder."). Under it, one line: "Set up the
-      insurer's Contracts under Contract holders. Most are plain RVG Contracts billed to the
-      insurer." with a teal text action "Set up as a contract holder" that opens 18's holder panel
-      prefilled (kind Insurer, linked to this insurer, holder is billed from the flag, billable party
-      the insurer), shown only when no holder is linked. The sheet ends with `RetireSection`;
-      - the subtitle reads "Insurers that accept direct claims are invoiced through their own
-        Contracts. A split with the patient is made on the Booking.";
-      - `InsurerSheet` has no split, rate or funding field;
-      - hook: `data-shot="masters-insurers"`.
+12. **Hospitals & holidays, Public holidays, Modifiers, the time rule and the Contract edit flow**
+    (US-13.4.1, DM-38, US-05.1.5, US-05.2.2):
     - **Hospitals & holidays:**
       - 17's `EditHospitalSheet` gains `RetireSection`, and a rename shows "Its contract holder is
         renamed too" when item 5's rule applies;
@@ -1016,11 +981,10 @@ green.**
     - Hook: `data-shot="masters-go-live"`.
 15. **Audit labels and narrative** (`shared/audit/actionLabels.ts`, `auditNarrative.ts`, and
     `fieldLabels.ts` where fields are new):
-    - Hospitals and insurers:
+    - Hospitals:
       - `hospital.retire` "Hospital retired";
       - `hospital.reinstate` "Hospital reinstated";
-      - the same pair for surgeon, surgeon room, surgeon group, insurer, organisation and AA modifier;
-      - `insurer.create` "Insurer added" and `insurer.update` "Insurer updated";
+      - the same pair for surgeon, surgeon room, surgeon group, organisation and AA modifier;
       - `modifier.update` "Modifier changed".
     - Public holidays:
       - `publicHoliday.create` "Public holiday added";
@@ -1041,7 +1005,7 @@ green.**
       row 3", and a public-holiday conflict as 30's describeConflict text.
     - Extend `auditNarrative.test.ts`.
 16. **Pickers offer active masters only** (US-13.4.1 "referenced by identity"):
-    - Add `activeHospitals`, `activeSurgeons`, `activeRooms`, `activeGroups`, `activeInsurers` and
+    - Add `activeHospitals`, `activeSurgeons`, `activeRooms`, `activeGroups` and
       `activeAaModifiers` selectors in `store/selectors.ts`, built on `activeOnly(records, keepId)`.
     - Route every picker from the drift-check grep through them: `EditListSheet`, `PhoneAdviceBooking`,
       30's recurring-booking sheet, the Draft List and assignment flows (31), 18's holder-link picker,
@@ -1056,14 +1020,13 @@ green.**
     - Display paths (grid, drawer, invoices, history, profile, 25's snapshots) keep resolving retired
       names unchanged.
     - Tests: a retired hospital is absent from a fresh picker and present, labelled, when it is the
-      current value; a retired insurer is absent from a fresh insurance-indication picker; a retired
+      current value; a retired
       AA modifier is absent from 19b's picker and still listed on a Procedure that claimed it.
 17. **Demo triggers** (`src/shared/demoTriggers/registry.ts`; bodies call the item 7 and 10
     actions; see the table below). Update the registry tests that assert entries per route. Add
     nothing to the Control Panel page; its index lists the entries under "Admin · Master data"
     automatically.
 18. **Shots and hooks** (`visual/admin-phase07.spec.ts`, or a new `visual/admin-masters-loads.spec.ts`):
-    - the Insurers view and `InsurerSheet`;
     - Public holidays;
     - the hospital calendar with Labour Day;
     - the Seed load view, a staged hospitals load with its result panel, and the loaded state;
@@ -1119,7 +1082,7 @@ pickers through item 16.
   Mapping arbitrary column names is out too: the template's headers are the contract.
 - **Updating existing records from a load, or deleting by load.** A load only adds; a price review is
   18's New version, by hand.
-- **Loads for insurers, surgeon groups, recurring bookings, availability statuses, preferences and
+- **Loads for surgeon groups, recurring bookings, availability statuses, preferences and
   priority tiers, body sections, and 31's request sources.** They are on neither US-13.4.3's nor
   AR-29's list, and each is maintained by hand in its view (body sections stay as the guide prints
   them; 31's request sources stay code-held, a candidate master noted for Phase 44). Recurring
@@ -1129,12 +1092,13 @@ pickers through item 16.
   handful of demo rows, and the full NZSA group set is narrated ("the full set loads the same way"),
   not transcribed here. Note it for the owner.
 - **No contract (RVG) and default Contracts.** No contract (RVG) is the one built-in default (18) and
-  is never loaded; there are no hospital or insurer default Contracts to load (OQ-78).
+  is never loaded; there are no hospital default Contracts to load (OQ-78).
 - **Loading patients, Bookings, invoices, balances or anything transactional from Solutions Plus.**
   The clean cut excludes them; the go-live view says so in its subtitle.
 - **Any Solutions Plus identifier** (US-13.4.3 takes names only; OQ-51 was deleted unanswered).
-- **An insurer cover split, rate or funding field on the insurer row.** The split is a Booking action
-  (Phase 22); special rates are insurer-held Contract lines (19a); the insurance indication is 21's.
+- **An insurer master, a direct-claims flag or any pre-fill from one** (FT-11.4 and US-11.4.1 Retired;
+  D55). Insurers are contract holders. The split is a Booking action (Phase 22); special rates are
+  Contract lines (19a).
 - **Changing the time rule's rounding.** A part interval always rounds up; the editor changes tiers
   only.
 - **Any second-person check of its own.** 25's staged review is the check (D34's default); this phase adds none.
@@ -1157,13 +1121,11 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       views say "Loaded once at go-live from AA's controlled spreadsheet, then kept here by hand.",
       and no Master data copy says "view only", "reference tables", "reference data", "default RVG
       Contract", "protected default" or "slot".
-- [ ] Insurers: add "Southern Health Cover" with direct claims on. It appears with Yes and 0
-      Contracts; Contracts and Contract holders show nothing new (no Contract was created). Use "Set
-      up as a contract holder": 18's holder panel opens prefilled with "Holder is billed" on (an insurer with the flag off opens not billed); save it, then add a plain RVG
-      Contract with no lines under it, and the insurer's Contracts count reads 1. Rename the insurer:
-      the holder's name follows. Try to retire nib: refused, "Retire its contract holder first". Retire
-      a fresh insurer with no holder and a reason: it greys out under "Show retired" and leaves the
-      insurance-indication picker on a Booking. The Insurer sheet has no split, rate or funding field.
+- [ ] Contract holders: Master data has no Insurers view and no "Accepts direct claims" anywhere. Add
+      an insurer by hand as a contract holder (kind Insurer, delivery Portal): it appears on Contract
+      holders and nowhere else, no Contract is created, and "Holder is billed" takes the panel's own
+      default, not a flag's. Add a surgeon holder linked to two surgeons, and an anaesthetist holder: it
+      takes one anaesthetist only.
 - [ ] Hospitals & holidays: rename a hospital, and the Day grid, List drawer, Booking detail and the
       holder's name show the new name, while an already-raised invoice keeps the old addressee. Try to
       retire St George's: refused, with upcoming List, recurring booking and contract holder counts.
@@ -1205,7 +1167,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       figure, the range not holding its figure, the blank description and the held code and
       description are rejected with 19's wording. No procedure or Contract is created.
 - [ ] contract-holders.csv, contracts.csv, contract-lines.csv in that order: the holders appear on
-      Contract holders (the first-party one with its practitioner link, never billed); the plain RVG
+      Contract holders (an insurer with delivery Portal, a surgeon holder linked to two surgeons, the first-party one with its practitioner link, never billed); the unknown delivery value, unknown practitioner and two-practitioner anaesthetist holder are rejected with 18's wording; the plain RVG
       Contract shows "Plain RVG: no lines" and is offered for every procedure in 20's picker for a
       Booking at that hospital; the loaded Contracts got AA codes and their editable and prepaid
       settings; the lines' blank cells show as not set and the 0 price as 0 in 19a's grid, each line
@@ -1240,7 +1202,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       rule are back as seeded.
 - [ ] No en or em dash in any new copy, no crimson on any new control, teal the only action colour, and
       every outcome pill carries its word.
-- [ ] Catalogue screenshots: the recipes for the covered items (US-13.4.1, US-11.4.1, US-13.4.2 and
+- [ ] Catalogue screenshots: the recipes for the covered items (US-13.4.1, US-13.4.2 and
       US-13.4.3) are created or updated as the table below says, every stale caption it names is
       replaced, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no
       failed recipe and no story without a recipe, the covered items' new shots are checked by eye,
@@ -1283,9 +1245,9 @@ phase; it adds one optional beat and refreshes the master-data lines:
   - one line under availability and holiday conflicts: public holidays come from one master calendar;
   - one "strong phrase": "Nothing comes across because it exists in Solutions Plus."
 - `docs/demo-guide/01-personas-and-responsibilities.md`: Kirsty's duty 9 ("Maintain schedule-related
-  master data ...") becomes "Maintain all master data (hospitals, surgeons and rooms, insurers,
+  master data ...") becomes "Maintain all master data (hospitals, surgeons and rooms,
   recurring bookings, public holidays and hospital calendars, RVG groups, procedures and modifiers,
-  contract holders, Contracts and their lines), by hand after the one-off go-live seed, and review
+  contract holders (insurers among them), Contracts and their lines), by hand after the one-off go-live seed, and review
   staged Contract changes".
 - `docs/demo-guide/02-workflows-and-handoffs.md`: in the canvas workflow's triggers, "A recurring
   booking or hospital holiday changes" (Phase 30's wording) becomes "A recurring booking, hospital
@@ -1305,13 +1267,12 @@ The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS
 run after the review pass and before the PROGRESS.md entry. Re-run
 `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 42` first: earlier phases may have
 changed these recipes. The catalogue has already refreshed US-13.4.1's captions (priority tier,
-recurring bookings, contact email, availability statuses); the one stale shot is US-11.4.1's, whose
-screen advertises a default Type 1 on the direct-claims flag.
+recurring bookings, contact email, availability statuses); its caption still calls insurers view only and says there is no master
+calendar. US-11.4.1 is Retired and has no row here (18 marks its recipe absent).
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) | partial · `admin-master-data` [anaesthetists, contracts, permanent-lists, hospitals-holidays, surgeons, surgeon-rooms, surgeon-groups, rvg-codes, modifier-codes, availability-statuses]; the partial reason names view-only masters and no master calendar | `captured`. Re-shoot at `/admin/masters`, one state per view in the grouped sub-nav, keeping the slugs and re-pointing clicks to the current button names; add `contract-holders`, `insurers`, `public-holidays` (`masters-public-holidays`), `hospitals-holidays` with Labour Day as a public-holiday closure plus a retire refusal, and `retired` (under "Show retired"). Captions say "Master data", no state shows a load button. Drop the partial reason |
-| [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md) | captured · `admin-insurers` (old view, text advertising a default Type 1) | stays `captured`, re-shot: `insurers` on `[data-shot=masters-insurers]` (Name, Accepts direct claims, Contracts count, Status; "its Contracts sit under its contract holder"); `add-insurer` (sheet caption "Turning this on creates no Contract"; "Set up as a contract holder" visible); `retire-refused` (nib: "Retire its contract holder first"). Nothing mentions a default Contract |
+| [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) | partial · `admin-master-data` [anaesthetists, contracts, permanent-lists, hospitals-holidays, surgeons, surgeon-rooms, surgeon-groups, rvg-codes, modifier-codes, availability-statuses]; the caption names insurers, organisations, RVG codes and modifier codes as view only and no master calendar | `captured`. Re-shoot at `/admin/masters`, one state per view in the grouped sub-nav, keeping the slugs and re-pointing clicks to the current button names; add `contract-holders` (insurers listed among the holders; no Insurers view), `public-holidays` (`masters-public-holidays`), `hospitals-holidays` with Labour Day as a public-holiday closure plus a retire refusal, and `retired` (under "Show retired"). Captions say "Master data", no state shows a load button or an insurer master. Drop the partial reason |
 | [US-13.4.2](../../../../requirements-board/requirements/stories/US-13.4.2.md) | absent | `captured`. Admin shot `go-live-load` at `/admin/masters?view=goLive`: `staged` (after the `go-live-data-load` entry: "14 Solutions Plus names (5 excluded as junk, 2 not approved)", struck-through units, 7 controlled spreadsheets; highlight `go-live-candidates`) and `loaded` (one name un-approved, "Load approved data" pressed; result line). Caption: "Clean-cut start: only AA-approved data is loaded" |
 | [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) | absent | `captured`. Admin shot `seed-load` at `/admin/masters?view=seedLoad`: `sheets` (DemoBadge, the D34 line, twelve sheets; highlight `seed-load`), `result` (hospitals.csv staged: "6 rows · 2 valid · 4 rejected" with reasons; `master-load-result`), `loaded`, `rvg-groups` (a repeated code valid; caption "RVG groups load with their base units; there is no procedure list") and `contract-lines` (blank not set, 0 zero; repeated line key rejected). Caption: "A one-off data load from AA's controlled spreadsheets, rejected rows listed with reasons". No office "Load from spreadsheet", no schedule upload |
 
@@ -1326,20 +1287,20 @@ screen advertises a default Type 1 on the direct-claims flag.
   `US-04.2.9`, `US-04.4.1` recipes were set `absent` by 18 to 20), plus those 17 to 41 added
   (re-grep: at least 18's `US-04.1.4` and `US-04.1.5` on Contract holders and the catalogue, 19a's `US-04.2.14` and the `US-05.2.2` time-rule panel, 19b's
   `US-05.1.4` `rvg-included`, 29's and 30's views). The buttons they use include Contracts, Contract
-  holders, Hospitals & holidays, Recurring bookings, Availability statuses, Insurers, RVG
+  holders, Hospitals & holidays, Recurring bookings, Availability statuses, RVG
   groups and Modifiers.
 - `US-01.5.1.json` and `US-01.5.2.json` (hospital holiday calendar and its conflicts): the seeded
   per-hospital Labour Day and Canterbury Anniversary rows migrate to the master public-holiday
   calendar, so re-point any hospital-holiday highlight to the new "Public holidays" line or view.
 - Any recipe on a Contract detail (18's `US-04.1.2`, `US-04.2.10`; 19a's `US-04.2.4`): 25's staged-change
   bar sits there, not a lines-check line; re-check highlights with `--dry`.
-- Any recipe that lists hospitals, surgeons or insurers in a picker: retired masters leave the
+- Any recipe that lists hospitals or surgeons in a picker: retired masters leave the
   pickers (item 16); the seed has none retired, so no change expected.
 - Work item 18 lists the Playwright specs; the `--dry` run is the check for anything else.
 
 **ATLAS.md.** Update "Routes" (the `?view=` Master data views, `seedLoad` and `goLive`), "Overlays that
-need clicks" (InsurerSheet, PublicHolidaySheet, RvgTimeRuleSheet, the retire dialogs), "Existing hooks"
-(`masters-insurers`, `masters-public-holidays`, `seed-load`, `master-load-result`,
+need clicks" (PublicHolidaySheet, RvgTimeRuleSheet, the retire dialogs), "Existing hooks"
+(`masters-public-holidays`, `seed-load`, `master-load-result`,
 `go-live-candidates`, `masters-go-live`, `rvg-time-rule-sheet` and the sub-nav
 group hooks) and the line that says Master data tabs include "Hospitals & holidays".
 
@@ -1370,7 +1331,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **Figures land where the catalogue puts them.** Group figures on `RvgGroup` (a repeated code is
   allowed; the hidden id is allocated, never read), line figures on `ContractLine` (blank not set, 0
   is zero; a line key allocated and never reused). There is no procedure list or general procedure.
-  Nothing creates a default RVG Contract, a hospital or insurer default, or a second No contract
+  Nothing creates a default RVG Contract, a hospital default, or a second No contract
   (RVG). No load refuses a value for differing from the NZSA guide or raises a warning for it.
 - **No office upload.** No office view offers a load; the Seed load view is badged as a stand-in and
   acts as `SEED_LOAD_ACTOR`; there is no Contract schedule upload anywhere (D34, US-04.2.13 Future).
@@ -1381,11 +1342,12 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **Clean cut is honest.** Solutions Plus units never reach a loaded record. Junk cannot be approved.
   A line whose name is not approved never loads, even when the controlled sheet has a row for it. The go-live view's wording does not claim the masters were emptied. A Reset and re-run gives
   identical records.
-- **Insurers.** Creating an insurer or flipping its flag creates no Contract and no holder; the flag
-  only pre-fills "is billed" on a new insurer holder (D55). The insurer row carries no split, rate or
-  funding field. Retire blockers read linked holders and upcoming insurance indications only.
-- **Retire, never break a reference.** A retired hospital, surgeon, room, group, organisation,
-  insurer or AA modifier still resolves everywhere it is displayed (grid, drawer, invoices, history,
+- **Insurers are holders.** There is no insurer master, no direct-claims flag and no pre-fill from
+  one; an insurer is edited and loaded as a contract holder. The holders sheet carries the delivery
+  setting (email or portal) and the practitioner link (one anaesthetist, or one or more surgeons)
+  through 18's `validateHolder`, never a second rule.
+- **Retire, never break a reference.** A retired hospital, surgeon, room, group, organisation
+  or AA modifier still resolves everywhere it is displayed (grid, drawer, invoices, history,
   profile, snapshots). It disappears from every picker (check the drift-check grep list, including
   18's holder link, 20's Contract picker by holder, 21's indication picker, 31's and 33's flows).
   Blockers are correct and counted from the demo clock's today. No contract (RVG) is never retired.
@@ -1398,7 +1360,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **The time rule.** Only tiers change; a part interval always rounds up. One function prices time
   everywhere (19a's `timeUnitsFromMinutes` with `masters.rvgTimeRule`); AUTHORISED Procedures and
   raised invoices keep their figures.
-- **Change once, reflected everywhere.** A hospital, insurer, surgeon, room or group rename shows in
+- **Change once, reflected everywhere.** A hospital, surgeon, room or group rename shows in
   every live surface and follows into the linked holder's generated name; a hand-edited holder name
   does not; raised invoices and snapshots keep theirs. List any other stored copy of a master name the
   grep found.
@@ -1416,7 +1378,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
   themselves"): D34 (OQ-100) as built (a developer-run seed, shown as a demo stand-in; no schedule
   upload; every later Contract edit staged and reviewed on 25's dashboard as the second-person
-  check); D55 (OQ-114: the insurer's flag only pre-fills "is billed" on a new insurer holder);
+  check); D55 (OQ-114, answered in part: delivery is a holder setting; outputs beyond email and portal are open, built as those two);
   US-13.4.3 no longer says what is loaded or from where (the loader follows its expected list and
   AR-29's templates); Solutions Plus names, which US-13.4.3 no longer mentions, matched to Contract
   line descriptions in the go-live demo (US-13.4.2 still says only approved data loads); calendar
@@ -1424,10 +1386,10 @@ review-and-fix pass (PROGRESS convention 18)**:
   sets (including the anaesthetists and contract holders sheets from AR-29's list); the RVG modifier
   table left to AR-34's files and the full NZSA group set narrated, not transcribed; the time rule
   editable by tier; anything logged rather than fixed; and the screens worth a look, each with its
-  route and persona (Kirsty: Master data, Insurers, Public holidays, a Contract's staged review,
+  route and persona (Kirsty: Master data, Contract holders, Public holidays, a Contract's staged review,
   Seed load, Go-live load).
 - **Status row** for catch-up Phase 42, and a phase entry with:
-  - the drift-check result (items changed since `d4db277` or not; OQ-100, OQ-98, OQ-88, OQ-101 and
+  - the drift-check result (items changed since `7cd7802` or not; OQ-100, OQ-98, OQ-88, OQ-101 and
     OQ-103 as found; the calendar-schedule question; whether Vanessa's files landed; and the 17 to
     34 names used);
   - what was built, per work item;
@@ -1457,13 +1419,12 @@ review-and-fix pass (PROGRESS convention 18)**:
   3. **A rename follows through to the linked contract holder's name** while it is still the old
      name. Raised invoices and pricing snapshots keep theirs. (Supersedes this plan's 2026-10-03
      reading, which renamed a protected default Contract; there are none, OQ-78.)
-  4. **Insurers are maintained in full and mint nothing.** Add, rename, retire and reinstate, with
-     the accepts-direct-claims flag creating no Contract and no holder; it only pre-fills "is billed"
-     on a new insurer holder (D55, OQ-114's default). An insurer's Contracts sit under its contract
-     holder, most of them plain RVG Contracts with no lines (OQ-98). The insurer row carries no split,
-     rate or funding field: the split is a Booking action (22), special rates are Contract lines
-     (19a). An insurer linked to an active holder or named by an upcoming insurance indication (21)
-     cannot be retired.
+  4. **Insurers are contract holders; there is no insurer master** (FT-11.4 and US-11.4.1 Retired
+     2026-10-28; Greg: "just an instance of contract holders"). No Insurers view, no accepts-direct-claims
+     flag, no pre-fill of "is billed" (D55's old default is gone). An insurer is a holder of kind
+     Insurer, edited in 18's holder panel and loaded by the holders sheet with the rest. Its Contracts
+     are mostly plain RVG Contracts with no lines (OQ-98); the split is a Booking action (22) and special
+     rates are Contract lines (19a).
   5. **The seed is checked, then loaded.** Stage validates and reports without touching masters.
      Commit re-validates and loads exactly the valid rows in one audited `mutate()`, through the same
      planners and validators as a manual add. Each loaded record's audit carries its load and row and
@@ -1481,9 +1442,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   8. **The RVG modifier table comes from AR-34's files, not a sheet.** 19b's generated table is what
      the seed would load; AA's own modifiers load from a sheet. The band table stays code-held.
   9. **Any Contract loads, as holders, Contracts and lines** (US-13.4.3 "Contracts and their lines";
-     AR-29 `data-loading`). A holders sheet carries 18's fields (kind, linked to, practitioner, is
-     billed, billable party), a Contracts sheet 18's and 22's fields and the editable and prepaid
-     settings, and a lines sheet 19a's line fields (line key, reference code, description, default
+     AR-29 `data-loading`). A holders sheet carries 18's fields (kind, linked to, the practitioner link to one anaesthetist or
+     one or more surgeons, is billed, billable party, delivery setting), a Contracts sheet 18's fields,
+     22's invoice layout and the editable and prepaid settings, and a lines sheet 19a's line fields (line key, reference code, description, default
      RVG code, price, rate, discount, units) with a blank cell not set and 0 zero. AA codes come from
      `nextAaCode` (D16). A Contract with no lines loads as a plain RVG Contract (OQ-98). No contract
      (RVG) and default Contracts are never loaded. The hospital sync set-up (34) stays code-held, and
@@ -1493,8 +1454,8 @@ review-and-fix pass (PROGRESS convention 18)**:
      check and no warning (the after-procedure warning stays with a value recorded on a Procedure).
   11. **The seed covers US-13.4.3's expected list, AR-29's additions and the calendars** (hospitals,
      hospital holidays, public holidays, surgeons' rooms, surgeons, anaesthetists, RVG groups, AA
-     modifiers, contract holders, Contracts, Contract lines and 39b's Contract event fees). Insurers,
-     surgeon groups, recurring bookings, availability statuses, preferences and tiers, and body
+     modifiers, contract holders, Contracts, Contract lines and 39b's Contract event fees; insurers are holders among them). Surgeon groups,
+     recurring bookings, availability statuses, preferences and tiers, and body
      sections are maintained by hand. Recurring bookings are the unclear "calendar schedules": left
      hand-made, for the owner.
   12. **Contract edits after the seed are staged and reviewed on 25's dashboard** (OQ-100's default,

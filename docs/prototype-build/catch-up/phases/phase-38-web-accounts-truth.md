@@ -9,6 +9,7 @@
 [RV-33](../analysis/reverse-check.md#rv-33-the-gst-report-lists-customer-receipts-not-the-payments-passed-to-the-anaesthetist) GST report lists customer receipts, not the payments passed to the anaesthetist ·
 [RV-34](../analysis/reverse-check.md#rv-34-dashboard-productivity-and-leave-panels) Dashboard Productivity and Leave panels ·
 [RV-35](../analysis/reverse-check.md#rv-35-receivables-ageing-buckets-age-chips-and-an-overdue-view) Receivables ageing buckets, age chips and an Overdue view.
+**Changed at 7cd7802 (2026-10-28 update):** US-12.2.1 gains a criterion (each line opens its Booking); US-12.2.2 drops the part-payment and repayment-plan wording (it lists the payments AA made in the month) and notes a BCTI per weekly payment run floated, unsettled ([OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md), [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md): this phase keeps the report on payments, not BCTIs); FT-12.2 says the ledger is the record of what is owed by patients and contract holders; US-12.2.3 is now graded Contradicts on the ageing panel, which the financial position and the flat list close. Same work otherwise.
 **Left this phase at d4db277 (2026-10-16 update):** [US-12.1.2](../../../../requirements-board/requirements/stories/US-12.1.2.md) GST period is **Retired** (no GST period on the profile; Phase 26 removes `gstPeriod`, so this phase builds no period, no aligned windows and no label sweep, and only confirms nothing reads one). The old RV-18, RV-19 and RV-32 are renumbered RV-34, RV-35 and RV-33 (same work).
 **Left this phase at 60e2d1e (2026-10-08 update):**
 [US-07.2.1](../../../../requirements-board/requirements/stories/US-07.2.1.md) (the web "completed,
@@ -77,7 +78,7 @@ This phase:
 - turns the Accounts **Overdue** tab into a flat **Outstanding** list on web and mobile, per owner
   decision **D8** (OQ-59, answered): one row per unpaid payable, oldest first, with no ageing
   buckets, no bucket totals, no age chips, no Overdue tab or route and no dashboard ageing panel
-  (US-12.2.1, Confirmed; RV-35). A row is the **unpaid payable** (US-12.2.1's words): it stays until
+  (US-12.2.1, Confirmed; RV-35). Each line opens its Booking (US-12.2.1's criterion); A row is the **unpaid payable** (US-12.2.1's words): it stays until
   AA has paid the anaesthetist, not only until the payer has paid AA;
 - turns the receipts-based **GST activity** list into the catalogue's monthly **GST report**
   (US-12.2.2, DM-29, RV-33, FT-12.2): for a calendar month chosen on a month picker (default the
@@ -97,23 +98,21 @@ so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (d4db277):
+1. Run the drift check against the plan's catalogue snapshot (7cd7802):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
    ```
 
-   (It diffs the plan's baseline, d4db277, to the working tree; the tool is rename-aware, so never
+   (It diffs the plan's baseline, 7cd7802, to the working tree; the tool is rename-aware, so never
    use a plain `git diff` of the catalogue folder.) Read the diff for US-12.2.3, FT-12.2,
    US-12.2.1, US-12.2.2, the context items US-08.3.5, US-08.3.1, US-10.1.2, US-05.2.7,
    US-07.4.1, US-10.2.7, US-11.3.2, and OQ-31, OQ-29, OQ-59 and OQ-60. If an item changed, re-read it and
    adjust the work items. If an item is now Retired or Future, drop its work items and record that in
-   the PROGRESS entry. At plan time (d4db277) US-12.2.1 and US-05.2.7 were **Confirmed**, US-12.2.2
+   the PROGRESS entry. At plan time (7cd7802) US-12.2.1 and US-05.2.7 were **Confirmed**, US-12.2.2
    (the monthly GST report, its release slot unconfirmed) and US-12.1.2 is **Retired**
    (it is in the diff list only to confirm it stayed so); OQ-59, OQ-33 and OQ-31 were answered and
-   OQ-29 and OQ-60 open. The 2026-10-16 update changed US-12.2.2 (monthly report of payments,
-   download, email or print; no GST period) and FT-12.2 (the same); US-12.2.1 and US-12.2.3 did not
-   change in substance.
+   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. Anything later than 7cd7802 is the drift to absorb.
 2. **Owner decisions** (the ROADMAP decisions table):
    - **D8 (ageing and an "Overdue" view): answered** at the 2026-10-01 meeting (OQ-59, "let's go with
      your recommendation for now"). Build the flat list, oldest first, no buckets, no age chips, no
@@ -338,6 +337,7 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      every caller (all anaesthetist-side: web Dashboard, Accounts, mobile Balances, the dashboard
      test); each moves to the reworked rows. Update any 36 test that asserted aging buckets or the
      receivable-based outstanding amount.
+   - **Each line opens its Booking** (US-12.2.1's acceptance criterion; the Booking need not be shown on the line). The row carries the invoice's Booking id; on web the row is a button to the existing Booking detail route (`/web/lists/:listId/bookings/:bookingId`), on mobile the card opens the Booking detail the Lists screens use. Add `bookingId` (and the List id the route needs) to the payable row from the ledger pair's stored Booking link, never a re-derivation; a row with no Booking (none expected) is not a link. Vitest: every row resolves to an existing Booking; clicking a row on web and mobile lands on that Booking.
    - AA fee invoices (16) never appear: AA's fee is what the anaesthetist owes AA, shown on the AA
      fees tab and 36's "You owe AA".
    - The 90-day unpaid threshold (OQ-33, US-11.3.2's mild or strong alert) belongs to Phase 40's
@@ -356,7 +356,7 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      `state.xero` (convention 9) or from `BillingCase` fields.
    - The figures (36's names in brackets), stated in a comment and in the Decisions log:
      - **Owed to you** (`owedToThem` = `awaitingCollection` + `dueNow`, that is, every payable not yet
-       paid out). With work item 2's reading it **equals the Outstanding list's total to the cent**;
+       paid out; FT-12.2: owed by patients and contract holders, read from the ledger). With work item 2's reading it **equals the Outstanding list's total to the cent**;
      - **Awaiting collection** (`awaitingCollection`): billed but not yet received;
      - **Due to you now** (`dueNow`): collected, released and not yet paid out;
      - **Collected** (`collected`) and **Paid out to you** (`paidOut`; 36's strip label), to date.
@@ -459,13 +459,14 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      AA passed to you in the month, with its GST component. An invoice paid in part appears in each
      month it is paid." A footnote says AA fee invoices are on the AA fees tab.
    - Empty state: "AA has not passed you any payments in this month."
+   - No BCTI link or per-run BCTI on the report: a BCTI per weekly payment run is floated and unsettled (OQ-29, OQ-47). Rows are payments; a BCTI flip changes only the row grain.
 
 8. **Mobile Balances** (`BalancesScreen.tsx`; US-12.2.1, US-12.2.2, RV-35).
    - The total card reads `outstandingTotalFor` over the reworked rows (not `aging.total`), labelled
      "Outstanding to you"; the subline keeps "N unpaid invoices". Phase 36's "Collected $X · Paid out
      $Y" line stays and reads the same selector as the web figures.
    - Delete `AgeChip`. Each row's second line becomes "<invoice number> · <billable party> · Invoice
-     date 14 Jul", with the stage word under the amount when it is not "Awaiting payment". Keep any
+     date 14 Jul", with the stage word under the amount when it is not "Awaiting payment". Each card opens its Booking (work item 2). Keep any
      ACC marker as earlier phases left it. One caption line under the list, as on web: "A row stays until AA
      pays you. For a question about a line, contact the office." (US-12.2.1 covers mobile too.)
    - The GST section is a **peek at the current month** (the catalogue's mobile screenshot; download,
@@ -499,14 +500,14 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
 12. **Tests and shots.**
     - `AccountsScreen.test.tsx`: Outstanding renders one row per unpaid payable oldest first with a
       stage word, a single total equal to Owed to you, and no bucket headers; a received payment keeps
-      the row as "Paid in, due to you"; the GST report's month picker changes the rows and totals,
+      the row as "Paid in, due to you"; clicking a row opens its Booking; the GST report's month picker changes the rows and totals,
       defaults to the current month, and has no View by or period control; Download produces the CSV
       (spy on the helper), Print calls `window.print`, "Email to me" shows its confirmation with the
       anaesthetist's email; a month with no rows disables the three actions.
     - A BalancesScreen test: no age chip; "GST this month" with the month label; a payment received
       adds no GST row.
     - Playwright: `visual/routing.spec.ts` (bare `/web/accounts` and `/web/accounts/overdue` both land on
-      `/web/accounts/outstanding`; the dashboard's "View outstanding invoices" link goes there);
+      `/web/accounts/outstanding`; the dashboard's "View outstanding invoices" link goes there; an Outstanding row opens its Booking);
       `visual/web-phase05.spec.ts` shots renamed `w-09-outstanding.png` and `w-10-gst-report.png`
       (with the month picker and actions), plus `w-01` dashboard re-shot; a new shot of mobile
       Balances on "GST this month". `data-shot` hooks as named above. No Lists shot changes here.
@@ -550,8 +551,8 @@ automatically.
   payments and the remittance advice (Phase 39a; a negative invoice with no later payment is handled
 outside the system, OQ-71). Each changes the figures through the ledger; 39a's netting must also appear in the
 GST report (handoff note).
-- One BCTI per procedure rather than per receivable invoice (the plan's provisional point with AA's
-  accountant, beside OQ-29 and OQ-60): the report's row grain follows 16's count if it flips.
+- One BCTI per procedure, or one per weekly payment run (Greg, 28 October; OQ-29, OQ-47, with AA's
+  accountant): the report is on payments, and its row grain follows 16's count if it flips.
 - GST agency treatment and BCTI presentation (OQ-29, Phase 22's wording).
 - Netting the AA fee against payables: never (Greg, 2026-10-02, OQ-60 part 3: "under trust law it
   mustn't"; Phase 16 builds the fee as a separate invoice paid into AA's own account). No fee line
@@ -589,7 +590,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Web → Accounts opens on **Outstanding** at `/web/accounts/outstanding`; `/web/accounts/overdue`
       redirects there (no not-found page). One row per unpaid payable, oldest first, an Invoice date
       column, a stage word, a single total, no bucket columns, the office-contact caption and no
-      provisional badge. The sub-tabs read Outstanding, Payments, GST report, AA fees.
+      provisional badge. Clicking a row opens its Booking, on web and on mobile Balances. The sub-tabs read Outstanding, Payments, GST report, AA fees.
 - [ ] S3: authorise both Mon 20 Jul Lists in Admin. The anaesthetist List views behave exactly as
       before this phase (no List view, marker or filter changed; 38a owns them); after Next morning
       the new invoices are rows in Outstanding on web and mobile.
@@ -678,10 +679,10 @@ phase's session edits them, this doc only says what each must show.
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-12.2.1](../../../../requirements-board/requirements/stories/US-12.2.1.md) Outstanding balances list | captured · web-outstanding, mobile-outstanding | captured. Web: re-point `start` from `/web/accounts/overdue` to `/web/accounts/outstanding`; the flat table, oldest first, with Invoice date, Stage and Outstanding to you, highlight `[data-shot=web-accounts-outstanding]`, caption "Flat list of unpaid payables, oldest first, no ageing". Mobile `/mobile/balances`: total card and rows with "Invoice date", no age chips, caption "Outstanding to you, one row per unpaid invoice". Add a web `paid-in` state after a `web-payment-full` demo step (row turns "Paid in, due to you" and stays; open an invoice first) |
+| [US-12.2.1](../../../../requirements-board/requirements/stories/US-12.2.1.md) Outstanding balances list | captured · web-outstanding, mobile-outstanding | captured. Web: re-point `start` from `/web/accounts/overdue` to `/web/accounts/outstanding`; the flat table, oldest first, with Invoice date, Stage and Outstanding to you, highlight `[data-shot=web-accounts-outstanding]`, caption "Flat list of unpaid payables, oldest first, no ageing". Mobile `/mobile/balances`: total card and rows with "Invoice date", no age chips, caption "Outstanding to you, one row per unpaid invoice". Add a web `paid-in` state after a `web-payment-full` demo step (row turns "Paid in, due to you" and stays; open an invoice first). Add a web `opens-booking` state clicking a row, landing on its Booking, caption "Each line opens its Booking" |
 | [US-12.2.2](../../../../requirements-board/requirements/stories/US-12.2.2.md) GST report | captured · web-gst-activity, mobile-gst-activity | captured. Keep the shot name `gst-activity` (files `web-gst-activity.png`, `mobile-gst-activity.png`), change the captions. Web `/web/accounts/gst`: the month's payments with the "Month total" footer and the month picker, Download, Print and Email to me, highlight `[data-shot=web-gst-actions]`, caption "GST report: the payments AA passed to you in the month, with the GST component of each; download, print or email". Add a `previous-month` state choosing June in the picker. Mobile: click text `GST this month` (unchanged), highlight the "July 2026 · paid to you" header, caption "GST this month: what AA passed to you, with its GST". Replace the stale "Amounts received ..." captions; shots show payments dated by disbursement, never receipts |
-| [US-12.2.3](../../../../requirements-board/requirements/stories/US-12.2.3.md) Dashboard | captured · web-dashboard | captured. Re-shoot `/web`: the week strip, then Financial position (`[data-shot=web-financial-position]`, the highlight) beside Who's free; no Productivity, Leave or ageing panels. Caption "Web dashboard: week calendar, financial position (owed, collected, paid out) and cover", replacing "week calendar, receivables, productivity and cover". The week strip shows whatever 38a has built; it is not this phase's highlight. Add a `paid-out` state after a payment and Run payables if a step chain can stage it |
-| [FT-12.2](../../../../requirements-board/requirements/stories/FT-12.2.md) Reporting for anaesthetists | no recipe of its own (its children's shots) | no change here |
+| [US-12.2.3](../../../../requirements-board/requirements/stories/US-12.2.3.md) Dashboard | captured · web-dashboard | captured. US-12.2.3 now grades Contradicts on the ageing panel, so this shot is what closes it. Re-shoot `/web`: the week strip, then Financial position (`[data-shot=web-financial-position]`, the highlight) beside Who's free; no Productivity, Leave or ageing panels. Caption "Web dashboard: week calendar, financial position (owed, collected, paid out) and cover", replacing "week calendar, receivables, productivity and cover". The week strip shows whatever 38a has built; it is not this phase's highlight. Add a `paid-out` state after a payment and Run payables if a step chain can stage it |
+| [FT-12.2](../../../../requirements-board/requirements/stories/FT-12.2.md) Reporting for anaesthetists | no recipe of its own (its children's shots) | no change here (its children's shots cover it) |
 
 **Left this phase.** US-12.1.2 is Retired (no row; Phase 26 owns its recipes' removal). US-07.2.1's
 recipe is **38a**'s; this phase changes no List screen.
@@ -720,7 +721,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   dashboard, the GST report and mobile Balances disagree.
 - **Unpaid payables.** An Outstanding row is the payable not yet paid out, not the receivable: a
   payer's payment keeps the row (stage "Paid in, due to you"), a payout removes it, a half payout
-  halves it. No subtotal by stage.
+  halves it. No subtotal by stage. Every row opens its own Booking, on web and mobile.
 - **Cash-basis GST.** A receipt alone never adds a report row; a payment adds one on its payout date;
   a payable paid across two months appears in both and its GST parts sum to the invoice's GST to the
   cent; GST comes from the invoice's own GST, not a flat 3/23; `aaFee` pairs never appear; nothing
@@ -751,7 +752,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
-  - the drift-check result against d4db277 (items changed or not; D8 built as answered; OQ-29's and
+  - the drift-check result against 7cd7802 (items changed or not; D8 built as answered; OQ-29's and
     OQ-60's status, with the fee-never-nets rule relied on; US-12.1.2 Retired and 26's removal of
     `gstPeriod` confirmed; D9 and US-07.2.1 confirmed as 38a's, nothing List-side built here);
   - what was built, with the name map for later phases: `receivablesAgingFor`, `overdueAccountsFor`,

@@ -4,7 +4,7 @@
 [FT-08.6](../../../../requirements-board/requirements/stories/FT-08.6.md) Billing after AUTHORISED (status 3; this phase closes it: the credit half, after 38b built the events and the additional invoice; the anaesthetist's post-op event route is FT-03.7, Phase 39b) ·
 [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue (status 3; credited "in full and then rebilled", no longer "an admin credits") ·
 [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices (status 4; a split after invoicing is a credit, then one additional invoice per component; the components **must add up to the credited amount**, entered freely, and the credit reverses the linked payable, OQ-77 parts 1 and 2; a split asked for **before** sending is a normal admin edit, OQ-77 part 3 answered 2026-10-19, D41) ·
-[US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices (changed 2026-10-07: the **anaesthetist on their own Procedure** can use it too, from the Anaesthetist App; the credit **reverses the linked payable**; after a fixed price no credit exists until someone raises one by hand; a credit for part of an invoice is OQ-97, Phase 41) ·
+[US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices (changed 2026-10-07: the **anaesthetist on their own Procedure** can use it too, from the Anaesthetist App; the credit **reverses the linked payable**; after a fixed price no credit exists until someone raises one by hand; a credit for part of an invoice is OQ-97, Phase 41; a credit is not a refund, except that the system itself refunds a cancelled prepayment, OQ-115, Phase 41) ·
 [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines (Proposed; new 2026-10-02) ·
 [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of changes (status 4, retitled; credit notes, master data, Contract and time-entry changes are audited, and **payments, receipts and disbursements are not**: they are recorded in Xero) ·
 [DM-24](../analysis/domain-model-delta.md#dm-24) A wrong invoice is credited in full, then rebilled (credit note to any party, payable reversal, new invoice), recorded as events ·
@@ -58,8 +58,8 @@ marker), 21 (who is billed from the Contract's holder or the payer on the Bookin
 `invoiceEmailFor`, and the holder references with `referenceValuesFor`), 22 (`procedureIds`,
 `lineage`, `delivery`, `materialiseInvoices`, the Split button's typed shares), 25 (the `BookingLock`
 with its per-Procedure pricing snapshot, the payee, "Regenerate from locked data") and 27 (the
-prepayment invoice generated at setup with its pair, and the deduction line "Less prepayment already
-invoiced, {number}" that leaves a prepaid Procedure nothing to bill; there is no balance invoice)
+prepayment invoice generated at setup with its pair; prepaid Procedures are left off the final invoice,
+D57, so there is no deduction line and no balance invoice)
 have also run. This phase does not need Phase 23 (the multi-procedure rule). 37 and 38 may run before
 or after this phase. 39a (netting, in the weekly payment run) runs after it; 40 (a patient credit
 balance) and 41 (credits on a prepaid Procedure, the part credit of OQ-97, and refunds) reuse its
@@ -138,9 +138,9 @@ No seeded figure moves. FT-08.6 closes here.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's baseline, catalogue commit `d4db277` (plan.json
+1. Run the drift check against the plan's baseline, catalogue commit `7cd7802` (plan.json
    `commit`; with no `--to` the tool diffs that baseline against the working tree, so it shows only
-   what changed after `d4db277`):
+   what changed after `7cd7802`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-07.4.1,US-07.4.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-10.2.7,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-61,OQ-63,OQ-71,OQ-72,OQ-76,OQ-77,OQ-97
@@ -150,7 +150,7 @@ No seeded figure moves. FT-08.6 closes here.
    never use a plain git diff of the catalogue folder.) Read the diff for FT-08.6, US-08.6.2, US-08.6.4,
    US-08.6.5, US-08.6.6, US-13.5.2, the context items and the questions. If an item changed, re-read
    it and adjust the work items. If an item is now Retired or Future, drop its work items and record
-   that in the PROGRESS entry. At plan time (`d4db277`) FT-08.6 and US-08.6.2 were at status 3,
+   that in the PROGRESS entry. At plan time (`7cd7802`) FT-08.6 and US-08.6.2 were at status 3,
    US-08.6.4 and US-13.5.2 at status 4, US-08.6.5 and US-08.6.6 unchanged since the earlier plan;
    OQ-77 and OQ-53 answered, OQ-97 and OQ-60 Open.
 2. **Answered, build the answer, no provisional label.**
@@ -291,9 +291,8 @@ No seeded figure moves. FT-08.6 closes here.
      (`Contract.holderReferences`, `referenceValuesFor`, and where each value lives: the Booking's
      `insurerMemberNumber` and `purchaseOrder`, the Procedure's `billingReference` relabelled "Claim or
      hospital reference");
-   - from **27**: the prepayment invoice's kind and pair, and the deduction line "Less prepayment
-     already invoiced, {number}" on a prepaid Procedure's invoice line (a negative line the rebill
-     copy must fold, work item 9). There is no balance invoice;
+   - from **27**: the prepayment invoice's kind and pair. Prepaid Procedures are left off the final
+     invoice (D57), so no deduction line exists to credit or rebill; there is no balance invoice;
    - from **16**: the `-P` rule, the `invoiceNumber` / `reference` fields on the Xero records,
      `bctiRecords(state)`, `bctisFor` and its paid-only switch;
    - from **14**: `payment-full` / `payment-half` (Admin · Invoice and the Xero sim pair route),
@@ -533,9 +532,8 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      prepayment invoice is not in this prototype yet.", Phase 41 with OQ-97) and an AA-FEE invoice ("AA
      fee invoices are not credited here."); a party with email delivery and no invoice email ("Add an
      invoice email for this billable party."); every 38b pricing refusal per replacement; and, for
-     `cause: 'split'` only, `splitTotalCheck`. A standard invoice that holds a prepaid Procedure
-     (netted to nothing by 27's deduction line) is creditable for what it billed; the prepayment
-     invoice it deducts is untouched. The party defaults to the original's; any billable party is
+     `cause: 'split'` only, `splitTotalCheck`. A standard invoice is creditable for what it billed
+     (a prepaid Procedure is not on it, D57); the prepayment invoice is untouched. The party defaults to the original's; any billable party is
      accepted and audited (`credit.partyChanged`), no reason beyond the credit's own. Nothing outside
      this action raises a credit: no run, threshold or price difference calls it (US-06.4.1).
    - **Review.** The credit event and its replacements pass 38b's one standard review step together
@@ -710,16 +708,15 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      as quantity 1 at `unitAmount` = the line's stored (ex GST) amount, its description unchanged (any
      units stay in the description), so no per-unit division can lose a cent. 38b's
      `priceFreeFormInvoice` refuses a zero or negative unit amount, but an original can carry negative
-     lines (27's "Less prepayment already invoiced, {number}" on a prepaid Procedure, and any other
-     negative line the build still writes, such as a lowering adjustment if 24 kept one): a zero line
-     is dropped, and each negative line is folded into the positive line it follows, its description
-     appended (", less {its description}"), so every copied line is positive and the draft totals the
-     original exactly; if folding would leave a line at zero or below, the line is dropped with its
-     deduction (a prepaid Procedure netted to nothing has nothing to rebill), and if nothing positive
-     remains the draft is one line "Rebill of {original number}" at the original's subtotal. Tested:
-     the draft prices through `priceFreeFormInvoice` to the original's total exactly for 1, 2 and 7
-     lines and each GST treatment; a prepayment deduction and a lowering line fold to the exact total;
-     a positive line after a negative one copies as its own line; determinism.
+     lines (any negative line the build still writes, such as a lowering adjustment if 24 kept one; 27
+     writes no prepayment deduction, D57): a zero line is dropped, and each negative line is folded
+     into the positive line it follows, its description appended (", less {its description}"), so
+     every copied line is positive and the draft totals the original exactly; if folding would leave a
+     line at zero or below it is dropped with its deduction, and if nothing positive remains the draft
+     is one line "Rebill of {original number}" at the original's subtotal. Tested: the draft prices
+     through `priceFreeFormInvoice` to the original's total exactly for 1, 2 and 7 lines and each GST
+     treatment; a lowering line folds to the exact total; a positive line after a negative one copies
+     as its own line; determinism.
    - **Credit in full and rebill** now opens step 2 with that draft as its one card, editable;
      **Credit note** in Admin offers "Start from a copy of the original's lines" on any card it adds.
      The holder references are editable on the card (so a wrong purchase order is corrected there)
@@ -925,8 +922,9 @@ the new entries under their screens automatically.
   approval (US-10.2.5, US-10.2.6, US-10.2.7): Phase 39a. A negative with no later payment is settled
   outside the system (OQ-71, D21): nothing is built, here or in 39a.
 - **Refunding a held credit** (money a payer paid on a credited invoice): outside the system
-  (US-08.6.5, "a credit note is not a refund"). This phase records `heldForPayer` only. Phase 41's
-  refund on cancellation of a prepayment is a separate path that reuses `CreditNote`.
+  (US-08.6.5, "a credit note is not a refund"). This phase records `heldForPayer` only. Phase 41 reuses
+  `CreditNote` and this credit to settle an unpaid prepayment on cancellation (D56) and raises the
+  refund of a paid one itself (OQ-115, the one refund the system makes).
 - **Credits on a prepaid Procedure's prepayment invoice**, including the anaesthetist's "only half the
   prepaid work was done" case and a credit for **part** of a prepayment (OQ-97, D31): Phase 41, on this
   phase's records. Splitting a **prepaid** combination (US-08.6.4's usual case: it needs 41's credit of
@@ -1211,8 +1209,8 @@ review-and-fix pass (PROGRESS convention 18)**:
   the anaesthetist; the anaesthetist's credit goes through the same review and issue; the
   anaesthetist apps show no ledger figures; the PWA stand-in is PWA only with its body in
   `src/store`.
-- **Rebill from a copy.** The copy reproduces the original's total exactly, folding 27's prepayment
-  deduction and any other negative line; holder references carry over and are editable; Regenerate
+- **Rebill from a copy.** The copy reproduces the original's total exactly, folding any negative line
+  (27 writes no prepayment deduction); holder references carry over and are editable; Regenerate
   reproduces the replacement; the Booking lock and its pricing snapshots are untouched.
 - **Audit.** Every step of a correction is its own entry with a label (no raw keys in the viewer);
   credit-note entries carry `entityType: 'creditNote'`; payments, receipts and disbursements are hidden
@@ -1246,7 +1244,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   note, a credited original, the split sheet with Left to allocate, the review row, the
   anaesthetist's credit sheet on web and mobile, the Audit viewer filtered to credit notes).
 - **Status row** for catch-up Phase 39, and a phase entry with:
-  - the drift-check result (items changed or not since `d4db277`; FT-08.6, US-08.6.2, US-08.6.4,
+  - the drift-check result (items changed or not since `7cd7802`; FT-08.6, US-08.6.2, US-08.6.4,
     US-13.5.2 and the other covered items; OQ-60 and OQ-97 status; the
     List the combined-procedure trigger uses; the prepaid-combination split left refused, as a known
     gap against US-08.6.4 handed to 41; the prepaid half of US-08.6.5's "After a fixed price" handed

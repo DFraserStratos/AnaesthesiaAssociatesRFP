@@ -1,10 +1,9 @@
 # Phase 26 · Anaesthetist profile and bank details
 
 **Requirements covered:**
-[FT-12.1](../../../../requirements-board/requirements/stories/FT-12.1.md) Profile settings (the grouping: the dollar value per unit, contact details and bank account, nothing else; Proposed) ·
-[US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) Anaesthetist identity, contact and bank details (Verify; Partial: one **HPI CPN**, OQ-52; bank details held in the system, OQ-14) ·
+[US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) Anaesthetist identity, contact and bank details (Contradicts, Agreed: one **HPI CPN**, OQ-52, and bank details held in the system, OQ-14, are both **mandatory**, a save refused without either) ·
 [RV-02](../analysis/reverse-check.md) the GST period is a per-anaesthetist setting and a selector on the GST report (remove it everywhere).
-**Left this phase (2026-10-20 update, D64):** prepaid settings on the profile are Retired. FT-06.1, US-06.1.1, US-06.1.2, US-12.1.3 and
+**Left this phase.** [FT-12.1](../../../../requirements-board/requirements/stories/FT-12.1.md) is now only a grouping (profile settings; the pairings sit with the anaesthetist, office-only, Phase 17): it has no work of its own, so nothing here is built for it; its story work is US-12.1.4 above and US-12.1.1 (Phase 25's cover). **D64 (2026-10-20 update):** prepaid settings on the profile are Retired. FT-06.1, US-06.1.1, US-06.1.2, US-12.1.3 and
 [DM-19](../analysis/domain-model-delta.md#dm-19) are gone: prepaid is a setting on the Contract (18 adds it, 27 starts prepayment from it), and
 there is no prepaid tick list, own-price-list view, "on their behalf" editing or `prepaidSettings` here. US-12.1.2 (GST period) is Retired too.
 **US-12.1.1** (dollar value per unit) is Phase 25's cover (the unit value in the pricing snapshot); this phase builds the
@@ -14,9 +13,9 @@ Context only, closed elsewhere:
 [US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) GST number on the invoice (Phase 22's `gstNumber` stays office-held in Master data; not on the profile) ·
 [US-01.1.3](../../../../requirements-board/requirements/stories/US-01.1.3.md) start date (Phase 28, built) ·
 [US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md) payables run (Phases 36, 37 and 39a carry the destination further).
-**Decisions and questions.** Built as answered, no provisional label:
-[OQ-14](../../../../requirements-board/requirements/questions/OQ-14.md) (bank details in the system, on the profile, display-only here),
-[OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (one identifier, the HPI CPN) and **D64** (above).
+**Decisions and questions.** Built as answered:
+[OQ-14](../../../../requirements-board/requirements/questions/OQ-14.md) (bank details in the system, on the profile, display-only here, mandatory),
+[OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (one identifier, the HPI CPN, mandatory) and **D64** (above).
 **Depends on:** Phase 17 only (built: `normaliseHpiCpn`, `isPlausibleHpiCpn`, the duplicate check, the Admin anaesthetist record page, the
 office-only privacy boundary). Needs nothing unbuilt, so it can run any time; it must run before Phase 38 (whose monthly GST report it leaves
 in calendar months) and before 40a. Where 22 or 25 have not landed, see "Before you start" step 4.
@@ -27,12 +26,15 @@ in calendar months) and before 40a. Where 22 or 25 have not landed, see "Before 
 Give each anaesthetist a profile they can see, hold bank details in the system for the payables run, and take the GST period out of the
 prototype.
 
-- **The profile (FT-12.1, US-12.1.4).** Contact details, registration number, HPI CPN, the bank account and the dollar value per unit, the
+- **The profile (US-12.1.4).** Contact details, registration number, HPI CPN, the bank account and the dollar value per unit, the
   only billing setting. The anaesthetist sees it on the mobile More tab and on a web Profile page; they edit only their own rate per unit
   (US-12.1.1 "each anaesthetist sets their own"). Contact details, HPI CPN and bank account are held by the office (US-12.1.4: "Admins hold
   each anaesthetist's master record"), shown read-only to the anaesthetist, the bank account masked.
-- **Bank account held in the system (OQ-14), display-only.** The office enters and edits it on the anaesthetist's record. The payables run
-  shows each payout's destination account and snapshots it on the disbursement. No payment is held or routed by it.
+- **Bank account held in the system (OQ-14), display-only, mandatory.** The office enters and edits it on the anaesthetist's record. The
+  payables run shows each payout's destination account and snapshots it on the disbursement. No payment is held or routed by it.
+- **HPI CPN and bank account are mandatory (US-12.1.4).** Add and edit are refused without either (inline and in the store); the old
+  optional "where available" HPI CPN and every "not set" or "Not on file" branch go. The seed gets bank details for all 14 first, so every
+  record is complete.
 - **No GST period anywhere (RV-02, US-12.1.2 Retired).** Remove `gstPeriod` from the type, the seed (Whitaker's six-monthly), the Admin
   record page, add and edit forms, the Master data column, the audit label and the web GST report's period switch. The report shows calendar
   months until Phase 38 rebuilds it.
@@ -45,21 +47,21 @@ No S1 to S5 figure moves.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
+1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-12.1,US-12.1.1,US-12.1.2,US-12.1.4,US-12.2.2,US-08.4.5,FT-06.1,OQ-14,OQ-52
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.1.1,US-12.1.2,US-12.1.4,US-12.2.2,US-08.4.5,FT-06.1,OQ-14,OQ-52
    ```
 
-   If an item changed after `d4db277`, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work and say so in
+   If an item changed after `7cd7802`, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work and say so in
    the PROGRESS entry. To see why an item says what it says, run `npm --prefix requirements-board run source -- --item <ID> --text` (Node 22.18+).
 2. Confirm the readings:
 
-| Item | Build (the reading at `d4db277`) | If it has changed |
+| Item | Build (the reading at `7cd7802`) | If it has changed |
 |---|---|---|
-| **US-12.1.4** (Verify): bank details in the system, on the profile; one HPI CPN | Office-held `bankAccount` (name and number), display-only; masked read-only on the anaesthetist's profile; payables run shows and snapshots the destination. | Bank details in Xero only: add no bank field, show "Bank account held in Xero" and skip work items 2 and 5. The anaesthetist may edit it: move `bankAccount` into the self-editable set. |
+| **US-12.1.4**: bank details in the system, on the profile; one HPI CPN; both mandatory | Office-held `bankAccount` (name and number) and `hpiId`, both required, a save refused without either; display-only, masked read-only on the anaesthetist's profile; payables run shows and snapshots the destination. | Bank details in Xero only: add no bank field, show "Bank account held in Xero" and skip work items 2 and 5. The anaesthetist may edit it: move `bankAccount` into the self-editable set. |
 | **US-12.1.1**: "each anaesthetist sets their own" | The anaesthetist edits only their rate on the profile; the office can edit it too. | Office-set only: the profile shows it read-only with "Set by the AA office". |
-| **FT-12.1**: unit value, contact, bank only | No GST period, GST number, prepaid or tier on the profile. | If a setting returns, add only that field. |
+| **Profile contents** (FT-12.1 grouping, US-12.1.4) | Unit value, contact, registration, HPI CPN, bank only; no GST period, GST number, prepaid or tier. | If a setting returns, add only that field. |
 
 3. Re-run `grep -rn gstPeriod aa-prototype/src` and list every hit (about 10 non-test files at plan time: `domain/types.ts`, `seed/cast.ts`,
    `billing/fixtures.ts`, `store/mastersActions.ts`, `AccountsScreen.tsx`, `AddAnaesthetistFlow.tsx`, `EditAnaesthetistSheet.tsx`,
@@ -77,7 +79,7 @@ No S1 to S5 figure moves.
 (card surfaces, row anatomy with label left and mono value right, bottom sheets, sticky teal primary action) and the existing `MoreScreen`
 persona card; the rate edits in a bottom sheet, never a desktop form. Web: `Web Dashboard.dc.html` (top nav, `Panel` anatomy). Admin: the
 record page, Master data table and `EditAnaesthetistSheet` (`Admin Review.dc.html` table anatomy). Tokens from `Design Language.dc.html`.
-Teal is the only action colour; crimson stays on the avatar and nav underline. "Not on file" is a warning-tone pill. Account numbers, the
+Teal is the only action colour; crimson stays on the avatar and nav underline. Account numbers, the
 HPI CPN, registration and money are Spline Sans Mono, tabular-nums.
 
 **Catalogue and analysis.** The items above; `domain-model.md` (the anaesthetist profile, the HPI CPN row); notes 2026-10-16 (Greg, #22:
@@ -107,18 +109,19 @@ Model, pure helpers, store and seed first, then screens.
    `GstPeriod` type, the Segmented and the default read; show the calendar month of the demo date (the monthly case of `periodWindow`),
    headed "Month ({from} to {to})". Keep the rest of the report as is (Phase 38 rebuilds it). Update `AccountsScreen.test.tsx`: no period
    switch, the month window. Leave `gstNumber` (Phase 22) alone.
-2. **Model and bank helpers.** `Anaesthetist` gains `bankAccount?: BankAccount` with `BankAccount { accountName: string; accountNumber: string }`,
-   stored as `BB-bbbb-AAAAAAA-SS(S)`. `Disbursement` gains `destination?: { accountName: string; accountMasked: string } | null`, a snapshot
-   taken at run time (`null` when none was on file) so a later bank edit never rewrites a past payout. Reword `Anaesthetist`'s doc comment (it
-   names no GST period or prepaid settings). `src/domain/bankAccount.ts` (Vitest): `normaliseNzBankAccount(input)` accepts digits with or
+2. **Model and bank helpers.** `Anaesthetist` gains required `bankAccount: BankAccount` with `BankAccount { accountName: string; accountNumber: string }`,
+   stored as `BB-bbbb-AAAAAAA-SS(S)`. `hpiId` is required and its "where available" comment goes. `Disbursement` gains
+   `destination: { accountName: string; accountMasked: string }`, a snapshot taken at run time so a later bank edit never rewrites a past
+   payout. Reword `Anaesthetist`'s doc comment (it names no GST period or prepaid settings). `src/domain/bankAccount.ts` (Vitest): `normaliseNzBankAccount(input)` accepts digits with or
    without dashes or spaces and returns the dashed form or `null` (2-digit bank, 4-digit branch, 7-digit account, 2 or 3-digit suffix);
    `maskBankAccount(n)` returns `BB-bbbb-•••••AA-SS`. No bank modulus check (a named demo simplification in the comment).
 3. **Store: who edits what** (`mastersActions.ts`). Widen `editAnaesthetist`: the office edits every field (as today); an anaesthetist actor
    may edit only their own `unitValue` (`actor.anaesthetistId === registrationNumber`, else `notOwnProfile`; any other field is
    `officeOnlyField`, naming it, for example "Bank details are held by the AA office."); any `role: 'system'` actor is refused. Keep
-   `invalidUnitValue`, round to cents. `AnaesthetistPatch` and `NewAnaesthetistFields` gain `bankAccount` (a `BankAccount`, or `null` to clear
-   on edit), refused when invalid (`invalidBankAccount`) or with an empty account name. Phase 17's HPI CPN normalise, format and duplicate
-   checks stay as built (confirm they apply on add and edit). A patch that changes nothing is `ok` with no audit entry. Audit stays
+   `invalidUnitValue`, round to cents. `AnaesthetistPatch` and `NewAnaesthetistFields` gain `bankAccount` (a `BankAccount`; no clearing),
+   required on add and never blanked on edit: refused as `bankAccountRequired` when missing or with an empty account name, `invalidBankAccount`
+   when malformed. `hpiId` likewise: blank is `hpiCpnRequired` on add and edit (drop the blank-accepted branches in `addAnaesthetist` and
+   `editAnaesthetist`); Phase 17's normalise, format and duplicate checks stay as built. A patch that changes nothing is `ok` with no audit entry. Audit stays
    `anaesthetist.update` with before and after of the changed fields only, the bank number written **masked** in both. Rewrite the doc
    comment: a unit-value change re-prices only Procedures not yet authorised (as built after 25; see step 4). Tests: the permission matrix
    (own, colleague, office, system) per field.
@@ -128,14 +131,13 @@ Model, pure helpers, store and seed first, then screens.
 5. **Payables run shows the destination** (`payablesActions.ts`; US-12.1.4 "used for the payables run"). Display only: amounts and behaviour do
    not change. Resolve each ACCPAY's anaesthetist through the BillingCase already looked up in `disbursePayables` (`caseByAccPay`).
    `payablesDue` widens its input from `Pick<AppState, 'xero'>` to also take what it needs to resolve the anaesthetist, and gains
-   `byAnaesthetist: { anaesthetistId, name, count, total, destinationMasked | null }[]` (by surname) and `missingBank: number`; update the
-   `useMemo` call in `BillingMonitorScreen.tsx`. A payable whose anaesthetist has no bank account is still disbursed, with `destination: null`.
-   Each `Disbursement` stores its `destination` at run time. Tests: snapshot written; a later bank edit leaves it; no-bank anaesthetist
-   disbursed with `null` and counted in `missingBank`; grouping; existing amounts and counts unchanged.
-6. **Seed and tests** (one `PERSIST_VERSION` bump; nothing from the seeded RNG). Every one of the 14 anaesthetists gets a `bankAccount`: name
+   `byAnaesthetist: { anaesthetistId, name, count, total, destinationMasked }[]` (by surname); update the
+   `useMemo` call in `BillingMonitorScreen.tsx`. Each `Disbursement` stores its `destination` at run time. Tests: snapshot written; a later
+   bank edit leaves it; grouping; existing amounts and counts unchanged.
+6. **Seed and tests** (do the seed first, before the mandatory checks land; one `PERSIST_VERSION` bump; nothing from the seeded RNG). Every one of the 14 anaesthetists gets a `bankAccount`: name
    from `nameWithoutTitle`, number built deterministically from the registration number on the non-issued bank code 99 (for example Souter
    `99-0101-0034821-00`), so it is plainly fictional. `seed.test.ts`: every number normalises and is on bank 99; every `hpiId` passes
-   `isPlausibleHpiCpn`; no `gstPeriod` remains. `mastersActions.test.ts`: the matrix from item 3, validation, no-op writes, masked audit, the
+   `isPlausibleHpiCpn`; no `gstPeriod` remains. `mastersActions.test.ts`: the matrix from item 3, validation, add and edit refused without an HPI CPN or bank details, no-op writes, masked audit, the
    unit-value lock test (an edit after authorise leaves the pricing snapshot, Review and invoice unchanged while an ACTIVE List's Booking
    re-prices; `it.todo` if 25 has not landed). `persistMigrate.test.ts` and the `SEED_MARKERS` inspector entries follow the bump.
 7. **Audit copy** (`src/shared/audit/fieldLabels.ts`): add `bankAccount` "Bank account"; remove `gstPeriod`; `phone` and `email` if missing;
@@ -146,7 +148,7 @@ Model, pure helpers, store and seed first, then screens.
    unchanged). Rows: "Rate per unit" `$26.50` → `EditRateSheet` (bottom sheet: mono dollar field with a decimal keypad, the rate note from
    step 4 of the drift check, sticky teal Save, a refusal rendered verbatim); "Phone" and "Email" read-only; "Registration" and "HPI CPN"
    (captioned "Your unique identifier on the Health Provider Index.") read-only with a lock glyph; "Bank account" `99-0101-•••••21-00`, lock
-   glyph, caption "Held by the AA office. Ask the office to change it." ("Not on file" if absent). The header eyebrow stays "Settings".
+   glyph, caption "Held by the AA office. Ask the office to change it." The header eyebrow stays "Settings".
    `data-shot` hooks: `mobile-profile`, `mobile-rate-sheet`. Confirm no demo trigger is registered for the More route and the new card does
    not collide with `PwaDemoActions` or `PwaDemoPanel` (`moreExtra`).
 9. **Web profile** (`apps/web/screens/ProfileScreen.tsx`, `routes.tsx`, `router.tsx`, `WebApp.tsx`, `components/WebNav.tsx`). Route
@@ -154,16 +156,15 @@ Model, pure helpers, store and seed first, then screens.
    unchanged. Desktop panels: **Billing** (rate field with `$` prefix and "per RVG unit", the same rate note, its own teal "Save changes"
    enabled only when dirty), **Contact** (read-only), **Identity** (registration, HPI CPN, read-only) and **Bank account** (masked,
    read-only, same caption). `data-shot` hooks: `web-profile`, `web-billing-panel`.
-10. **Admin** (`apps/admin/`). `AnaesthetistsView`: columns Name, Reg, Unit $ (keep it third, a recipe highlights it), HPI CPN, Bank (masked, or
-    warning-tone "Not on file"), Phone, Email, Active, the row action into 17's record page and Phase 22's GST number column if it landed;
+10. **Admin** (`apps/admin/`). `AnaesthetistsView`: columns Name, Reg, Unit $ (keep it third, a recipe highlights it), HPI CPN, Bank (masked), Phone, Email, Active, the row action into 17's record page and Phase 22's GST number column if it landed;
     drop the GST period column. `AnaesthetistRecord.tsx`: a **Profile** card (unit value, phone, email, HPI CPN, bank account masked,
     active) whose "Edit details" opens `EditAnaesthetistSheet`, beside 17's tier and pairing sections (unchanged); the stale doc comment about
     a later phase adding bank, GST number and prepaid settings is replaced. `EditAnaesthetistSheet` (and `AddAnaesthetistFlow`): unit value,
-    phone, email, HPI CPN (editable, 17's inline checks), bank account name and number with inline validation, active; the add flow's bank
-    fields optional, HPI labelled "HPI CPN (optional)"; the GST period field gone. `BillingMonitorScreen` Payables run card: under the
-    summary, a destinations list from `byAnaesthetist` ("Dr Souter · 2 payables · $1,234.00 to 99-0101-•••••21-00"), a warning-tone "No bank
-    account on file" for an anaesthetist without one, and a warning-tone summary line when `missingBank > 0`. `DemoXero.tsx` ACCPAY pane:
-    "Paid to <name> · <masked>" from each snapshot ("no bank account on file" when `null`). `RolesInfo.tsx`: anaesthetist copy "sees their
+    phone, email, HPI CPN (editable, 17's inline checks) and bank account name and number, both marked required with inline validation and Save
+    disabled or refused until filled, active; the add flow likewise, HPI labelled plain "HPI CPN" (no "(optional)", no "HPI CPN not set"); the GST
+    period field gone. `BillingMonitorScreen` Payables run card: under the
+    summary, a destinations list from `byAnaesthetist` ("Dr Souter · 2 payables · $1,234.00 to 99-0101-•••••21-00"). `DemoXero.tsx` ACCPAY pane:
+    "Paid to <name> · <masked>" from each snapshot. `RolesInfo.tsx`: anaesthetist copy "sees their
     own profile and sets their rate per unit"; office copy "maintains any anaesthetist's profile, including bank details and the HPI CPN".
 11. **Playwright shots.** A new `visual/profile-phase26.spec.ts`: mobile More with the Profile card and the rate sheet, the web profile page,
     the Admin record page's Profile card and the Payables run destinations. Update existing shots the table columns, the GST tab or the
@@ -171,7 +172,7 @@ Model, pure helpers, store and seed first, then screens.
 
 ## Demo triggers
 
-None needed. Seeded bank details show on the Admin record, on the Payables run and on Dr Souter's own profile (More, and `/web/profile`);
+None needed. Seeded bank details (all 14) show on the Admin record, on the Payables run and on Dr Souter's own profile (More, and `/web/profile`);
 the payables run is an existing office button. Nothing here is automatic, scheduled or external, so no trigger-registry entry is added and
 the Control Panel is untouched.
 
@@ -204,16 +205,17 @@ The agent runs every item itself in the running app and reports it with evidence
 - [ ] Admin Master data, Anaesthetists: Unit $ third, HPI CPN and Bank columns filled. Dr Souter's record page shows the Profile card beside
       17's tier and pairings. Edit details: change her bank number (an invalid one is refused inline; the audit shows masked before and after
       only), then her HPI CPN to `1ABCDE` (refused inline), to another practitioner's (refused as a duplicate), to a fresh valid one (saved,
-      audited "HPI CPN", shown on her mobile and web profile); set both back.
-- [ ] Add an anaesthetist without bank details and with HPI CPN `12abcd`: stored as `12ABCD`; the table shows "Not on file".
+      audited "HPI CPN", shown on her mobile and web profile); set both back. Clearing the HPI CPN or the bank fields is refused inline and by the store.
+- [ ] Add an anaesthetist: refused without bank details and refused without an HPI CPN (no "(optional)" label anywhere); with both, HPI CPN
+      `12abcd` is stored as `12ABCD` and the bank number masked in the table.
 - [ ] Billing monitor Payables run: the destinations list shows each anaesthetist and masked account; run it; paid amounts are as before and
       the Xero simulator's ACCPAY pane shows "Paid to" on the disbursement. Edit that anaesthetist's bank afterwards: the past disbursement
-      keeps the old masked number. The added no-bank anaesthetist shows "No bank account on file" and is still paid.
+      keeps the old masked number.
 - [ ] Privacy: nothing on the mobile, web or PWA profile names a tier or pairing preference; `officePrivacy.test.ts` is green.
 - [ ] As Dr Souter there is no way to edit contact, HPI CPN or bank anywhere; the store refuses each (the test proves it).
 - [ ] S3 and S4 figures behave exactly as before (the interim prepayment flag is untouched).
 - [ ] PWA build (`npm run build:pwa`, then preview): More shows the Profile card above the demo panel and the rate sheet saves.
-- [ ] Teal is the only action colour; crimson only on the avatar and nav underline; "Not on file" is neutral or warning tone; account
+- [ ] Teal is the only action colour; crimson only on the avatar and nav underline; account
       numbers, HPI CPN and registration are mono.
 - [ ] Catalogue screenshots: recipes updated as the section below says, a full `npm run capture` ends with no failed recipe, the new shots
       checked by eye, `npm run verify:board` green.
@@ -224,8 +226,8 @@ The agent runs every item itself in the running app and reports it with evidence
 No scripted figure changes. Patch in the same session, and the matching sections of `master-demo-guide.html`:
 
 - `01-personas-and-responsibilities.md`: the anaesthetist sees their own profile and sets their rate per unit; may not edit contact details,
-  HPI CPN, bank details or other master data. The office holds each anaesthetist's profile, bank details and HPI CPN. Use "HPI CPN" wherever
-  the guide says "HPI id" or "HPI number". Remove any mention of a GST period or prepaid settings on the profile.
+  HPI CPN, bank details or other master data. The office holds each anaesthetist's profile, bank details and HPI CPN. The HPI CPN and bank details are mandatory on every
+  anaesthetist record. Use "HPI CPN" wherever the guide says "HPI id" or "HPI number". Remove any mention of a GST period or prepaid settings on the profile.
 - `02-workflows-and-handoffs.md`: a short "Profile and bank details" case (what the profile holds, who edits what, bank details display-only
   and shown on the payables run). Leave the Pre-payment case as 15a and 20 left it; 27 rewrites it.
 - `04-presenter-cheat-sheet.md`: Permission matrix: a new row "Edit own rate per unit" reading Yes, own · Yes · No (anaesthetist, office,
@@ -241,15 +243,14 @@ Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-stat
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) Identity, contact and bank details | captured · admin-anaesthetist-record[edit,add] | Stays captured. Re-shoot `edit` (phone, email, HPI CPN and bank fields) and `add` (bank optional; the start date is 28's), and add state `record` on 17's record page (Profile card with HPI CPN and masked bank, highlighted) plus the mobile `mobile-profile` shot at `/mobile/more` (identity and bank rows, lock glyph, bank masked). Captions: "Editing an anaesthetist's contact, HPI CPN and bank details", "Adding an anaesthetist with registration number, contact, HPI CPN and bank account", "Anaesthetist identity, contact and bank details; one HPI CPN". |
+| [US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) Identity, contact and bank details | captured · admin-anaesthetist-record[edit,add] | Stays captured. Re-shoot `edit` (phone, email, HPI CPN and bank fields, both marked required) and `add` (HPI CPN and bank required; the start date is 28's), and add state `record` on 17's record page (Profile card with HPI CPN and masked bank, highlighted) plus the mobile `mobile-profile` shot at `/mobile/more` (identity and bank rows, lock glyph, bank masked). Captions: "Editing an anaesthetist's contact, HPI CPN and bank details (both required)", "Adding an anaesthetist with registration number, contact, mandatory HPI CPN and bank account", "Anaesthetist identity, contact and bank details; one HPI CPN". |
 | [US-12.1.1](../../../../requirements-board/requirements/stories/US-12.1.1.md) Dollar value per unit | partial · admin-unit-value[list,edit] ("only by the office") | captured. Keep `admin-unit-value` (Unit $ still the third column); add mobile `mobile-profile` states `profile` (Rate per unit row highlighted) and `rate-sheet`, and web `web-profile` (Billing panel highlighted). Caption "Anaesthetist sets their own dollar value per unit". Drop the partial reason. Phase 25 owns the lock states. |
-| [FT-12.1](../../../../requirements-board/requirements/stories/FT-12.1.md) Profile settings | feature, no recipe | no change here. |
 
 **Recipes this phase touches.**
 - `US-06.1.1`, `US-06.1.2`, `US-12.1.3` and `US-12.1.2` (`gst-period-setting`, `gst-period-view`): Retired, so the recipes go absent with the
   reason "Retired" (replace any caption or absent reason that describes the old model); delete their shots.
 - `US-12.2.2`: its caption "for the GST period" is Phase 38's; only confirm the GST tab still shoots without the period switch.
-- `US-01.1.3` (`Add anaesthetist` flow): the GST period field is gone and two optional bank fields added; re-shoot and check the caption.
+- `US-01.1.3` (`Add anaesthetist` flow): the GST period field is gone and the two required bank fields added; re-shoot and check the caption.
 - `US-08.3.4`, `US-09.2.4`, `US-10.1.2`, `US-10.2.1` (`[data-shot=billing-payables-run]`): the card gains a destinations list; look at the
   shots and caption the destination account where the story is about the payout.
 - 17's record-page recipes (US-13.6.3, US-01.3.6): the page gains a Profile card; check their highlights stay on the tier and pairing sections.
@@ -272,9 +273,11 @@ re-green. Do not re-raise anything settled in the Decisions log.
 - **GST period is gone, completely.** No `gstPeriod`, `GstPeriod`, `GST_OPTIONS`, Master data column, form field, audit label, report period
   switch or demo-guide mention survives; `gstNumber` (Phase 22) is untouched and not on the profile; the GST report still renders as a month.
 - **No prepaid residue.** No `prepaidSettings`, tick list, own-price-list view or prepaid copy on any profile; 20's interim flag untouched.
+- **Mandatory means mandatory.** No add or edit path saves a blank HPI CPN or bank account (form, store, tests); no "optional", "not set" or
+  "Not on file" branch survives; every seeded record is complete before the check lands.
 - **Bank data.** Masked on the anaesthetist's screens, in the audit and in the payables list; full only in the office's edit field. The
   disbursement snapshot does not move when the bank changes. Seeded numbers are on bank 99, deterministic, no RNG draw. Display-only: no
-  payout held, rerouted or re-amounted by a bank account, present or missing.
+  payout held, rerouted or re-amounted by a bank account.
 - **One unit value.** No second copy of the rate; the profile, the fee path and 25's snapshot read `Anaesthetist.unitValue`. The rate note is
   true for the code as built (lock or fallback).
 - **One identifier.** `hpiId` labelled "HPI CPN" on every surface and in the audit, checked by 17's helpers, office-only.
