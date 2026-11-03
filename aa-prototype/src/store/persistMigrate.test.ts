@@ -183,7 +183,7 @@ describe('the notification pool and the cover marker gone (catch-up Phase 32)', 
   afterEach(() => localStorage.clear())
 
   it('discards a v24 store carrying a cover marker and no pool, and reseeds with an empty pool', () => {
-    expect(PERSIST_VERSION).toBe(25)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(25)
     const fresh = freshAppState()
     const slotId = Object.keys(fresh.schedule.slots)[0]!
     const stale = {

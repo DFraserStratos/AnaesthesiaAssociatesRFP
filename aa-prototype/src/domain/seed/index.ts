@@ -61,6 +61,7 @@ import {
   SURGEON_GROUPS,
   SURGEON_ROOMS,
 } from './cast'
+import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
 import { RECURRING_BOOKINGS } from './recurringBookings'
@@ -398,7 +399,8 @@ function buildSeedInternal(): SeedBuild {
 
   const anaesthetistsRec = byId(ANAESTHETISTS, (a) => a.registrationNumber)
   const hospitalsRec = byId(HOSPITALS, (h) => h.id)
-  const surgeonsRec = byId(SURGEONS, (s) => s.id)
+  // The scripted cast first, then the specialist directory (FT-13.6): master data only, named by no List.
+  const surgeonsRec = byId([...SURGEONS, ...DIRECTORY_SURGEONS], (s) => s.id)
   const organisationsRec = byId(ORGANISATIONS, (o) => o.id)
   const patientsRec = byId(patients, (p) => p.hiddenInternalId)
 
@@ -466,7 +468,7 @@ function buildSeedInternal(): SeedBuild {
     masters: {
       anaesthetists: anaesthetistsRec,
       surgeons: surgeonsRec,
-      surgeonRooms: byId(SURGEON_ROOMS, (r) => r.id),
+      surgeonRooms: byId([...SURGEON_ROOMS, ...DIRECTORY_ROOMS], (r) => r.id),
       surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
       insurers: byId(INSURERS, (i) => i.id),

@@ -17,7 +17,7 @@ type Artifacts = Record<string, ArtifactRec>
 export function Prose({ text, small }: { text: string; small?: boolean }) {
   const index = useIndex()
   const artifacts = useCatalogue((s) => s.artifacts)
-  // A single tilde ("~85 anaesthetists") is approximate, never strikethrough.
+  // A single tilde ("~85 users") is approximate, never strikethrough.
   const plugins = useMemo((): Options['remarkPlugins'] => [[remarkGfm, { singleTilde: false }], remarkRecordIds(index, artifacts)], [index, artifacts])
   const components = useMemo(() => ({ ...recordLinkComponents(index, artifacts), table: ProseTable }), [index, artifacts])
   return (

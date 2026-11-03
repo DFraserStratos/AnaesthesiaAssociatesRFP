@@ -21,11 +21,11 @@
 <rect x="50" y="475" width="330" height="32" rx="7" fill="#FFFFFF" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="5 4"/>
 <text x="62" y="496" font-size="15.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Facelift plus 1 add on (eg bleph)</text>
 <text x="50" y="527" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The wording the invoice prints, its own field:</text>
-<text x="50" y="544" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">from the Contract line's description, or the</text>
-<text x="50" y="561" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Booking's description.</text>
+<text x="50" y="544" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">the rooms', then the hospital's, then the</text>
+<text x="50" y="561" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Contract line's invoice description.</text>
 <path d="M58 580 V612.0 H76" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
 <path d="M86 592 H76 V632 H86" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="92" y="614" font-size="13" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Which one is open (OQ-103).</text>
+<text x="92" y="614" font-size="13" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Admins can edit it as free text (OQ-103).</text>
 <rect id="procedure-slots" x="36" y="657" width="358" height="206" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
 <text x="50" y="684" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Each Procedure on the Booking gets</text>
 <rect x="50" y="699" width="330" height="44" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
@@ -243,8 +243,8 @@
 <text x="1404" y="496" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">the office's list.</text>
 <path d="M1380 503 V544.0 H1398" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
 <path d="M1408 515 H1398 V573 H1408" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1414" y="537" font-size="13" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Whether insurance narrows the</text>
-<text x="1414" y="555" font-size="13" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">list is open (OQ-93).</text>
+<text x="1414" y="537" font-size="13" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Insurance does not narrow the</text>
+<text x="1414" y="555" font-size="13" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">list (OQ-93).</text>
 <rect id="rvg-code" x="1358" y="601" width="388" height="108" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
 <circle cx="1382" cy="625" r="12" fill="#3B8FD6"/>
 <text x="1382" y="630.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
