@@ -32,10 +32,10 @@ the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](.
   pre-fill. Each holder carries how its invoices are delivered (18; 22 reads it), and the holders
   sheet loads it. **Open:** what outputs exist beyond email and portal; built as those two (email the
   default) and logged on the owner's review list.
-- **D75** ([OQ-128](../../../../requirements-board/requirements/questions/OQ-128.md), open; Ben's list puts 4 surgeons at two
-  practices): built as its default, one room per surgeon, as 17 built it. A surgeon listed at two
-  practices loads at one room and the load result notes the other; nothing builds a second room.
-  Logged on the owner's review list.
+- **D75** ([OQ-128](../../../../requirements-board/requirements/questions/OQ-128.md), answered 2026-11-04, Donald for the build):
+  a surgeon belongs to one or more rooms, built as answered (17a made `Surgeon.roomIds` a list, the first
+  the main room). The surgeons sheet loads a surgeon at **each room listed**; no note, no second-room
+  workaround.
 - **D76** ([OQ-129](../../../../requirements-board/requirements/questions/OQ-129.md), open; the list carries no HPI CPNs and some rows lack a title
   or surname): built as its default, the catalogue as written. A surgeon's HPI CPN stays required
   (US-13.6.2), so the surgeons sheet rejects a row with no HPI CPN, or with a first name only, and
@@ -73,7 +73,7 @@ the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](.
   one-off load covers and from what source (US-13.4.3) is open: the loader follows its expected list
   and AR-29 `data-loading`. OQ-51 (Solutions Plus identifiers) was deleted unanswered.
 
-**Depends on:** Phase 17a (a surgeons' room may hold no email or phone, so the rooms sheet accepts a row without them; the room's email helper), Phase 17 (surgeon profile with its one HPI CPN rule (`normaliseHpiCpn`,
+**Depends on:** Phase 17a (a surgeons' room may hold no email or phone, so the rooms sheet accepts a row without them; the room's email helper; `Surgeon.roomIds`, the ordered list the surgeons sheet fills, with `mainRoomOf`), Phase 17 (surgeon profile with its one HPI CPN rule (`normaliseHpiCpn`,
 `isPlausibleHpiCpn`, the duplicate check across surgeons and anaesthetists), surgeons' rooms, surgeon
 groups, hospital contact email, `editHospital`, `isPlausibleEmail`, the `apps/admin/screens/masters/`
 split and the `?view=` search param), Phase 18 (the contract-holder master `ContractHolder` with
@@ -90,7 +90,7 @@ and included rules), Phase 29 (the availability status master, nav "Availability
 `conflictFactsFor`, `describeConflict`, `HolidaySheet`, `addHospitalHoliday`,
 `editHospitalHoliday`, `deleteHospitalHoliday`, the hospital month calendar, and recurring bookings
 with their projection). Also relies on 14 (the demo-trigger registry, `useDemoTriggerContext`,
-`store/demoActors.ts`), 20 (the Contract picker, which offers No contract (RVG) first and hides
+`store/demoActors.ts`), 20 (the step rail, a working direction, which hides
 retired holders' Contracts), 21 (the payer on the Booking and the insurance indication
 `Booking.insuranceIndication`), 22 (`Contract.invoicing`), 23 (`Contract.isCombination`), 25 (staged Contract changes on its review dashboard, which is the second-person check, D34, and the pricing snapshot, so a master edit never moves an AUTHORISED price), 26 and 28 (`addAnaesthetist` with
 its start date, HPI CPN and profile fields, and 28's one generation path), 31 (the Draft List holiday
@@ -194,9 +194,9 @@ the complete line, not a patch: a blank cell is not set and 0 means zero") and
 [`contract`](../../../../requirements-board/requirements/artifacts/AR-30.md#contract) and
 [`contract-line`](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-line). The
 plain-language guide [AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md) regions
-[`rvg-groups-and-procedures`](../../../../requirements-board/requirements/artifacts/AR-28.md#rvg-groups-and-procedures) (its procedure half is superseded: there is no procedure list),
-[`contracts-two-kinds`](../../../../requirements-board/requirements/artifacts/AR-28.md#contracts-two-kinds) and
-[`keeping-prices-up-to-date`](../../../../requirements-board/requirements/artifacts/AR-28.md#keeping-prices-up-to-date)
+[`how-a-procedure-is-priced`](../../../../requirements-board/requirements/artifacts/AR-28.md#how-a-procedure-is-priced),
+[`typical-arrangements`](../../../../requirements-board/requirements/artifacts/AR-28.md#typical-arrangements) and
+[`price-reviews-and-controls`](../../../../requirements-board/requirements/artifacts/AR-28.md#price-reviews-and-controls)
 is true as written. AR-29 and AR-30 are a **draft** that a later version may change before or during the build.
 **Modifiers** come from the catalogue's files (artifact
 [AR-34](../../../../requirements-board/requirements/artifacts/AR-34.md): `NZSA RVG 2021 modifiers.md` and
@@ -208,13 +208,15 @@ here is mobile, so there is no PWA stand-in.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.4.1,US-13.4.2,US-13.4.3,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.4,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,US-04.1.6,OQ-100,OQ-114,OQ-98,OQ-88,OQ-101,OQ-93,OQ-128,OQ-129,DM-38
    ```
 
+   At the 2026-11-04 update (`d436947..a68f09b`) OQ-128 was answered (D75): a surgeon belongs to one or
+   more rooms and the surgeons sheet loads each; the plan reflects it.
    At the 2026-11-04 update (`7cd7802..d436947`) US-13.4.3 gained the 3 November specialist list
    note (OQ-129), DM-38 now names the specialist list, and OQ-128 and OQ-129 opened; the plan
    reflects them (D75, D76). Never read the real `Christchurch_Specialists.xlsx`: the fictional copy
@@ -238,7 +240,7 @@ here is mobile, so there is no PWA stand-in.
    data": the RVG table plus Vanessa's list); US-05.2.2 (a part interval always rounds up); US-01.3.2
    (recurring bookings; a clash becomes a Draft List); US-04.4.2, FT-04.4 and US-04.2.12 Retired;
    US-04.2.13 added in the Future Work lane; OQ-100 added; OQ-62 and OQ-78 answered. Diff only for
-   anything after `d436947`. If a covered item is now Retired or Future, drop it from this phase and
+   anything after `a68f09b`. If a covered item is now Retired or Future, drop it from this phase and
    say so in the PROGRESS entry. Watch in particular for:
    - **OQ-100 (D34).** If the schedule upload is answered "in the first release", it is still not this
      phase's: record it for the owner and Phase 44 (it needs its own phase: format, delta or full
@@ -257,9 +259,9 @@ here is mobile, so there is no PWA stand-in.
      opt-out). This phase builds "applies to every hospital unless listed as open".
    - **OQ-114 (D55).** Answered in part: delivery is a holder setting, email or portal. If the other
      outputs get named, extend the holders sheet's Delivery column only.
-   - **OQ-128 and OQ-129 (D75, D76).** If a second room per surgeon is allowed, or HPI CPNs are
-     answered as loadable blank, change the surgeons sheet's one rule only (the sheet and sample
-     follow it); the rejection reason and the room note are built as defaults until then.
+   - **OQ-129 (D76).** If HPI CPNs are answered as loadable blank, change the surgeons sheet's one
+     rule only (the sheet and sample follow it); the rejection reason is built as the default until
+     then. OQ-128 is answered (D75): nothing to watch.
    - **OQ-98 (answered), OQ-88 (answered), OQ-101.** The loader follows whatever 18, 19 and 19a built
      for them; if one was re-built, re-shape the matching sheet's columns to it before building.
 2. **Where loaded base units land (D12 superseded, answered).** Base units live on the RVG group
@@ -310,7 +312,7 @@ here is mobile, so there is no PWA stand-in.
      public-holiday migration can prove the set does not move (work item 3).
    - Grep every picker that offers hospitals, surgeons, rooms, groups or contract holders
      (`grep -rn "masters.hospitals\|masters.surgeons\|surgeonRooms\|surgeonGroups\|contractHolders" src --include=*.tsx`)
-     and list them, including 18's holder-link picker, 20's Contract picker (which must hide Contracts
+     and list them, including 18's holder-link picker, 20's step rail (which must hide Contracts
      whose holder is retired) and 21's insurance-indication picker. Work item 16 routes each one
      through the active-only selectors.
    - Grep every reader of hospital holidays
@@ -447,7 +449,7 @@ green.**
        membership of 34's `INTEGRATED_HOSPITALS`, worded as "Hospital sync is set up here".
      - **surgeon:** upcoming Lists and Draft Lists; active recurring bookings; an active contract
        holder linked to the surgeon.
-     - **room:** active surgeons linked to it (17 makes `roomId` required); an active rooms holder
+     - **room:** active surgeons linked to it (any surgeon whose `roomIds`, 17a, lists it); an active rooms holder
        linked to it.
      - **group:** an active rooms holder linked to it (18's COS mapping).
      - **organisation:** active contract holders whose `billablePartyRef` names it (17's
@@ -653,13 +655,14 @@ green.**
      - surgeons' rooms, in the shape of AA's specialist list of 3 November (the fictional copy
        `seed/specialistDirectory.ts` comes from): Room name, Contact email, Phone. Email and phone
        are optional, so a room with neither loads and shows as having none (17a, D74);
-     - surgeons, in the same shape: Name, Specialty, Room, HPI CPN, NZ registration number (for
+     - surgeons, in the same shape: Name, Specialty, Rooms, HPI CPN, NZ registration number (for
        information), keyed on the HPI CPN, with 17's HPI CPN normaliser, shape check and duplicate
        check across surgeons and anaesthetists. **A row with no HPI CPN, or a first name only, is
        rejected with its reason** (D76, 17's required-HPI-CPN refusal word for word; one validator).
-       A surgeon listed at two practices loads at **one** room (the first listed) and the result
-       row carries a note naming the other ("Also listed at Riverside Rooms; one room per surgeon",
-       D75). There is **no contacts sheet** (D74: practice manager and PA contacts are entered by
+       The **Rooms** cell names one or more rooms separated by ";" (the first the main room), so a
+       surgeon listed at two practices loads at **both** (D75, 17a's `roomIds`); each must resolve
+       ("No surgeons' room named Riverside Rooms") and a repeated room is dropped as in 17's action.
+       There is **no contacts sheet** (D74: practice manager and PA contacts are entered by
        hand);
      - anaesthetists: Name, HPI CPN, Unit value, Priority tier, Start date (the fields
        `NewAnaesthetistFields` takes as 26 and 28 left it, plus 17's admin-only priority tier; no GST
@@ -745,7 +748,7 @@ green.**
        closure on 30's `HH900` hospital and date, a bad date;
      - `surgeons-rooms.csv` and `surgeons.csv` (fictional, taken from `Christchurch_Specialists_fictional.xlsx`,
        never the real file): valid rooms include one with no email or phone; valid surgeons carry
-       invented CPNs, and one surgeon listed at two practices loads at one room with a note; rejected,
+       invented CPNs, and one surgeon listed at two practices loads at both rooms; rejected,
        a row with no HPI CPN, a first name only, a malformed HPI CPN, a duplicate HPI CPN and an
        unknown room;
      - `anaesthetists.csv`: two valid rows; rejected, a duplicate HPI CPN, a start date in the past,
@@ -1204,7 +1207,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       and the empty line are rejected with 19a's and 18's wording.
 - [ ] Repeat on Surgeons' rooms (a room with no email or phone loads and shows none) and Surgeons
       (a row with no HPI CPN and a first-name-only row are each rejected with their reason; a surgeon
-      at two practices loads at one room with a note; an unknown room, a malformed HPI CPN and a
+      at two practices loads at both rooms (open the profile: a card per room); an unknown room, a malformed HPI CPN and a
       duplicate HPI CPN are each rejected with 17's wording; no contacts sheet is offered), Anaesthetists (a loaded anaesthetist has Slots from
       the start date on the Day grid) and Modifiers (AA rows only).
 - [ ] Seed load with a real file: download the hospitals template, add two rows (one bad) in a text
@@ -1262,7 +1265,7 @@ phase; it adds one optional beat and refreshes the master-data lines:
       spreadsheet, the same load runs again into a test system."
     - Expected: as in the manual checklist.
   - **S5 Discovery points:** add "whether surgeons can load without an HPI CPN or a full name (OQ-129)",
-    "whether a surgeon can sit at two practices (OQ-128)", "whether a Contract schedule upload is needed in the first release
+    "whether a Contract schedule upload is needed in the first release
     (OQ-100)" and "whether recurring bookings join the seed spreadsheets (US-13.4.3's calendar
     schedules)". Remove any "whether admins can re-load master data after go-live" point (answered by
     US-13.4.3: seeded once, then by hand).
@@ -1306,7 +1309,7 @@ calendar. US-11.4.1 is Retired and has no row here (18 marks its recipe absent).
 |---|---|---|
 | [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) | partial · `admin-master-data` [anaesthetists, contracts, permanent-lists, hospitals-holidays, surgeons, surgeon-rooms, surgeon-groups, rvg-codes, modifier-codes, availability-statuses]; the caption names insurers, organisations, RVG codes and modifier codes as view only and no master calendar | `captured`. Re-shoot at `/admin/masters`, one state per view in the grouped sub-nav, keeping the slugs and re-pointing clicks to the current button names; add `contract-holders` (insurers listed among the holders; no Insurers view), `public-holidays` (`masters-public-holidays`), `hospitals-holidays` with Labour Day as a public-holiday closure plus a retire refusal, and `retired` (under "Show retired"). Captions say "Master data", no state shows a load button or an insurer master. Drop the partial reason |
 | [US-13.4.2](../../../../requirements-board/requirements/stories/US-13.4.2.md) | absent | `captured`. Admin shot `go-live-load` at `/admin/masters?view=goLive`: `staged` (after the `go-live-data-load` entry: "14 Solutions Plus names (5 excluded as junk, 2 not approved)", struck-through units, 7 controlled spreadsheets; highlight `go-live-candidates`) and `loaded` (one name un-approved, "Load approved data" pressed; result line). Caption: "Clean-cut start: only AA-approved data is loaded" |
-| [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) | absent | `captured`. Admin shot `seed-load` at `/admin/masters?view=seedLoad`: `sheets` (DemoBadge, the D34 line, twelve sheets, no contacts sheet; highlight `seed-load`), `result` (hospitals.csv staged: "6 rows · 2 valid · 4 rejected" with reasons; `master-load-result`), `loaded`, `rvg-groups` (a repeated code valid; caption "RVG groups load with their base units; there is no procedure list") and `contract-lines` (blank not set, 0 zero; repeated line key rejected) and `surgeons` (surgeons.csv staged from the fictional specialist list: a room with no email loads, a no-HPI-CPN row and a first-name-only row rejected with reasons, a two-practice surgeon valid with its note; highlight `master-load-result`; caption "Surgeons load from the specialist list; rows without an HPI CPN are rejected"). Caption: "A one-off data load from AA's controlled spreadsheets, rejected rows listed with reasons". No office "Load from spreadsheet", no schedule upload |
+| [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) | absent | `captured`. Admin shot `seed-load` at `/admin/masters?view=seedLoad`: `sheets` (DemoBadge, the D34 line, twelve sheets, no contacts sheet; highlight `seed-load`), `result` (hospitals.csv staged: "6 rows · 2 valid · 4 rejected" with reasons; `master-load-result`), `loaded`, `rvg-groups` (a repeated code valid; caption "RVG groups load with their base units; there is no procedure list") and `contract-lines` (blank not set, 0 zero; repeated line key rejected) and `surgeons` (surgeons.csv staged from the fictional specialist list: a room with no email loads, a no-HPI-CPN row and a first-name-only row rejected with reasons, a two-practice surgeon valid with both rooms shown; highlight `master-load-result`; caption "Surgeons load from the specialist list; rows without an HPI CPN are rejected"). Caption: "A one-off data load from AA's controlled spreadsheets, rejected rows listed with reasons". No office "Load from spreadsheet", no schedule upload |
 
 **Recipes this phase breaks.**
 
@@ -1376,7 +1379,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   identical records.
 - **Specialist list loads (D75, D76).** One HPI CPN validator shared with 17's manual add. A room
   with no email or phone loads; a surgeon with no HPI CPN or a first name only is rejected with the
-  reason; a two-practice surgeon loads at one room with the note and never a second room; no
+  reason; a two-practice surgeon loads at every room listed, the first the main room; no
   contacts sheet exists; the holders sheet says 'Surgeon', never 'Surgeon or rooms'; no fixture
   derives from the real `Christchurch_Specialists.xlsx`.
 - **Insurers are holders.** There is no insurer master, no direct-claims flag and no pre-fill from
@@ -1413,7 +1416,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): D75 (OQ-128, one room per surgeon, the other practice noted in the load result) and D76 (OQ-129, a surgeon with no HPI CPN or a first name only is rejected and listed) as built, with the validator shared with 17; D34 (OQ-100) as built (a developer-run seed, shown as a demo stand-in; no schedule
+  themselves"): D75 (OQ-128, answered: a surgeon loads at each room listed) as built, and D76 (OQ-129, a surgeon with no HPI CPN or a first name only is rejected and listed) as built, with the validator shared with 17; D34 (OQ-100) as built (a developer-run seed, shown as a demo stand-in; no schedule
   upload; every later Contract edit staged and reviewed on 25's dashboard as the second-person
   check); D55 (OQ-114, answered in part: delivery is a holder setting; outputs beyond email and portal are open, built as those two);
   US-13.4.3 no longer says what is loaded or from where (the loader follows its expected list and
@@ -1426,7 +1429,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   route and persona (Kirsty: Master data, Contract holders, Public holidays, a Contract's staged review,
   Seed load, Go-live load).
 - **Status row** for catch-up Phase 42, and a phase entry with:
-  - the drift-check result (items changed since `d436947` or not; OQ-100, OQ-98, OQ-88, OQ-101 and
+  - the drift-check result (items changed since `a68f09b` or not; OQ-100, OQ-98, OQ-88, OQ-101 and
     OQ-103 as found; the calendar-schedule question; whether Vanessa's files landed; and the 17 to
     34 names used);
   - what was built, per work item;

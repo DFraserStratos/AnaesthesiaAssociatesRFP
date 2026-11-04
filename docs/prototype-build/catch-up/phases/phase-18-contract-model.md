@@ -41,6 +41,13 @@ delivered: an emailed invoice or another output. Answered in part: delivery is a
 holder, no longer on the Contract. Open: what the other outputs are. Built default: two values,
 email, the default, and portal, one `delivery` field on the holder that 22 reads).
 
+**Open, built as its default** (ROADMAP D77, new 4 November; keep it in one place and log it for the owner):
+[OQ-131](../../../../requirements-board/requirements/questions/OQ-131.md) (how the office keeps a Contract's prices and dates current: whole-Contract dated versions,
+a date on each line, or an edit in place with an audit trail; DM-07 flags it). Built default: the whole-Contract dated
+versions below, with one `PROVISIONAL (OQ-131, D77)` doc comment in the version module (`contracts.ts`) and no UI
+label, so a date per line or an audited edit in place stays a contained change. No line dates (D40). 25 builds the staged
+change on the same default.
+
 **Answered and built as answered:**
 [OQ-105](../../../../requirements-board/requirements/questions/OQ-105.md) (D48: a surgeon's
 fixed-price arrangement is one Contract linked to every surgeon it covers by practitioner ID, offered
@@ -138,12 +145,14 @@ one stored **No contract (RVG)** held by AA.
   never overlaps; one entered ahead shows "Upcoming from <date>". **Nothing is backdated or
   deleted:** a version's dates are never edited in place, **Retire replaces Delete** (ending the
   latest version today or later), and a started version's terms and settings are frozen. Phase 25
-  replaces "New version" with staged changes, the one-future check and the relink.
+  replaces "New version" with staged changes, the one-future check and the relink. How the office keeps
+  a Contract current is open (OQ-131, D77): this is its default, kept in the one version module.
 - **A short AA code on every Contract** (US-04.1.4, OQ-66, D16), from one generator function, shared
   by every version of the Contract, shown in mono and searchable.
 - **The Admin Contract catalogue** (FT-04.1, US-04.1.2): Contracts grouped under holder headings with
   No contract (RVG) first, filters for active or all and by holder, and **one composite search** across
-  AA code, Contract name and holder name (19a adds line holder codes). Create, edit, New version and
+  AA code, Contract name and holder name (19a adds line holder codes). The catalogue view keeps No
+  contract (RVG) first under AA; the office's picker on a Booking is Phase 20's step rail. Create, edit, New version and
   retire are office-only (OQ-91, D42). Contracts number in the thousands: search, never a flat list.
 - **Type 1/2/3 go as kinds** (US-04.1.1): the pricing data they carry stays exactly where it is as
   **interim terms** (`interimTerms`, `type2Detail`, `permitsIndividualArrangement`, the `ContractPrice`
@@ -188,11 +197,11 @@ Phases 19a to 25; this phase changes the shape and keeps the numbers.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-04.1,US-04.1.1,US-04.1.2,US-04.1.4,US-04.1.5,US-04.1.6,US-04.2.1,US-04.2.2,US-04.2.10,US-04.2.14,US-04.3.2,US-04.3.3,US-05.2.5,US-05.2.6,US-05.4.3,US-05.5.1,US-06.4.1,US-11.2.2,FT-11.4,US-11.4.1,US-11.4.2,OQ-25,OQ-48,OQ-66,OQ-67,OQ-78,OQ-91,OQ-96,OQ-98,OQ-100,OQ-104,OQ-107,OQ-114,OQ-117
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-04.1,US-04.1.1,US-04.1.2,US-04.1.4,US-04.1.5,US-04.1.6,US-04.2.1,US-04.2.2,US-04.2.10,US-04.2.14,US-04.3.2,US-04.3.3,US-05.2.5,US-05.2.6,US-05.4.3,US-05.5.1,US-06.4.1,US-11.2.2,FT-11.4,US-11.4.1,US-11.4.2,OQ-25,OQ-48,OQ-66,OQ-67,OQ-78,OQ-91,OQ-96,OQ-98,OQ-100,OQ-104,OQ-107,OQ-114,OQ-117,OQ-131
    ```
 
    Read the hunks (if any) for the covered items, US-04.1.6 and US-04.2.10 (25's), US-04.2.14 (the
@@ -208,6 +217,10 @@ Phases 19a to 25; this phase changes the shape and keeps the numbers.
    US-04.1.1 (never editable on a prepaid Contract, never on a fixed price), FT-11.4, US-11.4.1 and
    US-11.4.2 Retired (no insurer master), and OQ-105, OQ-96 and OQ-117 answered, OQ-114 answered in part.
 
+   At the 2026-11-04 update (`d436947..a68f09b`) none of the covered items changed in substance; OQ-131
+   (D77) is new and DM-07 flags it: Contract upkeep is open, built here as the dated whole-Contract
+   versions below.
+
    - If an item changed, re-read it and adjust the work items before building.
    - If an item is now Retired or Future, drop it from this phase and say so in PROGRESS.
    - A new item that touches the holder or Contract record goes into this phase only if it is
@@ -218,7 +231,8 @@ Phases 19a to 25; this phase changes the shape and keeps the numbers.
    in the Goal and put it on "For the owner's review"; no UI note. If it names other outputs, extend
    the one `delivery` type and its label map, and hand the new values to 22.
 4. **OQ-96, OQ-117, OQ-98, OQ-107, OQ-25, OQ-48, OQ-66, OQ-67, OQ-78, OQ-91 (answered).** Confirm they
-   still read as built; none has a provisional label. If OQ-66 shows a code format, implement it in
+   still read as built; none has a provisional label. **OQ-131 (D77, open):** confirm it is still open;
+   if answered, build the answer in the same version module and drop the label. If OQ-66 shows a code format, implement it in
    the same generator and update the pinned seed table.
 5. **The design.** If a technical design newer than AR-29 v6 is in the artifacts folder, follow its
    shape inside the same one module and record the change in PROGRESS. AR-28 is true as written.
@@ -251,8 +265,8 @@ Contracts, Phase 19a);
 [US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) (staged changes and the
 relink, Phase 25; this phase builds the simple core);
 [US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) and
-[US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) (the picker and No
-contract (RVG) first, Phase 20, which wraps this phase's search matcher);
+[US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) (the picker, now
+Phase 20's step rail, with No contract (RVG) first in its Contract lists; 20 wraps this phase's search matcher);
 [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on the
 Booking, Phase 21);
 [FT-11.4](../../../../requirements-board/requirements/stories/FT-11.4.md), [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md)
@@ -262,7 +276,7 @@ master, no direct-claims flag; the flag needed is delivery on the holder);
 not editable);
 [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) and
 [US-05.4.3](../../../../requirements-board/requirements/stories/US-05.4.3.md) (fixed rate and fixed
-discount, carried as interim terms); OQ-25, OQ-48, OQ-66, OQ-67, OQ-78, OQ-91, OQ-96, OQ-98, OQ-105 (answered, D48), OQ-107, OQ-114, OQ-117.
+discount, carried as interim terms); OQ-25, OQ-48, OQ-66, OQ-67, OQ-78, OQ-91, OQ-96, OQ-98, OQ-105 (answered, D48), OQ-107, OQ-114, OQ-117, OQ-131 (open, D77).
 Evidence (read the cited passages with `npm --prefix requirements-board run source -- --item <ID> --text`,
 Node 22.18 or newer; each covered item's own sources list the passages): the 2026-10-07 and
 2026-10-14 notes of the AA meetings with Greg (AA in the centre, everyone else a contract holder; the
@@ -470,7 +484,9 @@ Model, seed and pricing come first and are re-greened before any UI.
      save the pair (OQ-96, D30).
    - **No contract (RVG):** `noContractOf(contracts)` returns the one `isDefault` Contract and throws
      in tests if there is not exactly one (`assertOneNoContract`); `isNoContract(c)`.
-   - **Versions** (AR-29 `contract-versions`): `versionChain(contracts, id)` (linked through
+   - **Versions** (AR-29 `contract-versions`; **this is the one version module and carries the single
+     `PROVISIONAL (OQ-131, D77)` doc comment**, so a date per line or an audited edit in place stays
+     contained): `versionChain(contracts, id)` (linked through
      `nextVersionId`, oldest first), `latestVersion`, `versionInForce(contracts, id, dateISO)` and
      `versionTimeline(chain, todayISO)` giving `{ current?, upcoming[], ended[] }` for "Current",
      "Upcoming from <date>" and "Ended <date>". `isEffectiveOn` is unchanged. Tests: the 1 April /
@@ -799,7 +815,8 @@ Model, seed and pricing come first and are re-greened before any UI.
       `HOLDER_KIND_LABEL`, `DELIVERY_LABEL`, `INTERIM_TERMS_LABEL`, `SETTING_LABEL`,
       `invoicedLabel(holder)`, `belongsToLabel(holder, names)` and `versionStatusLabel`. One home for
       every app. There is **no provisional-notes module**: every reading this phase builds is answered,
-      or (OQ-114's two delivery values) invisible on screen.
+      or (OQ-114's two delivery values, OQ-131's dated versions) invisible on screen: OQ-131's label is one doc
+      comment in `contracts.ts`.
     - `shared/audit/fieldLabels.ts`: labels for AA code, holder, holder is billed, billable party,
       invoice delivery, practitioner (belongs to), valid from and to, review date, next version, retired, price editable, prepaid,
       interim terms. Remove the Type, holder type and scope fields.
@@ -850,7 +867,7 @@ Do not add fields for these here (convention 15):
   holder codes in the search, the anaesthetists' own fixed-price Contracts (the seeded Souter
   holder's Contract, flagged prepaid where wanted), and the resolver's line, procedure and group
   layers: 19a.
-- The fitting Contract list (No contract (RVG) first, holder-fit candidates under holder headings,
+- The fitting Contract list inside 20's step rail (No contract (RVG) first, holder-fit candidates under holder headings,
   the practitioner rule (calling `practitionerLinkFits`, no rooms filter), the composite
   search inside it, a Contract with no lines offered by context), removing the route, the payment
   category, the Insurer route and `Procedure.insurerId`: 20.
@@ -900,6 +917,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       cannot be edited. There is no Delete; Retire ends it today or later (a past date refused) and it
       stays under "All" with `contract.retire` in the audit. No contract (RVG) opens with its notice and
       no actions, and the store refuses an edit, retire or new version.
+- [ ] OQ-131 default: the version rules sit in one module with its single `PROVISIONAL (OQ-131, D77)` comment;
+      no provisional text appears in the app.
 - [ ] Health NZ agreed rate: "New version" from 1 Aug 2026 at $24.00 ends the current version 31 Jul
       2026; the new one shows "Upcoming from 1 Aug 2026", both under Christchurch Public with one AA
       code; a start of 20 Jul 2026 is refused; the current terms are read-only. The Hemi Walker
@@ -1011,7 +1030,7 @@ US-04.2.4 left this phase for 19a; its recipe stays apart from the breakage belo
   to "Procedure governed by St George's plain RVG Contract" and "The Procedure's Contract shown on the
   Booking", keep names and status, and make its partial reason: "Seeded hospital Procedures carry
   their hospital's plain RVG Contract; an ended hospital or insurer Contract falls back to No contract
-  (RVG), held by AA. No contract (RVG) first in the picker is built in Phase 20."
+  (RVG), held by AA. The office's Contract picker, the step rail, is built in Phase 20."
 - `US-05.2.5` and `US-04.2.3`: "Type 3" in their reasons becomes "fixed prices", status unchanged.
   `US-05.5.1`, `US-05.5.2`: re-check names and captions.
 - Recipes with a `{ "trigger": "billing-failure" }` setup step: the cause changed (work item 13);
@@ -1054,6 +1073,8 @@ not re-raise anything settled in the Decisions log.
 - **No contract (RVG) (DM-49, OQ-78):** exactly one, found by `isDefault`, held by the never-billed
   `aa` holder, never expires, unchangeable through the store; the per-holder invariants, auto-create
   paths and fallback are gone everywhere, copy included.
+- **OQ-131 default is contained:** the dated-version rules are only in the one version module, carrying one
+  provisional comment and no UI label; no line dates, no in-place edit path.
 - **Holders (US-04.1.5):** every integrity rule holds in the store, not just the UI (billed needs a
   billable party; no rule ties billing to the kind; an anaesthetist holder has one anaesthetist, a
   surgeon holder one or more surgeons by ID); retire refusals; `delivery` is stored and read by
@@ -1079,7 +1100,8 @@ not re-raise anything settled in the Decisions log.
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): the D55 default (OQ-114's two delivery values, email and portal, on the holder; nib
+  themselves"): OQ-131 (D77, open): Contract upkeep built as whole-Contract dated versions, labelled
+  provisional once in the version module; the D55 default (OQ-114's two delivery values, email and portal, on the holder; nib
   seeded portal, AIA Health email and not billed); the interim Insurer identity record behind the
   insurer holders and the route gate that asks for an insurer holder; a new holder's defaults (not
   billed, email); the surgeon link's rule (anaesthetist holders take one anaesthetist, surgeon links
@@ -1102,14 +1124,14 @@ not re-raise anything settled in the Decisions log.
   US-04.2.1 to 20 and 21), and FT-11.4, US-11.4.1 and US-11.4.2 recipes marked absent (Retired).
 - **Status row:** Phase 18 (Contract holders, settings and dated Contracts) DONE with the date, or IN
   PROGRESS after session 1 with what remains.
-- **Phase entry:** the drift-check result against `d436947` (US-04.1.5 Verify; OQ-114 as built; the
+- **Phase entry:** the drift-check result against `a68f09b` (US-04.1.5 Verify; OQ-114 and OQ-131 as built; the
   answered questions as built); how Phase 17's `SG-COS` members map to COS's surgeon link, and
   Doyle's, Merivale's and Aria's holders; the holder and AA code tables as seeded; the parity fixture path and result; the
   `PERSIST_VERSION` bump; the review pass; the handoffs: **19a** (lines replace `interimTerms`,
   `type2Detail` and `ContractPrice` with a parity test; New version copies lines; the Souter Contract,
   flagged prepaid; holder codes join `contractMatchesQuery`; the Merivale arrangement on the surgeon
   link), **20** (the fitting list calls `practitionerLinkFits` and wraps `contractMatchesQuery`,
-  offers No contract (RVG) first and no-line Contracts by context; the route, the Insurer gate and
+  sits inside the step rail with No contract (RVG) first in its lists and no-line Contracts by context; the route, the Insurer gate and
   `Procedure.insurerId` go), **21** (`billed` and the payer decide who is billed; `billedAs`,
   `routeCounterpartyForHolder` and Doyle's interim billable-party link go; the Booking's insurer points
   at the insurer holder, retiring the `Insurer` identity), **22** (`delivery` is read by the run;
@@ -1145,5 +1167,7 @@ not re-raise anything settled in the Decisions log.
     US-11.4.2 Retired; the 2026-07 insurer rulings, 6th review #2): insurers are contract holders; the
     holder carries `delivery` (OQ-114's two-value default, D55's old pre-fill default superseded); the
     route's gate asks for an insurer holder until 20.
+  - (j) **Contract upkeep as whole-Contract dated versions** (OQ-131, D77, open): built as D45 planned,
+    provisional, kept in the one version module.
   - (i) **A prepaid Contract is never editable** (OQ-96, D30; OQ-117, D65): the pair is refused on save;
     a fixed price's override is 24's.

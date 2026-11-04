@@ -3,7 +3,7 @@
 (The file keeps its historical slug, `find-past-work`; the plan tools pin it in `plan.json`.)
 
 **Requirements covered:**
-[DM-55](../analysis/domain-model-delta.md#dm-55) (the anaesthetist's edit window and the main view's exit) ·
+[DM-55](../analysis/domain-model-delta.md) (the anaesthetist's edit window and the main view's exit) ·
 RV-19 (anaesthetist edit rights no longer end at SUBMITTED; supersedes binding convention 6) ·
 [FT-07.2](../../../../requirements-board/requirements/stories/FT-07.2.md) SUBMITTED ·
 [US-07.2.1](../../../../requirements-board/requirements/stories/US-07.2.1.md) Anaesthetist can still edit a submitted List ·
@@ -20,7 +20,7 @@ and change a submitted List until the office authorises it; changes audited and 
 change stands; AUTHORISED immutable) are both answered
 ([OQ-31](../../../../requirements-board/requirements/questions/OQ-31.md), OQ-26, OQ-17). Built as
 answered, no provisional label.
-Treated here without closing it: [DM-39](../analysis/domain-model-delta.md#dm-39) (its last sentence
+Treated here without closing it: [DM-39](../analysis/domain-model-delta.md) (its last sentence
 only: search is selectors and UI only).
 Read alongside (not closed here):
 [EP-07](../../../../requirements-board/requirements/stories/EP-07.md) (the four List states),
@@ -88,7 +88,7 @@ new stored entity. The seed grows, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `d436947`):
+1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `a68f09b`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-07.2,US-07.2.1,US-07.2.3,US-07.3.2,US-07.4.1,US-07.4.2,FT-07.4,US-03.1.6,US-03.1.7,EP-07,FT-03.1,US-03.1.1,US-03.1.4,US-12.2.1,US-02.5.5,FT-03.4,OQ-26,OQ-17,OQ-31,OQ-86

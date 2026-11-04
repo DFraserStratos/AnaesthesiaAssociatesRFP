@@ -8,13 +8,13 @@
 [US-06.2.2](../../../../requirements-board/requirements/stories/US-06.2.2.md) (status 4, graded Contradicts; changed: a surgeon's list too; a prepaid line saved without a price or at 0 is refused (new criterion); OQ-104 and OQ-105 answered),
 [US-06.3.1](../../../../requirements-board/requirements/stories/US-06.3.1.md) (status 4, graded Contradicts; changed: approval switchable (new criterion), addressed to whoever the Contract bills, payable to the AA Holding account; OQ-120 open),
 [US-06.3.2](../../../../requirements-board/requirements/stories/US-06.3.2.md) (Confirmed, graded Partial; unchanged: a warning in both apps that strengthens as the date nears, part paid, every upcoming prepaid Booking listed),
-[US-06.3.5](../../../../requirements-board/requirements/stories/US-06.3.5.md) (**now status 2, Open**, graded Partial; changed: its criterion holds only before the prepayment invoice is generated; after sending is [US-06.3.7](../../../../requirements-board/requirements/stories/US-06.3.7.md) and OQ-119),
+[US-06.3.5](../../../../requirements-board/requirements/stories/US-06.3.5.md) (**now status 3, Verify**, graded Partial; changed at `a68f09b`: a new paragraph and a "Sent or paid" criterion: after the prepayment invoice is sent or paid, a Contract changed off prepaid is handled as a cancellation of the prepayment, [US-06.3.7](../../../../requirements-board/requirements/stories/US-06.3.7.md), which 41 builds; OQ-119 answered, D67),
 [FT-08.1](../../../../requirements-board/requirements/stories/FT-08.1.md) (status 1, graded Contradicts; its one exception, the prepayment invoice generated before AUTHORISED),
 [US-03.1.8](../../../../requirements-board/requirements/stories/US-03.1.8.md) (status 4, graded Partial; the prepaid amount on opening the Booking and where units are recorded),
 [US-08.2.2](../../../../requirements-board/requirements/stories/US-08.2.2.md) (status 4, graded Contradicts; **rewritten** as "Prepaid Procedures left off the final invoice", OQ-116 answered: nothing deducted, a mixed Booking invoices only its not-prepaid Procedures, still ranked across all, and an all-prepaid Booking has no final invoice);
 [DM-20](../analysis/domain-model-delta.md) (started by a prepaid Contract per Procedure, the line's price above zero, generated on approval (optional) with its pair to the AA Holding account, left off the final invoice with nothing deducted; the letter-template master is 41's);
 [RV-05](../analysis/reverse-check.md) (prepayment as a payment category with a split deposit or an estimated full fee, netted from the final invoice).
-**Left at `7cd7802`:** none. At `d436947`: US-08.2.2 re-dated OQ-116's answer to 23 October and records that a mixed Booking's final invoice is unconfirmed with Vanessa (build as answered, D57); D37 answered: the prepayment invoice line prints the Procedure's invoice description.
+**Left at `7cd7802`:** none. At `a68f09b`: OQ-119 answered (D67), US-06.3.5 now Verify; OQ-120 stays open (D68). At `d436947`: US-08.2.2 re-dated OQ-116's answer to 23 October and records that a mixed Booking's final invoice is unconfirmed with Vanessa (build as answered, D57); D37 answered: the prepayment invoice line prints the Procedure's invoice description.
 
 **Depends on:** Phase 15a (the warning routine, `WARNING_RULES`, `prepaymentUnpaid` and its texts,
 `appSettings` and its backfill, `warningClearances` and `clearWarning`, the to-do list, the triangle,
@@ -69,9 +69,10 @@ and prepayment `negativeTotal` exceptions go. The anaesthetist never changes a p
 
 Nothing blocks (D5). Part paid is tracked and 15a's unpaid warning escalates, mild from a week out
 and strong from two days out, in both apps (US-06.3.2). The requirement is derived, so a change of
-Procedures, Contract or payer re-checks it at once (US-06.3.5, Open: built as written, labelled
-provisional): before generation an unapproved prepayment leaves the list; after sending the invoice is
-never rewritten and an office warning is the interim until 41 (US-06.3.7, OQ-119, D67). A move is not
+Procedures, Contract or payer re-checks it at once (US-06.3.5, Verify: built as written): before
+generation an unapproved prepayment leaves the list; after sending or payment a Contract changed off
+prepaid is a cancellation of the prepayment (US-06.3.7, OQ-119 answered, D67), which 41 builds: until
+then the invoice is never rewritten and an office warning is the interim, with no provisional caption. A move is not
 a change: no code detects it, and the payable is the AA Holding account (US-06.5.4, D38).
 
 **Pricing model in one place.** The rules (the requirement, the party, the amount, the status, the
@@ -92,17 +93,17 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-06,FT-06.2,FT-06.3,US-06.2.1,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,FT-08.1,US-03.1.8,US-08.2.2,FT-06.5,US-05.3.1,US-06.3.4,US-06.3.6,US-06.3.7,US-06.4.1,US-06.5.1,US-06.5.4,US-09.1.3,US-04.2.14,US-04.3.4,US-11.2.2,US-13.7.1,US-13.7.3,US-13.7.4,OQ-25,OQ-73,OQ-80,OQ-92,OQ-96,OQ-97,OQ-104,OQ-105,OQ-116,OQ-119,OQ-120,OQ-04,OQ-38,OQ-48,OQ-61,OQ-70,OQ-76,OQ-91
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-06,FT-06.2,FT-06.3,US-06.2.1,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,FT-08.1,US-03.1.8,US-08.2.2,FT-06.5,US-05.3.1,US-06.3.4,US-06.3.6,US-06.3.7,US-06.4.1,US-06.5.1,US-06.5.4,US-09.1.3,US-04.2.14,US-04.3.4,US-11.2.2,US-13.7.1,US-13.7.3,US-13.7.4,OQ-25,OQ-73,OQ-80,OQ-92,OQ-96,OQ-97,OQ-104,OQ-105,OQ-116,OQ-120,OQ-04,OQ-38,OQ-48,OQ-61,OQ-70,OQ-76,OQ-91
    ```
 
-   The plan updates through `d436947` folded in the 27 and 28 October notes, the 29 October typed
-   decision and the 23 October re-dating (summarised under "Requirements covered"); diff only for
-   anything after `d436947`.
-2. If an item changed since `d436947`, re-read it and adjust the work items; if one is now Retired or
+   The plan updates through `a68f09b` folded in the 27 and 28 October notes, the 29 October typed
+   decision, the 23 October re-dating and the 4 November answers (summarised under "Requirements
+   covered"); diff only for anything after `a68f09b`.
+2. If an item changed since `a68f09b`, re-read it and adjust the work items; if one is now Retired or
    Future, drop it and say so in PROGRESS. Check US-06.2.3 to US-06.2.5, US-06.3.3, US-06.4.2,
    US-06.1.1 and FT-06.4 are still Retired and US-13.7.4 still Future.
 3. **Answered: build as answered, no provisional label** (each as the Goal states it): D64 / OQ-25
@@ -111,16 +112,11 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
    account, no payee repoint); D23 revised / OQ-73 (whoever the Contract bills); D30 / OQ-96 (never
    the anaesthetist; the office can, raising nothing); D47 / OQ-104 (the issued price kept); D57 /
    OQ-116 (left off, nothing deducted, ranked across all); D5 / OQ-57 (no block); D42 / OQ-91 (the
-   office keeps the lists); OQ-04, OQ-38, OQ-61, OQ-76 (no estimate, contingency or part payment,
+   office keeps the lists); D67 / OQ-119 (before generation the re-check clears the requirement; after sending or paid, a Contract changed off prepaid is a cancellation of the prepayment, 41's: here the status reads `notNeeded` with an office warning, the interim, no provisional caption); US-06.3.5 (Verify, as written); OQ-04, OQ-38, OQ-61, OQ-76 (no estimate, contingency or part payment,
    nothing automatic afterwards); OQ-48 (the version in force on the procedure date); D37 / OQ-103 (the invoice line prints the Procedure's invoice description from 20a's chain, never the Contract line's description directly). If one has been
-   reopened since `d436947`, build the plan as written and put it first on "For the owner's review".
+   reopened since `a68f09b`, build the plan as written and put it first on "For the owner's review".
 4. **Open: build the default, one code comment naming the question, log it.** If answered since
-   `d436947`, build the answer instead.
-   - **US-06.3.5 (Open):** its criterion as written (cleared before the invoice is generated), one
-     "Provisional" caption on the re-check's confirmation line (item 10).
-   - **OQ-119 (D67):** after the invoice is sent or paid, a Contract changed off prepaid rewrites
-     nothing; the status reads `notNeeded` with an office warning, the interim until 41's settlement.
-     One comment in `prepaymentState`, one "Provisional (OQ-119)" caption on the panel's state.
+   `a68f09b`, build the answer instead.
    - **OQ-120 (D68):** the prepayment invoice names the anaesthetist as other AA invoices do, from one
      constant (`PREPAYMENT_NAMES_ANAESTHETIST`, comment naming OQ-120), so dropping it is one line. No
      caption.
@@ -145,8 +141,7 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
    `setBookingPayer`; 22's `materialiseInvoices`, send step, `supplier`, Split and `prepaidSplit`;
    23's allocation; 24's `procedurePrice.ts`, `anaesthetistMayChangePricing` and the office price
    edit; 25's snapshot, relink buckets and `priceBookingFromLock`. Reuse what exists.
-6. Record the result (including "no drift", the answers as built and the US-06.3.5, D67 and D68
-   defaults) in the PROGRESS entry.
+6. Record the result (including "no drift", the answers as built and the D68 default) in the PROGRESS entry.
 
 ## Reference
 
@@ -164,7 +159,7 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
     as mono rows (line, fixed price), a rule, then the prepaid amount and its status.
 - **Catalogue:** the covered files above; for context FT-06.5, US-05.3.1, US-06.3.4, US-06.3.6,
   US-06.3.7, US-06.4.1, US-06.5.1, US-06.5.4, US-09.1.3, US-04.2.14, US-04.3.4, US-11.2.2, US-13.7.1
-  to US-13.7.4; the questions OQ-97, OQ-119 and OQ-120 (open) and OQ-25, OQ-73, OQ-80, OQ-92, OQ-96,
+  to US-13.7.4; the questions OQ-97 and OQ-120 (open) and OQ-119, OQ-25, OQ-73, OQ-80, OQ-92, OQ-96,
   OQ-104, OQ-105, OQ-116, OQ-04, OQ-38, OQ-48, OQ-57, OQ-61, OQ-70, OQ-76 and OQ-91 (answered); and
   `requirements-board/requirements/domain-model.md` (the prepayment rows, Booking, Contract, Internal
   ledger, Warnings and the Prepayment paragraph). Evidence (cited passages only,
@@ -250,7 +245,8 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
      the Contract bills; D23 revised). No person-only guard.
    - `prepaymentState(derived, issuedInvoices)`: `none`; `awaitingApproval` (required, nothing issued;
      `ready` false on `noLine` or an incomplete party); or `issued` with `match`, `notNeeded` (no
-     longer on a prepaid Contract, or cancelled; OQ-119's interim, comment) or `changedAfterSending`
+     longer on a prepaid Contract, or cancelled; after sending or payment, the interim until 41's
+     cancellation handling of US-06.3.7, one comment) or `changedAfterSending`
      (its Procedures, Contract or party differ from the invoice's lines and addressee). An issued
      invoice is never rewritten.
    - `PREPAYMENT_NAMES_ANAESTHETIST = true` (OQ-120's default, D68, comment).
@@ -270,7 +266,7 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
    - `pendingPrepayments(state)`: every `awaitingApproval` Booking on a List not yet AUTHORISED, by
      date. `upcomingPrepayments(state)`: every prepaid Booking on such a List with its status and days
      to go from the demo clock.
-   - **The re-check is the derivation** (US-06.3.5, Open, comment): a change of Procedures, Contract
+   - **The re-check is the derivation** (US-06.3.5, Verify): a change of Procedures, Contract
      (including 25's relink) or party changes the status at once; nothing to call.
      `setProcedureContract`, `setBookingPayer` and the procedure edit return the status change for
      item 10's one-line confirmation. No move path reads or writes anything here; delete the stale
@@ -319,7 +315,7 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
      listDateISO)`; **mild** at `<= mildWithinDays` (7), **strong** at `<= strongWithinDays` (2),
      including the day and a passed date; nothing further out. Seed both in `defaultParams` (15a's
      backfill carries them; pin it). The same rule raises one mild office finding for `notNeeded` and
-     `changedAfterSending`, whatever the date (OQ-119's interim). No price-missing rule (D27).
+     `changedAfterSending`, whatever the date (the interim until 41, US-06.3.7). No price-missing rule (D27).
    - Texts (no en or em dash): `awaitingApproval` "Prepayment of {amount} is awaiting approval on
      Invoices and has not been sent."; `unpaid` "Prepayment invoice {number} unpaid. Check with the
      patient before surgery starts."; `partPaid` "Prepayment part paid, {x} of {y} received. Check
@@ -388,8 +384,8 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
     all three apps through `useSurface()`; US-06.2.2, US-06.3.2, US-03.1.8, D30):
     - Title by status, as a semantic tint: "Pre-payment awaiting approval"; "Pre-payment unpaid";
       "Pre-payment part paid · $x of $y received"; "Pre-payment received"; "Pre-payment no longer
-      needed"; "Pre-payment sent before a change". The last two carry the one "Provisional (OQ-119)"
-      caption. Amounts in mono, tabular-nums.
+      needed"; "Pre-payment sent before a change". No caption (OQ-119 is answered).
+      Amounts in mono, tabular-nums.
     - Body: one mono row per prepaid Procedure (the line, its fixed price, the Contract "Dr M. Souter,
       prepay price list"); who is invoiced (the party by name); the prepaid amount; the invoice number
       with a link (office). Other Procedures on the Booking are not listed. The warning stays in 15a's
@@ -403,7 +399,7 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
     - The re-check is visible (US-06.3.5): the Contract picker's, payer sheet's and procedure edit's
       confirmations append one line when the status changes ("Pre-payment now needed: awaiting
       approval", or "sent" with approval off; "Pre-payment no longer needed"; "Pre-payment invoice sent
-      before this change"), with the one "Provisional" caption. A reassign shows none.
+      before this change"), with no caption. A reassign shows none.
     - Delete the "RFP open question" and "discovery point" copy. Keep `data-shot="booking-prepayment"`.
 11. **Admin surfaces** (US-06.3.1, US-06.3.2, US-08.2.2):
     - **Invoices screen:** an "Awaiting approval" strip above the table, one row per
@@ -482,7 +478,7 @@ PWA equivalents (the mobile Booking waits on the office and on the patient):
   27a, straight after. This phase only names the payee and keeps the payables run off it.
 - Prepayment letters and reminders (US-06.3.6; the letter joins Approve and send in 41); the credit
   or refund on cancellation, a fresh prepayment on rebooking, settling a Contract changed off prepaid
-  after sending (US-06.3.7, OQ-119: here only the office warning), by-hand additional invoices and
+  after sending (US-06.3.7, OQ-119 answered, D67: 41 builds it; here only the office warning), by-hand additional invoices and
   credit notes on a prepaid Procedure, a part credit (OQ-97): Phases 38b, 39 and 41.
 - Any payee repoint on a move: none is built by any phase (D38). Anything on a move (28, 31, 32, 32a).
 - The ledger legs behind prepayment status: Phase 36.
@@ -520,8 +516,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       whose invoice is generated and sent at once (audit `invoice.prePaymentAutoSent`, pair to the AA
       Holding account), never on the strip. Switch it back on.
 - [ ] Re-check: "Add prepaid Booking" (approval on), then change its Procedure's Contract to one not
-      flagged prepaid: it leaves the strip, the confirmation says "Pre-payment no longer needed" with
-      the provisional caption (US-06.3.5). Back on the price list, a guardian as payer is named on the
+      flagged prepaid: it leaves the strip, the confirmation says "Pre-payment no longer needed"
+      (US-06.3.5, no caption). Back on the price list, a guardian as payer is named on the
       panel. A split on the prepaid Procedure is refused.
 - [ ] Price kept (D47): on Riley (sent), save a new version of Dr Souter's price list with Rhinoplasty
       at a new price: Riley keeps $1,200.00 and the dashboard lists her as prepaid; the new Booking
@@ -529,8 +525,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Move: reassign Riley (sent) to a colleague: no confirmation line, the amount, invoice, status
       and pair unchanged, no new invoice. Run this before the next item.
 - [ ] Sent then changed: on a sent prepayment, change the Procedure to a Contract not flagged prepaid:
-      nothing is rewritten on the invoice, the status reads "Pre-payment no longer needed" with
-      "Provisional (OQ-119)", and the review chip and the mild office warning show. Reset after.
+      nothing is rewritten on the invoice, the status reads "Pre-payment no longer needed", and the review chip and the mild office warning show. Reset after.
 - [ ] Who may change it (D30): the anaesthetist has no price field on a prepaid Procedure and the
       store refuses; the office price edit saves, raises no invoice or credit and the issued invoice is
       unchanged.
@@ -544,7 +539,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] S3, S4 Beat 3 and S5 figures unchanged (item 1); the pair shape matches the pinned one with the
       holding-account contact.
 - [ ] No "estimate", "deposit", "Less pre-payment", "discovery point" or "RFP open question" on any
-      prepayment surface; the only provisional captions are US-06.3.5's and OQ-119's.
+      prepayment surface, and no "Provisional" caption (OQ-119 is answered).
 - [ ] PWA build, Riley's mobile Booking (Reset first): "Office approves and sends the prepayment
       invoice" (badged), then "Patient pays half", then "Move to 2 days before procedure". Bottom
       sheets, teal actions, no crimson.
@@ -577,9 +572,9 @@ sections of `master-demo-guide.html`:
 - **S4 new closing Beat 6, "The date approaches"** ("Move to 2 days before procedure" on Admin Day,
   after clearing Riley's mild warning). It sits last so Beats 2 to 5 run on the seeded date; if Beat 2
   loses its ACTIVE today List after a jump, keep the jump last and say so in Stage it.
-- S4 "Discovery points": "a prepaid Contract changed after the invoice is sent or paid (OQ-119)" and
-  "whether the prepayment invoice names the anaesthetist (OQ-120)" only. Say OQ-96, OQ-104 and OQ-116
-  as facts (never editable by the anaesthetist, the prepaid price kept, left off the final invoice);
+- S4 "Discovery points": "whether the prepayment invoice names the anaesthetist (OQ-120)" only. Say OQ-96,
+  OQ-104, OQ-116 and OQ-119 as facts (never editable by the anaesthetist, the prepaid price kept, left
+  off the final invoice, a Contract changed after sending handled as a cancellation, built in 41);
   drop any gate, deposit, estimate, missing-price, setup-generation, deduction or move point.
 - `04-presenter-cheat-sheet.md` section 8 "Pre-payment": rewritten to the trigger (a Contract flagged
   prepaid, picked by the office, per Procedure), the amount (the line's price, in full), approve and
@@ -610,7 +605,7 @@ deduction, a payment category, a payable to the anaesthetist, the "prepay holdin
 | [US-06.2.2](../../../../requirements-board/requirements/stories/US-06.2.2.md) | partial · admin-deposit-invoice, admin-full-fee-invoice | captured. Delete `deposit-invoice`; `full-fee-invoice` at `/admin/invoices/INV0001` captioned "Prepayment invoice for the prepay Contract line's price, in full"; add admin `prepaid-amount` (Riley's panel, the line row, no amount input). |
 | [US-06.3.1](../../../../requirements-board/requirements/stories/US-06.3.1.md) | captured · admin-raise-prepayment-invoice, admin-prepayment-invoice, simulator-prepayment-xero-pair | captured. Rename `raise-prepayment-invoice` to `approve-and-send`, states `awaiting-approval` (the strip, switch on), `sent` and `approval-off` (switch off, the added Booking sent at once); keep `prepayment-invoice`; `prepayment-xero-pair` shows the payable to "AA Holding account". Caption: "Generated when an admin approves it (a step AA can switch off), its payable to the AA Holding account". |
 | [US-06.3.2](../../../../requirements-board/requirements/stories/US-06.3.2.md) | partial · admin-day-grid-flag, admin-card-status | captured. `day-grid-flag` on 15a's triangle; `card-status` states `awaiting-approval`, `unpaid`, `part-paid`, `received`; add `rail-prepayments`, a mobile Riley shot, and `strong` after the `prepayment-two-days-before` trigger. Caption: "Prepayment status per upcoming Booking, with a warning that strengthens as the date nears". |
-| [US-06.3.5](../../../../requirements-board/requirements/stories/US-06.3.5.md) | partial · admin-recheck-on-change | captured (the story is Open). `recheck-on-change` states `before` (awaiting approval) and `after` (Contract changed off prepaid before generation: off the strip, "no longer needed", provisional caption); add `moved` (Riley sent, reassigned: unchanged). Captions: "Before the invoice is generated, a Contract no longer prepaid clears it (provisional)" and "A move changes nothing". |
+| [US-06.3.5](../../../../requirements-board/requirements/stories/US-06.3.5.md) | partial · admin-recheck-on-change | captured (the story is Verify). `recheck-on-change` states `before` (awaiting approval) and `after` (Contract changed off prepaid before generation: off the strip, "no longer needed"); add `moved` (Riley sent, reassigned: unchanged). Captions: "Before the invoice is generated, a Contract no longer prepaid clears it" and "A move changes nothing". No caption for the sent-or-paid criterion (41 builds it and re-stages). |
 | [US-03.1.8](../../../../requirements-board/requirements/stories/US-03.1.8.md) | none | Create, captured. Mobile and web, Nair (paid): `booking` (highlight `[data-shot=booking-prepayment]`) and `units` (`[data-shot=capture-prepaid]`). Caption: "The anaesthetist sees the prepaid amount on the Booking and when recording units". |
 | [US-08.2.2](../../../../requirements-board/requirements/stories/US-08.2.2.md) | captured · admin-deposit-invoice, admin-balance-invoice | captured. Delete `deposit-invoice`; rename `balance-invoice` to `left-off`: authorise Souter Fri 24 PM, Forte's septoplasty invoice with no rhinoplasty line or deduction and "Prepaid, left off the final invoice (AA-2026-0001)", highlight the billing panel. Caption: "Prepaid Procedures are left off the final invoice; nothing is deducted". |
 | [FT-06.2](../../../../requirements-board/requirements/stories/FT-06.2.md) | none | Create, captured: admin Riley panel (trigger and amount from the prepaid Contract). Caption: "A prepaid Contract starts prepayment at its line's price". |
@@ -665,7 +660,7 @@ anything settled in the Decisions log except the rulings this phase explicitly s
   mixed Bookings keep 23's ranking across every Procedure; all-prepaid raises nothing. Prepaid plus
   invoiced equals the priced fees (GST included). No deduction line, `prepaidFunderOverride` or
   `prepaidCounterpartyChanged` remains; `negativeTotal` fires for every other negative.
-- **Status and warning (D5, OQ-119).** Part paid from mirror money; mild at 7, strong at 2, nothing
+- **Status and warning (D5, D67).** Part paid from mirror money; mild at 7, strong at 2, nothing
   once AUTHORISED; a cleared mild warning re-opens; `notNeeded` and `changedAfterSending` never rewrite
   the invoice; the demo clock only; nothing blocks.
 - **One place.** The rules in `prepayment.ts` (with the switch and `PREPAYMENT_NAMES_ANAESTHETIST`),
@@ -678,15 +673,14 @@ anything settled in the Decisions log except the rulings this phase explicitly s
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry), each with its route and persona:
-  - US-06.3.5 (Open): the re-check built as written, labelled provisional;
-  - D67 (OQ-119): a Contract changed off prepaid after sending rewrites nothing; an office warning
-    until 41;
+  - D67 (OQ-119, answered): after sending, a Contract changed off prepaid is 41's cancellation; here
+    it rewrites nothing and an office warning is the interim (Donald's answer, AA has not seen it);
   - D68 (OQ-120): the prepayment invoice names the anaesthetist, from one constant;
   - the readings in drift check 4, and the 7 and 2 day windows;
   - Souter's payables due fall by Nair's held prepayment until 27a.
-- Status row and a phase entry: the drift check against `d436947`; the answers built (D64, D27, D6
-  extended, D38, D23 revised, D30, D47, D57, D5, D42, OQ-04, OQ-38, OQ-61, OQ-76) and the US-06.3.5,
-  D67 and D68 defaults and where each lives; what 15a to 25 provided; the sessions and the adversarial
+- Status row and a phase entry: the drift check against `a68f09b`; the answers built (D64, D27, D6
+  extended, D38, D23 revised, D30, D47, D57, D67, D5, D42, OQ-04, OQ-38, OQ-61, OQ-76, US-06.3.5 as written) and the D68 default and
+  where each lives; what 15a to 25 provided; the sessions and the adversarial
   pass; the tests added; `PERSIST_VERSION` old to new and the re-pinned figures; the Catalogue
   screenshots result (recipes created or changed, broken ones re-pointed, REPORT.md counts before and
   after); handoffs: **27a** (`AA_HOLDING_ACCOUNT`, the payables skip, `settledByPrepayment` and the
@@ -708,5 +702,6 @@ anything settled in the Decisions log except the rulings this phase explicitly s
     price lock (OQ-96's former default); 22's `prepaidSplit` keyed on 20's interim (re-keyed).
   - **Readings settled here:** as listed under "For the owner's review".
   - **Answered, built as answered:** D64 / OQ-25, D27 / OQ-92, D6 and D38 / OQ-80, D23 / OQ-73, D30 /
-    OQ-96, D47 / OQ-104, D57 / OQ-116, D5 / OQ-57, D42 / OQ-91, OQ-04, OQ-38, OQ-61, OQ-76.
-  - **Defaults for open questions:** US-06.3.5 (Open), D67 / OQ-119, D68 / OQ-120.
+    OQ-96, D47 / OQ-104, D57 / OQ-116, D67 / OQ-119 (interim warning), D5 / OQ-57, D42 / OQ-91, OQ-04,
+    OQ-38, OQ-61, OQ-76.
+  - **Default for an open question:** D68 / OQ-120.

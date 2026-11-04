@@ -98,13 +98,13 @@ so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (d436947):
+1. Run the drift check against the plan's catalogue snapshot (a68f09b):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
    ```
 
-   (It diffs the plan's baseline, d436947, to the working tree; the tool is rename-aware, so never
+   (It diffs the plan's baseline, a68f09b, to the working tree; the tool is rename-aware, so never
    use a plain `git diff` of the catalogue folder.) Read the diff for US-12.2.3, FT-12.2,
    US-12.2.1, US-12.2.2, the context items US-08.3.5, US-08.3.1, US-10.1.2, US-05.2.7,
    US-07.4.1, US-10.2.7, US-11.3.2, and OQ-31, OQ-29, OQ-59 and OQ-60. If an item changed, re-read it and
@@ -112,7 +112,7 @@ so `PERSIST_VERSION` is bumped.
    the PROGRESS entry. At plan time (7cd7802) US-12.2.1 and US-05.2.7 were **Confirmed**, US-12.2.2
    (the monthly GST report, its release slot unconfirmed) and US-12.1.2 is **Retired**
    (it is in the diff list only to confirm it stayed so); OQ-59, OQ-33 and OQ-31 were answered and
-   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at d436947" note above. Anything later than d436947 is the drift to absorb.
+   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. Anything later than a68f09b is the drift to absorb.
 2. **Owner decisions** (the ROADMAP decisions table):
    - **D8 (ageing and an "Overdue" view): answered** at the 2026-10-01 meeting (OQ-59, "let's go with
      your recommendation for now"). Build the flat list, oldest first, no buckets, no age chips, no
@@ -170,7 +170,14 @@ so `PERSIST_VERSION` is bumped.
      BCTI count function;
    - if **37** has run: disbursements detected from Xero (they must raise Paid out and add a GST row on
      their own date, through the same ledger entries).
-5. Note the current `PERSIST_VERSION` (16 at plan time, after Phase 15a session 1; later phases bump
+5. **The payout control (OQ-111, D53: the payment to the anaesthetist is made in Xero and recorded, not
+   paid out by the product).** Check PROGRESS.md for Phase 37. If it is DONE, narrate the payout with its
+   badged **"Run payables in Xero"** control on the Billing monitor (and "Pay anaesthetist in Xero" on a
+   Xero pair). If 37 has not run, use the existing Billing monitor "Run payables" button and its Xero
+   simulator "Simulate payment and payout", say so in the PROGRESS entry, and re-word nothing in the
+   product; only this doc's narration changes. Either way the ledger records the same disbursement
+   entries, so the report maths is the same.
+6. Note the current `PERSIST_VERSION` (16 at plan time, after Phase 15a session 1; later phases bump
    it further).
 
 ## Reference
@@ -249,7 +256,7 @@ to 37, which will have moved them):
 - Demo: `src/shared/demoTriggers/registry.ts` (Phase 14: `payment-full` ~376, `payment-half` ~389,
   `pwa-payment-full` ~503, `pwa-payment-half` ~515),
   `src/apps/demo/DemoData.tsx` (the guard console), `src/apps/demo/DemoXero.tsx` ("Simulate payment
-  and payout" ~298), `src/shared/DemoBadge.tsx`; the product "Run payables" button in
+  and payout" ~298), `src/shared/DemoBadge.tsx`; the Billing monitor's payables control ("Run payables", or 37's "Run payables in Xero") in
   `src/apps/admin/screens/BillingMonitorScreen.tsx` (`data-shot="billing-payables-run"`, wherever
   Phase 37's restyle left it).
 - Playwright: `visual/routing.spec.ts` (50 to 52 and 85 to 86: the Overdue redirect and the dashboard link),
@@ -516,7 +523,8 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
 
 Everything this phase shows is reachable by normal use in the framed build: the office authorises a
 List (the billing run raises its invoices), the Xero simulator's "Simulate payment and payout" or a
-payment followed by the Billing monitor's product "Run payables" button moves Collected and Paid out
+payment followed by the payment to the anaesthetist made in Xero (37's "Run payables in Xero" on the
+Billing monitor, or the existing "Run payables" control if 37 has not run) moves Collected and Paid out
 and adds the GST report row on the payout date, and the demo clock's "Next morning" brings
 yesterday's invoices into Outstanding. So there is **no new trigger behaviour** (the two web payment entries below reuse Phase 14's body). Existing entries are
 re-pointed or re-worded so the money beat can be driven from the screen being presented:
@@ -526,10 +534,11 @@ re-pointed or re-worded so the money beat can be driven from the screen being pr
 | Payment received · full / half (re-pointed) | Web · Dashboard (`/web`) and Web · Accounts (`/web/accounts/:subTab`) | bar | The URL-driven `payment-full` / `payment-half` (Admin Invoice, Xero pair) stay exactly as they are. At 60e2d1e `surfaces` and `routes` are per entry (`src/shared/demoTriggers/types.ts`), so adding `/web` patterns and `bar` to `pwa-payment-full` / `pwa-payment-half` would also put them in the bar on `/mobile/balances`: add two new entries, `web-payment-full` / `web-payment-half` (routes `/web` and `/web/accounts/:subTab`, surface `bar`), whose `choices` and `run` call the same shared body as the PWA entries (generalise `souterOpenAccRecs` / `souterPaymentChoices` / `souterPaymentDisabled` to take an anaesthetist id; `DemoTriggerCtx` carries only `pathname`, `params` and `published` at 60e2d1e, so the web entries pass the web app's persona, `APP_CONFIG.web.persona.anaesthetistId` as `WebApp.tsx` reads it, unless a later phase put the persona on `ctx`). Only if a later phase made surfaces per route, extend the PWA entries instead. The chooser lists the open ACCRECs from `openAccRecs` whose payable belongs to that persona (36's stamped `pair.anaesthetistId`, not the List join `souterOpenAccRecs` uses today), not a hardcoded Souter. The webhook lands: Collected rises at once, the Outstanding row turns "Paid in, due to you", and the GST schedule gains **no** row. Result message: "Payment received. It reaches your GST report when AA pays you". Disabled with "No open invoices yet" when empty |
 | Office runs payables (re-worded) | Mobile · Balances (`/mobile/balances`) | PWA only, badged office stand-in | Phase 36's body, unchanged. Its result message now reads "Paid out $X to Dr Souter. It leaves Outstanding and shows under GST this month" |
 
-"Run payables" in the framed build stays the Billing monitor's own product button (Phase 14's
-ruling); the S3 path to show "a receipt adds no GST row, a payout does" is the web bar's "Payment
-received · full", then Admin → Billing monitor → Run payables, then back to Web → Accounts → GST
-report.
+The payout is the payment made in Xero and recorded (OQ-111, D53), not a product payout. It is not a
+registry entry: in the framed build it is the Billing monitor's control, "Run payables in Xero" once 37
+has run, else the existing "Run payables" button (say which in the PROGRESS entry). The S3 path to show
+"a receipt adds no GST row, a payout does" is the web bar's "Payment received · full", then Admin →
+Billing monitor → that control, then back to Web → Accounts → GST report.
 
 PWA parity: the mobile beat is Balances (flat list of unpaid payables, the current month's GST peek). The
 invoices on a handset come from Phase 14's "Office authorises this List" (unchanged), the payment
@@ -599,14 +608,14 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] On Web → Accounts → GST report, note the July rows. Harness bar → Demo actions → "Payment
       received · full" on AA-2026-0005: Collected rises by $152.38, the Outstanding row stays as
       "Paid in, due to you", and the GST report gains **no** row; its current-month line shows
-      $152.38 collected, not yet paid to you. Admin → Billing monitor → Run payables, back to the GST
+      $152.38 collected, not yet paid to you. Admin → Billing monitor → the payment made in Xero ("Run payables in Xero", or "Run payables" if 37 has not run), back to the GST
       report: one new row dated today, paid to you $152.38 with the invoice's own GST component. The
       Outstanding row is gone and Paid out rose by $152.38. Nothing on the tab reads "GST activity",
       "schedule", "period" or "received" (RV-33).
 - [ ] The bar's payment entries show on Web · Dashboard and Web · Accounts with a chooser of the
       current persona's open invoices; on Admin · Invoice the URL-driven entries behave as before.
       The entries do not show on Web → Lists or Availability.
-- [ ] Open another pair in the Xero simulator, Simulate payment and payout, return to the web
+- [ ] Open another pair in the Xero simulator, Simulate payment and payout (37's "Pay anaesthetist in Xero" if built), return to the web
       dashboard: Collected and Paid out have each risen by the invoice total, Owed to you has fallen
       by the same amount, and the GST report has the row.
 - [ ] GST report (Dr Souter): "July 2026" is the default; the month picker lists months back to the
@@ -646,7 +655,7 @@ disappearance" line) are **38a's**; leave them.
     gains AA-2026-0005 on today's date"; "It does not remain under Overdue because it is no
     longer outstanding" becomes "It leaves Outstanding because AA has now paid Dr Souter". Add an
     optional two-step aside: a payment alone keeps the row as "Paid in, due to you" and adds no GST
-    row; the payables run adds it (GST is on a cash basis of what AA pays out). Optionally show
+    row; the payment to Dr Souter made in Xero and recorded adds it (37's "Run payables in Xero", else the existing "Run payables"; GST is on a cash basis of what AA pays out). Optionally show
     Download, Print and Email to me on the report. Name the dashboard's
     Financial position wherever the beat says "receivables" or "aging".
   - **S3 discovery points**: add "whether the monthly GST report (payments passed, with the GST
@@ -681,7 +690,7 @@ phase's session edits them, this doc only says what each must show.
 |---|---|---|
 | [US-12.2.1](../../../../requirements-board/requirements/stories/US-12.2.1.md) Outstanding balances list | captured · web-outstanding, mobile-outstanding | captured. Web: re-point `start` from `/web/accounts/overdue` to `/web/accounts/outstanding`; the flat table, oldest first, with Invoice date, Stage and Outstanding to you, highlight `[data-shot=web-accounts-outstanding]`, caption "Flat list of unpaid payables, oldest first, no ageing". Mobile `/mobile/balances`: total card and rows with "Invoice date", no age chips, caption "Outstanding to you, one row per unpaid invoice". Add a web `paid-in` state after a `web-payment-full` demo step (row turns "Paid in, due to you" and stays; open an invoice first). Add a web `opens-booking` state clicking a row, landing on its Booking, caption "Each line opens its Booking" |
 | [US-12.2.2](../../../../requirements-board/requirements/stories/US-12.2.2.md) GST report | captured · web-gst-activity, mobile-gst-activity | captured. Keep the shot name `gst-activity` (files `web-gst-activity.png`, `mobile-gst-activity.png`), change the captions. Web `/web/accounts/gst`: the month's payments with the "Month total" footer and the month picker, Download, Print and Email to me, highlight `[data-shot=web-gst-actions]`, caption "GST report: the payments AA passed to you in the month, with the GST component of each; download, print or email". Add a `previous-month` state choosing June in the picker. Mobile: click text `GST this month` (unchanged), highlight the "July 2026 · paid to you" header, caption "GST this month: what AA passed to you, with its GST". Replace the stale "Amounts received ..." captions; shots show payments dated by disbursement, never receipts |
-| [US-12.2.3](../../../../requirements-board/requirements/stories/US-12.2.3.md) Dashboard | captured · web-dashboard | captured. US-12.2.3 now grades Contradicts on the ageing panel, so this shot is what closes it. Re-shoot `/web`: the week strip, then Financial position (`[data-shot=web-financial-position]`, the highlight) beside Who's free; no Productivity, Leave or ageing panels. Caption "Web dashboard: week calendar, financial position (owed, collected, paid out) and cover", replacing "week calendar, receivables, productivity and cover". The week strip shows whatever 38a has built; it is not this phase's highlight. Add a `paid-out` state after a payment and Run payables if a step chain can stage it |
+| [US-12.2.3](../../../../requirements-board/requirements/stories/US-12.2.3.md) Dashboard | captured · web-dashboard | captured. US-12.2.3 now grades Contradicts on the ageing panel, so this shot is what closes it. Re-shoot `/web`: the week strip, then Financial position (`[data-shot=web-financial-position]`, the highlight) beside Who's free; no Productivity, Leave or ageing panels. Caption "Web dashboard: week calendar, financial position (owed, collected, paid out) and cover", replacing "week calendar, receivables, productivity and cover". The week strip shows whatever 38a has built; it is not this phase's highlight. Add a `paid-out` state after a payment and the payment made in Xero (37's "Run payables in Xero", else "Run payables") if a step chain can stage it |
 | [FT-12.2](../../../../requirements-board/requirements/stories/FT-12.2.md) Reporting for anaesthetists | no recipe of its own (its children's shots) | no change here (its children's shots cover it) |
 
 **Left this phase.** US-12.1.2 is Retired (no row; Phase 26 owns its recipes' removal). US-07.2.1's
@@ -752,7 +761,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
-  - the drift-check result against d436947 (items changed or not; D8 built as answered; OQ-29's and
+  - the drift-check result against a68f09b (items changed or not; D8 built as answered; OQ-29's and
     OQ-60's status, with the fee-never-nets rule relied on; US-12.1.2 Retired and 26's removal of
     `gstPeriod` confirmed; D9 and US-07.2.1 confirmed as 38a's, nothing List-side built here);
   - what was built, with the name map for later phases: `receivablesAgingFor`, `overdueAccountsFor`,

@@ -19,8 +19,8 @@ Before doing anything else, read these in order:
    - the Decisions log entries this phase supersedes or must honour: 2026-07-22 (demo-plausible RVG values), the Phase 04 RVG code picker and in-range completion rule, and 2026-09-28 (the anaesthetist's Booking shows no calculation);
    - the PROGRESS entries for catch-up Phases 15, 15a, 15b, 17 and 18. From 15a: how a warning rule is registered (rule file, WARNING_RULES entry, WarningRuleId, WarningFacts, the appSettings default), the Warning shape, when after-procedure warnings surface and re-raise, and the WARNING_SAMPLES entry shape and pinned sample Bookings (including multiWarning). From 18: the feeParity.test.ts harness and its __parity__ fixture, where 18 put the pricing model's types (join its module if it made one), and the shape of the Type 3 price rows.
 
-Then do the drift check in the phase doc (baseline catalogue commit d436947):
-- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> for the IDs the doc lists, re-read anything changed after d436947, and drop anything now Retired or Future (noting it for PROGRESS.md).
+Then do the drift check in the phase doc (baseline catalogue commit a68f09b):
+- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> for the IDs the doc lists, re-read anything changed after a68f09b, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - D3 (OQ-56), D39 (OQ-88, the hidden id a unique identifier only, no system code), OQ-62 and D35 (OQ-101, the range held and shown to the anaesthetist) are all answered: build them with no label and no provisional note.
 - Check docs/discovery-reference/Data files for anything that helps the demo-sized seed (there is no procedure list to load).
 

@@ -13,7 +13,10 @@
 This phase also builds the layout half of
 [DM-16](../analysis/domain-model-delta.md#dm-16) (Phase 21 built its holder-references half; delivery is the holder's, 18's) and
 the invoice-presentation part of [DM-22](../analysis/domain-model-delta.md#dm-22) (supplier, agent,
-Procedure links, lineage; the ledger itself is Phase 36's).
+Procedure links, lineage; the ledger itself is Phase 36's), and
+[DM-62](../analysis/domain-model-delta.md#dm-62) (new 4 November): the optional `Anaesthetist.gstNumber`
+on the Admin anaesthetist record that US-08.4.5's invoice prints (the profile stories, so Phase 26,
+name no GST number).
 **Left this phase at the 2026-10-08 update:** US-04.2.12 (the Contract payment setting, Retired
 2026-10-05: "neither a Contract nor a Procedure holds a full payment or split setting"), so owner
 decision D18's old reading ("set on the Booking, defaulting from the Contract") is superseded and
@@ -47,7 +50,9 @@ items 10 to 15 are UI and fit a short second session.
 ## Goal
 
 Every receivable invoice is **issued in the anaesthetist's name**, with their GST number, and names
-**AA as agent**, not supplier (US-08.4.5). Each Contract carries its own **invoicing settings**,
+**AA as agent**, not supplier (US-08.4.5). The number is an **optional field on the Admin anaesthetist
+record** (DM-62; master data form and seed, not Phase 26's profile); the invoice prints it when held and
+"GST number not held" when not. The agency wording stays provisional in one label until OQ-29 is answered. Each Contract carries its own **invoicing settings**,
 agreed with Greg on 2026-10-07 (US-04.2.8, Confirmed): the layout (the holder's, or the patient's) and
 the GST treatment, so every invoice raised under it looks and is taxed the same way without the office
 choosing booking by booking, plus the **holder's reference** for the Contract (for example SXAP), printed so the holder knows which of its contracts to file the invoice under. The two layouts are very similar: the **holder's carries the BTM breakdown and a few cross-match fields** so a hospital can match the invoice to its own records, the **patient's does not** (US-08.4.1). On both, each line prints the **Procedure's invoice description** (20a's, never re-derived) and a **discount prints as its own line** once Phase 24 holds one (22 builds the line and its print; 24 supplies the discount). The GST treatment is the one rule the catalogue now states: **every price is held GST
@@ -109,14 +114,14 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the ones it leans on against the plan's
-   baseline, catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `a68f09b` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.2.8,FT-08.4,US-08.4.1,US-08.4.2,US-08.4.5,US-08.2.3,US-09.1.4,US-04.2.12,US-08.4.6,US-05.2.7,US-11.4.1,US-11.2.2,US-11.2.3,US-04.1.5,US-08.4.3,FT-08.2,US-08.2.1,FT-09.1,US-08.6.3,US-08.6.4,OQ-29,OQ-42,OQ-60,OQ-68,OQ-23,OQ-67,OQ-73,OQ-78,OQ-114,OQ-122
    ```
 
-   The plan already reflects the catalogue at d436947 (US-04.2.8's delivery now the holder's, OQ-114 and
+   The plan already reflects the catalogue at a68f09b (DM-62 joined; none of the covered items changed in substance since d436947; US-04.2.8's delivery now the holder's, OQ-114 and
    OQ-122 as above, US-09.1.4's open granularity): US-04.2.12 Retired and US-08.2.3 rewritten
    (2026-10-05 typed decision: a Split button on the Procedure, several billable
    parties, typed $ or %, no Contract setting and no default); US-04.2.8 agreed with Greg on
@@ -146,7 +151,7 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
      address (21); a postal-only payer's invoice is marked "To post" with a print view, no posting
      integration. Carries a small "Provisional (OQ-122)" pill; log it.
    - **D37 (which description goes on the invoice, OQ-103), answered.** Each line prints 20a's invoice description (`procedureInvoiceWording`) as the rule, with no provisional label; 22 reads it and never copies, edits or derives it.
-   - **OQ-29 (GST agency treatment, and IRD's new name for the buyer-created tax invoice), Open.**
+   - **OQ-29 (GST agency treatment, and IRD's new name for the buyer-created tax invoice), Open; also holds DM-62's agency wording.**
      Build the recommended reading: supplier = the anaesthetist with their GST number, AA named as
      agent, and the ACCPAY labelled a buyer-created tax invoice. Every surface that shows this
      wording carries a small neutral "Provisional (OQ-29)" pill and one caption: "Supplier, agent and
@@ -258,7 +263,7 @@ both superseded, Phase 08 work item 2's "Email invoice = mark emailed-at", **202
 preview centred with a sticky information rail** (kept; its Email control becomes Resend), and the
 handoff item **P3 GST per-invoice rounding on funder splits** (still true of split shares).
 
-**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, d436947; use the shapes 16 and
+**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, a68f09b; use the shapes 16 and
 18 to 21 left).
 - Types, `domain/types.ts`: `Anaesthetist` (~141, no GST number), `Contract` (~216, reshaped by 18),
   `PrepaymentDetail` (~435, the prepayment's own `'full' | 'split'`, a different concept: do not reuse
@@ -309,7 +314,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
 ## Work items
 
 1. **Model** (`domain/types.ts`). DM-28, DM-16 (layout and delivery), DM-22 (presentation).
-   - `Anaesthetist.gstNumber: string`, required, so the compiler finds every creator. US-08.4.5.
+   - `Anaesthetist.gstNumber?: string`, optional, on the Admin anaesthetist record only (DM-62; Phase 26's profile holds none). US-08.4.5.
    - `ContractInvoicing`: `{ invoiceLayout: 'contractHolder' | 'patient'; holderReference?: string;
      gstTreatment: 'exclusiveAtFoot' }`, with no delivery field (delivery is the holder's, 18, D55), and
      `Contract.invoicing: ContractInvoicing`, required, on every Contract including No contract
@@ -329,7 +334,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      names a split, a payment setting or a default share.
    - On `Invoice`:
      - `procedureIds: ProcedureId[]` (the Procedure links, in Booking order);
-     - `supplier: { anaesthetistId; name; gstNumber }` and `agent: { name; gstNumber }`, snapshots
+     - `supplier: { anaesthetistId; name; gstNumber? }` and `agent: { name; gstNumber }`, snapshots
        taken at the run;
      - `split?: { procedureId; feeExGst; shareLabel; isRest: boolean }` (set on each invoice raised
        from a split share);
@@ -349,7 +354,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
    - `InvoiceLine` gains `kind: 'fee' | 'discount' | 'adjustment'` (existing price-override line stays `adjustment`), `description` (the Procedure's invoice description), and, on holder-layout fee lines, `btm?: { base; time; modifiers; unitValue }` snapshotted from the fee result; `Invoice.crossMatch?: { procedureDateISO; surgeon; hospitalRef? }` on the holder layout only. US-08.4.1.
    - Remove `BillingLine.funderOverride` (and `FeeLine.funderOverride` in `fee.ts`).
    - On `XeroAccPay`: `taxInvoice: BuyerCreatedTaxInvoice` = `{ kind: 'buyerCreated'; documentName;
-     wording; supplierName; supplierGstNumber; agentName; agentGstNumber; relatesToInvoiceNumber;
+     wording; supplierName; supplierGstNumber?; agentName; agentGstNumber; relatesToInvoiceNumber;
      provisional: true }`, required. One per ACCPAY, so one per receivable invoice. US-09.1.4.
 2. **Pure presentation rules** in a new `src/domain/billing/invoicePresentation.ts`, re-exported from
    the billing index, all Vitest-covered (convention 9):
@@ -364,7 +369,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      the AA fee GST). Today's per-invoice GST at the foot is kept unchanged (US-05.2.7 Matches).
    - `isValidGstNumber(value)` (8 or 9 digits once spaces and hyphens are stripped) and
      `formatGstNumber` (`NN-NNN-NNN` or `NNN-NNN-NNN`). Format only, no IRD check digit.
-   - `supplierFor(anaesthetist)`.
+   - `supplierFor(anaesthetist)`: the snapshot, `gstNumber` only when held; the invoice and the BCTI wording print "GST number not held" or leave out ", GST {number}" when it is absent.
    - `invoiceLineViews(layout, feeResult, invoiceDescription)` and `crossMatchFor(booking, procedure, masters)`: one place for what each layout prints (US-08.4.1). Both layouts: a fee line per Procedure worded by the invoice description (never the generic fee text), a separate **discount line** (negative, ex GST) when the fee result carries a discount, and today's price-override line. Holder layout only: the BTM breakdown on each fee line (base, time and modifier units x unit value) and the cross-match fields (procedure date, surgeon, hospital reference). Patient layout: neither. The discount is read from the fee result, so 22 prints a discount as its own line without building the discount (Phase 24 puts it on the Procedure; where 18 to 21 left a Contract percentage discount folded into the rate, show it as its own line now, figures unchanged).
    - `invoiceLayoutFor(contract, party, isContractParty)`: the Contract's `invoiceLayout` when the
      invoice goes to the party the Contract bills (21's who is invoiced); for any other party (a split
@@ -391,7 +396,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      added person and organisation split party; delivery for a billed holder on portal and on email, an added
      holder's party (its own setting), a payer with an email, a postal-only payer (`post`), a payer with
      neither (`noAddress`), email with and without an address; GST
-     number validation and formatting; the wording has no en or em dash, names both GST numbers and
+     number validation and formatting; the wording has no en or em dash, names both GST numbers (the supplier's only when held, the not-held variant tested) and
      uses `BCTI_DOCUMENT_NAME`; the defaults for each holder kind; the holder layout prints the BTM breakdown and cross-match fields and the patient layout neither; each line prints the invoice description; a discount is its own negative line and the totals match the folded figure; the holder reference prints from the Contract, falling back to the Booking's.
 3. **Pure split** in a new `src/domain/billing/splitShare.ts`, the one home of the split basis
    (US-08.2.3, OQ-68 answered as our pick). No provisional caption.
@@ -554,17 +559,17 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      untouched; `store/xeroNhi.test.ts` (16's privacy scan) still passes. US-09.1.4.
 8. **Masters and their actions** (`store/mastersActions.ts`, `store/contractActions.ts`, or where 18
    put the holder actions):
-   - `editAnaesthetist` gains `gstNumber` (refuses an invalid one: "Enter a GST number of 8 or 9
-     digits."); `addAnaesthetist` requires it. Audit field label "GST number".
+   - `editAnaesthetist` and `addAnaesthetist` gain an optional `gstNumber` (blank is allowed and clears it; a non-blank invalid one is refused: "Enter a GST number of 8 or 9
+     digits."). Audit field label "GST number". DM-62.
    - `createContract`, `editContract` and 18's new-version flow carry `invoicing` (a new Contract or
      version starts from `defaultInvoicingFor`): `holderReference` is free text; `gstTreatment` is fixed.
      No delivery field and no direct-claims switch (the flag is gone, 18, RV-39): changing a holder's
      delivery is 18's holder edit, and the run reads it live.
    - Tests for each validation and the defaults on create and on a new version.
 9. **Seed** (determinism, convention 5), then **bump `PERSIST_VERSION`** by one:
-   - `cast.ts`: a deterministic, synthetic 9-digit GST number for all 14 anaesthetists (from the
+   - `cast.ts`: a deterministic, synthetic 9-digit GST number on all 14 anaesthetists so every scripted invoice shows one (from the
      registration number, labelled synthetic in a comment); Dr Souter's is the one the demo guide
-     quotes.
+     quotes. One unscripted anaesthetist is left blank so "GST number not held" shows (logged).
    - `contracts.ts`: `invoicing` on every Contract via `defaultInvoicingFor`, with a `holderReference` on the St George's and nib billed Contracts (the catalogue's SXAP style, synthetic). nib's holder carries portal
      delivery ("nib provider portal"; 18's seed, else add it there), so the nib invoice queues. One
      unscripted Booking on a submitted List gets a payer with a postal address and no email (21's, or
@@ -586,8 +591,8 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
    - `index.ts`: `SEED_MARKERS.twoFunderBooking` becomes `feeSplitBooking` ("One procedure's fee split
      between nib and the patient"); update every reference (Control Panel, 14's trigger registry,
      tests, capture recipes).
-   - Tests (`seed.test.ts`, `demoScenarios.test.ts`): two builds deep-equal; every anaesthetist's GST
-     number is valid and unique; every Contract has `invoicing`; no seeded line carries a funder and no
+   - Tests (`seed.test.ts`, `demoScenarios.test.ts`): two builds deep-equal; every held GST
+     number is valid and unique and a blank one is allowed; every Contract has `invoicing`; no seeded line carries a funder and no
      Contract carries a split; `authoriseList` on both S3 Lists raises **AA-2026-0002 Brian Holt Forte
      Health $396.18**, **AA-2026-0005 nib $152.38 (queued for nib provider portal)** and
      **AA-2026-0006 Alan Prentice $91.43 (emailed to Alan)**, with every S3 invoice `sent` or `queued`
@@ -597,7 +602,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
 10. **Admin invoice document** (`apps/admin/screens/InvoiceDocument.tsx`). US-08.4.5, US-08.4.1,
     US-04.2.8, US-08.2.3.
     - **Masthead:** the supplier on the left: the anaesthetist's name (from `invoice.supplier`, not
-      the live master), "GST number {formatted}" in mono. On the right: "TAX INVOICE" and the number.
+      the live master), "GST number {formatted}" in mono, or "GST number not held" when blank. On the right: "TAX INVOICE" and the number.
     - **Agent block**, beneath the addressee: the small AA `Logo` with "Issued by Anaesthesia
       Associates Limited as agent for {supplier}. AA GST number {aa}." and the "Provisional (OQ-29)"
       pill with `OQ29_CAPTION`. The old italic agency line goes (`data-shot` `invoice-agency-line`
@@ -637,7 +642,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
       payment or split setting on the sheet.
     - The Contracts table gains a read-only Delivery column read from the holder ("Email", "nib provider
       portal", or "Payer's email or post" where the holder is not billed); it is edited on 18's holder sheet.
-    - The Anaesthetists table gains a mono **GST number** column; Edit and Add sheets gain the field.
+    - The Anaesthetists table gains a mono **GST number** column (blank reads "Not held"); Edit and Add sheets gain the optional field. DM-62.
 13. **Xero simulation** (`apps/demo/DemoXero.tsx`, `AccPayCard`). US-09.1.4.
     - A **{BCTI_DOCUMENT_NAME}** block beneath the meta grid: the wording, then Supplier ({name},
       GST {number}) and Agent (Anaesthesia Associates Limited, GST {aa}) as `MetaItem`s, with the
@@ -694,7 +699,7 @@ Audit after a PWA authorise.
   credit then additional invoices (US-08.6.4, Phase 39).
 - One BCTI per Procedure, per payment or per payment run (OQ-29 leaves it open; ROADMAP "BCTI granularity") and a BCTI document separate from
   the ACCPAY record (built as the ACCPAY). Approving a period's BCTIs (US-10.2.6) is Phase 39a's.
-- Anaesthetist-facing GST number editing (no phase's profile carries it; the office edits it in Master data here), and any mobile or
+- Anaesthetist-facing GST number editing (Phase 26's profile holds none, US-12.1.4; the office edits it on the Admin anaesthetist record here, DM-62), and any mobile or
   web view of invoice delivery.
 - Building the discount (Phase 24 holds it on the Procedure; this phase only prints it as its own line) and the invoice description itself (20a).
 - Locking the Contract's invoicing settings and the Procedure's split at AUTHORISED (Phase 25; the
@@ -715,8 +720,8 @@ Audit after a PWA authorise.
 The agent runs every item itself in the running app and reports it with evidence; none is handed
 to the owner (ROADMAP.md "Owner review: agents test themselves").
 
-- [ ] Reset. Admin, Master data, Anaesthetists: every row shows a GST number; editing Dr Souter's to
-      "12" refuses with the GST message; a valid one saves and shows in History.
+- [ ] Reset. Admin, Master data, Anaesthetists: every row shows a GST number or "Not held"; editing Dr Souter's to
+      "12" refuses with the GST message; a valid one saves and shows in History; blank saves and her next invoice reads "GST number not held". Nothing on the anaesthetist's own profile screens shows or edits it.
 - [ ] Master data, Contracts: every row shows a read-only Delivery from its holder; nib's billed
       Contract shows "nib provider portal"; No contract (RVG) shows "Payer's email or post"; the sheet
       has no delivery control; the GST line reads "GST exclusive, added at the foot of the invoice" and cannot be changed; there is
@@ -728,7 +733,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       note naming AA-2026-0006. AA-2026-0006 Alan Prentice $91.43: patient layout, the share line,
       Emailed to Alan's address, linked back. No invoice goes to St George's for this Booking.
 - [ ] Holder layout (AA-2026-0005 nib, or a hospital invoice): each line prints the Procedure's invoice description, the BTM breakdown and cross-match strip show, and "Your reference" shows the Contract's holder reference. The patient layout (AA-2026-0006 to Alan) has no BTM breakdown or cross-match strip. A Procedure with a discount (once 24 has one, else a Contract percentage discount) shows it as its own line. Master data, Contracts: the Holder reference field saves and prints.
-- [ ] Every invoice shows Dr Souter as supplier with her GST number, the agent block with AA's GST
+- [ ] Every invoice shows Dr Souter as supplier with her GST number (the unscripted anaesthetist with none reads "GST number not held"), the agent block with AA's GST
       number, the Provisional (OQ-29) pill, and GST at the foot with the GST caption.
 - [ ] Admin Booking detail, Prentice's Booking (after a reset, before authorising): the Contract part
       reads "Split: nib $132.50, Alan Prentice $79.50 (the rest)"; Split opens the sheet with those
@@ -796,6 +801,7 @@ sheet's Split billing and money sections) and the S3 scenario text in `DemoContr
   - Optional aside: the **Funder allocation** aside becomes "open Alan's Booking and press Split on
     the Contract part: type nib's share as 62.5% instead of $132.50, same split; any user can split,
     including the anaesthetist on mobile, and there is no split setting on the Contract".
+  - Optional aside: the GST number is a field on the Admin anaesthetist record (Master data), not on the anaesthetist's own profile; blank prints "GST number not held"; the agency wording waits on AA's accountant (OQ-29).
   - "fee-split" replaces "two-funder" in the beat and in "Stage it" ("the fee-split Booking").
 - **S3 Beat 2:** add one line: each ACCPAY carries provisional buyer-created tax invoice wording
   naming Dr Souter as supplier and AA as agent, one per invoice and the same value, so Alan's split
@@ -845,7 +851,8 @@ matches what was built:
 | [US-08.4.6](../../../../requirements-board/requirements/stories/US-08.4.6.md) Invoice description | none (create it) | No change here (Phase 20a owns it); this phase only prints it on the lines above. |
 | [US-08.4.3](../../../../requirements-board/requirements/stories/US-08.4.3.md) Unique invoice numbers | captured · simulator-xero-numbers | Stays captured. Verify only: the numbers (AA-2026-0002, 0005, 0006) must not move; re-shoot if the ACCPAY rows or the first four rows changed. |
 | [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Stays partial. Re-shoot `admin-snapshot-invoice` on the new document (it now stores supplier, agent and delivery on the snapshot). Keep the partial reason, naming Phase 25 as the phase that builds the regenerate action from the locked data and Contract version. |
-| [US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | Captured, labelled provisional (OQ-29). Re-point `admin-agent-line` from `invoice-agency-line` to `invoice-agent-block` ("Issued by Anaesthesia Associates Limited as agent for {supplier}") and add `admin-supplier` on `invoice-supplier` (the anaesthetist's name and GST number in the masthead). The "Provisional (OQ-29)" pill sits in the highlight. Drop the partial reason. |
+| [US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | Captured, labelled provisional (OQ-29). Re-point `admin-agent-line` from `invoice-agency-line` to `invoice-agent-block` ("Issued by Anaesthesia Associates Limited as agent for {supplier}") and add `admin-supplier` on `invoice-supplier` (the anaesthetist's name and GST number in the masthead). The "Provisional (OQ-29)" pill sits in the highlight. Add state `not-held` on the unscripted anaesthetist's invoice ("GST number not held"). Drop the partial reason. |
+| [DM-62](../analysis/domain-model-delta.md#dm-62) Anaesthetist GST number (a data item) | no recipe | No recipe of its own: US-08.4.5's shots show it. Add one shot to US-08.4.5, `admin-gst-number`, on Master data, Anaesthetists (the GST number column and the Edit sheet's optional field). |
 | [US-08.2.3](../../../../requirements-board/requirements/stories/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | Captured. Replace all three stale captions (they say "nib and St George's" and "invoiced to St George's"). Re-shoot on the Booking split (a button on the Procedure): `admin-split-invoices` the two Prentice rows in the Invoices list (nib and Alan Prentice, "Split" chips, `invoice-list-delivery`), caption "One procedure's fee split on the Booking between nib and the patient, an invoice each"; `admin-insured-portion` nib's share (AA-2026-0005, `invoice-split-note`); `admin-remaining-portion` the patient's gap (AA-2026-0006 to Alan Prentice). Add `admin-split-button`: the Admin Booking detail with the Split button on the Contract part and the Split sheet open on Prentice's Booking, states `amount` (nib $132.50, Alan the rest) and `percent` (after typing "62.5%"); and `mobile-split-button` (app mobile): the Split sheet on an anaesthetist's own Booking. Caption in the catalogue's words: a button on the Procedure, each share typed in $ or %, no setting on the Contract. Drop the partial reason. |
 | [US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md) ACCPAY as buyer-created tax invoice | partial · simulator-accpay-record | Captured, labelled provisional (OQ-29). Re-point `simulator-accpay-record` (`/demo/xero/invoices/XRH01`) to `xero-accpay-buyer-created`: the buyer-created wording with Supplier (name, GST) and Agent (AA, GST). Replace the stale caption ("without buyer-created tax invoice wording") with: the ACCPAY is held as a buyer-created tax invoice, one for each invoice and the same value; wording and granularity provisional (OQ-29). Drop the partial reason. |
 
@@ -911,6 +918,7 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
 - **GST.** Every price stays GST exclusive with GST at the foot (US-05.2.7 carried across unchanged);
   `GST_RATE` and the GST caption live in one place; no GST-inclusive presentation was built.
 - **Layout and lines (US-08.4.1).** The holder layout carries the BTM breakdown and cross-match fields, the patient layout neither; both print 20a's invoice description (read, never re-derived), a discount as its own line with totals unchanged, and the Contract's holder reference; `invoiceLineViews` is the one place that decides what each layout prints.
+- **GST number (DM-62).** `gstNumber` is optional and held only on the Admin anaesthetist record (no profile screen shows it); blank saves, invalid is refused; the invoice and BCTI say "not held" or omit it when blank; supplier snapshots survive a later edit.
 - **Provisional labels.** Every surface with the agent or buyer-created wording shows the OQ-29 pill, and "To post" the OQ-122 pill;
   the wording and `BCTI_DOCUMENT_NAME` live only in `invoicePresentation.ts`. The Split button carries
   no provisional pill. AA fee invoices (16) carry none of it.
@@ -929,9 +937,9 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   anaesthetist splitting until submit; Prentice's second invoice now to Alan Prentice, not St
   George's (if 20 and 21 had not already moved it; S3 Beat 1's figures unchanged); a split share to a
   holder's party delivered by that holder's setting; holder delivery limited to email and portal (OQ-114's other outputs open); a postal-only payer marked To post with a print view (OQ-122/D70 default); layout for an added party by recipient class; the bare
-  number read as dollars; the OQ-29 wording; GST treatment stored as a single value; the cross-match fields chosen (procedure date, surgeon, hospital reference) and the Booking reference as fallback for the holder's reference.
+  number read as dollars; the OQ-29 wording; GST treatment stored as a single value; the cross-match fields chosen (procedure date, surgeon, hospital reference) and the Booking reference as fallback for the holder's reference; the GST number optional on the Admin record with "not held" printed when blank (DM-62, wording held on OQ-29).
 - **Status table:** a catch-up row for Phase 22.
-- **Phase entry:** the drift check result (catalogue diff from the d436947 baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
+- **Phase entry:** the drift check result (catalogue diff from the a68f09b baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
   as the 2026-10-05 decision, BCTI granularity, what 16 and 18 to 21 left), files and actions added and
   removed, the `PERSIST_VERSION` bump, the tests added and rewritten, the manual checklist item by
   item, and the review pass.

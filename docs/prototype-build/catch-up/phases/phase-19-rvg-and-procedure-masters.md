@@ -85,7 +85,7 @@ figure (item 5).
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```

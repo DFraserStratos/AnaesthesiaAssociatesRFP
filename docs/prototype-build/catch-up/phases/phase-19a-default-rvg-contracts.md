@@ -1,10 +1,10 @@
 # Phase 19a · Contract lines and starting values
 
 **Requirements covered:**
-[FT-04.2](../../../../requirements-board/requirements/stories/FT-04.2.md) Contract definition (status 3; graded Contradicts: a header and standalone lines, which may be none) ·
+[FT-04.2](../../../../requirements-board/requirements/stories/FT-04.2.md) Contract definition (status 3; graded Contradicts: a header and standalone lines, which may be none; a Notes section from 4 November on how the office keeps prices and dates current, OQ-131) ·
 [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) Contract lines (status 4; graded Contradicts) ·
 [US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) Combinations as Contract lines (status 4; graded Missing; joined from Phase 23 on 2026-10-20) ·
-[US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) Anaesthetist's own price list Contracts (status 4; graded Contradicts) ·
+[US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) Anaesthetist's own price list Contracts (status 2, Open since 4 November on OQ-131; graded Contradicts) ·
 [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) Tiered time units (status 4; graded Partial) ·
 [DM-09](../analysis/domain-model-delta.md#dm-09) the standalone Contract line, with a system line key, replaces ContractPrice ·
 [DM-43](../analysis/domain-model-delta.md#dm-43) starting values come from the line, else the RVG row, and become the Procedure's own ·
@@ -37,7 +37,12 @@ the procedure date), OQ-90 (no Contract prices a second procedure; RV-07) and OQ
 line of its own), D37
 ([OQ-103](../../../../requirements-board/requirements/questions/OQ-103.md), answered 2026-10-23: a line's
 description, where filled in, becomes the Procedure's invoice description in place of the hospital's or
-the rooms' text; a blank one falls through; the field is optional). No label anywhere in this phase.
+the rooms' text; a blank one falls through; the field is optional). No label on any of these.
+Open, built on its default: D77
+([OQ-131](../../../../requirements-board/requirements/questions/OQ-131.md), for Vanessa: how the office keeps
+a Contract's prices and dates current). The price lists are kept as whole-Contract dated versions like
+any Contract (18's New version, 25's staging); this phase adds no line dates and no audited in-place
+edit (D40), and the only label is the "provisional" one in 18's version module. A change there is contained.
 
 **Re-planned 2026-10-20 (catalogue `d4db277`).** Lines stand alone: no procedure link (there is no
 procedure list, OQ-88, D39), no nesting, several may share a default RVG code. The 2026-10-08 plan's
@@ -62,7 +67,7 @@ Merivale combinations, the editor's header and lines grid, captions, the time ti
 Playwright, demo guide) and the review pass. If session 2 runs long, cut "Set for all lines" (item
 9e) last of all, and the Review fee wording (item 10c) first.
 
-**Confirm before building.** Build the catalogue as it stands at `d436947`. The line's default RVG
+**Confirm before building.** Build the catalogue as it stands at `a68f09b`. The line's default RVG
 code is "agreed in principle; Ben has not yet been asked": build it, unlabelled, and put it on the
 owner-review list. AR-29 and AR-30 (technical design v6, overwritten in place; the v4 regions are
 gone) are Greg's proposal: field names for orientation, the catalogue wins. Keep the line type, its
@@ -117,7 +122,8 @@ scripted figure unchanged.
   linked to the anaesthetist, holder not billed, created and kept by the office, flagged prepaid
   where wanted. A prepaid list is never editable (D30) and every line on it must carry a price above
   zero: a missing or zero price is refused on save. Its lines are fixed prices the anaesthetist never
-  overrides (D65; 24 builds the gate). A surgeon's price list is the same kind of Contract, linked by
+  overrides (D65; 24 builds the gate). Its upkeep is a New version of the whole Contract like any
+  other (D77, OQ-131), with no line dates. A surgeon's price list is the same kind of Contract, linked by
   practitioner ID (D48). Dr Souter's list is seeded, flagged prepaid, so Phase 27 has prepaid amounts.
 - **No contract (RVG) has no lines** (D49); a holder's plain RVG Contract has none either (D32).
 - **Tiered time units become data** (US-05.2.2, D25): the tiers are seeded data, the stale
@@ -131,10 +137,10 @@ hernia Procedure (item 1).
 
 ## Before you start: drift check
 
-1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs>` (baseline `d436947`) for
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs>` (baseline `a68f09b`) for
    FT-04.2, US-04.2.4, US-04.2.11, US-04.2.14, US-05.2.2, US-04.2.2, US-04.2.10, US-04.3.2, US-03.3.1,
    US-05.1.1, US-05.2.1, US-05.2.5, US-05.2.6, US-05.2.7, US-05.4.3, US-08.4.6, FT-06.2, OQ-48, OQ-53,
-   OQ-75, OQ-89, OQ-90, OQ-91, OQ-98, OQ-101, OQ-103 and OQ-107. Re-read
+   OQ-75, OQ-89, OQ-90, OQ-91, OQ-98, OQ-101, OQ-103, OQ-107 and OQ-131. Re-read
    domain-model.md's Procedure and Contract sections (the Contract line table, "Procedure billing
    context", "Selection") and section 3's starting-values block. If an item changed, re-read it whole
    and adjust; if one is now Retired or Future, drop its work and say so in PROGRESS. If AR-29 or AR-30
@@ -153,6 +159,7 @@ hernia Procedure (item 1).
 | **D48 / OQ-105** (answered) | A surgeon's arrangement is one Contract linked by practitioner ID to every surgeon it covers (Merivale's, named for the rooms); no rooms-held Contract, no surgeon-keyed line | Not expected |
 | **D30 / OQ-96, D65 / OQ-117** (answered) | A prepaid list is never editable; prepaid lines priced above zero (save refusal); a fixed price is never overridden by the anaesthetist | Not expected |
 | **D35 / OQ-101** (answered, 19's) | Read 19's starting figure and range; a line's base units are one number | A ranged line widens one field here |
+| **D77 / OQ-131** (open, for Vanessa) | Price lists are whole-Contract dated versions like any Contract (New version keeps line keys); no line dates; no label here, 18's version module carries the one "provisional" mark | A date per line or an audited edit in place changes the version module and line type only; this phase's lines, starting values and fee path stand |
 | Default RVG code (Ben not yet asked) | Built, optional, unlabelled | Remove one field; the interim pick then uses the general line only |
 
 3. Read what Phases 18 and 19 built (their PROGRESS entries) and follow their names: 18's Contract,
@@ -317,7 +324,8 @@ from the seeded RNG. One `PERSIST_VERSION` bump.
      (never editable when prepaid, D30), lines Rhinoplasty $1,200 (the figure Riley's prepayment uses)
      and two or three cosmetic lines, each with a description, default RVG code and a price above
      zero, demo values labelled. No seeded Procedure moves onto it (offering is 20's, the prepaid
-     amount 27's).
+     amount 27's). Dr Souter's list is also given a New version (the same line keys, a changed
+     Rhinoplasty price) so the version path is shown on a price list (D77); no line dates.
    - **Merivale Plastic Surgery** (US-04.2.11, D48): a holder named for the rooms (not billed, so the
      patient is billed), its surgeons recorded on it by practitioner ID as 18 holds the link (two
      existing cosmetic surgeons, to show one Contract covering several; no rooms filter), and one
@@ -421,7 +429,7 @@ The agent runs every item itself and reports it with evidence.
 - [ ] Merivale: a Contract named for the rooms, linked to its surgeons by practitioner ID, three lines
       at $3,565, $3,910, $4,255 with H3; the line search by H3 finds all three.
 - [ ] Dr Souter's price list: the holder filter finds it, prepaid on, editable off, every line priced
-      above zero, Rhinoplasty $1,200; no anaesthetist persona can open or edit it on web, mobile or the PWA.
+      above zero, Rhinoplasty $1,200; New version keeps the line keys, changes the whole Contract and no line shows a date; no anaesthetist persona can open or edit it on web, mobile or the PWA.
 - [ ] A plain RVG Contract shows the empty state with no label; No contract (RVG) shows its note with
       no label.
 - [ ] The catalogue search finds a Contract by `AP0126`; the summary reads "{n} lines" or "No lines ·
@@ -444,8 +452,8 @@ Patch these, and the same sections of `master-demo-guide.html`:
   alone and sets only what it needs: a price, a rate, a discount or units, with a reference code, a
   description and an optional default RVG code. A Contract may have no lines and then prices at RVG.
   A combination such as Merivale's Facelift plus 1 add on is a line of its own. An anaesthetist's
-  price list is kept by the office and can be flagged prepaid (Dr Souter's), never editable then, every
-  line priced above zero; a surgeon's arrangement is one Contract linked to its surgeons (Merivale's)." "Fee calculation":
+  price list is kept by the office as dated Contract versions and can be flagged prepaid (Dr Souter's), never editable then, every
+  line priced above zero (how upkeep is kept is Vanessa's to confirm, OQ-131); a surgeon's arrangement is one Contract linked to its surgeons (Merivale's)." "Fee calculation":
   "A part interval always rounds up (confirmed with AA); the tiers are held as data. Choosing the
   Contract, line and RVG code fills the Procedure's starting values." Item 10: drop the rounding
   assumption.
@@ -466,7 +474,7 @@ assumption.
 |---|---|---|
 | [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) Contract lines | partial · admin-price-rows | Stays `partial`. Rename the shot `lines`, highlight `[data-shot=contract-lines]`: states `fixed-price` (Doyle), `rate` (SXAP, coded and general lines) and `search` (reference code). Caption "Each line stands alone and sets only what it needs"; the shot shows a line with a description and one with it blank (shown "Not set"), the first of which Phase 20a will print on the invoice. Reason: "Picking a line and searching by its codes when choosing a Contract is Phase 20's; its description (optional, where filled in it becomes the invoice description) reaching the invoice is Phase 20a's." |
 | [US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) Combinations as Contract lines | absent · "Phase 23 builds this" | `captured`. Admin shot `combination-lines`: Merivale's Contract (named for the rooms, linked to its surgeons) with its three lines, state `search-h3`. Caption "A combination is a line of its own, found by its RVG code" |
-| [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) Anaesthetist's own price list Contracts | none | Create, `partial`. Admin shot `price-list`: Souter's Contract via the holder filter, prepaid on, every line priced above zero; state `price-refused` (a zero price on save). Caption "An anaesthetist's price list, kept by the office, flagged prepaid, every line priced". Reason: "Offering it only on her Bookings is Phase 20's, the anaesthetist's price gate (a fixed price is never overridden) Phase 24's, the prepaid amount Phase 27's." |
+| [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) Anaesthetist's own price list Contracts | none | Create, `partial`. The item is Open (4 November, OQ-131): shoot it as built. Admin shot `price-list`: Souter's Contract via the holder filter, prepaid on, every line priced above zero, with a New version beside it (no line dates); state `price-refused` (a zero price on save). Caption "An anaesthetist's price list, kept by the office, flagged prepaid, every line priced". Reason: "Offering it only on her Bookings is Phase 20's, the anaesthetist's price gate (a fixed price is never overridden) Phase 24's, the prepaid amount Phase 27's." |
 | [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) Tiered time units | captured · web-time-units, mobile-time-units | Stays `captured`. Re-shoot both with the new T caption; add admin `time-rule` on `masters-rvg-time-rule`. Caption "The anaesthetist enters start and stop; the units follow the time tiers, held as data" |
 | [US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) | partial · admin-contract-holder | No change here (Phases 18, 20, 21 own it); `--dry` only |
 | [US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) | captured · admin-pricing-basis[type-1,type-2,type-3,rate-time] | Phase 24 owns it. Re-point any state still showing Contract-level terms to `[data-shot=contract-lines]` or `contract-lines-empty`, turn it `partial`, reason "Prices on the Procedure and the editable flag are built in Phase 24." |
@@ -504,7 +512,8 @@ Decisions-log rulings.
 - **Fee path.** Price is the whole price on any Procedure; else BTM x rate x (1 - discount), rounded
   once; no Type 2 or 3 branch survives; every assembler passes the same inputs.
 - **Price lists and combinations.** Souter's list prepaid, not billed, on her linked holder; Merivale's
-  lines each one fixed price with H3; no anaesthetist write path.
+  lines each one fixed price with H3; no anaesthetist write path; a price list's upkeep is a whole-Contract
+  version (D77), no line dates.
 - **Time rule as data.** No runtime read of the default or tier constants; 95 is 7, 125 is 9.
 - **Prepaid and fixed prices.** A prepaid line with no price or a zero price is refused on save and
   tested; no editable flag on a prepaid list; no anaesthetist write path or price override on a list.
@@ -515,7 +524,7 @@ Decisions-log rulings.
 ## PROGRESS.md updates
 
 - **For the owner's review:** the default RVG code built though Ben has not been
-  asked; the picked readings (`interimLineFor` until 20; a price excludes rate and discount on a line;
+  asked; price-list upkeep as whole-Contract dated versions, no line dates, awaiting Vanessa (D77, OQ-131); the picked readings (`interimLineFor` until 20; a price excludes rate and discount on a line;
   discount rounded once; starting modifier units added to the computed sum until 19b; out-of-range
   skipped when B equals the line's figure; "Set for all lines"); the dropped $950 hernia row and the
   hernia's new figure; the demo line codes and prices; screens
@@ -533,7 +542,7 @@ Decisions-log rulings.
   data (D25), superseding the 2026-07-22 rounding ASSUMPTION, ruling (8) and the callout; (7) No
   contract (RVG) has no lines (D49); (8) a prepaid list is never editable and its lines are priced
   above zero, a fixed price is never overridden (D30, D65); a surgeon's arrangement is one Contract
-  linked by practitioner ID (D48); (9) a line's description is optional and, where filled in, is the top layer of the invoice description (D37, OQ-103 answered), with no chain built here.
+  linked by practitioner ID (D48); (9) price lists are kept as whole-Contract dated versions pending OQ-131 (D77), no line dates (D40); (10) a line's description is optional and, where filled in, is the top layer of the invoice description (D37, OQ-103 answered), with no chain built here.
 - **Handoff list:**
   - 19b: the starting modifier units from `startingValuesFor`, and how claimed modifiers combine.
   - 20: the Contract and line picker replaces `interimLineFor`; the RVG-code reverse lookup reads

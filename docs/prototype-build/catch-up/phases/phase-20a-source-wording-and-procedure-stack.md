@@ -2,7 +2,7 @@
 
 **Requirements covered:**
 [US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) Keep the procedure text as received (Confirmed; graded **Contradicts**: today's one editable `Procedure.description` doubles as the received text, is trimmed on create and is overwritten by PDF updates and Edit procedure) ·
-[US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) Booking descriptions and Contract shown together (**Open**; graded Partial; the layout is not settled; what the invoice prints now follows D37's order of defaults) ·
+[US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) Booking descriptions and Contract shown together (Open to **Verify** 4 November; graded Partial; either order of Contract and RVG code is allowed until the picker is settled, and 20's step rail is only a working direction; what the invoice prints follows D37's order of defaults) ·
 [US-03.1.2](../../../../requirements-board/requirements/stories/US-03.1.2.md) See the Contract on each Procedure (Confirmed; graded Partial: no holder, who is invoiced or pricing basis with its figure) ·
 [US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) Add a Booking manually (graded Partial: hand entry is not kept as source text) ·
 [US-08.4.6](../../../../requirements-board/requirements/stories/US-08.4.6.md) Invoice description on each Procedure (**Agreed** 2026-11-04, rewritten to the order of defaults; **Missing**) ·
@@ -25,7 +25,7 @@ answered and built by 20 and 21.
 (**D73**): an admin's edit is kept against later defaults, with a "newer description" cue; built in
 `refreshInvoiceDescription`, labelled provisional there and logged for the owner.
 **Depends on:** Phase 20, done (one Contract per Procedure, mandatory at setup, the "Needs a Contract"
-list, No contract (RVG) first, the optional RVG code and 20's interim "who is billed" function), and
+list, the step rail picker (a working direction, not settled: FT-04.3), the optional RVG code and 20's interim "who is billed" function), and
 through it 19 (RVG groups, the optional RVG code on the Procedure), 19a (Contract lines with a
 description, starting values filled onto the Procedure), 19b, 18 (contract holders, dated Contracts, the
 AA code, the one stored No contract (RVG)), 38a, 15b (Copy and photo out, ACTIVE for an assigned
@@ -59,7 +59,7 @@ and is overwritten by a PDF update and by Edit procedure. This phase splits it:
 - **Every intake path writes it.** Hand entry (US-02.4.1) keeps what was typed or told as its source
   text: the anaesthetist's manual add on mobile and web, the office's phone-advice form, the hospital
   message apply path (create and update, until Phase 33's matching screen takes over) and the
-  Future-scope PDF ingest. The form stops auto-filling the text from an RVG code's description and stops
+  PDF ingest (14's `ingestPdfRow`; 34 later routes PDF rows through matching). The form stops auto-filling the text from an RVG code's description and stops
   trimming. There is no separate "as given" field: the text typed is the source text.
 - **Edits change the RVG code and the Contract, never the received text.**
 - Today's `Procedure.description` becomes the first source text of every seeded Procedure in one step,
@@ -80,13 +80,16 @@ adds the field, the helper, the office's edit and cue on the Admin Booking, a "H
 arrives" demo action and one invoice heading row per Procedure.
 
 **One shared component shows it all on every booking screen** (US-03.1.9, US-03.1.2; views may differ
-per app; the screen's exact layout is Open, so it lives in one component). Each Procedure shows: the
+per app; the picker is not settled, so the layout lives in one component). Each Procedure shows: the
 **received descriptions** (the rooms' and the hospital's), the **invoice description**, the **Contract**
 (its name, [holder](../../../../requirements-board/requirements/stories/US-04.1.5.md), who is invoiced, and the pricing basis with its
 figure: "Fixed $2,400", "10% off RVG", "$125.00 per unit", "RVG") and the **RVG code, only where the
 Contract prices from RVG units** (a fixed price makes it unnecessary). The Contract and the RVG code can
-be set in either order, so an empty part is marked **still to choose**, and a Booking with no Contract
-stays on 20's "Needs a Contract" list. One `ProcedureStack` component (in `src/shared`, PWA-safe)
+be set in either order (US-03.1.9 allows both until the picker is settled; 20's step rail, where the
+office's job ends at the Contract, is a working direction, a guess to design and test with AA), so an
+empty part is marked **still to choose**; an RVG code the office left on an RVG-priced Contract is marked
+**for the anaesthetist to fill in** on the office surfaces. A Booking with no Contract stays on 20's
+"Needs a Contract" list. One `ProcedureStack` component (in `src/shared`, PWA-safe)
 renders it on the shared `BookingDetailBody` (mobile, web, Admin and the PWA at once), in Admin List
 drawer rows and in Admin Review, where every Procedure shows. Phase 33 adds it to the matching screen.
 The component reads one view type from one pure module; **"who is invoiced" and "pricing basis" are
@@ -129,7 +132,7 @@ unchanged.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff since this plan's baseline (`d436947`):
+1. Run the catalogue diff since this plan's baseline (`a68f09b`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.5.7,US-03.1.9,US-03.1.2,US-02.4.1,US-08.4.6,US-03.1.3,US-02.3.1,US-02.1.2,US-07.2.2,US-15.0.1,US-04.2.4,FT-03.1,FT-02.5,OQ-103,OQ-130,OQ-13
@@ -141,7 +144,7 @@ unchanged.
    prints the cited passages.
 2. If an item changed, re-read it and adjust the work items. Specifically:
    - **US-03.1.9 or US-03.1.2.** If the parts shown, their order or the per-app difference changed (it
-     is Open), build the catalogue's current reading in `procedureStack.ts` and the component, and log
+     is not settled: Verify), build the catalogue's current reading in `procedureStack.ts` and the component, and log
      it. If the Contract part was taken off the anaesthetist's screens (for example US-15.0.1 promoted
      to Confirmed with that rule), build the catalogue's reading, keep the part for the office and log it.
    - **OQ-130.** If answered, build the answer in `refreshInvoiceDescription` and drop its provisional
@@ -316,7 +319,7 @@ Session 1 is items 1 to 8 and ends green. Session 2 is items 9 to 16.
      entered: SourceText[] }; invoiceDescription: { text: string; origin; newer?: { text: string;
      origin } }; contract: { name: string;
      aaCode?: string; holderName: string; invoiced: InvoicedParty; basis: PricingBasis } | null; rvg: {
-     code: string; description: string } | 'toChoose' | null }`, `InvoicedParty { name: string; kind:
+     code: string; description: string } | 'toChoose' | 'forAnaesthetist' | null }`, `InvoicedParty { name: string; kind:
      'holder' | 'patient' | 'payer' }` and `PricingBasis = { kind: 'fixedPrice'; amount: number } | {
      kind: 'fixedRate'; perUnit: number; discountPercent?: number } | { kind: 'fixedDiscount'; percent:
      number } | { kind: 'rvg' }` (a fixed rate and a fixed discount can sit on one line, US-05.2.6).
@@ -327,7 +330,8 @@ Session 1 is items 1 to 8 and ends green. Session 2 is items 9 to 16.
      entered), each in arrival order. `contract` is null when the Procedure has none (20's "Needs a
      Contract"). `rvg` is the code and its RVG group's description **only where the Contract prices from
      RVG units** (basis `rvg`, `fixedRate` or `fixedDiscount`); `'toChoose'` where it is RVG-priced and no
-     code is held; `null` on a fixed price (the code is unnecessary and not shown). With no Contract the
+     code is held (`'forAnaesthetist'` instead on an office surface, `ctx.surface`, the step rail's
+     hand-off); `null` on a fixed price (the code is unnecessary and not shown). With no Contract the
      RVG part shows a held code, else `'toChoose'`.
    - **`whoIsInvoicedFor(procedure, ctx): InvoicedParty`**: one function that wraps 20's interim
      who-is-billed function and only names the party (never a second derivation). Its comment says
@@ -358,7 +362,8 @@ Session 1 is items 1 to 8 and ends green. Session 2 is items 9 to 16.
      "Contract summary" AC (name, Southern Cross as holder, who is invoiced, the fixed price) and a
      null `rvg`; fixed rate, fixed discount, a rate with a discount, No contract (RVG) and a plain RVG
      Contract give their kinds with `rvg` shown; no Contract gives `contract: null` and keeps `received`
-     ("Not matched yet"); rooms and hospital texts group apart and keep arrival order ("Fuller wording
+     ("Not matched yet"); an RVG-priced Contract with no code gives `'forAnaesthetist'` on the office surface
+     and `'toChoose'` on the anaesthetist's; rooms and hospital texts group apart and keep arrival order ("Fuller wording
      kept"); `startingInvoiceDescription` against US-08.4.6's first six ACs (rooms to start; the
      hospital's replaces it; none arriving keeps the rooms'; a filled-in line wins with or without the
      hospital's; a blank line falls through; an RVG-only pick never yields a group name) plus entered
@@ -418,7 +423,7 @@ Session 1 is items 1 to 8 and ends green. Session 2 is items 9 to 16.
      every text on the Booking's first Procedure, append it (`addSourceText`, channel `hospitalFeed`)
      after the time change, in the same apply; identical text adds nothing. Never edit the RVG code,
      the Contract or an existing text. A cancelled Booking or a locked List parks as today.
-   - **Surgeon PDF ingest (Future scope):** the create path passes `row.operation` as the source text,
+   - **Surgeon PDF ingest** (14's `ingestPdfRow`, still built when this phase runs; Phase 34 routes its rows through matching): the create path passes `row.operation` as the source text,
      channel `surgeonPdf`; the update path appends with `addSourceText` instead of
      `editProcedure(..., { description })`.
    - The manual and phone-advice forms write it in item 11; the Future-scope photo demo's sample
@@ -543,7 +548,8 @@ Session 1 is items 1 to 8 and ends green. Session 2 is items 9 to 16.
      - **Contract:** the name with the AA code in mono, "Held by {holder}", "Invoiced: {party}", and the
        pricing basis with its figure from `formatPricingBasis` (item 14); "Contract to choose" when null.
      - **RVG code:** code and group description in mono, only where the view carries one; "RVG code to
-       choose" in mist with a neutral still-to-choose treatment; absent on a fixed price.
+       choose" in mist with a neutral still-to-choose treatment (on an office surface, "RVG code: for the
+       anaesthetist to fill in"); absent on a fixed price.
      Long wording wraps (row 27 is long); nothing truncates in full density. At 375 px the parts stay one
      column and the capture controls below keep their spacing. Mobile uses the same parts; web may lay
      them out in two columns.
@@ -718,7 +724,9 @@ none is handed to the owner (ROADMAP.md "Owner review: agents test themselves").
       below are uncrowded.
 - [ ] The same Booking on web and in Admin (`/admin/day/2026-08-04/bookings/<id>`): the same parts; on
       Admin, `OfficeBillingSetup` does not repeat the Contract's name or holder. On a fixed-price
-      Contract's Booking the RVG code part is absent.
+      Contract's Booking the RVG code part is absent. On Admin, a Booking on an RVG-priced Contract with
+      no code (Foster's, No contract (RVG)) reads "RVG code: for the anaesthetist to fill in"; the same
+      Booking on mobile reads "RVG code to choose".
 - [ ] The order of defaults on Admin Booking detail: Wiremu Tane's lap chole shows "lap chole +/- IOC"
       "From the surgeon's rooms"; Demo actions → Hospital description arrives (default row 12) → Run:
       it reads "lap chole", "From the hospital", both received texts kept. The Doyle Booking shows its
@@ -825,7 +833,7 @@ touched while the plan is updated; this phase's build does it.
 | Item | Recipe now | When this phase is done |
 |---|---|---|
 | [US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) Keep the procedure text as received | none | create, `captured`. Shot `source-wording` on web, mobile and admin from Diane Foster's Booking (Tue 4 Aug AM): state `rooms` (only "WLE MM", highlight `[data-shot=procedure-stack-received]`, caption "The procedure text kept exactly as the rooms sent it"), state `hospital-update` (a `trigger` step firing MSG-STG-1012 on mobile and admin; on the PWA, the Demo sheet; caption "The hospital's description is added beside it, never overwriting it"). Shot `source-wording-two-sources` on the "RTK" Booking on web, caption "The rooms' and the hospital's descriptions for the same Booking" |
-| [US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) Booking descriptions and Contract shown together | none | create, `partial`, `absentReason` "The hospital matching screen does not exist yet: Phase 33 adds the component to each row." Shot `procedure-stack` on mobile, web and admin on the "RTK" Booking, highlight `[data-shot=procedure-stack]`, caption "The rooms' and hospital's descriptions, the invoice description (here the hospital's), the Contract and the RVG code"; state `not-matched` on row 17's "blephs" (caption "Not matched yet: the wording shows, the Contract and RVG code are still to choose"). Shot `review-stack` on admin Review of a submitted List with a multi-procedure Booking, caption "Office review shows the descriptions and Contract for every Procedure" |
+| [US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) Booking descriptions and Contract shown together | none; status now Verify | create, `partial`, `absentReason` "The hospital matching screen does not exist yet: Phase 33 adds the component to each row." Shot `procedure-stack` on mobile, web and admin on the "RTK" Booking, highlight `[data-shot=procedure-stack]`, caption "The rooms' and hospital's descriptions, the invoice description (here the hospital's), the Contract and the RVG code"; state `not-matched` on row 17's "blephs" (caption "Not matched yet: the wording shows, the Contract and RVG code are still to choose"); state `office-hand-off` on admin Foster's Booking (highlight `[data-shot=procedure-rvg-code]`, caption "The office leaves the RVG code for the anaesthetist to fill in"). Shot `review-stack` on admin Review of a submitted List with a multi-procedure Booking, caption "Office review shows the descriptions and Contract for every Procedure" |
 | [US-03.1.2](../../../../requirements-board/requirements/stories/US-03.1.2.md) See the Contract on each Procedure | partial · procedure-contract on web and mobile (`BK0009`), `absentReason` "not on the List view before the session" | `captured`, no `absentReason`. Keep the shot name `procedure-contract` (the hook sits on the Contract part): state `before` on BK0009 (an ACTIVE List before the session), state `after` on a Booking of Dr Souter's SUBMITTED Mon 20 List on web (mobile only if the main view reaches it; 38a builds the archive). Caption "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure" |
 | [US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) Add a Booking manually | partial · add-card on web and mobile, `manual` caption "Manual entry of the patient and operation"; the optional description kept as source text is not built | `captured`. Keep `add-card`; state `manual` re-captioned "Add a Booking to my List: the patient, the RVG code and the procedure as written"; add state `procedure-description` that types "RTK" into the Procedure description field and highlights `[data-shot=procedure-description]`, caption "The procedure as written on the hospital's list is kept exactly as typed" |
 | [US-08.4.6](../../../../requirements-board/requirements/stories/US-08.4.6.md) Invoice description on each Procedure (Agreed) | none | create, `captured`. Shot `invoice-description` on admin Booking detail, highlight `[data-shot=procedure-invoice-description]`: state `rooms` on Wiremu Tane's lap chole ("Starts as the surgeon's rooms' description"); state `hospital` after a `trigger` step running Hospital description arrives ("The hospital's description replaces it when it arrives"); state `contract-line` on the Doyle Booking ("A filled-in Contract line description takes the place of both; the RVG code plays no part"); state `edited` after Edit invoice description then the trigger, showing the cue ("The office edits it as free text; a newer description is shown, not applied (provisional)"). State `printed` on Dr Morrison's TURP invoice, highlight `[data-shot=invoice-lines]` ("The invoice prints the invoice description") |
@@ -883,7 +891,8 @@ anything settled in the Decisions log, except the 2026-09-28 ruling this phase s
 - **One place.** The view, `whoIsInvoicedFor`, `pricingBasisFor`, `startingInvoiceDescription`,
   `refreshInvoiceDescription` and `procedureLabel` live only in `domain/billing/procedureStack.ts`; the component derives nothing; no
   screen re-derives the payer or the basis; `whoIsInvoicedFor` wraps 20's function rather than copying it.
-- **RVG code only where RVG-priced:** absent on a fixed price, "to choose" where it is needed and empty.
+- **RVG code only where RVG-priced:** absent on a fixed price, "to choose" where it is needed and empty,
+  "for the anaesthetist to fill in" on an office surface where the office left it on an RVG-priced Contract.
 - **Attachments fully gone:** no type, store action, seed row, `AT` prefix, UI hook or spec left, no
   existing seeded id shifted by the removal, and the Future-scope photo demo still works.
 - **No figure moved:** the parity check holds; S1 to S5 counts and names hold; no existing seeded id
@@ -903,10 +912,12 @@ anything settled in the Decisions log, except the 2026-09-28 ruling this phase s
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
   themselves"):
   - The descriptions, invoice description, Contract and RVG code on the Booking (Mobile, Web and Admin:
-    Dr Souter's Tue 4 Aug AM "RTK" Booking) and in Admin Review; US-03.1.9 is Open, so whether the
-    layout reads clearly, and whether the anaesthetist should see the same parts as the office.
+    Dr Souter's Tue 4 Aug AM "RTK" Booking) and in Admin Review; US-03.1.9 (Verify): whether the
+    layout reads clearly, and whether the anaesthetist should see the same parts as the office. 20's step
+    rail is a working direction (a guess to design and test with AA), so the either-order layout stays
+    one component; an RVG code left on an RVG-priced Contract reads "for the anaesthetist to fill in".
   - The anaesthetist now sees the Contract's name, holder, who is invoiced and pricing basis (US-03.1.2
-    Confirmed; US-03.1.9 Open) against US-15.0.1's Proposed note "see none of the Contract complexity":
+    Confirmed; US-03.1.9 Verify) against US-15.0.1's Proposed note "see none of the Contract complexity":
     built the catalogue's way; the running fee stays hidden.
   - OQ-130 (D73), provisional: an admin's edited invoice description is kept against a late hospital
     description or a line chosen or changed, with a "newer description" cue and "Use it" (on Wiremu
@@ -919,7 +930,7 @@ anything settled in the Decisions log, except the 2026-09-28 ruling this phase s
     27 paired as one Booking's rooms and hospital wording; any placement moved from the table.
   - "Add a description" on an existing Booking (built here, ahead of 35's amend flow), or cut.
 - **Status.** A catch-up status row for Phase 20a, DONE at the end.
-- **Phase entry:** the drift-check result against `d436947` and the names reused from 18 to 20; both
+- **Phase entry:** the drift-check result against `a68f09b` and the names reused from 18 to 20; both
   inventory greps before and after with any accepted leftover; the placement table as built with each
   new Booking's id; the `PERSIST_VERSION` bump; the parity check; the checklist item by item with
   evidence; Vitest and Playwright counts before and after; the review pass.

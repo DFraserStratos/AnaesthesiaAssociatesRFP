@@ -41,17 +41,17 @@ because "it's done in Xero").
 "working view shows only what is needed, raw payload behind restricted access" rule is applied here to
 the in-scope failure surface, the unmatched hospital rows.
 No DM or RV item is owned here. The generator produces the shapes of
-[DM-02](../analysis/domain-model-delta.md#dm-02) (Slots, Phase 28),
-[DM-52](../analysis/domain-model-delta.md#dm-52) (List states, 15b and 31),
-[DM-53](../analysis/domain-model-delta.md#dm-53) (recurring bookings, 30),
-[DM-54](../analysis/domain-model-delta.md#dm-54) (tiers and private preferences, 17),
-[DM-48](../analysis/domain-model-delta.md#dm-48) and [DM-49](../analysis/domain-model-delta.md#dm-49)
+[DM-02](../analysis/domain-model-delta.md) (Slots, Phase 28),
+[DM-52](../analysis/domain-model-delta.md) (List states, 15b and 31),
+[DM-53](../analysis/domain-model-delta.md) (recurring bookings, 30),
+[DM-54](../analysis/domain-model-delta.md) (tiers and private preferences, 17),
+[DM-48](../analysis/domain-model-delta.md) and [DM-49](../analysis/domain-model-delta.md)
 (contract holders with settings and the one No contract (RVG), 18),
-[DM-10](../analysis/domain-model-delta.md#dm-10) (one Contract per Procedure, 20),
-[DM-51](../analysis/domain-model-delta.md#dm-51) (descriptions as received, 20a),
-[DM-08](../analysis/domain-model-delta.md#dm-08) (the pricing snapshot, 25),
-[DM-22](../analysis/domain-model-delta.md#dm-22) (the ledger, 36) and
-[DM-34](../analysis/domain-model-delta.md#dm-34) (import rows, 33). Re-read each in
+[DM-10](../analysis/domain-model-delta.md) (one Contract per Procedure, 20),
+[DM-51](../analysis/domain-model-delta.md) (descriptions as received, 20a),
+[DM-08](../analysis/domain-model-delta.md) (the pricing snapshot, 25),
+[DM-22](../analysis/domain-model-delta.md) (the ledger, 36) and
+[DM-34](../analysis/domain-model-delta.md) (import rows, 33). Re-read each in
 [domain-model-delta.md](../analysis/domain-model-delta.md) as it now stands; no
 [reverse-check](../analysis/reverse-check.md) finding is closed here.
 Answered question this phase builds:
@@ -59,7 +59,7 @@ Answered question this phase builds:
 So Xero doesn't have NHI details. Xero will have an unique ID which allows transactions to link back to
 invoices in our system."). The leak scan's Xero area checks for the NHI **and** the other personal
 information Phase 16 keeps out of Xero (work item 13).
-**Owner decisions** ([ROADMAP.md](../ROADMAP.md) table, re-read at `d436947`). None gates this phase;
+**Owner decisions** ([ROADMAP.md](../ROADMAP.md) table, re-read at `a68f09b`). None gates this phase;
 the generator follows what the decisions produced, as the earlier phases built it: D1 (the monthly
 AA-FEE invoice, 16); D11 (NHI mandatory, 33, 40); D26 (one RVG multi-procedure rule, no switch, 23); D32
 (a Contract may hold no lines, 18, 19a, 20); D33 (no procedure to match, the RVG code optional, 20, 21);
@@ -72,14 +72,13 @@ out-of-range warning for the office, 19, 20); D39 (the RVG groups are the one ma
 anaesthetists' price lists, 19a); D43 (P1 included, pre-applied and removable, 19b); D44 (preferences
 admin-only, 17); D45 (versions never backdated, 18, 25); D37 (answered: the invoice description is 20a's one chain, the
 rooms' description, replaced by the hospital's when one arrives, replaced by the Contract line's invoice
-description where filled in, free text for the office; the RVG code plays no part; 20a); D28's answered
-parts (insurance does not narrow the Contract list and nothing matches the insurer against the Contracts,
-so there is no insurer-without-Contract review warning; the missing approval number is the only insurance
-warning, 21). Superseded and not built: D2, D3, D6, D12, D16,
+description where filled in, free text for the office; the RVG code plays no part; 20a); D28 (answered in full:
+insurance does not narrow the Contract list and nothing matches the insurer against the Contracts, so there
+is no insurer-without-Contract review warning; the missing approval number is the only insurance warning,
+and the anaesthetist sees the approval number, 21); D66 (a no-NHI intake row leaves a stub on its List, 33a);
+D75 (a surgeon at one or more rooms, the first the main room, 17a); D13 (events are billed in the next run, 38b). Superseded and not built: D2, D3, D6, D12, D16,
 D17, D20 (curated procedure lists and general procedures, price precedence, first-party prepaid
-sets, "no per-Booking override"). Defaults the generated set inherits, never re-decided here: D28's
-still-open part (the insurer, a contract holder, and the approval number on the Booking; insurance never
-decides who is billed), D29 (age on the procedure date), D36 (tier names).
+sets, "no per-Booking override"). Defaults the generated set inherits, never re-decided here: D29 (age on the procedure date), D36 (tier names).
 **Depends on:** Phase 42 (every master editable and the controlled loader, so the generator reads the
 final master shapes), Phase 37 (the processing monitor, `billingMonitorView`, and the Xero sync queue the
 scan reads), Phase 36 (the ledger pair as the system of record, which the generated history must follow)
@@ -107,7 +106,10 @@ Two claims the prototype has so far only narrated become things a presenter can 
   list, so a Procedure carries its description as received and an optional RVG code; contract holders
   with settings (billed or not, prepaid) and Contracts with or without standalone lines; exactly one
   Contract per Procedure by Phase 20's rules (No contract (RVG), or a Contract whose holder fits the
-  Booking; no hospital, insurer or procedure default); a payer and a patient with a valid NHI on every
+  Booking; no hospital, insurer or procedure default); surgeons at one or more rooms, the first their main
+  room (17a, a room may hold no email); a few stubs on Lists for no-NHI intake rows, held outside the
+  Bookings table and never counted as Bookings (33a), with rooms' PDF rows (34) among the intake rows; events
+  on a few Procedures, billed in the next run (38b); a payer and a patient with a valid NHI on every
   Booking; the price, rate and discount held on the Procedure; modifiers as records (age and P1
   pre-applied); and a practice-sized handful of prepaid Bookings on prepaid Contracts, with the prepay
   holding account's pairs. It is built **through the one billing module** in
@@ -140,7 +142,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware; never
+1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware; never
    a plain `git diff` of the catalogue folder):
 
    ```
@@ -155,12 +157,13 @@ Two claims the prototype has so far only narrated become things a presenter can 
    (currently four months), US-15.0.6 says the NHI is never sent to Xero "in any field". What changed is the
    model the generator builds (the v6 technical design and the change logs to 2026-11-02): RVG groups with no
    procedure list; contract holders (insurers among them, no insurer master) with settings and how their
-   invoices are delivered, and Contracts with or without standalone lines; one Contract per Procedure; the
+   invoices are delivered, and Contracts with or without standalone lines; one Contract per Procedure; surgeons at one or more rooms (17a); stubs outside the Bookings table (33a);
+   rooms' PDF rows among the intake rows (34); events billed in the next run (38b); the
    price, rate and discount held on the Procedure; modifiers as records with age and P1 pre-applied and
    removable; a payer with an email or postal address and a mandatory NHI on every Booking (OQ-49); prepaid as
    a Contract setting, the AA Holding account and its journal transfer, prepaid Procedures left off final
-   invoices (D57). Work item 2 reflects all of this; diff only for anything after `d436947`.
-2. If an item changed since `d436947`, re-read it in full and adjust the work items before building. If
+   invoices (D57). Work item 2 reflects all of this; diff only for anything after `a68f09b`.
+2. If an item changed since `a68f09b`, re-read it in full and adjust the work items before building. If
    an item is now Retired or Future, drop its work and say so in the PROGRESS entry:
    - **US-15.0.4** Retired or Future: drop work items 1 to 9. If its figures changed (anaesthetists,
      Slots, invoices per year), change the one `FULL_SCALE` constants block (work item 2) and every copy
@@ -172,7 +175,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
      that view hold up at scale and never adds a second authorise path.
    - **US-14.5.1** moved out of Future into scope: record it for Phase 44's handoff and apply work item
      11's restricted view to it only if the session has room.
-   - **A model item changed after `d436947`**: the earlier phase that built it owns the change; the
+   - **A model item changed after `a68f09b`**: the earlier phase that built it owns the change; the
      generator follows what shipped, because it builds through the same module. Change nothing here
      except the integrity test that names the rule.
 3. **Open questions.** None blocks this phase. OQ-30 and OQ-49 are answered and built as answered. The
@@ -205,7 +208,9 @@ Two claims the prototype has so far only narrated become things a presenter can 
      URL params, `MONITOR_EXPAND_ALL_UP_TO` and its handoff note on scale); Phases 38b, 39, 39a, 39b, 41
      (event, credit-note, payment-run and prepayment-letter shapes: the history may leave them sparse but
      must not break them); Phase 40 (the patient record and Admin · Patients, NHI mandatory).
-   - Phase 33 and 34: `ImportRow`, `IncomingBookingFields`, the sample fixtures, `stageImportRows`,
+   - Phase 17a (surgeon-to-room links, the main room, rooms with no email), Phase 33a (the Stub record, its
+     id and the one resolve path), Phase 38b (the event element and the next-run rule), Phase 33 and 34
+     (rooms' PDF rows beside hospital rows): `ImportRow`, `IncomingBookingFields`, the sample fixtures, `stageImportRows`,
      `importRowViews`, the derived unmatched state and its reasons (including a row waiting for an
      NHI), the context key `matching.selectedRowId` and the matching route. Whether rows are seeded on
      load decides whether the `PERSIST_VERSION` bump in work item 10 also reseeds rows.
@@ -420,7 +425,9 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        the generator adds a practice-sized set of synthetic holders (hospitals, surgeons' rooms, insurers,
        each with its settings: billed or not with a billable party, and how its invoices are delivered; there is
        no insurer master) and Contracts as dated versions built
-       through Phase 18's builders, at `linelessContractShare` with no lines and otherwise with standalone
+       through Phase 18's builders, **surgeons at one or more rooms** through 17a's builders (a `multiRoomSurgeonShare`
+       at two rooms, the first the main room; a few rooms with no email; Bookings name the room they were made at),
+        at `linelessContractShare` with no lines and otherwise with standalone
        lines (Phase 19a: line key, holder reference code, description, default RVG code, fixed price or
        rate and discount, units). A year of history crosses the seeded Contract versions, so old Bookings
        price at the old version.
@@ -462,7 +469,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        - **exactly one Contract per Procedure, by Phase 20's rule** (DM-10, US-04.3.3): No contract (RVG)
          or a Contract whose holder fits the Booking, with a version in force on the List date (Phase 18,
          D45) and a line for the Procedure where it has lines (a Contract with no lines is offered when
-         its holder fits, D32); the generator takes Phase 20's candidate list in its picker order (No
+         its holder fits, D32); the generator takes Phase 20's candidate list (the one path module behind the step rail, No
          contract (RVG) first, then the hospital's, surgeons' and anaesthetists') and draws one, No
          contract (RVG) at `noContractShare` when another fits. There is no hospital, insurer or
          procedure default to fall back to, because none exists;
@@ -483,6 +490,10 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
          pre-fill;
        - exactly one primary Procedure (Phase 23), the multi-procedure rule applied as Phase 23 built it
          (D26).
+     - **Stubs** (33a, D66): a few (`FULL_SCALE.stubs`) forward Lists each hold one Stub for a no-NHI intake row,
+       built through 33a's builder on its own identifier and linked to its waiting intake row (a hospital row or a
+       rooms' PDF row, 34), never a Booking and never in the Bookings table; a List holding one reads
+       not-all-complete. Generate no stub on a billed List.
      - **Billed history** for the 71 over the last 12 months before `DEMO_TODAY`: worked Lists (each with
        its Slot, following whatever Phase 28 does for pre-horizon history), AUTHORISED, their Bookings
        built as above, then the **pricing snapshot per Procedure written at authorise** (Phase 25, DM-08:
@@ -494,8 +505,10 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        payment cycle through its builders. Invoices land at about `targetInvoicesPerYear`. The monthly
        AA-FEE invoices (Phase 16, D1: one per generated anaesthetist per month, fixed items plus the
        per-BCTI charge counted by Phase 16's one pure count function, never a second count) are included
-       and counted separately. Events (38b, 39b), additional invoices and credit notes (38b, 39) may be
-       left out of the generated history; if any are generated they go through the same builders.
+       and counted separately. A few Procedures (`eventShare`) carry an event through 38b's builder, billed in the next run (bundled with the
+       same party's invoice where the run has one, never held), so the history never leaves one unbilled past its
+       run. Additional invoices and credit notes (38b, 39) may be left out; if any are generated they go through
+       the same builders.
        Generated billed history raises no open warnings (15a's routine); only the forward Bookings and
        the review backlog raise what the rules naturally raise, so the to-do list stays practice-sized.
      - **A realistic problem set for the processing monitor** (US-13.3.1): a small, deterministic share of
@@ -531,7 +544,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        backdrop (for example `AA-S-000001`); say so in the Decisions log.
      - Returns `{ state, counts: { anaesthetists, slotsInHorizon, slotsTotal, lists, draftLists,
        recurringBookings, bookings, procedures, prepaidBookings, patients, invoices, aaFeeInvoices,
-       ledgerPairs, xeroContacts, activeContacts, auditEntries } }`.
+       ledgerPairs, xeroContacts, activeContacts, auditEntries, stubs, events } }`.
    - Vitest (allow a generous per-test timeout; note the Node timing in the PROGRESS entry):
      - determinism: two builds give identical counts and an identical digest (an FNV-1a hash over every
        record id, amount and date, in key order);
@@ -564,6 +577,10 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        account balances (each prepayment pair in, each AUTHORISED List's journal transfer out) and nothing
        leaves it before its List is AUTHORISED; every NHI valid and unique; no id collides with the seed; the next allocated
        id of each kind is unused;
+     - stubs, surgeons and events: every stub sits outside the Bookings table, links to a waiting intake row and
+       sits on an unbilled List; no Booking total, count, invoice or snapshot includes a stub; every surgeon has
+       at least one room and exactly one main room; every event is billed in the next run or is still awaiting it
+       (none skipped);
      - one-module: the source-scan test above (no Contract, line, resolver, pricing, snapshot or
        prepayment logic outside `domain/billing`);
      - privacy: the leak scan (work item 13) over the full-scale state finds zero NHIs and zero other
@@ -728,7 +745,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
       `stageImportRows` and never edited (corrections stay in `corrections`).
     - Fixtures: a pure `rawRowFor(sampleRow)` in `domain/intake/` builds each sample's raw columns from its
       incoming fields plus a few deterministic synthetic extras, so no fixture is typed twice. A
-      `feedMessage` row's raw columns are the parsed segments of the Future-scope message text. Include a sample row with no NHI (it waits at intake, OQ-49) so the view covers it too.
+      `feedMessage` row's raw columns are the parsed segments of the Future-scope message text. Include a sample row with no NHI (it waits at intake, OQ-49, its stub on the List, 33a) and a rooms' PDF row (34), so the view covers both.
     - The working view (Phase 33's table and row detail) is unchanged: it shows the mapped fields only.
       Add one line under the row detail's incoming fields: "Only the fields needed to match are shown.
       The rest of what the hospital sent is held under restricted access."
@@ -919,6 +936,10 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       removable; no hospital or procedure default appears anywhere; the patient has a valid NHI. On the
       billed one the invoice's price equals the snapshot's. A prepaid Booking (find one by its prepaid
       Contract) shows the line's price and is left off its final invoice, and the AA Holding account in Admin is in balance.
+- [ ] A generated surgeon at two rooms shows both, the first as the main room; a room with no email reads as
+      such. A generated stub is drawn marked on its List in the Admin Day view and is not in the Booking count;
+      its waiting intake row appears on Matching. A generated event shows on its Procedure and on the next
+      run's invoice.
 - [ ] The Admin recurring bookings list (Phase 30) shows the 71's recurring bookings; no "Permanent
       List" wording appears.
 - [ ] Invoices at scale: "Showing 1 to 50 of" about 28,000; next, last and first work; searching an
@@ -1019,7 +1040,7 @@ matches what was built:
 | Item | Recipe now | When this phase is done |
 |---|---|---|
 | [US-15.0.4](../../../../requirements-board/requirements/stories/US-15.0.4.md) Volumes | absent | partial, reason "full-scale volumes are generated in memory and timed on screen; formal performance testing is a Testing-milestone task". Admin shots `full-scale-day` (`/admin/day/2026-07-21`, after the `load-full-scale` entry and its confirm: states `banner` with the 85 anaesthetists, 20,000+ sessions over the scheduling horizon, 27,500 to 28,500 invoices, generation time and Timings, no "slot"; and `paged` with "3 pages of 30", ACTIVE wording and the Draft List strip), `full-scale-invoices` ("Showing 1 to 50 of" about 28,000), `full-scale-audit` (pages of 100, newest "Full-scale data loaded") and `full-scale-billing-monitor` (`/admin/billing`, "Anaesthetists 1 to 20 of 85"; second state Problems only). Highlight the banner and the pagers. Caption "Demonstration at full practice volume with measured screen timings" |
-| [US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts, xero-pair | stays captured (the two Xero shots stay valid; the Xero sim shows no NHI in any field). Add admin shots `raw-row` (Matching, an unmatched row: only needed fields, then the reason prompt and the masked sheet with "Masking policy is for AA to agree"; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found, the Xero row checking NHIs and personal details, core rows "Held by design"; second state the planted leak, one masked hit) and `synthetic-badge` (admin side nav, plus the mobile More card on `/mobile`). Caption "NHI stays inside the core platform and non-production holds synthetic data only" |
+| [US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts, xero-pair | stays captured (the two Xero shots stay valid; the Xero sim shows no NHI in any field). Add admin shots `raw-row` (Matching, an unmatched row, a hospital row and a rooms' PDF row (34): only needed fields, then the reason prompt and the masked sheet with "Masking policy is for AA to agree"; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found, the Xero row checking NHIs and personal details, core rows "Held by design"; second state the planted leak, one masked hit) and `synthetic-badge` (admin side nav, plus the mobile More card on `/mobile`). Caption "NHI stays inside the core platform and non-production holds synthetic data only" |
 
 Re-run `recipe-status.mjs 43` at the start of the step: if an earlier phase already changed either
 recipe, keep its shots and add these. US-13.3.1 (the monitor) is Phase 37's recipe; here its screen is
@@ -1066,8 +1087,10 @@ anything settled in the Decisions log.
   a Contract kind, an estimate or deposit); prepaid Bookings sit only on prepaid Contracts with a person
   as payer, the AA Holding account's pairs and journal transfers, and no prepaid Procedure on a final
   invoice (D57); tiers and preferences stay office-private.
+- Stubs and the new shapes: a stub is never in the Bookings table or any Booking count and the integrity totals
+  exclude it; surgeons at one or more rooms follow 17a; events are billed in the next run (38b).
 - Answered rulings: the invoice description comes from 20a's one chain (D37), never copied from the line or the
-  Booking's description by the generator; the only insurance warning is the missing approval number (D28),
+  Booking's description by the generator; the only insurance warning is the missing approval number (D28, answered in full),
   with no insurer-without-Contract warning generated or asserted.
 - Integrity at scale: generated history went through the same pure builders as the billing run and the
   ledger (no parallel pricing code), every AUTHORISED Procedure has a pricing snapshot and its invoice
@@ -1113,7 +1136,7 @@ anything settled in the Decisions log.
   (Admin Day, Invoices, Audit and Billing monitor at full scale; a generated Booking's stack; the
   Matching raw-row sheet; the Data Inspector's Privacy checks).
 - A catch-up status row for Phase 43 and an entry `### Catch-up Phase 43 · Scale and privacy (date)`
-  (one per session if it runs over two): the drift-check result against `d436947` (OQ-30 and OQ-49 answered and
+  (one per session if it runs over two): the drift-check result against `a68f09b` (OQ-30 and OQ-49 answered and
   built as answered), the shipped names used from Phases 14 to 42 (the model names in
   `domain/billing` above all), the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in

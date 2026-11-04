@@ -45,9 +45,9 @@ billing route select and billable-party fields are gone), 33 (rows without an NH
 unmatched queue), 28 (seeded List ids keep the
 `L-<reg>-<date>-<AM|PM>` form through `projectedListId`, so the routes below hold; it adds no "Open"
 label), 31 (Draft Lists, state DRAFT, which have no anaesthetist), 34 (the Future-scope HL7/FHIR
-surface and surgeon PDF ingest, the reworded Integrations callout, and `DemoSettings.autoMatchDemo` with
-`setAutoMatchDemo`, audited `demo.autoMatch`: with Phase 10's `failNextHandoff` and `armHandoffFault` in
-`store/demoSettingsActions.ts`, the precedent for demo switches) and 38a (the search field on the mobile Lists tab and the web Lists page)
+surface, the reworded Integrations callout, and the rooms' PDF list as a product intake source landing on
+33's matching screen, with its row correction; Phase 10's `failNextHandoff` and `armHandoffFault` in
+`store/demoSettingsActions.ts` are the precedent for demo switches, 34 built no auto-match toggle) and 38a (the search field on the mobile Lists tab and the web Lists page)
 have also run.
 **Estimated:** 1 session. If it runs long, stop after work item 7 (pure modules, the Hub stub,
 the store action, tests green with the UI edited only to compile) and do items 8 to 16 in a short
@@ -85,7 +85,9 @@ This phase:
   written over the record without a choice), and the record is stamped **"Last refreshed"** from the
   demo clock;
 - makes **HPI CPN** the one label and one format wherever a practitioner identifier shows, including
-  the new lookup purpose line and the Future-scope FHIR pane.
+  the new lookup purpose line and the Future-scope FHIR pane;
+- reuses the same as-typed check (the one validator, no Hub lookup) on the NHI field of 34's PDF row
+  correction and the waiting row's "Add NHI" (33a, 40): a small reuse, this phase's decision.
 
 **The form it works in** is the `d4db277` one, already built by earlier phases: Add a booking on an
 **ACTIVE** List (15b; no "Open" label, no DRAFT state on an assigned List) opens straight on the
@@ -104,7 +106,7 @@ external system, so it is built from the seed by a pure function and never persi
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `d436947`;
+1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `a68f09b`;
    the tool is rename-aware, so never a plain git diff of the catalogue folder):
 
    ```
@@ -112,11 +114,11 @@ external system, so it is built from the seed by a pure function and never persi
    ```
 
    Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on the
-   Booking and the HPI CPN glossary row. (This doc is current at `d436947`: neither covered item
+   Booking and the HPI CPN glossary row. (This doc is current at `a68f09b`: neither covered item
    changed and both are still **Proposed** with no OQ linked; the 28 October changes to the read-alongside
    items (US-11.1.1, US-11.1.5, US-11.2.2, US-12.1.4, OQ-49) are 40's, 21's and 26's; OQ-49 is answered, so D11 is built, not
    a default; the add-booking form is as the Goal describes.)
-2. If an item changed after `d436947`, re-read it in full and adjust the work items. Specifically:
+2. If an item changed after `a68f09b`, re-read it in full and adjust the work items. Specifically:
    - **NHI rule.** If the NHI stops being mandatory, or a blank or pending NHI becomes allowed again,
      stop and tell the owner: the form's validation and Save gate follow 40's required NHI.
    - **Refresh cadence.** If US-14.4.1 now asks for an automatic refresh on a schedule (the
@@ -170,12 +172,13 @@ external system, so it is built from the seed by a pure function and never persi
      drop it from this doc's surface list), and `createBooking`;
    - **14:** the `DemoTrigger` contract, `DemoContextValues`, `useDemoTriggerContext`, the PWA sheet's
      reachability while a bottom sheet is open, and `src/store/demoActors.ts`;
-   - **34:** where `autoMatchDemo` and `setAutoMatchDemo` live (with Phase 10's `failNextHandoff` and
-     `armHandoffFault` in `store/demoSettingsActions.ts`, the precedent for `nhiHubMode`), the reworded
-     Keycloak and Hub callout, and the Future-scope surface's path (`src/apps/demo/futureScope/`);
+   - **34:** Phase 10's `failNextHandoff` and `armHandoffFault` in `store/demoSettingsActions.ts` (the
+     precedent for `nhiHubMode`; 34 built no auto-match toggle), the reworded Keycloak and Hub callout,
+     the Future-scope surface's path (`src/apps/demo/futureScope/`), and the PDF row correction's NHI
+     field on 33's matching screen (item 9);
    - **38a:** the search field components on mobile and web and `parseBookingQuery`;
    - the current `PERSIST_VERSION`.
-6. Record the result (changed items against `d436947`, the provisional reading, the real names) in
+6. Record the result (changed items against `a68f09b`, the provisional reading, the real names) in
    the PROGRESS entry.
 
 ## Reference
@@ -372,11 +375,10 @@ them, so use the real ones from their PROGRESS entries):
 
 5. **Model, demo switch and persistence.**
    - `DemoSettings.nhiHubMode?: NhiHubMode`, where absent reads as `available` (the precedent of
-     Phase 10's `failNextHandoff` and 34's `autoMatchDemo`). It is demo scaffolding, not AA configuration, so it does not go in Phase 40's
+     Phase 10's `failNextHandoff`). It is demo scaffolding, not AA configuration, so it does not go in Phase 40's
      `appSettings`. Reset clears it.
    - `setNhiHubMode(api, actor, mode)` in `store/demoSettingsActions.ts` beside `armHandoffFault` (or
-     beside 34's `setAutoMatchDemo` if 34 put it elsewhere; real file from 34's entry), through
-     `mutate()`, audited the same way 34 audits its switch (`demo.nhiHubMode`, before and after). It refuses an unknown mode.
+     through `mutate()`, audited the way `armHandoffFault` is (`demo.nhiHubMode`, before and after). It refuses an unknown mode.
    - `Patient.registerRefreshedAtISO?: string` (unseeded), with a doc comment saying it is stamped by
      the office's refresh from the demo clock.
    - `Patient`'s doc comment gains one line: "Identity is looked up and refreshed against the NHI
@@ -416,8 +418,7 @@ them, so use the real ones from their PROGRESS entries):
    (it now calls the hook in place of `lookupNhi`). Record the counts.
 
 8. **The add-booking flow** (`ManualBookingForm`, shared by mobile and web Add a booking, Admin phone
-   advice and, if 15b kept it, the Future-scope photo demo's review; surgeon PDF ingest is Future scope
-   after 34 and gets nothing new). The form is the `d4db277` one: Add a booking opens straight on it
+   advice and, if 15b kept it, the Future-scope photo demo's review; 34's PDF row correction is item 9's). The form is the `d4db277` one: Add a booking opens straight on it
    (15b), on an ACTIVE List or, for the office, a Draft List (31), with 19's RVG type-ahead, 20a's
    Procedure description (source text), 21's payer block and 40's required NHI. This item changes only
    the patient section.
@@ -482,6 +483,12 @@ them, so use the real ones from their PROGRESS entries):
      publishes `nhiHub.inUse` while open. Adding the NHI stays Phase 40's action, with `buildNhiIndex`
      as the uniqueness check: this phase adds only the register read, never a second add or merge
      path.
+   - **34's PDF row correction and the waiting row's "Add NHI"** (33a, 40; real names from 34's and
+     33a's entries): after 34 the rooms' PDF list is a product intake source landing on 33's matching
+     screen. Their NHI fields get `nhiEntryFeedback`'s state, reason and shape hint as typed (the one
+     validator, no second regex), and the same `invalid` state blocks the row's add. No Hub lookup and no
+     purpose note on the PDF row (the waiting row keeps the register read above). Test: `ZAA0068` on
+     each shows the check-digit reason, `ZAA0067` clears it.
    - **38a's search fields** (mobile Lists tab, web Lists page; 38a's handoff): when the query is 7
      characters with no space and `nhiEntryFeedback` says `invalid`, a caption shows the reason
      ("The check digit does not match."). Matching stays exact and nothing calls the Hub (the search is
@@ -629,6 +636,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Admin, 40's view of rows waiting for an NHI: the add-the-NHI entry for the waiting row looks
       `ZAP3016` up ("On the NHI register: Noah Prescott, 17 May 1983", purpose note "the AA office"),
       and adding it works as Phase 40 built it. No provisional patient or "NHI pending" shows.
+- [ ] Admin, 33's matching screen, a PDF row's NHI correction, and the waiting row's "Add NHI": typing
+      `ZAA0068` shows the check-digit reason, `ZAA0067` clears it; no Hub status line appears.
 - [ ] Mobile Lists search: `ZAA0068` shows the check-digit reason; `CQY9304` still finds Sarah
       Mitchell's Booking.
 - [ ] HPI CPN reads the same everywhere it shows: the Admin anaesthetist editor, the surgeon profile,
@@ -758,7 +767,7 @@ re-raise anything settled in the Decisions log.
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
-  - the drift-check result against `d436947` (items changed or not; the refresh cadence, HPI CPN and
+  - the drift-check result against `a68f09b` (items changed or not; the refresh cadence, HPI CPN and
     NHI-rule checks; the provisional reading built; the real form names from 15b, 19, 20a, 21 and 40);
   - what was built, with the name map for later phases: `nhiEntryFeedback`; `src/domain/nhiRegister/`
     (`NhiRegisterPerson`, `buildNhiRegister`, `lookupOnRegister`, `registerDifferences`);
@@ -785,6 +794,8 @@ re-raise anything settled in the Decisions log.
   4. **New:** HPI CPN has one label and one formatter. It is shape-checked only (17); no check
      character or practitioner lookup is built, because the catalogue does not ask for one. The lookup's
      purpose note names the practitioner's HPI CPN.
+  5. **New:** the as-typed NHI validation (the one validator, no Hub lookup) also marks the NHI field of
+     34's PDF row correction and the waiting row's "Add NHI" (33a, 40): a small reuse of item 1.
 - **Handoff notes:**
   - For **42**: the register is external data. Patient loads never write it, and register-only
     people are not AA patients.

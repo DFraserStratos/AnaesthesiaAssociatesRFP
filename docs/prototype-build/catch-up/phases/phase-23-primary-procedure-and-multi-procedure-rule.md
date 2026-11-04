@@ -38,8 +38,8 @@ Contract's line for the procedure, then the procedure, then its RVG group, each 
 fixed price, fixed rate and fixed discount from the line only), and its fee path (the line's fixed
 price as the whole price; else BTM x the fixed rate or the anaesthetist's unit value, less any fixed
 discount); Phase 19b's itemised modifiers (age and included P1 pre-applied but removable, claimed ones
-with explanations, `resolveModifiers` as the one M total); Phase 20's candidate list (for an added
-Procedure's starting Contract); Phase 20a's three-part stack and its "who is invoiced" and "pricing
+with explanations, `resolveModifiers` as the one M total); Phase 20's step rail (the one path function holding US-04.3.2's rules, for an added
+Procedure's starting Contract); Phase 20a's shared component and its "who is invoiced" and "pricing
 basis" selectors; Phase 21's payer on the Booking, Review and completeness; Phase 22's Split button
 and invoice layout.
 **Depends on:** Phase 19b (modifiers as itemised records, `resolveModifiers`, `reconcileClaims`, the
@@ -51,8 +51,8 @@ removed, photo capture out of the chooser, the List state DRAFT renamed ACTIVE),
 one BCTI count), 17 (surgeons' rooms), 18 (contract holders, dated Contract versions, the AA code
 generator, composite search, one stored No contract (RVG)), 19 (RVG groups as the one master list,
 the RVG code type-ahead), 19a, 19b, 20 (one Contract per
-Procedure, mandatory at setup, the candidate list with No contract (RVG) first and holder headings,
-the RVG-code route to the lines across a group), 20a, 21 and 22.
+Procedure, mandatory at setup, the step rail: one path function with US-04.3.2's rules inside it,
+holder fit and date and no line test), 20a (the shared component), 21 and 22.
 **Estimated:** 2 sessions. Session 1: work items 1 to 8 (baseline, model, the pure allocation, the
 Booking-level engine reading 19a's resolver and 19b's modifiers, rewiring every fee caller, store
 actions, seed, tests), ending green. Session 2: work items 9 to 13 (capture with the primary first,
@@ -86,7 +86,7 @@ the RVG default multi-procedure rule, the one system-wide rule (D26, OQ-90 answe
 - **Exactly one primary, shown first** (US-03.2.1, US-03.2.2, FT-03.2 carried across).
   `Procedure.isAdditional` becomes `Procedure.isPrimary`, with exactly one primary per Booking that
   has Procedures, guaranteed by the store and asserted by the seed test. The primary is always listed
-  first on every surface (US-03.2.2 note), in capture, in 20a's stack, in Review and on invoice lines;
+  first on every surface (US-03.2.2 note), in capture, in 20a's shared component, in Review and on invoice lines;
   the others follow in Booking order. The primary is a choice, not a time order: the first procedure
   done may not be the primary, and an ACC pre-op assessment never is (it is a pre-op event, 39b).
 - **"Make primary".** Anyone with edit rights (the anaesthetist on mobile and web, the office in
@@ -143,14 +143,14 @@ holds afterwards (work items 1, 7 and 8).
 
 The anaesthetist's capture shows units and shares only. The 2026-09-28 ruling (no calculated fee on
 the anaesthetist's Booking) stands wherever the catalogue gives no price: this phase adds no Booking
-total, dollar share or calculated fee to an anaesthetist surface, and 20a's stack shows pricing
+total, dollar share or calculated fee to an anaesthetist surface, and 20a's shared component shows pricing
 basis as it does today. Invoices still group by
 billable party (21), so the BCTI count (16's `bctisFor`) does not move.
 
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,US-08.2.2,OQ-15,OQ-62,OQ-90,OQ-89,OQ-116`
-   (the drift-check baseline is `d436947`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the drift-check baseline is `a68f09b`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks. Re-read the domain model's "Booking" and "Procedure" sections (the
    `isPrimary` bullet and the Modifiers bullet) and "3. Calculation rules" ("Units within a Booking",
    the 7 over 3 worked example, the CALCULATED note).
@@ -217,12 +217,12 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
      `claimModifier`, `removeModifier`, `restoreModifier` and their refusals, the Modifiers section in
      capture (rows visible, actions hidden on an additional Procedure, as 19b left it), and how the
      seed migration left the Holt and bariatric additional Procedures' claims.
-   - 20: one Contract per Procedure, mandatory at setup; the candidate selector (its name, its
-     result shape: No contract (RVG) first, then holder headings), how it applies "has a line for the
-     procedure" and holder fit, the composite search, the RVG codes tab route to the lines across a
-     group, how `addProcedure` picks the new Procedure's Contract, `setProcedureContract`, and the
-     anaesthetist's change flagged at review.
-   - 20a: the Procedure's source wording, the three-part stack component, and its "who is invoiced"
+   - 20: one Contract per Procedure, mandatory at setup; the step rail's path function (its name, its
+     result shape, how it applies holder fit and the date, with no line test), how `addProcedure` picks
+     the new Procedure's Contract, `setProcedureContract` (US-03.2.3), and the anaesthetist's change
+     flagged at review.
+   - 20a: the Procedure's source wording, the shared component (which replaced the three-part stack),
+     and its "who is invoiced"
      and "pricing basis with figure" selectors.
    - 21: the payer on the Booking, who is billed (the holder's billable party or the payer), invoice
      grouping by billable party (US-08.2.1), Review showing the stack, and the completion rules.
@@ -242,7 +242,7 @@ TOTAL UNITS block, row flags). The pill shape (`r-pill`), the accent tint note, 
 design has no provisional badge and this phase needs none. The "Primary" marker is a small neutral
 pill (`r-pill`), as Phases 19, 19a and 22 do (not `DemoBadge`, which means demo simulation). Teal is
 the only action colour: "Make primary" is a teal text action beside Edit, and the "Primary" pill is
-never crimson and never a status colour. No mockup covers 20a's stack; extend it.
+never crimson and never a status colour. No mockup covers 20a's shared component; extend it.
 
 **Pricing model (draft, one place).** [AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md)
 (the plain-language guide, true as written except that OQ-90 answered 2026-10-19 that base and time
@@ -266,7 +266,7 @@ true as written; AR-29 and AR-30 are a draft that a v5 may change.
 modifiers with explanations, the pre-applied age modifier; built in 19b),
 [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) (P1 included and pre-applied
 on Neurosurgery and Spine codes; 19b),
-[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) (the candidate list; built in 20),
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) (the step rail's rules; built in 20),
 [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) (the fixed price is the
 whole price) and
 [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (the anaesthetist's
@@ -297,7 +297,7 @@ symbols, so follow their PROGRESS entries).**
 
 - Names the earlier phases plan (confirm each against their PROGRESS entries): 19's `pickProcedure`
   and `ProcedurePickerSheet`; 19a's `resolveStartingUnits` and `lineFor`; 18's `nextAaCode`; 20's
-  `contractCandidatesFor`, `ContractPickerSheet`, `setProcedureContract` and `needsContractBookings`;
+  20's step-rail path function, `setProcedureContract` and `needsContractBookings`;
   20a's `procedureStackView` and `ProcedureStack`. All are new since `60e2d1e`.
 - Types: `src/domain/types.ts`. `Procedure` (453; `isAdditional` at 494, with the RFP comment above
   it), `Contract` (216; 18's and 19a's shape by now), `BillingLine` (528), `CapturedUnits` (87) and
@@ -338,7 +338,7 @@ symbols, so follow their PROGRESS entries).**
 - Capture (shared by mobile, web and admin): `UnitsCard.tsx` (`isAdditional` prop at 22; B and M
   captions at 59 and 77), `BtmCaptureBlock.tsx` (the header with "PROCEDURE n", Edit and Remove at 123
   to 180, Remove offered when `ordinal > 1` at 164; the additional note from 209; `isAdditional`
-  passed at 244), 19b's Modifiers section and picker, 19's procedure card, 20a's stack.
+  passed at 244), 19b's Modifiers section and picker, 19's procedure card, 20a's shared component.
   `src/shared/flows/RemoveProcedureSheet` is the pattern for the new confirm sheet.
 - Seed: `domain/seed/bookings.ts` (the `addProcedure` spec helper with `isAdditional` at 264 and 275;
   the Holt pair at 545 to 565, 49115 primary and 49120 additional; the bariatric pair at 684 to 715,
@@ -402,7 +402,7 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      `{ kind: 'severalPrimaries'; ids }`. The store guarantees exactly one; the engine refuses the other
      two cases rather than guessing.
    - `inDisplayOrder(procedures)`: the primary first, then the rest in Booking order. Every list of a
-     Booking's Procedures (capture, 20a's stack, the Booking total, Review detail, invoice lines,
+     Booking's Procedures (capture, 20a's shared component, the Booking total, Review detail, invoice lines,
      history labels) uses it, so "Procedure 1" is always the primary.
    - `procedureRole(procedure, procedures)`: `{ role: 'primary' | 'additional'; baseCharged;
      modifiersRecorded }`, the one selector the capture and the store read to decide whether base and
@@ -551,7 +551,7 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
    - UI callers: `BookingDetailBody`, `BtmCaptureBlock` (a `view` prop, no own pricing), 22's Split
      row, `OfficeBillingSetup` (any `ordinal` prop and "procedure {ordinal}" heading left go; it reads
      "primary procedure" or "additional procedure"; keep the `office-billing-setup-n` hook numbered by
-     `inDisplayOrder` so recipes keep landing), 20a's stack (order only; its selectors are unchanged),
+     `inDisplayOrder` so recipes keep landing), 20a's shared component (order only; its selectors are unchanged),
      `ReviewScreen`, `ListDetailView` and `reviewFlags` (`naturalBtm` keeps working per Procedure; the
      flags take the view's fee).
    - Grep `ordinal`, `isAdditional`, `splitBillingUnits` and `procs[0]` across `src/`. Only display
@@ -562,10 +562,10 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - `createBooking` creates its first Procedure with `isPrimary: true`. The first Procedure entered
        is the primary by default, which matches the rooms' sheet order AA staff work from.
      - `addProcedure` creates `isPrimary: false`. It starts on the **primary's** Contract when that
-       Contract fits the new Procedure's procedure under 20's candidate rule (a line for it, a plain RVG
-       Contract, or No contract (RVG)), not index 0's (20 wrote "the first Procedure's Contract";
-       re-base it here), and otherwise follows 20's rule for a new Procedure (No contract (RVG), or
-       blank and on the "Needs a Contract" list, as 20 built it).
+       Contract still fits the step rail's rules for the new Procedure (holder fit and the procedure
+       date, no line test), not index 0's (20 wrote "the first Procedure's Contract"; re-base it here),
+       and otherwise follows 20's rule for a new Procedure, as 20 built it. `setProcedureContract` stays
+       as 20 left it (US-03.2.3).
      - The integration create paths (`integrationActions.ts`, about 150 and 467) and the manual flow go
        through `createBooking`, so they inherit this.
      - `addPostOpAddendum` creates its Procedure with `isPrimary: true` (the addendum is its own Booking
@@ -685,12 +685,12 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
    fixture diff limited to the new Booking.
 
 9. **Capture UI, shared by mobile, web and admin** (US-03.2.1, US-03.2.2, US-05.3.1).
-    - a. **The primary first.** `BtmCaptureBlock`s and 20a's stacks render in `inDisplayOrder`: the
+    - a. **The primary first.** `BtmCaptureBlock`s and 20a's components render in `inDisplayOrder`: the
       primary at the top, then the rest in Booking order. After Make primary the blocks re-sort with the
       theme's `motion/selection-slide` (never blocking; reduced motion falls back to the 80 ms fade).
     - b. **The block header.** When the Booking has more than one Procedure:
       - the primary shows a neutral "Primary" pill beside its "PROCEDURE 1" label and on the procedure
-        part of 20a's stack (`data-shot="procedure-primary-pill"`);
+        part of 20a's shared component (`data-shot="procedure-primary-pill"`);
       - each additional Procedure shows a teal "Make primary" text action beside Edit
         (`data-shot="make-primary"`). It is offered under the same rule as Edit, and hidden for the
         anaesthetist on a completed Booking;
@@ -870,7 +870,7 @@ The agent runs every item itself in the running app and reports it with evidence
 to the owner (ROADMAP.md "Owner review: agents test themselves").
 
 - [ ] Mobile (Dr Souter): on an ACTIVE Booking, add a procedure. The first shows the "Primary" pill at
-      the top (capture and 20a's stack). The new one shows the additional note, B 0 "Base units are on
+      the top (capture and 20a's shared component). The new one shows the additional note, B 0 "Base units are on
       the primary procedure", its own T, the modifiers caption row instead of the Modifiers section,
       and "Make primary". It starts on the primary's Contract when that fits its procedure.
 - [ ] "Make primary" opens the bottom sheet and names what moves. Confirm it. The new primary slides to
@@ -1007,7 +1007,7 @@ ordinal or a Contract rule. FT-05.3 has a story (US-05.3.1), so it needs no reci
   `US-05.1.4` (the Modifiers section now shows on the primary only); `US-05.2.1`, `US-05.2.4` and
   `US-05.2.5` (the `booking-calculation` rows change to "Primary" and "Additional"; the bariatric shot
   gains "Additional · fixed price"); `US-03.1.1`, `US-03.1.2`, `US-03.1.9`, `US-03.4.1` and `US-04.3.3`
-  (`procedure-header` and 20a's stack gain the Primary pill and Make primary).
+  (`procedure-header` and 20a's shared component gain the Primary pill and Make primary).
 
 **ATLAS.md.** Update Seed data (the three-procedure Souter Booking, its List and its patient aged 70 to
 79; the bariatric pair now two fixed-price lines), Personas and IDs (`SEED_MARKERS.multiProcedureBooking`),

@@ -9,7 +9,7 @@
 [DM-44](../analysis/domain-model-delta.md#dm-44) modifiers become per-Procedure records with explanations; age and included modifiers are pre-applied but not locked; ASA is just a modifier ·
 [RV-09](../analysis/reverse-check.md#rv-09-p1-absorbed-by-the-wrong-codes-and-struck-through-instead-of-shown-selected-at-0-units) P1 'absorbed' by the wrong codes and struck through instead of shown selected at 0 units ·
 [RV-22](../analysis/reverse-check.md#rv-22-asa-class-auto-seeds-modifier-units) the ASA class auto-seeds modifier units ·
-[RV-38](../analysis/reverse-check.md#rv-38-modifier-master-values-and-codes-are-demo-inventions-now-that-the-real-rvg-table-is-in-the-catalogue) the modifier master's values and codes are demo inventions.
+[RV-38](../analysis/reverse-check.md#rv-38-modifier-master-is-demo-values-and-codes-that-differ-from-the-transcribed-rvg-table) the modifier master's values and codes are demo inventions.
 (RV-23 and RV-35 of the earlier numbering left this list: the catalogue's renumbering made RV-09 and RV-22 these same findings, and their work is item 3 onward below.)
 Answered, built as answered: owner decision D43
 ([OQ-94](../../../../requirements-board/requirements/questions/OQ-94.md): P1 is included in every
@@ -131,7 +131,7 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
-   (the baseline is `d436947`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the baseline is `a68f09b`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks, plus the "Procedure" (Modifiers bullet) and "RVG groups, procedure
    list and modifier master" sections of `requirements-board/requirements/domain-model.md`. If an item
    changed, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work

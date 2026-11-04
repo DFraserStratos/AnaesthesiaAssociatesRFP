@@ -3,9 +3,9 @@
 **Requirements covered:** none. No stories, gap, DM or RV items: every one closes in Phases 14 to
 43a (27a and 32b included). Outline work with no id: the copy sweep (item 6; RV-17 is no longer a
 finding) and the check that the photo-capture demo action is still badged Future scope (item 4).
-Parked, no beat: FT-02.6 and US-02.6.1 to US-02.6.3 (stubs on a List, D66, until OQ-118). RV-27 (the
-office's single-Booking move) is a keep-as-demo-scaffold finding, not a unit: it goes on the owner
-review list (item 13).
+RV-27 (the office's single-Booking move) is a keep-as-demo-scaffold finding, not a unit: it goes on the
+owner review list (item 13). Nothing is parked: stubs on a List are built (33a, D66) and surgeon PDF
+upload (US-02.2.1) is in scope since 34 (D51), so both are scripted.
 Read alongside, because the copy must now state these readings (statuses at `60e2d1e`, with later answers noted):
 [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) (tiered time units, **Confirmed**: a part interval always rounds up under the RVG tiers, held as data) ·
 [OQ-50](../../../../requirements-board/requirements/questions/OQ-50.md) and [OQ-75](../../../../requirements-board/requirements/questions/OQ-75.md) (**Answered**, D25: time units come only from the RVG rules and a part interval always rounds up; **no time-rule caveat survives**) ·
@@ -17,6 +17,7 @@ Read alongside, because the copy must now state these readings (statuses at `60e
 [US-05.2.7](../../../../requirements-board/requirements/stories/US-05.2.7.md) (GST; **Confirmed since `3d3a18c`**: every price held excluding GST, GST worked out only at the foot of the invoice; stated as the rule, the old "proposed" label goes) ·
 [OQ-84](../../../../requirements-board/requirements/questions/OQ-84.md) (**Answered**, D60: whoever moves a List is asked whether the vacated session becomes free or unavailable; 32b; no label) ·
 [US-06.4.1](../../../../requirements-board/requirements/stories/US-06.4.1.md) (**Confirmed since `3d3a18c`**, retitled "No automatic invoice or credit after a prepaid procedure"; [OQ-61](../../../../requirements-board/requirements/questions/OQ-61.md) and [OQ-76](../../../../requirements-board/requirements/questions/OQ-76.md) Answered: nothing is invoiced or credited automatically after a prepaid procedure, either way; extras and credits are raised by hand; only cancelling credits or refunds by itself, D56, 41. The old "balance always invoiced, provisional" label goes).
+Also read, for the new beats: [FT-02.6](../../../../requirements-board/requirements/stories/FT-02.6.md) (stubs on a List, D66; 33a) and [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md) (the rooms' PDF lists through the same matching screen, D51; 34).
 Also read, for the S5 beats:
 [OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) and [US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md) (**Answered** and **Confirmed**: no PII in Xero, only a unique ID that links transactions back to our invoices; S5 states it as the rule) and
 [US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) (Proposed, still says "modulus 24"; the mod-11 label stays flagged).
@@ -37,7 +38,7 @@ For the beats the guide scripts (not closed here; statuses at `60e2d1e`):
   [US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md) (Verify: contract holders), [US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) (Confirmed: dated versions) and [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (Confirmed: the anaesthetist's own fixed-price Contracts, kept by the office) (18, 19a) ·
   [FT-04.3](../../../../requirements-board/requirements/stories/FT-04.3.md), [US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) and [US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) (Confirmed: No contract (RVG) first, holder-fit Contracts with one search; 20) ·
   [US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md) (Verify: optional modifiers, each with a short explanation), [US-03.3.8](../../../../requirements-board/requirements/stories/US-03.3.8.md) and [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) (age and the included P1 pre-applied and removable, D43; the bands are OQ-95, open) (19b) ·
-  [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) and [US-07.2.2](../../../../requirements-board/requirements/stories/US-07.2.2.md) (Confirmed: the payer and the insurer on the Booking; office review of Contracts, references and the insurance indication, D28; 21) ·
+  [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) and [US-07.2.2](../../../../requirements-board/requirements/stories/US-07.2.2.md) (Confirmed: the payer and the insurer on the Booking; office review of Contracts, references and the insurance indication, D28 answered: the anaesthetist sees and may change the approval number; 21) ·
   [US-08.2.3](../../../../requirements-board/requirements/stories/US-08.2.3.md) (Verify: the Split button; 22) ·
   [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md), [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) and [US-05.4.3](../../../../requirements-board/requirements/stories/US-05.4.3.md) (Confirmed: fixed price, fixed rate and locked fixed discount on the Contract; the Contract on the Procedure sets its price and its editable flag says who may change it, D50; 24).
 - **Prepayment:** [US-06.2.2](../../../../requirements-board/requirements/stories/US-06.2.2.md), [US-03.1.8](../../../../requirements-board/requirements/stories/US-03.1.8.md) and [US-08.2.2](../../../../requirements-board/requirements/stories/US-08.2.2.md) (Confirmed: prepaid is a setting on the Contract, placed by the office, D64; the amount is the anaesthetist's own fixed price, in full and above zero, shown to them; the prepaid Procedure left off the final invoice with nothing deducted, D57; 26, 27) ·
@@ -54,8 +55,7 @@ scope). Since the 2026-10-03 update: [US-02.4.3](../../../../requirements-board/
 Copy a Booking (Retired; 15b), [US-05.2.3](../../../../requirements-board/requirements/stories/US-05.2.3.md)
 the conditional positioning modifier (Retired; its idea now lives as the locked included P1, 19b),
 and the Future Work items [US-02.4.4](../../../../requirements-board/requirements/stories/US-02.4.4.md)
-booking from a photo, [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md)
-surgeon PDF upload, US-02.5.1 to US-02.5.4 automated change application, US-02.5.6 concurrent edits
+booking from a photo, US-02.5.1 to US-02.5.4 automated change application, US-02.5.6 concurrent edits
 and US-13.7.4 warning settings. **Since the 2026-10-08 update:** Retired
 [US-06.2.3](../../../../requirements-board/requirements/stories/US-06.2.3.md),
 [US-06.2.4](../../../../requirements-board/requirements/stories/US-06.2.4.md) and
@@ -84,14 +84,13 @@ the two-tab picker: the RVG groups are the one list, D39), FT-06.1, US-06.1.1, U
 period); the "Reschedule" change type and the cross-List move (D62: a day move is a cancellation plus a
 new Booking); the conflict flag on unavailability (D59: conflicts cover hospital closures only); notices
 that expire (D58: ticked resolved); the "archive" browse (D9: a List leaves the main view at AUTHORISED
-and is found by search); the "trust account" and "prepay holding account" wording (the AA Holding account and its journal transfer, 27a); and a locked P1 (D43: pre-applied and removable). Since 2026-11-02: the Insurers master (insurers are contract holders, 18), a prepayment deduction line (D57, 27, 41), the "second pair" (27a: one journal transfer) and the FT-02.6 stubs (D66, parked): no beat.
+and is found by search); the "trust account" and "prepay holding account" wording (the AA Holding account and its journal transfer, 27a); and a locked P1 (D43: pre-applied and removable). Since 2026-11-02: the Insurers master (insurers are contract holders, 18), a prepayment deduction line (D57, 27, 41), the "second pair" (27a: one journal transfer) and the "stubs parked, no beat" reading (D66 answered: stubs are built, 33a).
 
-**Owner decisions** ([ROADMAP.md](../ROADMAP.md#owner-decisions) table D1 to D76, re-read on
-2026-11-04 against catalogue `d436947`). This phase gates on none: it scripts and labels what the
+**Owner decisions** ([ROADMAP.md](../ROADMAP.md#owner-decisions) table D1 to D77, re-read on
+2026-11-04 against catalogue `a68f09b`). This phase gates on none: it scripts and labels what the
 phases built. It tells the audience each decision as it now stands: answered rows as the rule (no
 provisional label), superseded rows (D2, D3, D6, D12, D16, D17, D20 and the old defaults of D30, D35,
-D47 to D49 and D54 to D57) in their **new** reading, and open rows (D28's open part (whether the anaesthetist sees the number), D29, D31, D34,
-D36, D51 to D53, D55's part and D66 to D76) as the built default, labelled provisional in the
+D47 to D49 and D54 to D57) in their **new** reading, and open rows (D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77) as the built default, labelled provisional in the
 UI's own words. Drift-check step 3 lists every row.
 
 **Depends on:** every catch-up phase, 14 to 43a (including 15a, 15b, 17a, 19a, 19b, 20a, 27a, 32a, 32b, 38a, 38b, 39a, 39b, 40a and 43a), DONE. This phase runs last. It changes no domain behaviour; it re-walks and
@@ -103,7 +102,7 @@ two full walks of S1 to S5 plus a handset pass, and a four-reviewer adversarial 
 lengthening S1, S2 and S4 rather than a third session).
 - **Session 1 (code and baseline):** drift check, items 1 to 7. It ends green with a draft Phase 44
   PROGRESS entry (status IN PROGRESS) holding what Session 2 needs, because scratchpad notes do not
-  survive the session: the drift-check result, the OQ list at HEAD, the D1 to D76 table, the beat and
+  survive the session: the drift-check result, the OQ list at HEAD, the D1 to D77 table, the beat and
   registry inventory (item 1) and the re-baselined figures (item 7).
 - **Session 2 (documents, QA, close-out):** items 8 to 13, starting from that draft entry.
 Regressions the QA pass finds are fixed only if small (item 12); anything larger is logged, never a
@@ -131,8 +130,11 @@ This phase:
   and scripting the beats the catch-up added:
   - **S1:** sign-in on the handset; **sync then match** with each row's **wording as received**, no
     automated decision, a day move shown as a cancellation plus a new Booking (D62), a row with no
-    NHI waiting (D11), and the office setting the Contract (**No contract (RVG) first**, then
-    holder-fit Contracts, one search); the **descriptions** (rooms', hospital's, invoice) on every
+    NHI waiting (D11) with a **stub on its List** (33a, D66), the **rooms' PDF lists through the same matching
+    screen** (34, D51), a **surgeon at two rooms** (17a, D75), and the office setting the Contract through
+    the **step rail** (20; a working direction, a guess to design and test with AA, labelled as such: who the
+    invoice goes to, prepaid or which Contract, the price; an RVG-priced Contract handed to the anaesthetist
+    for the RVG code; **No contract (RVG) first**, then holder-fit Contracts, one search); the **descriptions** (rooms', hospital's, invoice) on every
     booking screen; capture with the **RVG code by type-ahead**, starting units from the line,
     procedure or group, the **payer (an email or a postal address) and the insurer, a contract holder, with the approval number the anaesthetist can edit on the day, on the Booking**, **optional modifiers each with a
     short explanation, the age and included P1 pre-applied and removable**; the anaesthetist **editing
@@ -150,7 +152,7 @@ This phase:
   - **S3:** the run writing each Procedure's **pricing snapshot**, with **prices on the Procedure and
     the Contract's editable flag**, a **discount line** and a **$0 invoice**, who is invoiced decided
     by the Contract's holder or the payer, GST at the invoice foot; the **weekly payment run** with
-    BCTI approval and the remittance advice; the **monthly AA fee run**; asides for the **Split
+    BCTI approval and the remittance advice, the payment itself **made in Xero** and detected (D53); the **monthly AA fee run**; asides for the **Split
     button**, the price rules (the Contract on the Procedure sets its price; no step order) and the
     multi-procedure rule (D26, no switch);
   - **S4:** **prepayment from a prepaid Contract** (D64) at the anaesthetist's own fixed price, in full,
@@ -159,7 +161,7 @@ This phase:
     paying whoever did the List (27a; the trigger provisional, D72); the prepaid Procedure left off the
     final invoice with nothing deducted; **a cancelled prepayment credited if unpaid or refunded from
     the AA Holding account if paid, automatically** (D56, 41); **events on no List** (additional
-    invoices and credits by the office **and** the anaesthetist, pre-op, post-op and **billing events**);
+    invoices and credits by the office **and** the anaesthetist, pre-op, post-op and **billing events**, **billed in the next run** through the same review step, D69);
     **credit-and-rebill** with components equal to the credit, and the negative **netted on the weekly
     run's remittance advice**;
   - **S5:** NHI lookup, the **mandatory NHI** (waiting intake rows and the missing-NHI list), **staged
@@ -176,8 +178,8 @@ This phase:
   it is still open. The time-rule caveats go (D25), as do the balance-invoice caveat (OQ-61, OQ-76
   answered), the GST "proposed" label (US-05.2.7 Confirmed) and every label for an answered question
   (OQ-84, OQ-89, OQ-90, OQ-92, OQ-80, OQ-49 and D11, D26 to D27, D38 to D41 among them); a caveat stays
-  only where a question is still open, for example OQ-93 on the insurance indication, OQ-95 on the age
-  bands, OQ-97 on a part credit of a prepayment, D67 and D70 (a Contract changed off prepaid after sending; a postal-address payer), D73 on an edited invoice description kept against later defaults, and the **BCTI granularity,
+  only where a question is still open, for example OQ-95 on the age
+  bands, OQ-97 on a part credit of a prepayment, D70 (a postal-address payer), D73 on an edited invoice description kept against later defaults, and the **BCTI granularity,
   labelled provisional** (one BCTI per receivable invoice built; "one per procedure" unresolved, beside
   OQ-29 and OQ-60). The sweep also removes superseded vocabulary from app copy: "slot" (OQ-64), "Copy
   booking" (15b), "addendum" (38b), "blacklist" (D44, D36), "DRAFT" or "Open" for an assigned List
@@ -193,7 +195,7 @@ This phase:
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot, commit `d436947` (rename-aware; never a
+1. Run the drift check against the plan's catalogue snapshot, commit `a68f09b` (rename-aware; never a
    plain `git diff` of the catalogue folder, which moved). This phase scripts the whole app, so read
    the whole diff, not only the sweep's references:
 
@@ -205,17 +207,19 @@ This phase:
    (The last ten are OQ-87, open and Future, and the questions answered on 2026-10-05 to 08 that the
    guide now tells as the rule: a reopened one puts its caveat back.)
 
-   At plan time (2026-11-04) the baseline is `d436947`, so the diff is empty. What moved from `d436947`
-   to `d436947` is already in this doc: D37 answered (the invoice description by a series of defaults;
-   no OQ-103 label), D28's open part narrowed to whether the anaesthetist sees the approval number, D73
-   to D76 new open defaults, no insurer-without-Contract sample warning, and 17a (rooms with no email,
-   practice manager and PA contacts). Earlier moves
+   At plan time (2026-11-04) the baseline is `a68f09b`, so the diff is empty. What moved up to it is
+   already in this doc: D37 answered (no OQ-103 label); D28, D51, D53, D66, D67, D69 and D75 answered
+   (the anaesthetist sees the approval number; both intake sources; payments made in Xero; stubs on a List;
+   a Contract changed off prepaid after sending a cancellation; events billed in the next run; a surgeon
+   at more than one room), so no OQ-119 or OQ-121 label; D52 part 2 assumed; D73, D74, D76 and D77 open
+   defaults; no insurer-without-Contract sample warning; 17a (rooms with no email, practice manager and
+   PA contacts). Earlier moves
    (`changes/2026-10-28-aa-meetings-with-ben-vanessa-and-greg.md`): the AA Holding account and its journal transfer in place of the prepay holding account and a
    second pair, prepayment approval a step AA can switch off, prepaid Procedures left off the final
    invoice with no deduction line, a cancelled prepayment credited or refunded automatically, the
    payer's email or postal address, insurers folded into contract holders (no Insurers master), the
-   approval number editable on the day, events on no List, and FT-02.6 parked. For each item changed
-   **since `d436947`**:
+   approval number editable on the day, events on no List, and FT-02.6 parked (then; built since, D66, 33a). For each item changed
+   **since `a68f09b`**:
    - if it is one the copy sweep states (US-05.2.2, OQ-50, OQ-75, OQ-08, FT-13.3, OQ-74, OQ-30, US-09.3.1,
      US-07.3.2, FT-08.2, US-05.2.7, OQ-84, US-06.4.1), re-read it and adjust work item 6's wording;
    - if it changes a behaviour a scripted beat relies on, check the owning phase's PROGRESS entry for
@@ -225,12 +229,11 @@ This phase:
      click" as Future scope) and record that in the PROGRESS entry.
 2. **Every open question the guide will name.** Re-read the status of each OQ at HEAD
    (`requirements-board/requirements/questions/OQ-*.md`). The guide's "Open questions" list and every
-   discovery point are built from HEAD statuses, not from this doc. At `d436947` the Open ones are OQ-12 (ACC pre-op codes), OQ-13 (download format), OQ-29 (GST
-   agency), OQ-60 (what the fee counts), OQ-83 (sign-in experience), OQ-93 (insurance on the Booking,
-   the open part), OQ-95 (age bands), OQ-97 (a part credit), OQ-100 (schedule upload), OQ-102
-   (preference and tier names), OQ-130 (D73, a later default and an edited invoice description), OQ-127 to OQ-129 (D74 to D76), OQ-108, OQ-109 and
-   OQ-111 (D51 to D53), and the questions behind D55's part and D66 to D76 (take their ids from the
-   ROADMAP rows; OQ-118 parks FT-02.6, OQ-123 gates nothing); OQ-47 (payment day and cycle) is
+   discovery point are built from HEAD statuses, not from this doc. At `a68f09b` the Open ones are OQ-12 (ACC pre-op codes), OQ-13 (download format), OQ-29 (GST
+   agency), OQ-60 (what the fee counts), OQ-83 (sign-in experience), OQ-95 (age bands), OQ-97 (a part credit), OQ-100 (schedule upload), OQ-102
+   (preference and tier names), OQ-130 (D73, a later default and an edited invoice description), OQ-127 (D74), OQ-129 (D76), OQ-131 (D77) and
+   OQ-109's first part (D52: which two hospitals), and the questions behind D55's part, D68, D70 to D74, D76 and D77 (OQ-131; take their ids from the
+   ROADMAP rows; OQ-123 gates nothing). OQ-93, OQ-108, OQ-111, OQ-118, OQ-119, OQ-121 and OQ-128 are now answered (D28, D51, D53, D66, D67, D69, D75); OQ-47 (payment day and cycle) is
    **Proposed**, so it is "proposed", not "open". **Answered, told as the rule with no caveat:**
    OQ-15, OQ-30, OQ-31 (D9), OQ-38, OQ-43 (D44), OQ-48 (D45), OQ-49 (D11), OQ-50, OQ-61, OQ-62 to
    OQ-76, OQ-77 (D22, D41), OQ-78, OQ-79 (D58), OQ-80 (D38), OQ-81 (D59), OQ-82, OQ-84 (D60), OQ-85
@@ -263,7 +266,7 @@ This phase:
    - **BCTI granularity** is not an OQ but an open point the plan keeps in one place (ROADMAP,
      "Sequencing rules"): one BCTI per receivable invoice is built, "one per procedure" is unresolved
      beside OQ-29 and OQ-60. Every app and guide mention of the count stays labelled provisional.
-3. **Owner decisions D1 to D76** (ROADMAP "Owner decisions", at `d436947`). Write the table into the
+3. **Owner decisions D1 to D77** (ROADMAP "Owner decisions", at `a68f09b`). Write the table into the
    PROGRESS entry from the ROADMAP rows and each owning phase's entry, with the exact label the UI shows:
    - **Answered and built as answered, no provisional label:** D1 the monthly AA fee (16); D5 no
      prepayment gate (15a, 27); D7 an anaesthetist moves their own List with no confirmation (32, 32a);
@@ -296,16 +299,25 @@ This phase:
      master list; No contract (RVG) first with holder-fit Contracts; the Contract bills its holder or
      the payer on the Booking; no move detection and no re-check; one prepayment pair and one
      transfer, never a second pair.
-   - **Open, built as the default and labelled provisional in the UI's words:** D28's open part (the
-     missing-approval warning on the to-do list and Review is the rule; open only whether the
-     anaesthetist sees the number; OQ-93);
-     D29 (OQ-95, the age bands); D31 (OQ-97, a part credit); D34 (OQ-100); D36 (OQ-102, "Not
-     preferred", "Preferred", Tier 1 to Tier 4); D73 (OQ-130, an edited invoice description kept against later defaults); D74 (OQ-127, practice manager and PA contacts by room, optionally named for one surgeon); D75 (OQ-128, one room per surgeon); D76 (OQ-129, a surgeon's HPI CPN required, bad rows rejected); D51 to D53
-     (OQ-108, OQ-109, OQ-111); D55's part (email or portal on the holder); D66 (no stub, FT-02.6
-     parked); D67 (a Contract changed off prepaid after sending settled as a cancellation; 27's
-     warning the interim); D68 (the prepayment invoice and letter name the anaesthetist); D69 (events
-     billed by 38b's one rule); D70 (a postal-address payer accepted, invoices marked to post); D71
-     (emailed Lists and update emails stay); D72 (release at List authorisation).
+   - **Answered 2026-11-04 (Donald, for the build; AA has not seen them), built as answered, no
+     provisional label:** D28 (the anaesthetist sees and may change the approval number); D51 (both intake
+     sources, each into the matching screen: the hospital download and the rooms' PDF lists, 34); D53
+     (payments to anaesthetists made in Xero's payables run, the system raising, recording and tracking
+     them; 37, 39a); D66 (stubs on a List as well as the waiting row, 33a); D67 (a Contract changed off
+     prepaid after sending handled as a cancellation, 41; 27's warning the interim); D69 (an event billed
+     in the next run through the same review step, 38b); D75 (a surgeon at one or more rooms, 17a, 42).
+   - **Assumed:** D52 part 2 (both hospital integrations synced into the matching screen by an action,
+     nothing applied until the office decides, 34): one-line label as the UI words it.
+   - **Open, built as the default and labelled provisional in the UI's words:** D29 (OQ-95, the age
+     bands); D31 (OQ-97, a part credit); D34 (OQ-100); D36 (OQ-102, "Not preferred", "Preferred", Tier 1 to
+     Tier 4); D52 part 1 (which two hospitals; the catalogue's names kept in one place); D55's part (email
+     or portal on the holder); D68 (the prepayment invoice and letter name the anaesthetist); D70 (a
+     postal-address payer accepted, invoices marked to post); D71 (emailed Lists and update emails stay);
+     D72 (release at List authorisation); D73 (OQ-130, an edited invoice description kept against later
+     defaults); D74 (OQ-127, practice manager and PA contacts by room, optionally named for one surgeon);
+     D76 (OQ-129, a surgeon's HPI CPN required, bad rows rejected); D77 (OQ-131, how the office keeps a
+     Contract's prices and dates current: whole-Contract dated versions, labelled once, kept in one version
+     module).
    If an open row has been answered since its phase ran and the build still carries the default,
    script the build as it stands, label it provisional, and raise it with the owner; do not rework the
    feature here. If an answered or superseded row's phase still shows a provisional label for it (D9,
@@ -361,7 +373,7 @@ draft design as AA's decision, and quotes the app as built where they differ.
   OFF.)
 - `../GAP-ANALYSIS.md`: everything before "## By epic", especially "Demo impact", "Demo-trigger
   buttons", "Remove or rework" and "Uncertainty".
-- `../ROADMAP.md`: "Owner decisions" (D1 to D76), "Sequencing rules" (the BCTI granularity rule, the
+- `../ROADMAP.md`: "Owner decisions" (D1 to D77), "Sequencing rules" (the BCTI granularity rule, the
   pricing model in one place, and the Vocabulary paragraph), "Demo triggers", "PWA parity", "Demo
   guide" (its list of beats the 2026-10-08 changes break, which earlier phases patched and this phase
   rewrites), "Catalogue screenshots" (its "Stale captions after the 2026-10-08 update"), "Confirm
@@ -459,8 +471,8 @@ why.
      gate, the confirm step at submit and tap-to-read on the triangle (US-13.7.3), the 5% fee, the
      addendum Booking (38b), Copy a Booking (15b), "Permanent List", unavailability turning Lists into
      Draft Lists without the anaesthetist's choice (US-01.5.5), the update email prompted after a save
-     or a cover change (D19), surgeon PDF upload, photo capture or automated change application shown
-     as in scope (Future Work), two people editing one Booking (US-02.5.6), and the carried-forward
+     or a cover change (D19), photo capture or automated change application shown
+     as in scope (Future Work; surgeon PDF upload is in scope since 34), two people editing one Booking (US-02.5.6), and the carried-forward
      negative invoice (D21). **From the 2026-10-08 update:** the prepayment **estimate**, its
      contingency units and estimated duration, the **deposit**, the **balance invoice** raised after
      authorise and the **overpaid prepayment** "excess accepted" beat (US-06.2.3 to US-06.2.5 and
@@ -476,11 +488,11 @@ why.
      anaesthetist's own move (17, D44); **"DRAFT" or "Open" for an assigned List** (15b); a List
      disappearing at invoice generation (38a: it leaves the main view once finalised and sent to
      invoicing, and is found by search); and "Stage child billed directly" (21 seeds the
-     child-payer case instead). **From the 2026-10-20 update:** the two-tab picker and procedure master (19), the three-part stack as a unit (20a: the descriptions), the locked P1 (19b), the "archive" browse (38a: the main view and search), the "trust account" and "prepay holding account" (27, 27a: the AA Holding account), a conflict raised by unavailability and the conflict flag on sickness (32b), the "Reschedule" change type and cross-List move (33), a notice that expires (32b: ticked resolved) and the prepayment set on the anaesthetist's profile (D64). **From the 2026-11-02 update:** the "prepay holding account" and the "second pair" (27a: the AA Holding account and one journal transfer), the prepayment deduction line and a mixed Booking's deduction (D57), the Insurers master (18), a refund route told as open (D56: automatic), a stub on a List (FT-02.6 parked, D66).
+     child-payer case instead). **From the 2026-10-20 update:** the two-tab picker and procedure master (19), the three-part stack as a unit (20a: the descriptions), the locked P1 (19b), the "archive" browse (38a: the main view and search), the "trust account" and "prepay holding account" (27, 27a: the AA Holding account), a conflict raised by unavailability and the conflict flag on sickness (32b), the "Reschedule" change type and cross-List move (33), a notice that expires (32b: ticked resolved) and the prepayment set on the anaesthetist's profile (D64). **From the 2026-11-02 update:** the "prepay holding account" and the "second pair" (27a: the AA Holding account and one journal transfer), the prepayment deduction line and a mixed Booking's deduction (D57), the Insurers master (18), a refund route told as open (D56: automatic), "stubs parked, no beat" (D66: stubs are built, 33a, and scripted).
    - Every registry entry: dump `DEMO_TRIGGERS` (id, label, `screen`, `routes`, `surfaces`, `badge`,
      `indexPath` on the pristine seed) with a throwaway script or `vitest` snippet in the scratchpad.
    - Every scenario jump's current staging and message.
-   - The D1 to D76 table from drift-check step 3, and the open OQ list from step 2.
+   - The D1 to D77 table from drift-check step 3, and the open OQ list from step 2.
    - Every phase's "For the owner's review" list, from its PROGRESS entry, for item 13's one list.
    This inventory drives items 2 to 13.
 2. **Scenario jumps become a pure, tested module** (`aa-prototype/src/apps/demo/demoScenarios.ts`).
@@ -573,9 +585,11 @@ why.
        test, with its expected surfaces: at plan time 15b's "Photo capture (Future scope)" (Mobile ·
        List, bar and pwa, US-02.4.4), Phase 34's `fire-hospital-message` and `replay-hospital-message`
        (as 34 left them after 20a's Booking-route re-point: check both entries and record which routes
-       survived), `auto-match` (`/admin/intake/matching`) and "Ingest PDF row" (Surgeon PDFs,
-       US-02.2.1), all bar only unless an entry records otherwise. FT-02.6's stubs are parked (D66): no entry, none on the list. A new future-scope entry must be
-       added to the list deliberately;
+       survived), all bar only unless an entry records otherwise. The 'Ingest PDF row' and auto-match rows are
+       gone from the list (US-02.2.1 is in scope since 34, D51; FT-02.6's stubs are built, 33a). Instead audit
+       34's 'Upload PDF list' and 'Receive updated PDF from rooms' like any other in-scope entry (own screen,
+       bar only, no future-scope badge) and 33a's stub entry, if it registered one. A new future-scope entry
+       must be added to the list deliberately;
      - **the privacy boundary holds** (17, D44, US-13.6.3): no entry with a `/mobile` or `/web` route,
        and no PWA entry, mentions a preference, a pairing or a tier in its label, description or
        message (`/prefer|pairing|tier/i`).
@@ -663,7 +677,7 @@ why.
         estimated fee", "payment is required before the procedure proceeds", "this invoice covers the
         balance" and "a discovery point" (27 and 41 should already have rewritten them). State the rule
         as built: the system generates the prepayment invoice when a Procedure is on a prepaid Contract (D64) and a person pays for the patient (D23); the amount is the anaesthetist's own fixed
-        price, in full (US-06.2.2); it is held until an admin approves and sends it (a step AA can switch off), which creates its pair, payable to the AA Holding account, with a journal transfer at List authorisation, never a second invoice or payment (D38, 27a); the prepaid Procedure keeps its price and is left off the final invoice with nothing deducted, and nothing is invoiced or credited automatically after it (D57, US-08.2.2, US-06.4.1 Confirmed; OQ-61 and OQ-76 answered), while cancelling credits an unpaid prepayment or refunds a paid one automatically (D56). Only the open defaults keep a label, in the owning phase's words: OQ-97 (D31) and D67. 41's letter wording ("the prepaid amount as the price") must agree.
+        price, in full (US-06.2.2); it is held until an admin approves and sends it (a step AA can switch off), which creates its pair, payable to the AA Holding account, with a journal transfer at List authorisation, never a second invoice or payment (D38, 27a); the prepaid Procedure keeps its price and is left off the final invoice with nothing deducted, and nothing is invoiced or credited automatically after it (D57, US-08.2.2, US-06.4.1 Confirmed; OQ-61 and OQ-76 answered), while cancelling credits an unpaid prepayment or refunds a paid one automatically (D56). Only the open defaults keep a label, in the owning phase's words: OQ-97 (D31) and D68; D67 is answered, no label. 41's letter wording ("the prepaid amount as the price") must agree.
       - **Xero pair fee line** (`DemoXero.tsx:499`, "% prototype assumption"): Phase 16 took the fee
         off the payable and should have removed this line. D1 is answered, so any surviving fee note on
         the AA fee pair states the rule (fixed charges plus a charge per BCTI, from the AA fee
@@ -695,13 +709,13 @@ why.
       - **settled in the catalogue** (an Answered OQ, an answered or superseded owner decision in its
         new reading, D42 to D46, or a Confirmed item): state the rule plainly, with no provisional
         label;
-      - **still open** (an Open OQ at HEAD, D28's remaining part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76, or the BCTI granularity point): keep it, labelled "provisional" or "to confirm with AA",
+      - **still open** (an Open OQ at HEAD, D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77, or the BCTI granularity point): keep it, labelled "provisional" or "to confirm with AA",
         citing the catalogue OQ id (or "BCTI granularity, with OQ-29 and OQ-60"), not "the RFP". At plan
-        time this includes OQ-93 on the insurance indication (21), OQ-95 on the age bands (19b), OQ-97 on a part credit (41), D67 on a Contract changed off prepaid (27, 41), D70 on a postal-address payer (21, 22), OQ-100 on a schedule upload (42), OQ-101 on a group's range (19), OQ-102 on the
+        time this includes OQ-95 on the age bands (19b), OQ-97 on a part credit (41), D70 on a postal-address payer (21, 22), OQ-100 on a schedule upload (42), OQ-101 on a group's range (19), OQ-102 on the
         preference and tier names (17, 32b), D73 (OQ-130) on a later default replacing an edited invoice description (20a, 33, 35), OQ-83 on sign-in (43a), OQ-60 on the fee count (16), OQ-29 on GST agency (22),
-        OQ-13 on the download format and OQ-108 and OQ-109 on intake (33, 34), OQ-12 on ACC pre-op codes
-        (39b), OQ-111 (37, 39a), OQ-113 (32a, 32b), OQ-114 (18, 21). OQ-49, OQ-77, OQ-79
-        to OQ-81, OQ-84, OQ-85, OQ-88 to OQ-90, OQ-92, OQ-96, OQ-98, OQ-99, OQ-101, OQ-104 to OQ-106, OQ-113, OQ-115 and OQ-116 are answered: a surviving label
+        OQ-13 on the download format and OQ-109's first part, which two hospitals (33, 34; its second part, D52, is assumed and keeps a one-line label), OQ-12 on ACC pre-op codes
+        (39b), OQ-113 (32a, 32b), OQ-114 (18, 21). OQ-49, OQ-77, OQ-79
+        to OQ-81, OQ-84, OQ-85, OQ-88 to OQ-90, OQ-92, OQ-96, OQ-98, OQ-99, OQ-101, OQ-104 to OQ-106, OQ-108, OQ-111, OQ-113, OQ-115, OQ-116, OQ-118, OQ-119, OQ-121 and OQ-128 (and OQ-93, which D28 settled) are answered: a surviving label
         for one is a regression of its phase. A phase may have chosen to show no label for a default
         that needs none on screen (its entry says); the guide follows the UI;
       - **Proposed** catalogue item: the design ("proposed"), never "AA confirmed", never "open
@@ -745,9 +759,8 @@ why.
       OQ-31, OQ-43, OQ-50, OQ-61, OQ-75, OQ-76 or OQ-78 entry.
       **Must-keep list** in the same test: assert the live caveats are still present, so a sweep
       cannot remove them by accident: the provisional BCTI granularity label wherever 16 and 22 put
-      it (the AA fee settings or run, and the ACCPAY), the OQ-93 label on the insurance indication
-      (21), the OQ-95 label on the age bands (19b), the D67 label on a Contract changed off prepaid (27, 41), the D70 label on a postal-address payer (21),
-      D73's label on an edited invoice description (20a; no OQ-103 label) and the NHI mod-11 flag, plus every other open
+      it (the AA fee settings or run, and the ACCPAY), the OQ-95 label on the age bands (19b), the D70 label on a postal-address payer (21),
+      D73's label on an edited invoice description (20a; no OQ-103, OQ-119 or OQ-121 label), the step rail's working-direction caveat (20) and D52's one-line assumed label (34) and the NHI mod-11 flag, plus every other open
       default whose phase put a label on screen (take the list and the exact strings from the built
       screens and the entries). Assert too that no string labels an answered decision or question
       provisional (D9, D11, D26, D38 to D41, OQ-84, OQ-89 and OQ-90 among them), and that, if the
@@ -769,7 +782,7 @@ why.
    disagreement is a bug for item 12. The table goes into the PROGRESS entry, with the BCTI-dependent
    figures marked so a granularity flip re-baselines them in one place.
 **End of Session 1:** build, build:pwa and Vitest green (the item 5 file-level assertions still
-skipped); the draft Phase 44 PROGRESS entry holds the drift-check result, OQ list, D1 to D76 table,
+skipped); the draft Phase 44 PROGRESS entry holds the drift-check result, OQ list, D1 to D77 table,
 inventory and figures table; hand back with a note that Session 2 starts at item 8.
 
 ### Session 2: documents, QA and close-out (items 8 to 13)
@@ -788,7 +801,7 @@ have moved between sessions).
      Label, or "self-contained").
    - Demo presses use the item 5 convention (**Demo actions → Label**, **Demo sheet → Label**).
    - Answered and superseded owner decisions are told as the rule, in their current reading, with no
-     caveat; answered OQs likewise. Every provisional reading (D28's open part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76, an open OQ, the BCTI granularity) is named as provisional with its OQ or D
+     caveat; answered OQs likewise. Every provisional reading (D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77, an open OQ, the BCTI granularity) is named as provisional with its OQ or D
      number, in the UI's words.
    - Catalogue vocabulary in everything the audience hears (the Goal's list): "session", "AM" or
      "PM", never "slot" (Slot stays the planning word in the mental-model explanation only); "move",
@@ -806,11 +819,11 @@ have moved between sessions).
 
    | Scenario (time) | Core beats | Optional asides |
    |---|---|---|
-   | **S1 · Booking to theatre** (9 to 10 min) | 1 **Sign-in** on the handset: Dr Souter signs in, PWA first (43a, US-13.5.3; the sign-in experience beyond that is OQ-83, provisional in 43a's words); the framed phone is already signed in. 2 **Sync, then match**: Mobile Tue 28 Jul AM (three booked, two showing the rooms' wording as received); Admin Intake, Demo actions → Simulate sync (34; the download format per hospital is OQ-13), Sarah Mitchell's row showing the hospital's wording as received ("lap appy ?conv to open"), the patient reused by NHI, Create Booking; nothing applied without the office (FT-02.1, US-02.1.3); a row with no NHI waits on the intake list until one is attached (D11, 33, 40). Her unpaid balance raises the mild or strong warning at booking, counted from the invoice date (40, D24): script it, do not hide it. 3 **The office sets the Contract**: the Booking sits on the Admin Day "Needs a Contract" card (20); the office works down holder, Contract, line, with **No contract (RVG) first**, then the Contracts that fit the Booking under holder headings, one search across AA code and holder codes (18, 20, D16); the RVG code is optional and the anaesthetist's (D33); who is invoiced follows the Contract's holder or the **payer on the Booking** (name, email or NZ Post postal address, one required when billed; a postal-address payer is accepted and the invoice marked to post, D70), prefilled from the patient and editable (21); the **insurer** (a contract holder, no insurer master) **and approval number** are recorded on the Booking by the office, and by Dr Souter on the day; an insured Booking with no approval number raises the missing-approval warning on the to-do list and Review (21, D28; the open part is OQ-93, provisional). Back to Mobile for the fourth Booking. 4 **The descriptions** (20a, US-03.1.9): each Procedure shows the wording as received, the rooms' and the hospital's descriptions and the invoice description, kept apart, then the Contract (name and holder, who is invoiced, the pricing basis with its figure), on every booking screen in both apps; the invoice description is the series of defaults (the rooms', then the hospital's, then a filled-in line description; D37, answered), editable by the office, an edit kept against later defaults (D73, provisional). 5 The day arrives (clock; the catch-up sync applies nothing silently). 6 **Capture on mobile**: the **RVG code by type-ahead** under body-area headings (19, D39); the starting base units from the Contract line, the procedure or its RVG group, any value accepted with an office warning when out of range (19a, D3, D35); **modifiers**: the age modifier from date of birth and P1 on a Neurosurgery or Spine code **pre-applied and shown selected, removable** (19b, D43; the age bands are OQ-95, provisional), anything else claimed from the RVG table each with a short explanation, ASA included; the one primary Procedure (23); time units by the RVG rule, a part interval always rounded up (D25); the price shown with its Contract's editable flag, changeable only where the Contract allows (24, D50); Mark complete checks the Contract, times, explanations, references and the payer's email or postal address (21); submit straight through with no confirm step (15a, US-13.7.3); **Worth pointing at:** the point-of-need help on capture and the first-run hint (43a). 7 **Edit until authorised, then find past work** (38a, D63, D9): Dr Souter reopens her submitted List and changes it, Contract included, audited and seen at Review; the main view starts today and a List leaves it at AUTHORISED; search "Mitchell" or her NHI. | A failed sync loses nothing (34). The other providers' sheets and the Future-scope auto-match (34; whether St George's and Southern Cross sync in the first release is OQ-109, provisional). **A day move** (33, D62): the hospital's re-sent row has a new day, so the office sees a cancellation plus a new Booking, never a moved one. The two-source Booking: Dr Souter's Tue 4 Aug AM "RTK" with the hospital's later "right total knee" kept beside it (20a; AR-35's illustrative wording). Type-ahead on an RVG code: the Contract lines across its group, and No contract (RVG) pricing at the group (19, 20). "As given" on a manually added Booking (20a). Any base units accepted, with the office warning (19). A pre-op event at capture, such as the ACC pre-op assessment as a fixed fee, in the Procedure's events list (39b; the ACC pre-op codes are OQ-12). |
-   | **S2 · Office day** (12 to 14 min) | 1 **Read the day**: sessions and Lists (an assigned List is ACTIVE; Draft Lists in their own band), the session statuses from the user-maintained status master (29, D14), booking counts; **Worth pointing at:** the help on Admin Day (43a). 2 **Warnings on the to-do list**: Demo actions → Raise sample warnings (out-of-range base units, a child payer, an insurer indicated with no insurer Contract, a paying patient with a balance), mild and strong, the triangle on a Booking in each app, the warning visible on opening it (no tap-to-read, no confirm step at submit), Clear; never a block (15a, with 19, 21 and 40's rules; the insurance indication's open part is OQ-93, provisional). 3 **A recurring clash becomes a Draft List**: Demo actions → Stage recurring clash on Master data · Recurring bookings (30, 31, US-01.3.2, D14); the DRAFT List waits with its waiting flag; **the office assigns it**: the picker lists the free anaesthetists by priority tier, then preferred pairing, with not-preferred pairings in their own group and a soft warning on picking one (17, 31, 32b, D44; the names are OQ-102, provisional), and the List becomes ACTIVE. Anaesthetists never browse Draft Lists (D46). 4 **Illness cover and unavailability** (30, 32b, D59): marking a booked session unavailable, sickness included, forces a return to the office or a hand-on there and then, for the office as for the anaesthetist (US-01.5.5); the **conflict dashboard** shows hospital closures only; then the **on-demand update email**: the Booking's button, changes picked from the change history, the template for that kind of change, to the rooms or the hospital, sent by hand (35, D19, US-02.3.4; OQ-82 answered: manual only). 5 **An anaesthetist moves their own List** (32, D7): on the phone Dr Souter returns a List to the office and it lands on the Day band as a Draft List, at once, no confirmation and no preference warning (US-01.4.5, D44); or hands it on to a colleague (US-01.5.5); whoever moves a List is asked whether the vacated session becomes free or unavailable (D60); nothing about a prepayment is re-checked on a move (D20); Demo actions → Colleague moves a List to the office for the office view in the framed build. 6 **An anaesthetist moves a single Booking** (32a, US-01.4.7, D61): Move to a colleague, found by type-ahead or the list of free colleagues, only onto a session where they are free, landing on a new List there (never an existing one), the payable following the doer (US-01.4.6), no pairing warning, and telling the office or drafting the update email optional. 7 **The notification pool** (32, 32b, D58, D15): each move posts a notice; any admin ticks one resolved, which hides it for everyone and clears its to-do, Show resolved brings it back, nothing expires; from a notice the office sends the cover-change email (35); an anaesthetist's **"alert the office"** with a note on a List or Booking (32b) lands in the same pool. 8 **Authorise a submitted List** on Review: each Procedure's descriptions, the payer (changeable here), the insurer, its approval number and any warnings, the anaesthetist's Contract change flagged and approved (20, 21), any edit the anaesthetist made until authorised (D63), the price and its source with the Contract's editable flag and the office able to change any price (24, D50), and the help on Review (43a). | A phone-advice Booking into a free session, with "as given", the RVG code type-ahead and No contract (RVG) first (28, 20a, 20). Find available in tier order, preferred pairing next (28, 32b). Availability weeks ahead from the phone's calendar (29). Simulate sickness, and move a holiday (30). Simulate incoming request (31). A colleague moves a List into Dr Souter's free session (Demo sheet → Colleague moves a List into my free session, 32) or a Booking to her (Demo sheet → Colleague moves a Booking to me, 32a). The payer review List: a child as the payer (a mild warning, D4) and a guardian named as payer with no warning (21). |
-   | **S3 · Money end to end** (10 to 12 min) | 1 **Authorise**: the run writes each Procedure's pricing snapshot (the procedure, the Contract version, the resolved values, the price on the Procedure and where it came from, who is invoiced, the payee) and raises and sends every invoice in Dr Souter's name with AA as agent, to email or portal (22, 25); each Procedure's Contract decides who is invoiced, its holder or the payer on the Booking (21); prices held ex GST with GST at the foot (US-05.2.7, the rule). 2 **A discount line and a $0 invoice** (24, 22): a Procedure priced with a fixed discount shows the discount as its own line, and a Procedure with nothing to pay raises a $0 invoice that still sends and balances. 3 **The Xero pair**: the payable equals the receivable; one BCTI per receivable invoice, labelled provisional (BCTI granularity, with OQ-29 and OQ-60); buyer-created wording provisional (OQ-29); no patient name in Xero, only the hidden ID (16, 22, OQ-30). 4 Payment, ledger and disbursement detected from Xero (paying anaesthetists through Xero or from the new system is OQ-111, provisional); the processing monitor grouped by anaesthetist with sorting and filters (37, US-13.3.1); the web financial position and the flat outstanding list (D8) move (36, 38). 5 **The weekly payment run** (39a): the ISO week, Friday close, Monday checks, Tuesday schedule; Demo actions → Stage a payment week, approve the period's BCTIs, run payables, the remittance advice in Admin and web Accounts (US-10.2.7 and OQ-47 Proposed: "proposed"). 6 **AA's monthly fee run** (D1): the fee settings, Demo actions → Seed a month of BCTIs, run the monthly fee invoices, Dr Rutherford's $500 + $5 x 40 = $700 (figures as re-baselined), shown in web Accounts; what the per-BCTI charge counts is provisional (OQ-60) (16). 7 The ledger balances: an unmatched receipt, then allocate (36). | **The price rules** (24, D40, D50): on Dr Souter's Mon 27 Jul List, a fixed-rate Contract (BTM x the Contract's rate, US-05.2.6), a locked 10% fixed discount (US-05.4.3), a hospital's fixed price (US-05.2.5), each read-only or editable by the Contract's flag with no reason asked; her own typed price or % discount on No contract (RVG); the office changing any price at Review; no time band on Contract lines. The **Split** button on a Procedure's Contract line, each share a typed $ or % (22, D18). The 3-procedure Booking: Make primary and the 3/2/2 modifier split under the RVG multi-procedure rule, no switch (23, D26), and a combination Contract (23). A new Contract version from a date: the procedure date picks the price (18, D45). The cash-basis GST schedule (38). Record fee payment on the AA fee pair (16). |
-   | **S4 · Exceptions** (12 to 14 min) | 1 **Prepayment from a prepaid Contract** (26, 27, 27a; D64, D5, D23, D42): Annette Riley's rhinoplasty sits on a Contract the office has flagged prepaid, Dr Souter's own price list (kept by the office), and she pays for herself (the prepayment goes to whoever the Contract bills); the amount is her fixed price, in full and above zero, never an estimate or a deposit (US-06.2.2); the invoice is generated and held "Awaiting approval" (approval is a step AA can switch off); an admin's Approve and send creates its ledger pair and draft Xero pair, payable to the **AA Holding account**, paid out of only by the system (D38); Payment received · half: part paid; the letter names the anaesthetist (41; D68, provisional); on Mobile the triangle, the warning on opening and the prepaid amount shown to her (US-03.1.8), never editable by her (D65); complete and submit, no gate and no confirm step. 2 **The prepaid Procedure billed**: authorise; the **journal transfer** (not a new invoice or payment) moves the prepaid amount from the AA Holding account to the anaesthetist who did the List, so a moved prepaid Booking needs no change (27a, D38; releasing at List authorisation is D72, provisional); the prepaid Procedure keeps its price and is left off the final invoice with nothing deducted, an all-prepaid Booking having no final invoice (D57, US-08.2.2); nothing is invoiced or credited automatically after it (US-06.4.1; Demo actions → Stage longer prepaid procedure on Review first, 41); any extra is an additional invoice and any credit a credit note, raised by hand, a part credit allowed (41; OQ-97, provisional). 3 **Cancelling a prepaid Booking** (41, D56): the system credits an unpaid prepayment invoice, or refunds a paid one from the AA Holding account, by itself, with an optional patient email; a Contract changed off prepaid after sending is settled the same way (D67, provisional). 4 **Events on a Procedure, on no List** (38b, 39b, D13): the **events list** on the Procedure in each app (US-03.7.3); a **post-op event** from the phone, one standard review step, travelling with the Procedure's invoice before approval or invoiced in the next run (Demo actions → Run the next billing run; how events are billed is D69, provisional); a **billing event** from the office. 5 **An additional invoice to any party**, free-form lines, recorded as an event: by the office, and by Dr Souter on her own Procedure through the same review step (38b, D10, D22, US-08.6.3). 6 Billing failure on a missing holder reference, and retry (25). 7 **The credit note option and credit-and-rebill** (39, 39a, D22, D41): a credit note to any party, by the office or by Dr Souter on her own Procedure (US-08.6.5); after the anaesthetist was paid, Demo actions → Stage refund after payout, Credit in full and rebill from a copy of the original's lines (a product button, US-08.6.6), the rebuilt invoices equal to the credited invoice and the credit reversing the payable; before an invoice is sent a split is a normal admin edit; then Demo actions → Stage a payment week (its credit-after-payout choice), approve, and the negative **netted on the remittance advice** (US-10.2.5). 8 The date approaches: the warning strengthens (27; last, because it moves the clock). | The unmatched queue (33). A partial payment releases exactly what was received (16, 36, 37). Split a combined Procedure by a credit, then one invoice per component, equal to the credit (39, US-08.6.4). Xero outage, a void made in Xero, bulk hospital remittance (37). Prepayment letter (the prepaid amount as the price) and reminder, the AA Holding account in Admin, and a rebooking with a fresh prepayment at the new anaesthetist's own price (41). |
-   | **S5 · Compliance tour** (7 to 9 min) | 1 The audit trail: change sets and View as at (35), including a claimed modifier with its explanation (19b). 2 NHI at entry: **NHI lookup** with validation and the Hub states (Demo actions or Demo sheet → Hub: Unavailable, then the manual fallback) (40a); the new-format NHI validates on the synced row; the NHI is mandatory: rows without one wait on the intake list, and the **missing-NHI problem list** offers attach and merge, with the authorise guard (D11, 33, 40). 3 No NHI in Xero, stated as the rule (OQ-30, US-09.3.1: only a unique ID links back), and the NHI leak scan (16, 43). 4 **Staged Contract changes and the lock**: on the Health NZ agreed rate Contract (its holder Christchurch Public), New version from 1 Aug 2026, staged and reviewed on the dashboard; the Versions list shows the current version with Whitaker's invoices and the upcoming one with none; versions are never backdated and the procedure date decides the price (18, D45); Regenerate from locked data says identical (25). 5 **Authorise, then edit the unit value: the invoice is unchanged** (25, 26). | Sign out and back in on the handset, audited (43a). Simulate sign-in attempts (14). Restricted raw-row view and the synthetic-data badge (43). A controlled go-live load, with no Contract schedule upload in the first release (42; OQ-100, provisional). The patient view and its follow-up actions (40). HPI CPN shown the same everywhere and refresh from the NHI register (40a). |
+   | **S1 · Booking to theatre** (9 to 10 min) | 1 **Sign-in** on the handset: Dr Souter signs in, PWA first (43a, US-13.5.3; the sign-in experience beyond that is OQ-83, provisional in 43a's words); the framed phone is already signed in. 2 **Sync, then match**: Mobile Tue 28 Jul AM (three booked, two showing the rooms' wording as received); Admin Intake, Demo actions → Simulate sync (34; the download format per hospital is OQ-13), Sarah Mitchell's row showing the hospital's wording as received ("lap appy ?conv to open"), the patient reused by NHI, Create Booking; nothing applied without the office (FT-02.1, US-02.1.3); a row with no NHI waits on the intake list until one is attached (D11, 33, 40), and a **stub** stands in its place on its List, seen by the anaesthetist and the office, until the office resolves it from intake (33a, FT-02.6, D66; what a stub shows is our reading). **The rooms' PDF lists** come through the same matching screen (34, US-02.2.1, D51): Demo actions → Upload PDF list, and Receive updated PDF from rooms for a changed list, each row showing its source, read and corrected, nothing applied without the office; both hospitals sync by an action (D52 part 2 assumed; which two hospitals is OQ-109, provisional). **A surgeon at two rooms** (17a, D75): one of the seeded two-practice surgeons matches from either room's list, with the rooms' contacts held by room (D74, provisional). Her unpaid balance raises the mild or strong warning at booking, counted from the invoice date (40, D24): script it, do not hide it. 3 **The office sets the Contract**: the Booking sits on the Admin Day "Needs a Contract" card (20); the office works the **step rail** (a working direction, a guess to design and test with AA, not an AA decision): who the invoice goes to, prepaid or which Contract, then the price, with **No contract (RVG) first**, then the Contracts that fit the Booking under holder headings, one search across AA code and holder codes (18, 20, D16); an RVG-priced Contract is handed to the anaesthetist for the RVG code (20); the RVG code is optional and the anaesthetist's (D33); who is invoiced follows the Contract's holder or the **payer on the Booking** (name, email or NZ Post postal address, one required when billed; a postal-address payer is accepted and the invoice marked to post, D70), prefilled from the patient and editable (21); the **insurer** (a contract holder, no insurer master) **and approval number** are recorded on the Booking by the office, and by Dr Souter on the day; an insured Booking with no approval number raises the missing-approval warning on the to-do list and Review (21, D28 answered: Dr Souter sees and may change the number, no label). Back to Mobile for the fourth Booking. 4 **The descriptions** (20a, US-03.1.9): each Procedure shows the wording as received, the rooms' and the hospital's descriptions and the invoice description, kept apart, then the Contract (name and holder, who is invoiced, the pricing basis with its figure), on every booking screen in both apps; the invoice description is the series of defaults (the rooms', then the hospital's, then a filled-in line description; D37, answered), editable by the office, an edit kept against later defaults (D73, provisional). 5 The day arrives (clock; the catch-up sync applies nothing silently). 6 **Capture on mobile**: the **RVG code by type-ahead** under body-area headings (19, D39); the starting base units from the Contract line, the procedure or its RVG group, any value accepted with an office warning when out of range (19a, D3, D35); **modifiers**: the age modifier from date of birth and P1 on a Neurosurgery or Spine code **pre-applied and shown selected, removable** (19b, D43; the age bands are OQ-95, provisional), anything else claimed from the RVG table each with a short explanation, ASA included; the one primary Procedure (23); time units by the RVG rule, a part interval always rounded up (D25); the price shown with its Contract's editable flag, changeable only where the Contract allows (24, D50); Mark complete checks the Contract, times, explanations, references and the payer's email or postal address (21); submit straight through with no confirm step (15a, US-13.7.3); **Worth pointing at:** the point-of-need help on capture and the first-run hint (43a). 7 **Edit until authorised, then find past work** (38a, D63, D9): Dr Souter reopens her submitted List and changes it, Contract included, audited and seen at Review; the main view starts today and a List leaves it at AUTHORISED; search "Mitchell" or her NHI. | A failed sync loses nothing (34). The other providers' sheets and the Future-scope auto-match (34; whether St George's and Southern Cross sync in the first release is OQ-109, provisional). **A day move** (33, D62): the hospital's re-sent row has a new day, so the office sees a cancellation plus a new Booking, never a moved one. The two-source Booking: Dr Souter's Tue 4 Aug AM "RTK" with the hospital's later "right total knee" kept beside it (20a; AR-35's illustrative wording). Type-ahead on an RVG code: the Contract lines across its group, and No contract (RVG) pricing at the group (19, 20). "As given" on a manually added Booking (20a). Any base units accepted, with the office warning (19). A pre-op event at capture, such as the ACC pre-op assessment as a fixed fee, in the Procedure's events list (39b; the ACC pre-op codes are OQ-12). |
+   | **S2 · Office day** (12 to 14 min) | 1 **Read the day**: sessions and Lists (an assigned List is ACTIVE; Draft Lists in their own band), the session statuses from the user-maintained status master (29, D14), booking counts; **Worth pointing at:** the help on Admin Day (43a). 2 **Warnings on the to-do list**: Demo actions → Raise sample warnings (out-of-range base units, a child payer, an insurer indicated with no approval number, a paying patient with a balance), mild and strong, the triangle on a Booking in each app, the warning visible on opening it (no tap-to-read, no confirm step at submit), Clear; never a block (15a, with 19, 21 and 40's rules). 3 **A recurring clash becomes a Draft List**: Demo actions → Stage recurring clash on Master data · Recurring bookings (30, 31, US-01.3.2, D14); the DRAFT List waits with its waiting flag; **the office assigns it**: the picker lists the free anaesthetists by priority tier, then preferred pairing, with not-preferred pairings in their own group and a soft warning on picking one (17, 31, 32b, D44; the names are OQ-102, provisional), and the List becomes ACTIVE. Anaesthetists never browse Draft Lists (D46). 4 **Illness cover and unavailability** (30, 32b, D59): marking a booked session unavailable, sickness included, forces a return to the office or a hand-on there and then, for the office as for the anaesthetist (US-01.5.5); the **conflict dashboard** shows hospital closures only; then the **on-demand update email**: the Booking's button, changes picked from the change history, the template for that kind of change, to the rooms or the hospital, sent by hand (35, D19, US-02.3.4; OQ-82 answered: manual only). 5 **An anaesthetist moves their own List** (32, D7): on the phone Dr Souter returns a List to the office and it lands on the Day band as a Draft List, at once, no confirmation and no preference warning (US-01.4.5, D44); or hands it on to a colleague (US-01.5.5); whoever moves a List is asked whether the vacated session becomes free or unavailable (D60); nothing about a prepayment is re-checked on a move (D20); Demo actions → Colleague moves a List to the office for the office view in the framed build. 6 **An anaesthetist moves a single Booking** (32a, US-01.4.7, D61): Move to a colleague, found by type-ahead or the list of free colleagues, only onto a session where they are free, landing on a new List there (never an existing one), the payable following the doer (US-01.4.6), no pairing warning, and telling the office or drafting the update email optional. 7 **The notification pool** (32, 32b, D58, D15): each move posts a notice; any admin ticks one resolved, which hides it for everyone and clears its to-do, Show resolved brings it back, nothing expires; from a notice the office sends the cover-change email (35); an anaesthetist's **"alert the office"** with a note on a List or Booking (32b) lands in the same pool. 8 **Authorise a submitted List** on Review: each Procedure's descriptions, the payer (changeable here), the insurer, its approval number and any warnings, the anaesthetist's Contract change flagged and approved (20, 21), any edit the anaesthetist made until authorised (D63), the price and its source with the Contract's editable flag and the office able to change any price (24, D50), and the help on Review (43a). | A phone-advice Booking into a free session, with "as given", the RVG code type-ahead and No contract (RVG) first (28, 20a, 20). Find available in tier order, preferred pairing next (28, 32b). Availability weeks ahead from the phone's calendar (29). Simulate sickness, and move a holiday (30). Simulate incoming request (31). A colleague moves a List into Dr Souter's free session (Demo sheet → Colleague moves a List into my free session, 32) or a Booking to her (Demo sheet → Colleague moves a Booking to me, 32a). The payer review List: a child as the payer (a mild warning, D4) and a guardian named as payer with no warning (21). |
+   | **S3 · Money end to end** (10 to 12 min) | 1 **Authorise**: the run writes each Procedure's pricing snapshot (the procedure, the Contract version, the resolved values, the price on the Procedure and where it came from, who is invoiced, the payee) and raises and sends every invoice in Dr Souter's name with AA as agent, to email or portal (22, 25); each Procedure's Contract decides who is invoiced, its holder or the payer on the Booking (21); prices held ex GST with GST at the foot (US-05.2.7, the rule). 2 **A discount line and a $0 invoice** (24, 22): a Procedure priced with a fixed discount shows the discount as its own line, and a Procedure with nothing to pay raises a $0 invoice that still sends and balances. 3 **The Xero pair**: the payable equals the receivable; one BCTI per receivable invoice, labelled provisional (BCTI granularity, with OQ-29 and OQ-60); buyer-created wording provisional (OQ-29); no patient name in Xero, only the hidden ID (16, 22, OQ-30). 4 Payment, ledger and disbursement detected from Xero (payments to anaesthetists are made in Xero's payables run and detected here; the system raises, records and tracks them and never pays, D53, answered); the processing monitor grouped by anaesthetist with sorting and filters (37, US-13.3.1); the web financial position and the flat outstanding list (D8) move (36, 38). 5 **The weekly payment run** (39a): the ISO week, Friday close, Monday checks, Tuesday schedule; Demo actions → Stage a payment week, approve the period's BCTIs, mark the payment made in the Xero simulator, the remittance advice in Admin and web Accounts (US-10.2.7 and OQ-47 Proposed: "proposed"). 6 **AA's monthly fee run** (D1): the fee settings, Demo actions → Seed a month of BCTIs, run the monthly fee invoices, Dr Rutherford's $500 + $5 x 40 = $700 (figures as re-baselined), shown in web Accounts; what the per-BCTI charge counts is provisional (OQ-60) (16). 7 The ledger balances: an unmatched receipt, then allocate (36). | **The price rules** (24, D40, D50): on Dr Souter's Mon 27 Jul List, a fixed-rate Contract (BTM x the Contract's rate, US-05.2.6), a locked 10% fixed discount (US-05.4.3), a hospital's fixed price (US-05.2.5), each read-only or editable by the Contract's flag with no reason asked; her own typed price or % discount on No contract (RVG); the office changing any price at Review; no time band on Contract lines. The **Split** button on a Procedure's Contract line, each share a typed $ or % (22, D18). The 3-procedure Booking: Make primary and the 3/2/2 modifier split under the RVG multi-procedure rule, no switch (23, D26), and a combination Contract (23). A new Contract version from a date: the procedure date picks the price (18, D45). The cash-basis GST schedule (38). Record fee payment on the AA fee pair (16). |
+   | **S4 · Exceptions** (12 to 14 min) | 1 **Prepayment from a prepaid Contract** (26, 27, 27a; D64, D5, D23, D42): Annette Riley's rhinoplasty sits on a Contract the office has flagged prepaid, Dr Souter's own price list (kept by the office), and she pays for herself (the prepayment goes to whoever the Contract bills); the amount is her fixed price, in full and above zero, never an estimate or a deposit (US-06.2.2); the invoice is generated and held "Awaiting approval" (approval is a step AA can switch off); an admin's Approve and send creates its ledger pair and draft Xero pair, payable to the **AA Holding account**, released only by the journal transfer (D38); Payment received · half: part paid; the letter names the anaesthetist (41; D68, provisional); on Mobile the triangle, the warning on opening and the prepaid amount shown to her (US-03.1.8), never editable by her (D65); complete and submit, no gate and no confirm step. 2 **The prepaid Procedure billed**: authorise; the **journal transfer** (not a new invoice or payment) moves the prepaid amount from the AA Holding account to the anaesthetist who did the List, so a moved prepaid Booking needs no change (27a, D38; releasing at List authorisation is D72, provisional); the prepaid Procedure keeps its price and is left off the final invoice with nothing deducted, an all-prepaid Booking having no final invoice (D57, US-08.2.2); nothing is invoiced or credited automatically after it (US-06.4.1; Demo actions → Stage longer prepaid procedure on Review first, 41); any extra is an additional invoice and any credit a credit note, raised by hand, a part credit allowed (41; OQ-97, provisional). 3 **Cancelling a prepaid Booking** (41, D56): the system credits an unpaid prepayment invoice, or refunds a paid one from the AA Holding account, by itself, with an optional patient email; a Contract changed off prepaid after sending is settled the same way (D67, answered). 4 **Events on a Procedure, on no List** (38b, 39b, D13): the **events list** on the Procedure in each app (US-03.7.3); a **post-op event** from the phone, one standard review step, marked for invoicing, billed in the next run through the same review step, on the same party's invoice where it can be, otherwise its own, never held for the Procedure's invoice (Demo actions → Run the next billing run; D69, answered); a **billing event** from the office. 5 **An additional invoice to any party**, free-form lines, recorded as an event: by the office, and by Dr Souter on her own Procedure through the same review step (38b, D10, D22, US-08.6.3). 6 Billing failure on a missing holder reference, and retry (25). 7 **The credit note option and credit-and-rebill** (39, 39a, D22, D41): a credit note to any party, by the office or by Dr Souter on her own Procedure (US-08.6.5); after the anaesthetist was paid, Demo actions → Stage refund after payout, Credit in full and rebill from a copy of the original's lines (a product button, US-08.6.6), the rebuilt invoices equal to the credited invoice and the credit reversing the payable; before an invoice is sent a split is a normal admin edit; then Demo actions → Stage a payment week (its credit-after-payout choice), approve, and the negative **netted on the remittance advice** (US-10.2.5). 8 The date approaches: the warning strengthens (27; last, because it moves the clock). | The unmatched queue (33). A partial payment releases exactly what was received (16, 36, 37). Split a combined Procedure by a credit, then one invoice per component, equal to the credit (39, US-08.6.4). Xero outage, a void made in Xero, bulk hospital remittance (37). Prepayment letter (the prepaid amount as the price) and reminder, the AA Holding account in Admin, and a rebooking with a fresh prepayment at the new anaesthetist's own price (41). |
+   | **S5 · Compliance tour** (7 to 9 min) | 1 The audit trail: change sets and View as at (35), including a claimed modifier with its explanation (19b). 2 NHI at entry: **NHI lookup** with validation and the Hub states (Demo actions or Demo sheet → Hub: Unavailable, then the manual fallback) (40a); the new-format NHI validates on the synced row; the NHI is mandatory: rows without one wait on the intake list, and the **missing-NHI problem list** offers attach and merge, with the authorise guard, and a stub stands on the List meanwhile (D11, D66, 33, 33a, 40). 3 No NHI in Xero, stated as the rule (OQ-30, US-09.3.1: only a unique ID links back), and the NHI leak scan (16, 43). 4 **Staged Contract changes and the lock**: on the Health NZ agreed rate Contract (its holder Christchurch Public), New version from 1 Aug 2026, staged and reviewed on the dashboard; the Versions list shows the current version with Whitaker's invoices and the upcoming one with none; versions are never backdated and the procedure date decides the price (18, D45); Regenerate from locked data says identical (25). 5 **Authorise, then edit the unit value: the invoice is unchanged** (25, 26). | Sign out and back in on the handset, audited (43a). Simulate sign-in attempts (14). Restricted raw-row view and the synthetic-data badge (43). A controlled go-live load, with no Contract schedule upload in the first release (42; OQ-100, provisional). The patient view and its follow-up actions (40). HPI CPN shown the same everywhere and refresh from the NHI register (40a). |
 
    Also rewrite: **Pre-demo setup** (the Control Panel is the index; demo actions live in the bar on
    each screen and in the Demo sheet on a handset; "Play the office" off by default), **Direct URLs**
@@ -820,10 +833,10 @@ have moved between sessions).
    advice, Ledger and the AA Holding account, the profile, the main view and search, Accounts
    sub-tabs, the Future-scope surface; drop dead ones such as `/web/accounts/overdue` and any swap
    queue, except as a redirect note), **How to read the readiness** (every catch-up phase built; the
-   provisional readings listed: D28's open part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76 where a beat touches them, the open OQs, the BCTI
+   provisional readings listed: D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77 where a beat touches them, the open OQs, the BCTI
    granularity), **Recommended run orders** with the new times, **What to narrate rather than click**
    (Future scope: HL7 v2, FHIR R4 and near real time, warning settings (US-13.7.4), booking from a photo
-   (US-02.4.4), surgeon PDF upload (US-02.2.1), automated change application and reschedule rules
+   (US-02.4.4), automated change application and reschedule rules
    (US-02.5.x, US-02.2.3), two people editing one Booking (US-02.5.6), change emails sent automatically
    (US-02.3.5), a Contract schedule upload (US-04.2.13), a procedure not on the Contract's schedule
    (US-04.3.7); a negative invoice with no later payment, handled outside the system (D21); real Xero,
@@ -837,7 +850,7 @@ have moved between sessions).
    - **17a in the personas and cheat sheet** (`01`, `04`): a surgeons' room can be held with no email
      (shown as such; an update email then opens with an empty To, 35), and the room's practice manager
      and PA contacts (name, email, role), each optionally named for one surgeon, are kept by the office
-     and shown on the surgeon's profile (D74, provisional, OQ-127; one room per surgeon, D75). Say it as
+     and shown on the surgeon's profile (D74, provisional, OQ-127; a surgeon at one or more rooms, D75 answered). Say it as
      one line in the office persona and one in the cheat sheet's "who to contact"; no new beat.
    - `04-presenter-cheat-sheet.md`: the five nouns and "Terms not to use" in catalogue vocabulary
      ("slot" (say session, AM or PM), "swap", "Permanent List", "timesheet", "Card", "Copy booking",
@@ -845,8 +858,8 @@ have moved between sessions).
      "deposit" for a prepayment, "DRAFT" or "Open" for an assigned List, "Funder allocation" among
      them); lifecycle and permissions (the four List states); **Contracts and pricing**, in AR-28's
      plain words: RVG groups as the one master list and the RVG code by type-ahead;
-     contract holders and dated versions; No contract (RVG) first, then
-     holder-fit Contracts, the office setting the Contract and the anaesthetist able to change it until the office authorises (D63); who is invoiced (the holder or the payer on the Booking); the starting units from line,
+     contract holders and dated versions; the office setting the Contract through the step rail (No contract
+     (RVG) for an unprepaid invoice to the patient, holder-fit Contracts otherwise) and the anaesthetist able to change it until the office authorises (D63); who is invoiced (the holder or the payer on the Booking); the starting units from line,
      procedure or group; modifiers (the age and included P1 pre-applied and removable, optional ones with an explanation); the price rules (the Contract on the Procedure sets the price; its editable flag says whether the anaesthetist may change it; the office can change any price); the Split button;
      the multi-procedure rule; the pricing snapshot at authorise; the descriptions kept apart; warnings, never
      blocks, seen on opening the Booking; the shared notification pool beside the to-do list (notices active or resolved, "alert the office");
@@ -861,7 +874,7 @@ have moved between sessions).
      including "what if the office never confirms?" (it doesn't need to, D7), "who finds out when an
      anaesthetist moves a List?" (the shared notification pool, D15), "can I move just one Booking?"
      (yes, 32a), "can a warning stop me?" (no), "can I copy a Booking?" (no: retired, US-02.4.3), "who
-     decides which Contract applies?" (the office at setup, No contract (RVG) first; the anaesthetist
+     decides which Contract applies?" (the office at setup, through the step rail, a working direction; the anaesthetist
      may change it until submit, flagged at review), "can the anaesthetist change the price?" (only on
      No contract (RVG) or their own Contracts; a third-party price is read-only), "what if the
      procedure turns out bigger than the prepaid one?" (nothing automatic; an additional invoice by
@@ -899,7 +912,7 @@ have moved between sessions).
      `deposit`, `estimate`, `contingency`, `balance invoice`, `excess`, `overpaid`, `ASA` as seeded or
      pre-filled, `absorb`, `swap`, `cover request`, `Permanent List`, `timesheet`, `slot` outside the
      mental-model explanation, `blacklist`, `trust account`, `two-tab`, `three-part`, `procedure picker`, `handover`, `DRAFT` for an assigned List, `Copy booking`, `photo` or
-     `PDF upload` as in scope, `prompt` for the update email, `Resolve & retry` (if renamed), `MSG-`,
+     `prompt` for the update email, `Resolve & retry` (if renamed), `MSG-`,
      `PID-2`, `HL7` or `FHIR` outside Future-scope notes, `Surgeon TBC`, `Funder allocation`,
      `two-funder`, `billable-party override`, `guardian override`, `hourly`, `Method 3`, `carry
      forward`, `stay visible` for billed Lists, and any answered OQ called open (`OQ-30`, `OQ-31`,
@@ -996,7 +1009,7 @@ registry that Phases 14 to 43a filled, beat by beat:
 | Office and colleague stand-ins are PWA only | PWA sheet | Vitest (item 4): `office-stand-in` and PWA-only entries mean `surfaces: ['pwa']` and `/mobile` routes only; a both-surface entry (40a's Hub, 23's two entries, 39b's `stage-post-op`) has at least one `/mobile` route |
 | Withdrawn flows and superseded readings left no entry | Registry | Vitest (item 4): no swap, cover-request, Copy, addendum, blacklist, estimate, deposit, balance-invoice, overpaid, Type 1/2/3, billing-route, default-Contract, trust-account, prepay-holding-account, second-pair, insurer-master, handover or "child billed directly" label, and no label or description says "slot"; 33's row-match stand-in keeps its id with 34's label |
 | Preferences and tiers stay admin only | Registry, PWA | Vitest and the PWA spec (item 4): nothing anaesthetist-facing mentions a preference, a pairing or a tier |
-| Future-scope entries are deliberate | Registry | Vitest (item 4): every `future-scope` entry is on the test's expected list (15b's photo entry, still badged Future scope as the scaffold finding asks, and 34's Future-scope intake entries as 34 left them after 20a's re-point; none for FT-02.6's parked stubs, D66) |
+| Future-scope entries are deliberate | Registry | Vitest (item 4): every `future-scope` entry is on the test's expected list (15b's photo entry, still badged Future scope as the scaffold finding asks, and any 34 entry still Future-scope as 34 left it; none for the rooms' PDF entries, in scope since 34, or for 33a's stubs) |
 | Every warning rule has a sample | "Raise sample warnings" | Vitest (item 4): one sample per registered rule (15a, 19, 21's rules including the missing approval number, 40) |
 | Every scripted press exists | Run sheet and master guide | `demoGuideSync.test.ts` (item 5) |
 | Every beat with a mobile side runs on a handset | PWA, real phone | The parity matrix (item 12) and the PWA spec's per-screen table (item 4) |
@@ -1014,18 +1027,18 @@ followed by one deep link per beat.
   function, or the seed's content (beyond a scenario-staging need, which bumps `PERSIST_VERSION`).
 - Reworking a feature whose open decision (D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76) or OQ was answered after its phase ran:
   script it as built, label it provisional, raise it with the owner.
-- Re-grading the gap analysis or moving the `d436947` snapshot (the ROADMAP's "When the catalogue
+- Re-grading the gap analysis or moving the `a68f09b` snapshot (the ROADMAP's "When the catalogue
   changes" procedure owns that).
 - Settling the BCTI granularity: it stays provisional, and a flip is re-baselined in one place by the
   owning phases' count function, not here.
 - Editing the catalogue's artifacts (AR-28, AR-29, AR-30, AR-35): the guide quotes them, never edits
   them.
 - Future-scope and Retired items (HL7 v2, FHIR R4, near real time, warning settings US-13.7.4,
-  booking from a photo US-02.4.4, surgeon PDF upload US-02.2.1, automated change application
+  booking from a photo US-02.4.4, automated change application
   US-02.5.x, concurrent edits US-02.5.6, automatic change emails US-02.3.5, a Contract schedule upload
   US-04.2.13, a procedure off the Contract's schedule US-04.3.7; and the Retired items in "Left the
   script") beyond keeping their badges, absences and narration honest.
-- FT-02.6 and US-02.6.1 to US-02.6.3 (stubs on a List, parked, D66): no beat, no trigger.
+- FT-02.6 and US-02.6.1 to US-02.6.3 (stubs on a List) and US-02.2.1 (the rooms' PDF lists) are built (33a, 34): scripted, not out of scope.
 - Anything for a negative invoice with no later payment (D21, OQ-71: handled outside the system).
 - Catalogue screenshot work beyond the final sweep in the "Catalogue screenshots" section below (no
   new stories to cover; the sweep is a check and a correction of what exists).
@@ -1038,18 +1051,21 @@ followed by one deep link per beat.
 The agent runs every item itself in the running app and reports it with evidence; none is handed
 to the owner (ROADMAP.md "Owner review: agents test themselves").
 
-- [ ] Rooms with no email and practice manager and PA contacts (17a) read as the app shows them in the personas and cheat sheet, with D74 labelled provisional; the sample-warning list has no insurer-without-Contract warning; no OQ-103 label is expected in the UI.
-- [ ] Drift check run against `d436947` (in both sessions); the OQ list and the D1 to D76 table are
+- [ ] Rooms with no email and practice manager and PA contacts (17a) read as the app shows them in the personas and cheat sheet, with D74 labelled provisional; the sample-warning list has no insurer-without-Contract warning; no OQ-103, OQ-119 or OQ-121 label is expected in the UI.
+- [ ] Drift check run against `a68f09b` (in both sessions); the OQ list and the D1 to D77 table are
       recorded; nothing the guide or the app calls settled is an Open or Proposed OQ at HEAD, and no
-      Proposed, Open or Verify requirement is described as AA confirmed; answered and superseded decisions (every row of D1 to D76 except D28's open part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76) and answered OQs (OQ-15, OQ-30, OQ-31, OQ-38, OQ-43, OQ-48, OQ-49, OQ-50, OQ-61, OQ-62 to OQ-82, OQ-84 to OQ-92, OQ-94, OQ-96, OQ-98, OQ-99, OQ-101, OQ-104 to OQ-107, OQ-113, OQ-115, OQ-116) carry no provisional label, and no superseded reading (a default Contract, an estimate, a balance invoice, ASA seeding, a locked P1, a two-tab picker, a trust account or prepay holding account, a second pair, an Insurers master, a prepayment deduction line, a blacklist) is told anywhere.
+      Proposed, Open or Verify requirement is described as AA confirmed; answered and superseded decisions (every row of D1 to D77 except D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77) and answered OQs (OQ-15, OQ-30, OQ-31, OQ-38, OQ-43, OQ-48, OQ-49, OQ-50, OQ-61, OQ-62 to OQ-82, OQ-84 to OQ-92, OQ-94, OQ-96, OQ-98, OQ-99, OQ-101, OQ-104 to OQ-107, OQ-108, OQ-111, OQ-113, OQ-115, OQ-116, OQ-118, OQ-119, OQ-121, OQ-128 and OQ-93's approval-number part) carry no provisional label, and no superseded reading (a default Contract, an estimate, a balance invoice, ASA seeding, a locked P1, a two-tab picker, a trust account or prepay holding account, a second pair, an Insurers master, a prepayment deduction line, a blacklist) is told anywhere.
 - [ ] Control Panel: each of S1 to S5 jumps after "Confirm jump", shows its message and one link per
       core beat; every link lands on the right screen (a `null` link is disabled with its reason); no
       trigger buttons on the page; "Demo actions by screen" still lists every entry.
 - [ ] S1 to S5 run end to end on the framed build **from Reset**, exactly as written, with every
       Expected line and figure matching.
 - [ ] The new beats run as written: sign-in on the handset; sync then match with the wording as
-      received, a row with no NHI waiting, a day move shown as cancel plus new, and the office setting
-      the Contract (No contract (RVG) first, holder-fit Contracts with one search); the descriptions on
+      received, a row with no NHI waiting and a stub on its List (33a), the rooms' PDF lists through the
+      same matching screen (Upload PDF list, Receive updated PDF from rooms), a surgeon at two rooms, a
+      day move shown as cancel plus new, and the office setting the Contract through the step rail (a
+      working direction, labelled as such; No contract (RVG) first, holder-fit Contracts with one search,
+      an RVG-priced Contract handed to the anaesthetist for the RVG code); the descriptions on
       a Booking in both apps; capture with the RVG code by type-ahead, starting units from line,
       procedure or group, the age and included P1 pre-applied and removable, and an optional modifier
       refusing to save without its explanation; the payer (email or postal address) and the insurer on the Booking, the approval number editable by the anaesthetist on the day; the
@@ -1070,7 +1086,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       part paid, shown on her Booking; the prepaid Procedure authorised with the journal transfer, left
       off the final invoice with nothing deducted, nothing raised automatically; a prepaid Booking
       cancelled, the unpaid prepayment credited (a paid one refunded from the AA Holding account) with no
-      press; the events list in each app, on no List; a post-op event reviewed and invoiced; an additional invoice and a credit note raised
+      press; the events list in each app, on no List; a post-op event reviewed and billed in the next run (D69); payments made in the Xero simulator and detected (D53); an additional invoice and a credit note raised
       by Dr Souter on her own Procedure as well as by the office; credit-and-rebill from copied lines,
       the components equal to the credit, with the negative netted on the remittance advice; the main
       view and search; staged Contract changes and the lock; NHI lookup with the Hub states; the help
@@ -1090,8 +1106,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       "balance invoiced", or "DRAFT" or "Open" for an assigned List remains in rendered text (screens,
       sheets, toasts, demo trigger labels, scenario messages); no time-rule caveat survives; the GST
       footer states the rule; the Xero NHI callout states the settled rule; the NHI mod-11 flag, the
-      provisional BCTI granularity label and the live OQ labels the phases built (OQ-93, OQ-95, OQ-97
-      and D73 among them; no OQ-103 label) are still shown; nothing labels an answered decision or question (D9, D11,
+      provisional BCTI granularity label and the live OQ labels the phases built (OQ-95, OQ-97, D73 and D52's first part
+      among them; D52's second part, assumed, keeps its one-line label; step rail's working-direction caveat; no OQ-103, OQ-119 or OQ-121 label) are still shown; nothing labels an answered decision or question (D9, D11,
       D26, D38 to D41, D56, D57, OQ-84, OQ-89, OQ-90 among them) provisional.
 - [ ] `master-demo-guide.html` opens from the file system with the network off; every tab reads the
       same as the Markdown; "Print S1 to S5" puts each scenario on a fresh page; the Learn wizard's
@@ -1123,11 +1139,14 @@ This phase **is** the demo guide update. Every file changes:
   "DRAFT" for an assigned List (15b); S2 Beat 3's reassign (17: tiers, preferences apart); the cheat
   sheet's Type 1/2/3 and protected default Type 1 and S5 Beat 4's "Health NZ agreed rate (Type 2)"
   (18); S1 Beat 3's capture with ASA seeding and the workflows and personas "records ASA" lines (19,
-  19b); S1 Beat 1's and S2 Beat 2's default Contract (20: No contract (RVG) first, the office sets it);
+  19b); S1 Beat 1's and S2 Beat 2's default Contract and "No contract (RVG) first" narration (20: the office sets it through the step rail);
   S1 Beat 4's descriptions (20a); S3 Beat 1's payer and "Funder allocation" (21, 22); S4 Beat 3 and S5 Beat 4
   (25); S1 (34); S4 Beat 2's addendum (38b); credit-and-rebill (39); S4 Beat 5's weekly run (39a); and
   any balance-invoice narration (41: nothing automatic, by hand); and the 2026-10-20 beats: 27a's AA Holding account and journal transfer and 41's cancellation credit or refund (S4 Beats 1 to 3) and 32b's unavailability, resolved notices and "alert the office" (S2 Beats 4 and 7). Each earlier patch is re-walked, not
   trusted.
+- New beats since the 2026-11-04 answers, in the same file: stubs on a List (33a), the rooms' PDF lists
+  through matching (34), the step rail (working-direction caveat), a surgeon at two rooms, events in the
+  next run and payments made in Xero. "Stubs parked, no beat" is gone.
 - `docs/demo-guide/04-presenter-cheat-sheet.md`, `02-workflows-and-handoffs.md`,
   `01-personas-and-responsibilities.md`, `README.md`: brought into line (item 9).
 - `docs/demo-guide/master-demo-guide.html`: regenerated in full (item 10).
@@ -1141,7 +1160,7 @@ running app.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 44` first: it lists no covered stories (none at plan time, 2026-11-02), so this section has no per-item rows.
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 44` first: it lists no covered stories (none at plan time), so this section has no per-item rows. FT-02.6 and US-02.2.1 were `absent` (Parked, Future): no change here (Phases 33a and 34 own their recipes); the sweep only confirms neither is still set `absent`.
 
 **Final sweep.** This phase covers no stories of its own, so the step is the closing sweep over the
 whole catalogue, run in Session 2 after the guide, ATLAS.md and the QA pass have settled the app:
@@ -1158,8 +1177,8 @@ whole catalogue, run in Session 2 after the guide, ATLAS.md and the QA pass have
   update" names the owners; confirm each owning phase replaced its captions and that each shot now
   shows the new rule, and fix any survivor here (caption and, if needed, the recipe's steps, keeping
   shot `name`s):
-  - US-04.3.3 (20): No contract (RVG) first in the picker, then holder-fit Contracts; no default
-    hospital Contract;
+  - US-04.3.3 (20): No contract (RVG) the step rail's answer for an unprepaid invoice to the patient and
+    first in its Contract lists, then holder-fit Contracts; no default hospital Contract;
   - US-03.3.4 (19b): optional itemised modifiers, the explanation asked for on claiming, the age and P1 pre-applied and removable; no ASA seeding;
   - US-06.2.2 and US-06.3.1 (27): the prepaid amount as the fixed price on a prepaid Contract, the invoice generated and its pair created on admin approval, payable to the AA Holding account, approval a step AA can switch off; no estimated fee;
   - US-08.2.2 (27): the prepaid Procedure left off the final invoice with nothing deducted, the journal transfer at authorisation; no balance invoice or deduction line;
@@ -1183,9 +1202,9 @@ whole catalogue, run in Session 2 after the guide, ATLAS.md and the QA pass have
   US-04.2.5 and US-05.3.4 (per-Contract multi-procedure rules, Retired, 19a and 23), US-04.2.7
   (required booking inputs, Retired, 21), US-04.2.12 (the payment setting, Retired, 22), US-05.1.6 (the procedure master, Retired 2026-10-16, 19), FT-06.1, US-06.1.1, US-06.1.2 and US-12.1.3 (prepaid on the profile, Retired 2026-10-16, 18 and 26), US-12.1.2 (the GST period, Retired 2026-10-16), and the Future
   items US-13.7.4 (warning settings), US-02.4.4 (booking from a photo; 15b's badged demo at most),
-  US-02.2.1 (surgeon PDF upload; 34's badged tab), US-02.5.x (automated change application,
+  US-02.5.x (automated change application,
   reschedule rules, concurrent edits), US-02.3.5 (automatic change emails), US-04.2.13 (a Contract
-  schedule upload), US-04.3.7 (a procedure off the schedule) and the parked FT-02.6 and US-02.6.1 to US-02.6.3 (stubs on a List, D66, "Parked" until OQ-118). A badged Future-scope demo may keep
+  schedule upload), US-04.3.7 (a procedure off the schedule); FT-02.6 and US-02.2.1 are built, so their recipes are not absent. A badged Future-scope demo may keep
   `partial` with a reason saying it is Future scope, never `captured`;
 - `requirements-board/requirements/capture/REPORT.md` ends with no failed recipe and no story without a recipe;
 - `requirements-board/requirements/capture/ATLAS.md` is read end to end against the app: Routes, Personas and IDs, Seed data, Overlays,
@@ -1230,9 +1249,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   disagrees between Admin, web Accounts and mobile.
 - **Answered is answered, open stays open.** No copy, in the app or the guide, calls an Open or
   Proposed OQ settled, or the BCTI granularity settled; no answered OQ or decision keeps a stale caveat
-  (the Goal's lists; D9, D11, D26, D38 to D41, OQ-61, OQ-84, OQ-89, OQ-90, D56 and D57 in particular); no superseded decision is told in its struck
+  (the Goal's lists; D9, D11, D26, D28, D38 to D41, D51, D53, D56, D57, D66, D67, D69, D75, OQ-61, OQ-84, OQ-89 and OQ-90 in particular; no OQ-119 or OQ-121 label); no superseded decision is told in its struck
   reading. The provisional BCTI count, the live OQ labels the phases built and the NHI "modulus 24"
-  flag are still shown. Every open default (D28's open part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76) is labelled in the guide exactly as the UI labels them. A Verify item's settled part is told as the rule and only its open sub-question is
+  flag are still shown. Every open default (D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77) is labelled in the guide exactly as the UI labels them. A Verify item's settled part is told as the rule and only its open sub-question is
   labelled.
 - **Retired beats and superseded words are gone.** No swap request, office confirmation of a move,
   prepayment gate or override, prepayment estimate, deposit, contingency units or balance invoice,
@@ -1242,8 +1261,12 @@ review-and-fix pass (PROGRESS convention 18)**:
   hourly rate line, submit confirm step or tap-to-read on a warning, addendum Card, Copy a Booking, 5%
   fee, update email prompted after a save, carried-forward negative invoice, "Permanent List",
   "blacklist", "DRAFT" for an assigned List or "slot" survives in the script, the master guide, a
-  scenario message or a registry label; photo capture, surgeon PDF upload, automated change
+  scenario message or a registry label; photo capture, automated change
   application and automatic change emails appear only as Future scope.
+- **The new intake and Xero beats.** Stubs, the rooms' PDF lists (Upload PDF list, Receive updated PDF
+  from rooms), a surgeon at two rooms, events billed in the next run and payments made in Xero each run
+  as written; the step rail carries its working-direction label and D52's second part its one-line
+  assumed label; no "stubs parked" or Future-scope PDF copy survives.
 - **The prepayment story.** The AA Holding account's balance and entries agree between Admin and the
   guide at each step (approved, part paid, transferred at authorisation, credited or refunded on
   cancelling); no deduction line on a mixed Booking; no second pair; events sit on no List; the
@@ -1274,8 +1297,8 @@ review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **Status row** for catch-up Phase 44, and a phase entry with:
-  - the drift-check result (catalogue changes since `d436947` and what each did to the script; the OQ
-    list at HEAD; the D1 to D76 table: answered, superseded (new reading), open default or recorded,
+  - the drift-check result (catalogue changes since `a68f09b` and what each did to the script; the OQ
+    list at HEAD; the D1 to D77 table: answered, superseded (new reading), open default or recorded,
     and the label each shows);
   - the re-baselined figures table (item 7), with the BCTI-dependent figures marked;
   - the parity matrix (item 12) and how the handset was tested (real phone or emulated viewport);
@@ -1315,12 +1338,12 @@ review-and-fix pass (PROGRESS convention 18)**:
      fee hidden from the anaesthetist where the catalogue now shows a price, the addendum Card, the
      prepayment completion gate, the prepayment estimate and deposit, the overpaid prepayment's
      negativeTotal failure, the silent BTM fallback, availability reconciliation's conflict flag,
-     office write-through per tap, the cover-request flow, hospital auto-apply, Surgeon PDFs kept in scope by Phase 14, the locked P1, the conflict flag on unavailability, the "Reschedule" change type, the trust account, the prepay holding account and second pair, the Insurers master, the prepayment deduction line). Write any missing one here, citing the phase that superseded it.
+     office write-through per tap, the cover-request flow, hospital auto-apply, the locked P1, the conflict flag on unavailability, the "Reschedule" change type, the trust account, the prepay holding account and second pair, the Insurers master, the prepayment deduction line). Write any missing one here, citing the phase that superseded it.
 - **Catch-up closing summary** (a short section after the entry): every phase 14 to 44, with 15a,
   15b, 19a, 19b, 20a, 32a, 38a, 38b, 39a, 39b, 40a and 43a, DONE; the gaps, DM and RV items closed
   (RV ids were renumbered on 2026-10-20; take the final figures from `gaps.json` and the ROADMAP table at close); nothing parked; the Retired and Future items left out (the "Left the script" list);
-  the provisional readings still shown in the app, each with its OQ or D number (D28's open part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76, the open OQs, the BCTI granularity); the snapshot commits the plan was built and re-graded against
-  (`3d3a18c`, `60e2d1e`, `d4db277`, `7cd7802`, then `d436947`) and the HEAD commit this phase checked; a pointer to the ROADMAP's "When
+  the provisional readings still shown in the app, each with its OQ or D number (D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77, the open OQs, the BCTI granularity); the snapshot commits the plan was built and re-graded against
+  (`3d3a18c`, `60e2d1e`, `d4db277`, `7cd7802`, then `a68f09b`) and the HEAD commit this phase checked; a pointer to the ROADMAP's "When
   the catalogue changes" procedure for the next round; and the note that the pricing structures,
   resolver, precedence and snapshot sit in one place in `src/domain/billing` behind the types the UI
   reads, against the draft technical design (AR-29, AR-30, v6 at `7cd7802`), so a v7 is a contained edit.
@@ -1329,7 +1352,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   phase's "For the owner's review" list into one list, grouped by app and screen, each line with its
   phase, what to look at (route and persona), the default or reading built, and the OQ or D number;
   drop lines a later phase or a later answer already settled (D9 by OQ-31, D11, D26, D38 to D41, D56, D57 and D58 to D65 by their answers, the default-Contract, estimate and ASA lines by the 2026-10-08 model). Open it with a suggested review order (S1 to S5
-  from Reset, then the remaining screens), with RV-27 (the office's single-Booking move, a keep-as-demo-scaffold finding) among its lines, and a short "Open defaults" block listing D28's open part (whether the anaesthetist sees the number), D29, D31, D34, D36, D51 to D53, D55's part and D66 to D76 with where each shows in the app.
+  from Reset, then the remaining screens), with RV-27 (the office's single-Booking move, a keep-as-demo-scaffold finding) among its lines, and a short "Open defaults" block listing D29, D31, D34, D36, D52's first part, D55's part, D68, D70 to D74, D76 and D77 with where each shows in the app.
 - **Open-items handoff:** any regression logged in item 12, any parity gap not fixed, the catalogue
   correction for US-11.1.2's "modulus 24", the BCTI granularity point for AA's accountant (beside
   OQ-29 and OQ-60), and the stale `CLAUDE.md` lines for the owner.

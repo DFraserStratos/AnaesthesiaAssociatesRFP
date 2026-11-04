@@ -15,7 +15,7 @@
 [DM-50](../analysis/domain-model-delta.md#dm-50) pricing is one rule on values held on the Procedure ·
 [DM-14](../analysis/domain-model-delta.md#dm-14) price changes are edits of those values: the anaesthetist where the flag allows and the price is neither fixed nor prepaid, the office on any ·
 [RV-03](../analysis/reverse-check.md#rv-03-rate-x-time-billing-line-and-the-method-3-individual-arrangement-gate) the rate x time line and its Method 3 gate go ·
-[RV-04](../analysis/reverse-check.md#rv-04-anaesthetist-price-adjustment-reason-mandatory-offered-on-every-contract-no-per-contract-flag) the reasoned, always-offered adjustment is reworked (flag, not fixed, not prepaid) ·
+[RV-04](../analysis/reverse-check.md#rv-04-anaesthetist-price-adjustment-reason-mandatory-offered-on-every-contract-and-on-prepaid-and-fixed-prices-no-per-contract-flag) the reasoned, always-offered adjustment is reworked (flag, not fixed, not prepaid) ·
 [RV-29](../analysis/reverse-check.md#rv-29-the-anaesthetists-booking-shows-no-calculation-units-or-price) the anaesthetist sees the price and calculation.
 
 **Carried across without regression, with parity tests:**
@@ -102,7 +102,7 @@ source).
 
 ## Before you start: drift check
 
-1. **Diff the catalogue** against the plan's baseline, catalogue commit `d436947`:
+1. **Diff the catalogue** against the plan's baseline, catalogue commit `a68f09b`:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.2,US-05.2.5,US-05.2.6,US-05.4.3,US-04.2.2,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-05.2.1,US-05.2.7,OQ-107,OQ-16,OQ-89,OQ-96,OQ-117
@@ -611,7 +611,7 @@ Decisions log settles.
   - each seeded Contract's editable value (Aria and the discount Contract off) and the demo discount
     Contract;
   - Fitzgerald's new Aria figure.
-- **Status row and phase entry:** the drift check against d436947 (OQ-96 and OQ-117 answered); `PERSIST_VERSION`
+- **Status row and phase entry:** the drift check against a68f09b (OQ-96 and OQ-117 answered); `PERSIST_VERSION`
   from and to; the real names (`priceProcedure`, `anaesthetistMayChangePricing`, `setProcedurePricing`,
   `PriceCard`, `PricingSheet`); the Aria figures before and after; the parity result; tests added; the
   review pass; the catalogue screenshot result (`REPORT.md` counts before and after).

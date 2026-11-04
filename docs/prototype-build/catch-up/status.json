@@ -1,23 +1,22 @@
 {
   "in_progress": [],
   "next": {
-    "phases": ["32a", "38a"],
+    "phases": [
+      "32a",
+      "38a"
+    ],
     "note": "32a finishes the Schedule track (32b follows it). 38a needs only 31 and runs alongside it."
   },
   "guidance": {
     "as_of": "2026-11-04",
     "headline": "Start 32a and 38a now. 32b follows 32a.",
-    "headline_sub": "Both are untouched by the 4 November answers and have no open questions of their own. Hold 17a, 18 and 26 until the next build plan update, which brings in the answers that change them.",
+    "headline_sub": "Both are untouched by the 4 November answers and have no open questions of their own. 17a, 18 and 26 have now been re-planned on those answers (the 2026-11-04 update).",
     "parallel": "They share little: 32a works on moving a Booking, 38a on the main view and search. Both may bump `PERSIST_VERSION` in `src/store/appStore.ts`, so if you run them in separate sessions, expect one small merge there.",
     "safe": {
       "32a": "None of the 4 November answers touch it, and its question (OQ-113) is answered and built into the plan. It finishes the Schedule track.",
       "38a": "Depends only on 31, which is done. It has no open questions, and nothing answered on 4 November changes it.",
       "32b": "Its one question (OQ-102, the names for preference lists and tiers) is naming only, so a later answer is a text change."
     },
-    "wait": {
-      "17a": "OQ-128 was answered on 4 November: a surgeon can belong to more than one room. This plan still assumes one room per surgeon, so wait for the next build plan update.",
-      "18": "The Contract model is moving. The step rail is the working direction for picking a Contract (4 November), and how Contracts are kept up to date day to day is open (OQ-131, for Vanessa). Wait for the next build plan update, then build it as provisional.",
-      "26": "OQ-111 was answered on 4 November: Xero makes all payments to anaesthetists. Whether bank details stay on the profile or live only in Xero changes this phase, so wait for the next build plan update, or take the phase plan's \"bank details in Xero only\" branch."
-    }
+    "wait": {}
   }
 }

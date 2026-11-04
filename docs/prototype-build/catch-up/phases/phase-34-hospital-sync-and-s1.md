@@ -1,848 +1,532 @@
-# Phase 34 · Hospital sync and the S1 rebuild
+# Phase 34 · Hospital sync, the rooms' PDF lists and the S1 rebuild
 
 **Requirements covered:**
-[US-02.1.5](../../../../requirements-board/requirements/stories/US-02.1.5.md) Automatic sync from St George's and Southern Cross (status 1 at `d4db277`; re-graded Contradicts at `60e2d1e`: today's feeds push and apply, and Christchurch Public runs as a third live feed. The two hospitals only and one criterion, **No silent apply**; its 2026-10-16 note gives the cadence, one theatre list a day for the next day's bookings with no repeated updates, so it is narration, not a schedule to build) ·
-[RV-12](../analysis/reverse-check.md#rv-12-surgeon-pdf-upload-and-ingest-is-shown-unbadged-as-product) Surgeon PDF upload and ingest shown unbadged as product (Hide from demo; badged Future scope here) ·
+[US-02.1.5](../../../../requirements-board/requirements/stories/US-02.1.5.md) Automatic sync from St George's and Southern Cross (status 1; Contradicts: today's feeds push and apply, and Christchurch Public runs as a third live feed. One criterion, **No silent apply**; its 2026-10-16 cadence note, one theatre list a day for the next day's bookings, is narration, not a schedule to build. OQ-109 part 2 assumed 4 November: both integrated hospitals sync) ·
+[EP-14](../../../../requirements-board/requirements/stories/EP-14.md) Health systems integration (Partial: the first-release sync of the two integrated hospitals into the matching screen is this phase's; more feeds, automatic matching, HL7 v2 and FHIR stay Future Work and move to a Future-scope surface here; the NHI lookup is in scope and 40a's) ·
+[FT-02.2](../../../../requirements-board/requirements/stories/FT-02.2.md) Surgeon PDF list ingest and [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md) Read, correct and ingest a surgeon PDF list (status 3; out of Future Work on 4 November with OQ-108, D51: in the first release beside the hospital download, landing on the same matching screen. Contradicts and Partial today: correction before ingest exists, but there is no upload, the ingest writes straight onto a chosen List, a re-sent List is not modelled and a blank NHI makes a provisional Booking) ·
+[DM-61](../analysis/domain-model-delta.md#dm-61) The rooms' PDF list as a source document (a stored SurgeonPdfList whose rows become Phase 33's import rows with the rooms as their source) ·
+[RV-12](../analysis/reverse-check.md#rv-12-surgeon-pdf-upload-and-ingest-is-shown-unbadged-as-product) Surgeon PDF ingest shown unbadged as product ("Hide from demo" is overtaken by OQ-108: the PDF pathway is product here, never badged Future; its direct ingest goes) ·
 [RV-14](../analysis/reverse-check.md#rv-14-hl7-v2-to-fhir-simulator-live-drip-and-scenario-s1-built-on-them) HL7 v2 to FHIR simulator, live drip and Scenario S1 built on them (Rework) ·
 [RV-16](../analysis/reverse-check.md#rv-16-further-hospital-feeds-and-automatic-application-with-no-matching-step) Further hospital feeds and automatic application with no matching step (Rework: the Christchurch Public feed stops, rows wait for a decision).
-**Left this phase at `d4db277`:** FT-14.6 (further feeds and automatic matching: out of scope, its stories are all Future Work), so the manual-provider daily sheets, the three appended hospitals, the Other providers strip and the auto-match toggle are **not built**; a sheet from another provider comes in through Phase 33's Receive action (FT-02.1's baseline). RV-05, RV-06 and RV-26 were renumbered into RV-14 (with RV-15, the scaffold finding that the nav attention badge and patient names in the log fall away with the demotion), RV-14 and RV-12.
+**Left this phase at `d4db277`:** FT-14.6 (further feeds and automatic matching, all Future Work): no manual-provider sheets, appended hospitals, Other providers strip or auto-match toggle; another provider's sheet comes in through Phase 33's Receive action. RV-15 (the nav attention badge and patient names in the log) falls away with RV-14's demotion.
 Also touches, without closing:
-[DM-34](../analysis/domain-model-delta.md#dm-34) (Phase 33 builds the import rows, decisions and unmatched queue; this phase adds only the `'sync'` channel and the sync deliveries. DM-34's 2026-10-03 correction drops the optional per-hospital sync state, because US-02.1.5 no longer asks for a last-synced time),
-[FT-02.1](../../../../requirements-board/requirements/stories/FT-02.1.md) (Verify; its 2026-10-07 note: the first version has **no automated decisions**, rows from "probably just the same two hospitals" land in the matching screen),
-[US-02.1.1](../../../../requirements-board/requirements/stories/US-02.1.1.md) (retitled "Import hospital bookings" on 2026-10-02, however each hospital provides them), [US-02.1.2](../../../../requirements-board/requirements/stories/US-02.1.2.md) (2026-10-08: each row shows its procedure text exactly as the hospital sent it), [US-02.1.3](../../../../requirements-board/requirements/stories/US-02.1.3.md) (2026-10-07: a later update to a matched Booking arrives in the same screen, matched by date, surgeon, location and session, and the admin approves it; St George's delivery 2 is one) and [US-02.1.4](../../../../requirements-board/requirements/stories/US-02.1.4.md) (Phase 33's import, decisions and unmatched queue, which synced rows feed),
-[US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) (new 2026-10-08, Confirmed: the procedure text is kept exactly as received from every channel, never overwritten; 20a builds the source texts and 33 writes a row's text onto the Booking it creates or matches, so every synced row here carries realistic wording and S1 shows it) and [US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) (20a's three-part stack: wording as received, procedure and RVG code, Contract; S1 points at it),
-[US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) and [US-04.3.4](../../../../requirements-board/requirements/stories/US-04.3.4.md) (Phase 20's: No contract (RVG) always offered first, nothing derived from the hospital, OQ-78 answered; the office sets the Contract at setup and a Booking without one waits on the "Needs a Contract" list; a synced row's Booking arrives with no Contract and S1 shows the office choosing it),
-[DM-51](../analysis/domain-model-delta.md#dm-51) (source wording, 20a's) and [DM-49](../analysis/domain-model-delta.md#dm-49) (one stored No contract (RVG) in place of the per-hospital defaults, 18's), which S1 now demonstrates,
-[US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) (the NHI validators, which stay in Admin),
-[FT-02.2](../../../../requirements-board/requirements/stories/FT-02.2.md) (out of scope; its only live child, [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md), is in the Future Work lane, and [US-02.2.2](../../../../requirements-board/requirements/stories/US-02.2.2.md) is Retired into it: the existing Surgeon PDFs tab is badged Future scope here, not extended).
-Open questions, built as defaults (owner decisions in ROADMAP.md, logged on the "For the owner's review" list, not blocking): [OQ-109](../../../../requirements-board/requirements/questions/OQ-109.md) (are St George's and Southern Cross synced in the first release? **D52**: build the catalogue as written, rows from the two hospitals arrive on the matching screen with nothing applied until the office decides, delivered in the demo by an action; no schedule, sync button or last-synced time) and [OQ-108](../../../../requirements-board/requirements/questions/OQ-108.md) (which source starts a booking? **D51**: the hospital download stays the priority intake pathway; surgeon PDF ingest stays Future Work, which is why the Surgeon PDFs tab is badged). [OQ-13](../../../../requirements-board/requirements/questions/OQ-13.md) (hospital download format; still Open, with Stratos Tech to ask; the format and which field carries the procedure text are not known). It no longer gates a build choice: US-02.1.5 asks for no cadence mechanism, no sync button and no last-synced time, so this phase builds none of them and labels nothing provisional. Synced rows use Phase 33's neutral row shape, which is format-agnostic, with the procedure text in its own field.
-Relied on through 20 and 33, not built here: **D33** ([OQ-99](../../../../requirements-board/requirements/questions/OQ-99.md), answered 2026-10-16: there is no procedure to match; the office sets who pays, and the RVG code is optional and the anaesthetist's). S1's Booking arrives from its row with its wording and no RVG code, and the anaesthetist picks RVG code A3 (appendicectomy) by 19's type-ahead at capture, as 20a scripts it. **Answered and built as answered:** [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (No contract (RVG) is the one default, offered first for every procedure, billing the payer on the Booking; no hospital default Contract), so S1's office picks No contract (RVG) for Sarah Mitchell.
-**Depends on:** Phase 33 (the matching screen, import rows and decisions with each row's wording as received, the unmatched queue, no silent apply, and its registry entries). Through 33 it also relies on 14 (the trigger registry, `DemoBadge` tone `'future'`, the PWA sheet), 15 (Booking vocabulary and `Booking.source`), 15b (ACTIVE for an assigned List), 20 (no default Contract: a created Booking has none and waits on the "Needs a Contract" list; the one Contract picker with No contract (RVG) first; the guarded `setProcedureContract`), 20a (`Procedure.sourceTexts`, `addSourceText` and the three-part stack in both apps), 28 and 31 (Slots, ACTIVE Lists and Draft Lists as row targets). Phase 21 (the payer on the Booking, prefilled from the patient) is outside 33's chain but normally DONE by number; use it if DONE, so S1's "who is invoiced" reads Sarah Mitchell as the payer. It no longer depends on Phase 27: surgeon PDF ingest, whose review was to write 27's estimated duration, is Future Work.
-**Estimated:** 1 session (light). Order: sync deliveries and the store action, the Intake home and the Surgeon PDFs badge, the Future-scope surface, then the S1 rebuild and the PWA stand-in (the headline beat), then the close-out.
+[DM-34](../analysis/domain-model-delta.md#dm-34) (33 builds the rows, decisions and unmatched queue; this phase adds the `'sync'` channel and the rooms' PDF rows, and no sync state),
+[FT-02.1](../../../../requirements-board/requirements/stories/FT-02.1.md), [US-02.1.1](../../../../requirements-board/requirements/stories/US-02.1.1.md) to [US-02.1.4](../../../../requirements-board/requirements/stories/US-02.1.4.md) (33's matching screen, which synced and PDF rows feed; US-02.1.3's differences carry a re-sent PDF; US-02.1.4's no-NHI row waits with 33a's stub),
+[US-02.2.3](../../../../requirements-board/requirements/stories/US-02.2.3.md) and [US-02.5.4](../../../../requirements-board/requirements/stories/US-02.5.4.md) (Future Work: a Booking left off a re-sent List is not detected),
+[US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md), [US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) and [DM-51](../analysis/domain-model-delta.md#dm-51) (20a's wording as received and stack: a synced row brings the hospital's description, a PDF row the rooms'),
+[US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md), [US-04.3.4](../../../../requirements-board/requirements/stories/US-04.3.4.md) and [DM-49](../analysis/domain-model-delta.md#dm-49) (20's step rail and "Needs a Contract", which S1 shows),
+[US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) (the NHI validators, which stay in Admin and check a PDF row's correction).
+**Open questions:** [OQ-109](../../../../requirements-board/requirements/questions/OQ-109.md) (D52) part 2 **assumed** 4 November (Donald, for the build, not yet seen by AA: "both hospital integrations"), built as assumed and labelled once; part 1, which two hospitals, **still open**: default, keep the catalogue's St George's and Southern Cross, named in one place (`INTEGRATED_HOSPITALS`) so a later answer (Ben named Forte) is a one-place change. [OQ-13](../../../../requirements-board/requirements/questions/OQ-13.md) (hospital download format; Open): gates no build choice, since US-02.1.5 asks for no mechanism; synced rows use 33's format-agnostic row shape.
+**Answered and built as answered:** [OQ-108](../../../../requirements-board/requirements/questions/OQ-108.md) (D51, 4 November, Donald for the build: both intake sources in the first release, each landing on the one matching screen), [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (no hospital default Contract), [OQ-99](../../../../requirements-board/requirements/questions/OQ-99.md) (D33: no procedure to match; the RVG code optional and the anaesthetist's) and [OQ-118](../../../../requirements-board/requirements/questions/OQ-118.md) (D66: a no-NHI row waits with a stub on its List, 33a's). The office's Contract choice is **20's step rail, a working direction** (a guess to design and test with AA; ROADMAP D16), which S1 narrates as 20 built it.
+**Depends on:** Phase 33 (the matching screen, import rows carrying their source, hospital or rooms, decisions, the unmatched queue, `correctImportRow`, its registry entries) and Phase 33a (the Stub record made when a no-NHI row lands on a List, its List marking and its one resolve path). Through them: 14 (registry, `DemoBadge` tone `'future'`, PWA sheet), 15 (`Booking.source`), 15b (ACTIVE), 17 and 17a (the surgeon and their rooms, the PDF's sender), 20 (no default Contract, "Needs a Contract", the step rail, `setProcedureContract`), 20a (source texts, the `surgeonPdf` channel in the rooms' group, the invoice description's order of defaults, `ProcedureStack`), 21 (the payer on the Booking), 28 and 31 (Slots, ACTIVE and Draft Lists as row targets).
+**Estimated:** 2 sessions, with a cut line (one deliverable, not split into a 34a: both intake sources on one screen, told in S1). **Session 1, the product pathway:** sync deliveries and the sync action with Christchurch Public stopped; the SurgeonPdfList record, upload, correction, send to matching and the re-sent differences; ends green. **Session 2:** the Future-scope demotion, the Intake home and the S1 rebuild with its demo-guide patch. If session 1 runs long, the re-sent-differences trigger opens session 2. The S1 rebuild is never squeezed: if session 2 is tight, the Intake home lands as a plain grouping of the existing tabs (item 8).
 
 ## Goal
 
-St George's and Southern Cross, the two hospitals integrated today, bring their booking rows into
-Phase 33's matching screen without an admin downloading them by hand. How each hospital delivers its
-data is for the integration team to establish (OQ-13, US-02.1.5's 2026-10-02 rewrite: "the particulars
-of their technical implementation are yet to come"), so the demo shows arrival only (the real cadence, one theatre list a day for the next day's bookings with no repeated updates, is narration, not mechanics): a **Simulate
-sync** demo action per hospital delivers that hospital's next set of rows, marked New on the matching
-screen. Synced rows are only rows: nothing reaches a Booking, List or Patient until the admin decides
-(US-02.1.5 "No silent apply"). There is no schedule, no pull on open, no Sync button and no last-synced
-state to build: Greg and Donald took them out ("Let's leave it out").
+Both first-release intake sources reach Phase 33's matching screen, and nothing reaches a Booking,
+List or Patient until the office decides (US-02.1.5 "No silent apply").
 
-Only those two hospitals sync (D52). The Christchurch Public feed, which today runs as a third live HL7
-feed, stops being one (RV-16): it has no sync and no in-scope surface, and survives only as a labelled
-example on the Future-scope surface. Further feeds and automatic application are Future Work (FT-14.6
-is out of scope), so this phase builds no manual-provider sheets and no auto-match toggle; a daily sheet
-from another provider is brought in through Phase 33's Receive action (FT-02.1's baseline).
+- **Hospital sync.** St George's and Southern Cross bring their rows in without a hand download. How
+  each hospital delivers is the integration team's (OQ-13), so the demo shows arrival only: a
+  **Simulate sync** demo action per hospital delivers its next rows, marked New. No schedule, pull on
+  open, Sync button or last-synced time ("Let's leave it out"). Christchurch Public stops being a live
+  feed (RV-16).
+- **The rooms' PDF lists** (FT-02.2, US-02.2.1, DM-61). The canned inbox becomes stored source
+  documents: a **SurgeonPdfList** per emailed List (file or facsimile, sender, received time, a
+  suggested target List, status, the rows as read with each correction). The admin uploads one
+  (simulated reading: no OCR, no mailbox), corrects a row's fields beside the facsimile (an invalid NHI
+  among them), and **sends it to matching**, where its rows land as import rows with the rooms as their
+  source and their wording as the rooms' description (20a). `ingestPdfRow`'s direct write onto a
+  chosen List goes. A PDF re-sent for the same List lands as rows whose differences wait for approval
+  (our reading, DM-61); a row with no NHI waits with 33a's stub.
+- **The Future-scope surface.** The HL7/FHIR simulator, live drip, message log with retry and
+  dead-letter, and feed mapping leave Admin for a separated demo surface (RV-14, RV-15). Matching, PDF
+  lists, data quality and the NHI validators sit under one Admin **Intake** home, unbadged.
+- **S1 rebuilt** around sync then match: Sarah Mitchell's row reads `lap appy ?conv to open` and the
+  Booking keeps it as received; a no-NHI row in the same delivery waits with its stub on her List
+  (33a); the office sets her Contract through 20's step rail (the patient, not prepaid: No contract
+  (RVG), the RVG code handed to the anaesthetist, who picks A3 at capture, D33); and a rooms' PDF beat
+  beside it.
 
-The HL7 v2 and FHIR tooling (simulator, live drip, message log with retry and dead-letter, per-hospital
-feed mapping) leaves Admin for a clearly separated Future-scope demo surface, finishing what Phase 14's
-interim badges started (RV-14, RV-15: the Integrations nav attention badge goes too). The in-scope
-pieces stay in Admin under one **Intake** home: matching, data quality and the NHI validators. The
-Surgeon PDFs tab stays reachable there but is badged Future scope, with its ingest action and demo
-trigger, because surgeon PDF ingest is Future Work (US-02.2.1, RV-12; D51: the hospital download stays
-first); it is not extended (no upload, no new review fields).
-
-S1, the headline scenario, is rebuilt here around sync then match, including its Control Panel jump,
-run-sheet beats and the handset path. Under the 2026-10-08 rules it shows three things the old S1
-could not:
-
-- **The wording as received.** Sarah Mitchell's synced row reads `lap appy ?conv to open` (AR-35's
-  row 14, the shorthand 20a seeded on MSG-STG-1001 and Phase 33 carries on `SAMPLE_STG` R1). The
-  matching screen shows it on the row (US-02.1.2), and the Booking created from the row keeps it,
-  verbatim, as its source wording (US-02.5.7), at the top of 20a's three-part stack on mobile, web and
-  Admin (US-03.1.9). Nothing here writes or edits wording: Phase 33's create path does, through 20a's
-  `addSourceText` rules.
-- **The office choosing the Contract.** The row carries no Contract and nothing is derived from St
-  George's (US-04.3.3, OQ-78 answered; hospital-set Contracts are Future Work, US-04.3.6), so the new
-  Booking arrives with no Contract and sits on Phase 20's "Needs a Contract" list. The office opens it
-  and picks **No contract (RVG)**, the first row of the one picker, with any fitting Contracts listed
-  below it under their holders' headings. The stack then reads: the wording as received, "RVG code to
-  choose", and No contract (RVG) invoicing the payer on the Booking (Sarah Mitchell, prefilled from her
-  patient record by Phase 21) at RVG pricing. There is no "default Contract" anywhere in S1.
-- **The procedure picked by someone who knows the work.** The anaesthetist picks RVG code A3
-  (appendicectomy) by 19's type-ahead at capture in Beat 3, reading the wording above it (D33: the RVG
-  code is the anaesthetist's, as 20a scripts it).
-
-This phase builds no pricing structure and no wording model: it reads the Contract only through Phase
-20's picker and selectors, and the wording only through 20a's types, so the pricing model stays in
-one place in `aa-prototype/src/domain/billing` as the earlier phases left it.
+This phase builds no pricing structure and no wording model: it reads the Contract through 20's rail
+and selectors and the wording through 20a's types.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff for this phase's items and open questions against the plan's baseline,
-   catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue folder; needs
+1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
    Node 22.18 or newer):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.1.5,FT-14.6,US-02.2.1,FT-02.1,FT-02.2,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.5.7,US-03.1.9,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.1.2,FT-14.1,FT-14.2,FT-14.3,FT-14.5,US-14.5.1,OQ-13,OQ-34,OQ-78,OQ-99,OQ-108,OQ-109
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.1.5,EP-14,FT-02.2,US-02.2.1,US-02.2.3,US-02.5.4,FT-02.1,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.5.7,US-03.1.9,US-04.3.3,US-04.3.4,US-04.3.6,US-11.1.2,FT-02.6,US-02.6.1,FT-14.1,FT-14.2,FT-14.3,FT-14.5,FT-14.6,US-14.5.1,OQ-13,OQ-78,OQ-99,OQ-108,OQ-109,OQ-118
    ```
 
-   This doc reflects the catalogue at `d436947` (2026-11-02: the 27 October evidence on OQ-13, OQ-108
-   and OQ-109 leaves them open and changes no work item). From `d4db277` (2026-10-20): US-02.1.5 gained the cadence note (one
-   theatre list a day, no repeated updates; narration only); FT-14.6 and its stories are out of scope
-   (the sheets and auto-match left this phase); OQ-108 and OQ-109 carry the built defaults D51 and D52.
-   The 2026-10-02 trims (US-02.1.5 to "No silent apply", US-02.2.1 to the Future Work lane, US-02.1.1
-   retitled) and the 2026-10-07 and 2026-10-08 changes (FT-02.1's no-automated-decisions note, US-02.1.2's
-   text-as-sent criterion, US-02.1.3's matching keys, the new US-02.5.7, No contract (RVG) first with no
-   hospital default and the "Needs a Contract" list) still stand. `domain-model.md` section 1 may still
-   describe the sync as "on a schedule, when the matching screen opens, and by a sync button, with a
-   last-synced time": that row is stale against US-02.1.5; the story wins. Diff only for anything after
-   `d436947`. If an item changed since, re-read it and adjust the work items; re-run the gap analysis
-   for that item only, per `../README.md`.
-2. **US-02.1.5.** If it regains a schedule, a sync button or a last-synced time, stop and tell the owner
-   the shape (it was removed on 2026-10-02); do not build them on a guess. If it is now Retired or
-   Future, drop work items 1, 2 and 6's sync entries, rebuild S1 around Phase 33's hand import instead,
-   keep the Future-scope demotion (it stands on RV-14 and RV-12), and note it in PROGRESS.md. If a third
-   hospital is added to its integrated set (for example Christchurch Public), stop and tell the owner:
-   work item 5's demotion of the Christchurch Public feed would reverse.
-   **OQ-109** (Open; D52 built): if it is answered "not synced in the first release", drop the sync as above.
-3. **FT-14.6, US-14.6.1, US-14.6.2** (out of scope, Future Work at `d4db277`). If the other providers'
-   feeds or automatic matching come back into scope, stop and tell the owner: the manual-provider
-   sheets, hospitals and auto-match this phase no longer builds would need a phase of their own.
-4. **US-02.2.1 and FT-02.2.** If US-02.2.1 leaves the Future Work lane, stop and tell the owner: the
-   Surgeon PDFs tab would be unbadged and its upload and review work (planned here before 2026-10-03)
-   would need a phase. If it is Retired, hide the tab and its trigger instead of badging them, and note
-   it. **OQ-108** (Open; D51 built: the hospital download first, PDF ingest Future Work): if answered
-   otherwise, tell the owner; the badge is what D51 asks for.
-5. **FT-14.1, 14.2, 14.3, 14.5, US-14.5.1** (all Future at `d4db277`). If any has come back into
-   scope, do not demote that piece: keep it in Admin, unbadge it, and tell the owner.
-6. **OQ-13** (Open at `d4db277`). If it has been answered with a delivery shape or a cadence, record it
-   in PROGRESS.md; build nothing from it unless US-02.1.5 also changed (step 2). The fixture rows'
-   fields (patient, NHI, date, time, surgeon, procedure text as received, hospital appointment
-   reference; Contract and patient details may be absent, as Vanessa describes) are the one place to
-   adjust. If it names the field that carries the procedure text (US-02.5.7's note), record it; the
-   rows keep one text field either way.
-7. **The Contract and the wording (US-04.3.3, US-04.3.4, US-04.3.6, US-02.5.7, US-03.1.9, OQ-78).** If
-   a hospital default Contract has come back, or a row may now set a Contract (US-04.3.6 out of the
-   Future Work lane), stop and tell the owner: S1's Contract beat changes shape. If No contract (RVG)
-   no longer bills the payer on the Booking (OQ-78), rebuild nothing here: S1 narrates whatever 20's
-   who-is-invoiced selector and 20a's stack show. If US-02.5.7 or US-03.1.9 changed the stack's order or
-   parts, follow 20a's built stack; this phase only points at it. If US-02.5.7 was Retired or moved to
-   Future, drop the wording from the deliveries and the S1 narration and note it.
-8. **OQ-99 (D33, answered 2026-10-16).** There is no procedure to match: the office sets the
-   Contract in S1 Beat 1 and the anaesthetist picks the optional RVG code (A3) at capture in Beat 3.
-   Nothing about it is provisional. If OQ-99 has moved since `d4db277`, follow its answer and build
-   what Phase 20 and 21 built.
-9. **Confirm the dependencies are DONE** and read their PROGRESS entries for the real names this doc
-   can only anticipate:
-   - **Phase 33** (planned names shown; use the real ones from its entry): `ImportBatch` and
-     `ImportRow` (with `incoming: IncomingBookingFields`, `externalRef` as the appointment reference,
-     and a `channel` union of `'download' | 'manualSheet' | 'feedMessage'`) in a top-level
-     `intake` slice; the one staging entry point `stageImportRows(api, actor, channel, hospitalId,
-     label, rows, extras)` in `src/store/matchingActions.ts` (exported there, not from `store/index.ts`; import it directly), with its dedupe (an identical row for the
-     same appointment is skipped and counted in `skippedCount`); `importHospitalDownload(api, actor,
-     sampleId)`; the decision action `decideImportRow` and the derived `suggestDecision`; the badge
-     selector `matchingAttentionCount`; the screen `apps/admin/screens/MatchingScreen.tsx` (parts in
-     `apps/admin/matching/`) on route `/admin/matching` with its own `'matching'` nav section under Day
-     view, and its import button's real label (US-02.1.1 is now "Import hospital bookings"); the sample
-     library `HOSPITAL_DOWNLOAD_SAMPLES` in `src/domain/intake/hospitalDownloads.ts` (`SAMPLE_STG`, whose
-     R1 is Sarah Mitchell; `SAMPLE_SX`; and Phase 33's `manualSheet` channel, which the Receive action uses); its bar
-     triggers `matching-send-unmatched-row`, `matching-send-update` and `matching-reschedule-no-list`
-     (scoped to `/admin/matching`); its PWA stand-in `matching-office-matches-row` ("Hospital row arrives and the
-     office matches it", body `officeMatchesHospitalRow` in `src/store/matchingDemo.ts`, two `choices`);
-     the context key `matching.selectedRowId`; `visual/admin-matching.spec.ts`; and how it re-pointed
-     `processMessage` to stage rows (RV-13). Wherever this doc names a planned 33 symbol, use the real
-     one.
-   - **Phase 14:** the registry contract (`DemoTrigger`, `choices`, `badge`, `when`, `indexPath`), the
-     `DemoBadge` `'future'` tone, the context keys it defined (`integrations.tab` and
-     `integrationsSim.selectedMessageId`), the `ingest-pdf-row` entry (gated by
-     `when: integrations.tab === 'pdfs'`, body `SURGEON_PDFS[0]` row R2, no badge) and the interim
-     Future-scope badges this phase replaces.
-   - **Phase 15:** `BookingSource` (a synced or imported row creates `hospitalDownload`). Seeded
-     Bookings stamped `surgeonPdf` keep that descriptive value; nothing here changes them.
-   - **Phase 15b:** an assigned List reads ACTIVE (never DRAFT); DRAFT is a Draft List (31).
-   - **Phase 20:** no default Contract; `createBooking` with no pick leaves the Procedure without one;
-     `needsContractBookings` and Admin Day's "Needs a Contract" card; `contractCandidatesForProcedure`
-     with No contract (RVG) first; the guarded `setProcedureContract(api, actor, procedureId, {
-     contractId, lineId? })`; the id of 18's stored No contract (RVG) (use the real names).
-   - **Phase 20a:** `SourceText` and `SourceTextChannel`, `Procedure.sourceTexts`, `addSourceText` (the
-     exact duplicate adds nothing), the shared `ProcedureStack`, and MSG-STG-1001's reworded SCH-7 (`lap
-     appy ?conv to open`).
-   - **Phase 21** if DONE: the payer on the Booking prefilled from the patient, and who is invoiced
-     re-pointed at it; if not DONE, S1 narrates 20's interim who-is-invoiced as the stack shows it.
-   - **Phase 33's wording and Contract handling:** which source-text channel and `from` its create and
-     match paths write for a row (planned: `hospitalDownload`, `from` the hospital's name), whether a
-     matched row with different wording appends it (US-02.5.7) and counts as a procedure-text
-     difference, whether its decision panel offers a Contract step or leaves the created Booking on
-     "Needs a Contract", and `SAMPLE_STG` R1's text. If R1 does not carry `lap appy ?conv to open`, set
-     it there (one fixture, re-pinning 33's fixture test), so the hand import, the sync and
-     MSG-STG-1001 agree.
-   - Whether Phase 33 already re-pointed S4 Beat 4 (the Christchurch Public dead-letter beat) and S5
-     Beat 2 (MSG-STG-1002); its plan does both. If not, this phase does it (see Demo guide updates and the Control
-     Panel text), because both lean on the tabs leaving Admin and on Christchurch Public, which stops
-     being a live feed here.
-10. Note the current `PERSIST_VERSION` in `src/store/appStore.ts`. This phase does not expect to bump it: no new
-   hospitals, no persisted sync state and no demo setting change the seed. Bump it only if the build does
-   change the seed's shape or content.
-11. Record the drift-check result (against `d436947`) in the PROGRESS entry.
+   This doc reflects the catalogue at `a68f09b` (4 November: OQ-108 answered, US-02.2.1 out of Future
+   Work, FT-02.2 in the first release; OQ-109 part 2 assumed, noted on US-02.1.5 and EP-14).
+   `domain-model.md` section 1 may still describe a scheduled sync with a last-synced time: stale
+   against US-02.1.5; the story wins. If an item changed since, re-read it, adjust the work items and
+   re-run the gap analysis for it per `../README.md`.
+2. **US-02.1.5, EP-14, OQ-109.** If the sync regains a schedule, sync button or last-synced time, stop
+   and tell the owner. If part 1 is answered with other hospitals, change `INTEGRATED_HOSPITALS` and
+   the deliveries' hospitals (copy reads names from it). If part 2 is reversed (not synced), drop work
+   items 1, 2 and the sync triggers and rebuild S1 around 33's hand import. If a third hospital joins
+   the integrated set, stop: item 2's Christchurch Public stop would reverse.
+3. **US-02.2.1, FT-02.2, OQ-108.** If US-02.2.1 returns to Future Work or OQ-108 is reversed, stop and
+   tell the owner. If US-02.2.3 (removal detection) or US-02.5.4 leaves Future Work, note it and build
+   nothing: it needs a phase. If the mailbox read becomes a requirement, stop.
+4. **FT-14.x and FT-14.6.** If any Future item (FT-14.1 to 14.3, 14.5, US-14.5.1) returns to scope,
+   keep that piece in Admin unbadged and tell the owner; if FT-14.6 returns, stop.
+5. **OQ-13.** If answered with a delivery shape, record it in PROGRESS.md; the deliveries' row fields
+   are the one place to adjust. Build no mechanism unless US-02.1.5 also changed.
+6. **The Contract and the wording.** If a hospital default or a row-set Contract returns (US-04.3.6 out
+   of Future Work), stop. S1 narrates the picker 20 built: if AA has settled a different design, follow
+   it. If US-02.5.7 or US-03.1.9 changed, follow 20a's built stack.
+7. **Confirm the dependencies are DONE** and take the real names from their PROGRESS entries:
+   - **Phase 33:** `ImportBatch`, `ImportRow`, `IncomingBookingFields`, the channel union and how a row
+     carries its source (hospital or rooms; planned for this phase's PDF rows), `stageImportRows`
+     (exported from `matchingActions.ts`, not `store/index.ts`) and its dedupe, `correctImportRow`,
+     `decideImportRow`, `suggestDecision`, `sourceTextChannelFor`, `matchingAttentionCount`, the route
+     and nav section, `HOSPITAL_DOWNLOAD_SAMPLES` (`SAMPLE_STG` R1 is Sarah Mitchell; confirm it reads
+     `lap appy ?conv to open`), its bar triggers (planned `matching-receive-theatre-list`,
+     `matching-send-update`), the PWA stand-in `matching-office-matches-row` (`officeMatchesHospitalRow`
+     in `src/store/matchingDemo.ts`), how a decision sets `Booking.source` from the row's source, and
+     whether it re-pointed S4 Beat 4 and S5 Beat 2.
+   - **Phase 33a:** the Stub record and when it is made (a no-NHI row placed on a List, any source), its
+     List marking ("1 waiting at intake"), the resolve path (Add NHI, reject), its PWA entry and the List
+     it seeded a stub on.
+   - **Phase 20:** the step rail's path function and component, `needsContractBookings`,
+     `setProcedureContract`, the stored No contract (RVG) id, and the RVG-code hand-off to the
+     anaesthetist.
+   - **Phase 20a:** `SourceText`, `addSourceText`, the `surgeonPdf` channel (the rooms' group),
+     `refreshInvoiceDescription`, `ProcedureStack`.
+   - **Phase 14:** the registry contract, the context keys `integrations.tab` and
+     `integrationsSim.selectedMessageId`, and the `ingest-pdf-row` entry (removed here).
+   - **Phase 17a:** the surgeon's rooms (the PDF's sending room).
+8. Note `PERSIST_VERSION` (`src/store/appStore.ts`): this phase bumps it once, for the seeded
+   SurgeonPdfList records.
+9. Record the drift-check result (against `a68f09b`) in the PROGRESS entry.
 
 ## Reference
 
-**Design files (convention 17):**
-- `docs/design/Admin Review.dc.html`: the Admin page anatomy the Intake screens keep: breadcrumb and
-  title row, the micro-caps KPI strip with mono values, the table, and the `bannerIn` entry motion (for
-  newly arrived rows).
-- `docs/design/Admin Day.dc.html`: the dark-ink side nav and its badge treatment (the Intake item keeps
-  the amber attention badge), .
-- `docs/design/Design Language.dc.html`: pills (`r-pill`),
-  neutrals for the `'future'` badge tone, radii `ctl 10` / `card 14`, and the motion patterns
-  `selection-slide` (the Intake tabs) and reduced-motion 80ms fades. Teal `#0D6E63` is the only action
-  colour; crimson stays identity only.
-- `docs/design/Mobile App.dc.html`: nothing new; the PWA sheet from Phase 14 hosts the stand-in.
-- The Future-scope surface is a demo surface: it keeps `DemoSurface` chrome, not product styling.
+**Design files (convention 17):** `docs/design/Admin Review.dc.html` (page anatomy, the table, the
+`bannerIn` motion for newly arrived rows); `docs/design/Admin Day.dc.html` (the side nav and its amber
+badge); `docs/design/Design Language.dc.html` (pills, the `'future'` badge neutrals, radii,
+`selection-slide` for the Intake tabs, reduced-motion fades). Teal is the only action colour; crimson
+stays identity only. The Future-scope surface keeps `DemoSurface` chrome. The PDF review keeps today's
+facsimile-beside-rows layout.
 
-**Catalogue:** the covered items above (US-02.1.5's 2026-10-02 Notes), OQ-13 (with its 2026-10-07
-update), OQ-34 (volume ranking of the pathways), US-02.2.1's 2026-10-02 Future Work note, US-02.1.2's
-note on the manual step (the narration for hand-received sheets) and its "procedure text as sent"
-criterion, FT-02.1's and US-02.1.3's 2026-10-07 notes, US-02.5.7 and US-03.1.9 (the wording and the
-stack S1 shows), US-04.3.3 and US-04.3.4 with OQ-78 and OQ-99 (the office's Contract choice), and
-`domain-model.md` section 1 ("St George's and Southern Cross are integrated ... More hospital feeds,
-automatic matching and HL7/FHIR are Future Work. NHI lookup is in scope"; its sync-mechanics wording
-is stale, see the drift check), the Booking "Sources" and "Source wording" bullets and the glossary
-entries "Matching screen" and "Source wording". Evidence (read with `npm --prefix requirements-board
-run source -- --item <ID> --text`): `requirements-board/requirements/notes/2026-10-02-aa-requirements-review-with-greg.md`
-item #65, `requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md`
-items #6 and #22, "Notes 2026-10-07 · AA meeting with Greg #17" (no automated decisions; later updates
-matched by date, surgeon, location and session), and
-[AR-35](../../../../requirements-board/requirements/artifacts/AR-35.md), the note
-[2026-10-08-procedure-picker-and-source-text.md](../../../../requirements-board/requirements/notes/2026-10-08-procedure-picker-and-source-text.md),
-under its "Illustrative source wording" heading (AR-35 declares no regions; cite the heading by
-name): the AI-made, not-from-AA table the deliveries take their wording from.
-**Pricing model (read only, not built here):** [AR-28#no-contract-rvg](../../../../requirements-board/requirements/artifacts/AR-28.md)
-and [AR-28#who-gets-the-invoice](../../../../requirements-board/requirements/artifacts/AR-28.md) (the
-plain-language guide, true as written: what No contract (RVG) is and who it invoices) and
-[AR-29#contract-selection](../../../../requirements-board/requirements/artifacts/AR-29.md) (the
-draft design v4: No contract (RVG) first, then holder-fit candidates), for the S1 narration only.
+**Catalogue:** the covered items above (US-02.2.1's and FT-02.2's 4 November notes, EP-14's Notes,
+US-02.1.5's Notes), OQ-108, OQ-109, OQ-13, [AR-35](../../../../requirements-board/requirements/artifacts/AR-35.md)
+and its note [2026-10-08-procedure-picker-and-source-text.md](../../../../requirements-board/requirements/notes/2026-10-08-procedure-picker-and-source-text.md),
+"Illustrative source wording" heading (AI-made, not from AA; no regions, cite the heading): the wording
+the deliveries and PDF samples use. For the S1 narration only:
+[AR-28#no-contract-rvg](../../../../requirements-board/requirements/artifacts/AR-28.md) and
+[AR-29#contract-selection](../../../../requirements-board/requirements/artifacts/AR-29.md).
 
-**Analysis:**
-- `../GAP-ANALYSIS.md`: everything before "## By epic", especially theme 8 (intake becomes a matching
-  screen), "Remove or rework" (RV-12, RV-14, RV-15, RV-16, and the Christchurch Public feed as a live feed),
-  "Demo impact", the intake cluster under "Demo-trigger buttons", and the OQ-13 line; then the EP-02
-  and EP-14 tables.
-- `../epics/EP-02.md` (US-02.1.5, FT-02.1, FT-02.2).
-- `../analysis/reverse-check.md`: RV-12, RV-14, RV-15, RV-16 and RV-13 (which absorbed the dropped RV-27: feed Bookings
-  arriving with a pricing route the office never chose); `../analysis/domain-model-delta.md`:
-  DM-34 (intake, with its 2026-10-03 correction dropping the sync state; it now needs DM-51), DM-51
-  (source wording) and DM-49 (one stored No contract (RVG)).
-- `../analysis/prototype-map-admin.md` sections 1, 8, 13 and 14; `prototype-map-shell-demo-pwa.md`
-  sections 1, 3, 4, 5.1, 5.3, 7 and 9; `prototype-map-store-seed.md` sections 5, 7, 8 and 9;
-  `prototype-map-domain.md` section 6.
-- `../ROADMAP.md`: "Demo triggers", "PWA parity", "Demo guide", and the Phase 33 and 34 rows.
+**Analysis:** `../GAP-ANALYSIS.md` before "## By epic" (theme 8, "Remove or rework", the intake cluster
+of "Demo-trigger buttons"), then the EP-02 and EP-14 tables; `../epics/EP-02.md` and `../epics/EP-14.md`;
+`../analysis/reverse-check.md` RV-12 to RV-16; `../analysis/domain-model-delta.md` DM-61, DM-34, DM-51,
+DM-58; the prototype maps (`prototype-map-admin.md` 1, 8, 13, 14; `prototype-map-shell-demo-pwa.md` 1,
+3 to 5, 7, 9; `prototype-map-store-seed.md` 5, 7 to 9; `prototype-map-domain.md` 6).
 
 **Code entry points:**
-- `aa-prototype/src/apps/admin/screens/IntegrationMonitorScreen.tsx`: `Tab` state (:27, :45), the
-  header comment (:33), the five `TabButton`s (:62-66; Messages and Feed config already pass `future`,
-  Surgeon PDFs does not), `FutureScopeNote` (:516), `MessagesTab` (:83), `FeedConfigTab` (:153),
-  `SurgeonPdfsTab` (:214, reads the constant `SURGEON_PDFS`) and `PdfReview`, `DataQualityTab` (:363),
-  `ValidatorsTab` (:412).
-- `aa-prototype/src/apps/admin/components/SideNav.tsx` (`NavSection` `'integrations'` :5, the
-  Integrations item with its amber badge :36), `AdminApp.tsx` (section from path, `integrationAttentionCount`
-  :187, section paths), `apps/admin/routes.tsx` (`AdminIntegrationsRoute`), `src/router.tsx`.
-- `aa-prototype/src/apps/demo/DemoIntegrations.tsx` (feed picker, message library, the three panes,
-  "Live drip" `setInterval` :62-74, the Keycloak callout), `DemoSurface.tsx`,
-  `DemoControlPanel.tsx` (`SCENARIOS` S1 :252-262, still on MSG-STG-1001 with Phase 14's caveat; the S4
-  and S5 messages).
-- `aa-prototype/src/shell/appConfig.ts` (`APP_CONFIG['demo-integrations']`, label "Demo:
-  Integrations"), `AppSwitcher.tsx` (`ICONS`).
-- Store: `integrationActions.ts` (`processMessage` :309, `MAX_ATTEMPTS` :41, `wireIntegrationRetry`
-  :494, `setFeedMapping`, `correctEthnicityCode`, `ingestPdfRow` :434, all unchanged in behaviour),
-  `demoSettingsActions.ts` (`armHandoffFault`, the audited demo-setting pattern to copy),
-  `domain/types.ts` (`DemoSettings` :896, which already carries `failNextHandoff`; `BookingSource`
-  :371), `selectors.ts` (`integrationAttentionCount` :995, `dataQualityItems`), `appStore.ts`
-  (`PERSIST_VERSION` :136, `freshAppState`, `backfillMerge`), `index.ts` exports.
-  Phase 33's files (names from its PROGRESS entry): `src/store/matchingActions.ts`,
-  `src/store/matchingDemo.ts`, `src/domain/intake/` (`matching.ts`, `hospitalDownloads.ts`),
-  `apps/admin/screens/MatchingScreen.tsx` and `apps/admin/matching/`. Phase 20's and 20a's (names from
-  their entries): the Contract selection module and `setProcedureContract`, `needsContractBookings`
-  and the Admin Day "Needs a Contract" card; `SourceText` on `Procedure` in `domain/types.ts`,
-  `addSourceText`, `domain/billing/procedureStack.ts` and the shared `ProcedureStack`.
-- Domain: `domain/integrations/feeds.ts` (`FEED.cph` :22 and `FEED_META[FEED.cph]` "Christchurch
-  Public HL7 feed" :37, `CPH_MAPPING_MISCONFIGURED`, `CPH_NHI_FIX`, the CPH entry in the seeded feeds
-  :83), `messages.ts` (`APPT` correlation ids; `STG_LIST` and `SX_LIST` = Souter Tue 28 Jul AM and PM),
-  `pdfSamples.ts` (`SURGEON_PDFS`, unchanged), `domain/seed/cast.ts` (`HOSP`, read only: no hospital is added),
-  `domain/domainPurity.test.ts`.
-- Entries: `src/pwa/pwaPurity.test.ts`.
-- Registry: `src/shared/demoTriggers/registry.ts` and its test (Phase 14), including
-  `ingest-pdf-row` (:348), `fire-hospital-message` (:450) and `replay-hospital-message` (:475).
-- Tests and hooks: `aa-prototype/visual/phase11.spec.ts`, `visual/screens.spec.ts`,
-  `visual/pwa-device.spec.ts`, `store/integrationActions.test.ts`, `store/demoScenarios.test.ts`,
-  `store/persistMigrate.test.ts`, `shared/audit/actionLabels.ts` and `auditNarrative.test.ts`.
-- Outside the app: capture recipes `requirements-board/requirements/capture/recipes/*.json` FT-02.2, US-02.1.1 to
-  US-02.1.4, US-02.2.1, US-11.1.2, US-14.1.1, US-14.2.1, US-14.3.1 and US-14.5.1 (at the snapshot they
-  open `/admin/integrations` or `/demo/integrations`; Phase 33 points some at `/admin/matching`), and
-  `requirements-board/requirements/capture/ATLAS.md`. There is no US-02.1.5 recipe yet.
-- Visual specs: `visual/phase12.spec.ts` (S1, which Phase 33 routes through the matching screen) and
-  Phase 33's `visual/admin-matching.spec.ts`.
+- `apps/admin/screens/IntegrationMonitorScreen.tsx`: tabs (:62-72), `FutureScopeNote`, `MessagesTab`,
+  `FeedConfigTab`, `SurgeonPdfsTab` (:214) and `PdfReview` (:240-340, the editable rows and NHI check),
+  `DataQualityTab`, `ValidatorsTab`.
+- `domain/integrations/pdfSamples.ts` (`PdfRow`, `SurgeonPdf`, `SURGEON_PDFS`, the facsimile builder;
+  they become upload samples and seed), `store/integrationActions.ts` (`ingestPdfRow` :453, removed;
+  `processMessage`, `MAX_ATTEMPTS`, `wireIntegrationRetry`, unchanged), `domain/integrations/feeds.ts`
+  (`FEED.cph`, `FEED_META`), `domain/seed/cast.ts` (`HOSP`, read only).
+- `apps/admin/components/SideNav.tsx`, `AdminApp.tsx` (`integrationAttentionCount`, section paths),
+  `apps/admin/routes.tsx`, `src/router.tsx`; `apps/demo/DemoIntegrations.tsx` (Live drip :62-77),
+  `DemoSurface.tsx`, `DemoControlPanel.tsx` (`SCENARIOS` S1); `shell/appConfig.ts`.
+- Store: `appStore.ts` (`PERSIST_VERSION`, `freshAppState`, `backfillMerge`), `selectors.ts`
+  (`integrationAttentionCount`), `domain/ids.ts` (`ID_FORMATS`); Phase 33's `matchingActions.ts`,
+  `matchingDemo.ts`, `domain/intake/`; 33a's stub module; 20's rail; 20a's `procedureStack.ts`.
+- Registry `shared/demoTriggers/registry.ts` (`ingest-pdf-row` :515, `fire-hospital-message`,
+  `replay-hospital-message`) and its test; `pwa/pwaPurity.test.ts`; `domain/domainPurity.test.ts`.
+- Tests: `store/integrationActions.test.ts` (:256 PDF ingest), `store/demoScenarios.test.ts` (:192 PDF
+  ingest), `store/persistMigrate.test.ts`, `shared/audit/actionLabels.ts`; `visual/phase11.spec.ts`,
+  `screens.spec.ts`, `phase12.spec.ts` (S1), `pwa-device.spec.ts`, 33's `admin-matching.spec.ts`.
 
 ## Work items
 
-1. **Sync deliveries (pure domain, `src/domain/intake/syncDeliveries.ts`, beside Phase 33's intake
-   module; no React, no `Date.now()`, covered by `domainPurity.test.ts`).**
-   - `INTEGRATED_HOSPITALS = [HOSP.stg, HOSP.sx]`, with a comment citing US-02.1.5 (and that the
-     delivery mechanics are OQ-13's, not modelled).
-   - `HOSPITAL_SYNC_DELIVERIES: Record<IntegratedHospitalId, SyncDelivery[]>`, each delivery
-     `{ id, rows }` in Phase 33's neutral row shape (`IncomingBookingFields`), in a fixed order. Each
-     Simulate sync delivers the hospital's next undelivered delivery. Share appointment references
-     (`externalRef`) with `APPT` so a synced row matches the same seeded Booking the HL7 library does.
-     Every row carries its **procedure text as received** in Phase 33's text field, taken from the
-     "Hospital download" rows of AR-35's "Illustrative source wording" table where one fits (AI-made,
-     not from AA: say so in the module's header comment, and present nothing as AA's data), so the
-     matching screen and the Booking each row creates show realistic shorthand (US-02.1.2, US-02.5.7).
-     Never reuse the wording 20a placed on a seeded Booking for a different procedure, and never
-     AR-35's rows 1, 2, 26 or 27 (20a's two-source beats). The minimum set (adjust to Phase 33's proposal
-     rules, then pin every one in `demoScenarios.test.ts`):
-     - **St George's, delivery 1 (the S1 delivery):** Sarah Mitchell, NHI CQY9304, DOB 1988-04-12, Tue
-       28 Jul 08:30, Mr Hale, procedure text `lap appy ?conv to open` (AR-35 row 14, the wording 20a
-       put on MSG-STG-1001), appointment `APPT.s12`, no RVG code and
-       no Contract. Build it from `SAMPLE_STG` R1's fields (import them, do not retype), so Phase 33's
-       dedupe skips R1 if the presenter also imports `SAMPLE_STG` by hand, and the reverse. Its proposal
-       must be "Create Booking" on `listIdForSlot(ANAE.souter, '2026-07-28', 'AM')` (an ACTIVE List),
-       with the patient reused by NHI. Beside it, a new patient with a new-format NHI (the MSG-STG-1002
-       patient) on **another anaesthetist's** ACTIVE St George's List on Tue 28 Jul (never one of
-       Dr Souter's Lists, so the PWA stand-in and S1's "fourth Booking" count are not touched; not a
-       scripted-beat List; pin it), with `L4/5 microdisc` (AR-35 row 32, a hospital download; not
-       `ACL recon R`, which Phase 33's `SAMPLE_SX` R1 already gives Priya Nair), so S5 Beat 2 can
-       validate a new-format NHI on the matching screen.
-     - **St George's, delivery 2:** a changed time on the seeded Booking with `APPT.s13Time` (a "modify"
-       row whose only field difference is the time; the update, US-02.1.3's "later update
-       ... approve update"). Its procedure text is character for character the text that Booking
-       already holds (read it from the seed, do not retype), so no wording is appended.
-     - **St George's, delivery 3:** a reschedule to a date whose session holds no List (it lands in the
-       unmatched queue), with `lap chole` (AR-35 row 12) if its Booking is a laparoscopic
-       cholecystectomy, otherwise that Booking's own held text.
-     - **Southern Cross, delivery 1:** Priya Nair (NHI `MYY54SL`, the FHIR-SX-2001 patient), a new
-       Booking on Souter Tue 28 Jul PM 14:30 (Southern Cross, Ms Patel). This is `SAMPLE_SX` R1: build it
-       from that row's fields, so Phase 33's dedupe skips it if the presenter also imports `SAMPLE_SX` by
-       hand, and the reverse.
-     - **Southern Cross, delivery 2:** a cancellation of a seeded Southern Cross Booking that carries a
-       correlation reference (or, if none exists, a row whose patient no longer appears, which Phase 33
-       routes to the unmatched queue). Never a scripted-beat Booking, and never the Booking `SAMPLE_SX`
-       R2 modifies (a hand import after the sync must still show R2's change).
-     Delivery 1 rows that create a Booking keep their text on it as its first source text through
-     Phase 33's create path (20a's `addSourceText` rules; this phase writes no wording itself). No
-     synced row carries a Contract or picks one (the download is not comprehensive, OQ-13's 2026-10-01
-     note; US-04.3.6 is Future Work), and nothing is derived from the hospital (US-04.3.3): a created
-     Booking arrives with no Contract and waits on Phase 20's "Needs a Contract" list for the office.
-     None targets the Tue 21 design-day Lists, the S2 Lists
-     (Sharma Tue 21 PM, Rutherford Wed 22 AM, the Review queue Lists), the S3 Mon 20 Lists, the S4 Lists
-     (Riley Fri 24, Ropata Thu 16, Sharma Tue 14) or David Chen's S5 Booking.
-   - Cadence (US-02.1.5, 16 October): one theatre list a day for the next day's bookings, no repeated
-     updates. Each delivery stands for one day's list; deliveries 2 and 3 are later days' lists that
-     carry an update (US-02.1.3). No timing or schedule is modelled.
-   - `nextSyncDelivery(hospitalId, deliveredIds)` returns the next delivery or none. The delivered set
-     is derived from Phase 33's batches (each sync batch carries its `deliveryId` in `extras`), so there
-     is **no new persisted sync state** (DM-34's correction): no cursor, no last-synced time, no attempt
-     history.
-   - Vitest `syncDeliveries.test.ts`: deliveries in order per hospital; none after the last; ids
-     unique; S1's row equals `SAMPLE_STG` R1's fields, its text exactly `lap appy ?conv to open`; every
-     row has a non-blank procedure text; delivery 2's text equals its Booking's held text; no row
-     carries a Contract; no row text contains an en or em dash.
+### Session 1 · the product pathway (ends green)
 
-2. **The sync store action and demo setting (`src/store/hospitalSyncActions.ts`, exported from
-   `src/store/index.ts`).** All writes through `mutate()`, timestamps from the demo clock.
-   - `HOSPITAL_SYNC_ACTOR` (`{ who: 'Hospital sync', role: 'system', source: 'integration' }`) in
-     Phase 14's `src/store/demoActors.ts` or beside it.
-   - `simulateHospitalSync(api, hospitalId): Outcome<{ rows: number; skipped: number; deliveryId } |
-     { rows: 0; done: true }>`:
-     - refuses a hospital outside `INTEGRATED_HOSPITALS`, Christchurch Public included ("Only St
-       George's and Southern Cross are integrated. Receive other providers' sheets by hand.");
-     - hands the next delivery's rows to Phase 33's `stageImportRows` as one batch, under a new channel
-       value `'sync'` added to Phase 33's channel union (micro-cap "Sync" on the matching table; batch
-       label "St George's sync"; `deliveryId` in `extras`). Booking source stays `hospitalDownload`
-       (Phase 33 decision 7). Extend Phase 33's `sourceTextChannelFor` (or its real name) so `'sync'`
-       maps to 20a's `hospitalDownload` source-text channel, `from` the hospital's name, with a test:
-       a synced row is the same hospital data as a hand import, arriving without the download step. Phase 33's dedupe still applies, so a row also hand-imported is never
-       staged twice;
-     - with nothing left to deliver, returns `done` and writes nothing;
-     - audit: `intake.sync` (entity the batch, `after: { hospitalId, deliveryId, rows, skipped }`), in
-       the same commit as the staged rows. Never writes a Booking, List or Patient: no silent apply
-       (US-02.1.5's one criterion). A row about a locked List is staged like any other; Phase 33's
-       decision rules handle it.
-   - Selector `pendingSyncDeliveries(state, hospitalId)` (count left), used by the trigger's disabled
-     state.
-   - No new persisted state and no demo setting: no `PERSIST_VERSION` bump unless the build changes the
-     seed (drift check step 10).
-   - Vitest `hospitalSync.test.ts`: refuses Christchurch Public and every hospital outside the two;
-     delivery 1 stages the S1 rows once; the next call stages delivery 2; after the last, `done` with
-     no write; a `SAMPLE_STG` hand import after delivery 1 skips R1 (and the reverse order skips the
-     synced row); audit rows carry hospital, delivery and counts; no Booking, List or Patient changes
-     in any case; determinism (same actions, same state); reset restores the seed.
+1. **Sync deliveries (pure domain, `src/domain/intake/syncDeliveries.ts`; no React, no `Date.now()`).**
+   - `INTEGRATED_HOSPITALS = [HOSP.stg, HOSP.sx]`: the one place the two names live, with a comment
+     citing US-02.1.5 and OQ-109 (part 1 open; part 2 assumed 4 November).
+   - `HOSPITAL_SYNC_DELIVERIES: Record<IntegratedHospitalId, SyncDelivery[]>`, each `{ id, rows }` in 33's
+     row shape, fixed order; `externalRef` shared with `APPT`. Every row carries non-blank wording as
+     received from AR-35's "Hospital download" rows where one fits (AI-made, say so in the header; never
+     rows 1, 2, 26 or 27, 20a's beats; never a wording 20a placed on another procedure). Minimum set,
+     each pinned in `demoScenarios.test.ts`:
+     - **St George's 1 (S1):** Sarah Mitchell, built from `SAMPLE_STG` R1's fields (imported, not
+       retyped) so 33's dedupe skips either copy: `lap appy ?conv to open`, Tue 28 Jul 08:30, Mr Hale,
+       `APPT.s12`, no RVG code, no Contract, proposal Create Booking on Souter's Tue 28 Jul AM (ACTIVE),
+       patient reused by NHI. Beside it, **a no-NHI row** on the same List (a later time, an AR-35
+       wording not used elsewhere), which waits in the unmatched queue with 33a's stub on that List
+       (never the List 33a seeded its stub on); and the MSG-STG-1002 new-format NHI patient with `L4/5
+       microdisc` (AR-35 row 32) on **another anaesthetist's** ACTIVE St George's List that day (not a
+       scripted-beat List), for S5 Beat 2.
+     - **St George's 2:** a time change on the Booking with `APPT.s13Time`, its wording character for
+       character the Booking's held text (read from the seed), so only the time differs (US-02.1.3).
+     - **St George's 3:** a day move, arriving as a cancellation plus a new row for a session with no
+       List (D62; the new row lands in the unmatched queue), with that Booking's own held text.
+     - **Southern Cross 1:** Priya Nair, built from `SAMPLE_SX` R1. **Southern Cross 2:** a
+       cancellation of a seeded Southern Cross Booking with a correlation reference, never one `SAMPLE_SX`
+       R2 modifies.
+     None targets the design-day, S2, S3, S4 or S5 Lists and Bookings.
+   - `nextSyncDelivery(hospitalId, deliveredIds)`; the delivered set is derived from 33's batches
+     (`deliveryId` in `extras`): no cursor, last-synced time or attempt history (DM-34).
+   - Vitest `syncDeliveries.test.ts`: order, none after the last, unique ids, S1's row equals `SAMPLE_STG`
+     R1, every row's wording non-blank and dash-free, delivery 2's text equals the held text, no Contract.
 
-3. **Intake becomes the one Admin home (RV-14, RV-15), with Surgeon PDFs badged Future scope (RV-12).**
-   - Routes (adjust to what Phase 33 built; keep one nav item): `/admin/intake` redirects to
-     `/admin/intake/matching`; `/admin/intake/matching` (Phase 33's matching screen),
-     `/admin/intake/quality`, `/admin/intake/validators` and `/admin/intake/pdfs`. Tabs become
-     URL-routed (path segments are navigation, per the house rule), with `selection-slide`.
-     `/admin/integrations` and Phase 33's `/admin/matching` redirect with `replace`, so bookmarks and
-     the capture recipes keep working.
-   - Side nav: Phase 33's `'matching'` section and the `'integrations'` section merge into one
-     `'intake'` section, labelled "Intake", in Matching's place directly under Day view. Update
-     `NavSection` (`SideNav.tsx`), `sectionForPath` and `SECTION_PATH` (`AdminApp.tsx`). Its amber
-     badge is Phase 33's `matchingAttentionCount`; it no longer counts HL7 dead-letter or
-     manual-intervention messages (`integrationAttentionCount` leaves the badge; keep or delete it with
-     its callers).
-   - Re-point everything Phase 33 aimed at `/admin/matching` to `/admin/intake/matching`: its two bar
-     triggers (`matching-send-unmatched-row`, `matching-send-update`, `matching-reschedule-no-list`:
-     routes and `indexPath`),
-     the Booking detail's "From hospital row" link, and its `screens.spec.ts` entry.
-   - Header copy (no en or em dashes): "Hospital bookings from St George's and Southern Cross arrive
-     here through their integration, and any other sheet is received by hand. Every row waits for your
-     decision." Remove the HL7, FHIR, retry and dead-letter sentence. Name no cadence and
-     no sync button.
-   - **Surgeon PDFs (US-02.2.1 Future Work, RV-12; D51):** the tab sits last, after Validators, with the
-     `TabButton` `future` badge Messages and Feed config carry today, and a panel note in the
-     `FutureScopeNote` style: "Surgeon PDF ingest is Future Work, not in the first release. Shown here
-     for discussion." The tab's behaviour (inbox, facsimile, review, `ingestPdfRow`) is unchanged: no
-     upload, no new review fields, no state change. Data quality and Validators stay unbadged (in scope).
-     Hiding the tab instead of badging it is the owner's call (owner-review list).
-   - `MessagesTab` and `FeedConfigTab` leave `IntegrationMonitorScreen.tsx` (item 5). The screen file is
-     renamed to `IntakeScreen.tsx` (or split into one file per tab) and its header comment corrected.
-   - Phase 14's context: drop the `integrations.tab` key (the URL now carries the tab). Re-point
-     `ingest-pdf-row` to route `/admin/intake/pdfs`, drop its `when` guard, add `badge:
-     'future-scope'`, and change its screen to "Admin · Intake · Surgeon PDFs"; its body is unchanged.
+2. **The sync action, and Christchurch Public stopped (`src/store/hospitalSyncActions.ts`).**
+   - `HOSPITAL_SYNC_ACTOR` beside `src/store/demoActors.ts`. `simulateHospitalSync(api, hospitalId)`:
+     refuses any hospital outside `INTEGRATED_HOSPITALS` ("Only St George's and Southern Cross are
+     integrated. Receive other providers' sheets by hand."); stages the next delivery through
+     `stageImportRows` under a new `'sync'` channel (micro-cap "Sync", batch "St George's sync",
+     `deliveryId` in `extras`; `sourceTextChannelFor('sync')` is `hospitalDownload`, `from` the
+     hospital's name); returns `done` with no write when nothing is left; audit `intake.sync` in the
+     same commit. Never writes a Booking, List or Patient (33a's stub is made by 33's staging, not here).
+   - Selector `pendingSyncDeliveries(state, hospitalId)`. No persisted state, no demo setting.
+   - **Christchurch Public stops being a live feed (RV-16):** not integrated, never synced; the Live
+     drip filters `FEED.cph` out (the one simulator change; firing a CPH message by hand still works).
+     Its relabel on the Future-scope surface is item 9.
+   - Vitest `hospitalSync.test.ts`: refusals, staging once per delivery, `done` with no write, the
+     hand-import dedupe in both orders, the stub on Souter's Tue 28 Jul AM after delivery 1, no Booking,
+     List or Patient change, determinism, reset; the drip's feed list excludes CPH.
 
-4. **The matching screen receives synced rows (product UI).**
-   - Phase 33's header line gives way to item 3's Intake header copy; its teal Receive action stays (use its real
-     label; how a sheet from any other provider comes in), and its stats strip and table stay. Phase 33's OQ-13
-     sample-file line stays with the import button and picker, because it labels the hand-import
-     fixtures; it never describes the sync, which carries no provisional wording. Its empty state
-     becomes "No rows waiting. Rows from St George's and Southern Cross, and received sheets, land
-     here."
-   - The table's channel micro-cap reads "Sync" for `'sync'` rows, with the hospital name, so a synced
-     row is told apart from a hand-imported one at a glance. Each synced row shows its procedure text
-     as received exactly as Phase 33 shows an imported row's (US-02.1.2); nothing here restyles or
-     trims it.
-   - Newly staged rows enter with the `bannerIn` motion and a "New" chip until the admin decides or
-     leaves the screen; reduced motion gets the 80ms fade.
-   - No per-hospital sync tile, last-synced time, attempt history, failure pill or Sync button: US-02.1.5
-     dropped them.
-   - `data-shot` hook: `row-new`.
+3. **The rooms' PDF list record (DM-61; `domain/types.ts`, `src/domain/intake/pdfLists.ts`,
+   `src/store/pdfListActions.ts`).**
+   - `SurgeonPdfList { id, file: { name, facsimile }, surgeonId, roomId?, hospitalId, subject,
+     receivedAt, target: { anaesthetistId, dateISO, session } (the suggestion), status: 'received' |
+     'sent', replacesId?, batchId?, rows: PdfListRow[] }`; `PdfListRow { id, asRead: { nhi?, name,
+     dobISO?, scheduledTime?, ethnicityCode?, procedureText }, corrections: { field, from, to, at, by }[]
+     }`. `ID_FORMATS` gains `pdfList`. Slice in 33's `intake` state, `freshAppState`, the persisted
+     payload and `entityCounts`.
+   - Pure `effectivePdfRow(row)` (as read plus corrections) and `pdfRowIssues(row)` (the one NHI
+     validator: invalid flagged, blank allowed and named "No NHI: will wait at intake").
+   - Samples: `pdfSamples.ts` becomes the upload sample library (`PDF_LIST_SAMPLES`, the facsimile
+     builder kept, the deliberately wrong NHI kept, operation text re-worded from AR-35's rooms' rows,
+     labelled AI-made), plus one re-sent version per sample (`PDF_RESEND_SAMPLES`: one changed time, one
+     new patient). Seed the inbox with the Okafor list as received (deterministic; **PERSIST_VERSION**
+     bump). Keep every target off scripted-beat Lists and S1's Tue 28 Jul AM; pin them.
+   - Actions, each through `mutate()` with the demo clock, office only: `uploadPdfList(api, actor,
+     sampleId)` (simulated reading; audited `pdfList.upload`; refuses a sample already in the inbox);
+     `correctPdfListRow(api, actor, listId, rowId, patch)` (NHI, name, date of birth, time, ethnicity;
+     the wording is kept as read, as 33's `correctImportRow` keeps it; each correction recorded;
+     `pdfList.correct`); `sendPdfListToMatching(api, actor, listId)` (refuses an invalid NHI; stages the
+     effective rows through `stageImportRows` with 33's rooms source, label "<surgeon>'s PDF list ·
+     <date> <session>", `extras: { pdfListId }`; `sourceTextChannelFor` maps it to 20a's `surgeonPdf`, so
+     the wording is the rooms' description and the first invoice-description default; status `sent`;
+     `pdfList.send`). A Booking created from a rooms row takes source `surgeonPdf` (extend 33's mapping
+     if it hardcodes `hospitalDownload`). Nothing writes a Booking: `ingestPdfRow`, its screen call and
+     its tests go.
+   - **A re-sent List (our reading, DM-61; labelled once in the module):** pure `resentPdfListOf(state,
+     list)` on 33's matcher keys: an earlier sent list for the same surgeon, hospital, date and session.
+     On upload it sets `replacesId`; on send, 33's dedupe skips unchanged rows (counted "unchanged"),
+     a changed row arrives as a modification with its differences for approval (US-02.1.3), a new
+     patient as a new row. A patient left off the re-sent List is not detected (US-02.2.3, Future Work).
+   - Vitest: upload, correction history, the invalid-NHI refusal, a blank NHI staged and waiting with a
+     stub, rows staged once with the rooms' source and wording verbatim, no Booking written, a re-sent
+     list's differences, determinism, reset, persist migration.
 
-5. **The Future-scope demo surface (RV-14, RV-15, RV-16).**
-   - `/demo/integrations` becomes "Future scope: HL7 and FHIR" (label in `APP_CONFIG`, same icon, same
-     demo group; the path is kept for bookmarks and recipes), with three sub-routes:
-     `/demo/integrations` (the existing simulator, unchanged in behaviour), `/demo/integrations/log`
-     (the moved `MessagesTab`: message log, retry counts, dead-letter, Reprocess) and
-     `/demo/integrations/mapping` (the moved `FeedConfigTab`). Move the two components into
-     `src/apps/demo/futureScope/` unchanged in behaviour.
-   - The `DemoSurface` header carries `DemoBadge tone="future"` and one line: "HL7 v2, FHIR R4, near
-     real time messaging, retries with a dead-letter queue and per-hospital field mapping are Future
-     scope, shown here for discussion. In scope today: St George's and Southern Cross rows and received sheets on Admin Intake, matched by the office." Each sub-panel repeats the badge at
-     its top. Remove the interim per-tab badges Phase 14 put on Admin.
-   - **Christchurch Public stops being a live feed (US-02.1.5, RV-16).** It is not in
-     `INTEGRATED_HOSPITALS`, gets no sync, and no in-scope surface (Admin, mobile, web, PWA,
-     the Control Panel scenario text) names a Christchurch Public feed; its bookings are entered by hand
-     like any other non-integrated hospital. On the Future-scope surface its feed picker entry and
-     mapping panel read "Christchurch Public · not integrated today · example of a further feed (Future
-     Work, FT-14.6)". Its messages, mapping and `CPH_NHI_FIX` stay as data for the mapping-fix
-     discussion, unchanged, but the Live drip no longer offers it (the one change to the simulator:
-     `DemoIntegrations.tsx` filters `FEED.cph` out of the drip's feed list; firing one CPH message by
-     hand still works). A CPH message fired here stages through Phase 33's re-pointed `processMessage`
-     like any fired message, its batch labelled "Future-scope HL7 demo · Christchurch Public", so it
-     never reads as an in-scope sync. Keep `HOSP.cph` in the seed (its Lists and holidays are
-     unchanged). Vitest: no registry entry outside the Future-scope routes names CPH; the drip's feed
-     list excludes it.
-   - Do not extend the simulator, the message model, `MAX_ATTEMPTS` or `wireIntegrationRetry`. A
-     message fired here lands as a row on the matching screen, through Phase 33's re-pointed
-     `processMessage`; say so in one line on the simulator ("Fired messages land on Admin Intake as rows
-     for the office to decide.").
-   - The Keycloak and Digital Services Hub callout stays, reworded to keep NHI lookup (FT-14.4) clearly
-     in scope and the rest Future.
-   - The Control Panel index lists the Future-scope entries under "Future scope: HL7 and FHIR".
-   - `pwaPurity.test.ts`: nothing from `src/apps/demo/futureScope/` reaches the PWA closure.
+4. **The PDF lists screen (product UI, in the current Integrations screen until item 8 moves it).** The
+   tab is renamed **PDF lists**, unbadged. Inbox: one row per stored list (sender, hospital, received,
+   suggested List, a "Re-sent" chip where `replacesId`, a status pill Received or Sent to matching).
+   **Upload PDF list** (teal) opens a sample picker badged "Sample files" (simulated reading). The review
+   keeps the facsimile beside the editable rows: every correctable field, the NHI checked as typed,
+   each correction shown under the row ("NHI ZAA0068 corrected to ZAA0067"), the wording read-only as
+   received; **Send to matching** (teal), then a link to the rows on the matching screen. Copy names no
+   OCR or mailbox. `data-shot` hooks `pdf-upload`, `pdf-correction`, `pdf-send`.
 
-6. **Triggers in the registry (Phase 14's registry only; bodies in `src/store` or `src/shared`, so
-   `pwaPurity` holds).** All bar entries on route `/admin/intake/matching`:
-   - `simulate-hospital-sync`, "Simulate sync": `choices` St George's and Southern Cross; body
-     `simulateHospitalSync`. Disabled per choice when nothing is left ("No more rows from St George's in
-     this demo"). Message built from the result ("St George's sync: 2 new rows waiting on the matching
-     screen." or "1 row already imported, skipped."). The description says it stands in for the hospital
-     integration, whose delivery is still being established.
-   - Re-point Phase 14's `fire-hospital-message` and `replay-hospital-message` to the Future-scope
-     surface routes only (item 5's `/demo/integrations...`), bar only (Phase 33 already dropped the
-     `pwa` surface); remove the Admin and Mobile Lists patterns. They keep `badge: 'future-scope'`, and
-     Phase 33's description ("Stages the hospital's row on Admin, Matching...") changes to name Admin,
-     Intake.
-   - `ingest-pdf-row` as item 3 sets it (route `/admin/intake/pdfs`, `badge: 'future-scope'`).
-   - Registry tests: `simulate-hospital-sync` appears only on the matching route; Phase 33's three matching
-     entries follow it to `/admin/intake/matching`; the HL7 entries appear only on the Future-scope
-     routes; `ingest-pdf-row` only on Surgeon PDFs and badged; every label and description free of en
-     and em dashes; each `indexPath` matches its own routes.
+5. **The matching screen receives both sources.** Source micro-caps "Sync · St George's" and "Rooms PDF
+   · <surgeon>"; newly staged rows enter with `bannerIn` and a "New" chip (80ms fade under reduced
+   motion); each row's wording exactly as 33 shows it. Empty state: "No rows waiting. Rows from St
+   George's and Southern Cross, the rooms' PDF lists and received sheets land here." No sync tile,
+   last-synced time, failure pill or Sync button. `data-shot` hook `row-new`.
 
-7. **The handset stand-in (PWA parity for S1).** Re-point Phase 33's PWA entry
-   `matching-office-matches-row` (keep its id) to **"Hospital sync delivers my booking"** (Mobile ·
-   Lists, patterns `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`;
-   `surfaces: ['pwa']`; `badge: 'office-stand-in'`). Its S1 choice (which staged `SAMPLE_STG` R1 alone)
-   is replaced by the sync body below, relabelled "Hospital sync, Tue 28 Jul AM (S1)"; keep its other
-   two choices ("A new hospital booking on this List" on a List route, and "A hospital update for this
-   Booking, approved by the office" on a Booking route) unchanged. The body stays in Phase 33's `src/store/matchingDemo.ts` (`officeMatchesHospitalRow`), so
-   `pwaPurity` holds:
-   - body: `simulateHospitalSync` for each integrated hospital with a delivery left (on a List route,
-     only that List's hospital, so the Tue 28 Jul AM List does not also pull Southern Cross's Priya
-     Nair onto Dr Souter's PM List), then
-     `decideImportRow` as `OFFICE_SIMULATION_ACTOR` (`src/store/demoActors.ts`) with `suggestDecision`'s decision for each staged row
-     whose suggestion is a confident "Create Booking" or "Match" onto a List owned by the persona (on a
-     List route, only that List). Exceptions are left for the office. Then, for each Booking it created,
-     the office's Contract step as S1 scripts it: Phase 20's `setProcedureContract` to No contract
-     (RVG), as the same actor, on each Procedure with no Contract (never a candidate further down,
-     never on a matched Booking, whose Contract stays as it was). The procedure stays as the row left
-     it (D33), for the anaesthetist to pick.
-   - disabled when there is nothing to deliver or decide for this anaesthetist ("Nothing new from the
-     hospitals for your Lists"); pure, from `pendingSyncDeliveries` and Phase 33's pending selector.
-   - message: "St George's synced. The office created Sarah Mitchell's Booking on Tue 28 Jul AM and set
-     No contract (RVG)." (built from the result, not hardcoded).
-   - Vitest for the entry (the created Booking holds the row's text verbatim as its source text and No
-     contract (RVG), and nothing else changed); `visual/pwa-device.spec.ts`: on the Tue 28 Jul AM List,
-     the Demo chip, the stand-in, and a fourth Booking whose stack reads `lap appy ?conv to open`, then
-     the RVG code still to choose, then No contract (RVG).
+6. **Session 1 triggers (registry only; bodies in `src/store`).**
+   - `simulate-hospital-sync`, "Simulate sync", on 33's matching route: `choices` from
+     `INTEGRATED_HOSPITALS`; disabled per choice when exhausted ("No more rows from St George's in this
+     demo"); message from the result.
+   - `pdf-list-resend`, "Receive updated PDF from rooms", on the PDF lists tab: a choice per sent sample
+     with a re-sent version; lands the re-sent list in the inbox as received, marked Re-sent; disabled
+     until its first version is sent, or once received. **This is the entry that moves to open session
+     2 if session 1 runs long.**
+   - Remove `ingest-pdf-row` (its body went with `ingestPdfRow`). Registry tests: routes, `indexPath`,
+     no dashes.
+   - Close session 1: `npm run build`, `npm run build:pwa`, `npx vitest run` green; a short session note
+     in PROGRESS.md.
 
-8. **S1 rebuilt in the app.** Control Panel `SCENARIOS` S1 (`DemoControlPanel.tsx`):
-    - title "S1 · Booking to theatre", blurb "A St George's booking arrives through the hospital sync
-      with the hospital's own wording, the office matches it onto a booked List and chooses its
-      Contract, then it captures live on procedure day.";
-    - run: `resetDemo` only (the seed is the S1 stage; the presenter fires the sync on screen);
-    - message: open Mobile to introduce the Tue 28 Jul AM List (three booked cases, read as the rooms
-      sent them), open Admin Intake, run Demo actions "Simulate sync" with St George's (two rows
-      arrive, marked New; Sarah Mitchell's reads `lap appy ?conv to open`), create Sarah Mitchell's
-      Booking from her row, then set its Contract: open the Booking (from the row, or Admin Day's
-      "Needs a Contract" card, where it now waits) and pick No contract (RVG), first in the picker,
-      with no hospital default. Return to Mobile for the fourth Booking and its stack (the wording, the
-      RVG code to choose, No contract (RVG)), then "Procedure day · 28 Jul", pick RVG code A3
-      (appendicectomy) in the type-ahead and capture. Remove Phase 14's Future-scope caveat, the MSG-STG-1001 instruction, any
-      "default Contract" wording and the procedure code 20950;
-    - nav: "Go to Mobile app", "Go to Admin Intake" (`/admin/intake/matching`).
-    - `demoScenarios.test.ts`: after reset, St George's delivery 1 stages Sarah Mitchell's row with the
-      proposal on Souter's Tue 28 Jul AM List and its text `lap appy ?conv to open`; deciding it
-      creates a Booking at 08:30 with source `hospitalDownload`, the reused patient (CQY9304), its first
-      Procedure's only source text exactly `lap appy ?conv to open` (Phase 33's channel and `from: "St
-      George's"`), no RVG code (D33) and **no Contract**, listed by `needsContractBookings`;
-      `setProcedureContract` to No contract (RVG) as the office then takes it off that list, and 20a's
-      stack view reads the wording, no RVG code, and No contract (RVG) invoicing the payer on the
-      Booking (Sarah Mitchell, if 21 is DONE); the List reads 0 of 4 complete and stays ACTIVE; S2 to
-      S5 seed pins and figures still hold.
+### Session 2 · demotion, the Intake home and the S1 rebuild
 
-9. **Close-out.** Update `visual/phase11.spec.ts` and `visual/screens.spec.ts` for the Intake routes
-    and the moved tabs; update `visual/phase12.spec.ts` (S1 now runs Simulate sync, then the decision,
-    not a hand import) and Phase 33's `visual/admin-matching.spec.ts` (importing `SAMPLE_STG` after the
-    S1 sync reports R1 as already imported); add `visual/intake-sync.spec.ts` (Simulate sync St George's
-    twice: two New rows with their wording, then the time change; deciding Sarah Mitchell's row, then
-    No contract (RVG) on her Booking; Southern Cross; a third St George's delivery lands
-    unmatched; the trigger disables when exhausted). Capture recipes as the Catalogue screenshots
-    section below sets out, run after the review pass; update ATLAS.md; run `npm run verify:board`.
-    Update `aa-prototype/README.md` (the Intake routes and the Future-scope surface).
-    Add every new audit code to `ACTION_LABELS` ("Hospital sync"); `auditNarrative.test.ts` enforces it. Then `npm run build`, `npm run build:pwa`,
-    `npx vitest run`, `npm run shots`, all green; walk S1 in the browser; run the adversarial review,
-    patch the demo guide, write PROGRESS.md.
+7. **The Future-scope surface (RV-14, RV-15, RV-16).** `/demo/integrations` becomes "Future scope: HL7
+   and FHIR" (path kept) with `/demo/integrations` (the simulator, unchanged), `/demo/integrations/log`
+   (the moved `MessagesTab`) and `/demo/integrations/mapping` (the moved `FeedConfigTab`), components in
+   `src/apps/demo/futureScope/`. Header `DemoBadge tone="future"` and one line: "HL7 v2, FHIR R4, near
+   real time messaging, retries with a dead-letter queue and per-hospital mapping are Future scope,
+   shown for discussion. In scope today: St George's and Southern Cross rows and the rooms' PDF lists on
+   Admin Intake, matched by the office." Christchurch Public reads "not integrated today · example of a
+   further feed (Future Work)"; a fired CPH message's batch is labelled "Future-scope HL7 demo ·
+   Christchurch Public". One line on the simulator: "Fired messages land on Admin Intake as rows for the
+   office to decide." The Keycloak callout keeps NHI lookup (FT-14.4) in scope. Do not extend the
+   simulator, message model, `MAX_ATTEMPTS` or `wireIntegrationRetry`. Remove Phase 14's interim Admin
+   badges. `pwaPurity`: nothing from `futureScope/` reaches the PWA.
+
+8. **The Intake home.** One "Intake" nav item under Day view (33's `'matching'` and `'integrations'`
+   sections merge; badge `matchingAttentionCount` only, `integrationAttentionCount` dropped). Routes
+   `/admin/intake` (to `matching`), `/admin/intake/matching`, `/admin/intake/pdfs`,
+   `/admin/intake/quality`, `/admin/intake/validators`, URL-routed tabs with `selection-slide`;
+   `/admin/integrations` and `/admin/matching` redirect with `replace`. Everything 33 aimed at
+   `/admin/matching` follows (triggers, the Booking's "From hospital row" link, specs). Header: "Hospital
+   bookings from St George's and Southern Cross, and the rooms' PDF lists, arrive here. Every row waits
+   for your decision." Drop the `integrations.tab` context key. Rename the screen file to
+   `IntakeScreen.tsx` (or one file per tab). **If session 2 is tight**, the Intake home lands as a
+   plain grouping: the one nav item and redirects, the existing in-page tab buttons, no URL-routed tabs
+   or motion; log it.
+
+9. **Triggers re-pointed.** `simulate-hospital-sync` and 33's entries to `/admin/intake/matching`;
+   `pdf-list-resend` to `/admin/intake/pdfs` (if it opens this session, build it here); 14's
+   `fire-hospital-message` and `replay-hospital-message` only on the Future-scope routes, badged, their
+   description naming Admin, Intake. Control Panel index groups: Admin · Intake, and Future scope: HL7
+   and FHIR. Registry tests: each entry only on its routes; no CPH outside the Future-scope routes.
+
+10. **The handset stand-in (PWA parity for S1).** Re-point 33's `matching-office-matches-row` (id kept)
+    to **"Hospital sync delivers my booking"** (Mobile Lists, List and Booking routes; `surfaces:
+    ['pwa']`; `badge: 'office-stand-in'`); its S1 choice becomes "Hospital sync, Tue 28 Jul AM (S1)", its
+    other two choices unchanged; body in `matchingDemo.ts`: `simulateHospitalSync` for the List's
+    hospital (all integrated hospitals with a delivery left off a List route), then `decideImportRow` as
+    `OFFICE_SIMULATION_ACTOR` with the suggestion for each confident row onto the persona's Lists, then
+    the office's rail answer on each Booking it created (the patient, not prepaid: No contract (RVG), via
+    `setProcedureContract`; never on a matched Booking). The no-NHI row and other exceptions stay with
+    the office; its stub shows on the List. Disabled "Nothing new from the hospitals for your Lists".
+    Vitest; `pwa-device.spec.ts`: the fourth Booking with `lap appy ?conv to open`, the RVG code to fill
+    in, No contract (RVG), and the stub marked on the List.
+
+11. **S1 rebuilt in the app.** Control Panel S1: blurb "A St George's booking arrives through the
+    hospital sync with the hospital's own wording; the office matches it onto a booked List and answers
+    who pays; a booking with no NHI waits in its place; it captures live on procedure day."; run
+    `resetDemo` only; message per the run sheet (item 13's beats); nav "Go to Mobile app", "Go to Admin
+    Intake". Remove Phase 14's caveat, MSG-STG-1001, any "default Contract" and code 20950.
+    `demoScenarios.test.ts`: delivery 1 stages Sarah's row (proposal on Souter's Tue 28 Jul AM, the
+    wording exact) and the no-NHI row with its stub on that List; deciding Sarah's row creates the
+    Booking at 08:30, source `hospitalDownload`, patient CQY9304 reused, the only source text exactly
+    `lap appy ?conv to open`, no RVG code, no Contract, on `needsContractBookings`; the rail's patient,
+    not prepaid answer sets No contract (RVG) and takes it off; the stack reads the wording, the RVG code
+    to fill in and No contract (RVG) invoicing Sarah; the List reads 0 of 4 complete with 1 waiting at
+    intake, ACTIVE; S2 to S5 pins hold; the seeded PDF list and the deliveries touch no scripted List.
+
+12. **Close-out.** Update `phase11.spec.ts`, `screens.spec.ts`, `phase12.spec.ts` (S1 through sync, the
+    decision, the rail) and 33's `admin-matching.spec.ts` (Intake routes; `SAMPLE_STG` after the sync
+    reports R1 already imported); add `visual/intake-sync.spec.ts` (sync deliveries in order, the stub,
+    exhaustion) and `visual/intake-pdf-lists.spec.ts` (upload, correct, send, the rows on matching, the
+    re-sent differences). New audit codes in `ACTION_LABELS` ("Hospital sync", "PDF list uploaded",
+    "PDF list row corrected", "PDF list sent to matching"). README: the Intake routes, the PDF lists and
+    the Future-scope surface. Then build, build:pwa, vitest, shots green; walk S1; the review pass; the
+    demo guide; PROGRESS.md.
 
 ## Demo triggers
 
-Everything this phase adds or re-points in the harness bar (framed build) and the PWA sheet:
-
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Simulate sync | Admin · Intake · Matching | bar | Choose St George's or Southern Cross; that hospital's next delivery arrives as rows marked New, labelled "Sync", nothing applied. Disabled per hospital once its deliveries are used up |
-| Ingest PDF row (re-pointed, now Future scope) | Admin · Intake · Surgeon PDFs | bar | As Phase 14, now badged Future scope and scoped by route instead of the tab context |
-| Fire hospital message, Replay last message (re-pointed) | Future scope: HL7 and FHIR (all three routes) | bar | Unchanged bodies, now only on the Future-scope surface; a fired message lands as a matching row. Christchurch Public is offered only as a labelled "not integrated today" example and is not in the Live drip |
-| Hospital sync delivers my booking (re-pointed from Phase 33) | Mobile · Lists, List, Booking | PWA only | The office stand-in: delivers each integrated hospital's next rows, then creates or matches the confident rows for this anaesthetist's Lists as the office and sets No contract (RVG) on each Booking it created; the Booking arrives with its wording as received; exceptions stay with the office |
+| Simulate sync | Admin · Intake · Matching | bar | St George's or Southern Cross: the next delivery arrives as rows marked New, labelled Sync, nothing applied (a no-NHI row's stub shows on its List). Disabled per hospital when used up |
+| Upload PDF list | Admin · Intake · PDF lists | product button, badged sample picker | Stores the chosen sample as a received PDF list (simulated reading) for review and correction |
+| Receive updated PDF from rooms | Admin · Intake · PDF lists | bar | Re-sends a list already sent to matching with a changed time and a new patient; once sent, the matching screen shows the change as a difference for approval and the new patient as a new row |
+| Fire hospital message, Replay last message (re-pointed) | Future scope: HL7 and FHIR | bar | Unchanged bodies, only on the Future-scope surface; a fired message lands as a matching row; Christchurch Public only as a "not integrated today" example, not in the Live drip |
+| Hospital sync delivers my booking (re-pointed from 33) | Mobile · Lists, List, Booking | PWA only | Office stand-in: delivers the hospital's rows, decides the confident ones for this anaesthetist's Lists and answers the rail with No contract (RVG) on each Booking it created; the no-NHI row waits, its stub on the List |
 
-There is no product sync button and no scheduled pull: US-02.1.5 leaves the mechanism to the
-integration team, so Simulate sync is a demo stand-in for the hospital, not an admin action.
-
-PWA equivalents: the only mobile side of this phase is S1's "the booking reaches my List", covered by
-the stand-in above. The matching screen, Surgeon PDFs and the Future-scope surface do not exist in the
-PWA.
+`ingest-pdf-row` is removed. There is no product sync button or scheduled pull: Simulate sync stands in
+for the hospital. The matching screen, PDF lists and the Future-scope surface do not exist in the PWA;
+S1's handset side is the stand-in above.
 
 ## Out of scope
 
-- Real transport, file formats or cadence for the sync (OQ-13), and any schedule, pull on open, Sync
-  button, last-synced time or failed-sync display (removed from US-02.1.5 on 2026-10-02). Whether to
-  restore a last-synced line is an owner check, not a build item.
-- Surgeon PDF upload, parsing, OCR, mailbox reading and new review fields (DOB, ethnicity, estimated
-  duration): US-02.2.1 is Future Work. The existing tab is badged, not extended or removed.
-- Extending the HL7/FHIR simulator, the message model, the retry engine or feed mapping in any way; the
-  Christchurch Public feed stays only on the Future-scope surface, relabelled and out of the Live drip
-  (item 5), and is never synced.
-- Feeds and automatic matching (FT-14.6, US-14.6.1, US-14.6.2): out of scope, all Future Work. No
-  manual-provider sheets, new hospitals, Other providers strip or auto-match toggle are built here (they
-  left with FT-14.6); a sheet from another provider comes in through Phase 33's Receive action.
-  Hospital-supplied Contracts on a row (US-04.3.6, OQ-22, Future Work), and any hospital default
-  Contract (gone with OQ-78's answer).
-- The source-text model, the "as given" field and the stack (20a), the Contract picker and the "Needs
-  a Contract" list (20), the payer on the Booking (21): reused, not changed. No mapping from a row's
-  wording to a procedure or a Contract: a person reads the wording and picks.
-- Phase 33's matching rules, decisions, field differences and unmatched queue: reused, not changed,
-  except for the `'sync'` channel value and the route move into Intake. The automated change stories (US-02.5.1 to US-02.5.3) stay out of the demo (Phase
-  33, RV-28).
-- Draft List mechanics (31), explicit save and the update email (35), the missing-NHI problem list and
-  the unpaid-balance warning (40; S1's Sarah Mitchell has an unpaid prior balance that 40's warning will
-  surface), the restricted raw-row view and scale (43).
-- The web app: nothing changes there.
-- The full S1 to S5 rewrite and master-guide regeneration (44). This phase rebuilds S1 and patches the
-  beats it breaks.
+- Real transport, formats or cadence for the sync (OQ-13), and any schedule, pull on open, Sync button,
+  last-synced time or failed-sync display.
+- Real PDF parsing, OCR, reading the rooms' mailbox, detecting a Booking left off a re-sent List
+  (US-02.2.3) and accepting inbound changes automatically (US-02.5.4): Future Work or not asked.
+- Extending the HL7/FHIR simulator, message model, retry engine or feed mapping; FT-14.6's feeds,
+  sheets and auto-match; hospital-supplied or default Contracts (US-04.3.6, OQ-78).
+- 20's rail, 20a's wording model, 21's payer, 33's matching rules and 33a's stubs: reused, not changed,
+  except the `'sync'` channel, the rooms' rows and the route move.
+- 35 (explicit save, update email), 40 (the waiting-rows view, NHI mandatory on every form, the balance
+  warning), 40a (the as-typed NHI marking), 43 (the restricted raw-row view), the web app, and 44's full
+  S1 to S5 rewrite.
 
 ## Manual test checklist
 
-The agent runs every item itself in the running app and reports it with evidence; none is handed
-to the owner (ROADMAP.md "Owner review: agents test themselves").
+The agent runs every item itself in the running app and reports it with evidence (ROADMAP.md "Owner
+review: agents test themselves").
 
-- [ ] Fresh reset, open Admin: the side nav shows one "Intake" item under Day view (no "Integrations", no separate "Matching"); `/admin/integrations` and `/admin/matching` land on `/admin/intake/matching`; Phase 33's Send unmatched row, Send update for a matched Booking and Reschedule to a date with no List still appear there; the Intake badge counts only rows waiting on matching (no HL7 attention count).
-- [ ] The matching screen shows the Intake header (no cadence, no Sync button, no last-synced tile).
-- [ ] Demo actions on the matching screen lists Simulate sync; it does not appear on the Day view or on Surgeon PDFs.
-- [ ] Simulate sync, St George's: two rows arrive marked New with the "Sync" micro-cap, each showing its procedure text as received (Sarah Mitchell reading `lap appy ?conv to open`, proposal Create Booking on Dr Souter's Tue 28 Jul AM; the new-format NHI patient reading `L4/5 microdisc` on another anaesthetist's List); the Audit viewer shows one "Hospital sync" row; Mobile Tue 28 Jul AM still shows three bookings (no silent apply).
-- [ ] Importing the St George's sample by hand after that reports Sarah Mitchell's row as already imported (no duplicate row).
-- [ ] Deciding Sarah Mitchell's row creates her Booking at 08:30 on Dr Souter's Tue 28 Jul AM List with source "Hospital download", its wording `lap appy ?conv to open` as received from St George's, no procedure picked and **no Contract**: it appears on Admin Day's "Needs a Contract" card, and nothing anywhere names a default or hospital Contract.
-- [ ] The office opens Sarah Mitchell's Booking and the Contract picker: No contract (RVG) is the first row, any fitting Contracts sit below under holder headings, and there is no hospital default; picking No contract (RVG) takes the Booking off "Needs a Contract", and the Admin stack reads the wording, "RVG code to choose", then No contract (RVG) with who is invoiced (Sarah Mitchell, the payer on the Booking, if 21 is DONE) and RVG pricing.
-- [ ] Mobile then shows four bookings, 0 of 4 complete, the List ACTIVE; Sarah Mitchell's Booking shows the same three-part stack on mobile and web; at Procedure day the anaesthetist picks RVG code A3 (appendicectomy) in the type-ahead with the wording above it, and the stack's middle part fills while the wording stays exactly as received.
-- [ ] Simulate sync, St George's again: the time change arrives with its field difference; a third time: the reschedule lands in the unmatched queue; the St George's choice is then disabled "No more rows from St George's in this demo". Southern Cross: Priya Nair, then the cancellation.
-- [ ] Surgeon PDFs (`/admin/intake/pdfs`): the tab sits last with the Future scope badge and the Future Work note; the inbox, review and ingest behave as before; Ingest PDF row appears only there, badged. Data quality and Validators are unbadged and work as before.
-- [ ] Future scope: HL7 and FHIR (app switcher): the header badge and line; Simulator, Message log and Feed mapping sub-routes work as before; firing MSG-STG-1001 lands a row on Admin Intake (after the S1 sync, Phase 33's dedupe may count it as already imported if the fields match; either outcome stages nothing twice and applies nothing); Admin has no Messages or Feed config tab left.
-- [ ] Christchurch Public is no longer a live feed: Live drip does not offer it; its feed entry reads "not integrated today"; firing MSG-CPH-2001 by hand lands a row in a batch labelled "Future-scope HL7 demo · Christchurch Public"; nothing in Admin, mobile, web, the PWA or the Control Panel scenario text calls it a feed.
-- [ ] Control Panel: the S1 jump message and nav buttons follow the new beats (sync, match, the wording, the office's No contract (RVG) pick, the RVG code pick at capture), with no Future-scope caveat, no "default Contract" and no code 20950; the index lists the new entries under Admin · Intake and the HL7 entries under Future scope.
-- [ ] PWA (`npm run dev:pwa`, fresh storage): on the Tue 28 Jul AM List the Demo chip offers "Hospital sync delivers my booking"; running it adds Sarah Mitchell as a fourth booking whose stack reads `lap appy ?conv to open`, the procedure to choose, and No contract (RVG); once nothing is left for the persona it is disabled "Nothing new from the hospitals for your Lists".
-- [ ] S1 walked end to end from the run sheet in the framed build; S4 Beat 4 and S5 Beat 2 walked as patched.
-- [ ] No en or em dash in any new app copy; teal only on product action buttons; no crimson on rows, pills or banners; the word "slot" in no new copy.
-- [ ] Catalogue screenshots: the recipe for US-02.1.5 is created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
+- [ ] Fresh reset, Admin: one "Intake" item under Day view; `/admin/integrations` and `/admin/matching` land on `/admin/intake/matching`; 33's bar entries still appear there; the badge counts only rows waiting on matching.
+- [ ] Simulate sync, St George's: three rows arrive marked New with the Sync micro-cap and their wording (Sarah Mitchell `lap appy ?conv to open`, proposal Create Booking on Souter's Tue 28 Jul AM; the no-NHI row in the unmatched queue; `L4/5 microdisc` on another anaesthetist's List); Mobile Tue 28 Jul AM shows three Bookings and the stub, marked, "1 waiting at intake"; one "Hospital sync" audit row. Importing `SAMPLE_STG` by hand then reports R1 already imported.
+- [ ] Deciding Sarah's row creates her Booking at 08:30 (source Hospital download, wording as received, no RVG code, no Contract) on "Needs a Contract"; the office answers the step rail (the patient, not prepaid) and No contract (RVG) is set; the stack reads the wording, the RVG code to fill in, No contract (RVG) invoicing Sarah; no "default Contract" anywhere.
+- [ ] Mobile: four Bookings, 0 of 4 complete, 1 waiting at intake, ACTIVE; at Procedure day the anaesthetist picks RVG code A3 by type-ahead and the wording stays as received.
+- [ ] Simulate sync again: St George's 2 (the time difference), 3 (the cancellation plus the unmatched new row), then disabled; Southern Cross 1 and 2.
+- [ ] PDF lists (`/admin/intake/pdfs`), unbadged: the seeded Okafor list as received; Upload PDF list adds a sample from the badged picker; the invalid NHI is flagged and Send is refused until corrected; the correction shows under the row; Send to matching stages the rows with the Rooms PDF micro-cap and the rooms' wording, writes no Booking; deciding one creates a Booking with source surgeonPdf and the rooms' description first in its stack; a blank-NHI row waits with its stub.
+- [ ] Receive updated PDF from rooms, then Send: the unchanged rows skipped, the changed time shown as a difference for approval, the new patient as a new row; nothing applied until decided.
+- [ ] Future scope: HL7 and FHIR: header badge and line; simulator, log and mapping work as before; a fired message lands on Admin Intake; Christchurch Public not in the Live drip, labelled "not integrated today"; Admin has no Messages or Feed config tab; nothing in-scope calls Christchurch Public a feed.
+- [ ] Data quality and Validators unbadged and unchanged.
+- [ ] Control Panel S1 text and nav follow the new beats; the index groups Admin · Intake and Future scope.
+- [ ] PWA (fresh storage): "Hospital sync delivers my booking" on the Tue 28 Jul AM List adds Sarah with her stack and the stub; then disabled.
+- [ ] S1 walked end to end from the run sheet; S4 Beat 4 and S5 Beat 2 as patched.
+- [ ] No en or em dash in new copy; teal only on actions; no crimson on rows, pills or banners; no "slot".
+- [ ] Catalogue screenshots as below; `npm run capture` with no failed recipe; `npm run verify:board` green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` green.
 
 ## Demo guide updates
 
-Patch these in the same session, and the same sections of `master-demo-guide.html` (the S1 details
-block, the workflows, the personas, the readiness snapshot and the Direct URLs):
+Patch in the same session (session 2), and the same sections of `master-demo-guide.html`:
 
 - `03-demo-script.md`:
-  - **S1 · Booking to theatre, rebuilt** (one rewrite of the whole scenario, superseding the
-    interim S1 patches 20 and 20a made to Beat 1's Contract line and Beat 2's stack). "Serves": the St
-    George's and Southern Cross sync into the matching screen, the wording kept as received, the office
-    choosing the Contract, the Booking as the billing anchor and BTM capture. Stage it: Reset (or the
-    S1 jump). **Beat 1, "the booking arrives by sync"**: Mobile Tue 28 Jul AM (three booked cases, read
-    as the rooms sent them), then Admin Intake, Demo actions "Simulate sync" (St George's): two rows
-    arrive, marked New; Sarah Mitchell's row reads `lap appy ?conv to open` (patient reused by NHI,
-    proposed List), Create Booking. Say: St George's and Southern Cross bring their rows in without
-    anyone downloading them (in real life one theatre list a day for the next day's bookings); how each hospital delivers is for the integration team to establish;
-    nothing reaches the schedule until the office decides, which is the check AA relies on today (who
-    is on the List, double bookings, changed times); the hospital's wording is kept exactly as it came,
-    because shorthand like "?conv to open" needs someone who knows the work to read it; any other
-    provider's sheet is received by hand into the same screen (Phase 33); Christchurch Public and the rest
-    are not integrated. **Beat 1a, "the office chooses the Contract"**: the new Booking waits on Admin
-    Day's "Needs a Contract" card (the row named no Contract, and nothing is taken from the hospital);
-    open it, open the Contract picker: No contract (RVG) is always first, with any Contract that fits
-    this hospital, surgeon or anaesthetist below it under its holder; pick No contract (RVG). Say: one
-    Contract per Procedure decides the pricing and who is invoiced; No contract (RVG) bills the payer
-    on the Booking, here Sarah herself; there is no hospital default to undo. Back to Mobile for the
-    fourth Booking and its stack: the wording as received, the RVG code still to choose, the Contract.
-    Beat 2 is unchanged apart from
-    pointing at the stack. **Beat 3**: the anaesthetist opens Sarah, reads the wording, and picks
-    RVG code A3 (appendicectomy) by type-ahead before Start now; the stack's
-    middle part fills and the wording above it stays as received; replace "Choose procedure 20950 ·
-    Appendicectomy, laparoscopic" and keep 1 of 4 complete, the List ACTIVE (never DRAFT). Remove Phase
-    14's Future-scope caveat, the HL7 "Say" line, the MSG-STG-1001 click and any "default Contract"
-    line. Discovery points: the delivery mechanism is OQ-13, left to the integration team; setting a
-    Booking up with no procedure, the anaesthetist picking the RVG code at capture, is D33 (OQ-99,
-    answered 2026-10-16).
-  - **S4 Beat 4** (if Phase 33 has not already re-pointed it; check either way that no line still
-    calls Christchurch Public a feed of today's system): no longer Admin Feed config. Use the unmatched
-    queue (Phase 33's "Send unmatched row" or St George's delivery 3, the reschedule with no List) and,
-    optionally, the Christchurch Public mapping fix as a clearly labelled Future-scope aside on the
-    Future-scope surface ("an example of a further feed; Christchurch Public is not integrated today").
-  - **S5 Beat 2**: the new-format NHI arrives on the St George's synced row and validates on the
-    matching screen; the Validators tab (Admin Intake) is the optional deeper look. No MSG-STG-1002.
-  - Any beat or line that presents surgeon PDF ingest as in scope: it is Future Work now; keep it only
-    as a labelled aside ("surgeon PDF ingest is not in the first release; the tab is shown for
-    discussion").
-  - "Pre-demo setup", "Direct URLs" (the Intake routes; the Future-scope surface and its sub-routes),
-    "Recommended run orders" (the Integration-led row: S1), "What to narrate rather than
-    click" (HL7 v2, FHIR R4, further feeds, Christchurch Public's included, automatic matching and
-    surgeon PDF ingest are Future scope), "Recovery from demo accidents" (the simulator's reset now sits
-    on the Future-scope surface; a used-up Simulate sync needs a reset).
-- `04-presenter-cheat-sheet.md`: the demo-only list (Simulate sync as the hospital stand-in, the Future-scope surface, Surgeon PDFs as
-  Future scope), the Phase 11 readiness line, the S1 line (sync, match, the wording as received, No
-  contract (RVG) chosen by the office, no hospital default), and the "real patient or integration
-  data?" answer (simulated rows from St George's and Southern Cross only, other providers' sheets are received by
-  hand; the procedure wording is illustrative, not AA's).
-- `02-workflows-and-handoffs.md`: Workflow 1 main path (rows from the two integrated hospitals or a
-  hand import, each with its wording as received, then the office matches and sets the Contract, No
-  contract (RVG) first; surgeon PDFs are Future Work); the "Integration failure"
-  exception becomes "Row the office cannot match" (unmatched queue; rows about locked Lists wait for
-  the office); the readiness table row.
-- `01-personas-and-responsibilities.md`: the integration and exception operator becomes the intake
-  operator (matching, received sheets, data quality); HL7 and FHIR monitoring and surgeon PDF ingest are
-  Future scope.
-- `README.md` (demo guide): the readiness rows for ingestion and monitoring.
-- Control Panel scenario text: S1 (work item 8), and S4 and S5 where patched.
-- Finish with a consistency read of the S1, S4 Beat 4 and S5 Beat 2 sections of `master-demo-guide.html`
-  against the run sheet and the app (S1 is the headline; do not leave it for 44): no "default
-  Contract", no 20950, no DRAFT for Souter's List, the same wording string everywhere.
+  - **S1 · Booking to theatre, rebuilt** (one rewrite superseding 20's and 20a's interim patches).
+    Serves: both integrated hospitals' sync into the matching screen, the wording kept as received, a
+    booking with no NHI waiting as a stub, the office's Contract choice, BTM capture. **Beat 1, "the
+    booking arrives by sync":** Mobile Tue 28 Jul AM (three cases), then Admin Intake, Simulate sync,
+    St George's: three rows, New; Sarah's reads `lap appy ?conv to open`; Create Booking. Back on
+    Mobile, the stub sits on the List, "1 waiting at intake": a booking the hospital sent without an NHI
+    is never a Booking until the office adds it (optional: Add NHI on the row, 33a). Say: rows arrive
+    without anyone downloading them (one theatre list a day); nothing reaches the schedule until the
+    office decides; the hospital's wording is kept exactly as sent; both hospitals syncing is assumed
+    for now (OQ-109 part 2), and which two is still to confirm. **Beat 1a, "the office answers who
+    pays":** Sarah waits on "Needs a Contract"; the step rail asks who the invoice goes to (the
+    patient), then prepaid or not (not prepaid: No contract (RVG)); the RVG code goes to the
+    anaesthetist. Say: the rail is a working direction we will design with you; there is no hospital
+    default to undo. **Beat 1b, "the rooms' PDF list" (optional):** PDF lists, open Mr Okafor's list,
+    correct the flagged NHI, Send to matching; then Receive updated PDF from rooms and Send: only the
+    changed time shows, for approval. Say: both sources land on one screen; a re-sent List is matched
+    to the earlier one by surgeon, hospital, date and session (our reading); a patient dropped from a
+    re-sent List is not yet detected. **Beat 3:** pick RVG code A3 by type-ahead, Start now; the List
+    stays ACTIVE (never DRAFT); drop 20950. Remove the HL7 caveat, the MSG-STG-1001 click and any
+    "default Contract" line. Discovery points: OQ-13 (delivery), OQ-109 part 1 (which hospitals).
+  - **S4 Beat 4** and **S5 Beat 2** if 33 did not: the unmatched queue instead of Feed config (the
+    Christchurch Public mapping fix only as a labelled Future-scope aside); the new-format NHI on the
+    synced row, Validators the deeper look.
+  - Any line presenting surgeon PDF ingest as Future scope or as a direct write: it is product, through
+    matching.
+  - "Pre-demo setup", "Direct URLs" (Intake routes, the Future-scope sub-routes), "Recommended run
+    orders", "What to narrate rather than click" (HL7, FHIR, further feeds, automatic matching, OCR and
+    the mailbox read are Future or not built), "Recovery" (a used-up Simulate sync or re-send needs a
+    reset).
+- `04-presenter-cheat-sheet.md`: demo-only items (Simulate sync, the PDF sample picker and re-send, the
+  Future-scope surface), the S1 line, and "real integration data?" (simulated rows and sample PDFs; the
+  wording illustrative, not AA's).
+- `02-workflows-and-handoffs.md`: Workflow 1 (sync, a PDF list or a hand import, then matching and the
+  office's Contract; a no-NHI booking waits as a stub); "Integration failure" becomes "Row the office
+  cannot match".
+- `01-personas-and-responsibilities.md`: the intake operator (matching, PDF lists, received sheets, data
+  quality); HL7 and FHIR monitoring Future scope.
+- `README.md` (demo guide): readiness rows for intake.
+- Finish with a consistency read of master-guide S1, S4 Beat 4 and S5 Beat 2 against the run sheet: no
+  "default Contract", no 20950, no DRAFT for Souter's List, the same wording string everywhere.
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
-run after the review pass and before the PROGRESS.md entry. Re-run
-`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 34` first: earlier phases may have
-changed these recipes since this plan was written (Phase 33 may leave a partial US-02.1.5 recipe, and
-re-points the matching shots this phase moves). The harness bar is hidden in shots, so the bar-only state
-(Simulate sync) is staged with the runner's `trigger` step on
-`/admin/intake/matching` (for example `{ "trigger": "simulate-hospital-sync", "choice": "St George's" }`;
-ATLAS.md, "Recipe format" and "Demo control panel and Demo actions"). The `/demo/control` index has no trigger buttons.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), after
+the review pass. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs
+34` first. Bar-only states are staged with the runner's `trigger` step (`{ "trigger":
+"simulate-hospital-sync", "choice": "St George's" }`, `{ "trigger": "pdf-list-resend", ... }`; ATLAS.md
+"Recipe format").
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
-matches what was built:
-
-| Item | Recipe at plan time | When this phase is done |
+| Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-02.1.5](../../../../requirements-board/requirements/stories/US-02.1.5.md) Automatic sync from St George's and Southern Cross | none; placeholder `absent` ("Not built yet: catch-up Phase 34 builds this") | captured (admin, `/admin/intake/matching`). Shots: `synced-rows` (new; `trigger` step `simulate-hospital-sync`, choice St George's: Sarah Mitchell's and the new-format NHI rows marked New with the "Sync" micro-cap, each with its wording as received, `lap appy ?conv to open` and `L4/5 microdisc`; highlight `row-new`) and Phase 33's `rows-wait-for-decision`, kept under that name but re-staged from the sync (a second `trigger`, Southern Cross, leaves those rows pending: none applied, the stats strip counting them, the Booking a row targets unchanged). Caption in the catalogue's words: "Rows from St George's and Southern Cross arrive on the matching screen, and nothing is applied until an admin decides". No caption says a created Booking takes a default Contract; no last-synced or Sync button shot. Drop any partial reason |
+| [US-02.1.5](../../../../requirements-board/requirements/stories/US-02.1.5.md) Automatic sync from St George's and Southern Cross | absent ("Not built yet: catch-up Phase 34 builds this") | captured (admin, `/admin/intake/matching`): `synced-rows` (trigger St George's: the three rows New, Sync micro-cap, wording as received, the no-NHI row waiting; highlight `row-new`) and 33's `rows-wait-for-decision` re-staged from the sync (nothing applied). Caption: "Rows from St George's and Southern Cross arrive on the matching screen, and nothing is applied until an admin decides". Drop the absent reason |
+| [FT-02.2](../../../../requirements-board/requirements/stories/FT-02.2.md) Surgeon PDF list ingest | captured · surgeon-pdf-inbox (`/admin/integrations`, tab click) | captured (admin, `/admin/intake/pdfs`, no tab click): `surgeon-pdf-inbox` shows the stored lists with sender, received time, suggested List and status, unbadged. Caption: "The rooms' PDF lists, read and sent to the same matching screen as the hospital download" |
+| [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md) Read, correct and ingest a surgeon PDF list | captured · surgeon-pdf[inbox,extracted] | captured (admin, `/admin/intake/pdfs`): keep `inbox` and `extracted` (unbadged), add `upload` (the badged sample picker; highlight `pdf-upload`), `correction` (the invalid NHI flagged, then corrected with the correction shown; highlight `pdf-correction`), `on-matching` (after Send, the rows on `/admin/intake/matching` with the Rooms PDF micro-cap and the rooms' wording) and `resent` (after `pdf-list-resend` and Send, the changed time as a difference for approval). Captions in the story's words ("extraction mistakes are corrected before the rows are ingested") |
+| [EP-14](../../../../requirements-board/requirements/stories/EP-14.md) Health systems integration | no recipe (an epic shows its stories' shots) | no recipe of its own; its Future stories' recipes re-pointed below; US-14.4.1 no change here (Phase 40a owns it) |
 
-FT-14.6 and its stories (US-14.6.1, US-14.6.2) left this phase (out of scope, Future Work): no recipe work here. US-02.1.1 to US-02.1.4 are Phase 33's; this phase only re-points them (below).
+**Recipes this phase breaks.** Re-point each (33's and 33a's land first; re-run the status tool and the
+`--dry` run):
+- Tabs moved to URL-routed Intake routes (the `role=button[name="Surgeon PDFs"]` and `"Validators"`
+  clicks break): `US-11.1.2` to `/admin/intake/validators`; any recipe of the Retired `US-02.2.2` still
+  on disk to `/admin/intake/pdfs`, its caption no longer "Future".
+- 33's `/admin/matching` recipes (`US-02.1.1` to `US-02.1.4`, `FT-02.1`, `FT-02.5`, 33a's stub recipes
+  where they open matching) to `/admin/intake/matching`; one that imports `SAMPLE_STG` after a sync
+  expects R1 already imported.
+- The Future-scope moves: `US-14.1.1` and `US-14.5.1` to `/demo/integrations/log`; `US-14.2.1`,
+  `US-14.3.1` and `US-02.5.1` to `US-02.5.4` (path kept) checked under the Future-scope header, no
+  caption calling the simulator or Christchurch Public in scope.
+- The PWA stand-in's relabelled S1 choice, in any recipe or `pwa-device.spec.ts` step.
+- **S1-related recipes** (`grep -l "MSG-STG-1001\|SAMPLE_STG\|Sarah" requirements-board/requirements/capture/recipes/*.json`:
+  20a's US-02.5.7 and US-03.1.9 stack shots, 20's US-04.3.4 `needs-contract`, 33's matching shots):
+  keep shot names; where the shot is about S1, re-stage through `simulate-hospital-sync`, the decision
+  and the rail's No contract (RVG); show the wording exactly as received, the Booking on "Needs a
+  Contract" before the pick and the stack after; no caption naming a default Contract, 20950 or DRAFT.
 
-**Recipes this phase breaks.** Re-point each (Phase 33's changes land first, so re-run the status tool
-and the `--dry` run):
-- Admin tabs moved to Intake routes, with tabs as URL-routed links rather than buttons (the
-  `role=button[name="Surgeon PDFs"]` and `"Validators"` clicks break): `FT-02.2`, `US-02.2.1` and any
-  recipe of the Retired `US-02.2.2` still on disk, `US-11.1.2`. Point each `start` at
-  `/admin/intake/pdfs` or `/admin/intake/validators` and drop the tab click. The Surgeon PDFs shots now
-  show the Future scope badge and note; keep their states, add none (US-02.2.1 is Future Work).
-- Phase 33's `/admin/matching` recipes: `US-02.1.1`, `US-02.1.2`, `US-02.1.3`, `US-02.1.4` and any
-  other recipe Phase 33 aimed there move to `/admin/intake/matching` (the redirect keeps them working,
-  but re-point them). A recipe that imports `SAMPLE_STG` after a Simulate sync setup must expect R1 as
-  already imported.
-- Message log and mapping moved to the Future-scope routes: `US-14.1.1` (`message-log`),
-  `US-14.5.1` (`dead-letter`), `US-14.2.1` and `US-14.3.1` (the simulator, now headed Future scope;
-  the Live drip no longer offers Christchurch Public). Point the log shots at `/demo/integrations/log`.
-- Any recipe (or `pwa-device.spec.ts` step) that runs the PWA entry `matching-office-matches-row`
-  with Phase 33's S1 choice label ("Sarah Mitchell, Tue 28 Jul AM (S1)"): point it at the relabelled
-  choice (item 7).
-- `US-02.5.1` to `US-02.5.4` (Future Work; Phase 33's partial analogues) start at `/demo/integrations`,
-  whose path is kept: check they still pass under the Future-scope header, and that no caption calls
-  the simulator or Christchurch Public in scope.
-- Any recipe that clicks the Admin side nav's "Integrations" or "Matching" item: they are now one
-  "Intake" item. None found at plan time; the `--dry` run is the check.
-- **S1-related recipes the rebuild changes.** Any recipe that stages Sarah Mitchell's S1 Booking by
-  firing MSG-STG-1001 or hand-importing `SAMPLE_STG` (Phase 20a's US-02.5.7 or US-03.1.9 shots of her
-  stack, Phase 20's US-04.3.4 `needs-contract` shot, Phase 33's matching shots, whatever the status tool
-  and `grep -l "MSG-STG-1001\|SAMPLE_STG\|Sarah" requirements-board/requirements/capture/recipes/*.json` find):
-  keep its shot names and re-stage it through the S1 path where the shot is about S1 (the
-  `simulate-hospital-sync` trigger, the row's decision, then No contract (RVG)), or leave its own
-  setup where it is not. What each must show when done: the wording `lap appy ?conv to open` exactly as
-  received; before the office's pick, the Booking on "Needs a Contract" with no Contract; after it,
-  the stack with No contract (RVG) first-picked, who is invoiced and RVG pricing. Replace any caption
-  that still says the Booking "takes the hospital's default Contract", names procedure code 20950 or
-  calls Souter's List DRAFT.
-
-**ATLAS.md.** Update Routes (`/admin/intake/*`, the redirects, `/demo/integrations/log` and `/mapping`,
-the Future-scope header), Seed data (the sync deliveries), Existing hooks (`row-new`), the "Demo actions by
-screen" `trigger` ids (`simulate-hospital-sync`, the re-pointed
-`ingest-pdf-row`, the HL7 entries now on the Future-scope routes, and the relabelled PWA choice) and the Integration simulator section
-(Christchurch Public is not integrated today; Surgeon PDFs is Future scope).
+**ATLAS.md:** Routes (`/admin/intake/*`, the redirects, `/demo/integrations/log` and `/mapping`), Seed
+data (the deliveries, the seeded PDF list, the S1 stub), hooks (`row-new`, `pdf-upload`,
+`pdf-correction`, `pdf-send`), "Demo actions by screen" (`simulate-hospital-sync`, `pdf-list-resend`,
+the HL7 entries on the Future-scope routes, the relabelled PWA choice; `ingest-pdf-row` gone), and the
+Integration simulator section (Christchurch Public not integrated today).
 
 ## Adversarial review (after build)
 
-Once the manual test checklist and `npm run build`, `npm run build:pwa`, `npx vitest run` and
-`npm run shots` are green, and before writing the PROGRESS entry, run the standard **adversarial
-review-and-fix pass (PROGRESS convention 18)**:
-- fan out three independent Opus review subagents, one each for **quality**, **bugs/correctness** and
-  **plan adherence**, with the catalogue files, this doc, Phase 33's entry and the diff;
-- this session then independently verifies every finding against the catalogue, this doc and the
-  code, fixes the confirmed ones (with a test wherever a bug had none), re-greens, and records the
-  pass in the phase entry;
-- do not re-raise anything already settled in the Decisions log.
+Once the checklist and build, build:pwa, vitest and shots are green, run the standard **review-and-fix
+pass (PROGRESS convention 18)**: three Opus reviewers (quality, bugs/correctness, plan adherence) with
+the catalogue files, this doc, the 33 and 33a entries and the diff; verify each finding, fix the
+confirmed ones with tests, re-green, record it. Do not re-raise settled Decisions-log rulings.
 
-**Steer this phase's reviewers at:**
-- **No silent apply.** No sync or HL7 message writes a Booking, List or Patient except through
-  Phase 33's decision action. There is no automatic application anywhere (the auto-match toggle left with FT-14.6).
-- **Wording and Contract.** Every synced row carries non-blank procedure text; a Booking
-  created from a row keeps it character for character through Phase 33's path and 20a's rules (no
-  trim, no overwrite, an exact duplicate adds nothing); no row, delivery or stand-in
-  sets a procedure from the wording or picks a Contract other than the scripted No contract (RVG) on a
-  Booking the stand-in itself created; nothing derives a Contract from St George's or Southern Cross;
-  no "default Contract" survives in S1's code, copy or tests.
-- **Nothing staged twice.** A delivery is staged once; the delivered set is derived from batches, not a
-  second store; sync and hand import of the same row dedupe through Phase 33 in either order; a reset
-  restores the seed.
-- **No invented sync mechanics.** No schedule, no pull on open, no Sync button, no last-synced time, no
-  failure state, no `setInterval`, `Date.now()` or `new Date()`; no persisted sync state; no
-  "provisional cadence" wording. US-02.1.5 removed all of it.
-- **Scope honesty.** Only St George's and Southern Cross sync; Christchurch Public is no longer a live
-  feed anywhere (not synced, not in the Live drip, labelled "not integrated today" on the Future-scope
-  surface, its fired rows batch-labelled as the HL7 demo); no manual-provider sheet, new hospital or auto-match toggle was built (FT-14.6 is out of scope); everything HL7, FHIR, retry, dead-letter and mapping sits on the Future-scope
-  surface with the `'future'` badge and nowhere in Admin, the mobile app or the PWA; Surgeon PDFs, its
-  ingest and its trigger carry the Future scope badge and were not extended.
-- **The in-scope pieces survived the move.** Data quality and Validators still work, keep their
-  behaviour and tests, and live under Admin Intake unbadged; Surgeon PDFs still works; redirects cover
-  `/admin/integrations` and any Phase 33 route; `ingest-pdf-row` was re-pointed, not broken.
-- **Seed hygiene.** The seed is untouched (no hospital added); sync deliveries avoid every scripted-beat List and Booking;
-  `PERSIST_VERSION` moves only if the seed did; seeded
-  `surgeonPdf` sources are unchanged.
-- **Triggers and PWA purity.** New entries are scoped to their routes; the stand-in is PWA only and
-  acts only for the persona's Lists; bodies live in `src/store` or `src/shared`; nothing from
-  `src/apps/demo/futureScope/` or `src/apps/admin` reaches the PWA closure.
-- **S1 and the guide agree.** The Control Panel S1 text, the run sheet, the master guide and the app
-  tell the same story (sync, match, the wording as received, the office's No contract (RVG) pick, the
-  procedure picked at capture), with no leftover MSG-STG-1001 instruction, Future-scope caveat, "near
-  real time" claim, scheduled-pull narration, in-scope PDF beat, "default Contract", code 20950 or
-  DRAFT for an assigned List.
-- **Design and copy.** The rows follow the Admin Review anatomy; tints from the tokens; teal
-  only for actions; no crimson on rows, pills or banners; no en or em dashes; no "slot" in copy.
+**Steer the reviewers at:**
+- **No silent apply, no direct write.** No sync, PDF list, HL7 message or stand-in writes a Booking,
+  List or Patient except through 33's decision or 33a's resolve; `ingestPdfRow` and every caller are
+  gone.
+- **Wording and Contract.** Every synced and PDF row carries its wording verbatim (the hospital's or the
+  rooms', apart); a correction never touches the wording; no row or stand-in picks a Contract except
+  the scripted rail answer on a Booking the stand-in created; no "default Contract" in S1.
+- **Nothing staged twice.** Each delivery and each PDF list is staged once; delivered sets are derived
+  from batches; sync and hand import dedupe in either order; a re-sent list's unchanged rows are
+  skipped; reset restores the seed.
+- **The PDF record.** Each correction is kept with who and when; an invalid NHI blocks the send, a
+  blank one waits with a stub; the re-sent match is one pure function, labelled our reading; nothing
+  claims OCR, a mailbox read or removal detection.
+- **No invented sync mechanics.** No schedule, pull on open, Sync button, last-synced time, failure
+  state, `setInterval`, `Date.now()` or `new Date()`; no persisted sync state.
+- **Scope honesty.** Only the two integrated hospitals sync, named in one place; Christchurch Public is
+  not a feed anywhere in scope; everything HL7, FHIR, retry, dead-letter and mapping sits on the
+  Future-scope surface; PDF lists are product, unbadged; no FT-14.6 piece was built.
+- **Seed hygiene.** One `PERSIST_VERSION` bump for the seeded PDF list; deliveries and PDF targets
+  avoid every scripted-beat List; seeded `surgeonPdf` sources unchanged.
+- **Triggers and PWA purity.** Entries scoped to their routes; the stand-in PWA only and the persona's
+  Lists only; nothing from `futureScope/` or `apps/admin` in the PWA closure.
+- **S1 and the guide agree** (sync, the stub, the match, the wording, the rail, the RVG code at
+  capture, the PDF beat), with no MSG-STG-1001, HL7 caveat, 20950 or DRAFT.
+- **Design and copy.** Admin Review anatomy, token tints, teal only for actions, no crimson on rows or
+  pills, no en or em dashes, no "slot".
 
 ## PROGRESS.md updates
 
-- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): anything logged rather than fixed, and the screens worth a look, each with its route
-  and persona; in particular D51 and D52, built as defaults (OQ-108 and OQ-109 still Open: the hospital download first with
-  surgeon PDF ingest Future Work, and the two hospitals synced as the catalogue is written), whether a
-  last-synced line should come back on the matching screen
-  (US-02.1.5 removed it; not built), whether the Surgeon PDFs tab should be hidden rather than
-  badged, and the AR-35 wording placed on the deliveries (AI-made, not
-  from AA; any row reused on a channel AR-35 does not list, starting with row 14, an email in AR-35,
-  on the St George's sync, as 20a already logged for MSG-STG-1001).
-- **Status row** for catch-up Phase 34, and an entry `### Catch-up Phase 34 · Hospital sync and the S1 rebuild (date)` with:
-  - the drift-check result against `d436947`, OQ-13's status and OQ-99's (D33);
-  - the real Phase 33 names used (row types, staging and decision actions, routes), and Phase 20's and
-    20a's (the Contract step, "Needs a Contract", the source-text channel a synced row writes);
-  - what was built, and what was moved to the Future-scope surface or badged there;
-  - the `PERSIST_VERSION` bump (from and to);
-  - the sync deliveries the tests pin, for the demo guide;
-  - tests added (domain, store, triggers, Playwright) and the review pass;
-  - the S1 consistency read;
-  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured,
-    partial, absent, failed) before and after, and any partial reason handed to a later phase.
+- **For the owner's review:** OQ-109 part 2 built as assumed, part 1's default (the catalogue's two
+  names, in `INTEGRATED_HOSPITALS`); S1's narration of 20's step rail (a working direction); matching a
+  re-sent PDF by surgeon, hospital, date and session (our reading); the PDF wording read-only in the
+  review; S1's stub on Souter's Tue 28 Jul AM; whether a last-synced line should return (not built);
+  whether the Intake home landed in full or as a plain grouping; the AR-35 wording on the deliveries and
+  samples (AI-made, row 14 reused on the sync).
+- **Status row** and entry `### Catch-up Phase 34 · Hospital sync, the rooms' PDF lists and the S1
+  rebuild (date)`: the drift check against `a68f09b`; the real 33, 33a, 20 and 20a names used; what was
+  built, moved or badged; `PERSIST_VERSION` from and to; the pinned deliveries and PDF targets; tests and
+  the review pass; where the session cut fell; the S1 consistency read; the screenshot result (REPORT.md
+  counts before and after).
 - **Decisions log:**
-  1. **Supersedes** the Phase 11 reading that the Integrations monitor is "proposed product UI, not
-     demo-badged" (and convention 13's integration-monitor wording): the message log, retries,
-     dead-letter and feed mapping are Future scope and live on the Future-scope demo surface; Admin
-     Intake holds matching, data quality and the validators (RV-14, RV-15).
-  2. **Closes** Phase 14's "HL7/FHIR tooling carries interim Future-scope badges until Phase 34"; the
-     simulator is kept, not extended, and S1 no longer rests on it (RV-14).
-  3. **Supersedes** the same Phase 14 entry's ruling that Surgeon PDFs stays unbadged as in scope:
-     US-02.2.1 moved to the Future Work lane on 2026-10-02, so the tab, its ingest and its trigger carry
-     the Future scope badge, unchanged in behaviour (RV-12). Seeded Bookings keep the descriptive
-     `surgeonPdf` source.
-  4. The sync is shown only as arrival: Simulate sync delivers each integrated hospital's next rows in
-     Phase 33's neutral row shape; no schedule, pull on open, Sync button or last-synced state, because
-     US-02.1.5 removed them and leaves the mechanism to the integration team (OQ-13).
-  5. D51 and D52 built as defaults, logged for the owner (OQ-108 and OQ-109 still Open): the hospital
-     download stays the priority intake pathway with surgeon PDF ingest Future Work, and the two
-     hospitals are synced as the catalogue is written. FT-14.6 is out of scope: no manual-provider sheets
-     and no auto-match toggle; another provider's sheet comes in through Phase 33's Receive action.
-  6. **Supersedes** the Phase 11 reading of Christchurch Public as a third live HL7 feed: only St
-     George's and Southern Cross are integrated (US-02.1.5, RV-16); Christchurch Public's feed remains only as
-     a labelled Future-scope example, out of the Live drip.
-  7. **Supersedes** S1's "the hospital booking takes St George's default Contract" (the protected
-     default per hospital, retired by 18 and 20 under OQ-78): S1's Booking arrives with its wording as
-     received and no Contract, and the office picks No contract (RVG), first in the picker (US-04.3.3,
-     US-04.3.4, US-02.5.7). The S1 RVG code is picked at capture under D33 (OQ-99, answered).
-- **Binding conventions:** convention 4's "Simulated external systems (Xero, HL7, PDF/OCR)" adds the
-  hospital sync stand-in and names the Future-scope surface for HL7 and FHIR.
-- **Handoff notes:**
-  - For **35**: rows decided on the matching screen that change a Booking are candidates for the
-    update email's change history and the explicit-save change set.
-  - For **40**: S1's Sarah Mitchell (unpaid prior balance) is the natural beat for the mild or strong
-    unpaid-balance warning; no manual-provider sheets were built, so the missing-NHI list uses Phase 33's
-    no-NHI row.
-  - For **43**: the restricted raw-row view should cover synced rows and the Future-scope message log
-    (which still shows a patient reference).
-  - For **44**: S1 is rebuilt, not polished; the rewrite regenerates the master guide and walks the
-    handset stand-in in the PWA-parity audit.
-  - If OQ-13 is answered: the switch points are `HOSPITAL_SYNC_DELIVERIES`' row fields; any mechanism
-    (cadence, button, status) waits on US-02.1.5 changing.
+  1. **Supersedes** Phase 11's "Integrations monitor is proposed product UI" (and convention 13's
+     wording): the log, retries, dead-letter and mapping are Future scope on the demo surface (RV-14,
+     RV-15).
+  2. **Closes** Phase 14's interim Future-scope badges; the simulator is kept, not extended.
+  3. **Supersedes** Phase 14's ruling that Surgeon PDFs stays in scope with its direct ingest, and D51's
+     old default (hospital download first, PDF ingest Future Work): the rooms' PDF lists are product,
+     stored as SurgeonPdfList records whose rows go through the matching screen; `ingestPdfRow` is gone
+     (OQ-108, RV-12 overtaken).
+  4. The sync is shown only as arrival (US-02.1.5; OQ-13); D52 part 2 built as assumed, part 1's
+     default kept in one place.
+  5. **Supersedes** Phase 11's Christchurch Public as a live feed (RV-16).
+  6. **Supersedes** S1's St George's default Contract: the office answers 20's step rail, No contract
+     (RVG) for Sarah; the RVG code at capture (D33).
+- **Convention 4:** simulated external systems add the hospital sync stand-in and the PDF sample upload,
+  and name the Future-scope surface.
+- **Handoff notes:** **35**: decided rows, PDF rows included, feed the change history. **40**: the PDF
+  row and the synced no-NHI row wait with 33a's stub; 40's waiting view and NHI guard cover both; S1's
+  Sarah Mitchell suits the balance warning. **40a**: the as-typed NHI check also marks the PDF row
+  correction. **43**: the restricted raw-row view covers synced rows, PDF rows and the Future-scope log.
+  **44**: S1 is rebuilt, not polished. If OQ-13 or OQ-109 part 1 is answered: the switch points are
+  `HOSPITAL_SYNC_DELIVERIES` and `INTEGRATED_HOSPITALS`.

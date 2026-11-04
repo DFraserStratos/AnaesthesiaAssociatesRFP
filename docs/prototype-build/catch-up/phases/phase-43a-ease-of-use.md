@@ -28,8 +28,9 @@ discovery**. The catalogue around them moved, which rewrites this plan's old kee
   [US-03.1.2](../../../../requirements-board/requirements/stories/US-03.1.2.md) (Phase 20a) is the
   **descriptions as received (and the invoice description), the Contract** (its name, holder, who is
   invoiced and pricing basis with its figure) **and the RVG code where the Contract prices from RVG
-  units**. There is no two-tab picker: the RVG code is a type-ahead (19) and the Contract a picker, No
-  contract (RVG) first (20).
+  units**. There is no two-tab picker: the RVG code is a type-ahead (19) and the Contract a pick through 20's
+  **step rail** (a working direction, a guess to design and test with AA: who is invoiced, prepaid or which Contract, then the price; the
+  office's job ends at the Contract, and an RVG-priced Contract is handed to the anaesthetist to fill in the RVG code).
 - **Prices sit on the Procedure and the Contract's editable flag decides who changes them** (Phase 24,
   [FT-03.5](../../../../requirements-board/requirements/stories/FT-03.5.md),
   [US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md)): no first-party or
@@ -42,7 +43,7 @@ discovery**. The catalogue around them moved, which rewrites this plan's old kee
 
 US-15.0.1 (status 1) **yields** to the Confirmed US-03.1.2, US-03.1.9, FT-03.5 and
 [US-03.1.8](../../../../requirements-board/requirements/stories/US-03.1.8.md): the descriptions,
-Contract and RVG code, 24's price and 27's prepaid amount stay on every anaesthetist screen, and the
+Contract and RVG code (the RVG code handed over by the step rail), the insurance approval number where the Booking holds one (D28), 24's price and 27's prepaid amount stay on every anaesthetist screen, and the
 sweep removes only what stays office-only (below). Of the gap analysis's WRONG bullets (graded at
 3d3a18c, not re-graded), the route chip and insurer field went in Phase 20 and the Contract name and
 who is invoiced are required (20a shows them); what remains here is the missing help and any
@@ -55,7 +56,7 @@ US-03.1.2, US-03.1.9, US-03.1.8, FT-03.5 and US-03.5.1 (above: what the anaesthe
 [FT-03.4](../../../../requirements-board/requirements/stories/FT-03.4.md) and
 [US-03.4.1](../../../../requirements-board/requirements/stories/US-03.4.1.md) (Confirmed: the anaesthetist can change the procedure or the Contract until they submit, no reason needed, flagged at office review; Phase 20's "Change" stays),
 [FT-04.3](../../../../requirements-board/requirements/stories/FT-04.3.md) and
-[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) (Confirmed: the Contract picker, No contract (RVG) first, then the hospital's, surgeons' and anaesthetists' Contracts with their lines, and the RVG code by type-ahead; Phases 19 and 20),
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) (Confirmed: the Contract picker, No contract (RVG) first, then the hospital's, surgeons' and anaesthetists' Contracts with their lines, and the RVG code by type-ahead; Phases 19 and 20, where the office's pick is now the step rail, a working direction),
 [FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md),
 [US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md) (Verify) and
 [US-03.3.8](../../../../requirements-board/requirements/stories/US-03.3.8.md) (Confirmed: optional modifiers each with a short explanation, the age modifier and P1 pre-applied and removable, never locked; Phase 19b),
@@ -96,7 +97,7 @@ provider; Open and **deferred to the end of discovery**, and its recommendation 
 "define the deployable platforms first, then the experience"). The phase builds the one thing assumed,
 an account login on the PWA, as a simulated screen, and labels it provisional in one place (log it on
 the "For the owner's review" list). The help copy states as settled only answered decisions: D3, D12,
-D14, D15, D16 and D17 (as superseded), D25, D28 (OQ-93: insurance never narrows the Contract list; the missing approval number is the only insurance warning), D37 (OQ-103: the invoice description's order of defaults, which the office can always edit), D42 (OQ-91), D43 (OQ-94), D44 (OQ-43), D46 (OQ-86) and
+D14, D15, D16 and D17 (as superseded), D25, D28 (OQ-93, all four parts: insurance never narrows the Contract list; the missing approval number is the only insurance warning; the anaesthetist sees the approval number where the Booking holds one, answered 4 November), D37 (OQ-103: the invoice description's order of defaults, which the office can always edit), D42 (OQ-91), D43 (OQ-94), D44 (OQ-43), D46 (OQ-86) and
 OQ-78's answer (work item 11); none gates the phase.
 **Depends on:** 20a (the `ProcedureStack` on every Booking screen, `procedureStackView`,
 `whoIsInvoicedFor`, `pricingBasisFor` and `formatPricingBasis`), 21 (the payer on the Booking, its
@@ -110,7 +111,7 @@ By the roadmap order 14 (the trigger registry, the PWA demo sheet and "Simulate 
 To-do rail card), 15b (ACTIVE for an assigned List), 17 (the privacy boundary for preferences and
 tiers), 18 (contract holders), 19 (the RVG code type-ahead), 19a (Contract lines and the
 resolver), 19b (itemised modifiers with explanations, age and P1 pre-applied and removable), 20 (one Contract per
-Procedure, the Contract picker with No contract (RVG) first and the "Needs a Contract" card), 22 (the
+Procedure, the office's step rail and the anaesthetist's Contract picker, and the "Needs a Contract" card), 22 (the
 Split button on the stack's Contract part), 23 (the RVG default multi-procedure rule), 25 (the pricing
 snapshot), 26 (the anaesthetist profile on More, the prepaid card), 27 (the prepaid amount on the
 Booking), 29 (the user-maintained status list), 32 and 32a (the Notifications card and the move
@@ -148,7 +149,7 @@ both (US-15.0.1's has two halves: office-only detail left on anaesthetist screen
   the office's "Change price" sheet and billing set-up, any route, category, "Method 3" or hourly
   wording that survived, 23's multi-procedure rule wording and any preference or tier. It **keeps**,
   and proves it keeps, the descriptions as received, the Contract (name, holder, who is invoiced,
-  pricing basis with its figure), the RVG code where RVG-priced, the Price section with its
+  pricing basis with its figure), the RVG code where RVG-priced (handed over by the step rail), the insurance approval number where the Booking holds one, the Price section with its
   calculation and the Booking total (editable where the Contract's flag allows and the price is neither fixed nor
   prepaid, read-only otherwise, a Contract discount shown and not editable), the prepaid amount, the payer, the Split, the
   modifiers with their explanations and the Contract and RVG code "Change". It adds no new screen or
@@ -161,7 +162,7 @@ both (US-15.0.1's has two halves: office-only detail left on anaesthetist screen
   beside a section label that opens a short explanation, as a bottom sheet on the phone and an
   anchored popover on desktop. All copy lives in **one topic file**, written to the answered decisions
   and the plain-language guide (AR-28): how to read the stack, the RVG code type-ahead and base units
-  from the Contract line or the RVG group, No contract (RVG) first and billing the payer on the Booking,
+  from the Contract line or the RVG group, the Contract pick (the step rail, a working direction) and billing the payer on the Booking,
   what the anaesthetist can change on the price, the pre-applied age and P1 modifiers and the
   explanation asked for any other, Draft Lists assigned only by the office, warnings that never block
   or ask for confirmation, notices kept apart from the to-do list, and how the price is set. Tips sit on the
@@ -190,10 +191,10 @@ documentation and a web-app sign-in stay presenter-narrated.
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,FT-13.5,OQ-83,OQ-117,US-15.0.2,US-03.1.2,US-03.1.9,US-03.1.8,FT-03.5,US-03.5.1,FT-03.4,US-03.4.1,FT-04.3,US-04.3.2,FT-03.3,US-03.3.4,US-03.3.8,US-11.2.2,US-04.2.2,US-08.2.3,US-13.6.3,US-01.3.6,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86,OQ-89,OQ-90,OQ-93,OQ-95,OQ-96,OQ-102,OQ-103
    ```
 
-   (it diffs from the baseline, `d436947`, to the working tree; add `--to <ref>` to stop at a commit;
+   (it diffs from the baseline, `a68f09b`, to the working tree; add `--to <ref>` to stop at a commit;
    the tool is rename-aware, so never use a plain git diff of the catalogue folder.) Read the hunks for every item listed, any new note that cites
    US-15.0.1, US-13.5.3, US-03.1.2 or US-03.1.9, and the domain-model lines on what the anaesthetist
-   sees of a Contract and its price. At d436947 US-15.0.1 is status 1 with Greg's 16 October note, no
+   sees of a Contract and its price. At a68f09b US-15.0.1 is status 1 with Greg's 16 October note, no
    acceptance criteria and no linked OQ; US-13.5.3 is **Verify** with one criterion and OQ-83 **Open**
    and deferred to the end of discovery; re-read the statuses of the context items in the diff
    (US-13.7.3 and US-11.2.2 were Confirmed, OQ-78 and OQ-86 Answered).
@@ -223,7 +224,7 @@ documentation and a web-app sign-in stay presenter-narrated.
    explains it.
 4. **Open questions.** OQ-83 is the only one this phase builds against: the sign-in is simulated and
    carries the provisional caption (work item 3). The help copy is the other risk: a tip never states
-   as settled anything still open. At d436947 the copy in work item 11 is written to the answers (D3,
+   as settled anything still open. At a68f09b the copy in work item 11 is written to the answers (D3,
    D12, D16 and D17 as superseded, D14, D15, D25, D28, D30, D37, D42, D43, D44, D46, D65, OQ-78's answer,
    US-13.7.3) and to AR-28, and avoids what is still open:
    - a Booking without an NHI (D11, OQ-49, still Open though Vanessa leans to a mandatory NHI; no tip
@@ -234,11 +235,9 @@ documentation and a web-app sign-in stay presenter-narrated.
    - whether the anaesthetist may add their own discount on top of a fixed discount, and Contract
      time bands (OQ-89, D40; the price tip says only that a Contract's own discount is shown, not editable);
    - the multi-procedure rule (OQ-90, D26; no tip states it);
-   - the second half of OQ-93's answer, whether the anaesthetist sees the approval number itself
-     (still open; no tip says either way). OQ-93's other parts are answered (D28): insurance never
-     narrows the Contract list and the missing approval number is the only insurance warning, so the
-     review tip no longer mentions an insurer with no insurer Contract (that warning was dropped on
-     23 October);
+   - OQ-93 is fully answered (D28): insurance never narrows the Contract list, the missing approval
+     number is the only insurance warning, and the anaesthetist sees the number where the Booking holds
+     one. The review tip carries no insurer-pays-without-an-insurer-Contract sentence (dropped 23 October);
    - the age bands and stacking (OQ-95, D29; the modifiers tip says only that age modifiers are added
      for you and can be removed);
    - the names of the preference lists and tiers (OQ-102, D36; no tip names a tier);
@@ -248,8 +247,8 @@ documentation and a web-app sign-in stay presenter-narrated.
 
    Re-read each of these in the diff. If one is answered, the copy may say more; if a topic must touch
    an open point, it carries `provisional` (work item 10) and shows the small neutral "Provisional"
-   pill with the OQ in its tooltip, as earlier phases do. At d436947 no topic needs it. If Greg comes
-   back on OQ-78 (who No contract (RVG) bills), change the one `capture.contract` entry.
+   pill with the OQ in its tooltip, as earlier phases do. At a68f09b only the two step-rail topics carry the label (work item 10). If Greg comes
+   back on OQ-78 (who No contract (RVG) bills) or on the step rail, change the `capture.contract` and `day.needsContract` entries.
 5. **Prerequisite names.** Confirm 20a, 21, 24, 31 and 39b are DONE in PROGRESS.md and read their
    entries, name maps and handoff notes, and the entries for 14, 15, 15a, 15b, 17, 19, 19a, 19b, 20,
    22, 23, 26, 27, 29, 32, 32a, 38a, 38b, 39 and 43. Note in particular:
@@ -270,9 +269,8 @@ documentation and a web-app sign-in stay presenter-narrated.
      its hook and "Change") and the after-procedure out-of-range warning;
    - **19b:** the modifiers section on capture, the pre-applied age and P1 rows ("Applied" tag, Remove; nothing is locked),
      and where the explanation field opens when a modifier is claimed;
-   - **20:** the anaesthetist's Contract action in the stack, `ContractPickerSheet` (No contract (RVG)
-     first, then the hospital's, surgeons' and anaesthetists' Contracts and their lines, as 20 built it
-     for the anaesthetist), the "Changed by you · office to check" pill, and the Admin Day "Needs a Contract" card
+   - **20:** the anaesthetist's Contract action in the stack, `ContractPickerSheet` and the office's step rail (a
+     working direction; the anaesthetist's picker as 20 built it for them), the "Changed by you · office to check" pill, and the Admin Day "Needs a Contract" card
      and its hook;
    - **20a:** `ProcedureStack` (`shared/booking/ProcedureStack.tsx`, `data-shot="procedure-stack"`,
      and its received, RVG code and Contract hooks as 20a named them),
@@ -540,9 +538,8 @@ below exists today or is built by the phase that names it.
      `formatPricingBasis` gives it ("Fixed $2,400", "$125.00 per unit", "10% off RVG", "RVG", or what 24
      re-pointed it to); the RVG code where the Contract prices from RVG units; "Contract to choose" and
      "RVG code to choose" when empty.
-   - 20's Contract and RVG code "Change" until the List is authorised, the Contract picker rows (No
-     contract (RVG) first, then the hospital's, surgeons' and anaesthetists', with their lines: the same
-     rows the office sees, as 20 built them for the anaesthetist), and the "Changed by you · office to
+   - 20's Contract and RVG code "Change" until the List is authorised, the RVG code the step rail hands
+     them to fill in for an RVG-priced Contract, the Contract picker as 20 built it for the anaesthetist, and the "Changed by you · office to
      check" pill and 21's "Approved by the office".
    - 24's Price section in every state: the price and its calculation ("12 units x $30.00 = $360.00",
      "Fixed price $2,800.00"), the Booking total, the editable controls (rate, discount, price, Save,
@@ -552,7 +549,8 @@ below exists today or is built by the phase that names it.
      Contract flagged editable: D65, D30), a Contract discount shown as applied and not editable, the no-charge note, and the read-only
      view on a SUBMITTED or AUTHORISED List.
    - 27's prepaid amount and whether it is paid (US-03.1.8); 26's own unit value and prepaid prices.
-   - 21's payer on the Booking (name, relationship, email, editable), the Insurance row as 21 built it,
+   - 21's payer on the Booking (name, relationship, email, editable), the Insurance row as 21 built it with
+     the approval number where the Booking holds one (D28; edit rights as 21 built them),
      holder references asked in plain words ("{Contract} needs a member number."), and the mild
      under-18 note.
    - 19b's modifiers: age and P1 pre-applied with the small "Applied" tag and Remove (nothing locked),
@@ -639,7 +637,7 @@ below exists today or is built by the phase that names it.
      party and `formatPricingBasis` output, and the RVG code where RVG-priced; the Southern Cross case
      shows the fixed price; the `PriceCard`'s `data-state` matches the Contract (`editable`, `fixed`,
      `discount-fixed`, `no-charge`, `read-only` on SUBMITTED) with its calculation and the Booking total;
-     the prepaid Booking shows its prepaid amount; the payer's name shows. So the sweep cannot pass by
+     the prepaid Booking shows its prepaid amount; the payer's name shows, and the approval number shows on the Insurance row of a Booking that holds one. So the sweep cannot pass by
      stripping what the catalogue requires.
    - **Positive control.** The same renders for the office actor contain 24's `contract-editable-pill`
      (in the Contract catalogue) and the "Change price" action for at least one Booking, so the
@@ -654,15 +652,15 @@ below exists today or is built by the phase that names it.
 
 10. **One topic file** (`src/shared/help/helpTopics.ts`, pure TypeScript, PWA-safe):
     - `type HelpTopicId` is a string union; `HELP_TOPICS: Record<HelpTopicId, HelpTopic>` where
-      `HelpTopic = { title: string; body: readonly string[]; provisional?: { oq: string; note: string } }`.
+      `HelpTopic = { title: string; body: readonly string[]; provisional?: { oq?: string; note: string } }`.
       The body is one to three short sentences per paragraph and at most 60 words in all.
     - All help copy in the app lives here, so a later screen change keeps its tip by keeping the topic
-      id, and an answered OQ changes one entry. At d436947 no topic is provisional; the field stays
-      for a later open point.
+      id, and an answered OQ changes one entry. Two topics are provisional: `capture.contract` and `day.needsContract`, which describe the Contract pick the
+      step rail shapes (no `oq`; note "A working direction, still to be tried with AA.", shown as the small pill). The field stays for a later open point.
     - Vitest (`helpTopics.test.ts`): no en or em dash in any title or body; every body at most 60 words;
       no body contains "slot" (OQ-64: the word never reaches app copy), "event" (38b keeps that label
       in one place), "estimate" or "deposit" (the prepaid amount is never called either), "blacklist"
-      or "DRAFT"; every `provisional.oq` matches `OQ-\d+`; every id used by a component exists (a typed
+      or "DRAFT"; every `provisional.oq`, when present, matches `OQ-\d+`; every id used by a component exists (a typed
       union makes this a compile error; the test checks the reverse, that no topic is unused).
 11. **The topics** (copy verbatim unless the drift check changed a rule; each must match what phases 15a
     to 39b actually built, so re-read the screen before keeping a sentence):
@@ -671,14 +669,14 @@ below exists today or is built by the phase that names it.
     |---|---|---|---|
     | `capture.stack` | Booking capture, 20a's stack (its first label) | Reading a procedure | "Each procedure shows what the rooms and the hospital sent, kept exactly as received. Below it is the Contract: who holds it, who is invoiced and how it is priced. The invoice wording starts as the rooms' text, becomes the hospital's when one arrives, or the Contract line's when it has one; the office can edit it." (US-03.1.9, US-03.1.2, OQ-103 answered, D37) |
     | `capture.rvg` | 19's RVG code type-ahead sheet, beside its search | Choosing an RVG code | "Type a code or a few words. The starting base units come from the Contract line, or from the RVG group when the Contract has none. You can change them: any value is accepted, and an unusual one gives the office a note to check." (D3, D12, AR-28 `rvg-groups-and-procedures`) |
-    | `capture.contract` | 20's Contract picker header, and beside the stack's Contract action | Contract | "No contract (RVG) comes first. It prices on the RVG and invoices the payer on the Booking. Below are the Contracts that fit: the hospital's, surgeons' and anaesthetists', each with its lines. Insurance never narrows the list. You can change the Contract until you submit; the office sees every change." (D16, D17 as superseded, OQ-78 answered, OQ-93 answered (D28), US-03.4.1, AR-28 `no-contract-rvg`, `who-gets-the-invoice`) |
+    | `capture.contract` | 20's Contract picker header, and beside the stack's Contract action | Contract | "A procedure needs a Contract. The office usually sets it; where it prices on the RVG, you add the RVG code. Insurance never narrows the choices. You can change the Contract until you submit; the office sees every change." Provisional (the step rail). (D16, D17 as superseded, OQ-78 answered, OQ-93 answered (D28), US-03.4.1, AR-28 `no-contract-rvg`, `who-gets-the-invoice`) |
     | `capture.price` | 24's Price section | Price | "The price and how it is worked out show here. Where the Contract allows, change the rate, a discount or the price; no reason is needed. A fixed or prepaid price is never editable, and nor is a Contract's own discount. To charge differently, change the Contract or tell the office, who see every change." (FT-03.5, US-03.5.1, US-05.4.3, D65, D30, AR-28 `what-the-anaesthetist-can-change`) |
     | `capture.modifiers` | 19b's modifiers section | Modifiers | "Age modifiers, and P1 on neurosurgery and spine codes, are added for you; remove one if it does not apply. Every other modifier, ASA included, is optional: tick it and add a short explanation of why it applies." (US-03.3.8, US-05.1.4 and D43, US-03.3.4, AR-28 `modifiers`) |
     | `capture.times` | `TimesCard` | Times | "Tap Start now when the anaesthetic starts and Finish now at handover. You can adjust either time afterwards. Time units come from these two times, and a part interval always counts as a whole one." (D25) |
-    | `capture.warnings` | Booking capture, 15a's warnings section | Warnings | "A warning is a reminder, never a block. It shows here when you open the Booking. You can still complete and submit as usual. The office sees the same warning on its to-do list." (US-13.7.3: no confirm step) |
+    | `capture.warnings` | Booking capture, 15a's warnings section | Warnings | "A warning is a reminder, never a block, such as an insurer with no approval number. It shows when you open the Booking, and the approval number shows with the insurer where there is one. You can still complete and submit as usual. The office sees the same warning." (US-13.7.3: no confirm step; OQ-93 answered, D28) |
     | `day.statuses` | Admin Day, beside the status legend | Reading the day | "Each row is one anaesthetist's day: a morning and an afternoon session. A session shows its List, or its availability when it has none. The legend names each kind of List, then each availability status from the office's own list. Select one in the legend to hide or show it." (D14; names no colour, because 29 makes the availability statuses editable) |
     | `day.draftLists` | Admin Day, 31's band and the Draft Lists rail card | Draft Lists | "A Draft List has a hospital, surgeon, day and session, but no anaesthetist yet. Only the office assigns one; anaesthetists never see them. A List lands here when, for example, its anaesthetist returns it or a surgeon's regular booking falls on a session marked unavailable. Suggestions come in priority order, with any not-preferred pairing shown apart." (FT-01.6, D14, D44, D46; names no tier) |
-    | `day.needsContract` | Admin Day, 20's "Needs a Contract" card | Needs a Contract | "Every procedure needs a Contract before it can be completed. These Bookings arrived without one. Open one and pick: No contract (RVG) comes first, then the Contracts that fit. Nothing is chosen for you from the hospital." (US-04.3.4, US-04.3.3, OQ-78 answered) |
+    | `day.needsContract` | Admin Day, 20's "Needs a Contract" card | Needs a Contract | "Every procedure needs a Contract before it can be completed. These Bookings arrived without one. Open one and work down the steps: who is invoiced, prepaid or which Contract, then the price. An RVG-priced Contract goes to the anaesthetist for the RVG code. Nothing is chosen for you from the hospital." Provisional (the step rail). (US-04.3.4, US-04.3.3, OQ-78 answered) |
     | `day.todo` | Admin Day, 15a's To-do rail card | To-do | "Warnings that need action land here. None of them blocks anything. Open one to see the Booking, and Clear it once it is dealt with. Notices that need no action, such as a List an anaesthetist moved, go to Notifications instead." (FT-13.7 note, D15) |
     | `review.flags` | Admin Review, the Flags tile | Flags | "Flags are things to check before you authorise. Fix them here, or phone the anaesthetist. A List is never sent back to the anaesthetist for changes." (US-07.2.3, US-07.2.2: no warning blocks authorise) |
     | `review.contracts` | Admin Review, the stack column heading (20a, 21) | Procedures and Contracts | "Each procedure shows its wording as received, its Contract and the RVG code. Check the Contract and the payer; a change the anaesthetist made is marked. The invoice wording can be edited here. An insurer with no approval number is the one insurance warning, and you can still authorise." (US-07.2.2, OQ-93 and OQ-103 answered, D28, D37; the old "insurer pays, no insurer Contract" sentence is gone) |
@@ -686,7 +684,7 @@ below exists today or is built by the phase that names it.
     | `review.authorise` | Admin Review, the action bar beside "Authorise for billing" | Authorising | "Authorising locks the List, its Bookings and the prices they use, and passes it to billing for its invoices. Anything added afterwards is invoiced in the next run. A correction is made by hand, with an additional invoice or a credit note." (US-07.3.1, 25, 38b, 39; nothing is raised automatically; avoids the word "event", whose label 38b keeps in one place) |
 
     Keep the list at about fifteen. Do not add tips to other screens in this phase. If a sentence
-    depends on an open point after the drift check, give the topic `provisional` and show the pill.
+    depends on an open point after the drift check, or on a working direction, give the topic `provisional` and show the pill.
     `capture.units` (planned at 3d3a18c) is dropped: the stack, the RVG code, the modifiers and the
     Price section now explain the units and the price.
 12. **`InfoTip`** (`src/shared/help/InfoTip.tsx`, exported from `src/shared/index.ts`; PWA-safe):
@@ -893,7 +891,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       it; a reload keeps it hidden. Web Dashboard and Admin Day show their own card the same way.
 - [ ] Demo actions → "Show first-run hints again": all three cards come back. With none dismissed, the
       entry is disabled with its reason.
-- [ ] **Kept.** Mobile, Dr Souter, on an ACTIVE List: open a No contract (RVG) Booking, a fixed-price
+- [ ] **Kept.** Mobile, Dr Souter, on an ACTIVE List: open a No contract (RVG) Booking (RVG code handed over to fill in), a fixed-price
       Booking on a hospital Contract (20a's or 24's Southern Cross case), the "RTK" Booking (20a) and her
       prepaid Booking on her own price list (27). Each Procedure shows the stack: the descriptions as
       received, the Contract's name, holder, who is invoiced and its pricing basis with the figure, and
@@ -901,15 +899,15 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       or price offered where the Contract is editable; the same figures read-only with "change the
       Contract" where it is not, and always for the fixed-price and prepaid Bookings, even on an
       editable-flag Contract; a Contract discount shown, not editable), with the Booking total, and
-      the prepaid Booking shows its prepaid amount. The payer row shows the payer. The screens look
+      the prepaid Booking shows its prepaid amount. The payer row shows the payer, and a Booking that holds an insurer and approval number shows both on its Insurance row. The screens look
       like the current mobile app's: no extra screen or step.
 - [ ] **Swept.** On the same Bookings, their sheets and the List: no "Anaesthetist can change
       pricing" or "Fixed for the anaesthetist" pill, no "Change price" sheet, no version or lines grid,
       no route, category, Method 3 or hourly wording, no old "FIXED CONTRACT PRICE" or "FEE @" label, no
       "first-party", "third-party" or "adjustable", no preference or tier. Admin's view of the same
       Bookings still shows its Change price action and the Contract catalogue's pills.
-- [ ] Open the Contract picker as the anaesthetist: No contract (RVG) first, then the hospital's,
-      surgeons' and anaesthetists' Contracts with their lines, as 20 built it. Change the
+- [ ] Open the Contract picker as the anaesthetist, as 20 built it for them (the office's step rail
+      is not theirs). Change the
       Contract: the "Changed by you · office to check" pill shows and the stack updates.
 - [ ] Add a second procedure on mobile: the anaesthetist sees a plain line with no rule wording; Admin's
       view of the same Booking shows 23's rule wording.
@@ -924,18 +922,18 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Web → the same Booking: the same tips open as popovers; Esc closes and returns focus.
 - [ ] Admin Day Tue 21 Jul: the tips beside the legend, on the Draft Lists band and rail card, on the
       Needs a Contract card and on the To-do card open popovers that stay on screen at 1280px and
-      1440px. No tip carries a Provisional pill; no tip text says "slot", "event", "estimate" or a tier
+      1440px. Only the Contract and Needs a Contract tips carry a "working direction" pill (the step rail); no tip text says "slot", "event", "estimate" or a tier
       name; the To-do tip points to Notifications.
 - [ ] Admin Review (Dr Morrison, Mon 20 Jul, or the submitted List 21's recipes use): the Flags, stack
       column, Fee and Authorise tips open, and the stack column popover is not clipped by the table.
-      Each tip's copy matches what the screen does (the price order, the missing-approval-number warning as the only insurance warning, the invoice wording the office can edit, nothing
+      Each tip's copy matches what the screen does (the price order, the missing-approval-number warning as the only insurance warning, the approval number visible to the anaesthetist, the invoice wording the office can edit, nothing
       automatic after authorise).
 - [ ] PWA (fresh storage, after sign-in): the mobile card clears the insets, the tips open as sheets,
       and the Demo chip offers "Show first-run hints again" and "Sign out".
 - [ ] Keyboard: every tip is reachable by Tab and opens on Enter or Space; screen-reader names read
       "About {title}"; the sign-in fields are labelled and Enter submits.
 - [ ] No en or em dashes in any new string; teal the only action colour; crimson only in the logo and
-      avatar; the Provisional pill shows only on the sign-in screen.
+      avatar; the sign-in's Provisional caption (OQ-83) shows only there, and the step-rail pill only on its two tips.
 - [ ] Catalogue screenshots: the recipes for US-15.0.1 are updated and the one for US-13.5.3 created,
       any recipe this phase broke is re-pointed, the capture runner presets the three first-run
       dismissals and the PWA session, a full `npm run capture` ends with no failed recipe and no story
@@ -1004,7 +1002,7 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-15.0.1](../../../../requirements-board/requirements/stories/US-15.0.1.md) Ease of use | partial · mobile-card-capture and admin-day-view | stays partial, reason rewritten (calm capture screen with the stack and Price section kept, point-of-need help, welcome cards; intuitiveness for people not comfortable with modern systems needs usability testing). Shots `card-capture` (mobile :5174, signed in by the runner's preset, BK0009) with states `stack-kept` (highlight `[data-shot=procedure-stack]` and `[data-shot=price-card]`, no office-only pill) and `tip-open` (`info-tip-capture-stack` sheet); `day-view` (admin `/admin/day/2026-07-21`) with `day` and `tip-open` (`info-tip-day-statuses`); plus `first-run-hint-mobile`, `-web`, `-admin`, `review-tip` and a web `info-tip-capture-price` shot. Check the two old single images leave the frontmatter. Captions: `card-capture` "Booking capture: the descriptions, the Contract, the price and its calculation, nothing the office handles"; tips "Help at the point of need"; hints "Welcome card shown on first visit" |
+| [US-15.0.1](../../../../requirements-board/requirements/stories/US-15.0.1.md) Ease of use | partial · mobile-card-capture and admin-day-view | stays partial, reason rewritten (calm capture screen with the stack and Price section kept, point-of-need help, welcome cards; intuitiveness for people not comfortable with modern systems needs usability testing). Shots `card-capture` (mobile :5174, signed in by the runner's preset, BK0009) with states `stack-kept` (highlight `[data-shot=procedure-stack]` and `[data-shot=price-card]`, no office-only pill; the Insurance row with the approval number too if the shot's Booking holds one, else say so in the REPORT) and `tip-open` (`info-tip-capture-stack` sheet); `day-view` (admin `/admin/day/2026-07-21`) with `day` and `tip-open` (`info-tip-day-statuses`); plus `first-run-hint-mobile`, `-web`, `-admin`, `review-tip` and a web `info-tip-capture-price` shot. Check the two old single images leave the frontmatter. Captions: `card-capture` "Booking capture: the descriptions, the Contract, the price and its calculation, nothing the office handles"; tips "Help at the point of need"; hints "Welcome card shown on first visit" |
 | [US-13.5.3](../../../../requirements-board/requirements/stories/US-13.5.3.md) Sign in to the anaesthetist app | none (create it) | create, status captured. Mobile on :5174. Shot `pwa-sign-in`: open `/mobile/more`, tap `[data-shot=more-sign-out]` (the runner's preset starts signed in), state `sign-in` highlighting `[data-shot=sign-in-screen]`'s card (the pre-filled account, Sign in and the Provisional caption); then tap `[data-shot=sign-in-submit]`, state `signed-in` on `/mobile/lists`. Shot `more-account`: `/mobile/more`, highlight the "Signed in as" row and Sign out only (crop above the PWA build panel, below 26's profile card). Caption: "The anaesthetist signs in to the PWA with their account (simulated sign-in; the identity service is deferred to the end of discovery)" |
 
 **Recipes this phase must not break.** The stack and Price section recipes other phases own
@@ -1066,7 +1064,7 @@ Do not re-raise anything settled in the Decisions log.
   value is stored or logged.
 - **Nothing the catalogue gives the anaesthetist is stripped.** The stack (descriptions, the
   Contract's name, holder, who is invoiced and basis with figure, the RVG code: US-03.1.2, US-03.1.9); every
-  `PriceCard` state with its calculation and the total (FT-03.5, US-03.5.1; a fixed or prepaid price read-only even on an editable-flag Contract, D65, D30); the prepaid amount (US-03.1.8); the payer; the Split; the
+  `PriceCard` state with its calculation and the total (FT-03.5, US-03.5.1; a fixed or prepaid price read-only even on an editable-flag Contract, D65, D30); the prepaid amount (US-03.1.8); the approval number where the Booking holds one (D28); the RVG code the step rail hands them; the payer; the Split; the
   modifiers and explanations; the procedure and Contract Change. The guard test's "kept" half covers
   each and is not vacuous.
 - **Leaks.** Hunt for any anaesthetist path that still shows office-only detail: a sheet the inventory
@@ -1085,7 +1083,7 @@ Do not re-raise anything settled in the Decisions log.
 - **Help copy is true.** Each topic matches what the screen actually does after 15a to 39b and states
   only answered rules (D3, D12, D14 to D17, D25, D28, D30, D37, D42 to D44, D46, D65, OQ-78, US-13.7.3) and AR-28's
   plain words; none states as settled a point still open (OQ-49, OQ-60, OQ-79, OQ-83, OQ-88, OQ-89,
-  OQ-90, whether the anaesthetist sees the approval number, OQ-95, OQ-102, BCTI granularity); the price tips say no price is editable on a fixed or prepaid price (D65, D30); no topic says "slot",
+  OQ-90, OQ-95, OQ-102, BCTI granularity; the step rail's topics carry the working-direction pill); the price tips say no price is editable on a fixed or prepaid price (D65, D30); no topic says "slot",
   "event", "estimate", "deposit" or a tier name; every string is dash-free and within 60 words.
 - **Touch and focus.** Mobile tip hit areas are 44px and overlap nothing; a tip inside a picker sheet
   does not trap it; the desktop popover is not clipped, flips at the edges, closes on Esc and outside
@@ -1110,7 +1108,7 @@ Do not re-raise anything settled in the Decisions log.
   a fresh handset, More, mobile capture with the stack and a tip open, Admin Day and Review with a
   popover).
 - **Status row** for catch-up Phase 43a, and a phase entry with:
-  - the drift-check result against d436947 (US-15.0.1 and US-13.5.3 changed or not; OQ-83 still open
+  - the drift-check result against a68f09b (US-15.0.1 and US-13.5.3 changed or not; OQ-83 still open
     or answered; any OQ answered that changed a tip; any change to what the anaesthetist sees);
   - the work item 5 inventory, what was fixed in each place and what was confirmed kept;
   - the name map: `anaesthetistSession.ts` (`useAnaesthetistSession`, `signInSession`,
@@ -1165,8 +1163,7 @@ Do not re-raise anything settled in the Decisions log.
   - For any later phase that adds an operational screen section: give it a topic and pass `help`, and
     add any new anaesthetist-reachable sheet to the simplicity scan, in both its directions.
   - When OQ-83 is answered, change `SIGN_IN_RULE` and the sign-in screen, and drop
-    `SIGN_IN_PROVISIONAL`. When an OQ that a tip steers around is answered (OQ-89, OQ-90, the
-    approval number's visibility under OQ-93, OQ-95, OQ-102) or Greg reopens OQ-78, update its `HELP_TOPICS` entry. When the
+    `SIGN_IN_PROVISIONAL`. When an OQ that a tip steers around is answered (OQ-89, OQ-90, OQ-95, OQ-102, the step rail once designed with AA) or Greg reopens OQ-78, update its `HELP_TOPICS` entry. When the
     draft technical design (AR-29, AR-30) moves on, the stack and the price stay in 20a's and 24's
     modules; this phase's help copy names no field of the design and needs no change unless a rule
     changes.

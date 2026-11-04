@@ -71,7 +71,7 @@ information in Xero, only a unique id: the pair id is the Xero reference),
 [OQ-40](../../../../requirements-board/requirements/questions/OQ-40.md) (prepaid money is held until the procedure, in the AA Holding account
 Phase 27a builds and this phase promotes into the ledger, so "receipts held" includes prepayments received,
 which sit in the account until the List is authorised; refund on cancellation from the account is Phase
-41's (OQ-115: paid from the system), and its refund point is superseded by OQ-61: nothing is refunded or
+41's (OQ-115: the system raises the refund and Xero makes the payment, D53), and its refund point is superseded by OQ-61: nothing is refunded or
 credited automatically) and
 [OQ-42](../../../../requirements-board/requirements/questions/OQ-42.md) (a refund after
 payout is a credit note plus a negative invoice netted in the next run: Phases 39 and 39a; the leg
@@ -134,7 +134,7 @@ held for anaesthetists).
   deducted (D57, US-06.4.1, US-08.2.2). 27 builds no estimate, balance invoice, deduction or excess record.
 - **Phase 27a:** the AA Holding account in `src/domain/billing` (`prepayHolding.ts`: `HOLDING_ACCOUNT`, a
   payee kept like an anaesthetist's account, with its balance and entries; payables due skip it; only the
-  system pays out of it) and the **journal transfer** (`PrepayTransfer`), made when the office authorises a
+  money leaves it only by the transfer or a refund the system raises, and any payment itself is made in Xero, D53) and the **journal transfer** (`PrepayTransfer`), made when the office authorises a
   List: it moves each prepaid amount from the account to the anaesthetist who did the List (the payee in
   25's snapshot), mirrored in Xero as a journal (no ACCREC and ACCPAY pair), its anaesthetist leg released
   for the payables run like any payable. 27a keeps it out of 16's BCTI count by default. This phase promotes
@@ -185,7 +185,8 @@ ledger. The handoff reads the legs and stamps their mirror ids. A handoff fault 
 ledger, marked "Not yet in Xero". Payables due and the payables run are computed from payable legs,
 not from `state.xero.accPays`, and `payablesDue` stays the **one source** of what is due: Phase 39a's
 weekly ISO-week payment run (US-10.2.7, Proposed) reads it, with no second copy. Code and copy stop
-calling the engine's records a mirror of Xero.
+calling the engine's records a mirror of Xero. The payment itself is made in Xero and recorded here when
+detected (OQ-111, D53; Phase 37 builds the detection and "Run payables in Xero").
 Phase 16's BCTI count re-reads from the payable legs, with a parity test, so the monthly fee run
 charges exactly what it charged before (Dr Rutherford's $500 + $5 x 40 = $700 still reproduces).
 
@@ -227,7 +228,7 @@ read the same after the change, and a parity test proves it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the items it leans on against the plan's
-   baseline, catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `a68f09b` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -246,7 +247,7 @@ read the same after the change, and a parity test proves it.
    it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
    that in the PROGRESS entry.
 
-   Already folded into this plan (the `3d3a18c` to `d436947` changes, so not drift):
+   Already folded into this plan (the `3d3a18c` to `a68f09b` changes, so not drift):
    - the six covered items changed only in artifact links (AR-19, AR-25) and link markup, as did
      US-08.3.1, US-09.1.1, US-09.1.4, US-09.2.1, US-10.1.2, FT-06.3 and FT-10.2;
    - the prepayment rewrite: US-06.2.3 (an estimate) and US-06.4.2 (no automatic credit) Retired;
@@ -267,14 +268,18 @@ read the same after the change, and a parity test proves it.
      prototype), US-13.2.2's patient-centric balance, DM-23's two ledger scopes, US-10.2.5 with OQ-71
      (outside the system), Greg's view on OQ-60 (16 built it) and US-13.5.2's audit scope (DM-45,
      Phase 39).
-   Folded in at `d436947` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
+   Folded in at `a68f09b` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
    final invoice with nothing deducted, D57; a prepayment's payable is to the AA Holding account, a creditor
    in the payables sub-ledger, and its release at authorisation is a journal transfer, never a receivable);
    FT-06.5, US-06.5.1 and US-06.4.1 (the account, the transfer, system-only payouts); US-06.3.1 (the approval
    step AA can switch off: the pair is created at once when it is off); US-09.1.3 and FT-09.1; OQ-80 as
    extended 2026-10-28 (D38: the pair is created at generation, a move changes nothing, no payee repoint),
    OQ-116 (D57), OQ-125 (D72, the transfer's trigger, open) and OQ-115 (a cancellation refund is paid from
-   the system, Phase 41's); OQ-111 (whether the cash moves in Xero or here) open and not built here.
+   the system, Phase 41's).
+   Folded in at `a68f09b` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
+   anaesthetists are made in Xero's payables run and recorded here when detected (Phase 37 builds the
+   detection); the ledger side of a disbursement is unchanged. The refund on a cancelled prepayment is
+   raised by the system (Phase 41) and paid in Xero.
 2. **Answers and open questions.** None blocks this phase.
    - **Answered, build the answer:** OQ-02 (the fee is a monthly invoice; "what they owe AA" is the
      anaesthetist's unpaid fee invoices, with no new fee maths here), OQ-61 and OQ-76 (nothing is
@@ -297,8 +302,11 @@ read the same after the change, and a parity test proves it.
    - **Built defaults, logged for the owner:** the journal transfer's `in` leg stays out of 16's BCTI count
      (27a's default; one `prepaymentPairs: false` beside `paidOnly`), so a prepaid Procedure counts no BCTI
      for the fee unless the owner flips it. The transfer's trigger (the office authorises the List) is
-     OQ-125 (D72), still open: built as 27a built it. Whether the cash moves in Xero or in the new system
-     is OQ-111 (D53), not decided here: the ledger records the movement and Xero mirrors it as for any pair.
+     OQ-125 (D72), still open: built as 27a built it.
+   - **Answered, build the answer (OQ-111, D53):** the cash moves in Xero and the ledger records it when
+     detected, so the ledger's disbursement entry is the record of a Xero payment. Here the Billing
+     monitor's run button writes those entries directly (the seam); Phase 37 turns it into "Run payables
+     in Xero", with the entry written on detection. Build the entry so that change moves only the caller.
    - **If OQ-29 or AA's accountant has settled "one BCTI per procedure"** since `7cd7802`, do not stop
      (ROADMAP.md "Owner review: agents test themselves"): keep one payable leg per receivable invoice
      here, because the re-baseline belongs in 16's one place (`bctiRecords`, the $700 seed and the S3
@@ -894,6 +902,8 @@ read the same after the change, and a parity test proves it.
      guard it anyway with `notInXero`, skip, and count.
    - 26's destination snapshot and `missingBank` flag are unchanged (a payee with no bank account on
      file is still paid, with a `null` destination, as 26 built it).
+   - A disbursement entry is the ledger's record of a payment made in Xero (OQ-111, D53): write it through
+     one function that Phase 37's detection calls too, so only the caller changes.
    - The run stays an on-demand office action here (OQ-47 Proposed; the weekly cycle, its record and
      its approval are Phase 39a's): no payment day, no week number, no weekly close.
    - The AA fee is never netted against payables (16's rule): `payablesDue` and the run never read an
@@ -1219,7 +1229,9 @@ Harness bar (framed build):
 
 "Run payables" is **not** a bar entry. Phase 14 ruled that its home is the Billing monitor's own
 product button (an office action done through normal use), and this phase keeps that: the button now
-runs over payable legs, and the Ledger's Payables due tile links to it.
+runs over payable legs, and the Ledger's Payables due tile links to it. Phase 37 turns that button into
+"Run payables in Xero" (the payment made in Xero, recorded here when detected, OQ-111, D53); the
+PWA stand-in below is renamed there too.
 
 PWA equivalents (the mobile Balances "paid out" figure waits on the office's payables run):
 
@@ -1293,7 +1305,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       Released up by exactly the half, and Payables due up by the same. It stays in balance. The
       invoice document chips and the Xero sim agree ("Matches the ledger").
 - [ ] Run payables with the Billing monitor's own button (the Ledger's Payables due tile links there). Payables due returns to $0.00, and Disbursed and Dr Souter's
-      Paid out rise by the same amount.
+      Paid out rise by the same amount (the ledger's record of a payment made in Xero, D53; Phase 37 later
+      makes the button "Run payables in Xero").
 - [ ] "Inject unmatched receipt" on the Ledger, "Names Dr Souter". The indicator reads "Out of balance
       by $120.00", the check line names the held receipt, the nav badge reads 1, and the trigger is
       disabled. Anaesthetists out of balance lists Dr Souter with $120.00 and the reason; its Open link
@@ -1549,13 +1562,12 @@ explicitly supersedes.
     a receipt can belong to one anaesthetist's ledger before it is matched);
   - the journal transfer's `in` leg kept out of 16's BCTI count by default (`prepaymentPairs: false`,
     27a's default), so a prepaid Procedure counts no BCTI for the fee unless flipped; the transfer's trigger
-    (the office authorises the List) is OQ-125 (D72), still open, built as 27a built it; and whether the
-    cash movement happens in Xero or here (OQ-111, D53), unresolved;
+    (the office authorises the List) is OQ-125 (D72), still open, built as 27a built it;
   - OQ-29 (one BCTI per receivable invoice) and OQ-60 (paid-only, never netted) for AA's accountant;
   - the screens: `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId` (office), web
     Accounts and mobile Balances (Dr Souter).
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result against `d436947`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
+  - the drift-check result against `a68f09b`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
     OQ-61, OQ-70, OQ-71, OQ-73, OQ-76, OQ-80) and how the open questions were handled (OQ-29, OQ-47
     Proposed, OQ-60);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item

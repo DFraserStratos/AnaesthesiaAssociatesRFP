@@ -6,13 +6,13 @@
 [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) Payer on the Booking (Confirmed; **Contradicts**: the payer is a per-Procedure guardian override, with no name, email and postal address on the Booking, not prefilled, and the anaesthetist cannot change it) ·
 [US-11.2.3](../../../../requirements-board/requirements/stories/US-11.2.3.md) Payer email or postal address required when the payer is billed (Confirmed; Missing; where it is enforced is not stated) ·
 [US-11.2.4](../../../../requirements-board/requirements/stories/US-11.2.4.md) Warn when a child is the payer on the Booking (Confirmed; Missing) ·
-[US-11.4.3](../../../../requirements-board/requirements/stories/US-11.4.3.md) Insurance and approval number on the Booking (Verify, now under FT-11.2; Partial: no approval number, no warning, the insurer is office-only on the Procedure; the missing approval number is the only insurance warning) ·
+[US-11.4.3](../../../../requirements-board/requirements/stories/US-11.4.3.md) Insurance and approval number on the Booking (Verify, now under FT-11.2; Partial: no approval number, no warning, the insurer is office-only on the Procedure; the missing approval number is the only insurance warning; the anaesthetist sees the number where held) ·
 [FT-03.6](../../../../requirements-board/requirements/stories/FT-03.6.md) Booking completeness validation (Confirmed; Partial) ·
 [US-03.6.1](../../../../requirements-board/requirements/stories/US-03.6.1.md) Mark a Booking complete (Verify; **Contradicts**: route, an RVG code or billing line and times are demanded, with no Contract check and no modifier explanation) ·
 [US-03.3.3](../../../../requirements-board/requirements/stories/US-03.3.3.md) Record anaesthetic start and finish times (Confirmed; **Contradicts**: messages and labels say "handover" and times are mandatory even on a fixed price) ·
 [US-07.2.2](../../../../requirements-board/requirements/stories/US-07.2.2.md) Office review of Contracts and references (Confirmed; Partial: no stack, payer, insurer, approval number or warnings on the review rows) ·
 [DM-11](../analysis/domain-model-delta.md#dm-11) who is billed is the Contract's holder or the payer named on the Booking (any party, with an email or postal address), replacing the per-Procedure override ·
-[DM-12](../analysis/domain-model-delta.md#dm-12) the Booking carries the insurer (a contract holder) and the approval number, editable by the office and the anaesthetist; a missing number is the only insurance warning ·
+[DM-12](../analysis/domain-model-delta.md#dm-12) the Booking carries the insurer (a contract holder) and the approval number, editable by the office and the anaesthetist, who sees the number where one is held; a missing number is the only insurance warning, and the number is never needed to complete ·
 [DM-16](../analysis/domain-model-delta.md#dm-16) the references a Contract's holder needs, which the office supplies at review ·
 [DM-59](../analysis/domain-model-delta.md#dm-59) completion is three conditions, split from the billing validator (**joined**) ·
 [RV-21](../analysis/reverse-check.md#rv-21-completion-rules-follow-the-rfps-route-and-times-not-the-contract-with-no-modifier-explanation) completion rules follow the Contract, not the route ·
@@ -45,14 +45,13 @@
 [OQ-55](../../../../requirements-board/requirements/questions/OQ-55.md) (**D2**: the Booking holds the insurer, a contract holder, and the approval number; the Contract decides who is billed),
 [OQ-99](../../../../requirements-board/requirements/questions/OQ-99.md) (**D33**: completion needs a Contract; the RVG code is optional),
 [OQ-26](../../../../requirements-board/requirements/questions/OQ-26.md) (the office approves Contract selections at the submitted review; the anaesthetist may change one until AUTHORISED: item 12),
-[OQ-93](../../../../requirements-board/requirements/questions/OQ-93.md) (**D28**, answered 23 October, filed 4 November: fields on the Booking; the insurer does not narrow the Contract list; the warning for an insurer named with no insurer Contract is dropped, so nothing matches the insurer against the Contracts; a missing approval number is the only insurance warning, never a block, shown to the office (to-do list and review) and to the anaesthetist viewing the Booking; the approval number is the design's one insurance acceptance reference; the anaesthetist as well as the office may change it on the day and completes without it).
+[OQ-93](../../../../requirements-board/requirements/questions/OQ-93.md) (**D28**, answered in full, 23 October and 4 November: fields on the Booking; the insurer does not narrow the Contract list; the warning for an insurer named with no insurer Contract is dropped, so nothing matches the insurer against the Contracts; a missing approval number is the only insurance warning, never a block, shown to the office (to-do list and review) and to the anaesthetist viewing the Booking; the approval number is the design's one insurance acceptance reference; the anaesthetist as well as the office may change it on the day and completes without it; **4 November** (part 4, Donald, for the build): the anaesthetist sees the number itself where the Booking holds one; built as answered, no provisional label).
 **Still open, built as defaults** (each in one place, logged on the owner's review list):
-OQ-93's one open part (**D28**: whether the anaesthetist sees the approval number itself or only that it is approved; default, they see and edit it, in one place, labelled provisional),
 [OQ-122](../../../../requirements-board/requirements/questions/OQ-122.md) (**D70**: a payer with only a postal address is accepted; 22's run marks that invoice "To post"; Greg's "different payer" tick is the payer control),
 and a reading with no question: US-11.2.3 does not say where the contact rule is enforced, so the payer form asks for one and Review flags a billed payer with neither; never a completion block.
 OQ-114 (D55, holder delivery) is 18's and 22's; nothing here reads it beyond showing the holder's setting.
 
-**Depends on:** Phase 15a (the warning routine and registry, the Admin to-do list with Clear, the triangle in all three apps, the warning on opening a Booking, no confirm step at submit, "Raise sample warnings"), Phase 20a (the three-part Procedure stack with its "who is invoiced" selector) and Phase 32b (notices, active or resolved, and "alert the office" on a List or Booking). Through 20a it relies on 20 (one Contract per Procedure; the route, payment category and `Procedure.insurerId` gone; the picker with No contract (RVG) first; the flagged anaesthetist Contract change; the "Needs a Contract" list; three interims: who is billed through the holder or the `billablePartyId` override, `funderOverride`, and the office-set prepayment flag), 38a (the anaesthetist edits until AUTHORISED; late edits marked), 19b (modifier claims with explanations), 19a (Contract lines and the resolver), 19 (RVG groups and the out-of-range warning rule), 18 (the contract-holder master: kind including insurer, `billsHolder`, `billablePartyRef`, the delivery setting, the Insurer master gone so insurers are holders such as `CH-NIB`, the interim `routeCounterpartyForHolder`, `CH-ARIA` billed through `BP0002`, `CH-DOYLE` not billed), 17 (hospital and rooms contact emails), 16 (the Xero contact-name helper), 15b (ACTIVE) and 14 (trigger registry, PWA sheet, actors).
+**Depends on:** Phase 15a (the warning routine and registry, the Admin to-do list with Clear, the triangle in all three apps, the warning on opening a Booking, no confirm step at submit, "Raise sample warnings"), Phase 20a (the three-part Procedure stack with its "who is invoiced" selector) and Phase 32b (notices, active or resolved, and "alert the office" on a List or Booking). Through 20a it relies on 20 (one Contract per Procedure; the route, payment category and `Procedure.insurerId` gone; the step rail's Contract picker, a working direction; the flagged anaesthetist Contract change; the "Needs a Contract" list; three interims: who is billed through the holder or the `billablePartyId` override, `funderOverride`, and the office-set prepayment flag), 38a (the anaesthetist edits until AUTHORISED; late edits marked), 19b (modifier claims with explanations), 19a (Contract lines and the resolver), 19 (RVG groups and the out-of-range warning rule), 18 (the contract-holder master: kind including insurer, `billsHolder`, `billablePartyRef`, the delivery setting, the Insurer master gone so insurers are holders such as `CH-NIB`, the interim `routeCounterpartyForHolder`, `CH-ARIA` billed through `BP0002`, `CH-DOYLE` not billed), 17 (hospital and rooms contact emails), 16 (the Xero contact-name helper), 15b (ACTIVE) and 14 (trigger registry, PWA sheet, actors).
 **Estimated:** 2 sessions. Session 1 is work items 1 to 8: the payer on the Booking, who is billed in one function, grouping, the guardian master out, the insurer and approval number, two warnings and their samples, seed, re-greened and demoable. Session 2 is items 9 to 16: holder references, completion and 'finish', Review, Contract approval, the PWA trigger, copy, shots, demo guide. If session 2 runs long, finish and re-green items 9, 10 and 11 first; items 12 and 13 are the tail to carry over, never the tests.
 
 ## Goal
@@ -99,7 +98,7 @@ ticked or a contract holder's Contract bills it.
 [AR-44 · SXAP](../../../../requirements-board/requirements/artifacts/AR-44.md#sxap)): two optional
 Booking fields, the insurer (a reference to an insurer contract holder; there is no insurer master)
 and the approval number, from the source data where an intake path carries them, editable by the
-office and, on the day, by the anaesthetist. A blank insurer is fine when the patient pays. An insured
+office and, on the day, by the anaesthetist, who sees the number itself where the Booking holds one (D28, 4 November). A blank insurer is fine when the patient pays. An insured
 Booking with no approval number raises a **warning** through 15a's routine, never a block; the
 anaesthetist completes without it. It is the **only insurance warning**, shown to the office (to-do
 list and Review) and to the anaesthetist viewing the Booking (OQ-93, D28), and the approval number
@@ -140,7 +139,7 @@ from v6, say so in a doc comment beside v6's field names.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and questions against the plan's baseline,
-   catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue folder):
+   catalogue commit `a68f09b` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-11.2,US-11.2.1,US-11.2.2,US-11.2.3,US-11.2.4,US-11.4.3,US-08.2.1,FT-08.2,FT-03.6,US-03.6.1,US-03.6.3,US-07.2.2,US-04.2.1,US-04.2.2,US-04.1.5,US-04.3.3,US-04.2.8,US-03.4.1,US-03.3.3,US-03.3.4,US-03.1.9,US-13.7.2,US-04.3.2,OQ-26,OQ-54,OQ-55,OQ-67,OQ-78,OQ-93,OQ-99,OQ-122
@@ -160,19 +159,20 @@ from v6, say so in a doc comment beside v6's field names.
    - DM-59 added: completion as three conditions, split from the billing validator.
    - FT-11.2 links AR-44; an event uses its Procedure's billable party by default.
 
-   At the 2026-11-04 plan update (`7cd7802..d436947`): OQ-93 answered further (D28, 23 October):
-   the review warning for an insurer named with no insurer Contract is dropped (US-07.2.2, US-13.7.1);
-   the missing approval number is the only insurance warning, shown to the office and to the
-   anaesthetist viewing the Booking (US-11.4.3); no narrowing; the approval number is the acceptance
-   reference (FT-11.2). Only whether the anaesthetist sees the number itself stays open.
+   At the 2026-11-04 plan updates (`7cd7802..a68f09b`): OQ-93 answered in full (D28). The review warning
+   for an insurer named with no insurer Contract is dropped (US-07.2.2, US-13.7.1); the missing approval
+   number is the only insurance warning, shown to the office and the anaesthetist (US-11.4.3); no
+   narrowing; the approval number is the acceptance reference (FT-11.2); and the anaesthetist sees the
+   number itself where the Booking holds one, never needing it to complete (US-11.4.3's new criterion,
+   US-03.6.1).
 
-   Diff anything after `d436947` the same way. If a covered item is now Retired or Future, drop it
+   Diff anything after `a68f09b` the same way. If a covered item is now Retired or Future, drop it
    and say so in the PROGRESS entry.
 2. **Questions.** OQ-67, OQ-78, OQ-54, OQ-99 and OQ-26 are answered: build them, with no
    "provisional" caption. OQ-93 (fields on the Booking, the one warning shown to office and anaesthetist,
-   no narrowing, the approval number as the acceptance reference, the anaesthetist editing on the day)
-   is built as answered; only whether the anaesthetist sees the number itself, and OQ-122, are built as
-   D28's and D70's defaults, each labelled in one place (`insurance.ts`, `invoiceDeliveryFor`) and logged. If Greg has
+   no narrowing, the approval number as the acceptance reference, the anaesthetist seeing and editing
+   it on the day) is built as answered, with no label; only OQ-122 is built as D70's default, labelled
+   in one place (`invoiceDeliveryFor`) and logged. If Greg has
    reopened OQ-78, stop and record it: `billablePartyForProcedure` is the one place it changes. If any
    open part has been answered, build the answer and drop its label.
 3. **Read what 15a, 18, 19, 19b, 20, 20a, 32b and 38a actually left.**
@@ -340,8 +340,7 @@ DM-11, DM-12, DM-16, DM-59); `../epics/EP-11.md`, `EP-03.md`, `EP-07.md`, `EP-08
      Contract bills its contract holder (US-11.2.4).
    - `src/domain/billing/insurance.ts` (D28, one place): `approvalNumberMissing(booking)` (an insurer is
      named and there is no number: US-11.4.3), the only insurance rule. There is no insurer-against-Contract
-     check (dropped 23 October). Its doc comment labels the one open part (whether the anaesthetist sees the
-     number itself).
+     check (dropped 23 October). The number itself shows to the anaesthetist wherever the Booking holds one (D28, answered).
    - 20a's `whoIsInvoicedFor` now reads `billablePartyForProcedure`; its output shape is unchanged.
 3. **Store: one writer each.**
    - `setBookingPayer(api, actor, bookingId, payer)`: the only writer of `Booking.payer`. It
@@ -393,7 +392,7 @@ DM-11, DM-12, DM-16, DM-59); `../epics/EP-11.md`, `EP-03.md`, `EP-07.md`, `EP-08
      payer." Mobile-first: tappable rows, a toggle, no dropdown, no money.
    - The stack's Contract part (20a) shows who is invoiced from `billablePartyForProcedure`. Nothing
      else on anaesthetist screens shows the holder's billed setting (US-15.0.1, 43a).
-   - An **Insurance** row: the insurer and the approval number, editable by the office and the
+   - An **Insurance** row: the insurer and the approval number itself (not only that it is approved), editable by the office and the
      anaesthetist (a small sheet: an insurer select over insurer holders and a number field), in all
      three apps; "Add insurance" when blank. With an insurer and no number, item 7's warning shows in
      15a's places; there is no ring-the-rooms cue.
@@ -587,8 +586,8 @@ DM-11, DM-12, DM-16, DM-59); `../epics/EP-11.md`, `EP-03.md`, `EP-07.md`, `EP-08
       table (Greg); any party may pay, a family trust included; the Aria clinic stays a billed holder.
     - The payer-contact rule (US-11.2.3): asked on the form, flagged at Review, never at completion; a
       postal address alone accepted (D70's default).
-    - Insurance (D28, OQ-93, answered): fields on the Booking, the insurer an insurer holder, editable
-      by the office and the anaesthetist; a missing number is the only insurance warning, shown to the
+    - Insurance (D28, OQ-93, answered in full): fields on the Booking, the insurer an insurer holder, editable
+      by the office and the anaesthetist, who sees the number itself where held and needs none to complete; a missing number is the only insurance warning, shown to the
       office and the anaesthetist (the ring-the-rooms cue and the insurer-with-no-insurer-Contract
       warning are gone); no narrowing and no picker tag; the AIA Booking on No contract (RVG), billed to
       the patient, raising nothing.
@@ -680,7 +679,8 @@ the owner (ROADMAP.md "Owner review: agents test themselves").
       sheet); a blank insurer on a patient-paying Booking is fine. The `approvalMissing` Booking
       shows the approval warning on the to-do list, Review and the triangle, and Dr Souter sees it
       viewing the Booking on mobile; enter the number: the warning goes. He completes a Booking with
-      no number.
+      no number. On a Booking that holds a number (the nib Booking with one) the Insurance row shows
+      the number itself on mobile and web, and he can change it on the day.
 - [ ] **No other insurance warning (US-07.2.2, US-13.7.1).** The nib-naming Booking on No contract
       (RVG) and the AIA Booking raise nothing, on the to-do list, Review and the Booking; the picker
       carries no insurance tag and filters nothing; the List authorises with the approval warning open
@@ -734,7 +734,7 @@ In the same session, patch `docs/demo-guide/03-demo-script.md`, `04-presenter-ch
 - **Insured patients** (the cheat sheet's "Patient insurance distinction", the personas doc's
   reimbursement insurer row and their master-guide sections): the AIA patient is invoiced under No
   contract (RVG) like any patient; the insurer (a contract holder) and approval number sit on the
-  Booking, editable by the office and the anaesthetist; a missing number is the only insurance warning, shown to the
+  Booking, editable by the office and the anaesthetist; the anaesthetist sees the number itself where held; a missing number is the only insurance warning, shown to the
   office and the anaesthetist; insurance never decides who is billed or narrows the Contract list.
 - **S4 Beat 1:** no change (Riley has an email); confirm by running it.
 - **Cheat sheet:** the payer section (who is billed by holder or payer; the payer prefilled, the
@@ -762,7 +762,7 @@ after the review pass and before the PROGRESS.md entry. Re-run
 | [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) Payer on the Booking | partial · admin-guardian-payer (set, edit) | Captured. Re-shoot on Grace Park: `set` Hana Park in `booking-payer-row` with email and postal address; `edit` the `payer-sheet` with Different payer ticked. Add `web-booking-payer` and `mobile-booking-payer` (anaesthetist: dialog, bottom sheet). Captions on name, email and postal address; drop the partial reason; hand the stale-screenshot note to `/update-requirements`. |
 | [US-11.2.3](../../../../requirements-board/requirements/stories/US-11.2.3.md) Payer email or postal address required | absent | Captured. Create `admin-payer-contact-required` and `mobile-payer-contact-required` on `payerContactMissing`: `flagged` (chip on `booking-payer-row`, plus `review-payer` in admin), `postal` (a postal address entered, chip gone). Caption: "A billed payer needs an email or a postal address". |
 | [US-11.2.4](../../../../requirements-board/requirements/stories/US-11.2.4.md) Warn when a child is the payer | absent | Captured. Create `admin-todo-child-warning` on `/admin/day/2026-07-21` (`todo-child-warning`, expanding "Show all" if needed; `raised`, `cleared`), `booking-child-warning` on `childPayer` in admin, web and mobile, and `guardian-payer-no-warning` on Grace Park. Captions: mild, no block; none when a guardian pays or a contract holder is billed. |
-| [US-11.4.3](../../../../requirements-board/requirements/stories/US-11.4.3.md) Insurance and approval number on the Booking | none (create it) | Captured. Create `admin-insurer-approval` on `approvalMissing`: `missing` (`booking-insurance-row` and the warning), `recorded` (`insurance-sheet` with insurer and number); and `mobile-approval-on-the-day` (the anaesthetist sees the warning on the Booking, enters the number, the warning gone). Caption: "Insurer and approval number on the Booking; a missing number is the only insurance warning". No insurer-without-Contract state. |
+| [US-11.4.3](../../../../requirements-board/requirements/stories/US-11.4.3.md) Insurance and approval number on the Booking | none (create it) | Captured. Create `admin-insurer-approval` on `approvalMissing`: `missing` (`booking-insurance-row` and the warning), `recorded` (`insurance-sheet` with insurer and number); and `mobile-approval-on-the-day` (the anaesthetist sees the warning, enters the number, the warning gone, then the number itself in the Insurance row). Caption: "Insurer and approval number on the Booking; the anaesthetist sees the number and may change it on the day; a missing number is the only insurance warning". No insurer-without-Contract state. |
 | [FT-03.6](../../../../requirements-board/requirements/stories/FT-03.6.md) Booking completeness validation | feature | Shows its stories' shots; no recipe of its own. |
 | [US-03.6.1](../../../../requirements-board/requirements/stories/US-03.6.1.md) Mark a Booking complete | captured · web-mark-complete, mobile-mark-complete (blocked, complete) | Captured. Keep both `name`s and states on BK0009 (check `capture-times` still lands); the blocked line reads "finish". Add `fixed-price` on web and mobile on `fixedPriceNoTimes`: Mark complete passing with no times. |
 | [US-03.6.2](../../../../requirements-board/requirements/stories/US-03.6.2.md) Incomplete Bookings listed | captured · web-incomplete, mobile-incomplete (list, blocked) | Captured. Re-shoot; the "what is missing" line reads the new messages. |
@@ -809,7 +809,7 @@ in the Decisions log.
   reaches a holder-billed invoice; a postal-only payer is accepted and snapshotted.
 - **The two warnings.** Registered once each; no `reviewFlags` duplicate; age on the List date at
   the 18th birthday; none when another payer is ticked or a holder is billed; the approval warning
-  silent for a blank insurer and shown to the anaesthetist as well as the office; no warning anywhere
+  silent for a blank insurer and shown to the anaesthetist as well as the office, who also sees the number itself; no warning anywhere
   for an insurer named with no insurer Contract (`insurerNamedWithoutContract` and its sample gone);
   nothing blocks saving, completing, submitting or authorising.
 - **Completion.** `completionFailuresFor` is the only rule and holds exactly three conditions;
@@ -827,8 +827,7 @@ in the Decisions log.
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): the defaults built (D28: the anaesthetist seeing and editing the approval number itself;
-  D70: a postal address alone accepted and 22
+  themselves"): the defaults built (D70: a postal address alone accepted and 22
   posting it; the payer-contact rule asked on the form and flagged at Review, not at completion), the
   readings built (the payer on the Booking, changeable by the anaesthetist, against v6 and Greg's
   single table; the different-payer tick reading the patient record; any party as payer; the Aria
@@ -838,7 +837,7 @@ in the Decisions log.
   payer sheet on mobile and web, the Payer and Insurance rows, Review, the to-do list's two
   warnings).
 - **Status table:** a catch-up row for Phase 21.
-- **Phase entry:** the drift-check result (against `d436947`; what was built as answered and as
+- **Phase entry:** the drift-check result (against `a68f09b`; what was built as answered and as
   defaults; what 15a, 18, 19, 19b, 20, 20a, 32b and 38a left that was reused); files and actions added
   and the guardian master's removal; the parity result and the Doyle change; the `PERSIST_VERSION`
   bumps; tests added; the review List and each sample's placement; the manual checklist item by item;
@@ -853,8 +852,7 @@ in the Decisions log.
   address a party through `billablePartyForProcedure` or the payer sheet, and 39b removes the
   validator's BillingLine branch; 40 adds the missing-NHI blocker; 43a keeps the payer and the stack
   on anaesthetist screens; if OQ-78 reopens or the payer moves onto the booking procedure,
-  `whoIsBilled.ts` and `setBookingPayer` change; if the anaesthetist-sees-the-number part of OQ-93 or OQ-122 is answered, `insurance.ts` or
-  `invoiceDeliveryFor` is the place".
+  `whoIsBilled.ts` and `setBookingPayer` change; if OQ-122 is answered, `invoiceDeliveryFor` is the place".
 - **Catalogue screenshots:** recipes created (US-11.2.3, US-11.2.4, US-11.4.3) and changed
   (US-11.2.1, US-11.2.2, US-03.6.1, US-03.6.2, US-03.3.3, US-07.2.2, plus any the step broke), the
   `requirements-board/requirements/capture/REPORT.md` counts before and after, and US-11.2.2's

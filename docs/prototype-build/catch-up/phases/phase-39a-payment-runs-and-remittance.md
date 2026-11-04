@@ -6,12 +6,12 @@
 [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run (Confirmed) ·
 [DM-25](../analysis/domain-model-delta.md#dm-25) Weekly payment cycle with period approval of BCTIs and a remittance advice that nets negative invoices.
 Read alongside (not closed here):
-[FT-10.2](../../../../requirements-board/requirements/stories/FT-10.2.md) (Releasing payables: now
-**Matches**, so it left this phase's covers and nothing is built for it; the weekly run still
-replaces the ungated manual button, as US-10.2.7's work),
-[OQ-111](../../../../requirements-board/requirements/questions/OQ-111.md) (**open**, D53: whether
-anaesthetists are paid in Xero's payables run or by the new system with Xero only recording it; built
-to US-09.2.4 as written, the detection in one place),
+[FT-10.2](../../../../requirements-board/requirements/stories/FT-10.2.md) (Releasing payables: Phase
+37's, which moves the payout to Xero; nothing is built for it here, and the weekly run still replaces
+the ungated manual button, as US-10.2.7's work),
+[OQ-111](../../../../requirements-board/requirements/questions/OQ-111.md) (**answered** 4 November,
+D53: anaesthetists are paid in Xero's payables run; this cycle approves, records and tracks, and never
+pays from the app (US-09.2.4)),
 [US-06.5.1](../../../../requirements-board/requirements/stories/US-06.5.1.md) (27a's AA Holding
 account: a run never pays it; its prepayments reach a run only as the anaesthetist's payable that
 27a's journal transfer creates, [AR-52](../../../../requirements-board/requirements/artifacts/AR-52.md)),
@@ -147,10 +147,10 @@ anaesthetist can owe money back. The catalogue asks for four things (DM-25):
   Its prepayment reaches a run only as the anaesthetist's payable that 27a's journal transfer creates
   for whoever did the List, an ordinary run line, once it
   is released like any payable.
-- **Where the payment is made** (OQ-111, D53, open): built as US-09.2.4 is written. The accountant
-  pays the schedule in Xero and the engine records each payment (`recordDisbursement`,
-  `recordOffset`), kept in the one place that detects them, so "paid from the new system" is a small
-  change. No app caption; logged on the owner's review list.
+- **Where the payment is made** (OQ-111, answered, D53): Xero's payables run. The cycle approves,
+  schedules and tracks; the accountant pays the schedule in Xero and the engine records each payment
+  (`recordDisbursement`, `recordOffset`) when Xero reports it. The app never makes the payment, and
+  bank details (26) are held but not paid from.
 
 The state gains payment cycles (payables runs with an ISO week), a payment-cycle setting, a simulated
 bank download, an offset amount on the payable leg, nettings on the negative invoice and Xero
@@ -159,8 +159,8 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot, commit d436947 (the tool diffs from
-   the baseline in plan.json to the working tree, so it shows only what changed after d436947):
+1. Run the drift check against the plan's catalogue snapshot, commit a68f09b (the tool diffs from
+   the baseline in plan.json to the working tree, so it shows only what changed after a68f09b):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3
@@ -171,9 +171,9 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
    OQ-47, OQ-71, OQ-42, OQ-60, OQ-29 and OQ-77, and the domain-model lines on the internal ledger, the negative invoice and the remittance
    advice. If an item changed, re-read it and adjust the work items. If US-10.2.5, US-10.2.6 or
    US-10.2.7 is now Retired or Future, drop its work items and record that in the PROGRESS entry. At
-   7cd7802 US-10.2.7 is **Proposed** (Greg's weekly cycle, built to), US-10.2.6 is **Verify**
+   a68f09b US-10.2.7 is **Proposed** (Greg's weekly cycle, built to), US-10.2.6 is **Verify**
    (approver and its relation to the release open, OQ-47), US-10.2.5 is **Confirmed**, and FT-10.2 is
-   **Matches** (read only: nothing here is built for it).
+   37's (read only: nothing here is built for it).
 2. **Questions** (each built as one setting or one store action, so a different answer stays
    contained):
    - **OQ-47 (payment day and cycle; who approves), Proposed: build to the weekly cycle.** The cycle
@@ -190,12 +190,11 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
      If it says **US-10.2.6 is the same step as US-10.2.1's release**, stop and tell the owner (it
      would remove the gate this phase adds). If the **20th** has been folded into this cycle, stop
      and tell the owner (it would bring the AA fee into a trust run, against OQ-60 and FT-10.3).
-   - **OQ-111 / D53 (where the anaesthetist is paid), open.** Default: build US-09.2.4 as written
-     (the ACCPAY paid in Xero's payables run, the engine detecting it and recording the disbursement,
-     as 37 built it), with this phase's weekly run recording what is released. Keep the detection in
-     one place (`disbursementDetection.ts`, plus `recordOffset`) so "paid from the new system" is a
-     small change. No app caption; owner's review list. If OQ-111 is now answered "from the new
-     system", stop and tell the owner: it changes 37 and this phase's `payRunInXero`.
+   - **OQ-111 / D53 (where the anaesthetist is paid), answered 4 November: Xero's payables run.**
+     Build as 37 did (the ACCPAY paid in Xero, the engine detecting it and recording the
+     disbursement), with this phase's weekly run approving and recording what is released. No
+     provisional label, no app caption, and no pay-from-the-app path. If the catalogue has reopened
+     it, stop and tell the owner.
    - **OQ-71 (a negative with no later payment), answered: outside the system.** Build nothing for
      it beyond the open amount staying on the ledger position with its caption. If the catalogue has
      reopened it, do not build a recovery path here: record it in the PROGRESS entry for a later
@@ -570,7 +569,7 @@ check):
      makes the run stale; closing with nothing waiting refuses; an anaesthetist with only an open
      negative leaves nothing to close.
 6. **Store: pay a scheduled run in Xero, with netting** (`payablesActions.ts` and 37's
-   `xeroSimActions.ts`). US-10.2.5, US-10.2.6, OQ-111 (detection kept in one place).
+   `xeroSimActions.ts`). US-10.2.5, US-10.2.6, OQ-111 (answered: paid in Xero, detected by the engine).
    - `runPayables(api, office)` (the Billing monitor's "Run payables in Xero": the accountant paying
      the schedule, badged Simulated Xero) takes the oldest scheduled run and calls
      `payRunInXero(api, actor, runId, { webhook })`, which replaces 37's `payBillsInXero` for a run
@@ -974,9 +973,8 @@ reset run of the built app.
     remittances · `/web/accounts/remittances`".
   - The S4 discovery points gain OQ-47, one line: the weekly cycle is Greg's proposal, built to and
     being confirmed with AA's accountant, with who approves and how the 20th-of-the-month payment
-    fits still open. Add OQ-111 (D53), one line: whether anaesthetists are paid in Xero's payables run
-  (built, as US-09.2.4 reads) or by the new system is still with Greg. OQ-71 is answered and is not a
-  discovery point.
+    fits still open. OQ-71 is answered and is not a discovery point. Where the payment is made is
+  answered (OQ-111): the cycle approves and records while Xero pays, so no discovery point.
 - **`02-workflows-and-handoffs.md`:** Workflow 7 ("collect money and disburse it to the anaesthetist",
   step 6 "AA runs payables and disburses the authorised amount" and the "partial payment followed by
   two payables runs" demo point) gains the weekly cycle (close, Monday checks with holds, approval,
@@ -1007,7 +1005,7 @@ reset run of the built app.
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
 `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 39a` first: earlier phases may have
-changed these recipes since this plan was written. FT-10.2 left this phase (Matches): no row.
+changed these recipes since this plan was written. FT-10.2 is Phase 37's: no row here.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
@@ -1090,7 +1088,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   first reason is 27a's `isHeldPayable`: no run, schedule, Xero payment or staged payout ever takes
   a collect payable to the AA Holding account, while the journal transfer's payable is an ordinary line;
   netting reads every open negative whatever its credit note's cause; a missing bank account is a
-  Monday anomaly, never an automatic exclusion. OQ-111: the detection of a payment stays in one place.
+  Monday anomaly, never an automatic exclusion. OQ-111: no path pays from the app; the engine only records what Xero reports.
 - **Seed and persistence.** Backdrop weekly runs reproduce the seeded disbursements exactly and move
   no figure; every seeded receipt has its bank line; two fresh seeds deep-equal; `PERSIST_VERSION`
   bumped; the staging bodies are deterministic.
@@ -1104,8 +1102,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the readings built for OQ-47's still-open parts (the office approves, as a step of
   its own after the Monday checks; the 20th-of-the-month payment left to Phase 16's monthly fee run;
   Greg's pre-run balance check and one BCTI per weekly run noted for the accountant, not built),
-  OQ-111 (D53, open: built as US-09.2.4 reads, paid in Xero and recorded by the engine, detection in
-  one place), the cycle's built defaults (the demo clock does not gate the steps, so a week can be closed early
+  the cycle's built defaults (the demo clock does not gate the steps, so a week can be closed early
   and its stamp says so; a held line rolls whole into the next week; approval refuses while an
   anomaly is open; a missing bank account is a Monday anomaly, not an exclusion; staged one-pair
   demo runs sit beside the week's run), provisional readings (the GST schedule's treatment of a
@@ -1116,7 +1113,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   Souter).
 - **Status row** for catch-up Phase 39a, and a phase entry with:
   - the drift-check result (US-10.2.7 still Proposed, US-10.2.6 still Verify, US-10.2.5 still
-    Confirmed or not; FT-10.2 Matches, nothing built; OQ-47, OQ-71, OQ-111, OQ-60 and OQ-29 status; whether 39 shipped a negative
+    Confirmed or not; FT-10.2 is 37's, nothing built; OQ-47, OQ-71, OQ-111 (answered), OQ-60 and OQ-29 status; whether 39 shipped a negative
     invoice record or this phase added it);
   - what was built, with the name map for later phases: `PaymentCycleSettings` and
     `appSettings.paymentCycle`, `BankLine`, `PayablesRun` (kind, cycle, snapshot, anomalies) and its
