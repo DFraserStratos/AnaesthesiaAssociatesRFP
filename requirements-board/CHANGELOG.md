@@ -2,6 +2,12 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.2.0 · 2026-11-04
+
+- The build plan page (`update-build-plan`'s `build-index.mjs`) is cut to the essentials: a headline saying what to start, a map of every phase by track and wave (done, safe to start, safe once its dependencies land, wait, later), "Start now" cards with the kick-off prompt one click away, and an "Unblocked, but wait" list. Every phase, the sequencing rules, how a phase runs, milestones, parked items and the gap analysis sit behind collapsed sections.
+- Phases in the same wave do not depend on each other, so the map shows what can run side by side. A phase whose blocking questions were answered after the plan's baseline is marked "re-plan first".
+- The owner's safe and wait calls live in the plan's `status.json` `guidance`; the skill reviews them after each update.
+
 ## 1.1.0 · 2026-11-03
 
 - Tables in Markdown text now render (GitHub-flavoured Markdown); a single tilde, as in "~85", stays literal rather than striking text through.

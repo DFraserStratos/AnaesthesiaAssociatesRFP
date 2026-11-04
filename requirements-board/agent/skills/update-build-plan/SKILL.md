@@ -16,7 +16,9 @@ Outputs, all in `PLAN/`:
   delta, reverse check): the gap analysis;
 - `ROADMAP.md` (owner decisions, phase table, sequencing rules, milestones, parked list, standing
   rules), `phases/phase-NN-<slug>.md` and `.prompt.md`: the plan;
-- `plan.json` and `index.html` (generated): the plan as data and as a page;
+- `plan.json` and `index.html` (generated): the plan as data and as a page. The page leads with which
+  phases are done, which are safe to start and which can run side by side; the safe and wait calls
+  are the owner's, kept in `PLAN/status.json` `guidance`;
 - an "Update history" line in `PLAN/README.md`.
 
 ## This repo
@@ -250,6 +252,11 @@ before going on.
    - It moves the drift-check baseline only on baseline lines, never in ranges, history or README.md.
    - It keeps the baseline of phases the progress file marks DONE or IN PROGRESS.
    - It regenerates `index.html`. Its output must show no `indexWarnings`.
+   - Then review `PLAN/status.json` `guidance` (`safe`, `wait`, `headline`, `parallel`, `as_of`), the
+     page's "start now" calls. Drop a call this update overtook (the phase was re-planned, renumbered
+     or built), propose new ones for phases that became startable, and ask the user before marking any
+     phase safe. A call naming a phase that is done or not in `plan.json` is an index warning. Phases
+     whose `blocked_by_oqs` were answered after the baseline are flagged on the page by themselves.
 2. **Coverage.** `node T/plan-state.mjs --coverage` must report ok, with no `unknown`. Ids only on
    built phases that now Match are listed as `delivered`.
 3. **Screenshot check** (with screenshot capture). `node T/recipe-status.mjs --check` must pass:

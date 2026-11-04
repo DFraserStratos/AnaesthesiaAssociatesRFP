@@ -1,24 +1,45 @@
 #!/usr/bin/env node
-// Renders <plan>/index.html from plan.json, gaps.json, GAP-ANALYSIS.md and each phase's kick-off
-// prompt file. Its words come from plan.config.json "index" (defaults below).
-// Dependency-free. Run from the repo root:
+// Renders <plan>/index.html from plan.json, status.json and each phase's kick-off prompt file.
+// The page answers three questions first: which phases are done, which are safe to start now, and
+// which can run side by side. Everything else (every phase with its prompt, the sequencing rules, how
+// a phase runs, milestones, parked items, the gap analysis) sits behind collapsed sections.
+// Its words come from plan.config.json "index" (defaults below). Dependency-free. Run from the repo root:
 //   node <tools>/build-index.mjs [--plan <dir>]
-// Re-run whenever plan.json, gaps.json or a prompt file changes.
+// Re-run whenever plan.json, status.json, gaps.json or a prompt file changes.
+//
+// How a phase's state is worked out:
+// - done / in progress: the progress file's status table (DONE, IN PROGRESS), else status.json.
+// - wave: 0 when done; otherwise 1 + the highest wave of its unfinished dependencies (1 when every
+//   dependency is done, so it can start now). Phases in the same wave do not depend on each other, so
+//   they can run side by side.
+// - safe / wait: the owner's call, in status.json "guidance" (see below). A wave-1 phase with no call
+//   is shown as "can start" without a safety claim.
+// - re-plan: one of its blocked_by_oqs questions was answered after the plan's baseline commit, so the
+//   phase doc predates the answer until update-build-plan re-plans it.
+//
+// status.json (beside plan.json, all optional):
+//   { "in_progress": ["17"],
+//     "guidance": {
+//       "as_of": "2026-11-04",
+//       "headline": "One sentence for the top of the page",
+//       "safe":  { "32a": "why it is safe" },
+//       "wait":  { "18": "what it is waiting for" },
+//       "parallel": "a note on running the safe phases side by side" } }
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { linkFrom, loadConfig, phaseStatus } from './config.mjs';
+import { execFileSync } from 'node:child_process';
+import { linkFrom, loadConfig, phaseStatus, statusListsOf } from './config.mjs';
 
 const config = loadConfig();
-const ROOT = join(process.cwd(), config.plan);
+const CWD = process.cwd();
+const ROOT = join(CWD, config.plan);
 const OUT = join(ROOT, 'index.html');
-const SELF = relative(process.cwd(), fileURLToPath(import.meta.url)).split('\\').join('/');
+const SELF = relative(CWD, fileURLToPath(import.meta.url)).split('\\').join('/');
 const IX = config.index;
 const APP = config.appNoun;
-
 const CATALOGUE_REL = linkFrom(config.plan, config.requirements);
-const BOARD_URL = `${config.boardUrl}/#/board?item=`;
 
 const warnings = [];
 const warn = (m) => warnings.push(m);
@@ -29,9 +50,10 @@ const readJson = (p) => JSON.parse(readFileSync(join(ROOT, p), 'utf8'));
 const readText = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), 'utf8') : null);
 
 const plan = readJson('plan.json');
-const gaps = readJson('gaps.json');
+const gaps = readText('gaps.json') ? readJson('gaps.json') : {};
 const gapMd = readText('GAP-ANALYSIS.md') ?? '';
-if (!gapMd) warn('GAP-ANALYSIS.md not found');
+const statusJson = readText('status.json') ? readJson('status.json') : {};
+const G = statusJson.guidance ?? {};
 
 // ---------- helpers ----------
 
@@ -50,306 +72,254 @@ const inlineMd = (s) =>
     .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${u}">${t}</a>`);
 
-const isCatalogueId = (id) => /^(EP|FT|US)-/.test(id);
-const reqHref = (id) => `${CATALOGUE_REL}/stories/${encodeURIComponent(id)}.md`;
 const oqHref = (id) => `${CATALOGUE_REL}/questions/${encodeURIComponent(id)}.md`;
-const boardHref = (id) => BOARD_URL + encodeURIComponent(id);
-
-const sessionsOf = (s) => {
-  const m = String(s ?? '').match(/\d+/);
-  return m ? Number(m[0]) : 0;
-};
-
-// ["14","15","15a","16","19"] -> "14 to 16, 19": runs of three or more in plan order (lettered
-// phases included) collapse to "first to last".
-const phaseOrder = (n) => (plan.phases ?? []).findIndex((p) => p.num === String(n));
-const compressNums = (list) => {
-  const nums = [...new Set(list.map(String))].sort((a, b) => phaseOrder(a) - phaseOrder(b));
-  const parts = [];
-  for (let i = 0; i < nums.length; ) {
-    let j = i;
-    while (j + 1 < nums.length && phaseOrder(nums[j]) >= 0 && phaseOrder(nums[j + 1]) === phaseOrder(nums[j]) + 1) j++;
-    if (j - i >= 2) parts.push(`${nums[i]} to ${nums[j]}`);
-    else for (let k = i; k <= j; k++) parts.push(nums[k]);
-    i = j + 1;
+const sessionsOf = (s) => Number(String(s ?? '').match(/\d+/)?.[0] ?? 0);
+const firstSentence = (text) => {
+  const t = String(text ?? '').trim();
+  // The first ". " or "; " after 40 characters, outside brackets.
+  let depth = 0;
+  let cut = -1;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === '(') depth++;
+    else if (c === ')') depth = Math.max(0, depth - 1);
+    else if ((c === '.' || c === ';') && depth === 0 && i >= 40 && /\s/.test(t[i + 1] ?? ' ')) { cut = i; break; }
   }
-  return parts.join(', ');
+  const s = cut >= 0 ? `${t.slice(0, cut)}.` : t;
+  return s.length > 260 ? `${s.slice(0, 250).replace(/[\s,;(]+\S*$/, '')}...` : s;
+};
+const fill = (html, vars) => String(html).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? esc(vars[k]) : m));
+const listWords = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+const fmtDate = (d) => {
+  const m = String(d ?? '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return String(d ?? '');
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${Number(m[3])} ${months[Number(m[2]) - 1]} ${m[1]}`;
 };
 
-const phaseLinks = (nums) =>
-  [...new Set(nums)]
-    .sort((a, b) => phaseOrder(a) - phaseOrder(b))
-    .map((n) => `<a href="#phase-${esc(n)}">${esc(n)}</a>`)
-    .join(', ');
-
-// ---------- lookups ----------
-
-const VERDICTS = ['Contradicts', 'Partial', 'Missing', 'Matches', 'Grouping', 'OutOfScope'];
-const VCLASS = {
-  Contradicts: 'v-con', Partial: 'v-par', Missing: 'v-mis', Matches: 'v-mat', Grouping: 'v-grp', OutOfScope: 'v-oos',
-};
-
-const itemById = new Map();
-for (const it of gaps.items ?? []) itemById.set(it.id, { ...it, kind: 'item' });
-for (const d of gaps.dataModelDeltas ?? []) itemById.set(d.id, { ...d, kind: 'dm' });
-for (const r of gaps.reverseFindings ?? []) itemById.set(r.id, { ...r, kind: 'rv' });
+// ---------- phases and their state ----------
 
 const phases = plan.phases ?? [];
-// Built phases (DONE rows in the progress file's status table) may still list ids a later re-grade closed
-// (now Matches, or a delta or finding no longer reported): those were delivered, not lost.
+const byNum = new Map(phases.map((p) => [p.num, p]));
+const phaseNums = new Set(byNum.keys());
 const progress = phaseStatus(config);
 const builtPhases = new Set(progress.doneRows);
-// Phase status: the progress file's status table (DONE with its date, IN PROGRESS) wins; status.json
-// (optional, beside plan.json) marks a phase in progress before its progress row exists and names
-// what runs next: { "in_progress": ["17"], "next": { "phases": ["28"], "note": "..." } }. Without a
-// progress file, status.json may also list "done": ["14", ...].
-const statusJson = readText('status.json') ? readJson('status.json') : {};
 const doneDate = progress.doneDate;
-const progressWip = progress.inProgressRows;
 const progressName = config.progress ? basename(config.progress) : null;
-const phaseNums = new Set((plan.phases ?? []).map((p) => p.num));
-const statusOf = (num) =>
-  doneDate.has(num) ? 'done' : progressWip.includes(num) || (statusJson.in_progress ?? []).includes(num) ? 'wip' : null;
-const nextPhases = (statusJson.next?.phases ?? []).filter((n) => phaseNums.has(n) && !statusOf(n));
-for (const n of [...(statusJson.in_progress ?? []), ...(statusJson.next?.phases ?? [])])
-  if (!phaseNums.has(n)) warn(`status.json names phase ${n}, which is not in plan.json`);
+const isDone = (n) => doneDate.has(n) || (!config.progress && (statusJson.done ?? []).includes(n));
+const isWip = (n) => !isDone(n) && (progress.inProgressRows.includes(n) || (statusJson.in_progress ?? []).includes(n));
 
-const phasesCovering = new Map(); // item id -> [phase num]
-for (const p of phases) {
-  for (const id of p.covers ?? []) {
-    if (!phasesCovering.has(id)) phasesCovering.set(id, []);
-    phasesCovering.get(id).push(p.num);
-    if (!itemById.has(id) && !builtPhases.has(p.num)) warn(`Phase ${p.num} covers ${id}, which is not in gaps.json`);
+for (const n of statusJson.in_progress ?? []) if (!phaseNums.has(n)) warn(`status.json names phase ${n}, which is not in plan.json`);
+for (const key of ['safe', 'wait'])
+  for (const n of Object.keys(G[key] ?? {})) {
+    if (!phaseNums.has(n)) warn(`status.json guidance.${key} names phase ${n}, which is not in plan.json`);
+    else if (isDone(n)) warn(`status.json guidance.${key} names phase ${n}, which is done`);
   }
-}
 
-// Track colours: config index.tracks ({ "<track>": "setup" | "A" | "B" | "C" | "D" | "E" }), else
-// each track in order of first appearance takes the next colour.
-const PALETTE = { setup: { cls: 'setup', tag: 'e' }, A: { cls: 'trackA', tag: 'a' }, B: { cls: 'trackB', tag: 'b' }, C: { cls: 'trackC', tag: 'c' }, D: { cls: 'trackD', tag: 'd' }, E: { cls: 'trackE', tag: 'f' } };
-const TRACKS = {};
-if (IX.tracks) for (const [t, k] of Object.entries(IX.tracks)) TRACKS[t] = PALETTE[k] ?? PALETTE.setup;
-else {
-  const order = ['setup', 'A', 'B', 'C', 'D', 'E'];
-  for (const p of plan.phases ?? []) if (!TRACKS[p.track]) TRACKS[p.track] = PALETTE[order[Object.keys(TRACKS).length % order.length]];
-}
-const trackOf = (t) => TRACKS[t] ?? PALETTE.setup;
+// Every covered id should be in gaps.json (a built phase may keep ids a later re-grade closed).
+const knownIds = new Set([...(gaps.items ?? []), ...(gaps.dataModelDeltas ?? []), ...(gaps.reverseFindings ?? [])].map((x) => x.id));
+if (gaps.items)
+  for (const p of phases)
+    for (const id of p.covers ?? []) if (!knownIds.has(id) && !builtPhases.has(p.num)) warn(`Phase ${p.num} covers ${id}, which is not in gaps.json`);
 
-// Config text: HTML, with {phases}, {first}, {last} and {commit} filled in (escaped).
-const fill = (html, vars) => String(html).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? esc(vars[k]) : m));
-
-// ---------- GAP-ANALYSIS.md sections ----------
-
-const mdSection = (md, heading) => {
-  const lines = md.split('\n');
-  const start = lines.findIndex((l) => l.trim() === heading);
-  if (start < 0) return null;
-  const level = heading.match(/^#+/)[0].length;
-  const out = [];
-  for (let i = start + 1; i < lines.length; i++) {
-    const m = lines[i].match(/^(#+)\s/);
-    if (m && m[1].length <= level) break;
-    out.push(lines[i]);
-  }
-  return out.join('\n').trim();
+const waveMemo = new Map();
+const waveOf = (n, seen = new Set()) => {
+  if (waveMemo.has(n)) return waveMemo.get(n);
+  if (isDone(n)) return 0;
+  if (seen.has(n)) { warn(`Dependency cycle through phase ${n}`); return 1; }
+  seen.add(n);
+  const open = (byNum.get(n)?.depends_on ?? []).filter((d) => phaseNums.has(d) && !isDone(d));
+  const w = isWip(n) ? 1 : 1 + Math.max(0, ...open.map((d) => waveOf(d, seen)));
+  waveMemo.set(n, w);
+  return w;
 };
+const openDeps = (p) => (p.depends_on ?? []).filter((d) => phaseNums.has(d) && !isDone(d));
 
-const headlineMd = mdSection(gapMd, '### Headline');
-if (!headlineMd) warn('GAP-ANALYSIS.md has no "### Headline" section');
-
-const themesMd = mdSection(gapMd, '### Themes');
-const mdThemes = [];
-if (themesMd) {
-  for (const line of themesMd.split('\n')) {
-    const m = line.match(/^\d+\.\s+\*\*(.+?)\*\*\s*(.*)$/);
-    if (m) {
-      const titleRaw = m[1].replace(/\.$/, '');
-      const size = (titleRaw.match(/\(([^)]+)\)\s*$/) || [])[1] || '';
-      mdThemes.push({ title: titleRaw.replace(/\s*\([^)]+\)\s*$/, ''), size, description: m[2], item_ids: [] });
+// Questions a phase is blocked by: open now, or answered since the plan's baseline (re-plan first).
+let boardConfig = {};
+try { boardConfig = JSON.parse(readFileSync(join(CWD, config.requirements, 'board.config.json'), 'utf8')); } catch {}
+const answeredCodes = new Set(statusListsOf(boardConfig).questionStatuses.filter((s) => s.role === 'answered').map((s) => String(s.code)));
+const qStatus = (text) => text?.match(/^status:\s*"?([^"\s]+)/m)?.[1] ?? null;
+const qPath = (id) => `${config.requirements}/questions/${id}.md`;
+const qNow = (id) => (existsSync(join(CWD, qPath(id))) ? qStatus(readFileSync(join(CWD, qPath(id)), 'utf8')) : null);
+const qThen = (id) => {
+  if (!plan.commit) return null;
+  try { return qStatus(execFileSync('git', ['show', `${plan.commit}:${qPath(id)}`], { cwd: CWD, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch { return null; }
+};
+const qInfo = new Map();
+for (const p of phases)
+  for (const q of p.blocked_by_oqs ?? [])
+    if (!qInfo.has(q)) {
+      const now = qNow(q);
+      const then = qThen(q);
+      qInfo.set(q, { open: now !== null && !answeredCodes.has(now), answeredSince: now !== null && answeredCodes.has(now) && then !== null && !answeredCodes.has(then) });
     }
-  }
-} else warn('GAP-ANALYSIS.md has no "### Themes" section');
+const replanOqs = (p) => (p.blocked_by_oqs ?? []).filter((q) => qInfo.get(q)?.answeredSince);
+const openOqs = (p) => (p.blocked_by_oqs ?? []).filter((q) => qInfo.get(q)?.open);
 
-let themes;
-if (Array.isArray(gaps.themes) && gaps.themes.length) {
-  themes = gaps.themes.map((t) => {
-    const md = mdThemes.find((x) => x.title.toLowerCase() === String(t.title).toLowerCase());
-    return { ...t, size: md?.size ?? '', fromJson: true };
-  });
-} else {
-  themes = mdThemes;
-  if (!themes.length) warn('No themes found in gaps.json or GAP-ANALYSIS.md');
-}
-
-// ---------- rendering pieces ----------
-
-const itemChip = (id) => {
-  const it = itemById.get(id);
-  const v = it?.kind === 'item' ? it.verdict : null;
-  const cls = v ? VCLASS[v] : it?.kind === 'dm' ? 'v-dm' : it?.kind === 'rv' ? 'v-rv' : 'v-unk';
-  const label = it?.kind === 'item' ? `${v} · ${it.title}` : it ? `${it.kind === 'dm' ? 'Data model' : 'Reverse check'} · ${it.title}` : 'Not in gaps.json';
-  let href;
-  if (isCatalogueId(id)) href = reqHref(id);
-  else if (it?.kind === 'dm') href = `analysis/domain-model-delta.md#${id.toLowerCase()}`;
-  else if (it?.kind === 'rv') href = 'analysis/reverse-check.md';
-  const main = href ? `<a href="${esc(href)}">${esc(id)}</a>` : esc(id);
-  const board = isCatalogueId(id)
-    ? `<a class="brd" href="${esc(boardHref(id))}" title="Open ${esc(id)} in the Requirements Board">board</a>`
-    : '';
-  return `<span class="it" title="${esc(label)}"><i class="${cls}"></i>${main}${board}</span>`;
+// One state per phase, for colour: done, wip, safe (start now), safe-later, wait, ready, later.
+const stateOf = (p) => {
+  const n = p.num;
+  if (isDone(n)) return 'done';
+  if (isWip(n)) return 'wip';
+  const w = waveOf(n);
+  if (G.safe?.[n]) return w === 1 ? 'safe' : 'safe-later';
+  if (G.wait?.[n]) return 'wait';
+  if (w === 1) return replanOqs(p).length ? 'wait' : 'ready';
+  return 'later';
 };
+const STATE_WORD = { done: 'Done', wip: 'In progress', safe: 'Safe to start', 'safe-later': 'Safe, after its dependencies', wait: 'Wait', ready: 'Can start', later: 'Later' };
 
-const bar = (counts, total) => {
-  if (!total) return '<div class="bar"></div>';
-  const segs = VERDICTS.filter((v) => counts[v])
-    .map((v) => `<span class="${VCLASS[v]}" style="width:${((counts[v] / total) * 100).toFixed(2)}%" title="${esc(`${v}: ${counts[v]}`)}"></span>`)
-    .join('');
-  return `<div class="bar">${segs}</div>`;
-};
-
-const legend = () =>
-  `<div class="legend">${VERDICTS.filter((v) => v !== 'OutOfScope' || gaps.counts?.OutOfScope)
-    .map((v) => `<span><i class="${VCLASS[v]}"></i>${esc(v === 'OutOfScope' ? 'Out of scope' : v)}</span>`)
-    .join('')}<span><i class="v-dm"></i>Data model (DM)</span><span><i class="v-rv"></i>Reverse check (RV)</span></div>`;
-
-// ---------- sections ----------
-
-const counts = gaps.counts ?? {};
+const done = phases.filter((p) => isDone(p.num));
+const wip = phases.filter((p) => isWip(p.num));
+const safeNow = phases.filter((p) => stateOf(p) === 'safe');
+const safeLater = phases.filter((p) => stateOf(p) === 'safe-later');
+const readyUnflagged = phases.filter((p) => stateOf(p) === 'ready');
+const waitNow = phases.filter((p) => stateOf(p) === 'wait' && waveOf(p.num) === 1);
+const replanLater = phases.filter((p) => !isDone(p.num) && waveOf(p.num) > 1 && !G.safe?.[p.num] && (replanOqs(p).length || G.wait?.[p.num]));
 const totalSessions = phases.reduce((n, p) => n + sessionsOf(p.est_sessions), 0);
-const shortCommit = String(plan.commit ?? gaps.catalogue_commit ?? '').slice(0, 7);
-const generated = gaps.generated ?? '';
-const firstNum = phases[0]?.num ?? '';
-const lastNum = phases[phases.length - 1]?.num ?? '';
-const donePhases = phases.filter((p) => statusOf(p.num) === 'done');
-const wipPhases = phases.filter((p) => statusOf(p.num) === 'wip');
-const doneSessions = donePhases.reduce((n, p) => n + sessionsOf(p.est_sessions), 0);
+const doneSessions = done.reduce((n, p) => n + sessionsOf(p.est_sessions), 0);
+const shortCommit = String(plan.commit ?? '').slice(0, 7);
 
-const vars = { phases: phases.length, first: firstNum, last: lastNum, commit: shortCommit };
-const hero = `
-<header class="hero">
-  <p class="kicker">${fill(IX.kicker ?? esc(config.title), vars)}</p>
-  <h1>${fill(IX.heading ?? `${esc(config.title)}: <em>from the requirements to the ${esc(APP)}</em>`, vars)}</h1>
-  <p class="hero-sub">${fill(IX.intro ?? `This plan closes every verified gap between the requirements catalogue and the ${esc(APP)} in {phases} phases, numbered {first} to {last}, each one focused session (at most two) with one coherent deliverable.`, vars)}</p>
-  <p class="hero-meta">Catalogue commit <code>${esc(shortCommit)}</code> · gap analysis ${esc(generated)} · plan rendered from <code>plan.json</code> and <code>gaps.json</code></p>
-  <div class="stats">
-    <div class="stat"><b>${esc(gaps.in_scope ?? '')}</b><span>in-scope items</span></div>
-    <div class="stat"><b>${esc(counts.Matches ?? 0)}</b><span>match today</span></div>
-    <div class="stat"><b>${esc(counts.Partial ?? 0)}</b><span>partial</span></div>
-    <div class="stat"><b>${esc(counts.Contradicts ?? 0)}</b><span>contradict</span></div>
-    <div class="stat"><b>${esc(counts.Missing ?? 0)}</b><span>missing</span></div>
-    <div class="stat"><b>${esc(phases.length)}</b><span>phases (${esc(firstNum)} to ${esc(lastNum)})</span></div>
-    <div class="stat"><b>${esc(totalSessions)}</b><span>est. sessions</span></div>
-    <div class="stat"><b>${esc(donePhases.length)}</b><span>phases done</span></div>
-  </div>
-</header>`;
+// ---------- pieces ----------
 
-const statusTag = (num) => {
-  const s = statusOf(num);
-  if (s === 'done') return `<span class="tag done" title="Done ${esc(doneDate.get(num))}">Done</span>`;
-  if (s === 'wip') return '<span class="tag wip">In progress</span>';
-  if (nextPhases.includes(num)) return '<span class="tag nxt">Up next</span>';
-  return '';
+const chip = (p) => {
+  const s = stateOf(p);
+  const marks = [];
+  if (!['done', 'wip'].includes(s) && replanOqs(p).length) marks.push('<i class="mk" aria-hidden="true"></i>');
+  return `<a class="chip s-${s}" href="#p-${esc(p.num)}" title="${esc(`${p.num} ${p.title} (${STATE_WORD[s]})`)}">${esc(p.num)}${marks.join('')}</a>`;
 };
 
-const progressSection = `
-<section class="prose">
-  <h2>Where the build is</h2>
-  <div class="rule"></div>
-  <div class="pstrip" aria-hidden="true">${phases
-    .map((p) => {
-      const s = statusOf(p.num) ?? (nextPhases.includes(p.num) ? 'nxt' : 'todo');
-      return `<a class="pcell ${s}" href="#phase-${esc(p.num)}" title="${esc(`${p.num} ${p.title}`)}">${esc(p.num)}</a>`;
-    })
-    .join('')}</div>
-  <ul class="pstate">
-    <li><span class="tag done">Done</span> ${donePhases.length ? donePhases.map((p) => `<a href="#phase-${esc(p.num)}">${esc(p.num)}</a> ${esc(p.title)} <span class="when">${esc(doneDate.get(p.num))}</span>`).join('; ') : 'none yet'}</li>
-    <li><span class="tag wip">In progress</span> ${wipPhases.length ? wipPhases.map((p) => `<a href="#phase-${esc(p.num)}">${esc(p.num)}</a> ${esc(p.title)}`).join('; ') : 'none'}</li>
-    ${nextPhases.length ? `<li><span class="tag nxt">Up next</span> ${nextPhases.map((n) => `<a href="#phase-${esc(n)}">${esc(n)}</a>`).join(', ')}${statusJson.next?.note ? `. ${esc(statusJson.next.note)}` : ''}</li>` : ''}
-  </ul>
-  <p class="note">${progressName ? `Status comes from the status table in <code>${esc(progressName)}</code> (and <code>status.json</code> for a phase whose row is not written yet).` : 'Status comes from <code>status.json</code>.'} ${esc(doneSessions)} of ${esc(totalSessions)} estimated sessions are done.</p>
-</section>`;
+const copyButton = (p, label = 'Copy kick-off prompt') =>
+  p.prompt_file && readText(p.prompt_file) ? `<button class="btn" type="button" data-copy="prompt-${esc(p.num)}">${esc(label)}</button>` : '';
+const docLink = (p) => (p.file ? `<a class="lnk" href="${esc(p.file)}">Phase plan</a>` : '');
 
-const themesSection = `
-<section class="prose">
-  <h2>${esc(IX.themesHeading ?? 'What the gap analysis found')}</h2>
-  <div class="rule"></div>
-  ${(headlineMd ?? '').split(/\n\s*\n/).filter(Boolean).map((p) => `<p>${inlineMd(p.trim())}</p>`).join('\n  ')}
-  <p class="note">The themes below are the gap analysis's own grouping. Each lists the phases that carry its items. Full reasoning: <a href="GAP-ANALYSIS.md">GAP-ANALYSIS.md</a>.</p>
-  <ol class="themes">
-${themes
-  .map((t) => {
-    const ids = t.item_ids ?? [];
-    const ph = [...new Set(ids.flatMap((id) => phasesCovering.get(id) ?? []))];
-    const desc = t.fromJson ? esc(t.description) : inlineMd(t.description);
-    return `    <li>
-      <div class="th-head"><b>${esc(t.title)}</b>${t.size ? `<span class="tag e">${esc(t.size)}</span>` : ''}</div>
-      <p>${desc}</p>
-      <p class="th-meta">${ids.length ? `${esc(ids.length)} items` : ''}${ph.length ? ` · built in phase${ph.length > 1 ? 's' : ''} ${phaseLinks(ph)}` : ''}</p>
-    </li>`;
-  })
-  .join('\n')}
-  </ol>
-</section>`;
-
-const epicRows = (gaps.epics ?? [])
-  .map((ep) => {
-    const c = ep.counts ?? {};
-    const total = VERDICTS.reduce((n, v) => n + (c[v] || 0), 0);
-    const nn = ep.id.toLowerCase();
-    const ph = [
-      ...new Set(
-        (gaps.items ?? [])
-          .filter((i) => i.epic === ep.id)
-          .flatMap((i) => phasesCovering.get(i.id) ?? []),
-      ),
-    ];
-    const epicDetail = existsSync(join(ROOT, 'epics', `${ep.id}.md`));
-    if (!epicDetail) warn(`epics/${ep.id}.md not found`);
-    const num = (v) => `<td class="n">${c[v] ? esc(c[v]) : ''}</td>`;
-    return `      <tr>
-        <td><a href="GAP-ANALYSIS.md#${esc(nn)}"><b>${esc(ep.id)}</b></a> ${esc(ep.title)}<div class="read">${epicDetail ? `<a href="epics/${esc(ep.id)}.md">gap detail</a> · ` : ''}<a href="${esc(reqHref(ep.id))}">requirement</a></div></td>
-        <td class="barcell">${bar(c, total)}</td>
-        ${num('Contradicts')}${num('Partial')}${num('Missing')}${num('Matches')}${num('Grouping')}
-        <td class="n"><b>${esc(total)}</b></td>
-        <td class="read">${ph.length ? phaseLinks(ph) : ''}</td>
-      </tr>`;
-  })
-  .join('\n');
-
-const glanceSection = `
-<section>
-  <h2>The gap at a glance</h2>
-  <div class="rule"></div>
-  <p class="prose-p">Every in-scope epic, feature and story, graded against the running ${esc(APP)} and re-checked by an adversarial verifier. Retired items${config.lanesText ? ` and ${esc(config.lanesText)}` : ''} are excluded (${esc((gaps.excluded ?? []).length)}). Plus ${esc((gaps.dataModelDeltas ?? []).length)} data-model deltas (DM) and ${esc((gaps.reverseFindings ?? []).length)} reverse-check findings (RV): behaviour the ${esc(APP)} still has that the catalogue has retired or superseded.</p>
-  ${legend()}
-  <div class="tscroll">
-  <table class="scorecard epics">
-    <thead><tr><th>Epic</th><th>Verdicts</th><th class="n">Contra.</th><th class="n">Partial</th><th class="n">Missing</th><th class="n">Match</th><th class="n">Group.</th><th class="n">Items</th><th>Phases</th></tr></thead>
-    <tbody>
-${epicRows}
-      <tr class="tot">
-        <td><b>Total</b></td>
-        <td class="barcell">${bar(counts, gaps.in_scope ?? 0)}</td>
-        <td class="n"><b>${esc(counts.Contradicts ?? 0)}</b></td><td class="n"><b>${esc(counts.Partial ?? 0)}</b></td><td class="n"><b>${esc(counts.Missing ?? 0)}</b></td><td class="n"><b>${esc(counts.Matches ?? 0)}</b></td><td class="n"><b>${esc(counts.Grouping ?? 0)}</b></td>
-        <td class="n"><b>${esc(gaps.in_scope ?? '')}</b></td><td></td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
-</section>`;
-
-// Flow: phases grouped by track in order of first appearance.
+// The map: tracks down the side, waves across. A column is what can run once everything to its left is done.
 const trackOrder = [];
 for (const p of phases) if (!trackOrder.includes(p.track)) trackOrder.push(p.track);
-const flow = trackOrder
+// Waves past MAP_WAVES share one "Later" column (in wave order): far phases get re-planned anyway.
+const MAP_WAVES = Number(IX.mapWaves ?? 6);
+const maxWave = Math.max(0, ...phases.map((p) => waveOf(p.num)));
+const lastCol = Math.min(maxWave, MAP_WAVES + 1);
+const colOf = (n) => Math.min(waveOf(n), lastCol);
+const colHead = (w) => (w === 0 ? 'Done' : w === 1 ? 'Now' : w > MAP_WAVES ? 'Later' : String(w));
+const map = `
+<div class="map-scroll" tabindex="0" aria-label="Phases by track and wave">
+  <table class="map">
+    <thead><tr><th scope="col" class="tk"><span class="sr">Track</span></th>${Array.from({ length: lastCol + 1 }, (_, w) => `<th scope="col" class="${w === 0 ? 'dn' : w === 1 ? 'now' : w > MAP_WAVES ? 'lt' : ''}">${esc(colHead(w))}</th>`).join('')}</tr></thead>
+    <tbody>
+${trackOrder
   .map((t) => {
-    const nodes = phases
-      .filter((p) => p.track === t)
-      .map((p) => `<a class="fnode ${statusOf(p.num) ?? ''}" href="#phase-${esc(p.num)}">${statusOf(p.num) === 'done' ? '&#10003; ' : ''}${esc(p.num)} ${esc(p.title)}</a>`)
-      .join(' &rarr; ');
-    return `<span class="fpar">${esc(t.toLowerCase())}:</span> ${nodes}`;
+    const ps = phases.filter((p) => p.track === t);
+    const cells = Array.from({ length: lastCol + 1 }, (_, w) => {
+      const here = ps.filter((p) => colOf(p.num) === w).sort((a, b) => waveOf(a.num) - waveOf(b.num));
+      return `<td class="${w === 0 ? 'dn' : w === 1 ? 'now' : w > MAP_WAVES ? 'lt' : ''}">${here.map(chip).join('')}</td>`;
+    }).join('');
+    return `      <tr><th scope="row" class="tk">${esc(t)}</th>${cells}</tr>`;
   })
-  .join('<br>\n    ');
+  .join('\n')}
+    </tbody>
+  </table>
+</div>
+<ul class="key">
+  <li><span class="chip s-done">00</span> Done</li>
+  <li><span class="chip s-safe">00</span> Safe to start</li>
+  <li><span class="chip s-safe-later">00</span> Safe, once the phases to its left are done</li>
+  <li><span class="chip s-wait">00</span> Can start, but wait</li>
+  ${readyUnflagged.length ? '<li><span class="chip s-ready">00</span> Can start, no call made</li>' : ''}
+  <li><span class="chip s-later">00</span> Later</li>
+  <li><span class="chip s-later">00<i class="mk" aria-hidden="true"></i></span> Its questions were answered after the plan was written: re-plan first</li>
+</ul>
+<p class="fine">Each column needs the columns to its left. Phases in the same column don't depend on each other, so they can run side by side.${maxWave > MAP_WAVES ? ` Later holds the last ${esc(maxWave - MAP_WAVES)} waves, in order.` : ''}</p>`;
 
+const startCard = (p) => `
+  <article class="card">
+    <div class="card-top"><span class="num">${esc(p.num)}</span><h3>${esc(p.title)}</h3></div>
+    <p class="what">${esc(firstSentence(p.delivers || p.goal))}</p>
+    <p class="why">${inlineMd(G.safe?.[p.num] ?? '')}</p>
+    <p class="meta">${esc(p.est_sessions)}${p.track ? `, ${esc(p.track)} track` : ''}</p>
+    <div class="acts">${copyButton(p)}${docLink(p)}</div>
+  </article>`;
+
+const headline =
+  G.headline ??
+  (safeNow.length
+    ? `Safe to start now: ${listWords(safeNow.map((p) => p.num))}.`
+    : wip.length
+      ? `In progress: ${listWords(wip.map((p) => p.num))}.`
+      : readyUnflagged.length
+        ? `Can start now: ${listWords(readyUnflagged.map((p) => p.num))}.`
+        : 'Nothing is ready to start.');
+
+const nowSection = `
+<section class="now" aria-labelledby="h-now">
+  <h2 id="h-now">Start now</h2>
+  ${wip.length ? `<p class="lead">In progress: ${wip.map((p) => `<a href="#p-${esc(p.num)}">${esc(p.num)} ${esc(p.title)}</a>`).join(', ')}.</p>` : ''}
+  ${safeNow.length ? `${safeNow.length > 1 ? `<p class="lead">These ${safeNow.length} can run at the same time.${G.parallel ? ` ${inlineMd(G.parallel)}` : ''}</p>` : G.parallel ? `<p class="lead">${inlineMd(G.parallel)}</p>` : ''}
+  <div class="cards">${safeNow.map(startCard).join('')}</div>` : '<p class="lead">No phase is marked safe to start. Add calls to <code>status.json</code> "guidance".</p>'}
+  ${
+    safeLater.length
+      ? `<h3 class="sub">Safe next</h3>
+  <ul class="rows">${safeLater
+    .map((p) => `<li><a class="chip s-safe-later" href="#p-${esc(p.num)}">${esc(p.num)}</a><div><b>${esc(p.title)}</b>, after ${esc(listWords(openDeps(p)))}. ${inlineMd(G.safe[p.num])}</div><div class="acts">${copyButton(p, 'Copy prompt')}</div></li>`)
+    .join('')}</ul>`
+      : ''
+  }
+  ${
+    readyUnflagged.length
+      ? `<h3 class="sub">Can start, no call made yet</h3>
+  <ul class="rows">${readyUnflagged.map((p) => `<li><a class="chip s-ready" href="#p-${esc(p.num)}">${esc(p.num)}</a><div><b>${esc(p.title)}</b>${openOqs(p).length ? `. Open: ${openOqs(p).map((q) => `<a href="${esc(oqHref(q))}">${esc(q)}</a>`).join(', ')}` : ''}</div></li>`).join('')}</ul>`
+      : ''
+  }
+</section>`;
+
+const waitReason = (p) => {
+  if (G.wait?.[p.num]) return inlineMd(G.wait[p.num]);
+  const qs = replanOqs(p);
+  return `Answered since the plan was written: ${qs.map((q) => `<a href="${esc(oqHref(q))}">${esc(q)}</a>`).join(', ')}. Re-plan first.`;
+};
+const waitSection =
+  waitNow.length || replanLater.length
+    ? `
+<section aria-labelledby="h-wait">
+  <h2 id="h-wait">Unblocked, but wait</h2>
+  ${waitNow.length ? `<ul class="rows">${waitNow.map((p) => `<li><a class="chip s-wait" href="#p-${esc(p.num)}">${esc(p.num)}</a><div><b>${esc(p.title)}</b>. ${waitReason(p)}</div></li>`).join('')}</ul>` : ''}
+  ${
+    replanLater.length
+      ? `<details class="fold"><summary>Later phases the next plan update rewrites (${esc(replanLater.length)})</summary>
+    <ul class="rows tight">${replanLater.map((p) => `<li><a class="chip s-later" href="#p-${esc(p.num)}">${esc(p.num)}</a><div><b>${esc(p.title)}</b>. ${waitReason(p)}</div></li>`).join('')}</ul>
+  </details>`
+      : ''
+  }
+</section>`
+    : '';
+
+// ---------- the folds ----------
+
+let promptsFound = 0;
+const phaseEntry = (p) => {
+  const s = stateOf(p);
+  const prompt = p.prompt_file ? readText(p.prompt_file) : null;
+  if (prompt) promptsFound++;
+  else warn(`Phase ${p.num}: prompt file not found (${p.prompt_file ?? 'none given'})`);
+  if (p.file && !existsSync(join(ROOT, p.file))) warn(`Phase ${p.num}: plan doc not found (${p.file})`);
+  const deps = p.depends_on ?? [];
+  const oqs = p.blocked_by_oqs ?? [];
+  const when = isDone(p.num) ? `Done ${fmtDate(doneDate.get(p.num))}` : STATE_WORD[s];
+  return `
+  <details class="ph st-${s}" id="p-${esc(p.num)}">
+    <summary><span class="num">${esc(p.num)}</span><span class="t">${esc(p.title)}</span><span class="pill p-${s}">${esc(when)}</span></summary>
+    <div class="ph-body">
+      <p>${esc(firstSentence(p.delivers || p.goal))}</p>
+      <p class="meta">${deps.length ? `After ${esc(listWords(deps))}` : 'No dependencies'}. ${esc(p.est_sessions)}. ${esc(p.track)} track.${oqs.length ? ` Questions: ${oqs.map((q) => `<a href="${esc(oqHref(q))}">${esc(q)}</a>${qInfo.get(q)?.answeredSince ? ' (answered since)' : qInfo.get(q)?.open ? ' (open)' : ''}`).join(', ')}.` : ''}</p>
+      ${G.safe?.[p.num] ? `<p class="why">${inlineMd(G.safe[p.num])}</p>` : G.wait?.[p.num] ? `<p class="why w">${inlineMd(G.wait[p.num])}</p>` : ''}
+      <div class="acts">${docLink(p)}${prompt ? `<button class="btn quiet" type="button" data-copy="prompt-${esc(p.num)}">Copy kick-off prompt</button>` : ''}</div>
+      ${prompt ? `<details class="pr"><summary>Show the prompt</summary><pre id="prompt-${esc(p.num)}">${esc(prompt.trim())}</pre></details>` : ''}
+    </div>
+  </details>`;
+};
+
+const vars = { phases: phases.length, first: phases[0]?.num ?? '', last: phases[phases.length - 1]?.num ?? '', commit: shortCommit };
 const ruleParas = String(plan.sequencing_rules ?? '')
   .split(/\n\s*\n/)
   .filter((p) => p.trim())
@@ -358,317 +328,185 @@ const ruleParas = String(plan.sequencing_rules ?? '')
     const m = t.match(/^([A-Z][^.:]{0,40}[.:])\s+([\s\S]*)$/);
     return m ? `<p><b>${esc(m[1])}</b> ${esc(m[2])}</p>` : `<p>${esc(t)}</p>`;
   })
-  .join('\n  ');
-
+  .join('\n    ');
 const howTo = IX.howTo ?? [
-  '<b>Get the owner decisions first.</b> The decisions table at the top of <a href="ROADMAP.md">ROADMAP.md</a> says which phase each gates. A phase whose answer has not come in builds the stated default and labels it provisional.',
-  '<b>Pick the next phase</b> from the table below, respecting the order in "Sequencing and rules".',
-  `<b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt. The agent reads the roadmap, its phase doc and the gap detail for its items before touching anything.`,
-  '<b>Drift check first.</b> The catalogue keeps moving. Each session diffs its items against <code>{commit}</code>, reports what changed, and adapts the plan before building.',
-  '<b>The agent plans, builds and tests itself.</b> It turns the phase doc into work-sized steps, builds without waiting for approval, and runs the phase\'s manual test checklist itself. Agents never commit.',
-  `<b>When the catalogue changes,</b> run the <code>update-build-plan</code> skill: it re-grades the changed items, updates the affected phase docs, and re-renders this page with <code>node ${esc(SELF)}</code>.`,
+  '<b>Pick a phase that is safe to start</b>, open a fresh Claude Code session and paste its kick-off prompt.',
+  '<b>Drift check first.</b> Each session diffs its items against <code>{commit}</code>, reports what changed, and adapts before building.',
+  '<b>The agent plans, builds and tests itself.</b> Agents never commit.',
+  `<b>When the catalogue changes,</b> run the <code>update-build-plan</code> skill; it re-renders this page with <code>node ${esc(SELF)}</code>.`,
 ];
 const callouts = IX.callouts ?? [];
-const howSection = `
-<section class="prose">
-  <h2>How this works</h2>
-  <div class="rule"></div>
-  <ol class="howto">
-${howTo.map((li) => `    <li>${fill(li, vars)}</li>`).join('\n')}
-  </ol>
-${callouts.map((c) => `  <div class="callout${c.cls ? ` ${esc(c.cls)}` : ''}">\n    <p>${fill(c.html, vars)}</p>\n  </div>`).join('\n')}
-  <div class="flow">
-    ${flow}
-  </div>
-</section>
+const headlineMd = (() => {
+  const lines = gapMd.split('\n');
+  const start = lines.findIndex((l) => l.trim() === '### Headline');
+  if (start < 0) return '';
+  const out = [];
+  for (let i = start + 1; i < lines.length && !/^#{1,3}\s/.test(lines[i]); i++) out.push(lines[i]);
+  return out.join('\n').trim();
+})();
 
-<section class="prose">
-  <h2>Sequencing and rules</h2>
-  <div class="rule"></div>
-  ${ruleParas}
-</section>`;
+const fold = (id, title, body) => `
+  <details class="fold big" id="${id}"><summary>${title}</summary>
+    <div class="fold-body">${body}</div>
+  </details>`;
 
-const tableRows = phases
-  .map((p) => {
-    const tr = trackOf(p.track);
-    const after = (p.depends_on ?? []).length ? compressNums(p.depends_on) : 'Start here';
-    return `      <tr class="${statusOf(p.num) ?? ''}"><td><a href="#phase-${esc(p.num)}">${esc(p.num)}</a></td><td><b>${esc(p.title)}</b> ${statusTag(p.num)}<div class="read">${esc(p.delivers)}</div></td><td><span class="tag ${tr.tag}">${esc(p.track)}</span></td><td>${esc(sessionsOf(p.est_sessions) || p.est_sessions)}</td><td class="read">${esc(after)}</td><td class="n">${esc((p.covers ?? []).length)}</td></tr>`;
-  })
-  .join('\n');
-
-const tableSection = `
-<section>
-  <h2>The phases at a glance</h2>
-  <div class="rule"></div>
-  <div class="tscroll">
-  <table class="scorecard">
-    <thead><tr><th>#</th><th>Phase and what it delivers</th><th>Track</th><th>Sessions</th><th>After</th><th class="n">Items</th></tr></thead>
-    <tbody>
-${tableRows}
-    </tbody>
-  </table>
-  </div>
-</section>`;
-
-let promptsFound = 0;
-const articles = phases
-  .map((p) => {
-    const tr = trackOf(p.track);
-    const deps = p.depends_on ?? [];
-    const after = deps.length ? `After ${deps.length > 1 ? 'phases' : 'phase'} ${compressNums(deps)}` : 'Start here';
-    const prompt = p.prompt_file ? readText(p.prompt_file) : null;
-    if (prompt) promptsFound++;
-    else warn(`Phase ${p.num}: prompt file not found (${p.prompt_file ?? 'none given'})`);
-    if (p.file && !existsSync(join(ROOT, p.file))) warn(`Phase ${p.num}: plan doc not found (${p.file})`);
-    const covers = p.covers ?? [];
-    const oqs = p.blocked_by_oqs ?? [];
-    const triggers = p.demo_triggers ?? [];
-    return `
-<article class="phase ${tr.cls}${statusOf(p.num) ? ` is-${statusOf(p.num)}` : ''}" id="phase-${esc(p.num)}">
-  <div class="phase-head">
-    <span class="pnum">${esc(p.num)}</span>
-    <div class="phase-title">
-      <h3>${esc(p.title)}</h3>
-      <div class="badges">
-        ${statusOf(p.num) === 'done' ? `<span class="badge done">Done ${esc(doneDate.get(p.num))}</span>` : statusOf(p.num) === 'wip' ? '<span class="badge wip">In progress</span>' : nextPhases.includes(p.num) ? '<span class="badge nxt">Up next</span>' : ''}
-        <span class="badge trk">${esc(p.track)}</span>
-        <span class="badge dep">${esc(after)}</span>
-        <span class="badge est">${esc(p.est_sessions)}</span>
-        ${p.file ? `<a class="badge doc" href="${esc(p.file)}">plan doc &nearr;</a>` : ''}
-        <span class="badge dep">${esc(covers.length)} item${covers.length === 1 ? '' : 's'} covered</span>
-      </div>
-    </div>
-  </div>
-  <p class="goal">${esc(p.goal_short || p.goal)}</p>
-  <div class="items">${covers.map(itemChip).join('')}</div>
-  ${oqs.length ? `<p class="oqs">Open questions: ${oqs.map((q) => `<a href="${esc(oqHref(q))}">${esc(q)}</a>`).join(' · ')}</p>` : ''}
-  ${
-    triggers.length || p.risks
-      ? `<details>
-    <summary>Demo triggers and risks</summary>
-    ${triggers.length ? `<ul class="checks">${triggers.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="psum">No new demo triggers: this phase demos through normal use.</p>'}
-    ${p.risks ? `<p class="psum"><b>Risks.</b> ${esc(p.risks)}</p>` : ''}
-  </details>`
-      : ''
-  }
-  <details>
-    <summary>What to check when it's done</summary>
-    <ul class="checks">
-${(p.checks ?? []).map((c) => `      <li>${esc(c)}</li>`).join('\n')}
-    </ul>
-  </details>
-  ${
-    prompt
-      ? `${statusOf(p.num) === 'done' ? '<details class="ran"><summary>Kick-off prompt (already run)</summary>' : ''}<div class="prompt-wrap">
-    <div class="prompt-bar">
-      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
-      <button class="copy" data-target="prompt-${esc(p.num)}">Copy</button>
-    </div>
-    <pre id="prompt-${esc(p.num)}">${esc(prompt.trim())}</pre>
-  </div>${statusOf(p.num) === 'done' ? '</details>' : ''}`
-      : `<div class="callout"><p><strong>Kick-off prompt missing.</strong> Expected <code>${esc(p.prompt_file ?? '')}</code>.</p></div>`
-  }
-</article>`;
-  })
-  .join('\n');
-
-const phasesSection = `
-<section>
-  <h2>The phases</h2>
-  <div class="rule"></div>
-  ${legend()}
-${articles}
-</section>`;
-
-const parked = plan.parked ?? [];
-const milestones = plan.milestones ?? [];
-const tailSection = `
-<section>
-  <h2>Parked</h2>
-  <div class="rule"></div>
-  <p class="prose-p">In scope, but deliberately not planned yet.</p>
-  <ul class="defects">
-${parked
-  .map((x) => {
-    const it = itemById.get(x.id);
-    return `    <li class="keep"><b>${esc(x.id)}${it?.title ? ` · ${esc(it.title)}` : ''}</b> ${itemChip(x.id)}<br>${esc(x.reason)}</li>`;
-  })
-  .join('\n')}
-  </ul>
-</section>
-
-<section>
-  <h2>Milestones</h2>
-  <div class="rule"></div>
-  <p class="prose-p">What a workshop can be shown once each milestone phase is done.</p>
-  <ul class="defects ms">
-${milestones.map((m) => `    <li><b><a href="#phase-${esc(m.after)}">After phase ${esc(m.after)}</a></b><br>${esc(m.can_show)}</li>`).join('\n')}
-  </ul>
+const foldsSection = `
+<section class="folds" aria-label="Reference">
+  ${fold('all', `Every phase <span class="cnt">${esc(phases.length)}</span>`, `<p class="fine">${esc(done.length)} done, ${esc(phases.length - done.length)} to go: ${esc(doneSessions)} of about ${esc(totalSessions)} sessions. Status comes from ${progressName ? `the status table in <code>${esc(progressName)}</code>` : '<code>status.json</code>'}.</p>${phases.map(phaseEntry).join('')}`)}
+  ${fold('rules', 'Sequencing rules', ruleParas || '<p>None recorded.</p>')}
+  ${fold('how', 'How a phase runs', `<ol class="how">${howTo.map((li) => `<li>${fill(li, vars)}</li>`).join('')}</ol>${callouts.map((c) => `<p class="note">${fill(c.html, vars)}</p>`).join('')}`)}
+  ${(plan.milestones ?? []).length ? fold('milestones', 'What each milestone can show', `<ul class="plain">${plan.milestones.map((m) => `<li><b><a href="#p-${esc(m.after)}">After ${esc(m.after)}</a></b> ${esc(m.can_show)}</li>`).join('')}</ul>`) : ''}
+  ${(plan.parked ?? []).length ? fold('parked', `Parked <span class="cnt">${esc(plan.parked.length)}</span>`, `<ul class="plain">${plan.parked.map((x) => `<li><b>${esc(x.id)}</b> ${esc(x.reason)}</li>`).join('')}</ul>`) : ''}
+  ${fold('about', 'About this plan', `${IX.intro ? `<p>${fill(IX.intro, vars)}</p>` : ''}${headlineMd.split(/\n\s*\n/).filter(Boolean).map((p) => `<p>${inlineMd(p.trim())}</p>`).join('')}<p>Plan baseline <code>${esc(shortCommit)}</code>. The full plan is <a href="ROADMAP.md">ROADMAP.md</a>, the gap analysis <a href="GAP-ANALYSIS.md">GAP-ANALYSIS.md</a>, the data <a href="plan.json">plan.json</a>.</p>`)}
 </section>`;
 
 // ---------- page ----------
 
-// CSS: a base build-plan page's, then additions.
-const BASE_CSS = `:root {
-  --paper:#f7f3ec; --paper-2:#efe9de; --card:#fffdf8; --ink:#211d16; --ink-2:#574e40; --ink-3:#8a7f6c;
-  --rust:#b3400f; --rust-deep:#8a3009; --rust-soft:#f4e0d4;
-  --green:#2c6e49; --green-soft:#e3efe6; --amber:#9a6a08; --amber-soft:#f6ecd4;
-  --plum:#7a4a63; --plum-soft:#f0e2ea;
-  --line:#ddd3c2; --mono:'JetBrains Mono',monospace;
+const CSS = `:root {
+  --bg:#eef2f1; --sheet:#ffffff; --ink:#1c2a2e; --ink-2:#4a5b5f; --ink-3:#7f8e90; --line:#d3dcdb;
+  --teal:#0d6e63; --teal-2:#0a5a51; --teal-t:#d8ece8; --amber:#9c5f0c; --amber-t:#f6e8d2;
+  --sage:#8aa59e; --sage-t:#e3eae8; --focus:#0d6e63;
+  --ui:'Schibsted Grotesk',system-ui,sans-serif; --data:'Spline Sans Mono',ui-monospace,monospace;
 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#121a1c; --sheet:#1a2427; --ink:#e4ecea; --ink-2:#b2c0bf; --ink-3:#7f8f90; --line:#2c3a3d;
+  --teal:#3fb3a3; --teal-2:#5cc7b8; --teal-t:#173d38; --amber:#e0a552; --amber-t:#3a2c17; --sage:#5d7a73; --sage-t:#213230; --focus:#5cc7b8; } }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
-body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.62 'Archivo',sans-serif;
-  background-image:radial-gradient(circle at 12% -4%, rgba(179,64,15,.06), transparent 38%),
-  radial-gradient(circle at 110% 8%, rgba(44,110,73,.05), transparent 32%); }
-.wrap { max-width:1080px; margin:0 auto; padding:0 28px 120px; }
-a { color:var(--rust); }
-.hero { padding:64px 0 32px; border-bottom:3px solid var(--ink); }
-.kicker { font:600 12px/1 var(--mono); letter-spacing:.22em; text-transform:uppercase; color:var(--rust); margin:0 0 16px; }
-h1 { font:900 clamp(40px,6vw,72px)/0.98 'Fraunces',serif; letter-spacing:-.015em; margin:0 0 10px; }
-h1 em { font-style:italic; font-weight:300; color:var(--rust); }
-.hero-sub { max-width:760px; font-size:18px; color:var(--ink-2); margin:16px 0 0; }
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); border:1.5px solid var(--ink); margin:34px 0 0; background:var(--card); }
-.stat { padding:16px 20px 12px; border-right:1.5px solid var(--ink); }
-.stat:last-child { border-right:none; }
-.stat b { display:block; font:700 30px/1 'Fraunces',serif; }
-.stat span { font:600 11px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); }
-h2 { font:700 32px/1.1 'Fraunces',serif; margin:58px 0 6px; }
-.rule { height:3px; background:var(--ink); width:64px; margin:10px 0 20px; }
-.prose p { max-width:770px; }
-ol.howto { max-width:770px; padding-left:22px; }
-ol.howto li { margin:10px 0; }
-ol.howto b { font-family:'Fraunces',serif; }
-.callout { background:var(--card); border:1.5px solid var(--ink); border-left:6px solid var(--rust); padding:16px 20px; max-width:790px; margin:22px 0; }
-.callout.green { border-left-color:var(--green); }
-.flow { font:600 13px var(--mono); background:var(--card); border:1px solid var(--line); padding:18px 22px; margin:20px 0; line-height:2.1; max-width:840px; }
-.flow .fnode { background:var(--paper-2); padding:3px 8px; border-radius:3px; white-space:nowrap; }
-.flow .fpar { color:var(--green); }
-.scorecard { width:100%; border-collapse:collapse; margin:18px 0 8px; max-width:960px; background:var(--card); border:1.5px solid var(--ink); }
-.scorecard th, .scorecard td { text-align:left; padding:11px 16px; border-bottom:1px solid var(--line); font-size:14.5px; vertical-align:top; }
-.scorecard th { font:600 11px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); background:var(--paper-2); }
-.scorecard tr:last-child td { border-bottom:none; }
-.scorecard .read { color:var(--ink-2); font-size:13.5px; }
-.tag { font:600 10.5px var(--mono); letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:3px; white-space:nowrap; }
-.tag.a { background:var(--rust-soft); color:var(--rust-deep); }
-.tag.b { background:var(--green-soft); color:var(--green); }
-.tag.c { background:var(--plum-soft); color:var(--plum); }
-.tag.hi { background:var(--rust); color:#fff; }
-.defects { list-style:none; margin:18px 0 0; padding:0; max-width:850px; }
-.defects li { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--rust); padding:13px 18px; margin-bottom:10px; font-size:14.5px; color:var(--ink-2); }
-.defects li b { color:var(--ink); font-family:'Fraunces',serif; }
-.defects li.keep { border-left-color:var(--ink-3); }
-.defects code, .prose code, .scorecard code { font:600 12px var(--mono); background:var(--paper-2); padding:1px 5px; border-radius:3px; color:var(--rust-deep); }
-.phase { background:var(--card); border:1.5px solid var(--ink); margin:0 0 26px; padding:24px 26px 22px; }
-.phase.setup { border-left:6px solid var(--ink); }
-.phase.trackA { border-left:6px solid var(--rust); }
-.phase.trackB { border-left:6px solid var(--green); }
-.phase.trackC { border-left:6px solid var(--plum); }
-.phase-head { display:flex; gap:18px; align-items:flex-start; }
-.pnum { font:300 46px/1 'Fraunces',serif; font-style:italic; color:var(--rust); flex:none; min-width:64px; }
-.phase-title h3 { font:700 23px/1.15 'Fraunces',serif; margin:2px 0 8px; }
-.badges { display:flex; flex-wrap:wrap; gap:6px; }
-.badge { font:600 10.5px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; padding:4px 8px; border-radius:3px; text-decoration:none; }
-.badge.dep { background:var(--paper-2); color:var(--ink-2); }
-.badge.est { background:var(--rust-soft); color:var(--rust-deep); }
-.badge.trk { background:var(--ink); color:var(--paper); }
-.badge.doc { border:1px solid var(--line); color:var(--rust); }
-.badge.doc:hover { background:var(--rust); color:#fff; border-color:var(--rust); }
-.badge.hi { background:var(--rust); color:#fff; }
-.goal { margin:14px 0 12px; color:var(--ink-2); font-size:15px; }
-details { border-top:1px dashed var(--line); padding-top:10px; margin-bottom:14px; }
-summary { font:600 12px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--rust); cursor:pointer; }
-.psum { font-size:13.5px; color:var(--ink-2); max-width:880px; }
-.checks { font-size:13px; color:var(--ink-2); padding-left:20px; }
-.checks li { margin:6px 0; }
-.prompt-wrap { border:1px solid var(--line); }
-.prompt-bar { display:flex; justify-content:space-between; align-items:center; background:var(--ink); color:var(--paper); padding:8px 14px; font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; }
-.copy { font:600 11px var(--mono); background:var(--rust); color:#fff; border:none; padding:6px 14px; border-radius:3px; cursor:pointer; }
-.copy:hover { background:var(--rust-deep); }
-.copy.done { background:var(--green); }
-pre { margin:0; padding:16px 18px; font:400 12px/1.7 var(--mono); white-space:pre-wrap; background:#fbf9f4; color:var(--ink-2); max-height:360px; overflow:auto; }
-footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; font:400 12.5px var(--mono); color:var(--ink-3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
-@media print { pre { max-height:none; } body { background:#fff; } }`;
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--ui); }
+.chip, .num, .cnt, .map thead th { font-variant-numeric:tabular-nums; }
+a { color:var(--teal); text-underline-offset:2px; }
+:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+code { font:500 .86em var(--data); background:var(--sage-t); padding:1px 5px; border-radius:4px; }
+.wrap { max-width:1120px; margin:0 auto; padding:40px 32px 96px; }
+.top { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; color:var(--ink-3); font-size:14px; margin:0 0 28px; }
+.top b { color:var(--ink-2); font-weight:600; }
+h1 { font:800 clamp(30px,4.6vw,52px)/1.04 var(--ui); letter-spacing:-.02em; margin:0 0 12px; max-width:20ch; }
+.sub-h { font-size:18px; color:var(--ink-2); margin:0 0 28px; max-width:62ch; }
+.progress { display:flex; height:6px; border-radius:3px; overflow:hidden; background:var(--line); max-width:420px; margin:0 0 8px; }
+.progress span { background:var(--sage); }
+.fine { font-size:13.5px; color:var(--ink-3); margin:8px 0 0; max-width:70ch; }
+h2 { font:750 24px/1.2 var(--ui); letter-spacing:-.01em; margin:56px 0 14px; }
+h3 { margin:0; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 
-const EXTRA_CSS = `
-/* additions, drawn from the same palette */
-.hero-meta { font:600 12px/1.6 var(--mono); color:var(--ink-3); margin:14px 0 0; letter-spacing:.02em; }
-.hero-meta code { font:600 12px var(--mono); background:var(--paper-2); padding:1px 5px; border-radius:3px; color:var(--rust-deep); }
-.prose-p { max-width:770px; }
-.note { font-size:14px; color:var(--ink-3); }
-.tag.d { background:var(--amber-soft); color:var(--amber); }
-.tag.e { background:var(--ink); color:var(--paper); }
-.tag.f { background:var(--paper-2); color:var(--ink-2); border:1px solid var(--line); }
-.phase.trackD { border-left:6px solid var(--amber); }
-.phase.trackE { border-left:6px solid var(--ink-3); }
-.tscroll { overflow-x:auto; max-width:100%; }
-.scorecard td.n, .scorecard th.n { text-align:right; font-variant-numeric:tabular-nums; }
-.scorecard tr.tot td { background:var(--paper-2); }
-.epics td { padding:9px 12px; }
-.barcell { min-width:180px; width:30%; vertical-align:middle !important; }
-.bar { display:flex; height:14px; border:1px solid var(--ink); background:var(--paper-2); overflow:hidden; }
-.bar span { display:block; height:100%; }
-.v-con { background:var(--rust); }
-.v-par { background:var(--amber); }
-.v-mis { background:var(--plum); }
-.v-mat { background:var(--green); }
-.v-grp { background:var(--line); }
-.v-oos { background:var(--ink-3); }
-.v-dm { background:var(--ink); }
-.v-rv { background:var(--rust-deep); }
-.v-unk { background:var(--paper-2); }
-.legend { display:flex; flex-wrap:wrap; gap:6px 16px; font:600 11px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); margin:12px 0 4px; }
-.legend span { display:inline-flex; align-items:center; gap:6px; }
-.legend i { display:inline-block; width:11px; height:11px; border:1px solid var(--ink); }
-ol.themes { max-width:850px; padding:0; list-style:none; counter-reset:th; margin:18px 0 0; }
-ol.themes li { counter-increment:th; background:var(--card); border:1px solid var(--line); border-left:5px solid var(--rust); padding:13px 18px 8px; margin-bottom:10px; }
-ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
-.th-head { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
-.th-head b { font:700 17px/1.25 'Fraunces',serif; color:var(--ink); }
-.th-head b::before { content:counter(th) ". "; color:var(--rust); }
-.th-meta { font:600 11.5px var(--mono); color:var(--ink-3) !important; }
-.items { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 12px; }
-.it { display:inline-flex; align-items:center; gap:6px; font:600 11px/1 var(--mono); background:var(--paper-2); border-radius:3px; padding:4px 7px; }
-.it > i { display:inline-block; width:8px; height:8px; border-radius:50%; flex:none; }
-.it a { text-decoration:none; color:var(--ink); }
-.it a:hover { color:var(--rust); text-decoration:underline; }
-.it a.brd { font-weight:400; font-size:10px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.05em; }
-.oqs { font:600 11.5px var(--mono); color:var(--ink-3); margin:0 0 12px; }
-.defects.ms li { border-left-color:var(--green); }
-.defects li .it { margin-left:6px; vertical-align:middle; }
-/* phase status */
-.tag.done, .badge.done { background:var(--green-soft); color:var(--green); }
-.tag.wip, .badge.wip { background:var(--amber-soft); color:var(--amber); }
-.tag.nxt, .badge.nxt { background:var(--card); color:var(--ink-2); border:1px dashed var(--ink-3); }
-.pstrip { display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr)); gap:4px; max-width:850px; margin:8px 0 18px; }
-.pcell { font:600 11px/1 var(--mono); text-align:center; padding:9px 0; border-radius:3px; text-decoration:none; color:var(--ink-3); background:var(--paper-2); border:1px solid var(--line); }
-.pcell.done { background:var(--green); border-color:var(--green); color:#fff; }
-.pcell.wip { background:var(--amber); border-color:var(--amber); color:#fff; }
-.pcell.nxt { background:var(--card); border:1px dashed var(--ink-2); color:var(--ink); }
-.pcell:hover { outline:2px solid var(--ink); }
-ul.pstate { list-style:none; padding:0; margin:0; max-width:850px; }
-ul.pstate li { margin:0 0 10px; font-size:14.5px; color:var(--ink-2); }
-ul.pstate .tag { margin-right:8px; }
-ul.pstate .when { font:600 11px var(--mono); color:var(--ink-3); white-space:nowrap; }
-.scorecard tr.done td { background:#f9f8f2; }
-.scorecard tr.done td b { color:var(--ink-2); }
-.flow .fnode.done { background:var(--green-soft); color:var(--green); }
-.flow .fnode.wip { background:var(--amber-soft); color:var(--amber); }
-.phase.is-done { opacity:.82; }
-.phase.is-wip { box-shadow:0 0 0 3px var(--amber-soft); }
-details.ran { margin:0; }
-@media (max-width:640px) { .wrap { padding:0 16px 80px; } .phase { padding:18px 16px; } .phase-head { gap:12px; } .pnum { font-size:34px; min-width:44px; } }`;
+/* the map */
+.map-scroll { overflow-x:auto; background:var(--sheet); border:1px solid var(--line); border-radius:10px; }
+.map { border-collapse:separate; border-spacing:0; width:100%; min-width:720px; }
+.map th, .map td { padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle; text-align:left; }
+.map tr:last-child th, .map tr:last-child td { border-bottom:none; }
+.map thead th { font:600 12.5px var(--ui); color:var(--ink-3); padding-top:10px; padding-bottom:10px; }
+.map th.tk { position:sticky; left:0; background:var(--sheet); font:600 13px var(--ui); color:var(--ink-2); white-space:nowrap; padding-left:14px; min-width:116px; z-index:1; }
+.map .now { background:color-mix(in srgb, var(--teal-t) 55%, transparent); }
+.map thead th.now { color:var(--teal); }
+.map td { min-width:60px; }
+.map td.dn { width:150px; }
+.map td.lt { width:30%; }
+.map td.dn .chip { min-width:36px; height:24px; font-size:11.5px; }
+.chip { position:relative; display:inline-flex; align-items:center; justify-content:center; min-width:42px; height:28px; padding:0 7px; margin:2px 4px 2px 0;
+  font:600 12.5px var(--data); border-radius:6px; text-decoration:none; border:1.5px solid transparent; }
+.chip .mk { position:absolute; top:-4px; right:-4px; width:9px; height:9px; border-radius:50%; background:var(--amber); border:2px solid var(--sheet); }
+.s-done { background:var(--sage-t); color:var(--ink-3); }
+.s-wip { background:var(--amber-t); color:var(--amber); border-color:var(--amber); border-style:dashed; }
+.s-safe { background:var(--teal); color:#fff; }
+.s-safe:hover { background:var(--teal-2); }
+.s-safe-later { background:var(--sheet); color:var(--teal); border-color:var(--teal); }
+.s-wait { background:var(--amber-t); color:var(--amber); border-color:var(--amber); }
+.s-ready { background:var(--sheet); color:var(--ink); border-color:var(--ink-2); }
+.s-later { background:transparent; color:var(--ink-3); border-color:var(--line); }
+a.chip:hover { border-color:var(--ink); }
+.key { list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px 20px; font-size:13.5px; color:var(--ink-2); }
+.key li { display:inline-flex; align-items:center; gap:8px; }
+.key .chip { min-width:34px; height:22px; font-size:11px; margin:0; }
 
-const COPY_SCRIPT = `document.querySelectorAll('.copy').forEach(function (b) {
+/* start now */
+.lead { color:var(--ink-2); max-width:70ch; margin:0 0 16px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+.card { background:var(--sheet); border:1px solid var(--line); border-top:4px solid var(--teal); border-radius:10px; padding:18px 20px 18px; display:flex; flex-direction:column; }
+.card-top { display:flex; gap:12px; align-items:baseline; margin-bottom:8px; }
+.num { font:600 14px var(--data); color:var(--teal); flex:none; }
+.card h3 { font:700 19px/1.25 var(--ui); }
+.what { margin:0 0 10px; color:var(--ink); }
+.why { margin:0 0 10px; color:var(--ink-2); font-size:14.5px; padding-left:12px; border-left:3px solid var(--teal-t); }
+.why.w { border-left-color:var(--amber-t); }
+.meta { margin:0 0 14px; color:var(--ink-3); font-size:13.5px; }
+.acts { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:auto; }
+.btn { font:600 14px var(--ui); background:var(--teal); color:#fff; border:none; padding:9px 14px; border-radius:7px; cursor:pointer; }
+.btn:hover { background:var(--teal-2); }
+.btn.quiet { background:transparent; color:var(--teal); border:1.5px solid var(--teal); padding:6px 11px; font-size:13.5px; }
+.btn.ok { background:var(--sage); color:#fff; border-color:var(--sage); }
+.lnk { font-weight:600; font-size:14px; }
+h3.sub { font:700 16px var(--ui); margin:28px 0 8px; color:var(--ink-2); }
+.rows { list-style:none; padding:0; margin:0; max-width:900px; }
+.rows li { display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:start; padding:12px 0; border-bottom:1px solid var(--line); color:var(--ink-2); }
+.rows li b { color:var(--ink); font-weight:650; }
+.rows .chip { margin-top:-2px; }
+.rows.tight li { padding:8px 0; font-size:14.5px; }
+
+/* folds */
+.folds { margin-top:56px; border-top:1px solid var(--line); }
+details.fold > summary { cursor:pointer; list-style:none; }
+details.fold > summary::-webkit-details-marker { display:none; }
+details.fold.big { border-bottom:1px solid var(--line); }
+details.fold.big > summary { font:700 18px var(--ui); padding:16px 0; display:flex; align-items:center; gap:10px; }
+details.fold > summary::before { content:''; width:8px; height:8px; border-right:2px solid var(--ink-3); border-bottom:2px solid var(--ink-3); transform:rotate(-45deg); transition:transform .15s; flex:none; }
+details.fold[open] > summary::before { transform:rotate(45deg); }
+@media (prefers-reduced-motion: reduce) { details.fold > summary::before { transition:none; } }
+section > details.fold > summary { font:600 15px var(--ui); color:var(--ink-2); padding:14px 0 4px; display:flex; align-items:center; gap:10px; }
+.cnt { font:500 13px var(--data); color:var(--ink-3); }
+.fold-body { padding:0 0 24px 18px; max-width:900px; }
+.fold-body p { max-width:75ch; }
+.how li { margin:8px 0; }
+.note { color:var(--ink-2); font-size:14.5px; }
+.plain { padding-left:18px; } .plain li { margin:8px 0; color:var(--ink-2); } .plain b { color:var(--ink); }
+details.ph { border-bottom:1px solid var(--line); }
+details.ph > summary { cursor:pointer; list-style:none; display:grid; grid-template-columns:48px 1fr auto; gap:12px; align-items:baseline; padding:10px 0; }
+details.ph > summary::-webkit-details-marker { display:none; }
+details.ph .t { font-weight:600; }
+details.ph.st-done .t { color:var(--ink-3); font-weight:500; }
+details.ph:target > summary { background:var(--teal-t); }
+.pill { font:600 12px var(--ui); padding:2px 9px; border-radius:20px; white-space:nowrap; }
+.p-done { background:var(--sage-t); color:var(--ink-3); }
+.p-safe, .p-safe-later { background:var(--teal-t); color:var(--teal); }
+.p-wait, .p-wip { background:var(--amber-t); color:var(--amber); }
+.p-ready { background:var(--sheet); color:var(--ink-2); border:1px solid var(--line); }
+.p-later { color:var(--ink-3); }
+.ph-body { padding:0 0 16px 60px; }
+.ph-body p { margin:4px 0 8px; }
+details.pr { margin-top:10px; }
+details.pr > summary { cursor:pointer; font-size:13.5px; color:var(--ink-3); }
+pre { margin:8px 0 0; padding:14px 16px; font:400 12px/1.65 var(--data); white-space:pre-wrap; background:var(--sheet); border:1px solid var(--line); border-radius:8px; color:var(--ink-2); max-height:340px; overflow:auto; }
+footer { color:var(--ink-3); font-size:13px; margin-top:48px; }
+@media (max-width:640px) {
+  .wrap { padding:24px 16px 72px; }
+  .rows li { grid-template-columns:auto 1fr; } .rows li .acts { grid-column:2; }
+  .ph-body { padding-left:0; }
+  details.ph > summary { grid-template-columns:44px 1fr; } details.ph .pill { grid-column:2; justify-self:start; }
+}
+@media print { pre { max-height:none; } details { display:block; } }`;
+
+const SCRIPT = `document.querySelectorAll('[data-copy]').forEach(function (b) {
   b.addEventListener('click', function () {
-    var text = document.getElementById(b.getAttribute('data-target')).textContent;
-    navigator.clipboard.writeText(text).then(function () {
-      b.textContent = 'Copied'; b.classList.add('done');
-      setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('done'); }, 1800);
+    var el = document.getElementById(b.getAttribute('data-copy'));
+    if (!el) return;
+    var label = b.textContent;
+    navigator.clipboard.writeText(el.textContent).then(function () {
+      b.textContent = 'Copied'; b.classList.add('ok');
+      setTimeout(function () { b.textContent = label; b.classList.remove('ok'); }, 1600);
     });
   });
-});`;
+});
+function openTarget() {
+  var id = decodeURIComponent(location.hash.slice(1));
+  var el = id && document.getElementById(id);
+  if (!el) return;
+  for (var n = el; n; n = n.parentElement) if (n.tagName === 'DETAILS') n.open = true;
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();`;
 
+const asOf = G.as_of ? `Safety calls as of ${esc(fmtDate(G.as_of))}.` : '';
 const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -677,32 +515,28 @@ const html = `<!doctype html>
 <title>${esc(IX.title ?? config.title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700;9..144,900&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-${BASE_CSS}
-${EXTRA_CSS}
+${CSS}
 </style>
 </head>
 <body>
-<!-- Generated by ${esc(SELF)}. Do not edit by hand: edit plan.json, gaps.json or the phase prompt files and re-run it. -->
-<div class="wrap">
-${hero}
-${progressSection}
-${themesSection}
-${glanceSection}
-${howSection}
-${tableSection}
-${phasesSection}
-${tailSection}
-
-</div>
-<footer class="wrap" style="padding-top:0">
-  <span>${esc(IX.footer ?? config.title)} · catalogue ${esc(shortCommit)} · gap analysis ${esc(generated)} · rendered by build-index.mjs from plan.json and gaps.json</span>
-  <span>${esc(config.plan)}/index.html</span>
-</footer>
-
+<!-- Generated by ${esc(SELF)}. Do not edit by hand: edit plan.json, status.json or the phase prompt files and re-run it. -->
+<main class="wrap">
+  <div class="top"><b>${esc(IX.title ?? config.title)}</b><span>${esc(done.length)} of ${esc(phases.length)} phases done. ${asOf}</span></div>
+  <h1>${esc(headline)}</h1>
+  ${G.headline_sub ? `<p class="sub-h">${inlineMd(G.headline_sub)}</p>` : ''}
+  <div class="progress" aria-hidden="true"><span style="width:${phases.length ? ((done.length / phases.length) * 100).toFixed(1) : 0}%"></span></div>
+  <p class="fine">${esc(doneSessions)} of about ${esc(totalSessions)} sessions done.</p>
+  <h2 class="sr">The phases by track</h2>
+  <div style="margin-top:28px">${map}</div>
+${nowSection}
+${waitSection}
+${foldsSection}
+  <footer>Rendered by <code>${esc(basename(SELF))}</code> from <code>plan.json</code> and <code>status.json</code>, plan baseline <code>${esc(shortCommit)}</code>.</footer>
+</main>
 <script>
-${COPY_SCRIPT}
+${SCRIPT}
 </script>
 </body>
 </html>
@@ -710,7 +544,7 @@ ${COPY_SCRIPT}
 
 writeFileSync(OUT, html);
 const kb = (Buffer.byteLength(html) / 1024).toFixed(1);
-console.log(`Wrote ${OUT} (${kb} KB): ${phases.length} phases, ${promptsFound} prompts, ${themes.length} themes, ${(gaps.epics ?? []).length} epics, ${totalSessions} est. sessions.`);
+console.log(`Wrote ${OUT} (${kb} KB): ${phases.length} phases, ${promptsFound} prompts, ${done.length} done, ${safeNow.length} safe now, ${maxWave} waves.`);
 if (warnings.length) {
   console.warn(`${warnings.length} warning(s):`);
   for (const w of warnings) console.warn(`  - ${w}`);
