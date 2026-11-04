@@ -227,7 +227,7 @@ read the same after the change, and a parity test proves it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the items it leans on against the plan's
-   baseline, catalogue commit `7cd7802` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -246,7 +246,7 @@ read the same after the change, and a parity test proves it.
    it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
    that in the PROGRESS entry.
 
-   Already folded into this plan (the `3d3a18c` to `7cd7802` changes, so not drift):
+   Already folded into this plan (the `3d3a18c` to `d436947` changes, so not drift):
    - the six covered items changed only in artifact links (AR-19, AR-25) and link markup, as did
      US-08.3.1, US-09.1.1, US-09.1.4, US-09.2.1, US-10.1.2, FT-06.3 and FT-10.2;
    - the prepayment rewrite: US-06.2.3 (an estimate) and US-06.4.2 (no automatic credit) Retired;
@@ -267,7 +267,7 @@ read the same after the change, and a parity test proves it.
      prototype), US-13.2.2's patient-centric balance, DM-23's two ledger scopes, US-10.2.5 with OQ-71
      (outside the system), Greg's view on OQ-60 (16 built it) and US-13.5.2's audit scope (DM-45,
      Phase 39).
-   Folded in at `7cd7802` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
+   Folded in at `d436947` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
    final invoice with nothing deducted, D57; a prepayment's payable is to the AA Holding account, a creditor
    in the payables sub-ledger, and its release at authorisation is a journal transfer, never a receivable);
    FT-06.5, US-06.5.1 and US-06.4.1 (the account, the transfer, system-only payouts); US-06.3.1 (the approval
@@ -1555,7 +1555,7 @@ explicitly supersedes.
   - the screens: `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId` (office), web
     Accounts and mobile Balances (Dr Souter).
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result against `7cd7802`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
+  - the drift-check result against `d436947`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
     OQ-61, OQ-70, OQ-71, OQ-73, OQ-76, OQ-80) and how the open questions were handled (OQ-29, OQ-47
     Proposed, OQ-60);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item

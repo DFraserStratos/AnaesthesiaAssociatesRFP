@@ -88,13 +88,13 @@ new stored entity. The seed grows, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `7cd7802`):
+1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `d436947`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-07.2,US-07.2.1,US-07.2.3,US-07.3.2,US-07.4.1,US-07.4.2,FT-07.4,US-03.1.6,US-03.1.7,EP-07,FT-03.1,US-03.1.1,US-03.1.4,US-12.2.1,US-02.5.5,FT-03.4,OQ-26,OQ-17,OQ-31,OQ-86
    ```
 
-   (This doc is current at `7cd7802`; the 2026-11-02 update added only a link to US-03.1.6. What
+   (This doc is current at `d436947`; the 2026-11-02 update added only a link to US-03.1.6. What
    changed from `60e2d1e` to `d4db277`, already reflected: the edit window
    to AUTHORISED and the "changed since submitted" reading (FT-07.2, US-07.2.1, US-07.2.3); the exit
    at AUTHORISED with invoices at once (US-07.4.1, FT-07.4, US-07.4.2); search on name, NHI or date

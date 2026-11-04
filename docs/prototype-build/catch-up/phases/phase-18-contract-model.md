@@ -188,7 +188,7 @@ Phases 19a to 25; this phase changes the shape and keeps the numbers.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
@@ -1102,7 +1102,7 @@ not re-raise anything settled in the Decisions log.
   US-04.2.1 to 20 and 21), and FT-11.4, US-11.4.1 and US-11.4.2 recipes marked absent (Retired).
 - **Status row:** Phase 18 (Contract holders, settings and dated Contracts) DONE with the date, or IN
   PROGRESS after session 1 with what remains.
-- **Phase entry:** the drift-check result against `7cd7802` (US-04.1.5 Verify; OQ-114 as built; the
+- **Phase entry:** the drift-check result against `d436947` (US-04.1.5 Verify; OQ-114 as built; the
   answered questions as built); how Phase 17's `SG-COS` members map to COS's surgeon link, and
   Doyle's, Merivale's and Aria's holders; the holder and AA code tables as seeded; the parity fixture path and result; the
   `PERSIST_VERSION` bump; the review pass; the handoffs: **19a** (lines replace `interimTerms`,

@@ -150,7 +150,7 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,US-08.2.2,OQ-15,OQ-62,OQ-90,OQ-89,OQ-116`
-   (the drift-check baseline is `7cd7802`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the drift-check baseline is `d436947`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks. Re-read the domain model's "Booking" and "Procedure" sections (the
    `isPrimary` bullet and the Modifiers bullet) and "3. Calculation rules" ("Units within a Booking",
    the 7 over 3 worked example, the CALCULATED note).

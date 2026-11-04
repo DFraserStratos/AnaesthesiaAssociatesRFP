@@ -49,7 +49,7 @@ FT-01.4 then holds in full: a List (Phases 28 and 32) or a single Booking from i
 
 ## Before you start: drift check
 
-1. Run the catalogue diff since this plan's baseline (catalogue commit `7cd7802`, the 2026-11-02 plan update):
+1. Run the catalogue diff since this plan's baseline (catalogue commit `d436947`, the 2026-11-02 plan update):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-01.4.7,US-01.4.6,FT-01.4,US-01.4.3,US-01.4.5,US-13.8.1,US-13.8.2,US-06.3.5,US-06.5.4,US-06.5.1,OQ-85,OQ-80,OQ-43,OQ-79,OQ-113,OQ-39,OQ-65,OQ-82
@@ -257,7 +257,7 @@ Once the checklist and `npm run build`, `npm run build:pwa`, `npx vitest run` an
   - an anaesthetist moves only Bookings dated today or later on an ACTIVE List; otherwise it is the office's;
   - the source List stays when its last Booking leaves, and nothing stops others adding Bookings to the new List (not discussed in the room);
   - a catalogue point: US-01.6.3 lets the office assign a Draft List onto an unavailable session with a soft warning, while US-01.4.7 says the office does not assign work to someone marked unavailable without them knowing; this phase applies the receiver rule to the anaesthetist's move only.
-- **Status row** for catch-up Phase 32a, and a phase entry with: the drift-check result against `7cd7802` (items changed or not); the names 25 to 32 delivered that were used, anything folded in, and any 32 hook removed; what was built; the `PERSIST_VERSION` bump (from and to); any seed record added and why; the Booking, colleagues, prepaid Booking and trigger candidates the seed tests pin, for the demo guide; the checklist item by item with evidence; the tests added; the review pass; the Catalogue screenshots result (recipes created or changed, REPORT.md counts before and after); the milestone consistency read.
+- **Status row** for catch-up Phase 32a, and a phase entry with: the drift-check result against `d436947` (items changed or not); the names 25 to 32 delivered that were used, anything folded in, and any 32 hook removed; what was built; the `PERSIST_VERSION` bump (from and to); any seed record added and why; the Booking, colleagues, prepaid Booking and trigger candidates the seed tests pin, for the demo guide; the checklist item by item with evidence; the tests added; the review pass; the Catalogue screenshots result (recipes created or changed, REPORT.md counts before and after); the milestone consistency read.
 - **Decisions log:**
   1. **US-01.4.7 and US-01.4.6 are one move** (DM-42): found by type-ahead or the free list, only a colleague free in that session, always a new List, the same action is the doer rule. Replaces the earlier plan's find-or-create placement onto an existing List and its separate "move to the anaesthetist who did it" (never built).
   2. **The anaesthetist guard is replaced:** `reassignBooking`'s `notOwnList` points at the one sanctioned path.

@@ -109,14 +109,14 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the ones it leans on against the plan's
-   baseline, catalogue commit `7cd7802` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.2.8,FT-08.4,US-08.4.1,US-08.4.2,US-08.4.5,US-08.2.3,US-09.1.4,US-04.2.12,US-08.4.6,US-05.2.7,US-11.4.1,US-11.2.2,US-11.2.3,US-04.1.5,US-08.4.3,FT-08.2,US-08.2.1,FT-09.1,US-08.6.3,US-08.6.4,OQ-29,OQ-42,OQ-60,OQ-68,OQ-23,OQ-67,OQ-73,OQ-78,OQ-114,OQ-122
    ```
 
-   The plan already reflects the catalogue at 7cd7802 (US-04.2.8's delivery now the holder's, OQ-114 and
+   The plan already reflects the catalogue at d436947 (US-04.2.8's delivery now the holder's, OQ-114 and
    OQ-122 as above, US-09.1.4's open granularity): US-04.2.12 Retired and US-08.2.3 rewritten
    (2026-10-05 typed decision: a Split button on the Procedure, several billable
    parties, typed $ or %, no Contract setting and no default); US-04.2.8 agreed with Greg on
@@ -145,7 +145,7 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
    - **D70 (posted invoices, OQ-122), open: built as its default.** A billed payer has an email or a postal
      address (21); a postal-only payer's invoice is marked "To post" with a print view, no posting
      integration. Carries a small "Provisional (OQ-122)" pill; log it.
-   - **D37 (which description goes on the invoice, OQ-103), open: built as its default.** Each line prints 20a's invoice description (`procedureInvoiceWording`), whatever 20a settled; 22 reads it and never copies, edits or derives it. Log the reading on the owner's list.
+   - **D37 (which description goes on the invoice, OQ-103), answered.** Each line prints 20a's invoice description (`procedureInvoiceWording`) as the rule, with no provisional label; 22 reads it and never copies, edits or derives it.
    - **OQ-29 (GST agency treatment, and IRD's new name for the buyer-created tax invoice), Open.**
      Build the recommended reading: supplier = the anaesthetist with their GST number, AA named as
      agent, and the ACCPAY labelled a buyer-created tax invoice. Every surface that shows this
@@ -258,7 +258,7 @@ both superseded, Phase 08 work item 2's "Email invoice = mark emailed-at", **202
 preview centred with a sticky information rail** (kept; its Email control becomes Resend), and the
 handoff item **P3 GST per-invoice rounding on funder splits** (still true of split shares).
 
-**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, 7cd7802; use the shapes 16 and
+**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, d436947; use the shapes 16 and
 18 to 21 left).
 - Types, `domain/types.ts`: `Anaesthetist` (~141, no GST number), `Contract` (~216, reshaped by 18),
   `PrepaymentDetail` (~435, the prepayment's own `'full' | 'split'`, a different concept: do not reuse
@@ -411,8 +411,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
    - `splitLineText(procedureWording, fee, share)` and `splitNoteText(...)`: the split's wording, in this one
      place (the catalogue leaves it unsettled, US-08.2.3 note; logged). Each party's invoice carries one
      line "{procedure wording}: share of the fee of ${fee} ({share label})" for its amount, where the
-     procedure wording is 20a's `procedureInvoiceWording` (passed in, never re-derived, so D37's
-     general-procedure wording stays in its one place), and a
+     procedure wording is 20a's `procedureInvoiceWording` (passed in, never re-derived, so the description chain stays in its one place, D37 answered), and a
      note "This fee of ${fee} is split. The other shares are invoiced separately to {party, invoice
      number}, ..." (numbers filled in by the run).
    - `shareLabel(basis)`: "$132.50", "62.5%" or "the rest".
@@ -930,9 +929,9 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   anaesthetist splitting until submit; Prentice's second invoice now to Alan Prentice, not St
   George's (if 20 and 21 had not already moved it; S3 Beat 1's figures unchanged); a split share to a
   holder's party delivered by that holder's setting; holder delivery limited to email and portal (OQ-114's other outputs open); a postal-only payer marked To post with a print view (OQ-122/D70 default); layout for an added party by recipient class; the bare
-  number read as dollars; the OQ-29 wording; GST treatment stored as a single value; the cross-match fields chosen (procedure date, surgeon, hospital reference) and the Booking reference as fallback for the holder's reference; the invoice description read from 20a as its D37 default.
+  number read as dollars; the OQ-29 wording; GST treatment stored as a single value; the cross-match fields chosen (procedure date, surgeon, hospital reference) and the Booking reference as fallback for the holder's reference.
 - **Status table:** a catch-up row for Phase 22.
-- **Phase entry:** the drift check result (catalogue diff from the 7cd7802 baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
+- **Phase entry:** the drift check result (catalogue diff from the d436947 baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
   as the 2026-10-05 decision, BCTI granularity, what 16 and 18 to 21 left), files and actions added and
   removed, the `PERSIST_VERSION` bump, the tests added and rewritten, the manual checklist item by
   item, and the review pass.

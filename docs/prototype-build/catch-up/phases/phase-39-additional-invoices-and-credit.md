@@ -138,9 +138,9 @@ No seeded figure moves. FT-08.6 closes here.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's baseline, catalogue commit `7cd7802` (plan.json
+1. Run the drift check against the plan's baseline, catalogue commit `d436947` (plan.json
    `commit`; with no `--to` the tool diffs that baseline against the working tree, so it shows only
-   what changed after `7cd7802`):
+   what changed after `d436947`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-07.4.1,US-07.4.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-10.2.7,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-61,OQ-63,OQ-71,OQ-72,OQ-76,OQ-77,OQ-97
@@ -1244,7 +1244,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   note, a credited original, the split sheet with Left to allocate, the review row, the
   anaesthetist's credit sheet on web and mobile, the Audit viewer filtered to credit notes).
 - **Status row** for catch-up Phase 39, and a phase entry with:
-  - the drift-check result (items changed or not since `7cd7802`; FT-08.6, US-08.6.2, US-08.6.4,
+  - the drift-check result (items changed or not since `d436947`; FT-08.6, US-08.6.2, US-08.6.4,
     US-13.5.2 and the other covered items; OQ-60 and OQ-97 status; the
     List the combined-procedure trigger uses; the prepaid-combination split left refused, as a known
     gap against US-08.6.4 handed to 41; the prepaid half of US-08.6.5's "After a fixed price" handed

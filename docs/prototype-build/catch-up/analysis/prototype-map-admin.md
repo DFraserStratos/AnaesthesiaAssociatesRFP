@@ -45,6 +45,7 @@ All paths below are relative to `aa-prototype/src/` unless they start with `apps
 | `/admin/masters/surgeons/:surgeonId` | `SurgeonProfile` | unknown id -> `RequireEntity` fallback |
 | `/admin/masters/anaesthetists/:anaesthetistId` | `AnaesthetistRecord` | |
 | `/admin/audit` | `AuditViewer` | |
+| `/admin/day/:dateISO/cards/:cardId` | `LegacyBookingRedirect` | old-URL redirect |
 | `/admin/*` | redirect `/admin` | |
 
 Side nav (`A/components/SideNav.tsx`): Day view, Draft Lists (amber badge = waiting Draft Lists), Conflicts (amber = open conflicts today..horizon), Notifications (no badge, by design), Review queue (crimson = SUBMITTED count), Invoices, Billing monitor (amber = failed billing cases + Xero handoff faults), Integrations (amber = dead-letter + manual-intervention messages), Master data, Audit. Footer: "Roles in this prototype" (`RolesInfo`), static "KW Kirsty W. Office" chip. The "Day view" item returns to the last-seen day and sort (refs in `AdminApp.tsx:108-118`). Min layout width 1320px.
@@ -166,7 +167,7 @@ Static overlay "Roles in this prototype" opened from the side-nav footer: four h
 - Review flags `A/reviewFlags.ts:57`. AA fee `D/billing/aaFee.ts:25,44`; run `S/aaFeeActions.ts:158-245`.
 - Notification pool rule `D/notifications.ts:23`.
 - Guards: all admin master writes office-only; `integration` actors cannot touch Draft Lists (`draftListActions.ts:38`).
-- `PERSIST_VERSION = 25` (`S/appStore.ts:191`).
+- `PERSIST_VERSION = 26` (`S/appStore.ts:194`).
 
 ## 16. Demo / simulator affordances touching Admin
 Admin screens contain few badges: `DemoBadge` only on Integrations Messages/Feed tabs (Future scope), on invoice delivery ("Simulated send", "Simulated portal handoff"). Everything else is in the harness bar's Demo actions menu, registered in `shared/demoTriggers/registry.ts` (route-scoped; Admin screens publish context with `useDemoTriggerContext`: `adminDay.selectedSlotId`, `adminMasters.view`, `adminDraftLists.openListId`, `aaFees.month`, `integrations.tab`). Entries visible on Admin routes: Billing monitor (`/admin/billing`): Trigger billing failure (`:364`), Arm handoff failure (`:397`), Run reconciliation poll (`:412`), Run archive job (`:433`); Audit: Simulate sign-in attempts (`:457`); Review and Booking detail: Stage post-op scenario (`:479`); Integrations (pdfs tab): Ingest PDF row (`:515`), Fire hospital message / Replay (`:1017,1042`, Future-scope badge); Invoice pages: Payment received full/half, Replay last payment (`:548-578`); AA fee invoices: Run scheduled month-end fee run (`:604`), Seed a month of BCTIs (`:627`); Day view + Conflicts: Simulate sickness (`:750`, writes unavailable via office `setAvailability`); Day + Notifications: Colleague moves a List to the office (`:787`, one or busy morning); Draft Lists: Simulate incoming request (`:842`); Day: Add Draft List for this day (`:868`); Masters recurring tab: Stage recurring clash (`:888`); Day/Booking detail: Raise/Clear sample warnings (`:924,947`). The harness bar also has demo clock (`shell/DemoClockMenu.tsx`; `advanceClockDays` rolls the canvas and runs the nightly archive job (per the Xero view copy)) and Reset. Separate Demo app screens `apps/demo/*` (Xero, integrations simulator, data) are outside Admin.

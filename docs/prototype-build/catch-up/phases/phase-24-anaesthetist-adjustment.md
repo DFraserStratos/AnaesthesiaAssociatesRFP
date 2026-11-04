@@ -102,19 +102,19 @@ source).
 
 ## Before you start: drift check
 
-1. **Diff the catalogue** against the plan's baseline, catalogue commit `7cd7802`:
+1. **Diff the catalogue** against the plan's baseline, catalogue commit `d436947`:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.2,US-05.2.5,US-05.2.6,US-05.4.3,US-04.2.2,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-05.2.1,US-05.2.7,OQ-107,OQ-16,OQ-89,OQ-96,OQ-117
    ```
 
-   The plan already reflects 7cd7802: the one rule on Procedure values (FT-05.2), the per-Contract
+   The plan already reflects d436947: the one rule on Procedure values (FT-05.2), the per-Contract
    editable flag with no reason (OQ-107 and D50, OQ-16), narrowed so a fixed price is never the
    anaesthetist's to change (OQ-117, D65) and a prepaid Contract is never editable (OQ-96, D30), BTM
    optional on a fixed price (US-03.5.2, US-05.2.5), the rate live on the line (US-05.2.6), the discount
    its own invoice line (US-05.4.3), no time band (OQ-89, D40). Also read `domain-model.md`'s calculation
    rules and the Contract and Procedure rows for price, rate, discount and editable. **If an item changed
-   since 7cd7802**, re-read it and adjust the work items; **if one is now Retired or Future**, drop it and say
+   since d436947**, re-read it and adjust the work items; **if one is now Retired or Future**, drop it and say
    so in the PROGRESS entry.
 2. **Read what 18 to 23 actually left** (PROGRESS entries and code), and name the real symbols:
    - 18: the Contract's editable setting (name and seeded values), `isDefault`, the version lookup,
@@ -611,7 +611,7 @@ Decisions log settles.
   - each seeded Contract's editable value (Aria and the discount Contract off) and the demo discount
     Contract;
   - Fitzgerald's new Aria figure.
-- **Status row and phase entry:** the drift check against 7cd7802 (OQ-96 and OQ-117 answered); `PERSIST_VERSION`
+- **Status row and phase entry:** the drift check against d436947 (OQ-96 and OQ-117 answered); `PERSIST_VERSION`
   from and to; the real names (`priceProcedure`, `anaesthetistMayChangePricing`, `setProcedurePricing`,
   `PriceCard`, `PricingSheet`); the Aria figures before and after; the parity result; tests added; the
   review pass; the catalogue screenshot result (`REPORT.md` counts before and after).

@@ -13,7 +13,7 @@ Paths are relative to `aa-prototype/src/` unless stated. Facts are from the code
 
 ## 1. Surface seam: `shared/surface/`
 - `context.ts`: `useSurface()` returns `{variant:'mobile'|'web', Overlay, BookingLayout, BookingTotal, Pair}`. Throws outside `SurfaceProvider`.
-- `SurfaceProvider.tsx:296`: `variant` mobile gives `BottomSheet` overlay + `MobileBookingLayout` (one scroll column, folding masthead, pinned dock; BookingTotal renders nothing); web gives `Dialog` + `WebBookingLayout` (12-col grid: banners span 12, capture span 8, sticky commit rail span 4 with ink BookingTotal panel and a separate Complete bar) + `WebPair` (two equal cols). The admin app uses the web variant.
+- `SurfaceProvider.tsx:296-314`: `variant` mobile gives `BottomSheet` overlay + `MobileBookingLayout` (one scroll column, folding masthead, pinned dock; BookingTotal renders nothing); web gives `Dialog` + `WebBookingLayout` (12-col grid: banners span 12, capture span 8, sticky commit rail span 4 with ink BookingTotal panel and a separate Complete bar) + `WebPair` (two equal cols). The admin app uses the web variant.
 - `BottomSheet.tsx`, `Dialog.tsx`: plain modal containers (motion from `theme/motion.ts`).
 - Only the desktop surface shows the money panel, and only for non-anaesthetist actors (see 2).
 

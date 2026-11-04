@@ -14,7 +14,7 @@
 [US-08.2.2](../../../../requirements-board/requirements/stories/US-08.2.2.md) (status 4, graded Contradicts; **rewritten** as "Prepaid Procedures left off the final invoice", OQ-116 answered: nothing deducted, a mixed Booking invoices only its not-prepaid Procedures, still ranked across all, and an all-prepaid Booking has no final invoice);
 [DM-20](../analysis/domain-model-delta.md) (started by a prepaid Contract per Procedure, the line's price above zero, generated on approval (optional) with its pair to the AA Holding account, left off the final invoice with nothing deducted; the letter-template master is 41's);
 [RV-05](../analysis/reverse-check.md) (prepayment as a payment category with a split deposit or an estimated full fee, netted from the final invoice).
-**Left at `7cd7802`:** none.
+**Left at `7cd7802`:** none. At `d436947`: US-08.2.2 re-dated OQ-116's answer to 23 October and records that a mixed Booking's final invoice is unconfirmed with Vanessa (build as answered, D57); D37 answered: the prepayment invoice line prints the Procedure's invoice description.
 
 **Depends on:** Phase 15a (the warning routine, `WARNING_RULES`, `prepaymentUnpaid` and its texts,
 `appSettings` and its backfill, `warningClearances` and `clearWarning`, the to-do list, the triangle,
@@ -92,17 +92,17 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-06,FT-06.2,FT-06.3,US-06.2.1,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,FT-08.1,US-03.1.8,US-08.2.2,FT-06.5,US-05.3.1,US-06.3.4,US-06.3.6,US-06.3.7,US-06.4.1,US-06.5.1,US-06.5.4,US-09.1.3,US-04.2.14,US-04.3.4,US-11.2.2,US-13.7.1,US-13.7.3,US-13.7.4,OQ-25,OQ-73,OQ-80,OQ-92,OQ-96,OQ-97,OQ-104,OQ-105,OQ-116,OQ-119,OQ-120,OQ-04,OQ-38,OQ-48,OQ-61,OQ-70,OQ-76,OQ-91
    ```
 
-   The 2026-11-02 plan update (`d4db277..7cd7802`) folded in the 27 and 28 October notes and the
-   29 October typed decision (summarised under "Requirements covered"); diff only for anything after
-   `7cd7802`.
-2. If an item changed since `7cd7802`, re-read it and adjust the work items; if one is now Retired or
+   The plan updates through `d436947` folded in the 27 and 28 October notes, the 29 October typed
+   decision and the 23 October re-dating (summarised under "Requirements covered"); diff only for
+   anything after `d436947`.
+2. If an item changed since `d436947`, re-read it and adjust the work items; if one is now Retired or
    Future, drop it and say so in PROGRESS. Check US-06.2.3 to US-06.2.5, US-06.3.3, US-06.4.2,
    US-06.1.1 and FT-06.4 are still Retired and US-13.7.4 still Future.
 3. **Answered: build as answered, no provisional label** (each as the Goal states it): D64 / OQ-25
@@ -112,10 +112,10 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
    the anaesthetist; the office can, raising nothing); D47 / OQ-104 (the issued price kept); D57 /
    OQ-116 (left off, nothing deducted, ranked across all); D5 / OQ-57 (no block); D42 / OQ-91 (the
    office keeps the lists); OQ-04, OQ-38, OQ-61, OQ-76 (no estimate, contingency or part payment,
-   nothing automatic afterwards); OQ-48 (the version in force on the procedure date). If one has been
-   reopened since `7cd7802`, build the plan as written and put it first on "For the owner's review".
+   nothing automatic afterwards); OQ-48 (the version in force on the procedure date); D37 / OQ-103 (the invoice line prints the Procedure's invoice description from 20a's chain, never the Contract line's description directly). If one has been
+   reopened since `d436947`, build the plan as written and put it first on "For the owner's review".
 4. **Open: build the default, one code comment naming the question, log it.** If answered since
-   `7cd7802`, build the answer instead.
+   `d436947`, build the answer instead.
    - **US-06.3.5 (Open):** its criterion as written (cleared before the invoice is generated), one
      "Provisional" caption on the re-check's confirmation line (item 10).
    - **OQ-119 (D67):** after the invoice is sent or paid, a Contract changed off prepaid rewrites
@@ -244,7 +244,7 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
      whose Contract's version in force on the procedure date has 18's `prepaid` on, an anaesthetist's
      or a surgeon's list alike. Per Procedure: the others on the Booking need nothing.
    - `prepaidAmountFor(procedure, contracts, dateISO)` (D27): `{ kind: 'priced', contractId,
-     versionId, lineId, description, amount }` from the line's fixed price (ex GST, above zero by
+     versionId, lineId, amount }` (no description: the invoice line reads the Procedure's, D37) from the line's fixed price (ex GST, above zero by
      19a's guard), or `{ kind: 'noLine' }`. Never an estimate, the RVG, a unit value or a typed price.
    - `prepaymentPartyFor(...)`: 21's `billablePartyForProcedure` for each prepaid Procedure (whoever
      the Contract bills; D23 revised). No person-only guard.
@@ -286,8 +286,9 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
      `awaitingApproval` and `ready`, and on a cancelled Booking or an AUTHORISED or billed List.
    - One `mutate()`, through the internal `generatePrepaymentInvoice` (the one place the pair is
      created; comment naming OQ-80): `buildPrePaymentInvoiceForBooking` reads `prepaidProceduresFor`,
-     one invoice per party billed with one line per prepaid Procedure (the line's description,
-     "Prepaid amount", its fixed price ex GST), patient layout, GST by 22's rule, the anaesthetist
+     one invoice per party billed with one line per prepaid Procedure (the Procedure's invoice
+     description read through 20a's chain helper, so an admin's edit shows and a blank Contract line
+     description falls through; "Prepaid amount"; its fixed price ex GST), patient layout, GST by 22's rule, the anaesthetist
      named through `PREPAYMENT_NAMES_ANAESTHETIST`; 22's `materialiseInvoices` with `approval`
      stamped; the `BillingCase` and `handoffCase`: an ACCREC to the party billed and a DRAFT ACCPAY to
      `AA_HOLDING_ACCOUNT`; then 22's send step (`deliveryPlanFor`) at the clock time. Audited
@@ -301,7 +302,8 @@ link on the booking procedure, which `prepaymentForProcedure` hides) in the head
      every payable to the holding account (27a releases it with the transfer).
    - Submit never invoices it again (US-06.3.1's criterion).
    - Tests: office approves once (invoice, pair, send); the anaesthetist, a second approve and
-     `noLine` are refused; half a payment reads `partPaid`; the pair equals item 1's shape with the
+     `noLine` are refused; the line prints the Procedure's invoice description (an admin's edit shows, a
+     blank line description falls through to the hospital's or rooms' text; D37); half a payment reads `partPaid`; the pair equals item 1's shape with the
      holding-account contact; the payables run pays nothing to it; off, picking the prepaid line sends
      at once and switching off sends the pending ready ones (not a `noLine` one); on again, the next
      waits.
@@ -682,7 +684,7 @@ anything settled in the Decisions log except the rulings this phase explicitly s
   - D68 (OQ-120): the prepayment invoice names the anaesthetist, from one constant;
   - the readings in drift check 4, and the 7 and 2 day windows;
   - Souter's payables due fall by Nair's held prepayment until 27a.
-- Status row and a phase entry: the drift check against `7cd7802`; the answers built (D64, D27, D6
+- Status row and a phase entry: the drift check against `d436947`; the answers built (D64, D27, D6
   extended, D38, D23 revised, D30, D47, D57, D5, D42, OQ-04, OQ-38, OQ-61, OQ-76) and the US-06.3.5,
   D67 and D68 defaults and where each lives; what 15a to 25 provided; the sessions and the adversarial
   pass; the tests added; `PERSIST_VERSION` old to new and the re-pinned figures; the Catalogue

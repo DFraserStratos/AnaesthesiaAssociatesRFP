@@ -59,7 +59,7 @@ Answered question this phase builds:
 So Xero doesn't have NHI details. Xero will have an unique ID which allows transactions to link back to
 invoices in our system."). The leak scan's Xero area checks for the NHI **and** the other personal
 information Phase 16 keeps out of Xero (work item 13).
-**Owner decisions** ([ROADMAP.md](../ROADMAP.md) table, re-read at `7cd7802`). None gates this phase;
+**Owner decisions** ([ROADMAP.md](../ROADMAP.md) table, re-read at `d436947`). None gates this phase;
 the generator follows what the decisions produced, as the earlier phases built it: D1 (the monthly
 AA-FEE invoice, 16); D11 (NHI mandatory, 33, 40); D26 (one RVG multi-procedure rule, no switch, 23); D32
 (a Contract may hold no lines, 18, 19a, 20); D33 (no procedure to match, the RVG code optional, 20, 21);
@@ -70,11 +70,16 @@ D35 (answered: the RVG group holds a starting figure and the published range, an
 out-of-range warning for the office, 19, 20); D39 (the RVG groups are the one master list,
 19); D40 and D50 (no time band, the per-Contract editable flag, 19a, 24); D42 (the office keeps the
 anaesthetists' price lists, 19a); D43 (P1 included, pre-applied and removable, 19b); D44 (preferences
-admin-only, 17); D45 (versions never backdated, 18, 25). Superseded and not built: D2, D3, D6, D12, D16,
-D17, D20, D37 (curated procedure lists and general procedures, price precedence, first-party prepaid
-sets, "no per-Booking override"). Defaults the generated set inherits, never re-decided here: D28
-(the insurer, a contract holder, and the approval number on the Booking; insurance never decides who is
-billed), D29 (age on the procedure date), D36 (tier names).
+admin-only, 17); D45 (versions never backdated, 18, 25); D37 (answered: the invoice description is 20a's one chain, the
+rooms' description, replaced by the hospital's when one arrives, replaced by the Contract line's invoice
+description where filled in, free text for the office; the RVG code plays no part; 20a); D28's answered
+parts (insurance does not narrow the Contract list and nothing matches the insurer against the Contracts,
+so there is no insurer-without-Contract review warning; the missing approval number is the only insurance
+warning, 21). Superseded and not built: D2, D3, D6, D12, D16,
+D17, D20 (curated procedure lists and general procedures, price precedence, first-party prepaid
+sets, "no per-Booking override"). Defaults the generated set inherits, never re-decided here: D28's
+still-open part (the insurer, a contract holder, and the approval number on the Booking; insurance never
+decides who is billed), D29 (age on the procedure date), D36 (tier names).
 **Depends on:** Phase 42 (every master editable and the controlled loader, so the generator reads the
 final master shapes), Phase 37 (the processing monitor, `billingMonitorView`, and the Xero sync queue the
 scan reads), Phase 36 (the ledger pair as the system of record, which the generated history must follow)
@@ -135,7 +140,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware; never
+1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware; never
    a plain `git diff` of the catalogue folder):
 
    ```
@@ -154,8 +159,8 @@ Two claims the prototype has so far only narrated become things a presenter can 
    price, rate and discount held on the Procedure; modifiers as records with age and P1 pre-applied and
    removable; a payer with an email or postal address and a mandatory NHI on every Booking (OQ-49); prepaid as
    a Contract setting, the AA Holding account and its journal transfer, prepaid Procedures left off final
-   invoices (D57). Work item 2 reflects all of this; diff only for anything after `7cd7802`.
-2. If an item changed since `7cd7802`, re-read it in full and adjust the work items before building. If
+   invoices (D57). Work item 2 reflects all of this; diff only for anything after `d436947`.
+2. If an item changed since `d436947`, re-read it in full and adjust the work items before building. If
    an item is now Retired or Future, drop its work and say so in the PROGRESS entry:
    - **US-15.0.4** Retired or Future: drop work items 1 to 9. If its figures changed (anaesthetists,
      Slots, invoices per year), change the one `FULL_SCALE` constants block (work item 2) and every copy
@@ -167,7 +172,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
      that view hold up at scale and never adds a second authorise path.
    - **US-14.5.1** moved out of Future into scope: record it for Phase 44's handoff and apply work item
      11's restricted view to it only if the session has room.
-   - **A model item changed after `7cd7802`**: the earlier phase that built it owns the change; the
+   - **A model item changed after `d436947`**: the earlier phase that built it owns the change; the
      generator follows what shipped, because it builds through the same module. Change nothing here
      except the integrity test that names the rule.
 3. **Open questions.** None blocks this phase. OQ-30 and OQ-49 are answered and built as answered. The
@@ -447,8 +452,10 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
          NZ Post postal address, prefilled from the patient; below `guardianPayerAgeUnder` a synthetic guardian (a person billable party)
          instead. No Booking is saved without an NHI and none is generated pending (OQ-49);
        - the Procedure's **description as received** (Phase 20a, DM-51), in its channel, drawn from the
-         pool 20a seeded from AR-35, kept as written, and an **invoice description** copied from the line
-         or the Booking's description. The **RVG code is optional** (D33): a Procedure on a Contract line
+         pool 20a seeded from AR-35, kept as written, and an **invoice description** from 20a's one chain
+         (D37, answered): the rooms' description, the hospital's where the feed brought one, the Contract
+         line's invoice description where filled in, taken from 20a's helper, never a second copy of the
+         order. The **RVG code is optional** (D33): a Procedure on a Contract line
          carries the line's default RVG code; one priced on No contract (RVG) carries a code from the RVG
          group master (Phase 19; the group is the one master list, so there is no procedure list to pick
          from and no "general procedure"); never a blank Procedure that a Booking needs priced;
@@ -461,8 +468,8 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
          procedure default to fall back to, because none exists;
        - **who is billed** from Phase 21's one function: the holder's billable party when the holder is
          billed, otherwise the payer on the Booking; where the patient is insured, the insurer (a contract
-         holder) and approval number on the Booking (D28), so billed history raises no missing-approval or
-         review warning; insurance never decides who is billed;
+         holder) and approval number on the Booking (D28), with an approval number on every insured Booking, so billed history raises no missing-approval
+         warning (the only insurance warning; there is no insurer-without-Contract warning); insurance never decides who is billed;
        - **values held on the Procedure** (Phase 19a and 24): the starting values (price, rate, discount,
          base and modifier units) filled from the line or the RVG group, then priced by Phase 24's
          calculation: the held price if there is one, else BTM x rate x (1 - discount), the discount its
@@ -547,7 +554,8 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        route, `funderOverride`, a default-Contract flag, a Contract kind, an insurer master, a prepayment
        estimate or deposit); who is billed equals Phase 21's function; no List is DRAFT with an anaesthetist and every
        DRAFT List is a Draft List; every recurring booking projects through Phase 30's projection; every
-       prepaid Booking is on a Contract flagged prepaid (lines above zero) with a person as payer;
+       prepaid Booking is on a Contract flagged prepaid (lines above zero) with a person as payer; every invoice description equals 20a's chain for its Procedure; no
+       insured Booking lacks an approval number and no insurer-without-Contract warning exists;
      - integrity, the money: every AUTHORISED Procedure has a pricing snapshot, and re-running Phase 24's
        calculation from the snapshot's values gives its stored price (parity); a prepaid Procedure is
        priced at its line's price; every invoice links to a Booking and a snapshot; every ledger pair
@@ -1058,6 +1066,9 @@ anything settled in the Decisions log.
   a Contract kind, an estimate or deposit); prepaid Bookings sit only on prepaid Contracts with a person
   as payer, the AA Holding account's pairs and journal transfers, and no prepaid Procedure on a final
   invoice (D57); tiers and preferences stay office-private.
+- Answered rulings: the invoice description comes from 20a's one chain (D37), never copied from the line or the
+  Booking's description by the generator; the only insurance warning is the missing approval number (D28),
+  with no insurer-without-Contract warning generated or asserted.
 - Integrity at scale: generated history went through the same pure builders as the billing run and the
   ledger (no parallel pricing code), every AUTHORISED Procedure has a pricing snapshot and its invoice
   prices only from it (parity with Phase 24's calculation), every ledger pair balances, the Ledger screen
@@ -1102,7 +1113,7 @@ anything settled in the Decisions log.
   (Admin Day, Invoices, Audit and Billing monitor at full scale; a generated Booking's stack; the
   Matching raw-row sheet; the Data Inspector's Privacy checks).
 - A catch-up status row for Phase 43 and an entry `### Catch-up Phase 43 · Scale and privacy (date)`
-  (one per session if it runs over two): the drift-check result against `7cd7802` (OQ-30 and OQ-49 answered and
+  (one per session if it runs over two): the drift-check result against `d436947` (OQ-30 and OQ-49 answered and
   built as answered), the shipped names used from Phases 14 to 42 (the model names in
   `domain/billing` above all), the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in

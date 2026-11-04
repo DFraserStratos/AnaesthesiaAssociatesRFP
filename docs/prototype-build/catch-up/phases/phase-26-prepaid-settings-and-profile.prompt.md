@@ -21,7 +21,7 @@ Before doing anything else, read these in order:
    - the PROGRESS entries for catch-up Phases 14 (where the PWA demo-actions chip landed), 17 (the HPI CPN helpers, label and duplicate refusal, the Admin anaesthetist record page, the officePrivate slice and officePrivacy.test.ts) and 28 (the start date on the record page and add form), and for 22 and 25 if they have landed (Anaesthetist.gstNumber; the pricing snapshot that copies the unit value).
 
 Then do the drift check in the phase doc:
-- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> (baseline 7cd7802) for the IDs the doc lists, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> (baseline d436947) for the IDs the doc lists, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - Build the answers as answered: OQ-14, OQ-52 and D64.
 - Confirm US-12.1.4 still puts bank details in the system, names one HPI CPN and makes both mandatory, and that US-12.1.1 still lets the anaesthetist set their own rate. If any reading changed, apply the "If it has changed" column of the phase doc's table; anything that changes the shape of the work, build the doc's default and log it.
 - Check whether Phases 22 and 25 have landed and apply the doc's drift-check step 4 (the rate note and the lock test; gstNumber left alone).

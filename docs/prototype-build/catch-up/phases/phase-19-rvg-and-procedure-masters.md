@@ -85,16 +85,16 @@ figure (item 5).
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.1,US-05.1.1,US-05.1.3,US-05.1.6,US-03.3.1,FT-04.3,US-04.2.4,US-05.1.4,US-13.7.1,OQ-56,OQ-62,OQ-88,OQ-99,OQ-101,OQ-106
    ```
 
-   The plan already reflects the catalogue at `7cd7802` (US-05.1.1's range criterion and the settled
+   The plan already reflects the catalogue at `d436947` (US-05.1.1's range criterion and the settled
    system code, US-05.1.3 Agreed, OQ-101 answered); diff only for anything after it.
-2. If an item changed after `7cd7802`, re-read it whole and adjust the work items. If one is now
+2. If an item changed after `d436947`, re-read it whole and adjust the work items. If one is now
    Retired or Future, drop its work and say so in the PROGRESS entry.
 3. Read `requirements-board/requirements/domain-model.md` "RVG groups and modifier master", the
    "Base units come from the RVG code" row of §1 and §3's resolver block.

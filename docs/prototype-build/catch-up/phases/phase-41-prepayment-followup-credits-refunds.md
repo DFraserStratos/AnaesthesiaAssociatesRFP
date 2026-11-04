@@ -46,13 +46,13 @@ Finish the prepayment story on 27 and 27a. Keep it thin and build what the catal
 
 ## Before you start: drift check
 
-1. Diff this phase's items, context and open questions against the plan baseline `7cd7802` (rename-aware; never a plain `git diff` of the catalogue folder):
+1. Diff this phase's items, context and open questions against the plan baseline `d436947` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-06.3.6,US-06.3.7,US-06.4.1,US-06.5.2,US-06.5.3,US-06.5.4,FT-06.4,FT-06.5,US-06.5.1,US-06.4.2,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,US-03.1.8,US-05.4.2,US-08.2.2,US-08.6.2,US-08.6.3,US-08.6.5,US-04.2.14,US-09.1.3,US-01.4.6,US-01.4.7,US-02.5.3,OQ-03,OQ-61,OQ-76,OQ-80,OQ-96,OQ-97,OQ-104,OQ-115,OQ-116,OQ-119,OQ-120,OQ-125
    ```
 
-   The plan reflects the catalogue at `7cd7802`; diff only for anything after it. If a covered item is now Retired or Future, drop it and record that. **Stop and tell the owner** if US-06.5.4 or US-06.3.5 brings back a re-check, recalculation or payee repoint on a move, or if OQ-61 or OQ-76 is reopened toward an automatic balance invoice or credit.
+   The plan reflects the catalogue at `d436947`; diff only for anything after it. If a covered item is now Retired or Future, drop it and record that. **Stop and tell the owner** if US-06.5.4 or US-06.3.5 brings back a re-check, recalculation or payee repoint on a move, or if OQ-61 or OQ-76 is reopened toward an automatic balance invoice or credit.
 2. Confirm from the PROGRESS entries that:
    - 27's `generatePrepaymentInvoice` is the single send path (called by `approvePrepayment` and `autoSendPrepayments`), a prepayment awaiting approval has no invoice, the requirement is derived for any new Booking on a prepaid line (the rebook relies on it), and 27 left the deduction line and its exceptions gone;
    - no move path reads or writes anything prepayment, 32a left no hook, and no "Phase 41 seam" comment survives (remove any and say so);
@@ -345,7 +345,7 @@ After the checklist and the four commands are green, run the standard pass (conv
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry): the defaults built (D31's part credit, one per invoice, reversing the holding payable before the transfer and the anaesthetist's after; D67's Contract change settled as a cancellation; D68's anaesthetist field and the email caption); the readings (the cancellation credit issued at once with no review step; a late payment refunded by the system although the catalogue leaves who refunds it unstated; a by-hand credit pays no refund; a credit in full before authorise making the Procedure bill normally; a cancelled Procedure on a live Booking settled by hand; the Contract change crediting only that Procedure's share); anything logged rather than fixed; the screens worth a look with route and persona.
-- Status row and phase entry: the drift-check result against `7cd7802` and the OQ states (OQ-97, OQ-119, OQ-120 built as defaults and labelled; OQ-125 27a's; the rest as answered); what 18, 27, 27a, 32a, 36, 38b and 39 provided and that no move hook or seam remained; how 39's `submitCredit`, `cause` and issue path were widened; the sessions and the review pass; the tests added; each `PERSIST_VERSION` change; the re-pinned holding balance; the Phase 44 handoff (US-08.6.4's prepaid split still refused).
+- Status row and phase entry: the drift-check result against `d436947` and the OQ states (OQ-97, OQ-119, OQ-120 built as defaults and labelled; OQ-125 27a's; the rest as answered); what 18, 27, 27a, 32a, 36, 38b and 39 provided and that no move hook or seam remained; how 39's `submitCredit`, `cause` and issue path were widened; the sessions and the review pass; the tests added; each `PERSIST_VERSION` change; the re-pinned holding balance; the Phase 44 handoff (US-08.6.4's prepaid split still refused).
 - **Catalogue screenshots:** recipes created or changed (by ID, US-06.3.7 new), REPORT.md counts before and after, recipes re-pointed, the US-06.4.1 balance-invoice caption confirmed gone.
 - Decisions log:
   - **Superseded:** the earlier plan readings of this phase, never built: the balance invoice, the overpaid prepayment kept, the estimate notice, the agreed-rate settlement, the trust hold built here, the payee repoint, the deduction line on a mixed Booking (D57 reversed), the "small set of templates" picker, and the office refund action with a two-step payout (D56's old default): replaced by "nothing further but by hand", "a move changes nothing", "one standard template" and "cancellation settles automatically". The Phase 08 `negativeTotal` belt for an overpaid prepayment (record only if 27 did not).

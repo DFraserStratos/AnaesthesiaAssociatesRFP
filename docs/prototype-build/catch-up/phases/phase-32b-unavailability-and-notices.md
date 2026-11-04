@@ -32,7 +32,7 @@ Follow up the built Schedule track (28 to 32) for the 19 October answers (D58, D
 
 ## Before you start: drift check
 
-Baseline `7cd7802`.
+Baseline `d436947`.
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.8.3,US-03.6.3,US-01.5.2,US-01.5.4,US-01.5.5,US-01.6.3,US-01.4.1,US-01.4.3,US-13.6.4,US-13.8.1,US-13.8.2,US-13.7.2,OQ-79,OQ-81,OQ-84,OQ-102`, re-read what changed, adjust the work items, and drop and log anything now Retired or Future (if US-13.8.3 or US-03.6.3 went, stop and tell the owner).
 2. Confirm Phases 14 to 32a are DONE; read what 32 and 32a delivered, because this doc names some planned code: the `Notification` kind union and `postNotification` (32a adds `'bookingMoved'`), `notificationText`, `NOTIFICATION_POOL_RULE`, `moveListToOffice`, `pushListToSlot`, `markUnavailableAndMoveList`, `MoveListSheet`, `anaesthetistActor`, and 32a's pinned Souter Booking (reuse it for the alert shots).
@@ -180,7 +180,7 @@ The standard pass (PROGRESS convention 18): three independent Opus reviewers (qu
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; each with route and persona): the defaults in "Before you start" item 4 (submit while alerted, no un-tick, the vacated control pre-selected, the office hand-on posting no notice, SUBMITTED and AUTHORISED Lists), the "Show resolved" proposal (Admin, Notifications), the panel's place and count (US-13.8.1, Verify), the seeded Rutherford change (Admin, Draft Lists), the alert limit (one active per target), and OQ-102 still open.
-- **Status row** for Phase 32b and a phase entry: the drift-check result against `7cd7802`; the names 32 and 32a delivered that this used; what was built; `PERSIST_VERSION` from and to; the seed pins; the checklist with evidence; tests added; the review pass; the catalogue screenshot result with REPORT.md counts before and after.
+- **Status row** for Phase 32b and a phase entry: the drift-check result against `d436947`; the names 32 and 32a delivered that this used; what was built; `PERSIST_VERSION` from and to; the seed pins; the checklist with evidence; tests added; the review pass; the catalogue screenshot result with REPORT.md counts before and after.
 - **Decisions log:**
   1. **Unavailability is never a conflict (D59, OQ-81 part 3)**: supersedes Phase 30's office-recorded sickness keeping its conflict and Phase 31's reassign-from-a-closed-session; the office is forced to return or hand on.
   2. **No assign onto an unavailable session (D59, US-01.6.3)**: supersedes 31's accept-and-warn for a closed session.

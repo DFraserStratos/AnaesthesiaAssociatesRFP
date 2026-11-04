@@ -131,17 +131,17 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
-   (the baseline is `7cd7802`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the baseline is `d436947`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks, plus the "Procedure" (Modifiers bullet) and "RVG groups, procedure
    list and modifier master" sections of `requirements-board/requirements/domain-model.md`. If an item
    changed, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work
    and say so in the PROGRESS entry.
-2. Check the AR-34 files have not changed since `7cd7802` (`git log -- "requirements-board/requirements/artifacts/files/NZSA RVG 2021 modifiers.md" "requirements-board/requirements/artifacts/files/NZSA RVG 2021 included modifiers.csv"`).
+2. Check the AR-34 files have not changed since `d436947` (`git log -- "requirements-board/requirements/artifacts/files/NZSA RVG 2021 modifiers.md" "requirements-board/requirements/artifacts/files/NZSA RVG 2021 included modifiers.csv"`).
    If they did, the generator (item 2) picks the change up; read the diff for new rows, new value
    shapes or a changed P1 list. US-05.1.5 asks for a spot-check against the PDF: compare five rows
    (PA3, A1, OB4, POC2a, NC2) with `NZSA RVG 2021.pdf` pages 12 and 13 (artifact AR-16) and record the
    result in PROGRESS. A disagreement is reported, never fixed by hand in the generated table.
-   Also check whether the draft pricing design has moved to a v5 since `7cd7802` (`git log` on
+   Also check whether the draft pricing design has moved to a v5 since `d436947` (`git log` on
    `requirements-board/requirements/artifacts/AR-29.md`, `AR-30.md` and their files); if it has,
    re-read regions `booking-procedure-fields` (AR-29) and `booking-procedure` and `rvg-group` (AR-30)
    and adjust item 3's types in the one place.

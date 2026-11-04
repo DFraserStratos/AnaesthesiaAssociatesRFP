@@ -199,7 +199,7 @@ it for the owner.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `7cd7802` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `d436947` (rename-aware;
    never a plain `git diff` of the catalogue folder), and read it for this phase's items:
 
    ```
@@ -212,7 +212,7 @@ it for the owner.
      above, and in `domain-model.md` the Booking ("Billing fails per Booking"), the "Procedure billing
      context" table (`contractId`: "locked at AUTHORISED"), and the pricing section (the resolver,
      `price(procedure)`, the engine's rejections and the pricing snapshot bullet).
-   - At `7cd7802`, relative to the plan's earlier baseline `7cd7802`:
+   - At `d436947`, relative to the plan's earlier baseline `d436947`:
      - US-04.1.6 is new: the staged change, review dashboard and all-or-nothing submit. US-04.2.13
        (upload) is Future Work.
      - US-04.2.10 (now Agreed) is rewritten: versions from a date the office chooses, never past; the
@@ -228,7 +228,7 @@ it for the owner.
      - `domain-model.md`: the engine rejects a Booking when a typed price sits on a Contract that is not
        adjustable, when BTM is missing and no fixed price resolves, or when the Contract is not valid on
        the procedure date.
-   - If an item changed after `7cd7802`, re-read it and adjust the work items before building. If
+   - If an item changed after `d436947`, re-read it and adjust the work items before building. If
      discovery names the fields to freeze, or a later design changes the snapshot, lock exactly those
      plus whatever the printed invoice and the payee need, inside `lock.ts`, and record the list in
      the Decisions log. If an item is now Retired or Future, drop it and say so in the PROGRESS entry.
@@ -1229,7 +1229,7 @@ Decisions log.
   never-invoiced held-back Booking, the built defaults (no Contract upload, D34 and OQ-100; a Procedure locked at authorise is not relinked; a withdrawn version stays on the chain; the demo trigger leaves the effective date
   blank), anything logged rather than fixed, and the screens worth a look,
   each with its route and persona.
-- Status row for catch-up Phase 25, and a phase entry: the drift-check result against `7cd7802`
+- Status row for catch-up Phase 25, and a phase entry: the drift-check result against `d436947`
   (including what 16 and 18 to 24 were found to provide, every live payee join and every live invoice
   print replaced, and any change to the fields to freeze), the snapshot's field list, the tests added,
   `PERSIST_VERSION` old to new, and the adversarial pass.

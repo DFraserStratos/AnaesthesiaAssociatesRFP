@@ -73,14 +73,14 @@ one place in `aa-prototype/src/domain/billing` as the earlier phases left it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and open questions against the plan's baseline,
-   catalogue commit `7cd7802` (rename-aware; never a plain `git diff` of the catalogue folder; needs
+   catalogue commit `d436947` (rename-aware; never a plain `git diff` of the catalogue folder; needs
    Node 22.18 or newer):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.1.5,FT-14.6,US-02.2.1,FT-02.1,FT-02.2,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.5.7,US-03.1.9,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.1.2,FT-14.1,FT-14.2,FT-14.3,FT-14.5,US-14.5.1,OQ-13,OQ-34,OQ-78,OQ-99,OQ-108,OQ-109
    ```
 
-   This doc reflects the catalogue at `7cd7802` (2026-11-02: the 27 October evidence on OQ-13, OQ-108
+   This doc reflects the catalogue at `d436947` (2026-11-02: the 27 October evidence on OQ-13, OQ-108
    and OQ-109 leaves them open and changes no work item). From `d4db277` (2026-10-20): US-02.1.5 gained the cadence note (one
    theatre list a day, no repeated updates; narration only); FT-14.6 and its stories are out of scope
    (the sheets and auto-match left this phase); OQ-108 and OQ-109 carry the built defaults D51 and D52.
@@ -90,7 +90,7 @@ one place in `aa-prototype/src/domain/billing` as the earlier phases left it.
    hospital default and the "Needs a Contract" list) still stand. `domain-model.md` section 1 may still
    describe the sync as "on a schedule, when the matching screen opens, and by a sync button, with a
    last-synced time": that row is stale against US-02.1.5; the story wins. Diff only for anything after
-   `7cd7802`. If an item changed since, re-read it and adjust the work items; re-run the gap analysis
+   `d436947`. If an item changed since, re-read it and adjust the work items; re-run the gap analysis
    for that item only, per `../README.md`.
 2. **US-02.1.5.** If it regains a schedule, a sync button or a last-synced time, stop and tell the owner
    the shape (it was removed on 2026-10-02); do not build them on a guess. If it is now Retired or
@@ -177,7 +177,7 @@ one place in `aa-prototype/src/domain/billing` as the earlier phases left it.
 10. Note the current `PERSIST_VERSION` in `src/store/appStore.ts`. This phase does not expect to bump it: no new
    hospitals, no persisted sync state and no demo setting change the seed. Bump it only if the build does
    change the seed's shape or content.
-11. Record the drift-check result (against `7cd7802`) in the PROGRESS entry.
+11. Record the drift-check result (against `d436947`) in the PROGRESS entry.
 
 ## Reference
 
@@ -797,7 +797,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   from AA; any row reused on a channel AR-35 does not list, starting with row 14, an email in AR-35,
   on the St George's sync, as 20a already logged for MSG-STG-1001).
 - **Status row** for catch-up Phase 34, and an entry `### Catch-up Phase 34 · Hospital sync and the S1 rebuild (date)` with:
-  - the drift-check result against `7cd7802`, OQ-13's status and OQ-99's (D33);
+  - the drift-check result against `d436947`, OQ-13's status and OQ-99's (D33);
   - the real Phase 33 names used (row types, staging and decision actions, routes), and Phase 20's and
     20a's (the Contract step, "Needs a Contract", the source-text channel a synced row writes);
   - what was built, and what was moved to the Future-scope surface or badged there;
