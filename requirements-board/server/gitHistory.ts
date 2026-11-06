@@ -6,6 +6,7 @@
  * which is faster than `--follow` and also covers a screenshot folder.
  */
 import { execFile, spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 import { promisify } from 'node:util'
@@ -16,9 +17,13 @@ import { gitBlobSha } from './historyJournal.ts'
 import { priorDirs, priorPaths } from './gitRenames.ts'
 
 const run = promisify(execFile)
-const git = async (cwd: string, args: string[]) => (await run('git', args, { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 })).stdout
+export const git = async (cwd: string, args: string[]) => (await run('git', args, { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 })).stdout
 
-const tryParse =
+/** A git object name: SHA-1 (40 hex) or SHA-256 (64 hex). */
+export const OBJECT_SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
+
+/** `parse`, reading a file that does not parse as null. */
+export const tryParse =
   <T>(parse: (text: string) => T) =>
   (text: string): T | null => {
     try {
@@ -29,7 +34,7 @@ const tryParse =
   }
 
 /** Every `sha:path` blob in one `git cat-file --batch` process; null where the file was absent. */
-function readBlobs(top: string, specs: string[]): Promise<(string | null)[]> {
+export function readBlobs(top: string, specs: string[]): Promise<(string | null)[]> {
   return new Promise((resolve, reject) => {
     const p = spawn('git', ['cat-file', '--batch'], { cwd: top })
     const chunks: Buffer[] = []
@@ -56,6 +61,50 @@ function readBlobs(top: string, specs: string[]): Promise<(string | null)[]> {
     })
     p.stdin.end(specs.map((s) => `${s}\n`).join(''))
   })
+}
+
+const tops = new Map<string, string>()
+
+/**
+ * The top of the git repository `dir` is in (symlinks resolved, as git reports it), or null outside
+ * one or with no git. Remembered per folder once found: a folder never moves to another repository.
+ */
+export async function repoTop(dir: string): Promise<string | null> {
+  const hit = tops.get(dir)
+  if (hit) return hit
+  if (!existsSync(dir)) return null
+  try {
+    const top = (await git(dir, ['rev-parse', '--show-toplevel'])).trim()
+    if (tops.size > 64) tops.clear()
+    tops.set(dir, top)
+    return top
+  } catch {
+    return null
+  }
+}
+
+/** A file's git blob name, as a SHA-1 repository names it, or (`sha256`) a SHA-256 one. */
+export const blobShaOf = (buf: Buffer, sha256 = false) =>
+  sha256 ? createHash('sha256').update(`blob ${buf.length}\0`).update(buf).digest('hex') : gitBlobSha(buf)
+
+const emptyTrees = new Map<string, Promise<string>>()
+
+/** The repository's empty tree (SHA-1 or SHA-256, whichever it uses): the state before the first commit. */
+export function emptyTree(top: string): Promise<string> {
+  let p = emptyTrees.get(top)
+  if (!p) {
+    p = new Promise<string>((resolve, reject) => {
+      const child = spawn('git', ['hash-object', '-t', 'tree', '--stdin'], { cwd: top })
+      let out = ''
+      child.stdout.on('data', (c: Buffer) => (out += c.toString('utf8')))
+      child.on('error', reject)
+      child.on('close', (code) => (code === 0 ? resolve(out.trim()) : reject(new Error(`git hash-object exited ${code}`))))
+      child.stdin.end()
+    })
+    p.catch(() => emptyTrees.delete(top))
+    emptyTrees.set(top, p)
+  }
+  return p
 }
 
 /** Commit history per file, keyed by path and HEAD, so a new commit (or a checkout) reads afresh. */
@@ -154,7 +203,7 @@ export async function gitScreenshots(root: string, id: string): Promise<{ commit
 
 /** A blob's bytes from the repository `cwd` sits in, or null (not in git, or no git). */
 export async function gitBlob(cwd: string, sha: string): Promise<Buffer | null> {
-  if (!/^[0-9a-f]{40}$/.test(sha)) return null
+  if (!OBJECT_SHA.test(sha)) return null
   try {
     return (await run('git', ['cat-file', 'blob', sha], { cwd, encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 })).stdout
   } catch {

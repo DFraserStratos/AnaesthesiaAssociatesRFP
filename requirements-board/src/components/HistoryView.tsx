@@ -6,13 +6,13 @@
  */
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { TEXT_FIELDS, lineCounts, lineDiff, type DiffLine, type FieldChange, type ScreenshotVersion, type TimelineEntry } from '../../shared/history.ts'
+import { TEXT_FIELDS, lineCounts, lineDiff, setDiff, type DiffLine, type FieldChange, type ScreenshotVersion, type TimelineEntry } from '../../shared/history.ts'
 import { firstLaneName, parseArtifactRef, type ImageRef, type Item } from '../../shared/types.ts'
-import { spotName } from '../artifactIndex.ts'
 import { api, historyBlobUrl } from '../api.ts'
+import { dayLabel, timeLabel } from '../dates.ts'
 import { useCatalogue, useConfig, type Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
-import { ArtifactName, ItemName, StatusLabel } from './bits.tsx'
+import { ArtifactRefName, ItemName, RecordName, StatusLabel } from './bits.tsx'
 
 export const TEXT_LABEL: Record<string, string> = { description: 'Description', acceptance: 'Acceptance criteria', technical: 'Technical discussion', notes: 'Notes', source: 'Diagram source' }
 
@@ -216,12 +216,12 @@ export function ChangeRow({ change: c, index, firstLane }: { change: FieldChange
           <ul className="hist-lines">
             {added.map((ref) => (
               <li key={`+${ref}`} className="add">
-                <ArtifactRefName refText={ref} />
+                <ArtifactRef refText={ref} />
               </li>
             ))}
             {removed.map((ref) => (
               <li key={`-${ref}`} className="del">
-                <ArtifactRefName refText={ref} />
+                <ArtifactRef refText={ref} />
               </li>
             ))}
             {!added.length && !removed.length && <li className="quiet">Reordered</li>}
@@ -311,7 +311,7 @@ function Shot({ v, label }: { v: ScreenshotVersion; label: string }) {
   )
 }
 
-/** An item named as everywhere else: type icon and title, never the bare ID (unless it no longer exists). */
+/** An item named as everywhere else, as a chip: type icon and title, never the bare ID (unless it no longer exists). */
 function Named({ id, index }: { id: string | null; index: Index }) {
   if (!id) return <span className="hist-field">the top level</span>
   const it = index.byId.get(id)
@@ -320,21 +320,19 @@ function Named({ id, index }: { id: string | null; index: Index }) {
       <ItemName item={it} />
     </span>
   ) : (
-    <span className="mono" title="No longer in the catalogue">
-      {id}
-    </span>
+    <RecordName id={id} />
   )
 }
 
-/** An artifact link named as everywhere else: its mark, its title and the spot; the bare ref once it is gone. */
-function ArtifactRefName({ refText }: { refText: string }) {
-  const { id, region } = parseArtifactRef(refText)
-  const rec = useCatalogue((s) => s.artifacts[id])
-  if (!rec) return <span className="mono">{refText}</span>
-  return (
+/** An artifact link as a chip: its mark, its title and the spot; the bare ref once it is gone. */
+function ArtifactRef({ refText }: { refText: string }) {
+  const known = useCatalogue((s) => !!s.artifacts[parseArtifactRef(refText).id])
+  return known ? (
     <span className="chip item hist-name">
-      <ArtifactName artifact={rec.data} spot={region ? (spotName(rec, region) ?? region) : null} />
+      <ArtifactRefName refText={refText} />
     </span>
+  ) : (
+    <ArtifactRefName refText={refText} />
   )
 }
 
@@ -382,19 +380,3 @@ export function Diff({ lines }: { lines: DiffLine[] }) {
     </div>
   )
 }
-
-export function setDiff(from: string[], to: string[]) {
-  return { added: to.filter((s) => !from.includes(s)), removed: from.filter((s) => !to.includes(s)) }
-}
-
-const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-
-function dayLabel(iso: string, locale: string | undefined): string {
-  const d = new Date(iso)
-  const now = new Date()
-  if (sameDay(d, now)) return 'Today'
-  if (sameDay(d, new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))) return 'Yesterday'
-  return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
-}
-
-const timeLabel = (iso: string, locale: string | undefined) => new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })

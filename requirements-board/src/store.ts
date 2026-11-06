@@ -510,11 +510,30 @@ export function useComponents(): string[] {
   }, [config, items, artifacts])
 }
 
+/**
+ * The catalogue index for one catalogue state, built once and shared: every `useIndex` caller (a
+ * page can hold thousands, one per Markdown block) gets the same object until the items, questions
+ * or config change.
+ */
+let lastIndex: { items: Record<string, Rev<Item>>; questions: Record<string, Rev<Question>>; config: BoardConfig; index: Index } | null = null
+export function sharedIndex(items: Record<string, Rev<Item>>, questions: Record<string, Rev<Question>>, config: BoardConfig): Index {
+  if (lastIndex && lastIndex.items === items && lastIndex.questions === questions && lastIndex.config === config) return lastIndex.index
+  const index = buildIndex(items, questions, config)
+  lastIndex = { items, questions, config, index }
+  return index
+}
+
+/** The shared index of the catalogue as it is now, outside React (a remark plugin, an event handler). */
+export function currentIndex(): Index {
+  const { items, questions, config } = useCatalogue.getState()
+  return sharedIndex(items, questions, config)
+}
+
 export function useIndex(): Index {
   const items = useCatalogue((s) => s.items)
   const questions = useCatalogue((s) => s.questions)
   const config = useCatalogue((s) => s.config)
-  return useMemo(() => buildIndex(items, questions, config), [items, questions, config])
+  return sharedIndex(items, questions, config)
 }
 
 /** Is the item retired, or does it sit under a retired card? Either way it is hidden with retired cards. */

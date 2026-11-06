@@ -1,0 +1,1042 @@
+/*
+ * The Diff review's styles, loaded with its route (DiffView imports them). Tokens and the shared
+ * type colours (`.ty-*`, `.q-mark`) are in styles.css.
+ */
+/* --------------------------------------------------------- diff review */
+/*
+ * Two versions side by side on the chart paper. Each card is a white sheet split by a seam: the
+ * before column sits a shade back (the past, under the paper), the after column full white. A row
+ * that changed carries a short band in the seam (rose over green when edited, one colour when a
+ * block was added or removed), so changes can be found by running an eye down the seam alone.
+ */
+:root {
+  --diff-add-tint: color-mix(in srgb, var(--tone-green) 14%, var(--card));
+  --diff-add-soft: color-mix(in srgb, var(--tone-green) 5%, var(--card));
+  --diff-add-edge: var(--tone-green);
+  --diff-add-ink: var(--tone-green-ink);
+  --diff-del-tint: var(--danger-tint);
+  --diff-del-soft: color-mix(in srgb, var(--danger-tint) 55%, var(--card-soft));
+  --diff-del-edge: color-mix(in srgb, var(--danger) 70%, var(--card));
+  --diff-seam: 14px;
+}
+/* Density: Comfortable, or Compact (the default; kept per browser). Every card measure reads these. */
+.diff-page {
+  --dfs: 14.5px;
+  --dlh: 1.55;
+  --dpy: 4px;
+  --dpx: 18px;
+  --dgap: 14px;
+  --dhead: 9px;
+  --dh3: 15.5px;
+}
+.diff-page.compact {
+  --dfs: 13.5px;
+  --dlh: 1.45;
+  --dpy: 2px;
+  --dpx: 12px;
+  --dgap: 8px;
+  --dhead: 5px;
+  --dh3: 14.5px;
+}
+.diff-inner {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 28px 24px 120px;
+}
+.diff-head {
+  margin-bottom: 10px;
+}
+.diff-bar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0 -24px;
+  /* The slot keeps the full bar's height while it is folded (see StickyBar): the part below the
+     one-line bar is see-through and lets clicks through to the cards. Never a scroll anchor. */
+  pointer-events: none;
+  overflow-anchor: none;
+}
+.diff-bar-face {
+  padding: 10px 24px 0;
+  background: var(--paper);
+  pointer-events: auto;
+}
+.diff-bar-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.diff-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.diff-bar-row.filters {
+  gap: 6px;
+}
+.diff-bar-spacer {
+  flex: 1;
+}
+.diff-bar-rule {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--rule-strong);
+}
+.diff-note-line {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.diff-viewed-count {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The From and To pickers, and the jump list: a button, then a popover list. */
+.diff-picker-wrap {
+  position: relative;
+  min-width: 0;
+}
+.diff-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 480px;
+  height: 34px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+}
+.diff-picker:hover {
+  border-color: var(--ink-4);
+}
+.diff-picker[aria-expanded='true'] {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 1px var(--teal);
+}
+.diff-picker-label {
+  color: var(--ink-3);
+}
+.diff-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.diff-picker-date {
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.diff-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 500px;
+  max-height: min(64vh, 560px);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow-lift);
+}
+.diff-picker-wrap.right .diff-pop {
+  left: auto;
+  right: 0;
+}
+.diff-pop-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+.diff-pop-search .input {
+  flex: 1;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+.diff-pop ul {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow: auto;
+}
+.diff-pop-empty {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.diff-commit {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 16px;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.diff-commit:hover:not(:disabled),
+.diff-commit:focus-visible {
+  background: var(--paper);
+}
+.diff-commit[aria-selected='true'] {
+  background: var(--teal-tint);
+}
+/* The row the arrow keys have reached, picked by Enter. */
+.diff-commit.active:not(:disabled),
+.diff-jump-row.active {
+  box-shadow: inset 0 0 0 1px var(--teal);
+}
+.diff-commit.active:not(:disabled):not([aria-selected='true']),
+.diff-jump-row.active {
+  background: var(--paper);
+}
+.diff-commit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.diff-commit-date {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.diff-commit-subject {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.diff-commit-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.diff-commit-meta .mono {
+  font-size: 11px;
+}
+.diff-commit-check {
+  align-self: center;
+  color: var(--teal);
+}
+.diff-jump {
+  width: 440px;
+}
+.diff-jump-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font-size: 13.5px;
+  text-align: left;
+}
+.diff-jump-row:hover,
+.diff-jump-row:focus-visible {
+  background: var(--paper);
+}
+.diff-jump-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Filters: quiet pills that are on (white, ink) or off (outline, muted). */
+.diff-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.diff-toggle:hover {
+  border-color: var(--ink-4);
+}
+.diff-toggle[aria-pressed='true'] {
+  border-color: var(--rule-strong);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-tag);
+}
+.diff-toggle .count {
+  font: 500 11px/1 var(--mono);
+  color: var(--ink-3);
+}
+.diff-toggle.change-added[aria-pressed='true'] .count {
+  color: var(--diff-add-ink);
+}
+.diff-toggle.change-removed[aria-pressed='true'] .count {
+  color: var(--danger);
+}
+
+/* The column heads, level with every card's two columns, pinned under the bar. */
+.diff-colheads {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--diff-seam) minmax(0, 1fr);
+  padding: 4px 1px 8px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.diff-colhead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 var(--dpx);
+  font-size: 13px;
+}
+.diff-colhead-side {
+  font-weight: 700;
+}
+.diff-colhead-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.diff-colhead-date {
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.diff-state {
+  padding: 40px 0;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.diff-state.bad {
+  color: var(--danger);
+}
+.diff-stream {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dgap);
+  padding-top: 18px;
+}
+.diff-section {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 26px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.diff-section .count {
+  font: 500 12px/1 var(--mono);
+  color: var(--ink-3);
+}
+
+/* An unchanged epic or feature the changes sit under: a rule in its type colour and its title. */
+.diff-heading {
+  margin-top: 12px;
+  border-top: 2px solid var(--ty);
+}
+.diff-heading.ty-epic {
+  margin-top: 22px;
+  border-top-width: 4px;
+}
+.diff-stream > .diff-heading:first-child {
+  margin-top: 0;
+}
+.diff-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 9px 0 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 15.5px;
+  font-weight: 650;
+  text-align: left;
+}
+.diff-heading.ty-epic button {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.diff-heading .diff-pill {
+  align-self: center;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.diff-heading button:hover span:not(.diff-pill) {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--teal) 55%, transparent);
+  text-underline-offset: 3px;
+}
+
+/* A changed record: a sheet with its type's top rule, thicker for higher levels. */
+.diff-card {
+  border: 1px solid var(--rule-strong);
+  border-top: 3px solid var(--ty);
+  border-radius: var(--r-story);
+  background: var(--card);
+  box-shadow: var(--shadow-tag);
+  /* clip, not hidden: rounds the corners without making the card a scroll box, which would hold
+     the added or removed placeholder (sticky) to the card instead of the page. */
+  overflow: clip;
+  scroll-margin-top: calc(var(--diff-bar-h, 160px) + 12px);
+  /* Off-screen cards skip style and layout: the page holds every card, the view a few. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
+}
+/* A card not drawn yet: its head, and a quiet space about its size. */
+.diff-card-pending {
+  background: linear-gradient(to right, var(--card-soft) 50%, var(--card) 50%);
+}
+.diff-card.ty-feature {
+  border-top-width: 4px;
+  border-radius: var(--r-feature);
+}
+.diff-card.ty-epic {
+  border-top-width: 5px;
+  border-radius: var(--r-epic);
+}
+.diff-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--dhead) 12px var(--dhead) var(--dpx);
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(color-mix(in srgb, var(--ty-tint) 45%, var(--card)), var(--card));
+}
+.diff-card.viewed .diff-card-head {
+  border-bottom: 0;
+  background: var(--card);
+}
+.diff-card-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.diff-card-title > svg {
+  flex-shrink: 0;
+}
+.diff-card-title h3 {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--dh3);
+  font-weight: 650;
+}
+.diff-card.ty-feature .diff-card-title h3 {
+  font-size: calc(var(--dh3) + 1px);
+}
+.diff-card.ty-epic .diff-card-title h3 {
+  font-size: calc(var(--dh3) + 2.5px);
+  font-weight: 700;
+}
+.diff-card.viewed .diff-card-title h3 {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.diff-card-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+.diff-viewed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.diff-viewed:hover {
+  background: var(--paper);
+}
+.diff-viewed input {
+  accent-color: var(--teal);
+  margin: 0;
+}
+/* What happened to a record: squared, outlined marks, so they never read as a status pill. */
+.diff-pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.diff-pill.add {
+  color: var(--diff-add-ink);
+  background: var(--diff-add-soft);
+}
+.diff-pill.del {
+  color: var(--danger);
+  background: var(--diff-del-soft);
+}
+.diff-pill.moved {
+  color: var(--ink-2);
+}
+.diff-pill.quiet {
+  border-style: dashed;
+  color: var(--ink-3);
+}
+/* A card or a row brought in by a key or the jump list: a teal ring that closes (scroll.ts). */
+.diff-flash,
+.diff-flash-row {
+  animation: diff-flash 1.4s var(--ease);
+}
+.diff-flash {
+  --flash-from: 0 0 0 7px color-mix(in srgb, var(--teal) 30%, transparent), var(--shadow-tag);
+  --flash-to: 0 0 0 0 transparent, var(--shadow-tag);
+}
+.diff-flash-row {
+  --flash-from: inset 0 0 0 2px color-mix(in srgb, var(--teal) 55%, transparent);
+  --flash-to: inset 0 0 0 2px transparent;
+}
+@keyframes diff-flash {
+  from {
+    box-shadow: var(--flash-from);
+  }
+  to {
+    box-shadow: var(--flash-to);
+  }
+}
+
+/* The two columns and the seam. The before side's shade is drawn under the whole grid so it runs unbroken. */
+.diff-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--diff-seam) minmax(0, 1fr);
+  padding-bottom: 12px;
+  background: linear-gradient(to right, var(--card-soft) calc(50% - var(--diff-seam) / 2), var(--card) 0);
+}
+.dc {
+  min-width: 0;
+  padding: var(--dpy) var(--dpx);
+}
+/* A field's name as a small tag on the seam, at its first row, with room made above that row. */
+.diff-tag {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-tag);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+.dc.tagged {
+  padding-top: calc(var(--dpy) + 24px);
+}
+/* An unchanged paragraph kept beside a change: one quiet line until clicked. */
+.dc.ctx {
+  cursor: pointer;
+}
+.dc.ctx .diff-prose {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--ink-3);
+}
+.dc.ctx .diff-prose ul,
+.dc.ctx .diff-prose ol,
+.dc.ctx .diff-prose li {
+  display: inline;
+  padding: 0;
+}
+.dc.ctx .diff-prose li::before {
+  content: '• ';
+}
+.dc.ctx:hover .diff-prose {
+  color: var(--ink-2);
+}
+.dc.ctx:focus-visible {
+  outline-offset: -2px;
+}
+/* Sentences left out of an edited paragraph: a "…" that opens it whole. */
+.diff-ell {
+  margin: 0 2px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--paper-deep);
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.diff-ell:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
+.dc.gap {
+  background-image: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--rule) 55%, transparent) 7px 8px);
+}
+.dc.before.blk-del {
+  background-color: var(--diff-del-soft);
+}
+.dc.after.blk-add {
+  background-color: var(--diff-add-soft);
+}
+.seam {
+  position: relative;
+  background: linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+}
+.seam.edited::before,
+.seam.added::before,
+.seam.removed::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: calc(50% - 2px);
+  width: 4px;
+  border-radius: 2px;
+}
+.seam.edited::before {
+  background: linear-gradient(var(--diff-del-edge) 50%, var(--diff-add-edge) 50%);
+}
+.seam.added::before {
+  background: var(--diff-add-edge);
+}
+.seam.removed::before {
+  background: var(--diff-del-edge);
+}
+.diff-fold-row {
+  position: relative;
+  grid-column: 1 / -1;
+}
+.diff-fold-row.tagged {
+  padding-top: 22px;
+}
+.diff-fold {
+  width: 100%;
+  height: 26px;
+  margin: 4px 0;
+  border: 0;
+  border-block: 1px dashed var(--rule);
+  background: var(--paper);
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.diff-fold:hover {
+  color: var(--ink);
+}
+.diff-fold.open {
+  height: 22px;
+  margin: 2px 0;
+  background: transparent;
+  font-size: 11.5px;
+}
+
+/* Changed words. Anything taken away (a word, a list row) is struck on the rose tint. */
+del.dm,
+ins.dm {
+  padding: 0 1px;
+  border-radius: 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+del.dm,
+del.dm {
+  text-decoration-thickness: 1.5px;
+}
+ins.dm {
+  background: var(--diff-add-tint);
+  color: var(--ink);
+  text-decoration: none;
+}
+.diff-prose {
+  font-size: var(--dfs);
+  line-height: var(--dlh);
+}
+.diff-prose p,
+.diff-prose ul,
+.diff-prose ol,
+.diff-prose blockquote,
+.diff-prose pre,
+.diff-prose .prose-table {
+  margin: 0;
+}
+.diff-prose ul,
+.diff-prose ol {
+  padding-left: 20px;
+}
+.diff-prose.depth-1 {
+  padding-left: 20px;
+}
+.diff-prose.depth-2 {
+  padding-left: 40px;
+}
+.diff-prose.depth-3,
+.diff-prose.depth-4 {
+  padding-left: 60px;
+}
+.diff-prose h1,
+.diff-prose h2,
+.diff-prose h3,
+.diff-prose h4,
+.diff-prose h5,
+.diff-prose h6 {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+.diff-prose blockquote {
+  padding-left: 12px;
+  border-left: 3px solid var(--rule-strong);
+  color: var(--ink-2);
+}
+.diff-code {
+  font: 12.5px/1.55 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The short fields (status, area, kind...) on one line under a card's head. */
+.diff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  padding: 6px var(--dpx);
+  border-bottom: 1px solid var(--rule);
+  background: var(--card-soft);
+  font-size: 12.5px;
+}
+.diff-summary:last-child {
+  border-bottom: 0;
+}
+.diff-sum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.diff-sum.same {
+  opacity: 0.7;
+}
+.diff-sum-k {
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.diff-sum-to {
+  color: var(--ink-3);
+}
+.diff-sum .diff-inline,
+.diff-sum .diff-li {
+  font-size: 12.5px;
+}
+.diff-chips.inline {
+  display: inline-flex;
+  padding: 0;
+}
+
+/* The bar folded to one line once the page is scrolled, the keys hint, the density switch. */
+.diff-bar-face:has(.diff-bar-inner.slim) {
+  padding-top: 6px;
+}
+.diff-bar-inner.slim {
+  gap: 4px;
+}
+.diff-slim-cmp {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.diff-slim-cmp .k {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+.diff-slim-cmp .n {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.diff-linkish {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--teal);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.diff-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.diff-bar .mode-switch {
+  background: var(--paper-deep);
+}
+.diff-bar .mode-switch button {
+  height: 24px;
+  font-size: 12px;
+}
+
+/* Field cells: pills, chips and rows as on the sheet. */
+.diff-empty {
+  font-size: 13px;
+  color: var(--ink-4);
+}
+.diff-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+}
+.diff-mono {
+  font-size: 12px;
+}
+.diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 0;
+}
+.diff-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+.diff-li {
+  min-width: 0;
+  margin-left: -6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13.5px;
+}
+.diff-li.add {
+  background: var(--diff-add-tint);
+}
+.diff-li.del {
+  background: var(--diff-del-tint);
+  color: var(--ink-2);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+.diff-chips .diff-li {
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+.diff-chips .diff-li.add .chip {
+  border-color: color-mix(in srgb, var(--tone-green) 40%, transparent);
+  background: var(--diff-add-tint);
+}
+.diff-chips .diff-li.del .chip {
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  background: var(--diff-del-tint);
+}
+.diff-more {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: 12px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.diff-more:hover {
+  color: var(--ink);
+}
+.diff-note {
+  color: var(--ink-3);
+}
+.diff-source-plain {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.diff-source-missing {
+  font-size: 13px;
+  color: var(--ink-3);
+  text-decoration: underline dotted var(--danger);
+}
+.diff-shot {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 240px;
+  margin: 2px 0;
+}
+.diff-shot img {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--card);
+}
+.diff-shot figcaption,
+.diff-shot-gone {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.diff-picture {
+  display: block;
+  margin: 4px 0;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--card);
+}
+.diff-picture img {
+  display: block;
+  max-width: 100%;
+  max-height: 520px;
+  margin: 0 auto;
+  object-fit: contain;
+}
+.diff-picture.page img {
+  max-height: 360px;
+}
+
+/* An added or removed record: the whole card on one side, a placeholder that keeps pace on the other. */
+.diff-placeholder {
+  position: sticky;
+  top: calc(var(--diff-bar-h, 160px) + 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  margin: 12px 0;
+  border: 1.5px dashed var(--rule-strong);
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.diff-whole {
+  padding-bottom: 6px;
+}
+.diff-sec h4 {
+  margin: calc(var(--dpy) + 8px) 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.diff-sec .diff-prose + .diff-prose {
+  margin-top: 8px;
+}
+
+/* A comparison picked and still being read: the old one stays, washed out and out of reach. */
+.diff-reading {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.diff-stream.stale {
+  opacity: 0.45;
+  transition: opacity 160ms var(--ease);
+}
+
+/* A record whose file does not parse: the parser's message, then the file as it stands. */
+.diff-pill.bad {
+  color: var(--danger);
+}
+.diff-unreadable {
+  padding: var(--dpy) 0;
+}
+.diff-unreadable p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--danger);
+}
+.diff-unreadable strong {
+  font-weight: 600;
+}
+.diff-raw {
+  max-height: 420px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--card);
+  font: 12px/1.5 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-2);
+}
+@media (max-width: 1240px) {
+  .diff-keys {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .diff-card-actions .btn.sm {
+    padding: 0 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .diff-flash,
+  .diff-flash-row {
+    animation: none;
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  .diff-flash-row {
+    outline-offset: -2px;
+  }
+}

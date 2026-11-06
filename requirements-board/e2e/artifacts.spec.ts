@@ -35,7 +35,7 @@ test.beforeEach(async ({ page, request, context }) => {
 
 test('the Artifacts tab sits between Board and Outstanding items, and lists every artifact by kind', async ({ page }) => {
   await page.goto('/#/artifacts')
-  await expect(page.locator('.tabs .tab')).toHaveText([/^Board/, /^Artifacts\s*5/, /^Outstanding items/, /^Outline/])
+  await expect(page.locator('.tabs .tab')).toHaveText([/^Board/, /^Artifacts\s*5/, /^Outstanding items/, /^Outline/, /^Diff review/])
   await expect(page.locator('.plate')).toHaveCount(5)
   await expect(page.locator('.group-head')).toHaveText([/Diagrams\s*2/, /Screenshots\s*1/, /Notes\s*1/, /Documents\s*1/])
   await expect(page.locator('.plate', { hasText: 'Fixture drawing' }).locator('.artifact-date')).toHaveText('6 Oct 2026')

@@ -29,9 +29,10 @@ only as quiet text beside the board's name (`project.name` in `board.config.json
 | Feature | purple `#773B93` | card top rule, type icon, lineage pill, minimap |
 | Story | blue `#009CCC` | card top rule (thinnest), type icon, lineage pill, minimap |
 | Artifact | indigo `#4B56B0` | kind icon (plates, list rows, the artifact page, item sheets, links) |
+| Outstanding item | Open's amber `#C0851B` | question mark (`q-mark`), a Diff review card's top rule |
 
-Tokens live in `src/styles.css` (`--ty-*`, set per element by the `ty-epic|feature|story|artifact`
-classes). Artifacts took indigo because it is clear of every type, every status, the action teal,
+Tokens live in `src/styles.css` (`--ty-*`, set per element by the `ty-epic|feature|story|artifact|question`
+classes; an outstanding item is not a work-item type, so the new card picker shows it neutral). Artifacts took indigo because it is clear of every type, every status, the action teal,
 and above all the red highlight box, which must stay the one red mark on an artifact. Always pair an item's title with its `TypeIcon` (or use `ItemName`) outside its own sheet.
 
 **Status is always a labelled pill, never an item's main colour.** The type owns the card's colour;
@@ -280,6 +281,82 @@ edits only their details (below), never the file, its highlights or the links to
   over a before and after, side by side or swiped (a teal handle over the two), or as a source diff
   for a text file.
 
+## Diff review
+
+The catalogue compared between two versions in git, on its own tab after Outline (its count: records
+changed since the last commit, minor ones left out; hidden at none). Read-only: it never writes to
+the catalogue. Laptop first: the width goes to the two columns, the controls to a bar above.
+
+- **The bar**, sticky at the top: From and To pickers (each a popover listing only commits that changed
+  a card, outstanding item or artifact as the page reads them, so a commit that only renumbered
+  statuses or moved the folder is not there; by date and message, the number of records that commit
+  changed and its short hash quiet; To also offers Uncommitted, the files on disk), a swap, the keys
+  hint, the Viewed count and a "27 changes" jump list (searchable; a pick scrolls the card in under
+  the bar and a teal ring closes on it). In the pickers' and the jump list's search, the arrow keys
+  move a highlighted row (a teal ring) and Enter picks it; the first row that can be picked starts
+  highlighted. Then the filters as quiet pills with counts: the types, Added, Edited and Removed, Show minor
+  changes, and on the right the density switch (Comfortable · Compact, Compact by default, kept per
+  browser). Then the two column heads, Before and After, each naming its commit, level with the
+  cards' columns. **Once the page heading scrolls away the bar folds to one line**: "From <commit>
+  to <commit>", a "Change or filter" link that opens the full bar again (until the reader scrolls
+  on a good way, or back to the top), the Viewed count and the jump list, with the column heads
+  kept under it.
+- **Keys**: j goes up to the previous change and k down to the next (a row, or a summary line),
+  ringing it, both cells of a row together; Shift J and Shift K go up and down card by card (n stays
+  the board's new card); v ticks the card in view Viewed and goes to the next one not yet viewed.
+  Every move lands the target 12px under the bar, however far down the page. Not while typing, with
+  a sheet, picker, popover or dialog open, or while a new comparison is being read.
+- **Default**: the last commit that changed the catalogue against Uncommitted; with nothing
+  uncommitted, what that commit changed, with a quiet line saying so. A pick goes in the URL. While
+  To is Uncommitted the page refreshes in place as files change, and when the window regains focus.
+  A new pick names its commits in the bar at once; the comparison on the page stays, dimmed and out
+  of reach, under a quiet "Reading git" line until the new one arrives, then the page starts from the
+  top. The first cards draw at once and the rest fill in a few at a time, nearest the view first;
+  until drawn, a card is its head and a quiet space about its size, so the scrollbar holds its place.
+- **Order** follows the Mapped view: each epic, its features, each feature's stories (by lane, then
+  order). Unchanged parents of changed cards are slim headings (a type-colour rule across, thicker
+  for an epic, the title); so is a changed epic or feature whose own card the filters hide, with a
+  quiet "Changed, hidden by the filters" pill. Branches with nothing changed don't show. Then Outstanding items (in their
+  tab's group order), then Artifacts (by kind).
+- **A card** is a white sheet with its type's top rule (artifacts indigo, outstanding items amber).
+  Head: type mark and title, then only marks worth noticing: Added, Removed, Moved, Minor, as squared
+  outlined tags so they never read as a status pill. Right: Whole card, Open (not for a removed one),
+  the Viewed tick. Body: a grid of rows, Before | seam | After. The before column sits a shade back
+  (`--card-soft`), the after one full white. **The seam** is a hairline with a short band on every row
+  that changed: rose over green for an edit, green for an addition, rose for a removal, so changes can
+  be found by running an eye down the seam.
+- **Only changed fields show.** A field's name is a small tag on the seam at its first row, never a
+  row of its own. **Short fields** (status, area, swimlane, type, position among its siblings, owner,
+  kind, date, author, replaced by) sit on one line under the card's head, each "Status (Agreed) to (Verify)", an area as its chips
+  taken off (struck) and put on (tinted); a card whose only change is its status is just that line.
+  Whole card shows every field with something in it, the unchanged short ones quieter on that line.
+  Markdown fields pair paragraph by paragraph (list items, criteria, headings each a row; a row with
+  no counterpart faces a faint hatch). Unchanged runs fold to "3 unchanged paragraphs", which opens
+  and then reads "Hide 3 unchanged paragraphs" to fold it again. The row kept either side of a change
+  is a one-line quiet preview (a list item keeps its bullet) that opens on a click or Enter; its
+  links are inert until it opens, so a click anywhere on it opens it. An edited
+  paragraph shows only the sentences that hold a change; the rest is a small "…" that opens the whole
+  paragraph. Changed words: struck on the rose tint (before), on the green tint (after). A paragraph
+  mostly rewritten is tinted whole, both sides, rather than marked word by word. Other fields are
+  drawn as on the sheet: lineage pills for a move, rows for related cards, artifacts and sources (the
+  ones only on one side tinted; each named as it stood at that side, so a source citing an artifact
+  since removed still shows its name), screenshots, highlights. Whole card turns off the previews and the
+  sentence folding.
+- **A file that does not parse** (a hand edit, a merge conflict) is never shown as added or removed:
+  the card is marked "Could not be read" (a squared danger tag), its broken side says "This file does
+  not parse." with the parser's message and the file's text in a quiet mono box, and the other side is
+  the record whole (or the placeholder). It has no Open. An artifact's broken side is its details
+  (the seam tag says Details), and its file still compares below, as File.
+- **Added or removed** keeps both columns: the whole card on its side, tinted, and a dashed
+  placeholder ("Didn't exist yet", "Deleted") opposite that keeps pace as the page scrolls.
+- **An artifact's file** by kind: drawings and images as two pictures (each opens full size), a
+  mermaid diagram drawn from each source, Markdown paired by paragraph, a PDF by its first page
+  ("File replaced").
+- **Minor changes** (a reorder among siblings, a list reordered, spacing only) hide behind Show minor
+  changes. Status renumbering is no change at all.
+- Viewed is per browser, per comparison, and clears itself when the record changes again.
+- Outside git, the tab says there is nothing to compare and how to start.
+
 ## Settings
 
 The gear at the right of the masthead opens `/settings`: each status list (items, then questions) is a
@@ -297,5 +374,6 @@ except in the pills and swatches. Below 1000px the table stacks, one block per s
 
 Take Playwright screenshots of the board (near, mid and fit zoom), an item sheet, Outline,
 Outstanding items and Artifacts (grid, list, a drawing at a highlight with the minimap open, a
-transcript and a PDF at a spot; `shots/artifacts.mjs`) (`shots/` holds local scratch scripts), and
-check them against this page.
+transcript and a PDF at a spot; `shots/artifacts.mjs`) and Diff review (top, an edited card, an
+added one, an artifact, the open picker, at 1280 and 1440 wide; `shots/diff.mjs`, `shots/diff2.mjs`)
+(`shots/` holds local scratch scripts), and check them against this page.

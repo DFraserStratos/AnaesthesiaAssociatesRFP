@@ -6,8 +6,8 @@ import { idMentions, isArtifactHref, isIdHref, isQuestionId } from '../../shared
 import { isRetired, statusLabel } from '../../shared/statuses.ts'
 import { parseArtifactRef, type ArtifactRec, type Item, type Question } from '../../shared/types.ts'
 import { spotName } from '../artifactIndex.ts'
-import { guarded, useOpen } from '../nav.ts'
-import { useCatalogue, useIndex, type Index } from '../store.ts'
+import { guarded, useOpenRecord } from '../nav.ts'
+import { currentIndex, useCatalogue, useIndex, type Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
 import { ArtifactIcon, TypeIcon } from './bits.tsx'
 
@@ -57,8 +57,11 @@ const titleOf = (index: Index, artifacts: Artifacts, id: string) => (isArtifactH
  * A remark plugin: every bare record ID in running text becomes a link to that record, marked
  * `data-bare` so it renders as the record's name. A parenthesised title right after the ID
  * ("the former US-01.3.4 (AM and PM can differ)") is the same name, so it is folded in.
+ * Given functions, it reads the index and artifacts when it runs, so one plugin serves every state.
  */
-export function remarkRecordIds(index: Index, artifacts: Artifacts = {}) {
+export function remarkRecordIds(indexOf: Index | (() => Index), artifactsOf: Artifacts | (() => Artifacts) = {}) {
+  let index: Index
+  let artifacts: Artifacts
   const split = (value: string): MdNode[] => {
     const out: MdNode[] = []
     let at = 0
@@ -84,7 +87,41 @@ export function remarkRecordIds(index: Index, artifacts: Artifacts = {}) {
       return [c]
     })
   }
-  return () => (tree: MdNode) => walk(tree)
+  return () => (tree: MdNode) => {
+    index = typeof indexOf === 'function' ? indexOf() : indexOf
+    artifacts = typeof artifactsOf === 'function' ? artifactsOf() : artifactsOf
+    walk(tree)
+  }
+}
+
+/** The record-ID plugin over the catalogue as it is whenever a block is parsed: a constant, so memoised Markdown stays memoised. */
+export const remarkLiveRecordIds = remarkRecordIds(currentIndex, () => useCatalogue.getState().artifacts)
+
+/**
+ * Links in Markdown as `recordLinkComponents` draws them, each reading the catalogue itself: a
+ * constant, so a block's parse is kept when the store changes and only its links redraw.
+ */
+export const liveRecordLinkComponents: Components = {
+  a: ({ href = '', children, node }) => {
+    const bare = node?.properties?.['data-bare'] === 'true'
+    if (isArtifactHref(href)) return <LiveArtifactLink refText={href.trim()} bare={bare} text={children} />
+    if (!isIdHref(href)) {
+      return (
+        <a href={href} target="_blank" rel="noreferrer">
+          {children}
+        </a>
+      )
+    }
+    return <LiveRecordLink id={href.trim()} bare={bare} text={children} />
+  },
+}
+
+function LiveRecordLink(props: { id: string; bare: boolean; text: ReactNode }) {
+  return <RecordLink {...props} index={useIndex()} />
+}
+
+function LiveArtifactLink(props: { refText: string; bare: boolean; text: ReactNode }) {
+  return <ArtifactLink {...props} artifacts={useCatalogue((s) => s.artifacts)} />
 }
 
 /** Links in Markdown: a record ID opens that record's sheet; anything else is an ordinary link, in a new tab. */
@@ -107,7 +144,7 @@ export function recordLinkComponents(index: Index, artifacts: Artifacts = {}): C
 }
 
 function RecordLink({ id, index, bare, text }: { id: string; index: Index; bare: boolean; text: ReactNode }) {
-  const open = useOpen()
+  const open = useOpenRecord()
   const rec = recordOf(index, id)
   if (!rec) {
     return (
@@ -141,7 +178,7 @@ function RecordLink({ id, index, bare, text }: { id: string; index: Index; bare:
 
 /** A link to an artifact, or a spot in one: the author's words, or for a bare ID the artifact's mark and name. */
 function ArtifactLink({ refText, artifacts, bare, text }: { refText: string; artifacts: Artifacts; bare: boolean; text: ReactNode }) {
-  const open = useOpen()
+  const open = useOpenRecord()
   const { id, region } = parseArtifactRef(refText)
   const rec = artifacts[id]
   const spot = rec && region ? spotName(rec, region) : null

@@ -3,14 +3,15 @@
  * (`diffItems`), a line diff for its Markdown fields (`lineDiff`), and the timeline the sheet
  * shows (`buildTimeline`), merged from the dev server's journal and the file's git commits.
  */
-import type { Artifact, Item } from './types.ts'
+import { lcsPairs, squashSpace } from './textCompare.ts'
+import type { Artifact, Item, Question } from './types.ts'
 
 /**
  * Record fields a history row can name, plus `position` (a Freeform drag, from board-layout.json),
  * `screenshot` (an image file under `assets/<ID>/` rewritten in place, e.g. by `npm run capture`)
  * and `content` (an artifact's file changed).
  */
-export type HistoryField = Exclude<keyof Item, 'id'> | Exclude<keyof Artifact, 'id'> | 'position' | 'screenshot' | 'content'
+export type HistoryField = Exclude<keyof Item, 'id'> | Exclude<keyof Artifact, 'id'> | Exclude<keyof Question, 'id'> | 'position' | 'screenshot' | 'content'
 
 /**
  * One version of a screenshot file: its catalogue-relative path and git blob hash, so any version
@@ -90,8 +91,20 @@ export type TimelineEntry =
     }
   | { type: 'commit'; at: string; commit: CommitInfo }
 
+type Fields<T> = Exclude<keyof T, 'id'>
+
+/**
+ * A record's fields in order, checked to name every one but `id`: a field added to the type and
+ * left out here fails to compile ("Expected 2 arguments"; the second names it), rather than its
+ * changes going unseen in a history row or the Diff review.
+ */
+const fieldList =
+  <T>() =>
+  <const L extends readonly Fields<T>[]>(list: L, ..._missing: [Exclude<Fields<T>, L[number]>] extends [never] ? [] : [missing: Exclude<Fields<T>, L[number]>]) =>
+    list
+
 /** Fields in the order a history row lists them. `id` never changes; `extra` is agent-only frontmatter. */
-const FIELDS: Exclude<keyof Item, 'id'>[] = ['title', 'status', 'type', 'parent', 'swimlane', 'order', 'components', 'sources', 'related', 'artifacts', 'images', 'description', 'acceptance', 'technical', 'notes', 'extra']
+const FIELDS = fieldList<Item>()(['title', 'status', 'type', 'parent', 'swimlane', 'order', 'components', 'sources', 'related', 'artifacts', 'images', 'description', 'acceptance', 'technical', 'notes', 'extra'])
 
 /** A field's value, reading a snapshot saved before the field existed as its empty value. */
 const valueOf = (it: Item, f: (typeof FIELDS)[number]) => (f === 'related' || f === 'artifacts' ? (it[f] ?? []) : it[f])
@@ -104,10 +117,31 @@ export function diffItems(a: Item, b: Item): FieldChange[] {
 export const TEXT_FIELDS: ReadonlySet<HistoryField> = new Set(['description', 'acceptance', 'technical', 'notes', 'source'])
 
 /** An artifact's fields in the order a history row lists them. */
-const ARTIFACT_FIELDS: Exclude<keyof Artifact, 'id'>[] = ['title', 'status', 'supersededBy', 'kind', 'date', 'author', 'components', 'sources', 'file', 'regions', 'description', 'source', 'extra']
+const ARTIFACT_FIELDS = fieldList<Artifact>()(['title', 'status', 'supersededBy', 'kind', 'date', 'author', 'components', 'sources', 'citedAs', 'file', 'regions', 'description', 'source', 'extra'])
 
 export function diffArtifacts(a: Artifact, b: Artifact): FieldChange[] {
   return ARTIFACT_FIELDS.filter((f) => JSON.stringify(a[f]) !== JSON.stringify(b[f])).map((field) => ({ field, from: a[field], to: b[field] }))
+}
+
+/** An outstanding item's fields in the order the Diff review lists them. */
+const QUESTION_FIELDS = fieldList<Question>()(['title', 'status', 'kind', 'owner', 'affects', 'question', 'answer', 'sources', 'extra'])
+
+export function diffQuestions(a: Question, b: Question): FieldChange[] {
+  return QUESTION_FIELDS.filter((f) => JSON.stringify(a[f]) !== JSON.stringify(b[f])).map((field) => ({ field, from: a[field], to: b[field] }))
+}
+
+const LIST_FIELDS: ReadonlySet<string> = new Set(['components', 'sources', 'related', 'artifacts', 'affects'])
+const sortedJson = (v: unknown) => JSON.stringify(Array.isArray(v) ? v.map((x) => JSON.stringify(x)).sort() : v)
+
+/**
+ * A change that alters nothing a reader would notice: a reorder among siblings, a list reordered
+ * without anything added or removed, or text that differs only in its spacing.
+ */
+export function isMinorChange(c: FieldChange): boolean {
+  if (c.field === 'order' || c.field === 'position') return true
+  if (LIST_FIELDS.has(c.field) || c.field === 'images' || c.field === 'regions') return sortedJson(c.from ?? []) === sortedJson(c.to ?? [])
+  if (TEXT_FIELDS.has(c.field) || c.field === 'title' || c.field === 'question' || c.field === 'answer' || c.field === 'author') return squashSpace(c.from) === squashSpace(c.to)
+  return false
 }
 
 /** What happened to an artifact's regions between two versions, by region ID. */
@@ -139,24 +173,25 @@ const MAX_DIFF_LINES = 400
 export function lineDiff(a: string, b: string, max = MAX_DIFF_LINES): DiffLine[] {
   const x = a ? a.split('\n') : []
   const y = b ? b.split('\n') : []
-  if (x.length > max || y.length > max) return [...x.map((text) => ({ op: 'del' as const, text })), ...y.map((text) => ({ op: 'add' as const, text }))]
-  // lcs[i][j]: the longest common run of x[i..] and y[j..].
-  const lcs = Array.from({ length: x.length + 1 }, () => new Array<number>(y.length + 1).fill(0))
-  for (let i = x.length - 1; i >= 0; i--) for (let j = y.length - 1; j >= 0; j--) lcs[i]![j] = x[i] === y[j] ? lcs[i + 1]![j + 1]! + 1 : Math.max(lcs[i + 1]![j]!, lcs[i]![j + 1]!)
+  const pairs = x.length > max || y.length > max ? null : lcsPairs(x, y, (p, q) => p === q, (max + 1) * (max + 1))
+  if (!pairs) return [...x.map((text) => ({ op: 'del' as const, text })), ...y.map((text) => ({ op: 'add' as const, text }))]
   const out: DiffLine[] = []
   let i = 0
   let j = 0
-  while (i < x.length && j < y.length) {
-    if (x[i] === y[j]) {
-      out.push({ op: 'same', text: x[i]! })
-      i++
-      j++
-    } else if (lcs[i + 1]![j]! >= lcs[i]![j + 1]!) out.push({ op: 'del', text: x[i++]! })
-    else out.push({ op: 'add', text: y[j++]! })
+  // Between two kept lines: the removed ones, then the added ones.
+  for (const [pi, pj] of [...pairs, [x.length, y.length] as const]) {
+    while (i < pi) out.push({ op: 'del', text: x[i++]! })
+    while (j < pj) out.push({ op: 'add', text: y[j++]! })
+    if (pi < x.length && pj < y.length) out.push({ op: 'same', text: x[pi]! })
+    i = pi + 1
+    j = pj + 1
   }
-  while (i < x.length) out.push({ op: 'del', text: x[i++]! })
-  while (j < y.length) out.push({ op: 'add', text: y[j++]! })
   return out
+}
+
+/** What a list gained and lost, by value (a reorder is neither). */
+export function setDiff<T>(from: readonly T[], to: readonly T[]): { added: T[]; removed: T[] } {
+  return { added: to.filter((s) => !from.includes(s)), removed: from.filter((s) => !to.includes(s)) }
 }
 
 /** Added / removed line counts, for a row's summary. */

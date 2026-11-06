@@ -8,10 +8,22 @@ import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { configPath, itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
 import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, type StatusDef } from '../shared/statuses.ts'
 import type { ServerResponse } from 'node:http'
-import { serveAsset } from '../server/cataloguePlugin.ts'
+import { execFileSync } from 'node:child_process'
+import { serveAsset, serveHistoryBlob } from '../server/cataloguePlugin.ts'
+import { gitBlobSha } from '../server/historyJournal.ts'
+import type { DiffResponse } from '../shared/diff.ts'
 import { item, question } from './fixtures.ts'
 
 const JSON_HEADERS = { 'content-type': 'application/json', host: 'localhost:5180' }
+
+const hasGit = (() => {
+  try {
+    execFileSync('git', ['--version'], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+})()
 
 let root: string
 let events: CatalogueEvent[]
@@ -481,5 +493,143 @@ describe('the status settings', () => {
     put(a, { statuses: [{ code: '9', label: 'Idea', help: '', tone: 'sand', role: 'default' }, ...DEFAULT_ITEM_STATUSES.map((d) => (d.role === 'default' ? { ...d, role: undefined } : d))] })
     const rec = call(a, 'POST', '/api/items', { type: 'epic', title: 'New' }) as Rev<Item>
     expect(rec.data.status).toBe('9')
+  })
+})
+
+describe('diff review routes', () => {
+  it('needs both refs, and reads a folder outside git as nothing to compare', async () => {
+    const a = api()
+    expect(status(() => a.handle({ method: 'GET', path: '/api/diff', query: { from: 'HEAD' } }))).toBe(400)
+    expect(await a.handle({ method: 'GET', path: '/api/diff/commits' })).toEqual({ available: false, commits: [], head: null })
+    expect(await a.handle({ method: 'GET', path: '/api/diff', query: { from: 'HEAD', to: 'worktree' } })).toMatchObject({ available: false, records: [] })
+    expect(await a.handle({ method: 'GET', path: '/api/diff/count' })).toEqual({ available: false, count: 0 })
+    expect(await a.handle({ method: 'GET', path: '/api/diff/auto' })).toMatchObject({ available: false, records: [] })
+  })
+
+  describe.skipIf(!hasGit)('in a repository', () => {
+    const g = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'ignore' })
+    const commitAll = (msg: string) => {
+      g('add', '-A')
+      g('-c', 'user.name=Tester', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', msg)
+    }
+    beforeEach(() => {
+      g('init', '-q')
+      commitAll('Catalogue')
+    })
+
+    it('counts, refuses a bad ref with a 400, and gives the default comparison', async () => {
+      const a = api()
+      writeItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, notes: 'A longer note.' }), root)
+      expect(await a.handle({ method: 'GET', path: '/api/diff/count' })).toEqual({ available: true, count: 1 })
+      expect(await a.handle({ method: 'GET', path: '/api/diff/count', query: { from: 'HEAD', to: 'HEAD' } })).toEqual({ available: true, count: 0 })
+      await expect(a.handle({ method: 'GET', path: '/api/diff/count', query: { from: 'abcdef1' } }) as Promise<unknown>).rejects.toMatchObject({ status: 400 })
+      const auto = (await a.handle({ method: 'GET', path: '/api/diff/auto' })) as DiffResponse
+      expect([auto.jumped, auto.records.map((r) => r.id)]).toEqual([false, ['US-01.1.1']])
+    })
+
+    it('a write through the API is seen at once, even where comparisons with the disk are kept', async () => {
+      const a = createCatalogueApi(root, (e) => events.push(e), { watched: true })
+      const get = () => a.handle({ method: 'GET', path: '/api/diff', query: { from: 'HEAD', to: 'worktree' } }) as Promise<DiffResponse>
+      expect((await get()).records).toEqual([])
+      const r = recOf(a, 'US-01.1.2')
+      call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
+      expect((await get()).records.map((x) => x.id)).toEqual(['US-01.1.2'])
+      // A change on disk is kept until the watcher says so.
+      writeItem(item({ id: 'EP-01', type: 'epic', title: 'Edited elsewhere' }), root)
+      expect((await get()).records.map((x) => x.id)).toEqual(['US-01.1.2'])
+      a.worktreeChanged()
+      expect((await get()).records.map((x) => x.id).sort()).toEqual(['EP-01', 'US-01.1.2'])
+    })
+
+    describe('history blobs', () => {
+      const res = () => {
+        const headers: Record<string, string> = {}
+        const r = { headers, body: null as Buffer | null, setHeader: (k: string, v: string) => (headers[k] = v), end: (b: Buffer) => (r.body = b) }
+        return r
+      }
+      const serve = async (path: string, artifacts: Record<string, unknown> = {}) => {
+        const r = res()
+        const ok = await serveHistoryBlob(root, new URL(path, 'http://local'), r as unknown as ServerResponse, artifacts as never)
+        return { ok, type: r.headers['Content-Type'], nosniff: r.headers['X-Content-Type-Options'], body: r.body?.toString() }
+      }
+      const shaAt = (path: string) => execFileSync('git', ['rev-parse', `HEAD:${path}`], { cwd: root, encoding: 'utf8' }).trim()
+
+      it("serves a version as its own file's type when the blob was at that path, else as the artifact's file now", async () => {
+        mkdirSync(join(root, 'artifacts', 'files'), { recursive: true })
+        writeFileSync(join(root, 'artifacts', 'files', 'AR-01.png'), 'png bytes')
+        writeFileSync(join(root, 'secret.txt'), 'not an artifact')
+        commitAll('A picture')
+        const png = shaAt('artifacts/files/AR-01.png')
+        const secret = shaAt('secret.txt')
+        const now = { 'AR-01': { data: { file: 'artifacts/files/AR-01.svg' } } }
+        expect(await serve(`/history-blob/${png}?artifact=AR-01&file=artifacts/files/AR-01.png`, now)).toEqual({ ok: true, type: 'image/png', nosniff: 'nosniff', body: 'png bytes' })
+        expect((await serve(`/history-blob/${png}?artifact=AR-01`, now)).type).toBe('image/svg+xml')
+        // A blob that was never at the named path: not served as that type.
+        expect((await serve(`/history-blob/${secret}?artifact=AR-01&file=artifacts/files/x.md`, now)).type).toBe('image/svg+xml')
+        expect((await serve(`/history-blob/${secret}?artifact=AR-99&file=artifacts/files/x.md`)).ok).toBe(false)
+        expect((await serve(`/history-blob/${secret}?artifact=AR-99&file=../secret.md`)).ok).toBe(false)
+        // A file only on disk, not committed yet.
+        writeFileSync(join(root, 'artifacts', 'files', 'new.md'), '# New')
+        expect(await serve(`/history-blob/${gitBlobSha(Buffer.from('# New'))}?artifact=AR-99&file=artifacts/files/new.md`)).toMatchObject({ ok: true, type: 'text/markdown; charset=utf-8', body: '# New' })
+      })
+
+      it('serves an earlier version of an artifact that has since been removed, by the file it had', async () => {
+        mkdirSync(join(root, 'artifacts', 'files'), { recursive: true })
+        writeFileSync(join(root, 'artifacts', 'files', 'AR-07.md'), '# Gone now')
+        commitAll('A note')
+        const sha = shaAt('artifacts/files/AR-07.md')
+        rmSync(join(root, 'artifacts', 'files', 'AR-07.md'))
+        commitAll('Remove it')
+        // AR-07 is in no catalogue now: the blob was at that path in a commit, so its type holds.
+        expect(await serve(`/history-blob/${sha}?artifact=AR-07&file=artifacts/files/AR-07.md`)).toEqual({ ok: true, type: 'text/markdown; charset=utf-8', nosniff: 'nosniff', body: '# Gone now' })
+        // Named for a path it never had, it is not served.
+        expect((await serve(`/history-blob/${sha}?artifact=AR-07&file=artifacts/files/AR-07.svg`)).ok).toBe(false)
+        // A blob that is not in the repository at all.
+        expect((await serve(`/history-blob/${'0'.repeat(40)}?artifact=AR-07&file=artifacts/files/AR-07.md`)).ok).toBe(false)
+      })
+
+      it('serves a version of a removed artifact that only existed before the folder moved', async () => {
+        // A repository whose requirements folder sits at `old/req`, then moves to `new/req`.
+        const top = mkdtempSync(join(tmpdir(), 'catalogue-moved-'))
+        try {
+          const gt = (...args: string[]) => execFileSync('git', args, { cwd: top, stdio: 'ignore' })
+          const commit = (msg: string) => {
+            gt('add', '-A')
+            gt('-c', 'user.name=Tester', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', msg)
+          }
+          const files = (base: string) => join(top, base, 'req', 'artifacts', 'files')
+          gt('init', '-q')
+          mkdirSync(files('old'), { recursive: true })
+          writeFileSync(join(files('old'), 'AR-08.md'), '# First version')
+          writeFileSync(join(files('old'), 'AR-09.md'), '# Removed before the move')
+          writeFileSync(join(files('old'), 'AR-10.md'), '# Stays')
+          commit('Notes')
+          const first = execFileSync('git', ['rev-parse', 'HEAD:old/req/artifacts/files/AR-08.md'], { cwd: top, encoding: 'utf8' }).trim()
+          const early = execFileSync('git', ['rev-parse', 'HEAD:old/req/artifacts/files/AR-09.md'], { cwd: top, encoding: 'utf8' }).trim()
+          writeFileSync(join(files('old'), 'AR-08.md'), '# Second version')
+          rmSync(join(files('old'), 'AR-09.md'))
+          commit('Edit one, remove one')
+          mkdirSync(join(top, 'new'))
+          gt('mv', 'old/req', 'new/req')
+          commit('Move the folder')
+          rmSync(join(files('new'), 'AR-08.md'))
+          commit('Remove it')
+          const moved = join(top, 'new', 'req')
+          const serveIn = async (path: string) => {
+            const r = res()
+            const ok = await serveHistoryBlob(moved, new URL(path, 'http://local'), r as unknown as ServerResponse, {})
+            return { ok, type: r.headers['Content-Type'], body: r.body?.toString() }
+          }
+          // The first version was only ever at the old path: still served, as its own type.
+          expect(await serveIn(`/history-blob/${first}?artifact=AR-08&file=artifacts/files/AR-08.md`)).toEqual({ ok: true, type: 'text/markdown; charset=utf-8', body: '# First version' })
+          // A file removed before the move, so never renamed itself: found in its folder's earlier place.
+          expect(await serveIn(`/history-blob/${early}?artifact=AR-09&file=artifacts/files/AR-09.md`)).toEqual({ ok: true, type: 'text/markdown; charset=utf-8', body: '# Removed before the move' })
+          // Named for another file, it is still refused.
+          expect((await serveIn(`/history-blob/${first}?artifact=AR-08&file=artifacts/files/AR-10.md`)).ok).toBe(false)
+        } finally {
+          rmSync(top, { recursive: true, force: true })
+        }
+      })
+    })
   })
 })

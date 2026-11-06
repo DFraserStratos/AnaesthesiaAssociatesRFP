@@ -69,6 +69,10 @@ shared/        code shared by server, scripts and browser
   ids.ts         next-ID assignment, sibling order
   move.ts        Mapped board moves (pure): planMove / applyMove / invertChanges, lane-name rules
   history.ts     card and artifact history (pure): field and line diffs, the journal + git timeline merge
+  textCompare.ts the one LCS and the one spacing rule that history and the Diff review share
+  diff.ts        the Diff review's API types (commits, a comparison, the count)
+  diffModel.ts   the Diff review's model (pure, server and page): entries, minor changes, the count, filters, page order
+  proseDiff.ts   the Diff review's text comparison (pure): Markdown blocks, paired rows, changed words, sentence folds
   artifacts.ts   reading artifacts without a DOM: anchors, SVG text, mermaid node IDs, image sizes, Markdown headings
   highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
@@ -78,6 +82,7 @@ server/
   historyJournal.ts  the per-card change journal (.history/, gitignored)
   gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
   gitRenames.ts      a file's earlier paths from git's renames, so history reaches back past folder moves
+  catalogueDiff.ts   the Diff review's git reading: commits that changed records, two states compared, cached
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files, folder watcher → HMR events
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
   pdfFacts.ts        a PDF's page sizes and text, in a child process (pdf.js is async; the catalogue loads sync)
@@ -88,6 +93,11 @@ src/
   artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
   useDismiss.ts  Esc / outside-press close for popovers
+  useCatalogueRefresh.ts  re-run on record changes on disk or window focus; usePersistentState.ts a per-browser pick
+  dates.ts       dates and times in the project's locale
+  diff/          the Diff review, loaded with its route: DiffView (the page), useDiffData (loading), viewedStore,
+                 useProgressiveDraw, useDiffKeys + scroll, DiffBar, DiffCard (typed field definitions),
+                 DiffFields, DiffProse, DiffFile, diffMarks (remark plugin), diff.css, useUncommittedCount
   views/         BoardView, ArtifactsView (grid or list; a click opens ArtifactPage), ArtifactPage, QuestionsView, OutlineView
   artifacts/     the viewers: CanvasViewer (SVG, image, mermaid: viewBox pan and zoom, minimap, red box),
                  MarkdownReader, PdfReader, sanitise, camera (pure), regionsDom, ArtifactPanel, ArtifactHistory,
@@ -185,6 +195,38 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   from git: the sidecar's commits as field changes, the file's as before and after (side by side,
   swipe, or a source diff). Every artifact with text has a find box (`src/artifacts/find.ts`):
   matches across element and line breaks, counted over a whole PDF from pdf.js's page text.
+
+- **Diff review** (its tab): the catalogue between two git states (`server/catalogueDiff.ts`,
+  read-only git in child processes; statuses read as today's codes; a folder that moved, and each
+  record folder (even one renamed in the move), is read at the path it had at each side, so a move
+  alone is no change). Outside git every route reports
+  `available: false`.
+  - `GET /api/diff/commits`: the commits that changed records (cards, outstanding items, artifact
+    sidecars, and an artifact's file wherever its sidecar points), newest first along HEAD's first
+    parents, merges included; each with its first `parent`, and the resolved `head`. Each commit's
+    `records` is counted by comparing it with its parent (kept per commit, counted in the background
+    once the board asks for the tab's count), so a commit that changed no record as the page reads
+    it (a status renumbering) is left out.
+  - `GET /api/diff?from=&to=` (`to=worktree` for the files on disk; refs are `HEAD` or a hash, else
+    400): every record that differs with both versions parsed, artifact file and screenshot blob
+    hashes, the unchanged epics and features they sit under, and the artifacts that read differently
+    at each side than today (slimmed, `context.artifacts`), so citations are named as they stood. A
+    side that does not parse comes back as its parser's message and raw text (`beforeError`,
+    `beforeText`), never as added or removed; an artifact's file is still compared (`fileNameBefore`).
+  - `GET /api/diff/auto`: the page's default in one request: HEAD against the files on disk, or with
+    nothing uncommitted what the last record commit changed (`jumped: true`).
+  - `GET /api/diff/count?from=&to=`: the tab's count (records changed, minor ones left out), a few bytes.
+  - Results are cached (keyed by HEAD, the refs, and a generation the folder watcher and every API
+    write bump), and identical requests in flight share one read.
+  - `/history-blob/<sha>?artifact=<ID>&file=<path>` serves an artifact file's earlier version as the
+    type of `file` (honoured only when the blob was at that path in some commit, or on disk).
+
+  The page pairs Markdown fields paragraph by paragraph and marks changed words
+  (`shared/proseDiff.ts`); entries, minor changes, filters and order are `shared/diffModel.ts`, so the
+  server's count and the page agree. It loads the commit list and the comparison side by side, draws
+  the first cards whole and the rest a few at a time (nearest the view first; off-screen cards skip
+  layout through `content-visibility`), keeps unchanged cards memoised across refreshes, and keeps
+  the last comparison for a return to the tab.
 
 Screenshots: put files under `requirements/assets/<ID>/` and list them in the item's `images`, each
 with a `viewport` and optionally an `app`, one of the keys in `screenshotApps`. The item sheet's

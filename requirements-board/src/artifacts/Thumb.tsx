@@ -43,11 +43,17 @@ function ThumbBody({ rec }: { rec: ArtifactRec }) {
 }
 
 function MermaidThumb({ rec }: { rec: ArtifactRec }) {
-  const loaded = useLoaded(`${rec.data.id}|${rec.data.source}`, () => loadCanvas({ format: 'mermaid', source: rec.data.source, seed: rec.data.id }))
+  return <MermaidPicture id={rec.data.id} source={rec.data.source} />
+}
+
+/** A mermaid diagram drawn as an image, from its source. */
+export function MermaidPicture({ id, source }: { id: string; source: string }) {
+  const loaded = useLoaded(`${id}|${source}`, () => loadCanvas({ format: 'mermaid', source, seed: id }))
   return loaded.status === 'ready' ? <img src={loaded.value.imageUrl} alt="" draggable={false} /> : null
 }
 
-function PdfThumb({ url }: { url: string }) {
+/** A PDF's first page, drawn small. */
+export function PdfThumb({ url }: { url: string }) {
   const loaded = useLoaded(url, async () => {
     const { doc } = await loadPdf(url)
     const page = await doc.getPage(1)

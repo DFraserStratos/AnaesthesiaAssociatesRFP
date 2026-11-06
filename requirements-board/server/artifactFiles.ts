@@ -20,6 +20,12 @@ const here = dirname(fileURLToPath(import.meta.url))
  */
 export const REPO_ROOT = process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : repoOf(process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements'))
 
+/**
+ * Where a `/`-rooted path starts for a requirements folder in the git repository `gitTop`:
+ * `REPO_ROOT` when the environment sets it (as `artifactPath` reads it), else that repository.
+ */
+export const repoRootFor = (gitTop: string) => (process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : gitTop)
+
 function repoOf(data: string): string {
   try {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: data, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()

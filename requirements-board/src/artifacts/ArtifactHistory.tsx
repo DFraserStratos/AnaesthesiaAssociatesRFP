@@ -5,11 +5,11 @@
  */
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { lineCounts, lineDiff, regionChanges, TEXT_FIELDS, type ContentVersion, type FieldChange, type TimelineEntry } from '../../shared/history.ts'
+import { lineCounts, lineDiff, regionChanges, setDiff, TEXT_FIELDS, type ContentVersion, type FieldChange, type TimelineEntry } from '../../shared/history.ts'
 import type { ArtifactRec, Region } from '../../shared/types.ts'
 import { api } from '../api.ts'
 import { StatusLabel } from '../components/bits.tsx'
-import { Counts, Diff, HistoryTimeline, setDiff, TEXT_LABEL } from '../components/HistoryView.tsx'
+import { Counts, Diff, HistoryTimeline, TEXT_LABEL } from '../components/HistoryView.tsx'
 import { useCatalogue } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, artifactDate } from '../vocab.ts'
 import { VisualCompare } from './VisualCompare.tsx'

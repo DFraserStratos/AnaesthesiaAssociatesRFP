@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Info, Settings } from 'lucide-react'
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { STARTER_PROJECT_NAME } from '../shared/config.ts'
 import { isOpenQuestion } from '../shared/statuses.ts'
@@ -17,8 +17,12 @@ import { ArtifactPage } from './views/ArtifactPage.tsx'
 import { ArtifactsView } from './views/ArtifactsView.tsx'
 import { BoardView } from './views/BoardView.tsx'
 import { OutlineView } from './views/OutlineView.tsx'
+import { useUncommittedCount } from './diff/useUncommittedCount.ts'
 import { QuestionsView } from './views/QuestionsView.tsx'
 import { SettingsView } from './views/SettingsView.tsx'
+
+/** The Diff review (its Markdown kit, its styles) loads the first time the tab is opened. */
+const DiffView = lazy(() => import('./diff/DiffView.tsx').then((m) => ({ default: m.DiffView })))
 
 export function App() {
   const status = useCatalogue((s) => s.status)
@@ -83,6 +87,14 @@ export function App() {
             <Route path="/artifacts/:id" element={<ArtifactPage />} />
             <Route path="/questions" element={<QuestionsView />} />
             <Route path="/outline" element={<OutlineView />} />
+            <Route
+              path="/diff"
+              element={
+                <Suspense fallback={<div className="page" />}>
+                  <DiffView />
+                </Suspense>
+              }
+            />
             <Route path="/settings" element={<SettingsView />} />
             <Route path="/about" element={<AboutView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
@@ -116,6 +128,7 @@ function Masthead({ connected }: { connected: boolean }) {
   }, [project, board])
   const openCount = index.questions.filter((q) => isOpenQuestion(index.config, q)).length
   const errors = issues.filter((i) => i.severity === 'error').length
+  const uncommitted = useUncommittedCount()
   const warnings = issues.length - errors
 
   return (
@@ -141,6 +154,9 @@ function Masthead({ connected }: { connected: boolean }) {
         </NavLink>
         <NavLink className="tab" to="/outline">
           Outline <span className="count">{shown.items.length}</span>
+        </NavLink>
+        <NavLink className="tab" to="/diff" title={uncommitted ? `${uncommitted} record${uncommitted === 1 ? '' : 's'} changed since the last commit` : 'Compare the catalogue between two versions'}>
+          Diff review {!!uncommitted && <span className="count">{uncommitted}</span>}
         </NavLink>
       </nav>
       <div className="masthead-right">

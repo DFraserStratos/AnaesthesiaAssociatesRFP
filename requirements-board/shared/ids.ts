@@ -45,9 +45,12 @@ export function nextArtifactId(taken: Iterable<string>): string {
   return `AR-${pad(maxUnder(taken, 'AR-') + 1)}`
 }
 
+/** One collator for every compare: `localeCompare` with options resolves the locale on each call, about 13 times slower. */
+const ID_COLLATOR = new Intl.Collator('en', { numeric: true })
+
 /** Natural compare for catalogue IDs: FT-01.10 sorts after FT-01.9. */
 export function compareIds(a: string, b: string): number {
-  return a.localeCompare(b, 'en', { numeric: true })
+  return ID_COLLATOR.compare(a, b)
 }
 
 /** Sibling order: explicit `order`, then ID. */

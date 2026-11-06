@@ -33,6 +33,10 @@
   --tone-forest: #1b5a3c;
   --tone-sand: #8a7a66;
   --tone-hatched: #9aa6ab;
+  /* Text-safe shades and tints of two tones, for the marks that borrow them outside a status pill. */
+  --tone-amber-ink: #7d530a;
+  --tone-amber-tint: #fbefd9;
+  --tone-green-ink: #22613b;
 
   /* Work item types, after Azure DevOps: epic orange, feature purple, story blue.
      --ty is the accent (rules, icons), --ty-ink the text-safe shade, --ty-tint the fill. */
@@ -50,6 +54,11 @@
   --ty-artifact: #4b56b0;
   --ty-artifact-ink: #3a438c;
   --ty-artifact-tint: #e9ebf7;
+  /* Outstanding items are not a work-item type: their question mark (and a Diff review card's top
+     rule) take Open's amber. */
+  --ty-question: var(--tone-amber);
+  --ty-question-ink: var(--tone-amber-ink);
+  --ty-question-tint: var(--tone-amber-tint);
   /* The red box that marks a spot (shared/highlight.ts), for the small marks that stand for it. */
   --highlight: #e0243a;
 
@@ -440,8 +449,8 @@ button.chip:hover {
 }
 .tone-amber {
   --sc: var(--tone-amber);
-  --sbg: #fbefd9;
-  --sink: #7d530a;
+  --sbg: var(--tone-amber-tint);
+  --sink: var(--tone-amber-ink);
 }
 .tone-olive {
   --sc: var(--tone-olive);
@@ -451,7 +460,7 @@ button.chip:hover {
 .tone-green {
   --sc: var(--tone-green);
   --sbg: #e5f2ea;
-  --sink: #22613b;
+  --sink: var(--tone-green-ink);
 }
 .tone-forest {
   --sc: var(--tone-forest);
@@ -490,9 +499,19 @@ button.chip:hover {
   --ty-ink: var(--ty-artifact-ink);
   --ty-tint: var(--ty-artifact-tint);
 }
+.ty-question {
+  --ty: var(--ty-question);
+  --ty-ink: var(--ty-question-ink);
+  --ty-tint: var(--ty-question-tint);
+}
 .type-icon {
   flex: none;
   color: var(--ty);
+}
+/* An outstanding item's question mark (`RecordMark`, `QuestionName`). */
+.q-mark {
+  flex: none;
+  color: var(--ty-question);
 }
 
 /* Lineage: arrow-shaped pills that slot into each other, coloured by type. */

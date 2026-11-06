@@ -4,9 +4,8 @@
  * Both draw on the card's `artifacts:` links and on its `sources:` strings, resolved to artifact
  * spots (`shared/sources.ts`). Pure, so the sheet and the tests agree.
  */
-import { useMemo } from 'react'
 import { buildSourceIndex, resolveSource, spotFactsOfMeta, type SourceIndex, type SourceSpot } from '../shared/sources.ts'
-import { parseArtifactRef, type ArtifactKind, type ArtifactRec } from '../shared/types.ts'
+import { parseArtifactRef, type Artifact, type ArtifactKind, type ArtifactRec } from '../shared/types.ts'
 import { spotName } from './artifactIndex.ts'
 import { useCatalogue } from './store.ts'
 
@@ -24,9 +23,12 @@ export const PICTURE_KINDS: readonly ArtifactKind[] = ['diagram', 'mockup', 'scr
 
 const WHOLE: SourceSpot = { region: null, label: null, detail: null, problem: null }
 
+/** The source index for the artifacts as they are, built once and shared by every caller (one per source cell). */
+let lastSourceIndex: { artifacts: Record<string, ArtifactRec>; index: SourceIndex } | null = null
 export function useSourceIndex(): SourceIndex {
   const artifacts = useCatalogue((s) => s.artifacts)
-  return useMemo(() => sourceIndexOf(artifacts), [artifacts])
+  if (lastSourceIndex?.artifacts !== artifacts) lastSourceIndex = { artifacts, index: sourceIndexOf(artifacts) }
+  return lastSourceIndex.index
 }
 
 export const sourceIndexOf = (artifacts: Record<string, ArtifactRec>) =>
@@ -34,6 +36,20 @@ export const sourceIndexOf = (artifacts: Record<string, ArtifactRec>) =>
     Object.values(artifacts).map((r) => r.data),
     (id) => (artifacts[id] ? spotFactsOfMeta(artifacts[id]!.meta) : null),
   )
+
+/**
+ * The source index for the artifacts as they stood at another time: today's, with `then` (the ones
+ * that read differently then, or are gone now) as they were. A file's facts are today's, used only
+ * where the artifact still names the same file. Today's own index when nothing differs.
+ */
+export function sourceIndexAt(today: Record<string, ArtifactRec>, then: Record<string, Artifact>, todayIndex: SourceIndex): SourceIndex {
+  if (!Object.keys(then).length) return todayIndex
+  const all: Record<string, Artifact> = { ...Object.fromEntries(Object.entries(today).map(([id, r]) => [id, r.data])), ...then }
+  return buildSourceIndex(Object.values(all), (id) => {
+    const rec = today[id]
+    return rec && rec.data.file === all[id]?.file ? spotFactsOfMeta(rec.meta) : null
+  })
+}
 
 /** One row for a source string. `self` is the artifact the source sits on (its own origin shows plain). */
 export function sourceRow(index: SourceIndex, source: string, self?: string): SheetRow {

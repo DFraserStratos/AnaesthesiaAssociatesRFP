@@ -361,6 +361,17 @@ function Anatomy() {
           </p>
         </div>
         <div className="about-tile">
+          <h3>Diff review</h3>
+          <p>
+            <Link to="/diff">Diff review</Link> shows what changed in the catalogue between two versions in git: every changed card, outstanding item and artifact, before on the left and after on the right, with
+            the changed words marked. It starts on what has changed since the last commit (with nothing uncommitted, on what the last commit changed); pick any two commits that changed the catalogue
+            from the bar. Only what changed shows: an edited paragraph is cut to its changed sentences (click the &hellip; for the rest), and
+            a status change is one line under the title. A file that does not parse shows as <em>Could not be read</em>, with the parser&rsquo;s message, rather than as removed.
+            Tick a card Viewed as you go; the tick lasts in this browser until the card changes again. Compact or Comfortable, from the bar, is kept the same way.
+            Keys: <kbd>j</kbd> <kbd>k</kbd> previous or next change, <kbd>Shift</kbd> <kbd>J</kbd> <kbd>K</kbd> previous or next card, <kbd>v</kbd> Viewed and on to the next.
+          </p>
+        </div>
+        <div className="about-tile">
           <h3>Outline and checks</h3>
           <p>
             <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. <em>Checks pass</em> in the masthead turns red when a file is wrong; click it to see why.

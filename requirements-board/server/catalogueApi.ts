@@ -13,6 +13,14 @@
  *   POST /api/questions          { title, ... }
  *   GET  /api/items/:id/history  the card's timeline: the change journal, backfilled from git
  *   GET  /api/artifacts/:id/history  an artifact's timeline from git: its sidecar and its file
+ *   GET  /api/diff/commits       the commits that changed catalogue records, newest first along HEAD's first
+ *                                parents, each with its first parent, and HEAD (Diff review)
+ *   GET  /api/diff?from=&to=     every record that differs between two commits, or a commit and the files
+ *                                on disk (`to=worktree`), with both versions (Diff review)
+ *   GET  /api/diff/count?from=&to=  { available, count }: how many records differ, minor changes left out
+ *                                (From defaults to HEAD, To to `worktree`): the Diff review tab's count
+ *   GET  /api/diff/auto          the Diff review's default: HEAD against the files on disk, or with nothing
+ *                                there what the last catalogue commit changed (`jumped: true`)
  *   PUT  /api/artifacts/:id      { record, baseRev }  its details only (title, kind, status, date, author,
  *                                area, sources, description); its file, regions and source stay as on disk
  *   PUT  /api/config             { statuses?, questionStatuses? }  replaces those lists in board.config.json (the
@@ -71,6 +79,7 @@ import {
 } from './catalogueFs.ts'
 import { artifactInfo, artifactPath } from './artifactFiles.ts'
 import { gitAssetHistory, gitDirty, gitFileHistory, gitScreenshots } from './gitHistory.ts'
+import { DiffRefError, createDiffReader } from './catalogueDiff.ts'
 import { NO_JOURNAL, type Journal } from './historyJournal.ts'
 
 export class HttpError extends Error {
@@ -89,6 +98,8 @@ export interface ApiRequest {
   body?: unknown
   /** Lower-cased request headers; used to refuse cross-site writes. */
   headers?: Record<string, string | undefined>
+  /** The URL's query parameters (read by the GET routes that take any). */
+  query?: Record<string, string>
 }
 
 const MAX_CREATE_ATTEMPTS = 5
@@ -102,6 +113,12 @@ export interface ApiOptions {
   gitScreenshots?: typeof gitScreenshots
   /** An artifact file's versions in git (injectable for tests). */
   gitAssetHistory?: typeof gitAssetHistory
+  /**
+   * The caller reports every file change in the folder (and in artifacts' files) through
+   * `worktreeChanged()`, as the dev server's watcher does, so the Diff review can keep its
+   * comparisons with the files on disk until the next change. Otherwise it reads them afresh.
+   */
+  watched?: boolean
 }
 
 export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => void = () => {}, opts: ApiOptions = {}) {
@@ -110,6 +127,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   const gitHistory = opts.gitHistory ?? gitFileHistory
   const gitShots = opts.gitScreenshots ?? gitScreenshots
   const gitAsset = opts.gitAssetHistory ?? gitAssetHistory
+  const diffs = createDiffReader(root, { watched: opts.watched })
   journal.baseline(state.items)
   journal.screenshots(join(root, 'assets'), { offline: true })
 
@@ -242,12 +260,34 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   }
 
   function handle(req: ApiRequest): unknown {
+    if (req.method === 'GET') return route(req)
+    // A write changes files on disk: comparisons with them are stale, now and once it is done.
+    diffs.touched()
+    const out = route(req)
+    return out instanceof Promise ? out.finally(() => diffs.touched()) : out
+  }
+
+  const refError = (e: unknown) => {
+    throw e instanceof DiffRefError ? new HttpError(400, e.message) : e
+  }
+
+  function route(req: ApiRequest): unknown {
     const { method, path } = req
     const body = (req.body ?? {}) as Record<string, unknown>
     refuseCrossSite(req)
 
     if (path === '/api/catalogue' && method === 'GET') {
       return { items: state.items, questions: state.questions, artifacts: state.artifacts, layout: state.layout, config: state.config, issues: state.issues }
+    }
+
+    // Diff review: read-only git, in child processes like the history routes.
+    if (path === '/api/diff/commits' && method === 'GET') return diffs.commits()
+    if (path === '/api/diff/count' && method === 'GET') return diffs.count(req.query?.from || undefined, req.query?.to || undefined).catch(refError)
+    if (path === '/api/diff/auto' && method === 'GET') return diffs.auto().catch(refError)
+    if (path === '/api/diff' && method === 'GET') {
+      const q = req.query ?? {}
+      if (!q.from || !q.to) throw new HttpError(400, 'from and to are required')
+      return diffs.diff(q.from, q.to).catch(refError)
     }
 
     const a = /^\/api\/artifacts\/([^/]+)\/history$/.exec(path)
@@ -561,6 +601,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 
   /** Re-read the folder and emit an event for every record whose file changed. */
   function syncFromDisk() {
+    diffs.touched()
     // Screenshot files carry no rev in the catalogue: the journal fingerprints them itself.
     journal.screenshots(join(root, 'assets'))
     const prev = state
@@ -594,7 +635,15 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     for (const e of events) emit(e)
   }
 
-  return { handle, syncFromDisk, getState: () => state }
+  return {
+    handle,
+    syncFromDisk,
+    getState: () => state,
+    /** A file in the folder, or an artifact's file elsewhere, changed on disk (see `ApiOptions.watched`). */
+    worktreeChanged: () => diffs.touched(),
+    /** Start reading the Diff review's commit list in the background (see `DiffReader.warm`). */
+    warmDiff: () => diffs.warm(),
+  }
 }
 
 export type CatalogueApi = ReturnType<typeof createCatalogueApi>

@@ -17,14 +17,17 @@ const here = dirname(fileURLToPath(import.meta.url))
 /** The requirements folder: `REQUIREMENTS_DIR` from the environment, else `requirements/` beside the board's code. */
 export const REQUIREMENTS_DIR = process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements')
 
-export const storiesDir = (root = REQUIREMENTS_DIR) => join(root, 'stories')
-export const questionsDir = (root = REQUIREMENTS_DIR) => join(root, 'questions')
+/** The folders under the requirements folder that hold records, by record kind (the Diff review reads them in git too). */
+export const RECORD_DIRS = { item: 'stories', question: 'questions', artifact: 'artifacts' } as const
+
+export const storiesDir = (root = REQUIREMENTS_DIR) => join(root, RECORD_DIRS.item)
+export const questionsDir = (root = REQUIREMENTS_DIR) => join(root, RECORD_DIRS.question)
 export const layoutPath = (root = REQUIREMENTS_DIR) => join(root, 'board-layout.json')
 export const configPath = (root = REQUIREMENTS_DIR) => join(root, CONFIG_FILE)
 export const itemPath = (id: string, root = REQUIREMENTS_DIR) => join(storiesDir(root), `${id}.md`)
 export const questionPath = (id: string, root = REQUIREMENTS_DIR) => join(questionsDir(root), `${id}.md`)
 /** Artifact sidecars (`AR-nn.md`); the artifact files themselves are in its `files/`. */
-export const artifactsDir = (root = REQUIREMENTS_DIR) => join(root, 'artifacts')
+export const artifactsDir = (root = REQUIREMENTS_DIR) => join(root, RECORD_DIRS.artifact)
 export const artifactSidecarPath = (id: string, root = REQUIREMENTS_DIR) => join(artifactsDir(root), `${id}.md`)
 
 const ID_FILE = /^[A-Z]{2}-[\d.]+$/

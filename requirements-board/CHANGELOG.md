@@ -2,6 +2,22 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.5.0 · 2026-11-06
+
+- Diff review, a new tab after Outline: the catalogue compared between two versions in git. Every changed epic, feature, story, outstanding item and artifact is a card with before on the left and after on the right, paired paragraph by paragraph, the changed words struck on a rose tint or set on a green one, status, lineage, area and link rows drawn as on the sheet. A paragraph mostly rewritten is tinted whole.
+- It starts on the last commit that changed the catalogue against the files on disk, and refreshes as they change; with nothing uncommitted, on what that last commit changed. The From and To pickers list only commits that changed records as the page reads them (a status renumbering alone is left out), by date and message, each with the number of records that commit changed. The tab counts the records changed since the last commit.
+- Cards sit as on the Mapped view (each epic, its features, each feature's stories), unchanged parents as headings (a changed epic or feature the filters hide is a heading too, marked "Changed, hidden by the filters"), then outstanding items and artifacts. Filters by type and by added, edited or removed; reorders and spacing-only edits hide behind Show minor changes. Whole card shows every field; Viewed folds a card, kept per browser until it changes again; a jump list finds any change.
+- An artifact's file compares by kind: drawings and images side by side, Markdown documents paired by paragraph, a PDF by its first page.
+- Fits more on a laptop: once the page heading scrolls away the bar folds to one line ("Change or filter" opens it); field names are tags on the seam rather than rows; status, area and the other short fields sit on one line under the card's title; the paragraph kept beside a change is a one-line preview that opens on a click; an edited paragraph shows only its changed sentences, the rest a "…" that opens it; a Compact density (the default) with Comfortable a click away, kept per browser.
+- An opened fold reads "Hide 3 unchanged paragraphs" and folds again.
+- Keys: j and k step up and down through the changes, Shift J and Shift K through the cards, v ticks the card in view Viewed and goes on. They rest while typing, with a sheet, picker or popover open, and while a new comparison is being read. In the pickers' and the jump list's search, the arrow keys move a highlighted row and Enter picks it.
+- A record whose file does not parse on one side (a hand edit, a merge conflict) is a card marked "Could not be read", with the parser's message and the file's text on that side, never shown as added or removed. An artifact's file still compares under it.
+- Picking commits names them in the bar at once; the comparison on the page dims ("Reading git") until the new one arrives.
+- Fast on a big catalogue: the first cards draw at once and the rest a few at a time, nearest the view first; folding the bar, ticking Viewed, filtering and opening a sheet redraw only what changed; a refresh that finds nothing new draws nothing; coming back to the tab shows the last comparison at once, then refreshes it. The tab's code and styles load the first time it is opened.
+- `GET /api/diff/commits`, `GET /api/diff?from=&to=`, `GET /api/diff/auto` (the default in one request) and `GET /api/diff/count` (the tab's count, a few bytes), in `server/catalogueDiff.ts`, cached until HEAD moves or a record changes. Artifact files are compared wherever their sidecar points, a moved requirements folder is followed (each record folder on its own, so one renamed in the move is followed too), and SHA-256 repositories work. Sources are read against the artifacts of each side, so one citing an artifact since removed keeps its name. Outside git the tab says there is nothing to compare.
+- `/history-blob/<sha>?artifact=<ID>&file=<path>` serves an earlier version of an artifact's file as the type it had then.
+- A change to an artifact's Cited as list now shows in its history and in the Diff review.
+
 ## 1.2.0 · 2026-11-04
 
 - The build plan page (`update-build-plan`'s `build-index.mjs`) is cut to the essentials: a headline saying what to start, a map of every phase by track and wave (done, safe to start, safe once its dependencies land, wait, later), "Start now" cards with the kick-off prompt one click away, and an "Unblocked, but wait" list. Every phase, the sequencing rules, how a phase runs, milestones, parked items and the gap analysis sit behind collapsed sections.

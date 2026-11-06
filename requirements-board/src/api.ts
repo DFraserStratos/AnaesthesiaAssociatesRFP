@@ -1,5 +1,6 @@
 /** Thin client for the dev-server file API (server/cataloguePlugin.ts). */
 import type { BoardConfig, ConfigPatch } from '../shared/config.ts'
+import type { CommitsResponse, DiffCountResponse, DiffResponse } from '../shared/diff.ts'
 import type { TimelineEntry } from '../shared/history.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
 
@@ -46,6 +47,15 @@ export const api = {
   itemHistory: (id: string) => call<{ entries: TimelineEntry[] }>('GET', `/api/items/${encodeURIComponent(id)}/history`),
   /** An artifact's timeline, newest first, from git: its sidecar's changes and its file's. */
   artifactHistory: (id: string) => call<{ entries: TimelineEntry[] }>('GET', `/api/artifacts/${encodeURIComponent(id)}/history`),
+  /** Commits that changed catalogue records, newest first (the Diff review's pickers). */
+  diffCommits: () => call<CommitsResponse>('GET', '/api/diff/commits'),
+  /** Every record that differs between two commits, or a commit and the files on disk (`worktree`). */
+  diff: (from: string, to: string) => call<DiffResponse>('GET', `/api/diff?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  /** How many records differ, minor changes left out (From defaults to HEAD, To to the files on disk): the tab's count. */
+  diffCount: (from?: string, to?: string) =>
+    call<DiffCountResponse>('GET', `/api/diff/count${from || to ? `?${new URLSearchParams({ ...(from && { from }), ...(to && { to }) })}` : ''}`),
+  /** The Diff review's default: HEAD against the files on disk, or with nothing there what the last catalogue commit changed (`jumped`). */
+  diffAuto: () => call<DiffResponse>('GET', '/api/diff/auto'),
   /** An artifact's details (name, kind, status, date, author, area, sources, description); the server keeps the rest as on disk. */
   putArtifact: (record: Artifact, baseRev?: string) => call<ArtifactRec>('PUT', `/api/artifacts/${encodeURIComponent(record.id)}`, { record, baseRev }),
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => call<Rev<Item>>('POST', '/api/items', partial),
@@ -73,8 +83,9 @@ export const historyBlobUrl = (v: { src: string; sha: string }) => `/history-blo
 /** The file an artifact shows, versioned by its content so a change on disk reloads it. */
 export const artifactFileUrl = (id: string, fileRev: string | null) => `/artifact-file/${encodeURIComponent(id)}${fileRev ? `?v=${fileRev.slice(0, 12)}` : ''}`
 
-/** One version of an artifact's file (by git blob hash), for its history. */
-export const artifactBlobUrl = (id: string, sha: string) => `/history-blob/${sha}?artifact=${encodeURIComponent(id)}`
+/** One version of an artifact's file (by git blob hash), for its history. `file` names its type when the artifact is gone. */
+export const artifactBlobUrl = (id: string, sha: string, file?: string | null) =>
+  `/history-blob/${sha}?artifact=${encodeURIComponent(id)}${file ? `&file=${encodeURIComponent(file)}` : ''}`
 
 /** URL the dev server serves a catalogue-relative asset path from. */
 export const assetUrl = (src: string) => `/requirements/${src.split('/').map(encodeURIComponent).join('/')}`

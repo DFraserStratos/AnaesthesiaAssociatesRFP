@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { UNSAFE_NavigationContext, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { isQuestionId } from '../shared/links.ts'
 
 /**
@@ -50,6 +50,40 @@ export function useOpen() {
     clearEdit: () => withParams({ edit: null }, location.pathname, true),
     params,
   }
+}
+
+/** Where the router is now, read at the moment of a click rather than subscribed to. */
+function locationNow(navigator: object): { pathname: string; search: string } {
+  const loc = (navigator as { location?: { pathname: string; search: string } }).location
+  if (loc) return loc
+  const url = new URL(window.location.hash.slice(1) || '/', 'http://board.local')
+  return { pathname: url.pathname, search: url.search }
+}
+
+/**
+ * Opens a record's sheet, or an artifact's page, as `useOpen` does, but without subscribing to the
+ * location: for what is drawn many times over (links in Markdown, the Diff review's cards), which
+ * would otherwise all re-render each time a sheet opens or closes.
+ */
+export function useOpenRecord() {
+  const { navigator } = useContext(UNSAFE_NavigationContext)
+  return useMemo(() => {
+    const go = (patch: (here: URLSearchParams, pathname: string) => Record<string, string | null>) => {
+      const here = locationNow(navigator)
+      const next = new URLSearchParams(here.search)
+      for (const [k, v] of Object.entries(patch(next, here.pathname))) {
+        if (v === null) next.delete(k)
+        else next.set(k, v)
+      }
+      const qs = next.toString()
+      navigator.push({ pathname: here.pathname, search: qs ? `?${qs}` : '' })
+    }
+    return {
+      item: (id: string) => go(() => ({ item: id, question: null, edit: null })),
+      question: (id: string) => go((params, pathname) => ({ question: id, item: pathname === '/board' ? params.get('item') : null, edit: null })),
+      artifact: (id: string, region?: string | null) => navigator.push({ pathname: `/artifacts/${encodeURIComponent(id)}`, search: region ? `?region=${encodeURIComponent(region)}` : '' }),
+    }
+  }, [navigator])
 }
 
 /**

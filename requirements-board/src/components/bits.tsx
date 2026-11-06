@@ -1,10 +1,11 @@
-import { Camera, FileText, MessagesSquare, Monitor, NotebookPen, PanelsTopLeft, Workflow } from 'lucide-react'
+import { Camera, FileText, MessageCircleQuestion, MessagesSquare, Monitor, NotebookPen, PanelsTopLeft, Workflow } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { componentCodeIn } from '../../shared/config.ts'
 import { statusClasses, statusLabel, type StatusKind } from '../../shared/statuses.ts'
-import { TYPE_LABEL, type Artifact, type ArtifactKind, type ArtifactStatus, type Item, type ItemType } from '../../shared/types.ts'
+import { TYPE_LABEL, parseArtifactRef, type Artifact, type ArtifactKind, type ArtifactStatus, type Item, type ItemType, type Question } from '../../shared/types.ts'
+import { spotName } from '../artifactIndex.ts'
 import { recordUrl } from '../nav.ts'
-import { useConfig } from '../store.ts'
+import { useCatalogue, useConfig } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, artifactStatusClass, typeClass } from '../vocab.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
@@ -29,6 +30,40 @@ export function ItemName({ item }: { item: Item }) {
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
     </span>
   )
+}
+
+/** An outstanding item named as everywhere outside its own sheet: the question mark in its amber, then its title. */
+export function QuestionName({ question, title }: { question: Question; title?: string }) {
+  return (
+    <span className="ty-question" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0 }} title={title ?? question.id}>
+      <MessageCircleQuestion size={14} aria-hidden className="q-mark" />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{question.title}</span>
+    </span>
+  )
+}
+
+/** A card or outstanding item by name (as found by the caller); the bare ID only once it is gone. */
+export function RecordName({ id, item, question }: { id: string; item?: Item; question?: Question }) {
+  if (item) return <ItemName item={item} />
+  if (question) return <QuestionName question={question} />
+  return (
+    <span className="mono" title="Not in the catalogue now">
+      {id}
+    </span>
+  )
+}
+
+/** What a record's mark is drawn from: an item's type, an outstanding item, an artifact's kind. */
+export type MarkOf = { kind: 'item'; type: ItemType } | { kind: 'question' } | { kind: 'artifact'; artifactKind: ArtifactKind }
+
+/** The class that sets a record's type colour (`--ty`, `--ty-ink`, `--ty-tint`). */
+export const markClass = (m: MarkOf) => (m.kind === 'item' ? typeClass(m.type) : `ty-${m.kind}`)
+
+/** A record's mark: the type icon, the question mark or the artifact's kind icon, each in its colour. */
+export function RecordMark({ mark, size = 14 }: { mark: MarkOf; size?: number }) {
+  if (mark.kind === 'item') return <TypeIcon type={mark.type} size={size} />
+  if (mark.kind === 'question') return <MessageCircleQuestion size={size} aria-hidden className="q-mark" />
+  return <ArtifactIcon kind={mark.artifactKind} size={size} />
 }
 
 /** The lineage as arrow pills that slot into each other, each in its type colour. Pills are clickable when `onPick` is given. */
@@ -133,4 +168,18 @@ export function ArtifactName({ artifact, spot }: { artifact: Artifact; spot?: st
       {spot && <span className="artifact-name-spot">{spot}</span>}
     </span>
   )
+}
+
+/**
+ * An artifact link (`AR-nn`, or `AR-nn#region` for a spot in it) named as everywhere else: its
+ * mark, its title and the spot; the bare ref once it is gone. `at` names it as it stood at another
+ * time (a side of the Diff review), the spot still read from the file as it is now when it can be.
+ */
+export function ArtifactRefName({ refText, at }: { refText: string; at?: Artifact }) {
+  const { id, region } = parseArtifactRef(refText)
+  const rec = useCatalogue((s) => s.artifacts[id])
+  const data = at ?? rec?.data
+  if (!data) return <span className="mono">{refText}</span>
+  const spot = region ? ((rec ? spotName({ ...rec, data }, region) : null) ?? data.regions.find((r) => r.id === region)?.name ?? region) : null
+  return <ArtifactName artifact={data} spot={spot} />
 }
