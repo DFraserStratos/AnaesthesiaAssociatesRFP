@@ -9,7 +9,7 @@ Before doing anything else, read these in order:
 6. requirements-board/requirements/capture/ATLAS.md and the phase doc's "Catalogue screenshots" section.
 7. docs/prototype-build/PROGRESS.md: the binding conventions.
 
-Then do the drift check in the phase doc (plan-state.mjs --diff with the IDs it lists, baseline a68f09b), confirm 33 is DONE and how it exposes the List a no-NHI row would land on, build OQ-118 and OQ-49 as answered, and build the stub readings the doc lists, labelled once in code and once in the app and logged for the owner. Then write a short plan from the work items and start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
+Then do the drift check in the phase doc (plan-state.mjs --diff with the IDs it lists, baseline efe123c), confirm 33 is DONE and how it exposes the List a no-NHI row would land on, build OQ-118 and OQ-49 as answered, and build the stub readings the doc lists, labelled once in code and once in the app and logged for the owner. Then write a short plan from the work items and start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it. Here it applies to the stub row, its marker and sheet, the List's "waiting at intake" note, and Add NHI on the Matching panel.
@@ -23,7 +23,7 @@ While working:
 
 When done:
 - run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
-- confirm npm run build, npm run build:pwa and npx vitest run are green;
+- confirm npm run build, npm run build:pwa, npx vitest run and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: Opus subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding, fix the confirmed ones, re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 33a; create the US-02.6.1 to US-02.6.3 recipes, add US-02.1.4's stub state, and fix every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update ATLAS.md; then npm run verify:board green. Never edit a requirement's text or status or any artifact;
 - patch the demo guide in the same session as the phase doc's "Demo guide updates" lists (the no-NHI beat, the cheat sheet's NHI answer and the NHI to type, Workflow 1, master-demo-guide.html);

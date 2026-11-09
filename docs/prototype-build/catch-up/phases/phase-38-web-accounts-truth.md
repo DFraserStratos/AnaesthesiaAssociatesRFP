@@ -9,7 +9,7 @@
 [RV-33](../analysis/reverse-check.md#rv-33-the-gst-report-lists-customer-receipts-not-the-payments-passed-to-the-anaesthetist) GST report lists customer receipts, not the payments passed to the anaesthetist ·
 [RV-34](../analysis/reverse-check.md#rv-34-dashboard-productivity-and-leave-panels) Dashboard Productivity and Leave panels ·
 [RV-35](../analysis/reverse-check.md#rv-35-receivables-ageing-buckets-age-chips-and-an-overdue-view) Receivables ageing buckets, age chips and an Overdue view.
-**Changed at 7cd7802 (2026-10-28 update):** US-12.2.1 gains a criterion (each line opens its Booking); US-12.2.2 drops the part-payment and repayment-plan wording (it lists the payments AA made in the month) and notes a BCTI per weekly payment run floated, unsettled ([OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md), [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md): this phase keeps the report on payments, not BCTIs); FT-12.2 says the ledger is the record of what is owed by patients and contract holders; US-12.2.3 is now graded Contradicts on the ageing panel, which the financial position and the flat list close. Same work otherwise.
+**Changed at 7cd7802 (2026-10-28 update):** US-12.2.1 gains a criterion (each line opens its Booking); US-12.2.2 drops the part-payment and repayment-plan wording (it lists the payments AA made in the month) and notes a BCTI per weekly payment run floated, unsettled ([OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md), [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md): this phase keeps the report on payments, not BCTIs); FT-12.2 says the ledger is the record of what is owed by patients and contract holders (reworded 5 November: owed by payers and the Parties AA bills, Donald's contract model decisions D1 to D11; wording only); US-12.2.3 is now graded Contradicts on the ageing panel, which the financial position and the flat list close. Same work otherwise.
 **Left this phase at d4db277 (2026-10-16 update):** [US-12.1.2](../../../../requirements-board/requirements/stories/US-12.1.2.md) GST period is **Retired** (no GST period on the profile; Phase 26 removes `gstPeriod`, so this phase builds no period, no aligned windows and no label sweep, and only confirms nothing reads one). The old RV-18, RV-19 and RV-32 are renumbered RV-34, RV-35 and RV-33 (same work).
 **Left this phase at 60e2d1e (2026-10-08 update):**
 [US-07.2.1](../../../../requirements-board/requirements/stories/US-07.2.1.md) (the web "completed,
@@ -42,7 +42,7 @@ the 2026-10-01 meeting note ([2026-10-01-aa-meeting-with-greg.md](../../../../re
 entries, and the per-anaesthetist position). The dependency on 28 is dropped: it existed only for the
 billed-Lists work, now 38a's. By the roadmap order 14 to 36 have run before this phase, including 16
 (payable equals receivable, the monthly AA fee invoice and the AA fees tab), 20a and 21 (who is
-invoiced: the Contract holder's billable party or the payer on the Booking), 22 (prices held ex GST,
+invoiced: the billable Party on the Booking's Contract or the payer on the Booking), 22 (prices held ex GST,
 GST at the invoice foot and the Contract's GST treatment, which changes only how an invoice presents
 GST, never its stored amounts), 26 (which removes the GST period from the profile) and 27
 (the prepayment pair, generated at setup and sent on approval). 37 may run before or after this
@@ -98,13 +98,13 @@ so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (a68f09b):
+1. Run the drift check against the plan's catalogue snapshot (efe123c):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
    ```
 
-   (It diffs the plan's baseline, a68f09b, to the working tree; the tool is rename-aware, so never
+   (It diffs the plan's baseline, efe123c, to the working tree; the tool is rename-aware, so never
    use a plain `git diff` of the catalogue folder.) Read the diff for US-12.2.3, FT-12.2,
    US-12.2.1, US-12.2.2, the context items US-08.3.5, US-08.3.1, US-10.1.2, US-05.2.7,
    US-07.4.1, US-10.2.7, US-11.3.2, and OQ-31, OQ-29, OQ-59 and OQ-60. If an item changed, re-read it and
@@ -112,7 +112,7 @@ so `PERSIST_VERSION` is bumped.
    the PROGRESS entry. At plan time (7cd7802) US-12.2.1 and US-05.2.7 were **Confirmed**, US-12.2.2
    (the monthly GST report, its release slot unconfirmed) and US-12.1.2 is **Retired**
    (it is in the diff list only to confirm it stayed so); OQ-59, OQ-33 and OQ-31 were answered and
-   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. Anything later than a68f09b is the drift to absorb.
+   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. FT-12.2's wording changed at efe123c (owed by payers and the Parties AA bills; no change of substance). Anything later than efe123c is the drift to absorb.
 2. **Owner decisions** (the ROADMAP decisions table):
    - **D8 (ageing and an "Overdue" view): answered** at the 2026-10-01 meeting (OQ-59, "let's go with
      your recommendation for now"). Build the flat list, oldest first, no buckets, no age chips, no
@@ -158,7 +158,7 @@ so `PERSIST_VERSION` is bumped.
      Contract's GST treatment is presentation and delivery only, so the report reads the stored foot
      GST and never recomputes it;
    - from **20a** and **21**: the one "who is invoiced" selector and the label the money rows use for
-     the party an invoice went to (the Contract holder's billable party, or the payer on the Booking);
+     the party an invoice went to (the Contract's billable Party, or the payer on the Booking);
      the rows read the invoice's own stored party, never re-derive it;
    - from **27**: the prepayment pair's states (generated at setup with its ledger pair and draft Xero
      pair, sent on the admin's approval), so a held (not yet sent) or withdrawn prepayment pair is
@@ -363,7 +363,7 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      `state.xero` (convention 9) or from `BillingCase` fields.
    - The figures (36's names in brackets), stated in a comment and in the Decisions log:
      - **Owed to you** (`owedToThem` = `awaitingCollection` + `dueNow`, that is, every payable not yet
-       paid out; FT-12.2: owed by patients and contract holders, read from the ledger). With work item 2's reading it **equals the Outstanding list's total to the cent**;
+       paid out; FT-12.2: owed by payers and the Parties AA bills, read from the ledger). With work item 2's reading it **equals the Outstanding list's total to the cent**;
      - **Awaiting collection** (`awaitingCollection`): billed but not yet received;
      - **Due to you now** (`dueNow`): collected, released and not yet paid out;
      - **Collected** (`collected`) and **Paid out to you** (`paidOut`; 36's strip label), to date.
@@ -433,8 +433,8 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
    - `OutstandingTable` (`data-shot="web-accounts-outstanding"`): one row per unpaid payable, oldest
      first, no grouping. Columns: Invoice date, Invoice (mono), Patient, Billable party, Stage (the
      `OUTSTANDING_STAGE_LABEL` word, plain text), Outstanding to you (mono, right). Leave any ACC
-     marker exactly as earlier phases left it (RV-20 is not this phase's; ACC is an ordinary Contract
-     holder after 18). Footer: one "Total outstanding"
+     marker exactly as earlier phases left it (RV-20 is not this phase's; ACC is an ordinary Party
+     after 18). Footer: one "Total outstanding"
      row with the count ("N invoices") and the sum, equal to "Owed to you". No bucket columns or
      totals.
    - Caption: "One row per invoice not yet paid to you, oldest first. A row stays until AA pays you.
@@ -761,7 +761,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
-  - the drift-check result against a68f09b (items changed or not; D8 built as answered; OQ-29's and
+  - the drift-check result against efe123c (items changed or not; D8 built as answered; OQ-29's and
     OQ-60's status, with the fee-never-nets rule relied on; US-12.1.2 Retired and 26's removal of
     `gstPeriod` confirmed; D9 and US-07.2.1 confirmed as 38a's, nothing List-side built here);
   - what was built, with the name map for later phases: `receivablesAgingFor`, `overdueAccountsFor`,

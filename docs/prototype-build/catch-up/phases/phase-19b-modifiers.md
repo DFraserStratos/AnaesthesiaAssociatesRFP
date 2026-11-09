@@ -1,8 +1,8 @@
 # Phase 19b · Modifiers: the RVG table, pre-applied age and included modifiers, explanations
 
 **Requirements covered:**
-[FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md) Record clinical billing data per Procedure (status 1; graded Contradicts; this phase closes its modifier half: the RVG code only where the Contract prices from RVG, start and finish times, BTM optional, received text never edited) ·
-[US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md) Choose optional modifiers, each with a short explanation (status 3; graded Contradicts) ·
+[FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md) Record clinical billing data per Procedure (status 1; graded Contradicts; this phase closes its modifier half: on an RVG pricing kind, modifiers each with a short explanation, and choosing none is a valid answer; the RVG code, times and modifiers step asked only on RVG kinds, which 21a's form collapse closes; start and finish times; the procedure text never edited) ·
+[US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md) Choose optional modifiers, each with a short explanation (status 3; graded Contradicts; now carries an "RVG kinds only" criterion, built by 21a's gate) ·
 [US-03.3.8](../../../../requirements-board/requirements/stories/US-03.3.8.md) Age modifier from the patient's age (status 3; graded Partial) ·
 [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Modifiers already included in base units (status 4, Agreed; graded Contradicts) ·
 [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier code master (status 4, Agreed; graded Contradicts) ·
@@ -24,12 +24,12 @@ Backstop only, finished by Phase 21: the "short explanation for any modifier cla
 [US-03.6.1](../../../../requirements-board/requirements/stories/US-03.6.1.md) (Mark a Booking
 complete).
 **Not this phase's:** the RVG code type-ahead and the RVG groups (Phase 19); the starting
-base and modifier units from the Contract line, procedure and RVG group, and the time tiers (Phase
-19a); the Contract (Phase 20); the multi-procedure modifier split (Phase 23); the pricing snapshot
+base and modifier units from the Contract, procedure and RVG group, and the time tiers (Phase
+19a); the Contract (Phase 20); the one pricing-kind predicate that hides the modifiers step on a fixed or open price (Phase 21a); the multi-procedure modifier split (Phase 23); the pricing snapshot
 (Phase 25); other billing lines and events, which take no modifiers (Phase 39b); loading and editing
 the masters from spreadsheets (Phase 42).
-**Depends on:** Phase 19a (the line, procedure, RVG group resolver with each value's layer, including
-the starting modifier units; Contract lines). Through 19a: Phase 19 (RVG groups under body sections
+**Depends on:** Phase 19a (the Contract, procedure, RVG group resolver with each value's layer, including
+the starting modifier units, read from the flat Contract). Through 19a: Phase 19 (RVG groups under body sections
 with base and modifier units, the RVG code type-ahead, the Procedure's optional RVG code), Phase 18 (the fee parity harness,
 `feeParity.test.ts` and its `__parity__/` fixtures), 15a (the warning routine, the Booking warning
 surfaces, "Mark complete" with no submit confirm step), 15b (ACTIVE for an assigned List), 15 (Booking
@@ -45,7 +45,8 @@ sheet (item 12b) before any capture work; the model and store action stay.
 **Confirm before building.** D43 is answered and OQ-95 part 2 is answered (Ben, 27 October; US-05.1.4
 and US-05.1.5 Agreed): age and the zero-unit included modifiers are pre-applied and removable, nothing
 else is pre-filled, nothing is locked, stacking has no limit. Build it as answered, with no provisional
-label and no switch. What stays open is the age band boundaries (OQ-95 part 1). Build D29's default,
+label and no switch. FT-03.3 and US-03.3.4 (5 November): on an RVG price the modifiers step is
+completed and choosing none is a valid answer, so no rule demands a modifier. What stays open is the age band boundaries (OQ-95 part 1). Build D29's default,
 keep the age and included rules in **one rule module** (item 4), and label the open part provisional in **one place**
 only: the header of the Admin Modifiers tab (item 12a).
 
@@ -90,17 +91,20 @@ pick, 23's multi-procedure split and 25's snapshot read them.
   the claim is not saved until it has one. A pre-applied modifier needs none unless the anaesthetist
   removes it and claims it again by hand. "Mark complete" also refuses a claimed optional modifier
   with no explanation, as the backstop for US-03.6.1 (finished in Phase 21).
-- **FT-03.3's modifier half**: the RVG code is recorded only where the Contract prices from RVG; times
-  are start and finish; BTM is optional; the received procedure text is never edited. The pricing and
-  procedure parts belong to Phases 19, 19a and 20: this phase checks the capture block shows no RVG code
-  or BTM entry where the Contract does not use them, and adds nothing the other phases own.
+- **FT-03.3's modifier half** (5 November): on an RVG pricing kind the modifiers step must be
+  completed and **choosing no modifier is a valid answer** (A20: nothing demands one, and completion
+  never fails for having none); on a fixed or open price no modifiers step is shown (US-03.3.4's "RVG
+  kinds only" criterion, US-03.3.9). This phase builds the records and explanations for every
+  Procedure and leaves the gate to **21a's one pricing-kind predicate**; it only checks that the
+  section reads that predicate once it exists, and adds no second one. Times are start and finish
+  and the procedure text is never edited (Phases 19, 19a, 20).
 - **What goes:** the ASA card and its seeding of modifier units (RV-22, superseding the 2026-07-22
   "ASA seeding values" ruling); the absorbed-modifier refusal and strike-through on hip and shoulder
   codes (RV-09, superseding the absorbed-P1 ruling); the "locked" reading of age and included
   modifiers (US-03.3.8 and US-05.1.4 as first built, D43 in part); and there is **no
   procedure-default pre-fill and no "untickable default modifiers"** (the 2026-10-02 reading and the
   2026-10-03 plan's version of Phase 19, both superseded by US-05.1.4 on 8 October).
-- **Starting modifier units still come from Phase 19a's resolver** (Contract line, then procedure,
+- **Starting modifier units still come from Phase 19a's resolver** (Contract, then procedure,
   then RVG group; 0 in every seeded row). The M total is that starting value plus the itemised list.
   The existing manual M adjustment (`modifierUnitsCaptured` overridden) is kept unchanged: gaps.json
   lists it against US-03.3.4 ("Combined M total can still be overridden by stepper"), but it is an
@@ -108,15 +112,14 @@ pick, 23's multi-procedure split and 25's snapshot read them.
   Logged on the owner's review list.
 - **One place for the pricing model.** The modifier types, the age and included rules
   and the M total live in `aa-prototype/src/domain/billing` (plus the generated seed
-  table), behind types the UI reads, so a v5 of the draft design, or OQ-95 part 1's answer, stays a contained
-  edit. The reference shape is the draft technical design v4: its Booking procedure fields
-  ([AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md), region
-  `booking-procedure-fields`: one `modifier_note`, required when modifier units are claimed) and its
-  ERD ([AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md), region
-  `booking-procedure`). The catalogue goes beyond the draft with a record per modifier (the
-  domain model's BOOKING_MODIFIER, MODIFIER and the RVG group's "included" link, labelled "our
-  addition, not in draft ERD AR-30"); build the catalogue's shape. The plain-language guide
-  ([AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md), region `modifiers`) is
+  table), behind types the UI reads, so OQ-95 part 1's answer stays a contained
+  edit. The reference shape is the flat ERD
+  ([AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md), region `procedure`) and
+  the contract model proposal ([AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md)
+  5.7), with AR-34 for the table. Build the flat model: never Contract lines, versions or staged
+  changes (Donald's decisions D1 to D11; AR-28, AR-29 and AR-30 are Retired). The catalogue's record
+  per modifier (the domain model's BOOKING_MODIFIER, MODIFIER and the RVG group's "included" link) is
+  the shape. The RVG's plain-language guide (AR-34's modifiers file) is
   true as written except where the directors overtook it: modifiers are no longer "never added
   automatically" (age and included ones are), and its page-12 "typical and maximum values for each
   body area" guidance does not exist in the 2021 RVG, whose table is flat (change log 2026-10-07,
@@ -131,7 +134,7 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
-   (the baseline is `a68f09b`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the baseline is `efe123c`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks, plus the "Procedure" (Modifiers bullet) and "RVG groups, procedure
    list and modifier master" sections of `requirements-board/requirements/domain-model.md`. If an item
    changed, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work
@@ -141,10 +144,7 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
    shapes or a changed P1 list. US-05.1.5 asks for a spot-check against the PDF: compare five rows
    (PA3, A1, OB4, POC2a, NC2) with `NZSA RVG 2021.pdf` pages 12 and 13 (artifact AR-16) and record the
    result in PROGRESS. A disagreement is reported, never fixed by hand in the generated table.
-   Also check whether the draft pricing design has moved to a v5 since `d436947` (`git log` on
-   `requirements-board/requirements/artifacts/AR-29.md`, `AR-30.md` and their files); if it has,
-   re-read regions `booking-procedure-fields` (AR-29) and `booking-procedure` and `rvg-group` (AR-30)
-   and adjust item 3's types in the one place.
+   (The draft technical design AR-29 and AR-30 is Retired: no v5 check.)
 3. Check `docs/discovery-reference/Data files/` (`git log` on it) for Vanessa's list of AA's own
    modifiers. If it has landed, seed those rows as `source: 'aa'` through the same generator path (a
    second source file), with values as given; if not, seed none.
@@ -211,11 +211,8 @@ modifier split, Phase 23). Artifacts:
 [AR-34](../../../../requirements-board/requirements/artifacts/AR-34.md) (the modifiers file, its
 sections "2a. The modifying factors table (pages 12 to 13)", "4. Codes whose base units include a
 modifier" and "Uncertainties and gaps to confirm"; the CSV),
-[AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md) region `modifiers`,
-[AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md) region
-`booking-procedure-fields` (and `resolver-layers`, `null-handling` for the starting modifier units),
-[AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md) region `booking-procedure`
-(and `rvg-group`). Evidence: `requirements-board/requirements/notes/2026-10-06-aa-directors-meeting.md`
+[AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) region `procedure` (the flat
+ERD) and [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) 5.7 (the proposal). Evidence: `requirements-board/requirements/notes/2026-10-06-aa-directors-meeting.md`
 items 3 and 8 (only modifiers that cannot be removed are applied; age; included modifiers; "All else
 are optional"); `2026-10-07-pricing-model-documents.md` items 12, 16, 30, 40, 43 and 45 (a short
 explanation per claimed modifier; the 30 codes; values not plain numbers; codes not keys; the findings
@@ -354,9 +351,9 @@ test.
      `includesModifierCodes` Phase 19 left is deleted** ("deleted by 19b"), with every
      reader of it (`modifierUnits`' refusal, the capture strike-through, its `seed.test.ts` check).
      There is no procedure master (US-05.1.6 Retired): a group's optional modifier-units figure and a
-     Contract line's are starting values on the Procedure (19a, DM-43), never a pre-selection.
+     the Contract's are starting values on the Procedure (19a, DM-43), never a pre-selection.
    - `SeedMasters` and `AppState['masters']`: `modifierCodes` becomes `modifiers` keyed by id.
-   - Keep these types in `types.ts` beside 19a's Contract line and resolver types, so 25's snapshot
+   - Keep these types in `types.ts` beside 19a's Contract and resolver types, so 25's snapshot
      and 42's loader read one shape.
 
 4. **One modifier rule module**, `src/domain/billing/modifiers.ts`, replacing `modifierCodes.ts` and
@@ -447,7 +444,7 @@ test.
    for each claim whose explanation is blank, field `modifierClaims` with the modifier id, message
    "Add a short explanation for {code}, or remove it." It also fails a claim needing units with none.
    A refused duplicate of a pre-applied modifier is not a failure (it adds nothing and the capture section
-   shows it with Remove). Pre-applied modifiers never need an explanation, and a removed one is no failure. Tests: a seeded claim with a
+   shows it with Remove). Pre-applied modifiers never need an explanation, a removed one is no failure, and a Procedure with no modifier at all passes (FT-03.3). Tests: a seeded claim with a
    blank explanation blocks "Mark complete" and submit; adding the explanation clears it; the pristine
    seed has no such failure anywhere (so no seeded List stops submitting).
 
@@ -596,6 +593,7 @@ test.
     shows A1 pre-applied and removable;
   - claiming ASA III, or any other optional modifier, asks for its short explanation before the claim
     saves.
+- A fixed-price Booking shows no modifiers step: that is 21a's collapse, not a 19b trigger.
 - The PWA reaches all three through the shared capture components, so no PWA trigger is needed, and no
   mobile beat waits on the office or a colleague, so no PWA stand-in. 15a's "Raise sample warnings" is
   unchanged (this phase adds no warning rule).
@@ -605,7 +603,7 @@ test.
 ## Out of scope
 
 - The RVG code type-ahead, RVG groups and their base and modifier units (Phase 19); the
-  resolver and the Contract line's modifier units, including whether a line that sets modifier units
+  resolver and the Contract's modifier units, including whether a Contract that sets modifier units
   replaces or adds to the itemised claims (19a and 24; this phase adds 19a's starting value to the
   itemised total and logs the reading).
 - The multi-procedure rule's modifier split (Phase 23, D26), and modifiers on an additional Procedure,
@@ -634,7 +632,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       audit entry, and is claimable on a mobile Booking at once.
 - [ ] RVG groups: the 20 Neurosurgery and Spine groups show "P1 · 0" under Included modifiers; no
       Absorbs column.
-- [ ] FT-03.3: a Contract that does not price from RVG shows no RVG code entry; times read start and finish; the procedure text is not editable.
+- [ ] FT-03.3: on an RVG-priced Booking, completing with no modifier at all is accepted; times read start and finish; the procedure text is not editable. (The fixed-price collapse is 21a's to check.)
 - [ ] Mobile (Dr Souter) → Tue 21 Jul PM → Margaret Ellison: A1 is pre-applied with "From the patient's
       age (72) on the procedure date" and a Remove action; nothing else is selected; there is no ASA
       card. Remove takes A1 off (M drops by 1, audited) and "Put back" restores it. After "Finish
@@ -729,7 +727,9 @@ matches what was built:
 | [US-03.3.8](../../../../requirements-board/requirements/stories/US-03.3.8.md) age modifier | none (create it) | Create, `captured`. `age-applied` on web and mobile at `BK0009` (Ellison, 72), highlight the A1 row (`capture-modifier-applied`); caption "A1 is applied from the patient's age and can be removed"; a second state `age-removed` (Remove tapped, "Put back" showing) |
 | [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) included modifiers | captured · admin-rvg-absorbs, web-/mobile-absorbed-positioning (hip and shoulder struck through: retired) | `captured` (now Agreed), re-pointed. Drop both old shots. Admin `rvg-included` (highlight `masters-rvg-included`; "P1 is included in every Neurosurgery and Spine group's base units"); web and mobile `included-applied` at the `includedModifierBooking` Booking, states `selected` (P1 at 0 units, removable; highlight the P1 row) and `not-addable` (picker open, P1 "Applied"; "An included modifier cannot be added twice") |
 | [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) modifier code master | partial · admin-modifier-codes (stale caption; VM1, TTE, PACU1, EAA1, POC, NC missing) | `captured`. Re-shoot `modifier-codes` on the Modifiers tab (`masters-modifiers`; click re-pointed to "Modifiers"): the 30 RVG rows as printed, the Applied column, "AA's own"; caption "The RVG modifier table as printed, plus AA's own"; add state `add-aa` (sheet open); the tab's one provisional note reads "the age bands" only. Drop the partial reason; keep `partial` ("Vanessa's list not supplied; the office adds AA modifiers one by one") only if the review judges it material |
-| [FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md) clinical billing data | no recipe row | No change here: shown through its stories (US-03.3.1 and US-03.3.3 below, US-03.3.4) |
+| [FT-03.3](../../../../requirements-board/requirements/stories/FT-03.3.md) clinical billing data | no recipe row | No change here: shown through its stories (US-03.3.1 and US-03.3.3 below, US-03.3.4); its RVG-kinds-only gate is Phase 21a's |
+| [US-03.3.9](../../../../requirements-board/requirements/stories/US-03.3.9.md) RVG detail follows the pricing kind | none (create it) | No change here (Phase 21a owns it and creates its recipe) |
+| [US-03.3.10](../../../../requirements-board/requirements/stories/US-03.3.10.md) See what the price comes to | none (create it) | No change here (Phase 24 owns it and creates its recipe) |
 | [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) | captured · web-rvg-picker, mobile-rvg-picker | No change here (Phases 19 and 20 own it); `--dry` after `AsaCard` leaves the `Pair`, re-point only selectors this phase moved |
 | [US-03.3.3](../../../../requirements-board/requirements/stories/US-03.3.3.md) | captured · web-times, mobile-times | No change here (not this phase's); `--dry` confirms `capture-times` is still found |
 
@@ -797,6 +797,7 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
 - **One provisional label** (OQ-95 part 1, the age bands, on the Admin Modifiers tab), none elsewhere. Plus the usual: teal-only
   actions, no dashes in copy, mobile sheets not modals, `pwaPurity` green, every write audited and
   through `mutate()`, `PERSIST_VERSION` bumped once.
+- **No modifier required.** An RVG-priced Procedure with none claimed completes; no second pricing-kind predicate exists here.
 - **No gold-plating.** No modifier loader, no RVG row editing, no warning rule, no body-area guidance,
   no multi-procedure split, no snapshot, no change to the manual M adjustment.
 
@@ -846,7 +847,8 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
   - 21: finishes US-03.6.1 around the explanation rule this phase added; the review screen shows the
     itemised modifiers with their explanations.
   - 23: reads `resolveModifiers(...).units` (pre-applied and claimed) for the 3/2/2 split, from the primary.
-  - 24: decides whether a Contract line's modifier units replace the itemised total ("some Contracts
+  - 21a: its pricing-kind predicate hides the modifiers step on a fixed or open price; this phase builds the records for every Procedure and demands none.
+  - 24: decides whether a Contract's modifier units replace the itemised total ("some Contracts
     zero modifiers"); a fixed price ignores modifiers for price.
   - 25: snapshots `modifierItems` (codes, units, explanations, origins) and the starting value's
     layer.

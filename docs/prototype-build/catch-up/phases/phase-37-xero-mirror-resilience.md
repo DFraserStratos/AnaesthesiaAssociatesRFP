@@ -35,8 +35,11 @@ the restyle) and
 (audit trail; since `60e2d1e` its list names invoices and credit notes, not payments or disbursements,
 "It's done in Xero". The prototype still audits every write through `mutate()` (convention), so the
 detection and queue rows stay; no copy claims the audit trail is required to cover payments).
-No DM or RV item is owned here. The phase builds on
-[DM-18](../analysis/domain-model-delta.md#dm-18) (the ledger pair, Phase 36); no
+One review finding is owned here: [RV-40](../analysis/reverse-check.md) (new 5 November; the office's
+in-app "Run payables" button makes the payment, where Xero pays and the system only tracks it). It
+names the same in-app payout as FT-10.2, so work item 8 closes both and the PROGRESS entry names both.
+No DM item is owned. The phase builds on
+[DM-18](../analysis/domain-model-delta.md#dm-18) (the ledger pair, Phase 36); no other
 [reverse-check](../analysis/reverse-check.md) finding covers Xero resilience. The FT-13.3 placement
 caveat is part of RV-17 (Phase 44's sweep); this phase removes it from the monitor because it rewrites
 that copy anyway.
@@ -128,7 +131,7 @@ record.
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-09,FT-10.2,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,OQ-47,OQ-111,US-09.1.1,US-09.3.1
    ```
 
-   (It diffs the plan baseline, catalogue commit `a68f09b`, to the working tree.)
+   (It diffs the plan baseline, catalogue commit `efe123c`, to the working tree.)
    Read the hunks for EP-09, FT-10.2, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
    US-10.2.1, US-10.2.3, US-10.2.4, US-08.3.2, FT-13.3, US-13.3.1, US-13.3.2, US-13.5.2, OQ-47 and the
    domain-model lines on Xero, the payables run and bank reconciliation. At `7cd7802` the Xero items
@@ -428,7 +431,7 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
    after restore exactly one receipt and a payable leg released (and a Xero ACCPAY authorised) for
    exactly the amount received; the poll catching that same payment first then the queue draining is
    still one receipt; `setXeroOutage` and `retryXeroItemNow` actor guards; determinism.
-8. **Disbursement detected from Xero** (US-09.2.4, FT-10.2; OQ-111 answered, D53):
+8. **Disbursement detected from Xero** (US-09.2.4, FT-10.2, RV-40; OQ-111 answered, D53):
    - One detection point: `recordDisbursement` (below) is the only code that records a disbursement,
      whoever paid (a Xero bill-paid webhook, the poll, and later 39a's weekly run). AA Holding account payables (27a) are never
      paid by the run: a payable leg is payable only once 27a's journal transfer has released it, so `payBillsInXero` and the
@@ -1011,7 +1014,7 @@ amends (listed below).
 - Conservation on every pair, seeded and live, through outage, void and remittance paths: disbursed at
   most released, released at most received, received at most due; a voided receivable takes no
   payment; the Phase 36 ledger stays in balance.
-- Detection, not performance (FT-10.2, US-09.2.4): no engine code path writes the payable leg's disbursement except
+- Detection, not performance (FT-10.2, RV-40, US-09.2.4): no engine code path writes the payable leg's disbursement except
   `recordDisbursement`; the Billing monitor's payables list is read-only and its badged button pays in Xero, never in-app, with no `disbursePayables` caller left but the Xero side; "missed"
   really leaves the engine behind until the poll, with the payment's own date.
 - The scope fence: nothing in the engine imports `domain/xeroSim`; the engine has no remittance
@@ -1067,7 +1070,7 @@ amends (listed below).
   later phase), and the review pass.
 - **Decisions log:**
   - "The payables run happens in Xero; the engine detects each disbursement by bill-paid webhook or
-    poll" (US-09.2.4, FT-10.2; OQ-111 answered, D53, the detection in one place). Amends the 2026-07-24 Phase 10 decision (5) (payables run as an unbadged office
+    poll" (US-09.2.4, FT-10.2, RV-40; OQ-111 answered, D53, the detection in one place). Amends the 2026-07-24 Phase 10 decision (5) (payables run as an unbadged office
     action): the Billing monitor lists payables awaiting Xero's run, read-only, and its button is badged Simulated
     Xero. The 2026-07-29 "S3 invoice-local settlement" shortcut keeps its one click but now uses the
     Xero-side bill payment.

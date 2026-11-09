@@ -1,13 +1,13 @@
 # Phase 40 · Patients: mandatory NHI, balance warning, patient view
 
 **Requirements covered:**
-[EP-11](../../../../requirements-board/requirements/stories/EP-11.md) Patients and billable parties (closes here) ·
+[EP-11](../../../../requirements-board/requirements/stories/EP-11.md) Patients and billable parties (closes here; 5 November: insurers and funders are Parties like any other holder, the Contract bills its holder or the payer on the Booking, and a Booking names its insurer or funder, all 18's and 21's, which the warning's payer gate reads) ·
 [FT-11.3](../../../../requirements-board/requirements/stories/FT-11.3.md) Patient outstanding balances and alerts (a mild alert under the threshold, a strong one over it, a mild one for a credit balance; **anaesthetists also see the alert, on the Booking in their List**) ·
 [US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) Patient record keyed on NHI (reworked 2026-10-16 and 19: **the NHI is the patient identifier throughout, with no blank**; one record per NHI; any internal id is only an implementation detail; the NHI never reaches Xero; **demographics and ethnicity are held and shown only where supplied, never required**) ·
 [US-11.1.4](../../../../requirements-board/requirements/stories/US-11.1.4.md) Patient without NHI (reworked: **the NHI is mandatory, a Booking cannot be saved without one, an incoming booking without one waits at intake and creates no Booking and no patient**; **while it waits, 33a's stub stands in its place on its List**: OQ-118 answered 4 November, D66) ·
 [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) Intake rows waiting for an NHI (retitled from "Missing NHI problem list": the office's view over Phase 33's unmatched queue; each row shows its 33a stub on its List; the request's To follows OQ-127 part 5) ·
 [US-11.3.1](../../../../requirements-board/requirements/stories/US-11.3.1.md) Patient outstanding bills view ·
-[US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) Alert on booking a patient with unpaid bills (the rules are still "to check with Ben"; OQ-74's answer: days from the invoice date, a credit balance is mild, yellow versus red; **the anaesthetist sees the alert on the Booking in their List, the mild one as a colour code**; it says the threshold is fixed until AA asks for a settings page) ·
+[US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) Alert on booking a patient with unpaid bills (the rules were restated to Ben and Vanessa on 5 November and neither changed; OQ-74's answer: days from the invoice date, a credit balance is mild, yellow versus red; **the anaesthetist sees the alert on the Booking in their List, the mild one as a colour code**; it says the threshold is fixed until AA asks for a settings page) ·
 [US-11.3.3](../../../../requirements-board/requirements/stories/US-11.3.3.md) Follow-up tools (and **a free-text note on a List or Booking that anyone, office or anaesthetist, can write and everyone who opens it sees**) ·
 [US-13.2.2](../../../../requirements-board/requirements/stories/US-13.2.2.md) Per-patient balance (attributed to the patient whoever pays) ·
 [US-03.1.5](../../../../requirements-board/requirements/stories/US-03.1.5.md) Anaesthetist sees the patient's NHI (always present now; no "NHI missing" state) ·
@@ -28,6 +28,7 @@ Read alongside (not closed here):
 [OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (**Answered** 2026-10-16 and 19, owner decision **D11**: NHI mandatory, no blank),
 [OQ-118](../../../../requirements-board/requirements/questions/OQ-118.md) (**answered** 4 November, owner decision **D66**: the row waits at intake and a stub, not a Booking, stands in its place on its List; built by 33a),
 [OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) (**open**, owner decision **D74**: contacts by room or by surgeon; built default, the room's contact email, read through 17a's helper),
+[OQ-134](../../../../requirements-board/requirements/questions/OQ-134.md) (**open**, new 5 November, owner decision **D80**: do overdue alerts include the outstanding prepayment alert; built default, two rules shown together: this phase's balance alert beside 27's prepayment warning, each in one place),
 [OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) (the Contract bills its holder when the holder pays AA, otherwise the payer on the Booking),
 [OQ-41](../../../../requirements-board/requirements/questions/OQ-41.md) and [OQ-74](../../../../requirements-board/requirements/questions/OQ-74.md) (answered; **D24**),
 [OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (answered: no NHI or PII in Xero, only a unique id),
@@ -36,7 +37,7 @@ Read alongside (not closed here):
 **Depends on:** 15a (`WarningRule`, `WarningFacts`, `WARNING_RULES`, `evaluateWarnings`,
 `appSettings.warningRules` and its backfill, `warningFactsFor`, `warningsForBooking`, `openWarnings`,
 `clearWarning`, the to-do list, `WarningTriangle`, `WarningsPanel`, `WARNING_SAMPLES`,
-`SEED_WARNING_SAMPLE_BOOKINGS`), 33 and 34 (the rows: `ImportRow` with `corrections`,
+`SEED_WARNING_SAMPLE_BOOKINGS`), 17a (a room may hold no email; its one helper returns a room's contact email, empty when none is held; D74), 33a (stubs on a List and their resolve path; through it 33) and 34 (the rows: `ImportRow` with `corrections`,
 `correctImportRow`, `suggestDecision`'s derived `waitingForNhi`, `matchingQueue`, `decideImportRow`,
 `stageImportRows`, `importHospitalDownload`, `HOSPITAL_DOWNLOAD_SAMPLES`; 34's rebuilt S1 where Sarah
 Mitchell's St George's row is matched and created), 36 (`patientPosition` and `patientLedgerPosition`:
@@ -45,10 +46,10 @@ rows carry the billable party and a signed outstanding) and 39 (a credited pair 
 anaesthetist's own credit note, US-08.6.5). By the roadmap order 14 (the trigger registry,
 `OFFICE_ACTOR`, `OFFICE_SIMULATION_ACTOR`, `store/officeStandIn.ts`), 15 (`createBooking`,
 `ManualBookingForm`, `AddBookingFlow`), 15b (an assigned List is ACTIVE, never "DRAFT"), 17 (surgeons'
-rooms with a contact email and phone, the hospital contact email), 17a (a room may hold no email; its one helper returns a room's contact email, empty when none is held; D74), 20a (`Procedure.sourceTexts`, the
+rooms with a contact email and phone, the hospital contact email), 20a (`Procedure.sourceTexts`, the
 three-part stack), 21 (`Booking.payer` (`BookingPayer`), `setBookingPayer`, `CounterpartyKind`
 `'payer'`, `billablePartyForProcedure`, `isPayerBilled`, the child-payer rule), 22 (`resendInvoice` and
-its send history), 27 (the prepayment pair created at generation), 31, 35 (`mailto` builder in
+its send history), 27 (the prepayment pair created at generation, and its `prepaymentUnpaid` warning rule, US-06.3.2), 31, 35 (`mailto` builder in
 `src/domain/updateEmail.ts`, as-at views), 38a (`src/domain/bookingSearch.ts`, `patientMatches`) and 38b.
 **Estimated:** 2 sessions, the upper limit. If session 2 cannot finish, stop green after item 14,
 tell the user what remains and let them decide whether to split it; never cut coverage silently.
@@ -109,14 +110,14 @@ who was billed.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67,OQ-118,OQ-127,FT-02.6
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67,OQ-118,OQ-127,OQ-134,FT-02.6,US-06.3.2
    ```
 
-   Already folded into this plan (changes up to `a68f09b`, so not drift):
+   Already folded into this plan (changes up to `efe123c`, so not drift):
    - **D11 / OQ-49 answered (16 and 19 October):** the NHI is mandatory with no blank and no pending
      state; an incoming row without one waits on 33's queue; the earlier problem list of Bookings,
      the provisional patient and the authorise block are dropped. US-11.1.1 now makes the NHI the
@@ -131,14 +132,18 @@ who was billed.
      by AA): US-11.1.1, US-11.1.4 and US-11.1.5 gain the stub criterion and DM-30 the stub; built as
      answered, 33a's stub beside each waiting row. OQ-127 (D74) is open: the request's
      To is the room's contact email through 17a's helper, the main room's for a surgeon at more than one
-     room with the others offered (part 5; item 6).
+     room with the others offered (part 5; item 6). **5 November (efe123c):** EP-11 says insurers and
+     funders are Parties and the Booking names its insurer or funder (21's; no change here); US-11.3.2's
+     rules were restated by Ben and Vanessa and left unchanged, so "still to check with Ben" is gone;
+     OQ-134 (D80, open) is new: the balance alert and 27's prepayment warning are two rules shown
+     together (item 3, item 13).
    - Earlier and still in force: the payer on the Booking (21, OQ-67: the Contract bills its holder
      when the holder pays AA, otherwise the payer on the Booking; no `Procedure.payer`), DM-47 merged
      into DM-23, ACTIVE Lists (15b), 20a's source wording, 27's prepayment pair at generation, 39's
      credits (including the anaesthetist's own credit note), OQ-74 answered (no "provisional (OQ-74)"
      caption anywhere).
 
-   If an item changed after `a68f09b`, re-read it and adjust the work items; re-run the gap analysis for
+   If an item changed after `efe123c`, re-read it and adjust the work items; re-run the gap analysis for
    that item only, per `../README.md`. If an item is now Retired or Future, drop the work items that
    serve only it and note it in PROGRESS.md. Record the result in the phase entry.
 2. **D11 is answered: build it, no default and no caption.** Check OQ-49 still reads mandatory. No
@@ -147,8 +152,8 @@ who was billed.
    path (it is Donald's answer for the build; log that AA has not seen it). **OQ-127 (D74) is
    open:** build the default (the request reads 17a's helper) and log it on the owner's list; if AA
    answered for contacts on the surgeon, only the helper's owner field moves.
-3. **US-11.3.2 (Verify), OQ-41 and OQ-74.** Build both answers: the age counts from the **invoice date**
-   (`invoiceAgeDays`, the only place the basis lives) and a **credit balance is a mild warning**. If Ben
+3. **US-11.3.2 (Agreed, rules restated 5 November, unchanged), OQ-41 and OQ-74.** Build both answers: the age counts from the **invoice date**
+   (`invoiceAgeDays`, the only place the basis lives) and a **credit balance is a mild warning**. If AA
    sets a different starting threshold, change only the rule's `defaultParams`. Record in the Decisions
    log, in two halves in the one rule file:
    - **Which earlier invoices count:** only receivables billed to the patient themself
@@ -165,6 +170,13 @@ who was billed.
      amounts** (US-15.0.6), read-only, following the live strength; the office's Clear on the to-do list
      does not hide it ("the alert stays until the balance is paid", Donald), and whether an anaesthetist
      can clear or annotate it is parked by the catalogue.
+   - **Beside the prepayment warning (OQ-134, D80, open; build its default, no provisional caption):** two
+     rules, shown together, each in one place: this rule says only what the patient's past invoices say,
+     27's `prepaymentUnpaid` only what this Booking's own prepayment says, and neither reads the other.
+     A Booking that carries both lists both in 15a's `WarningsPanel`, Admin Booking detail and Day to-do
+     list; the anaesthetist's chip shows the strongest balance alert beside 27's own prepayment strip.
+     One combined set of overdue alerts would be a small change in the shared panel. Log it on the owner's
+     list.
    - **The warning kind** (US-13.7.1 leaves it unset): `beforeProcedure`, in the one rule file.
    - **The threshold field against US-11.3.2 (fixed until a settings page) and US-13.7.4 (Future):** build
      the one Master data field and nothing else of the settings page; log the tension. If the owner
@@ -332,7 +344,8 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
      `balanceAlertForBooking` returns strong for Sarah Mitchell's Booking on Souter's List, still strong
      after the office clears it, mild for Tuilagi, none on another anaesthetist's List, and its text holds
      no amount or name; Heather Sinclair gives one mild credit warning; a guardian payer through `setBookingPayer` removes it and the patient restores
-     it; a Booking with the child-payer rule's warning and this one carries both.
+     it; a Booking with the child-payer rule's warning and this one carries both, and one with an unpaid
+     prepayment (27) and a balance warning carries two separate findings, each cleared on its own.
 
 4. **Model** (`domain/types.ts`; DM-30, DM-23).
    - `Patient.nhi` becomes **required** (string, normalised). Doc comment: the NHI is the patient
@@ -623,7 +636,8 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
       "No NHI" pill and gains a link to Waiting for NHI; its stub shows on its List (33a). McMurray's NHI-less row from 34 follows the same
       rule.
     - **Admin Booking detail:** the patient name links to the record; the balance warning shows in 15a's
-      `WarningsPanel` and triangle (office only); a guardian as payer on 21's payer sheet removes it at
+      `WarningsPanel` and triangle (office only), beside 27's prepayment warning as its own row when the
+      Booking has both (OQ-134, D80); a guardian as payer on 21's payer sheet removes it at
       once.
     - **Anaesthetist List and Booking (mobile and web):** `BalanceAlertChip` on the Booking row of the List
       and in the Booking detail, in `src/shared` so the PWA ships it; no amount, no Clear, no patient link.
@@ -781,6 +795,10 @@ owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Details differ: add a Booking for Sarah Mitchell (CQY9304) with a new address from the web form: the
       form says "Some details differ". No second patient exists. Patients, Follow-up, Details to review
       lists her; on her record, Apply with "Use incoming" updates the address.
+- [ ] Two rules together (OQ-134): on a Booking with an unpaid prepayment (27) for a patient who owes
+      (Raise sample warnings, or the S1 Booking), Admin Booking detail and the to-do list show the
+      prepayment warning and the balance warning as two rows, cleared separately; the anaesthetist's List
+      shows both.
 - [ ] On Admin Day, Raise sample warnings: the `multiWarning` Booking carries a strong balance warning
       beside the other rules' samples, and that Booking's anaesthetist sees the red alert on their mobile List. Clear sample
       warnings removes both.
@@ -814,7 +832,7 @@ this phase adds lines, it does not re-script them, and Phase 44 rewrites S1 to S
     the credit case, a guardian as payer, the threshold field in Master data, a shared note on the List
     from each side. Discovery points: whether
     the warning should also need this Booking's Contract to bill the patient, whether the anaesthetist's
-    colour code and money-free line is enough, whether staff can clear or annotate it (parked), the starting threshold (US-11.3.2 is still to check with Ben), and whether the
+    colour code and money-free line is enough, whether staff can clear or annotate it (parked), the starting threshold (Ben and Vanessa left the rules as they were on 5 November), whether the balance and prepayment alerts should be one combined set (OQ-134: built as two rules shown together), and whether the
     threshold should be editable at all (US-11.3.2 says fixed until a settings page).
   - **S5, a new optional beat, "no NHI, no Booking":** the add-booking form refuses a blank NHI; Patients,
     Waiting for NHI after the trigger (the patient as received, the rooms contact, Urgent, Email rooms);
@@ -850,7 +868,7 @@ The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS
 after the review pass and before the PROGRESS.md entry. Re-run
 `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 40` first: earlier phases may have changed
 these recipes. Every Booking shot is on an ACTIVE List (15b), with 20a's stack as it renders, and the
-record route is keyed by NHI. EP-11 and FT-11.3 have no recipe row (their shots are the stories'); confirm
+record route is keyed by NHI. EP-11 (restated 5 November) and FT-11.3 have no recipe row (their shots are the stories'); confirm
 with `recipe-status.mjs`. Rows for US-11.4.1 and US-11.4.2 are gone from this phase (Retired); US-11.1.4's and US-11.1.5's rows gain the 33a stub (4 November). Two old captions are replaced: US-11.1.4's "shown as NHI pending" and US-11.3.2's
 "Prior balance flag on a returning patient with unpaid invoices".
 
@@ -862,7 +880,7 @@ with `recipe-status.mjs`. Rows for US-11.4.1 and US-11.4.2 are gone from this ph
 | [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) Intake rows waiting for an NHI | absent (no shots) | captured. Admin shot `waiting-for-nhi` at `/admin/patients/waiting`: states `list` (after "Receive list with a missing NHI": two rows, one Urgent, the room's contact email and phone; highlight the urgent row), `add-nhi` (the sheet typing JKL1188: "Matches Losa Tuilagi ... no second one is made") and `ready` (the Booking on Dr Souter's List in the stub's place, matched to her single record). Add `stub` states (mobile and web List: the stub beside the waiting row's List; no amount). Caption "Intake rows waiting for an NHI, each a stub on its List, with the surgeon's rooms" |
 | US-11.2.1, US-11.2.2, US-11.2.3, US-11.2.4, US-11.4.3 | admin-default-payer, admin-guardian-payer, none and absent rows | no change here (Phase 21 owns them); re-run `--dry` |
 | [US-11.3.1](../../../../requirements-board/requirements/stories/US-11.3.1.md) Patient outstanding bills view | absent | captured. Admin shot `patient-invoices` on `/admin/patients/CQY9304`, highlighting the invoice table: every invoice across anaesthetists (paid under Dr Sharma, unpaid under Dr Souter) with Paid, Part paid, Unpaid pills and the balance |
-| [US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) Alert on booking a patient with unpaid bills | partial · prior-balance (billing monitor, `[data-shot=billing-prior-balance]`) | captured. Replace with `balance-warning`, setup `{ "scenario": "S1" }`: states `preview` (the matching row's preview before Create Booking), `to-do` (after Create Booking, the strong red warning on 15a's to-do list: $610.00, 98 days), `credit` (Admin phone advice for Heather Sinclair: the mild yellow credit preview) and `threshold` (Master data, the one field at 90). Admin only. Add `anaesthetist` states on mobile and web (Dr Souter's List after Create Booking: the strong red alert on Sarah Mitchell's Booking, a mild yellow colour code on Tuilagi's; highlight the chip; no amount, no Clear). Caption "Balance warning when booking a patient who owes AA, strong over the threshold, also shown on the anaesthetist's List". Drop the partial reason and the `billing-prior-balance` hook |
+| [US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) Alert on booking a patient with unpaid bills | partial · prior-balance (billing monitor, `[data-shot=billing-prior-balance]`) | captured. Replace with `balance-warning`, setup `{ "scenario": "S1" }`: states `preview` (the matching row's preview before Create Booking), `to-do` (after Create Booking, the strong red warning on 15a's to-do list: $610.00, 98 days), `credit` (Admin phone advice for Heather Sinclair: the mild yellow credit preview) and `threshold` (Master data, the one field at 90). Admin only. Add `anaesthetist` states on mobile and web (Dr Souter's List after Create Booking: the strong red alert on Sarah Mitchell's Booking, a mild yellow colour code on Tuilagi's; highlight the chip; no amount, no Clear). Add a `beside-prepayment` state (a Booking carrying 27's prepayment warning and this one, two rows). Caption "Balance warning when booking a patient who owes AA, strong over the threshold, also shown on the anaesthetist's List". Drop the partial reason and the `billing-prior-balance` hook |
 | [US-11.3.3](../../../../requirements-board/requirements/stories/US-11.3.3.md) Follow-up tools | partial · resend-invoice[ready, sent] | captured. Keep `resend-invoice` (ready, sent), add `resent` (the send history lists both sends, no "already emailed" refusal) and `follow-up-log` on `/admin/patients/CQY9304` (Log call, Set reminder, Resend, completed entries with who, when and invoice number). Add `shared-note` (mobile, web and Admin: a note written by one side and seen on the other, with author and time; `[data-shot=shared-notes]`). Drop the partial reason |
 | [US-13.2.2](../../../../requirements-board/requirements/stories/US-13.2.2.md) Per-patient balance | absent | captured. Admin shot `patient-balance` on `/admin/patients/CQY9304`, highlighting the balance tiles and By payer line (whole balance whoever pays, Billed to the patient, Other payers); add a `credit` state on Heather Sinclair ("In credit $260.00") |
 | [US-03.1.5](../../../../requirements-board/requirements/stories/US-03.1.5.md) Anaesthetist sees the patient's NHI | absent (no shots) | captured. Mobile and web shot `nhi-shown` (the List row and a Booking, e.g. Sarah Mitchell, NHI in mono above 20a's stack); web start `/web/lists/:listId`, mobile `/mobile/lists/:listId` and `.../bookings/:bookingId`; highlight the NHI line. No "missing" state, and no patient amount in either app (the balance alert is US-11.3.2's shot) |
@@ -913,7 +931,7 @@ anything settled in the Decisions log (as amended by this phase).
   allowlist (no DOB, NHI, money or notes).
 - **The internal id.** `hiddenInternalId` is the store key and Xero's ContactNumber only; it appears in no
   Admin screen, route, search result or copy. The NHI never enters Xero (`xeroNhi.test.ts` passes).
-- **The balance rule.** One 15a rule, never a block, never a separate alert store. Only a Booking whose payer
+- **The balance rule.** One 15a rule, independent of 27's `prepaymentUnpaid` (two rules shown together, OQ-134), never a block, never a separate alert store. Only a Booking whose payer
   on the Booking is the patient is checked (`checksPatientBalance`, the only gate; the Contract does not
   gate it), and only patient-billed receivables count toward the warning (`countsTowardPatientBalance`);
   hospital, insurer, holder, named-payer, AA fee and credited rows never count as owing; the Booking's own
@@ -959,12 +977,12 @@ anything settled in the Decisions log (as amended by this phase).
   the office's clearance; the shared note log beside the old single note field; OQ-118 built as answered (D66, Donald's answer, not yet seen by AA: 33a's stub beside each waiting
   row, Add NHI through 33a's path); OQ-127's default (the NHI request to the room's contact email via
   17a's helper, the main room's for a surgeon at more than one, else the hospital's, else empty; D74); `beforeProcedure` although US-13.7.1 leaves it
-  unset; the one threshold field although US-11.3.2 now says fixed and US-13.7.4 is Future; the urgent
+  unset; the one threshold field although US-11.3.2 now says fixed and US-13.7.4 is Future; OQ-134's default (the balance alert and 27's prepayment warning as two rules shown together, one place each; D80); the urgent
   constant (3 days); the NHI as route key with the internal id hidden; the "Office adds the NHI" PWA entry on the
   List rather than the Booking; no standalone "New patient" form; the waiting view as a filtered office
   view over 33's queue (US-11.1.5 says it could be folded into the queue if it adds nothing); who is the
   credit patient in the seed.
-- **Status row** for catch-up Phase 40 and a phase entry with: the drift-check result against `a68f09b`
+- **Status row** for catch-up Phase 40 and a phase entry with: the drift-check result against `efe123c`
   (items changed or not; D11 answered and built; OQ-74 built as answered, D24); what was built with a name
   map for later phases:
   - the `patientBalance` rule, its `thresholdDays` param and `setPatientBalanceThreshold`;
@@ -1001,6 +1019,7 @@ anything settled in the Decisions log (as amended by this phase).
   4. **New:** the anaesthetist sees the balance alert on the Booking in their List (mild a colour code),
      read-only and without amounts, from `balanceAlertForBooking`; the office's Clear does not hide it.
   4a. **New:** a shared append-only note log on a List and a Booking, writable by either side.
+  4a2. **New:** OQ-134 (D80, open): the balance alert and 27's prepayment warning are two rules shown together.
   4b. **New:** OQ-118 answered (D66): a no-NHI booking waits at intake with 33a's stub on its List; Add NHI resolves through 33a's path.
   5. **New:** only Bookings stamped at create or match carry the balance warning; strength is derived live.
   6. **New:** the threshold is the one warning parameter with a UI, one Master data field; the settings page
@@ -1025,5 +1044,5 @@ anything settled in the Decisions log (as amended by this phase).
     follow-up log; `patientSearch` must stay fast at full scale.
   - For **44**: S1 Beat 1's warning line, Beat 1d and the S5 beat were added here; re-read them in the
     rewrite and walk "Office adds the NHI" in the PWA-parity audit. If Ben changes the balance rule
-    (US-11.3.2 is still Verify), the switch points are the rule's `defaultParams`,
+    (restated 5 November, unchanged; OQ-134 open, D80), the switch points are the rule's `defaultParams`,
     `patientBalanceStrength`, `checksPatientBalance` and `countsTowardPatientBalance`.

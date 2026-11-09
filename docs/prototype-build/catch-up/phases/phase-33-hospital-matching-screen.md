@@ -12,9 +12,9 @@
 [RV-13](../analysis/reverse-check.md#rv-13-automated-modify-reschedule-and-cancel-from-hospital-messages-is-shown-working-with-a-day-move-applied-as-a-move) Automated modify, reschedule and cancel from hospital messages is shown working, with a day move applied as a move (Hide from demo: the canned S13 to S15 messages stage rows and never apply themselves, a day move is a cancellation plus a new Booking, and none is in the scripted demo). The old RV-28, which this phase also covered, left when the reverse check renumbered on 2026-10-20: its work is RV-13's, and the new RV-28 (office edits write through with no Save) is Phase 35's.
 Also touches, without closing:
 [US-02.1.5](../../../../requirements-board/requirements/stories/US-02.1.5.md) (Proposed; its only criterion is "No silent apply", met here for every row that arrives; one list a day for the next day is its cadence; bringing St George's and Southern Cross rows in without a hand import is Phase 34),
-[US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) and [DM-51](../analysis/domain-model-delta.md) (Phase 20a's source wording: every row decision that creates or changes a Booking writes the row's wording through 20a's `addSourceText` or `createBooking`'s source text, verbatim, added beside what the Procedure already holds, never overwriting it; the hospital's wording stays apart from the rooms'),
-[US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) (OQ-103 answered, D37; Phase 20a's stack: the text as received with the rooms' and the hospital's apart, the Contract and the RVG code where the Contract prices from RVG units; this phase puts it on the matching screen, which completes 20a's partial recipe),
-[US-04.3.4](../../../../requirements-board/requirements/stories/US-04.3.4.md) (the "matched" half: "Admins apply the Contract to each Procedure at booking setup, when the Booking is created or matched": the office picks holder, Contract and line in the row panel, the RVG code is the anaesthetist's, and a created Booking without a Contract waits on Phase 20's "Needs a Contract" list),
+[US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) and [DM-51](../analysis/domain-model-delta.md) (**retitled 2026-11-05: the hospital's procedure text replaces the rooms'**; Phase 20a's one procedure text per Procedure: every row decision that creates or changes a Booking writes the row's text through `createBooking`'s text input or 20a's replace helper, verbatim, with no check against the rooms' wording, the replaced text kept in the Booking's change history with its source; [US-02.5.8](../../../../requirements-board/requirements/stories/US-02.5.8.md), Phase 35's history screen, reads it),
+[US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) (OQ-103 answered, D37; Phase 20a's shared view: the procedure text, the invoice description, the Contract and the RVG code on RVG kinds; this phase puts it on the matching screen, which completes 20a's partial recipe),
+[US-04.3.4](../../../../requirements-board/requirements/stories/US-04.3.4.md) (the "matched" half: "Admins apply the Contract to each Procedure at booking setup, when the Booking is created or matched": the office sets where the invoice goes and the Contract through Phase 20's decided step rail in the row panel, the RVG code is the anaesthetist's, and a created Booking with no invoice destination waits on Phase 20's "Needs an invoice destination" list),
 [US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) (No contract (RVG) first; "There are no hospital, insurer or procedure default Contracts, and nothing is derived from the List's location", so a row's hospital never sets a Contract; US-04.3.6, the hospital setting the Contract, is Proposed and not built),
 [US-02.5.1](../../../../requirements-board/requirements/stories/US-02.5.1.md), [US-02.5.2](../../../../requirements-board/requirements/stories/US-02.5.2.md) (retitled "Reschedule to another day arrives as cancel and new Booking"), [US-02.5.3](../../../../requirements-board/requirements/stories/US-02.5.3.md), [US-02.5.4](../../../../requirements-board/requirements/stories/US-02.5.4.md) (retitled "Inbound changes accepted until the List is authorised") and [US-02.5.6](../../../../requirements-board/requirements/stories/US-02.5.6.md) (Future Work: the **automated** path, with [US-14.6.2](../../../../requirements-board/requirements/stories/US-14.6.2.md). This phase builds none of it. The office-decided new Booking, modification and cancellation on the matching screen are US-02.1.2, US-02.1.3 and FT-02.5's, and US-02.5.4's window, until AUTHORISED, is the one the office's decision runs in; their capture recipes become partial analogues, see Catalogue screenshots),
 [US-02.2.3](../../../../requirements-board/requirements/stories/US-02.2.3.md) (Future Work, new: detecting Bookings missing from a re-sent List; not built, a removal stays for the office to cancel by hand),
@@ -23,12 +23,12 @@ Also touches, without closing:
 [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on the Booking, Phase 21's: a Booking created from a row gets the patient as payer like any other; a row never names a guardian or a billable party),
 [US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) (the unpaid-balance alert "at Booking create or match": mild under and strong over the threshold counted from the invoice date, mild for a credit balance (D24), never a block; Phase 40 registers it as a rule in Phase 15a's warning routine and shows it on this screen),
 [DM-03](../analysis/domain-model-delta.md) (a Draft List can hold Bookings; "a matching-screen row can create one"),
-[DM-12](../analysis/domain-model-delta.md) (the insurer and approval number on the Booking, OQ-93 answered in part, D28, Phase 21's `Booking.insurerHolderId`, an insurer contract holder with no insurer master, and `insuranceApprovalNumber`; US-11.4.3 puts the approval number on the matching screen: a row's insurer and approval number, taken from the source data, show on the row and are recorded on the Booking by the office's decision as source data only: it never decides who is billed and is never matched against the Booking's Contracts, D28),
+[DM-12](../analysis/domain-model-delta.md) (the insurer or funder and approval number on the Booking, OQ-93, D28 extended by D7 on 5 November: the insurer or funder is a Party (no insurer master), Phase 21's field and `insuranceApprovalNumber`; US-11.4.3 puts the approval number on the matching screen: a row's insurer or funder and approval number, taken from the source data, show on the row and are recorded on the Booking by the office's decision; never who is billed, never matched against the Booking's Contracts, and only marking a path 'Suggested' on 21's step rail, D28, US-04.3.10),
 [RV-14](../analysis/reverse-check.md#rv-14-hl7-v2-to-fhir-simulator-live-drip-and-scenario-s1-built-on-them) and [RV-15](../analysis/reverse-check.md#rv-15-reliability-tooling-retries-dead-letter-queue-manual-intervention-residual-unbadged-nav-badge-patient-names-in-the-log) (the HL7/FHIR tooling keeps Phase 14's Future-scope badges; Phase 34 demotes it).
-**Changed since the plan was written** (2026-10-08 to 2026-10-20, catalogue `60e2d1e` to `d4db277`): the match key for a later update is the List's date, surgeon, location and session, then the patient (US-02.1.3, AR-21 `look-for-match`); every row shows its procedure wording as received and the Bookings it creates or changes keep it, **added beside** what the Procedure holds (US-02.1.2, US-02.5.7, Phase 20a); a created Booking carries **no default Contract** (OQ-78) and **no procedure to match** (OQ-99 answered, D33): the office picks the Contract in the panel or later from Phase 20's "Needs a Contract" list, and the RVG code is the anaesthetist's; the hospital sends one theatre list a day for the next day; a **day move is a cancellation plus a new Booking** (D62, OQ-87: Lists never move day, so the "Reschedule" change type and the S13 cross-List move go); a **row with no NHI waits** in the unmatched queue and creates no patient or Booking (D11, OQ-49 answered); approved changes apply **until the List is AUTHORISED** (US-02.5.4), so a submitted List is an ordinary target; the insurer is stored on the Booking from the source data (D28, Phase 21), not offered as an indication; the List states are DRAFT (a Draft List), ACTIVE, SUBMITTED and AUTHORISED (15b, 31); "blacklist" is Phase 17's private not-preferred pairing with a tier-ordered picker (D44). **Changed at `7cd7802`:** the Insurer master is retired (a row's insurer is an insurer contract holder, never an `InsurerId`; no `I-NIB`), US-11.4.3 shows the approval number on the matching screen, OQ-118 (D66) is open with the 19 October rule as the built default, and D51 stands with no final choice on 27 October. **Changed at `d436947`:** OQ-103 is answered (D37): the hospital's description a row brings **replaces the Procedure's invoice description** through 20a's helper, unless the chosen Contract line's description is filled in (it replaces both) or the office edited it; OQ-130 (D73) is open with its default built (an office edit is kept and a later description never replaces it; the office sees that a newer received description has arrived and can choose to use it); OQ-93 (D28) is answered further (the insurer is source data only: no hint when a row's insurer holds none of the Booking's Contracts, 23 October). **Changed at `a68f09b` (4 November, Donald's answers, for the build):** OQ-108 (D51): both intake sources are built and each row carries its source, hospital or rooms, so Phase 34's PDF rows use this screen; the 'hospital first, PDF inbox left alone' default is gone. OQ-118 (D66): a no-NHI row still waits and creates no Booking, and a stub shows on its List; Phase 33a draws it, this phase exposes the row's target List. The office's Contract choice in the row panel is Phase 20's step rail. The phase depends on 20a.
+**Changed since the plan was written** (2026-10-08 to 2026-10-20, catalogue `60e2d1e` to `d4db277`): the match key for a later update is the List's date, surgeon, location and session, then the patient (US-02.1.3, AR-21 `look-for-match`); every row shows its procedure wording as received and the Bookings it creates or changes keep it, **added beside** what the Procedure holds (US-02.1.2, US-02.5.7, Phase 20a); a created Booking carries **no default Contract** (OQ-78) and **no procedure to match** (OQ-99 answered, D33): the office picks the Contract in the panel or later from Phase 20's "Needs an invoice destination" list, and the RVG code is the anaesthetist's; the hospital sends one theatre list a day for the next day; a **day move is a cancellation plus a new Booking** (D62, OQ-87: Lists never move day, so the "Reschedule" change type and the S13 cross-List move go); a **row with no NHI waits** in the unmatched queue and creates no patient or Booking (D11, OQ-49 answered); approved changes apply **until the List is AUTHORISED** (US-02.5.4), so a submitted List is an ordinary target; the insurer is stored on the Booking from the source data (D28, Phase 21), not offered as an indication; the List states are DRAFT (a Draft List), ACTIVE, SUBMITTED and AUTHORISED (15b, 31); "blacklist" is Phase 17's private not-preferred pairing with a tier-ordered picker (D44). **Changed at `7cd7802`:** the Insurer master is retired (a row's insurer is an insurer or funder Party, never an `InsurerId`; no `I-NIB`), US-11.4.3 shows the approval number on the matching screen, OQ-118 (D66) is open with the 19 October rule as the built default, and D51 stands with no final choice on 27 October. **Changed at `d436947`:** OQ-103 is answered (D37): the hospital's description a row brings **replaces the Procedure's invoice description** through 20a's helper, unless the chosen Contract line's description is filled in (it replaces both) or the office edited it; OQ-130 (D73) is open with its default built (an office edit is kept and a later description never replaces it; the office sees that a newer received description has arrived and can choose to use it); OQ-93 (D28) is answered further (the insurer is source data only: no hint when a row's insurer holds none of the Booking's Contracts, 23 October). **Changed at `a68f09b` (4 November, Donald's answers, for the build):** OQ-108 (D51): both intake sources are built and each row carries its source, hospital or rooms, so Phase 34's PDF rows use this screen; the 'hospital first, PDF inbox left alone' default is gone. OQ-118 (D66): a no-NHI row still waits and creates no Booking, and a stub shows on its List; Phase 33a draws it, this phase exposes the row's target List. The office's Contract choice in the row panel is Phase 20's step rail. The phase depends on 20a. **Changed at `efe123c` (5 November, Donald's contract model decisions D1 to D11, made for the build; AR-28, AR-29 and AR-30 are Retired, so cite AR-58 and AR-61):** the hospital's procedure text now **replaces** the rooms' on the Procedure (US-02.5.7: no check against the rooms' wording; the replaced text goes to the Booking's change history with its source through 20a's helper), so the 'added beside' and 'side by side' wording is gone; the invoice description follows rooms', hospital's, then the Contract's invoice description (no lines), and an admin's edit always wins (OQ-130 answered, D73: no default, no provisional label); a created Booking waits on 'Needs an invoice destination', set through the decided step rail; the insurer or funder is a Party that only marks a path 'Suggested' (D7, D28).
 **Open questions:** [OQ-13](../../../../requirements-board/requirements/questions/OQ-13.md) (Open: the cadence is settled for now, one theatre list a day for the next day with no repeated updates; the format and fields per hospital are not, and the Contract and patient details sometimes do not come through; the 2026-10-07 update: a later update for the same booking is matched by "the date, the surgeon, the location, the slot" and staff "just say approve update"; built as labelled sample files, see the drift check). [OQ-109](../../../../requirements-board/requirements/questions/OQ-109.md) (are St George's and Southern Cross synced in the first release: Phase 34's). [OQ-34](../../../../requirements-board/requirements/questions/OQ-34.md) is Answered (the hospital download carries the most bookings).
-**Answered and built as answered:** [OQ-108](../../../../requirements-board/requirements/questions/OQ-108.md) (D51, 4 November: both intake sources are built, each landing on this screen; every row carries its source, hospital or rooms, and Phase 34 adds the PDF rows through it). [OQ-118](../../../../requirements-board/requirements/questions/OQ-118.md) (D66, 4 November: a no-NHI row waits and creates no Booking, and a stub shows on its List; 33a draws it, this phase exposes the row's target List). [OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (D11, 2026-10-16 and 19: the NHI is mandatory and a Booking cannot be saved without one; an incoming booking with no NHI waits on the matching screen's unmatched queue, creating no Booking or patient, until the office adds the NHI; Phase 40 makes the NHI required on every form and builds the office's view of waiting rows). [OQ-99](../../../../requirements-board/requirements/questions/OQ-99.md) (D33: there is no procedure to match; at setup the office identifies who pays, holder then Contract then line; the RVG code is optional and the anaesthetist's). [OQ-87](../../../../requirements-board/requirements/questions/OQ-87.md) (D62: a List does not move; a Booking moved to another day is a cancellation plus a new Booking, and detecting removals is US-02.2.3, Future Work). [OQ-93](../../../../requirements-board/requirements/questions/OQ-93.md) (D28, answered in part and then further: the insurer, an insurer contract holder, and the approval number are stored on the Booking from the source data and never decide who is billed; insurance does not narrow the Contract list and nothing matches the insurer against the Contracts, so a row carries **no insurer hint**; the missing approval number is the only insurance warning, Phase 21's; whether the anaesthetist sees the number itself or only that it is approved stays open, Phase 21's default). [OQ-103](../../../../requirements-board/requirements/questions/OQ-103.md) (D37, answered 23 October: the invoice description starts as the rooms' description, the hospital's replaces it whenever one arrives, the chosen line's, where filled in, replaces both, and the office edits it as free text; 20a's helper builds the chain, this phase applies the hospital's layer). [OQ-130](../../../../requirements-board/requirements/questions/OQ-130.md) (Open, D73: does a later default replace an office edit; **built default: an edit is kept**, and the row shows that a newer hospital description has arrived with a choice to use it). [OQ-44](../../../../requirements-board/requirements/questions/OQ-44.md) (a Draft List is a List with no anaesthetist; hospital, surgeon, day and session are all required; Bookings can be added before an anaesthetist is assigned; only the office assigns it, OQ-86 and D46), so "Create a Draft List" saves all four fields and puts the row's Booking on the new Draft List in the same decision. [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (No contract (RVG) is the one default, offered first; no hospital, insurer or procedure default Contracts), so a created Booking has no Contract until the office picks one. [OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) and D17 (the Contract bills its holder, or the payer named on the Booking), so a row never sets a billable party or a payer. [OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (the HPI CPN is the surgeon's unique index), so a row's surgeon resolves by HPI CPN first, then by name. [OQ-43](../../../../requirements-board/requirements/questions/OQ-43.md) (D44: private two-way pairing preferences; the office gets a soft not-preferred warning when it assigns a List, never a block), which "Create a List in a session" shows like every office pairing path.
-**Depends on:** Phase 20a (the received text kept apart by source: `Procedure.sourceTexts`, `SourceText`, `SourceTextChannel`, `addSourceText`, `createBooking`'s `sourceText` input and its "Type the procedure as told, or choose an RVG code." refusal, `procedureStackView` and `ProcedureStack` in `domain/billing/procedureStack.ts` and `shared/booking/`, `Procedure.invoiceDescription` with its recorded origin and the one helper `refreshInvoiceDescription` that builds the chain (D37), and its re-pointed "Fire hospital message" on the Booking routes) and Phase 31 (Draft Lists with the four required fields that hold Bookings, `createDraftList(..., 'hospitalRow')`, `pairingIssues` and Phase 30's conflict raising on every path). Through them: Phase 20 (one Contract per Procedure: `createBooking`'s optional Contract pick, `contractCandidatesFor` and its selectors, `ContractPickerSheet` with No contract (RVG) first, `setProcedureContract`, `needsContractBookings` and the "Needs a Contract" card; no billing route and no Procedure `insurerId`), Phase 19 (RVG groups with no procedure list: `rvgGroupId`, `pickRvgGroup`, the `CodePickerSheet` type-ahead), Phases 19a and 19b (starting values and the locked modifiers, refreshed by 20's actions), Phase 18 (holders, the AA code, the one stored No contract (RVG)), Phase 38a (the edit window until AUTHORISED, the office's and the anaesthetist's), Phase 17 (the surgeon master with `hpiId`, the HPI CPN; `rankAnaesthetistCandidates`, `AnaesthetistCandidates`, `NotPreferredWarning` and the acknowledgement on the office write paths), Phase 15a (the warning routine), Phase 15b (ACTIVE for an assigned List), Phase 14 (built: the registry, `useDemoTriggerContext`, `OFFICE_SIMULATION_ACTOR` in `store/demoActors.ts`, `store/officeStandIn.ts`, the PWA demo sheet and the Future-scope badges), Phase 15 (built: Booking vocabulary and `Booking.source`, whose `hospitalDownload` value the HL7/FHIR path stamps as an interim "until Phase 33", `integrationActions.ts` :161) and Phase 28 (Slots, `assignListToSlot`, `placeListOnSlot`, `slotFor`/`listInSlot`, and the S12/S13 park-on-no-List seam, which this phase replaces, with Phase 31's interim `pairingIncomplete` park if 31 left one). **Not guaranteed before 33** (outside its dependency chain, though normally done first by number): Phase 21 (the payer and the insurer with its approval number on the Booking: `Booking.payer`, `Booking.insurerId`, `setBookingInsurance`), Phase 23 (the primary Procedure) and Phase 25 (the AUTHORISED lock) and Phase 27 (the prepayment re-check on a change of Procedures, Contract or payer). Where a work item names them, use them if DONE; otherwise the row's wording goes on the Booking's first Procedure, the insurer stays display only, and the AUTHORISED refusal is today's `editRefusal` `listAuthorised`. Record which in the drift-check result. First phase of the Intake track; 34 and 35 build on it.
+**Answered and built as answered:** [OQ-108](../../../../requirements-board/requirements/questions/OQ-108.md) (D51, 4 November: both intake sources are built, each landing on this screen; every row carries its source, hospital or rooms, and Phase 34 adds the PDF rows through it). [OQ-118](../../../../requirements-board/requirements/questions/OQ-118.md) (D66, 4 November: a no-NHI row waits and creates no Booking, and a stub shows on its List; 33a draws it, this phase exposes the row's target List). [OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (D11, 2026-10-16 and 19: the NHI is mandatory and a Booking cannot be saved without one; an incoming booking with no NHI waits on the matching screen's unmatched queue, creating no Booking or patient, until the office adds the NHI; Phase 40 makes the NHI required on every form and builds the office's view of waiting rows). [OQ-99](../../../../requirements-board/requirements/questions/OQ-99.md) (D33: there is no procedure to match; at setup the office sets where the invoice goes and the Contract through 20's step rail; the RVG code is optional and the anaesthetist's). [OQ-87](../../../../requirements-board/requirements/questions/OQ-87.md) (D62: a List does not move; a Booking moved to another day is a cancellation plus a new Booking, and detecting removals is US-02.2.3, Future Work). [OQ-93](../../../../requirements-board/requirements/questions/OQ-93.md) (D28, answered in part and then further: the insurer or funder (a Party, D7) and the approval number are stored on the Booking from the source data and never decide who is billed; insurance does not narrow the Contract list and nothing matches the insurer against the Contracts, so a row carries **no insurer hint**; the missing approval number is the only insurance warning, Phase 21's; the anaesthetist sees the number and may change it on the day, answered 4 November, Phase 21's). [OQ-103](../../../../requirements-board/requirements/questions/OQ-103.md) (D37, answered 23 October: the invoice description starts as the rooms' description, the hospital's replaces it whenever one arrives, the chosen Contract's invoice description, where filled in, replaces both (no lines), and the office edits it as free text; 20a's helper builds the chain, this phase applies the hospital's layer). [OQ-130](../../../../requirements-board/requirements/questions/OQ-130.md) (Answered 5 November, D73: an admin's edit to the invoice description always wins, so a late hospital text never replaces it; the row shows that newer hospital text has arrived with a choice to use it, a convenience; built with no provisional label). [OQ-44](../../../../requirements-board/requirements/questions/OQ-44.md) (a Draft List is a List with no anaesthetist; hospital, surgeon, day and session are all required; Bookings can be added before an anaesthetist is assigned; only the office assigns it, OQ-86 and D46), so "Create a Draft List" saves all four fields and puts the row's Booking on the new Draft List in the same decision. [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (No contract (RVG) is the one default, offered first; no hospital, insurer or procedure default Contracts), so a created Booking has no Contract until the office picks one. [OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) and D17 (the Contract bills its holder, or the payer named on the Booking), so a row never sets a billable party or a payer. [OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (the HPI CPN is the surgeon's unique index), so a row's surgeon resolves by HPI CPN first, then by name. [OQ-43](../../../../requirements-board/requirements/questions/OQ-43.md) (D44: private two-way pairing preferences; the office gets a soft not-preferred warning when it assigns a List, never a block), which "Create a List in a session" shows like every office pairing path.
+**Depends on:** Phase 20a (the one procedure text per Procedure, never hand-edited: `createBooking`'s text input and its "Type the procedure as told, or choose an RVG code." refusal, the helper that replaces the text with the hospital's and writes the replaced one to the Booking's change history with its source (US-02.5.7; planned name `replaceProcedureText`, use the name 20a recorded), `procedureStackView` and the shared view in `domain/billing/procedureStack.ts` and `shared/booking/` (procedure text, invoice description, Contract with its pricing basis, RVG code), `Procedure.invoiceDescription` with its recorded origin and the one helper `refreshInvoiceDescription` for the order of defaults with an admin's edit always winning (D37, D73), its 'Hospital description arrives' action, and its re-pointed "Fire hospital message" on the Booking routes) and Phase 31 (Draft Lists with the four required fields that hold Bookings, `createDraftList(..., 'hospitalRow')`, `pairingIssues` and Phase 30's conflict raising on every path). Through them: Phase 20 (one Contract per Procedure and the decided step rail: `createBooking`'s optional Contract pick, `contractCandidatesFor` and its selectors, the rail (`ContractPickerSheet`; where the invoice goes is worked out from each Contract and never stored), `setProcedureContract`, `needsContractBookings` and the "Needs an invoice destination" list; no billing route and no Procedure `insurerId`), Phase 19 (RVG groups with no procedure list: `rvgGroupId`, `pickRvgGroup`, the `CodePickerSheet` type-ahead), Phases 19a and 19b (starting values and the locked modifiers, refreshed by 20's actions), Phase 18 (holders, the AA code, the one stored No contract (RVG)), Phase 38a (the edit window until AUTHORISED, the office's and the anaesthetist's), Phase 17 (the surgeon master with `hpiId`, the HPI CPN; `rankAnaesthetistCandidates`, `AnaesthetistCandidates`, `NotPreferredWarning` and the acknowledgement on the office write paths), Phase 15a (the warning routine), Phase 15b (ACTIVE for an assigned List), Phase 14 (built: the registry, `useDemoTriggerContext`, `OFFICE_SIMULATION_ACTOR` in `store/demoActors.ts`, `store/officeStandIn.ts`, the PWA demo sheet and the Future-scope badges), Phase 15 (built: Booking vocabulary and `Booking.source`, whose `hospitalDownload` value the HL7/FHIR path stamps as an interim "until Phase 33", `integrationActions.ts` :161) and Phase 28 (Slots, `assignListToSlot`, `placeListOnSlot`, `slotFor`/`listInSlot`, and the S12/S13 park-on-no-List seam, which this phase replaces, with Phase 31's interim `pairingIncomplete` park if 31 left one). **Not guaranteed before 33** (outside its dependency chain, though normally done first by number): Phase 21 (the payer and the insurer or funder Party with its approval number on the Booking: `Booking.payer`, the insurer or funder field, `setBookingInsurance`, and the 'Suggested' path on the rail), Phase 23 (the primary Procedure) and Phase 25 (the AUTHORISED lock) and Phase 27 (the prepayment re-check on a change of Procedures, Contract or payer). Where a work item names them, use them if DONE; otherwise the row's wording goes on the Booking's first Procedure, the insurer stays display only, and the AUTHORISED refusal is today's `editRefusal` `listAuthorised`. Record which in the drift-check result. First phase of the Intake track; 34 and 35 build on it.
 **Estimated:** 2 sessions. Session 1 is the model, the pure matcher, the fixtures, the store actions and the HL7/FHIR re-route, re-greened (work items 1 to 9): after it the demo still works, because the Integrations monitor shows each message as "Sent to matching", and a temporary check in `demoScenarios.test.ts` drives S1 through the store. Session 2 is the Admin matching screen with the stack, the triggers and PWA stand-in, Playwright, capture recipes and the demo guide (work items 10 to 17).
 
 ## Goal
@@ -75,30 +75,15 @@ This phase:
   theatre list, a later St George's update, a Southern Cross list and a manual sheet from Forte
   Health) while how each hospital provides its bookings is still open (OQ-13). Every row shows its
   **procedure text as received** in the table, and the row panel shows each Procedure as **Phase
-  20a's stack** (as received, Contract, RVG code), with what the row is missing named beside it;
+  20a's shared view** (procedure text, invoice description, Contract, RVG code), with what the row is missing named beside it;
 - applies a decision only through the existing guarded write paths, as the office actor, with the
   Booking's source (`hospitalDownload`) and a Booking-side history row naming the hospital row, so
   "recorded with its source" (FT-02.5, EP-02) is visible on the Booking. A decision applies while the
   List is ACTIVE or SUBMITTED, and is refused once it is AUTHORISED (US-02.5.4);
-- **keeps the wording as received**: a created Booking's Procedure starts with the row's wording
-  through `createBooking`'s `sourceText`; a matched row with wording the Procedure does not already
-  hold **adds it beside** the earlier texts through `addSourceText` (US-02.5.7: never edited, never
-  overwritten; the hospital's channel stays apart from the rooms'). The hospital's wording never
-  changes the Contract or the RVG code. It does change the **invoice description**, in one place only
-  (OQ-103 answered, D37): when a row brings a description, 20a's `refreshInvoiceDescription` makes it
-  the Procedure's invoice description, unless the chosen Contract line's description is filled in
-  (that layer wins) or the office edited it (kept; OQ-130's default, D73, with a note that a newer
-  hospital description has arrived and a choice to use it);
-- **sets no Contract and no RVG code by itself**: a created Booking carries no Contract (OQ-78: no
-  hospital default, nothing derived from the location) and, unless the office picks one, no RVG code
-  (OQ-99 answered, D33: there is no procedure to match). The row panel offers the office Phase 20's
-  Contract choice (Phase 20's step rail) and, quietly, Phase 19's RVG code type-ahead, both
-  optional; a Booking left without a Contract lands on Phase 20's "Needs a Contract" list
-  (US-04.3.4). The hospital's insurer (an insurer contract holder, no insurer master) and approval number,
-  when the row carries them, **show on the row** (US-11.4.3) and are recorded on the Booking by the
-  decision as source data (D28, Phase 21), never as who is billed and never matched against the Booking's Contracts (no hint, 23 October);
-- widens what a Modification row can change to patient (name, date of birth), the procedure wording
-  (added beside) and the insurer, as well as time (a time change within the same List) and note
+- **keeps the text as received, and the hospital's replaces the rooms'** (US-02.5.7, no check against the rooms' wording): a created Booking's Procedure starts with the row's text through `createBooking`'s text input; a matched row whose text differs from the Procedure's **replaces** it through 20a's replace helper, which writes the replaced text to the Booking's change history with its source and the demo clock's time (never hand-edited, never lost; a later update with different wording replaces it again the same way). The text never changes the Contract or the RVG code. It does change the **invoice description**, in one place only (OQ-103 answered, D37; OQ-130 answered, D73): when a row brings a text, 20a's `refreshInvoiceDescription` makes it the invoice description, unless the chosen Contract's invoice description is filled in (the top default, which wins) or an admin edited it (an admin's edit always wins, never replaced; the Booking then shows that newer hospital text has arrived, with the choice to use it);
+- **sets no Contract and no RVG code by itself**: a created Booking carries no Contract (no hospital default, nothing derived from the location) and, unless the office picks one, no RVG code (OQ-99 answered, D33: there is no procedure to match). The row panel offers the office Phase 20's decided step rail (where the invoice goes, then the Contract) and, quietly, Phase 19's RVG code type-ahead, both optional; a Booking left without an invoice destination lands on Phase 20's "Needs an invoice destination" list (US-04.3.4), the RVG code left to the anaesthetist on RVG kinds. The hospital's insurer or funder (a Party; no insurer master) and approval number, when the row carries them, **show on the row** (US-11.4.3) and are recorded on the Booking by the decision as source data (D28, D7, Phase 21), never as who is billed, never matched against the Booking's Contracts (no hint, 23 October), and only marking a path 'Suggested' on 21's rail (US-04.3.10);
+- widens what a Modification row can change to patient (name, date of birth), the procedure text
+  (replaced, the old one kept in the change history) and the insurer or funder, as well as time (a time change within the same List) and note
   (US-02.1.3: "time, patient or procedure"), and appends a hospital note instead of overwriting the
   Booking's own notes;
 - treats **a day move as a cancellation plus a new Booking** (D62): the old day's row is a
@@ -113,28 +98,22 @@ This phase:
   row on the matching screen and applies nothing (RV-13), and `manualIntervention` is retired because
   every applicable message now waits for a decision. Retry, dedupe and dead-letter stay as they are,
   under Phase 14's Future-scope badge, until Phase 34 demotes them. No scripted beat fires S13 to S15.
-  Phase 20a's wording beat on Diane Foster's Booking (MSG-STG-1012 adding the hospital's fuller
-  wording) now goes through the matching screen;
+  Phase 20a's wording beat on Diane Foster's Booking (MSG-STG-1012 replacing `WLE MM` with the hospital's fuller
+  text) now goes through the matching screen;
 - registers the demo triggers: two harness-bar entries on the Matching screen ("Receive tomorrow's
   theatre list" and "Send update for a matched Booking") and a PWA-only office stand-in on Mobile
   Lists and the Booking screen ("Hospital row arrives and the office matches it") so S1 and the
   wording beat still run on a handset.
 
-This phase builds **no pricing structure**. It reads Contract candidates, the RVG code and the stack only through Phase 19, 20 and 20a's modules in `aa-prototype/src/domain/billing` (the draft
-technical design [AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md) at
-`contract-selection` and `billable-party`, its ERD
-[AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md) at `booking-procedure`, and the
-plain-language guide [AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md)), never a
-second copy, so a later change to the draft pricing design (a v5 may follow) stays out of this
-phase's files.
+This phase builds **no pricing structure**. It reads Contract candidates, the RVG code and the shared view only through Phase 19, 20 and 20a's modules in `aa-prototype/src/domain/billing` (the flat model: the proposal [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) and its ERD [AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md); Donald's D1 to D11 are made for the build, with no Contract lines, versions or staged changes), never a second copy, so a later change to the pricing design stays out of this phase's files.
 
 ## Before you start: drift check
 
 1. Diff the catalogue for this phase's items against the plan's snapshot, catalogue commit
-   `a68f09b` (rename-aware; never a plain `git diff` of the catalogue folder):
+   `efe123c` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-02,FT-02.1,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.1.5,FT-02.5,US-02.2.3,US-02.5.1,US-02.5.2,US-02.5.3,US-02.5.4,US-02.5.5,US-02.5.6,US-02.5.7,US-03.1.9,US-14.6.2,US-01.6.1,US-01.6.4,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.3.2,US-11.4.3,US-08.4.6,FT-02.6,OQ-13,OQ-34,OQ-44,OQ-49,OQ-52,OQ-78,OQ-87,OQ-93,OQ-99,OQ-103,OQ-108,OQ-109,OQ-118,OQ-130
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-02,FT-02.1,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.1.5,FT-02.5,US-02.2.3,US-02.5.1,US-02.5.2,US-02.5.3,US-02.5.4,US-02.5.5,US-02.5.6,US-02.5.7,US-02.5.8,US-03.1.9,US-14.6.2,US-01.6.1,US-01.6.4,US-04.3.3,US-04.2.18,US-04.3.4,US-04.3.6,US-04.3.10,US-11.2.2,US-11.3.2,US-11.4.3,US-08.4.6,FT-02.6,OQ-13,OQ-34,OQ-44,OQ-49,OQ-52,OQ-78,OQ-87,OQ-93,OQ-99,OQ-103,OQ-108,OQ-109,OQ-118,OQ-130
    ```
 
    At plan time (2026-10-20, `60e2d1e..d4db277`) the changes that touch this phase were: FT-02.5 now has
@@ -146,7 +125,7 @@ phase's files.
    from the stack (OQ-99 answered, D33: no procedure to match); US-04.3.4 has the office pick holder,
    Contract and line and leave the RVG code; OQ-93 answered in part (the insurer on the Booking,
    D28); US-02.2.3 is new, Future Work. (The 2026-10-08 changes, `3d3a18c..60e2d1e`, are in "Changed
-   since the plan was written" above; the 23 October rulings at `d436947` are in "Changed at `d436947`".) (The 4 November answers at `a68f09b` are in "Changed at `a68f09b`".) If an item changed after `a68f09b`, re-read it and adjust the work items
+   since the plan was written" above; the 23 October rulings at `d436947` are in "Changed at `d436947`".) (The 4 November answers at `a68f09b` are in "Changed at `a68f09b`", the 5 November decisions in "Changed at `efe123c`".) If an item changed after `efe123c`, re-read it and adjust the work items
    before planning. If any covered item is now Retired or Future, drop it from this phase and say so
    in the PROGRESS entry. Dropping US-02.1.2 or FT-02.1 drops the screen; the RV-13 re-route (no
    silent apply) still stands while US-02.1.5 or US-02.1.3 says a hospital change goes through the
@@ -160,13 +139,7 @@ phase's files.
    the Future Work lane, or US-04.3.6 (the hospital sets the Contract) has, keep this doc's rule (every
    row waits for an office decision and never sets a Contract or an RVG code by itself), build the
    rest, and put it on the "For the owner's review" list.
-1a. **OQ-103 answered (D37) and OQ-130 (D73), the hospital's invoice description.** Read the invoice
-   description's chain as 20a left it (`Procedure.invoiceDescription`, its origin values and
-   `refreshInvoiceDescription`) and build the answer: a description a row brings replaces the invoice
-   description through that helper, unless a filled-in Contract line description applies or the
-   office edited it. If OQ-130 is answered the other way (a later default replaces an edit), change
-   only the helper's rule and its tests and record it; if still open, keep the edit and log the
-   default on the owner's review list. Never write `invoiceDescription` from this phase directly.
+1a. **OQ-103 answered (D37) and OQ-130 answered (D73), the procedure text and the invoice description.** Read what 20a left (`Procedure.invoiceDescription`, its origin values, `refreshInvoiceDescription` and the replace helper for the procedure text) and build the answers: a text a row brings replaces the Procedure's text through the replace helper (the old one to the change history with its source, no check against the rooms' wording), and the invoice description follows through `refreshInvoiceDescription`: the Contract's invoice description where filled in is the top default, and an admin's edit always wins. No provisional label and no default to log. Never write the Procedure's text or `invoiceDescription` from this phase directly.
 2. **OQ-13 (how each hospital provides its bookings).** Still Open at `7cd7802`: the cadence is
    settled for now (one theatre list a day, for the next day, no repeated updates), the format and
    fields per hospital are not (US-02.1.1's note). Build what this doc describes: the four samples are
@@ -201,12 +174,7 @@ phase's files.
    row's Booking on it in the same decision. The row is then applied; nothing waits on the Draft List.
    If US-02.1.2 has dropped that decision, drop Create a Draft List from the panel and log it; if
    OQ-44 has been reopened, build it as this doc says and log it.
-6. **OQ-99 and D33 (no procedure to match), Answered: build the answer.** The office identifies who pays
-   when it creates a Booking from a row (holder, Contract, line, all optional in the panel, through
-   20's step rail); the RVG code is optional and the anaesthetist's; a Booking with no Contract waits on
-   the office's "Needs a Contract" list (Phase 20). The row needs only something to show: its wording,
-   or an RVG code the office picks (20a's `createBooking` refusal). No provisional label anywhere. If
-   OQ-99 has been reopened, build it as this doc says and log it.
+6. **OQ-99 and D33 (no procedure to match), Answered: build the answer.** The office sets where the invoice goes and the Contract when it creates a Booking from a row (both optional in the panel, through 20's decided step rail); the RVG code is optional and the anaesthetist's; a Booking with no invoice destination waits on the office's "Needs an invoice destination" list (Phase 20). The row needs only something to show: its text, or an RVG code the office picks (20a's `createBooking` refusal). No provisional label anywhere. If OQ-99 has been reopened, build it as this doc says and log it.
 7. **No default Contract (OQ-78, answered).** Confirm Phase 20 left no `defaultContractForBooking`,
    no `contractSetBy` and no hospital or insurer default Contract: `createBooking` with no Contract
    pick leaves the Procedure without one and the Booking appears on `needsContractBookings`. If any
@@ -231,21 +199,12 @@ phase's files.
       `editBooking`/`BookingPatch`, `cancelBooking`, `findBookingByCorrelation`, `bookingsOnListByNhi`,
       `bookingsForList`, `BOOKING_SOURCE_LABELS` (in `shared/format.ts`), and the Booking detail route
       `/admin/day/:dateISO/bookings/:bookingId`.
-    - Phase 20a: `Procedure.sourceTexts`, `SourceText`, `SourceTextChannel` and
-      `SOURCE_TEXT_CHANNEL_LABELS`, `addSourceText` (verbatim, append-only, an identical text adds
-      nothing, `added: false`), `createBooking`'s `sourceText` input and its refusal with neither text
-      nor RVG code, `procedureStackView` and `ProcedureStackView` (received text grouped rooms,
-      hospital, entered; invoice description; Contract; RVG code), `Procedure.invoiceDescription` (text and origin) with `refreshInvoiceDescription` and `setInvoiceDescription` (the chain's one helper, D37: confirm how it takes the hospital's text and what origin it records), `ProcedureStack` (full and compact
-      density, `data-shot="procedure-stack"`), the re-pointed "Fire hospital message" (Booking routes,
-      defaulting MSG-STG-1012 on Diane Foster's Booking) and what 20a did to the S12, S13 and S14 apply
-      paths (which this phase removes), and the AR-35 wording it seeded (MSG-STG-1001's
-      `lap appy ?conv to open`, Foster's `WLE MM`).
+    - Phase 20a: the one procedure text per Procedure and the replace helper (it writes the replaced text to the Booking's change history with its source; confirm its name, inputs and what it records), `createBooking`'s text input and its refusal with neither text nor RVG code, `procedureStackView` and the shared view (procedure text; invoice description; Contract with its pricing basis; RVG code), `Procedure.invoiceDescription` (text and origin) with `refreshInvoiceDescription` and `setInvoiceDescription` (the one helper for the order of defaults, D37, D73: confirm how it takes the hospital's text and what origin it records), the shared component (full and compact density, `data-shot="procedure-stack"`), the re-pointed "Fire hospital message" (Booking routes, defaulting MSG-STG-1012 on Diane Foster's Booking), the 'Hospital description arrives' action and what 20a did to the S12, S13 and S14 apply paths (which this phase removes), and the AR-35 text it seeded (MSG-STG-1001's `lap appy ?conv to open`, Foster's `WLE MM`).
     - Phase 20: `createBooking`'s optional Contract pick, `contractCandidatesFor`,
       `contractCandidatesForProcedure`, `contractCandidatesForNewBooking`, `ContractPickerSheet`
       (its step rail is the office's Contract choice; confirm what 20 left and use it as it is),
-      `setProcedureContract(api, actor, procedureId, { contractId, lineId? })` and its refusals
-      (`contractNotInEffect`, `contractOutOfScope`), `needsContractBookings` and the Admin Day "Needs a
-      Contract" card. Confirm no Procedure `insurerId` or billing route remains.
+      `setProcedureContract(api, actor, procedureId, { contractId })` and its refusals
+      (`contractNotInEffect`, `contractOutOfScope`), `needsContractBookings` and the Admin Day "Needs an invoice destination" list. Confirm no Procedure `insurerId` or billing route remains.
     - Phase 19: `Procedure.rvgGroupId` (optional), `pickRvgGroup`, the `CodePickerSheet` type-ahead,
       `RvgGroup`. There is no procedure master, procedure pick or `ProcedurePickerSheet`.
     - Phase 15a: the warning routine in `src/domain/warnings` (`WARNING_RULES`) and the
@@ -254,7 +213,7 @@ phase's files.
     - Phase 23 if DONE: the primary Procedure, the target of a row's wording on a matched Booking (else
       the Booking's first Procedure).
     - Phase 21 if DONE: `Booking.payer` (a created Booking gets `{ kind: 'patient' }` through
-      `createBooking`), `Booking.insurerHolderId` (an insurer contract holder) and `insuranceApprovalNumber`, and `setBookingInsurance(api,
+      `createBooking`), `Booking.insurerHolderId` (the insurer or funder, a Party; use the field name 21 left) and `insuranceApprovalNumber`, and `setBookingInsurance(api,
       actor, bookingId, { insurerHolderId, insuranceApprovalNumber })`, whose comment says Phase 33 sets it
       from rows.
     - Phase 27 if DONE: which store paths re-check a prepayment (a change of Procedures, Contract or
@@ -359,7 +318,7 @@ decision; it is not built.
   `hl7.ts`/`fhir.ts` (`ParsedMessage`, `extractViaMapping`, `extractFromFhir`), `pdfSamples.ts` (the
   fixture and facsimile pattern the import samples follow), `index.ts`.
 - `aa-prototype/src/domain/types.ts`: `BookingSource` (:371), `Procedure` (:453, `description` at
-  :456, which 20a replaces with `sourceTexts`), `IntegrationMessageStatus` (:844) and
+  :456, which 20a replaces with the one procedure text), `IntegrationMessageStatus` (:844) and
   `IntegrationMessage` (:852; `manualIntervention` retired, `resultBookingId` (:869) replaced by
   `resultImportRowId`), `IntegrationCorrelationRef`, `Booking.correlationRef`, `Booking.source`,
   `AuditSource`.
@@ -416,11 +375,7 @@ the guide.
    - `ImportChannel = 'download' | 'manualSheet' | 'feedMessage'`. `download` is the code name for a
      hospital import (app copy says "import", per US-02.1.1's retitle); `feedMessage` is the
      Future-scope HL7/FHIR simulator's channel, kept so its rows are honest about where they came
-     from. Each maps to one of 20a's `SourceTextChannel` values in one pure function
-     (`sourceTextChannelFor(channel)`): `download` to `hospitalDownload`, `feedMessage` to
-     `hospitalFeed`, and `manualSheet` to a new `hospitalSheet` value ("Hospital sheet") added to
-     20a's union and to `SOURCE_TEXT_CHANNEL_LABELS` (a sheet keyed by the office is not a download).
-     20a's `procedureStackView` groups `hospitalSheet` with the hospital's texts, not the rooms'.
+     from. Each maps to one of 20a's change-history source values in one pure function (`sourceTextChannelFor(channel)`; rename to what 20a recorded): `download` to the hospital's list, `feedMessage` to the hospital's feed, and `manualSheet` to a new "Hospital sheet" value added to 20a's source list and labels (a sheet keyed by the office is not a download). The source shows in the change history beside the replaced text.
    - `ImportSource = 'hospital' | 'rooms'`, stored on every `ImportRow` and `ImportBatch` (OQ-108 answered, D51). Every channel built here is `hospital`; Phase 34's PDF rows are `rooms`, through the same `stageImportRows` and screen. Not the channel: the channel says how the row arrived, the source whose text it is.\n   - `IncomingBookingFields` (what the hospital sent; every field optional except the four marked):
 
      ```ts
@@ -433,7 +388,7 @@ the guide.
        scheduledTime?: WallTime
        patient: { name: string; nhi?: string; dobISO?: IsoDate; ethnicityCode?: string } // name required; no nhi means the row waits (D11)
        procedure?: { text?: string; code?: string } // text: the wording exactly as sent, never trimmed (US-02.1.2, US-02.5.7); code: the hospital's own code as sent, shown, never mapped
-       insurer?: { text: string; insurerHolderId?: ContractHolderId; approvalNumber?: string } // as sent; shown on the row (approval number included, US-11.4.3) and recorded on the Booking by the decision as source data (D28), never a Contract or a billable party
+       insurer?: { text: string; insurerPartyId?: PartyId; approvalNumber?: string } // the insurer or funder as sent; shown on the row (approval number included, US-11.4.3) and recorded on the Booking by the decision as source data (D28), never a Contract or a billable party
        note?: string
        hospitalStatus: 'booked' | 'cancelled'       // default 'booked'
        cancelReason?: string
@@ -443,12 +398,12 @@ the guide.
      A row never names an RVG code, a Contract, a payer or a billable party: the hospital does not
      set the Contract (US-04.3.6 is Proposed), there is no default (OQ-78), and the Contract decides
      who is billed through its holder or the payer on the Booking (D17). When the `insurer` text names
-     a seeded insurer contract holder (Phase 18's holder of kind insurer; there is no insurer master), the fixture sets `insurerHolderId` (nib's holder).
+     a seeded insurer or funder Party (Phase 18's Party of kind insurer or funder, such as nib; there is no insurer master), the fixture sets `insurerPartyId` (use the Party id type and Booking field 21 left).
 
    - `ImportDecision`, a discriminated union recorded once a row is decided:
 
      ```ts
-     type OfficePicks = { rvgGroupId?: RvgGroupId; contract?: { contractId: ContractId; lineId?: ContractLineId } }
+     type OfficePicks = { rvgGroupId?: RvgGroupId; contract?: { contractId: ContractId } }
      type ImportDecision =
        | { kind: 'match'; bookingId: BookingId; changeType: ChangeType; fieldsApplied: IncomingFieldKey[]; picks?: OfficePicks }
        | { kind: 'createBooking'; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
@@ -457,8 +412,8 @@ the guide.
        | { kind: 'reject'; reason: string }
      ```
 
-     Use the type names 19 and 20 actually left for the RVG group id, the Contract line id and the
-     pick. `bookingId` on `createList` and `createDraft` is the Booking created onto the new List or
+     Use the type names 19 and 20 actually left for the RVG group id and the Contract
+     pick (no lines; the invoice destination is worked out from the Contract and never stored). `bookingId` on `createList` and `createDraft` is the Booking created onto the new List or
      Draft List: a Draft List holds Bookings (OQ-44), so neither decision leaves the row waiting.
      `picks` holds only what the office chose in the panel; it is never derived from the row. There is
      no move decision: a Booking never changes List or day through a row (D62).
@@ -516,20 +471,16 @@ the guide.
      incoming, effect }`) for time (within the same List), patient name, date of birth, NHI,
      procedure wording, insurer and note. The date, session and List are the key, so they never
      differ. A field the hospital did not supply is skipped (never a change). NHI is compared but
-     flagged, never applied (see work item 4). **Procedure wording:** compared character for
-     character against every source text the target Procedure already holds, the rooms' included
-     (the primary if 23 is DONE, else the first); identical to one of them, no diff; otherwise a
-     diff whose `effect` is `'addBeside'` ("Add the hospital's wording beside the current text"),
-     never a replacement. The hospital's `code` is shown in the panel and is never a diff.
+     flagged, never applied (see work item 4). **Procedure text:** compared character for character against the target Procedure's current text, whatever its source, the rooms' included (the primary if 23 is DONE, else the first), with no check against the rooms' wording (US-02.5.7); identical, no diff; otherwise a diff whose `effect` is `'replaces'` ("Replaces the current text; the current text is kept in the change history"), never an addition beside it. The hospital's `code` is shown in the panel and is never a diff.
      **Insurer:** a diff only when Phase 21 built the insurer on the Booking (against
-     `booking.insurerHolderId` and `insuranceApprovalNumber`); otherwise it is returned as `insurerNote`
+     the Booking's insurer or funder Party and `insuranceApprovalNumber`); otherwise it is returned as `insurerNote`
      (`{ text, approvalNumber }`, the row's insurer as sent) and shown beside the stack, never a field
      to apply. There is no `differs` and no comparison with the Booking's Contracts (D28, 23 October:
      the insurer is source data only). The Contract and the RVG code are never diffs: the row never
      names them.
-     **Invoice description:** the wording diff's `effect` also says whether the hospital's text will
+     **Invoice description:** the text diff's `effect` also says whether the hospital's text will
      become the invoice description (`invoiceEffect`: `'replaces'` when the Procedure's invoice
-     description is not from a filled-in line or an office edit, `'keptLine'`, or `'keptEdit'` with
+     description is not from a filled-in Contract invoice description or an admin's edit, `'keptContract'`, or `'keptEdit'` with
      "a newer hospital description has arrived" so the office can choose to use it, D73). It is read
      from the Procedure's recorded origin, never recomputed here.
    - `classifyChange(match, fields, diffs)`: no match gives `'new'`; `hospitalStatus === 'cancelled'`
@@ -576,11 +527,11 @@ the guide.
      on another day is a New row, never a move, and a cancellation on the old day is its own row;
      surgeon by HPI CPN beats a name that differs; an unrecognised surgeon falls back to the patient
      on that day with the flag; a time change on the same List is a Modification; a missing incoming
-     field is never a diff; wording identical to a held text (the rooms' included) is no diff,
-     different wording is an `addBeside` diff and never a replacement; leading spaces, "?conv" and
+     field is never a diff; text identical to the Procedure's current text is no diff,
+     different text is a `replaces` diff, whatever the rooms' held; leading spaces, "?conv" and
      "+/-" in the wording survive into the diff unchanged; a code is never a diff; an insurer is a diff
      only with 21's field and never raises a flag for holding none of the Booking's Contracts; the
-     wording diff's `invoiceEffect` is `replaces`, `keptLine` or `keptEdit` from the Procedure's origin; a new row and a Draft List with the same four fields; a row for a session
+     text diff's `invoiceEffect` is `replaces`, `keptContract` or `keptEdit` from the Procedure's origin; a new row and a Draft List with the same four fields; a row for a session
      with no List or Draft List is unmatched with the reason and no suggestion; a modification that
      finds no Booking is unmatched; the AUTHORISED, cancelled, invalid-NHI, no-NHI, no-wording and
      duplicate-row flags, and no flag for a SUBMITTED List; a later row for a Booking an earlier
@@ -609,7 +560,7 @@ the guide.
        by the List and NHI; (R3) **Diane Foster's** `APPT.s14` Booking (Tue 4 Aug AM, 20a's `WLE MM`
        from the rooms) with MSG-STG-1012's new time, a booking-office note and the hospital's fuller
        wording `WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC`
-       (AR-35 row 27, as 20a put in MSG-STG-1012): Modification (time, wording added beside, note);
+       (AR-35 row 27, as 20a put in MSG-STG-1012): Modification (time, text replaced, note);
        (R4 and R5) **a day move, as the hospital sends it**: (R4) the `APPT.s13Move` Booking on its
        current day with `hospitalStatus: 'cancelled'`: Cancellation, found by its NHI; (R5) the same
        patient (same NHI) as a booked row on the day of an existing St George's Mr Hale List, with the
@@ -619,8 +570,8 @@ the guide.
        hospital's fuller wording `Laparoscopic appendicectomy, may convert to open` (AR-35 row 14's
        meaning, written as a hospital would spell it; say so in the fixture comment). Once
        `SAMPLE_STG` R1 has been applied it is a **Modification** of the Booking that decision created,
-       matched by date, surgeon, hospital and session, then NHI (time, note, and the wording added
-       beside `lap appy ?conv to open`, waiting for approval: US-02.1.3's "The admin then approves
+       matched by date, surgeon, hospital and session, then NHI (time, note, and the text replacing
+       `lap appy ?conv to open`, waiting for approval: US-02.1.3's "The admin then approves
        the update"); while R1 is still open it carries the "Earlier row for this Booking still open"
        flag.
      - `SAMPLE_SX` **Southern Cross theatre list, Tue 28 Jul to Thu 6 Aug** (channel `download`), five
@@ -628,7 +579,7 @@ the guide.
        `ACL recon R` (AR-35 row 7, a hospital download): New on Dr Souter's Tue 28 Jul PM List;
        (R2) a seeded ACTIVE Southern Cross Booking after 21 Jul (record which in the PROGRESS entry)
        whose Procedure is on a Contract not held by nib, with a corrected patient name, a
-       date-of-birth fix, an `insurer` naming nib (its insurer contract holder, with an approval number) and a
+       date-of-birth fix, an `insurer` naming nib (its insurer or funder Party, with an approval number) and a
        booking-office note: Modification (patient and note, and, if 21 is DONE, the insurer diff; no
        insurer flag, D28). Pick an nib-held Contract that
        Phase 20's `contractCandidatesForProcedure` offers for that Procedure (if none is, use another
@@ -716,34 +667,18 @@ the guide.
        (`after: { importRowId, hospital, channel, changeType, fields }`), so the Booking's History
        shows "Hospital row applied: Modification (time, wording, note)". A refusal returns the reason
        and leaves the row open; a test proves the schedule is unchanged.
-     - **The wording (US-02.5.7).** Every decision that creates or matches a Booking writes the row's
-       wording, when it sent one, onto the target Procedure (the primary if 23 is DONE, else the
-       first) exactly as received, with channel `sourceTextChannelFor(row.channel)`, `from` the
-       hospital's name ("St George's", "Forte Health daily sheet") and the demo clock's time: through
-       `createBooking`'s `sourceText` for a created Booking, through `addSourceText` for a matched
-       one. An identical text adds nothing (`added: false`); a different one is added beside the
-       others; no path edits or removes a text, and the hospital's wording never changes the Contract
-       or the RVG code.
-     - **The invoice description (OQ-103 answered, D37; OQ-130's default, D73).** In the same commit,
-       whenever the row brought a description (a created Booking's first text, or a matched row's
-       text that was added), call 20a's `refreshInvoiceDescription` for the Procedure with the
-       hospital's text as the new layer: it becomes the invoice description (origin recorded as the
-       hospital's) unless the chosen Contract line's description is filled in (the line wins; a blank
-       one falls through) or the office edited it (kept, never replaced; the Booking then shows that a
-       newer hospital description has arrived, with the office's choice to use it, which goes through
-       `setInvoiceDescription`). A row with no wording, or an identical text that adds nothing
-       (`added: false`), changes nothing. This phase never writes `invoiceDescription` itself, and the
-       decision's History names the change ("Invoice description set from the hospital's wording").
+     - **The procedure text (US-02.5.7).** Every decision that creates or matches a Booking writes the row's text, when it sent one, onto the target Procedure (the primary if 23 is DONE, else the first) exactly as received, from the hospital's name ("St George's", "Forte Health daily sheet"), with the source value `sourceTextChannelFor(row.channel)` and the demo clock's time: through `createBooking`'s text input for a created Booking, through 20a's replace helper for a matched one, which **replaces** the current text (the rooms' or an earlier hospital's) with no check against it and writes the replaced text to the Booking's change history with its source. An identical text changes nothing (`replaced: false`, no history entry); no path hand-edits a text, and the hospital's text never changes the Contract or the RVG code.
+     - **The invoice description (OQ-103 answered, D37; OQ-130 answered, D73).** In the same commit, whenever the row brought a text (a created Booking's first text, or a matched row's text that replaced the current one), 20a's replace helper (and `createBooking`) calls `refreshInvoiceDescription` for the Procedure with the hospital's text as the new layer: it becomes the invoice description (origin recorded as the hospital's) unless the chosen Contract's invoice description is filled in (the top default wins; a blank one falls through) or an admin edited it (an admin's edit always wins, never replaced; the Booking then shows that newer hospital text has arrived, with the office's choice to use it, which goes through `setInvoiceDescription`). A row with no text, or an identical one, changes nothing. This phase never writes `invoiceDescription` itself, and the decision's History names the change ("Invoice description set from the hospital's text").
      - **The office's picks (US-04.3.4, D33).** When `picks.rvgGroupId` is set it goes through 19's
        `pickRvgGroup` (or `createBooking`'s RVG code input) and when `picks.contract` is set through
        Phase 20's `setProcedureContract` (or `createBooking`'s Contract pick), both on the target
        Procedure, as the office actor, with 20's refresh (starting values, locked modifiers) in their
        commits. With no picks a created Booking has **no Contract and no RVG code**: it appears on
-       `needsContractBookings` ("No Contract") for the office to settle, and nothing is derived from
+       `needsContractBookings` ("Needs an invoice destination") for the office to settle, and nothing is derived from
        the hospital (OQ-78, US-04.3.3). A matched Booking keeps its Contract and RVG code unless the
        office picks.
      - `match` + `modification`: apply only the ticked `fieldsApplied`: time through `editBooking`;
-       patient name and DOB through `editPatient`; the wording through `addSourceText` (above); the
+       patient name and DOB through `editPatient`; the text through the replace helper (above); the
        insurer and its approval number, when Phase 21 is DONE and the diff is ticked, through
        `setBookingInsurance` (D28: source data, never who is billed and never matched against the
        Contracts), and otherwise nothing is written for it. The picks as above. A hospital note is **appended** to the
@@ -755,7 +690,7 @@ the guide.
        List, marked cancelled. Whatever Phases 27 and 41 hang on it (a prepayment refund) follows.
      - `match` + `noChange`: records the decision ("Matched, nothing to change") and writes nothing
        else.
-     - `createBooking`: `createBooking(api, actor, listId, { patient, sourceText, RVG code and
+     - `createBooking`: `createBooking(api, actor, listId, { patient, text, RVG code and
        Contract picks if any, scheduledTime, correlationRef: { sourceFeedId:
        hospitalSourceKey(hospitalId), externalAppointmentId } (when the row sent one), source:
        'hospitalDownload' })` on an ACTIVE or SUBMITTED List or an unassigned Draft List. The patient
@@ -768,7 +703,7 @@ the guide.
        `BookingSource`; the channel lives on the row, on the source text and in the History.
      - **What follows with no code here.** Because every decision goes through the guarded actions,
        15a's warning routine re-runs (including 21's insurer warning, if DONE), a Booking without a
-       Contract shows on "Needs a Contract", who is billed follows the Contract's holder or the payer
+       Contract shows on "Needs an invoice destination", who is billed follows the Contract's holder or the payer
        on the Booking (D17), and, if Phase 27 is DONE, its prepayment re-check runs on a change of
        Procedures, Contract or payer. A row never sets a billable party, a payer, an invoice email or
        a prepayment itself.
@@ -802,23 +737,18 @@ the guide.
      kind end to end; a refusal leaves both the row and the schedule unchanged; a row with no NHI is
      refused every decision but reject and creates no patient, Booking or List, and after a valid NHI
      is typed it creates normally; a created Booking has `source: 'hospitalDownload'`, the row's
-     wording verbatim as its first source text with the right channel, `from` and time, **no Contract**
+     text verbatim as its text with the right source, `from` and time, **no Contract**
      and no RVG code when nothing was picked (and appears on `needsContractBookings`), the correlation
      ref when one was sent, and a reused patient for Sarah Mitchell and Priya Nair; picks land
      through `pickRvgGroup` and `setProcedureContract`'s checks and an unoffered Contract is refused;
      a row with no wording and no RVG code is refused `wordingOrCodeRequired`; no decision writes a
      billable party or a payer, and the insurer lands only through `setBookingInsurance`; a
-     modification applies only ticked fields, appends the note and adds the wording beside the earlier
-     text (Foster's `WLE MM` kept first, the hospital's long line second) and, where no line description
-     or office edit applies, replaces the invoice description with the hospital's line (a filled-in line
-     description keeps its own; an office-edited one is kept and the Booking shows that a newer hospital
-     description has arrived, with the choice to use it); replaying the same row adds no second text
-     and changes the invoice description no further; a created Booking's invoice description starts as
+     modification applies only ticked fields, appends the note and replaces the text (Foster's `WLE MM` replaced by the hospital's long line, `WLE MM` kept in the change history with its source) and, where no Contract invoice description or admin edit applies, replaces the invoice description with the hospital's text (a filled-in Contract invoice description keeps its own; an admin-edited one always wins and the Booking shows that newer hospital text has arrived, with the choice to use it); replaying the same row writes no second history entry and changes the invoice description no further; a created Booking's invoice description starts as
      the hospital's row text; a day move's cancellation row cancels the old Booking and its New row
      creates a separate one, neither touching the other; a decision on a SUBMITTED List applies and
      one on an AUTHORISED List is refused `listLocked`; `SAMPLE_STG_UPDATE` after `SAMPLE_STG` R1 is
      applied matches the created Booking by the List and NHI and changes nothing until decided, then
-     applies its time, appends its note and adds its wording beside; `createList` goes through
+     applies its time, appends its note and replaces the text, the earlier one kept in the change history; `createList` goes through
      `assignListToSlot` (a not-preferred pairing is acknowledged, not refused); `createDraft` creates
      the Draft List holding the new Booking and with no surgeon is refused; the two audit metas land
      in one commit and the Booking's History shows the row.
@@ -827,7 +757,7 @@ the guide.
    requires), `importRowViews(state, filter)` (row, effective fields, suggestion, queue, flags,
    batch label), `rowStackViews(state, rowId, picks)` (the matched Booking's Procedures through 20a's
    `procedureStackView`; for a New row, a preview built by passing a draft Procedure value held in
-   memory, never stored, with the row's wording as a `SourceText` and the office's picks, to the same
+   memory, never stored, with the row's text and the office's picks, to the same
    `procedureStackView`, so the stack logic stays in 20a's one module), `matchingCounts(state)` and
    `matchingAttentionCount(state)` (open rows, for the side-nav badge).
    `integrationAttentionCount` now counts dead-letter rows only.
@@ -879,7 +809,7 @@ the guide.
      PID-3 and `reprocessMessage` it stages a valid row; MSG-STG-1014 (the old locked target) stages
      an ordinary row, which the office can apply while the List is SUBMITTED and not once AUTHORISED;
      the S13 message stages a New row for the new day and leaves the old Booking where it is;
-     MSG-STG-1012's row, applied, adds the hospital's wording beside Foster's `WLE MM` and changes
+     MSG-STG-1012's row, applied, replaces Foster's `WLE MM` with the hospital's text (kept in her change history) and changes
      neither her Contract nor her RVG code.
 7. **Audit reading layer** (`shared/audit/actionLabels.ts`, `fieldLabels.ts`, `auditNarrative.ts`):
    `importBatch.create` "Hospital bookings imported", `importRow.receive` "Hospital row received",
@@ -888,7 +818,7 @@ the guide.
    `IncomingBookingFields` key (`procedure.text` as "Procedure as received", `procedure.code` as
    "Hospital's code", `insurer` as "Insurer (as sent)", the surgeon's `hpiId` as "HPI CPN") and for
    `changeType`, `decision`, `fieldsApplied` and `picks`. The narrative reads "Kirsty W. applied a
-   St George's row: Modification (time, wording, note)"; 20a's "Description added as received" entry
+   St George's row: Modification (time, wording, note)"; 20a's replaced-text history entry (the replaced text and its source)
    follows it in the History. Remove the `manualIntervention` wording from any label.
 8. **Seed and `PERSIST_VERSION`.** No seeded batches or rows: the screen starts empty on a reset and
    the presenter imports or the trigger delivers. Bump `PERSIST_VERSION` by one with a history comment
@@ -944,10 +874,7 @@ the guide.
         what is missing before it decides (FT-02.1's note);
       - **the wording as received**, in full, verbatim, with the hospital's code beside it when sent
         ("Hospital's code 1661"), never wrapped in an edit field;
-      - **side-by-side field diff** (US-02.1.3; AR-21 `review-differences`): columns Field, "On the
-        Booking now", "From the hospital"; changed rows in warning tint with a tick box (default
-        ticked) on a Modification; the wording row reads "Add beside the current text" with every
-        current text listed, the rooms' and the hospital's apart (never "replace"), and under it one line on the invoice description from `invoiceEffect` ("Also becomes the invoice description", "The Contract line's description stays", or "The office's edited description stays; newer hospital wording has arrived" with a "Use it" link through 20a's setter); "Not supplied" in
+      - **field diff** (US-02.1.3; AR-21 `review-differences`): columns Field, "On the Booking now", "From the hospital"; changed rows in warning tint with a tick box (default ticked) on a Modification; the text row reads "Replaces the current text" with the current text shown and a note that it is kept in the change history, and under it one line on the invoice description from `invoiceEffect` ("Also becomes the invoice description", "The Contract's invoice description stays", or "The admin's edited description stays; newer hospital text has arrived" with a "Use it" link through 20a's setter); "Not supplied" in
         mist where the hospital sent nothing; the matched Booking named with a link to its Booking
         detail and the match basis ("Matched by date, surgeon, hospital and session, then NHI";
         "Matched by NHI at St George's on that day"); a "Match to another Booking" link opening a
@@ -958,12 +885,12 @@ the guide.
         leaves only Reject enabled; typing a valid NHI releases it into a ready New row;
       - **Contract and RVG code** under the diff, for every decision that creates or matches a
         Booking: each Procedure as Phase 20a's `ProcedureStack` in full density (`rowStackViews`): for
-        a matched Booking its current stack with the hospital's wording shown as the text to be added;
+        a matched Booking its current stack with the hospital's text shown as the text that replaces the current one;
         for a New row the preview (the row's wording, then "Contract to choose"). Under it, a teal text
         link **Choose Contract** (Phase 20's step rail, opened from the row panel; confirm the entry point 20 left) and a quiet secondary link **Choose
         RVG code** (Phase 19's `CodePickerSheet`, the type-ahead; required only when the row sent no
         wording). Both are optional; a mist caption says "Leave either to choose later: the Booking
-        waits on Needs a Contract, and the RVG code is the anaesthetist's." The row's insurer and
+        waits on Needs an invoice destination, and the RVG code is the anaesthetist's." The row's insurer and
         approval number show beside the stack ("Insurer from the hospital: nib, approval 1234567"), as source data
         with no comparison against the Booking's Contracts and no pill; with Phase 21 DONE it is a tick
         ("Record on the Booking", default ticked) and, on a Modification, a diff row. The footer label
@@ -989,26 +916,25 @@ the guide.
         locked", "Choose the surgeon first", "This row has no procedure wording. Choose an RVG code
         first.");
       - on success, the Admin Review choreography: a `bannerIn` banner ("Applied: Booking created on
-        Dr Souter's Tue 28 Jul AM List · Kirsty W. 09:14", with a link to the Booking, and "Needs a
-        Contract" when none was picked), the `tickDraw` tick, the row dims into Decided, the badge
+        Dr Souter's Tue 28 Jul AM List · Kirsty W. 09:14", with a link to the Booking, and "Needs an invoice destination" when none was picked), the `tickDraw` tick, the row dims into Decided, the badge
         decrements, and **Next row** moves to the next open row.
     - Keyboard: the table rows and the decision radios are focusable; Escape closes the panel.
 11. **Where the Booking shows its intake.** Phase 15's "SOURCE · Hospital download" line already shows
-    on a created Booking, and Phase 20a's stack shows the row's wording as received ("Hospital
-    download · St George's · Tue 21 Jul"), with later wording below it. The Booking's History (via
-    `booking.fromHospitalRow` and 20a's `procedure.sourceText.add`) names the row, the hospital and
+    on a created Booking, and Phase 20a's shared view shows the row's text as received ("Hospital
+    download · St George's · Tue 21 Jul"), a later hospital text replaces it, the replaced one kept in the change history. The Booking's History (via
+    `booking.fromHospitalRow` and 20a's text-replaced entry) names the row, the hospital and
     the change type, on all three surfaces through `BookingDetailBody`. The Admin Booking detail adds
     a quiet "From hospital row IR0003" link to `/admin/matching` with that row selected (pass the row
     id in router `state`, like the Invoices List column's `openListId`). Under the invoice description
     on the Admin Booking, when an office edit was kept against a newer hospital description (the helper
-    reports it, OQ-130's default), show one quiet line "Newer hospital wording has arrived" with a
+    reports it, OQ-130 answered), show one quiet line "Newer hospital text has arrived" with a
     **Use it** link that calls 20a's `setInvoiceDescription` with that text; no other surface.
 12. **Re-point Phase 14's hospital-message entries** (as 20a left them). `fire-hospital-message` and
     `replay-hospital-message` keep `badge: 'future-scope'` and their routes (20a's Booking routes
     included), but become **bar only** (the PWA gets the stand-in in work item 13, because a row on a
     handset has no office to decide it). Their descriptions say "Stages the hospital's row on Admin,
     Matching. The Booking changes only once the office applies it." 20a's success message for
-    MSG-STG-1012 becomes "Sent MSG-STG-1012 to matching: the hospital's wording is added once the
+    MSG-STG-1012 becomes "Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the
     office applies the row." On Mobile Lists and the Booking routes in the framed build the result
     message adds "Switch to Admin, Matching, to apply it." The S13 to S15 choices stay, badged, so a
     presenter asked about feeds can show one landing as a row, but no scripted beat uses them
@@ -1020,11 +946,11 @@ the guide.
     row. Registry tests: routes, surfaces, disabled states, determinism, that `receiveTheatreList`
     stages exactly the sample's rows and applies nothing, and that `officeMatchesHospitalRow` goes
     through `decideImportRow` with the derived suggestion and no picks (never `createBooking` or
-    `addSourceText` directly).
+    the replace helper directly).
 14. **Playwright** (`npm run shots`): a new `visual/admin-matching.spec.ts` (import St George's, the
     table with the "Procedure as received" column and stats, the panel on R3 (Foster) with the
-    wording to add beside `WLE MM`, a field unticked, apply, the banner and Decided, the Booking's
-    stack showing both texts; R1 with Choose Contract opening 20's step rail, then Create Booking leaving it on Needs a Contract; R4 cancelled and R5 created as a day
+    hospital text that replaces `WLE MM`, a field unticked, apply, the banner and Decided, the Booking's
+    stack showing the hospital's text and its History the replaced `WLE MM`; R1 with Choose Contract opening 20's step rail, then Create Booking leaving it on Needs an invoice destination; R4 cancelled and R5 created as a day
     move's two rows; a reject with a reason; the St George's update after R1 is applied showing its
     Modification and leaving the Booking unchanged until applied; Southern Cross R4 waiting for an
     NHI, then released by typing one; Create a List in a session on R5); update `phase11.spec.ts`
@@ -1114,7 +1040,7 @@ messages (RV-13).
 - **A refund for a cancelled prepaid Booking** (US-02.5.3's pointer to US-06.5.2, OQ-40): Phase 41.
   A Cancellation decision calls `cancelBooking`, so whatever 27 and 41 hang on it follows.
 - **Re-deciding a decided row** (undo). A wrong decision is corrected on the Booking through normal
-  edits; the row's history and any wording it added stay as they were (the wording is append-only).
+  edits; the row's history and any text it replaced stays in the change history.
 - The full S1 and S4 rewrites: Phases 34 and 44. This phase patches S1 Beats 1 and 2, S4 Beat 4 and
   S5 Beat 2.
 
@@ -1133,36 +1059,28 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
   supplied"). Importing it again says nothing new was added.
 - [ ] Open R1 (Sarah Mitchell): New, suggested "Create Booking on Dr Souter, Tue 28 Jul AM"; the
   stack preview reads the wording, then "Contract to choose". Choose Contract opens 20's step rail with no hospital default preselected; close it without picking. Create
-  Booking: the banner (with "Needs a Contract"), tick and dimmed row show, the badge drops to 4,
+  Booking: the banner (with "Needs an invoice destination"), tick and dimmed row show, the badge drops to 4,
   "Next row" opens R2. Mobile Lists, Tue 28 Jul AM: Sarah Mitchell is the fourth Booking at 08:30,
   "SOURCE · Hospital download", her stack showing `lap appy ?conv to open` (Hospital download · St
-  George's), no Contract and an invoice description that reads the hospital's wording (the rooms sent none), her existing patient record reused. Admin Day: she is on the "Needs a
-  Contract" card; setting the Contract there as Phase 20's S1 Beat 1 does takes her off it, and her
-  invoice description reads the chosen line's description where that line's is filled in, else stays
+  George's), no Contract and an invoice description that reads the hospital's wording (the rooms sent none), her existing patient record reused. Admin Day: she is on the "Needs an invoice destination" card; setting the invoice destination and Contract there as Phase 20's S1 Beat 1 does takes her off it, and her
+  invoice description reads the Contract's invoice description where that is filled in, else stays
   the hospital's.
 - [ ] Import "St George's theatre list, a day later": its row is a Modification of the Booking R1
   created ("Matched by date, surgeon, hospital and session, then NHI"), with time 08:30 against
-  09:00, the note, and the wording row "Add beside the current text". Sarah Mitchell's Booking still
-  reads 08:30 with one text until "Apply 3 changes"; then it reads 09:00, the note is appended, and
-  her stack shows `lap appy ?conv to open` then `Laparoscopic appendicectomy, may convert to open`
-  below it, both from the hospital, and her invoice description now reads the fuller wording (unless
-  her chosen line's description is filled in, which stays). Her Contract and RVG code are unchanged. (Imported before R1 is
+  09:00, the note, and the text row "Replaces the current text". Sarah Mitchell's Booking still
+  reads 08:30 with `lap appy ?conv to open` until "Apply 3 changes"; then it reads 09:00, the note is appended, her text is `Laparoscopic appendicectomy, may convert to open`, her change history shows `lap appy ?conv to open` as the replaced text with its source (the hospital's list), and her invoice description now reads the fuller text (unless her Contract's invoice description is filled in, which stays, or an admin edited it). Her Contract and RVG code are unchanged. (Imported before R1 is
   decided, the row instead shows "Earlier row for this Booking still open".)
 - [ ] R2: No change, "Matched by date, surgeon, hospital and session, then NHI"; the panel's
   "Missing from the hospital" line names the procedure wording, which is not a change; "Mark as
   matched" records it and writes nothing.
-- [ ] R3 (Diane Foster): Modification with time, wording and note in warning tint side by side. Untick
-  the note, apply "2 changes": the Booking shows the new time; its stack shows `WLE MM` (rooms) then
-  the hospital's long line below it, apart from the rooms'; her Contract and RVG code are unchanged;
-  her invoice description is the hospital's long line (origin the hospital's) where no line description
-  applies; her notes are unchanged; her History shows "Hospital row applied: Modification (time, wording)" by
-  Kirsty W. and "Description added as received".
+- [ ] R3 (Diane Foster): Modification with time, text and note in warning tint. Untick
+  the note, apply "2 changes": the Booking shows the new time; its text is now the hospital's long line and `WLE MM` (the rooms') is in her change history with its source; her Contract and RVG code are unchanged; her invoice description is the hospital's long line (origin the hospital's) where no Contract invoice description or admin edit applies; her notes are unchanged; her History shows "Hospital row applied: Modification (time, text)" by Kirsty W. and the replaced-text entry.
 - [ ] The invoice description layers (D37, D73): on a Booking whose invoice description the office
   edited (Admin Booking, Edit invoice description), apply a hospital update that brings new wording:
-  the edit is kept, the wording is still added beside the source texts, the panel said "The office's
+  the edit is kept, the text is still replaced (the old one in the change history), the panel said "The admin's
   edited description stays", and the Booking shows that newer hospital wording has arrived with a "Use
-  it" choice that sets it through 20a's setter. On a Procedure whose Contract line has a description,
-  the line's stays. A row with no wording, or wording identical to one held, changes nothing.
+  it" choice that sets it through 20a's setter. On a Procedure whose Contract has an invoice description,
+  the Contract's stays. A row with no wording, or wording identical to one held, changes nothing.
 - [ ] Import St George's again after deciding R3: nothing new (identical rows, including R3, are
   skipped). The note-append check is Southern Cross R2 below.
 - [ ] R4 and R5, a day move: R4 is a Cancellation found by NHI on the Booking's current day: "Cancel
@@ -1171,13 +1089,13 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
   as received and no Contract; the cancelled Booking's History is untouched by it and nothing links
   the two. No "Reschedule" appears anywhere.
 - [ ] Southern Cross sample (OPEN 5, NEW 3 with R4 waiting and R5 unmatched, MODIFICATIONS 2, UNMATCHED 2):
-  Priya Nair lands on the Tue 28 PM List with `ACL recon R` as received and on "Needs a Contract"; R2
+  Priya Nair lands on the Tue 28 PM List with `ACL recon R` as received and on "Needs an invoice destination"; R2
   shows patient name, DOB and note diffs, "Insurer from the hospital: nib, approval <number>" (also on the table row) as plain source data, with no insurer pill or hint whichever Contract the
   Booking is on (and, with Phase 21 DONE, the insurer diff). Choose Contract, pick the
   nib-held one, and apply: the patient is updated, the Procedure is on the picked Contract, the
   hospital note is appended below the Booking's existing notes (never overwriting them), and the
   insurer is recorded only if ticked. Leaving the Contract alone keeps the Booking's current
-  Contract.
+  Contract. With Phase 21 DONE, recording the insurer marks the nib path 'Suggested' on the step rail and removes none.
 - [ ] Southern Cross R4, no NHI: the row sits under Unmatched with "No NHI" and "Waiting for an NHI",
   the panel's NHI field leads, every decision but Reject is disabled with "Add the NHI first", and no
   patient or Booking exists for it (Data Inspector, Admin Day); the row's `targetListId` is the Tue 28 PM List (exposed for 33a's stub, no stub drawn here). Type an invalid NHI: "NHI invalid".
@@ -1217,7 +1135,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] RV-13: fire each S13, S14 and S15 message (MSG-STG-1010 to MSG-STG-1014): every target
   Booking is unchanged (time, List, notes, wording, not cancelled), and a row waits on Matching for
   each (the S13 that moves a Booking to another day is a New row for the new day; the old Booking
-  stays). On Diane Foster's Booking, Fire hospital message (MSG-STG-1012) adds no wording until its
+  stays). On Diane Foster's Booking, Fire hospital message (MSG-STG-1012) changes no text until its
   row is applied. No scripted beat in the run sheet or the Control Panel fires them.
 - [ ] The Integrations simulator's pane 3 reads "Sent to matching" with the change type, the
   suggestion and the wording, and never "applied".
@@ -1228,7 +1146,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
   row arrives and the office matches it, Sarah Mitchell** puts her on the Tue 28 Jul AM List with her
   wording as received; the choice is then disabled. On an ACTIVE St George's List, "A new hospital
   booking on this List" adds a synthetic patient. On Diane Foster's Booking, "A hospital update for
-  this Booking, approved by the office" adds the hospital's long wording below `WLE MM`. "Fire
+  this Booking, approved by the office" replaces `WLE MM` with the hospital's long text. "Fire
   hospital message" is no longer in the PWA sheet.
 - [ ] S1 Beats 1 to 3 run from a reset as patched below; S4 Beat 4 and S5 Beat 2 run as patched.
 - [ ] No en or em dash in any new copy, no "slot" in app copy (OQ-64: say session, AM or PM), no
@@ -1253,18 +1171,17 @@ and 19b S1 Beat 3's capture). Phase 34 rebuilds S1 around the sync; this phase m
       open Sarah Mitchell's row, read `lap appy ?conv to open` as the hospital sent it and the
       suggestion; **Choose Contract** and set the Contract Phase 20's patched beat names (through its step rail), leaving the RVG code to the anaesthetist; **Create Booking**; back to
       Mobile, reopen the Tue 28 Jul AM List. Handset variant: Mobile Lists, Demo, **Hospital row
-      arrives and the office matches it** (the office then sets her Contract from the "Needs a
-      Contract" card, or the presenter narrates it).
+      arrives and the office matches it** (the office then sets her Contract from the "Needs an invoice destination" card, or the presenter narrates it).
     - **Say:** "Hospital bookings are how most bookings reach AA today. They land on the matching
       screen with the hospital's wording exactly as sent, the office sees what each row would change,
       and nothing reaches the schedule until someone decides, even an update to a Booking already
       matched. This one is new, so it becomes a Booking on Dr Souter's List. The hospital does not
-      choose the Contract; the office does, here or from its Needs a Contract list."
-    - **Expected:** Sarah Mitchell as the fourth Booking at 08:30, source "Hospital download", her stack showing the wording as received, her existing patient record reused, on the Contract the office picked, her invoice description starting as the hospital's wording (the line's description replaces it where filled in). Remove any "on the hospital's default Contract"
+      choose the Contract; the office does, here or from its Needs an invoice destination list."
+    - **Expected:** Sarah Mitchell as the fourth Booking at 08:30, source "Hospital download", her stack showing the wording as received, her existing patient record reused, on the Contract the office picked, her invoice description starting as the hospital's text (the Contract's invoice description replaces it where filled in). Remove any "on the hospital's default Contract"
       wording and replace the "near real time HL7 and FHIR" line; Phase 14's Future-scope caveat now
       only needs to say the simulator is not how S1 is shown.
-    - Optional beat 1b: open R3 (Diane Foster) to show the side-by-side diff, the hospital's long
-      wording to be added beside `WLE MM` and the line saying it also becomes the invoice description, and
+    - Optional beat 1b: open R3 (Diane Foster) to show the field diff, the hospital's long
+      text that replaces `WLE MM` (kept in the history) and the line saying it also becomes the invoice description, and
       untick a field; or import "St George's bookings, a day
       later" to show Sarah Mitchell's update waiting for approval, matched by date, surgeon, hospital
       and session.
@@ -1274,9 +1191,8 @@ and 19b S1 Beat 3's capture). Phase 34 rebuilds S1 around the sync; this phase m
   - **S1 Beat 2 aside** (20a's "the rooms' and the hospital's wording" on Diane Foster's Booking):
     replace "Demo actions → Fire hospital message (MSG-STG-1012) to add the hospital's fuller wording
     live" with "on Admin, Matching, Demo actions → Send update for a matched Booking (or R3 of the St
-    George's import), then Apply: the hospital's fuller wording is added beside 'WLE MM', never
-    overwriting it, and it also becomes her invoice description unless the Contract line's description
-    is filled in or the office edited it". Handset: the stand-in's "A hospital update for this Booking, approved by the
+    George's import), then Apply: the hospital's fuller text replaces 'WLE MM', which stays in the Booking's change history, and it also becomes her invoice description unless the Contract's invoice description
+    is filled in or an admin edited it". Handset: the stand-in's "A hospital update for this Booking, approved by the
     office".
   - **S1 Serves** line: "importing hospital bookings and the matching screen" replaces "the RFP's
     near-real-time hospital integration".
@@ -1304,16 +1220,16 @@ and 19b S1 Beat 3's capture). Phase 34 rebuilds S1 around the sync; this phase m
 - `docs/demo-guide/02-workflows-and-handoffs.md`: **Workflow 1** readiness line and triggers ("hospital
   bookings or a sheet arrive"); main path step 5 becomes "Hospital rows are matched on the matching
   screen: the office applies, creates (a Booking, a List, or a Draft List holding the Booking) or
-  rejects each one, and sets the procedure and Contract there or from Needs a Contract; anaesthetists
+  rejects each one, and sets the invoice destination and Contract there or from Needs an invoice destination; anaesthetists
   and the office change Bookings directly while the List is ACTIVE"; add the matching-screen handoff
   (office to anaesthetist: the Booking appears on her List with the hospital's wording). **Integration
   failure** becomes "Hospital rows": an unmatched row, or one with no NHI, waits in the unmatched queue; a duplicate row is skipped; a later update waits for approval, matched by date, surgeon, hospital and session; a Booking moved to another day arrives as a cancellation plus a new Booking; a row for a submitted List can still be applied by the office; a row for an authorised List cannot be applied. The HL7
   dead-letter line moves under a Future-scope note, beside one line that automated hospital changes
-  are Future Work. The hospital-update paragraph 20a wrote says the hospital's later wording is added
+  are Future Work. The hospital-update paragraph 20a wrote says the hospital's later text replaces the rooms'
   once the office applies its row. The readiness table gains "Hospital import and matching screen,
   Phase 33" and the HL7/FHIR row says Future scope.
 - `docs/demo-guide/01-personas-and-responsibilities.md`: the office gains "Import hospital bookings,
-  match each row, and set each new Booking's procedure and Contract"; the integration-operator
+  match each row, and set each new Booking's invoice destination and Contract"; the integration-operator
   section says the matching screen is the in-scope surface and the HL7/FHIR monitor is Future scope.
 - `docs/demo-guide/04-presenter-cheat-sheet.md`: rewrite "How do late hospital changes work?" (rows
   land on the matching screen with their wording as received; a later update is matched by date,
@@ -1351,19 +1267,20 @@ matches what was built:
 |---|---|---|
 | [US-02.1.1](../../../../requirements-board/requirements/stories/US-02.1.1.md) Import hospital bookings | partial · admin-surgeon-pdf-import[inbox,review-rows] | captured. Re-shoot on `/admin/matching` (admin): `matching-import` (the Sample file dialog, four samples) and `matching-table` after importing `SAMPLE_STG` with the "Procedure as received" column. Drop the surgeon PDF shots and the partial reason; captions "Hospital bookings imported from a sample file" and "Each imported row lands on the matching screen with its procedure text as received" |
 | [US-02.1.2](../../../../requirements-board/requirements/stories/US-02.1.2.md) Match rows to Lists and Bookings | partial · admin-pdf-row-matching | captured (admin). `as-received` first (Sarah Mitchell's `lap appy ?conv to open` exactly as sent; highlight `matching-received`; caption "Each row shows its procedure text exactly as the hospital sent it"), then the decision panel (`matching-decision`): `match`, `create-booking` (List picker, stack preview, Choose Contract), `create-list`, `create-draft` (holds the row's Booking), `reject` (reason required); the Southern Cross R2 panel shows the insurer and its approval number (US-11.4.3 is not covered here; no row for it). Drop the PDF shot, its stale caption and the partial reason |
-| [US-02.1.3](../../../../requirements-board/requirements/stories/US-02.1.3.md) Show differences on match | absent | captured (admin). Open R3 (Foster's Modification): `diff` (time, wording "Add beside the current text", note in warning tint; `matching-diff`) and `diff-unticked` (note unticked, footer counts 2 changes); `matched-update`: after R1 is applied, import `SAMPLE_STG_UPDATE`, its row matched by date, surgeon, hospital and session, then NHI, waiting for approval. Remove the absent reason |
+| [US-02.1.3](../../../../requirements-board/requirements/stories/US-02.1.3.md) Show differences on match | absent | captured (admin). Open R3 (Foster's Modification): `diff` (time, text "Replaces the current text", note in warning tint; `matching-diff`) and `diff-unticked` (note unticked, footer counts 2 changes); `matched-update`: after R1 is applied, import `SAMPLE_STG_UPDATE`, its row matched by date, surgeon, hospital and session, then NHI, waiting for approval. Remove the absent reason |
 | [US-02.1.4](../../../../requirements-board/requirements/stories/US-02.1.4.md) Unmatched queue | partial · admin-needs-attention-queue | captured (admin). Import `SAMPLE_SX`, filter Unmatched (`matching-unmatched`): R4 "Waiting for an NHI" and R5 with its reason "No List at Southern Cross ...", amber nav badge; state `nhi-added` (a valid NHI typed, the row ready); state `decided` (R5 resolved, nothing dropped). Caption "A row with no NHI, or that matches nothing, waits in the unmatched queue until the office decides"; the row exposes its target List for 33a, which draws the stub and owns the shot that closes the stub criterion. Retire the integration-log shot and its stale caption ("held for manual intervention"); drop the partial reason |
 | [US-02.1.5](../../../../requirements-board/requirements/stories/US-02.1.5.md) Automatic sync from St George's and Southern Cross | absent | no change here (Phase 34 owns it) |
 | [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md) Read, correct and ingest a surgeon PDF list | captured · admin-surgeon-pdf[inbox,extracted] | no change here (Phase 34 owns it: the PDF rows land on this screen). Check the Surgeon PDFs inbox shot still passes |
 | [US-02.3.1](../../../../requirements-board/requirements/stories/US-02.3.1.md) to [US-02.3.4](../../../../requirements-board/requirements/stories/US-02.3.4.md) Create or amend, save, update email, templates | partial, absent, absent, none | no change here (Phase 35 owns them). US-02.3.1's partial reason: the office adding a Booking to a List that already has one by hand is Phase 35's; a matched row creates one only through this screen |
 | [US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) Add a Booking manually | captured · web-add-card, mobile-add-card | no change here (Phase 20a owns the "as given" state). Check it still passes |
-| [US-02.5.1](../../../../requirements-board/requirements/stories/US-02.5.1.md) Apply a modification | captured · simulator-inbound-message[received,applied], admin-card-history | partial (Future Work: the automated path). `received`: Foster's Modification row on the matching screen; `card-history`: after the office applies it, the changed Booking and its History lines "Hospital row applied" and "Description added as received" (applied through store setup, not a replay). `absentReason`: "Automated application from an integration is Future Work (US-14.6.2). In the first release the office applies a hospital modification on the matching screen, shown here." Drop the simulator "applied" shot and its caption |
+| [US-02.5.1](../../../../requirements-board/requirements/stories/US-02.5.1.md) Apply a modification | captured · simulator-inbound-message[received,applied], admin-card-history | partial (Future Work: the automated path). `received`: Foster's Modification row on the matching screen; `card-history`: after the office applies it, the changed Booking and its History lines "Hospital row applied" and the replaced-text entry (applied through store setup, not a replay). `absentReason`: "Automated application from an integration is Future Work (US-14.6.2). In the first release the office applies a hospital modification on the matching screen, shown here." Drop the simulator "applied" shot and its caption |
 | [US-02.5.2](../../../../requirements-board/requirements/stories/US-02.5.2.md) Reschedule to another day arrives as cancel and new Booking | captured · simulator-inbound-message[received,applied], web-rescheduled-card | partial (Future Work: the automated path). `cancel-and-new`: `SAMPLE_STG` R4 (the old day's Cancellation) and R5 (the new day's New row) on the matching screen, then the web Lists showing the old Booking cancelled and the new one created; caption "A Booking that moves day arrives as a cancellation plus a new Booking, decided by the office". `absentReason`: "Detecting the move or the missing Booking from a re-sent List, and automated handling, are Future Work (US-02.2.3). In the first release the office decides each row." Drop the simulator "applied" shot, `web-rescheduled-card` and their captions ("Reschedule applied, the Booking moves to the new List") |
 | [US-02.5.3](../../../../requirements-board/requirements/stories/US-02.5.3.md) Record a cancellation | captured · simulator-inbound-message[received,applied], web-cancelled-card | partial (Future Work: the automated path). `received`: the Cancellation row (R4) on the matching screen; `applied`: the Booking the office cancelled, kept visible on the web List, marked cancelled. `absentReason`: "Automated cancellation from an integration is Future Work. In the first release the office records a hospital cancellation on the matching screen." Drop the simulator "applied" shot and its caption |
 | [US-02.5.4](../../../../requirements-board/requirements/stories/US-02.5.4.md) Inbound changes accepted until the List is authorised | partial · simulator-change-cutoff | partial, re-shot on the matching screen (admin): a row for a submitted List (MSG-STG-1014) that the office can still apply, beside a row for an authorised List (`SAMPLE_SX` R3) with its "List authorised" flag and the disabled apply ("This List is authorised and locked"). Reason: "Automated changes are Future Work. In the first release every hospital change waits for the office, who may apply it until the List is authorised." Drop "held for manual intervention" and its caption |
-| [US-02.5.5](../../../../requirements-board/requirements/stories/US-02.5.5.md) Append-only change history | captured · admin-card-history, admin-audit-log | no change here. Check the History names the hospital row, the office who applied it and the wording added |
+| [US-02.5.5](../../../../requirements-board/requirements/stories/US-02.5.5.md) Append-only change history | captured · admin-card-history, admin-audit-log | no change here. Check the History names the hospital row, the office who applied it and the text replaced |
 | [US-02.5.6](../../../../requirements-board/requirements/stories/US-02.5.6.md) Concurrent edits | absent | stays absent; reword the reason: "Future Work: concurrent edits between an automated update and a person." |
-| [US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) Keep the procedure text as received | captured by 20a · source-wording[rooms,hospital-update] | stays captured. Re-point `hospital-update` (MSG-STG-1012 now only stages a row): stage Foster's update (the `matching-send-update` entry or `SAMPLE_STG` R3) and apply it on Admin, Matching, then shoot the Booking on web, mobile and admin as before. Caption "A later hospital update, approved on the matching screen, is added beside it, never overwriting it". Add state `matching-row` (the wording to add beside `WLE MM`, highlight `matching-diff`) |
+| [US-02.5.7](../../../../requirements-board/requirements/stories/US-02.5.7.md) The hospital's procedure text replaces the rooms' | none (create it) | captured. 20a shoots the rooms' text and the replacement on the Booking; this phase re-points the hospital state through the matching screen: stage Foster's update (`matching-send-update` or `SAMPLE_STG` R3), apply it on Admin, Matching, then shoot the Booking on web, mobile and admin showing the hospital's text with `WLE MM` in the change history. Add state `matching-row` (admin, the replacement in the diff, highlight `matching-diff`). Caption "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history". Create the recipe if 20a left none |
+| [US-02.5.8](../../../../requirements-board/requirements/stories/US-02.5.8.md) See a Booking's change history | none (create it) | no change here (Phase 35 owns the screen). Check the Booking's History shows this phase's entries: "Hospital row applied" and the replaced text with its source |
 | [US-03.1.9](../../../../requirements-board/requirements/stories/US-03.1.9.md) Booking descriptions and Contract shown together | partial (20a) | captured. Add `matching-stack` on `/admin/matching` (Sarah Mitchell's panel after Choose Contract: the wording as received, then the Contract; highlight `matching-stack`; caption "The matching screen shows each Procedure's text as received, then its Contract"; the panel's invoice-description line shows in the `matching-diff` shot, not here). Drop the `absentReason` |
 | [US-02.3.2](../../../../requirements-board/requirements/stories/US-02.3.2.md) | see Phase 35 | no change here (Phase 35 owns it) |
 | [US-02.3.3](../../../../requirements-board/requirements/stories/US-02.3.3.md) | see Phase 35 | no change here (Phase 35 owns it) |
@@ -1414,7 +1331,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 **Steer this phase's reviewers at:**
 - **No silent apply, and no automated decisions, anywhere.** Grep for every caller of
-  `createBooking`, `editBooking`, `editPatient`, `editProcedure`, `addSourceText`, `pickRvgGroup`,
+  `createBooking`, `editBooking`, `editPatient`, `editProcedure`, the replace helper, `pickRvgGroup`,
   `setProcedureContract`, `setBookingInsurance`, `reassignBooking` and `cancelBooking` reachable
   from `integrationActions.ts`, the fixtures and the trigger bodies: the only path from a hospital row
   to the schedule is `decideImportRow`, and only with an explicit decision (the PWA stand-in
@@ -1431,14 +1348,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **The match key is US-02.1.3's.** `findMatch` finds the List by date, surgeon, hospital and session
   and then the patient by NHI; the appointment id is only a duplicate key; nothing matches by name
   alone; the key lives in that one function with its tests.
-- **The wording is kept as received.** Every row's wording reaches the Procedure verbatim (no trim,
-  no case change), through `createBooking`'s source text or `addSourceText` only, beside earlier
-  texts and never replacing them, the hospital's apart from the rooms'; a replay adds nothing;
-  `correctImportRow` cannot touch it; the wording never sets or changes a Contract or an RVG code; the
-  table and panel show it exactly as stored.
+- **The text is kept as received, and the hospital's replaces the rooms' (US-02.5.7).** Every row's text reaches the Procedure verbatim (no trim, no case change), through `createBooking`'s text input or 20a's replace helper only (grep: no direct write from `matchingActions.ts`, the fixtures or a trigger body); a matched row's text replaces the current one with no check against the rooms', and the replaced text lands in the Booking's change history with its source; nothing keeps two texts side by side; a replay writes no second history entry; `correctImportRow` cannot touch it; the text never sets or changes a Contract or an RVG code; the table and panel show it exactly as stored.
 - **No Contract or RVG code from a row.** No suggestion, trigger body or stand-in carries a Contract or
-  RVG code pick; a created Booking with no office pick has no Contract and appears on "Needs a
-  Contract"; no default Contract exists or is reintroduced (OQ-78); the office picks through 20's step
+  RVG code pick; a created Booking with no office pick has no Contract and appears on "Needs an invoice destination"; no default Contract exists or is reintroduced (OQ-78); the office picks through 20's step
   rail and its one path module; a pick goes through `setProcedureContract`'s, `pickRvgGroup`'s or
   `createBooking`'s checks only.
 - **Applies until AUTHORISED (US-02.5.4).** A decision on a SUBMITTED List applies as the office;
@@ -1451,13 +1363,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   and said.
 - **A missing field is never a change.** No incoming "not supplied" value blanks a Booking field; the
   diff, the classifier and the apply agree on this.
-- **The invoice description layers (D37, D73).** A row's description reaches `invoiceDescription` only
-  through 20a's `refreshInvoiceDescription` (grep: no direct write from `matchingActions.ts`, the
-  fixtures or a trigger body): it replaces the invoice description unless a filled-in line description
-  applies or the office edited it; an edit is kept and the Booking says newer wording has arrived; a
-  row with no wording, or an identical text, changes nothing; the received texts are unchanged either way.
-- **No insurer hint (D28, 23 October).** No flag, pill or comparison relates a row's insurer to the Booking's Contracts; the insurer is source data only.
-- **No stub here, no Insurer master.** A row with no NHI leaves the List, Booking and patient tables unchanged and draws nothing on the List (33a draws the stub), its `targetListId` is exposed and agrees with `findMatch`'s List, every row and batch carries a `source`, and no `InsurerId` or `I-NIB` appears: the insurer is an insurer contract holder.
+- **The invoice description layers (D37, D73).** A row's text reaches `invoiceDescription` only through 20a's `refreshInvoiceDescription` (grep: no direct write from `matchingActions.ts`, the fixtures or a trigger body): it replaces the invoice description unless the Contract's filled-in invoice description applies or an admin edited it; an admin's edit always wins (D73 answered, no provisional label) and the Booking says newer text has arrived; a row with no text, or an identical one, changes nothing; the change history keeps the replaced procedure text either way.
+- **No insurer hint (D28, 23 October).** No flag, pill or comparison relates a row's insurer to the Booking's Contracts; the insurer or funder (a Party) is source data only and only marks a path 'Suggested' on 21's rail.
+- **No stub here, no Insurer master.** A row with no NHI leaves the List, Booking and patient tables unchanged and draws nothing on the List (33a draws the stub), its `targetListId` is exposed and agrees with `findMatch`'s List, every row and batch carries a `source`, and no `InsurerId` or `I-NIB` appears: the insurer is an insurer or funder Party.
 - **Who is billed is untouched.** No decision writes a billable party or a payer; the row's insurer is
   recorded on the Booking only through Phase 21's `setBookingInsurance`, as source data, and never
   decides who is billed (D17, D28).
@@ -1495,20 +1403,20 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
   themselves"): the defaults built for open questions (the labelled sample files while OQ-13 is open,
-  spanning several days where a real list is one day's; OQ-130's default, D73: a hospital description replaces the invoice description unless a line description applies or the office edited it, an edit kept with a "newer wording has arrived, use it" choice; a decision on a row for a SUBMITTED
+  spanning several days where a real list is one day's; a decision on a row for a SUBMITTED
   List applied by the office until AUTHORISED, and a change for an AUTHORISED List refused and left to
   reject or handle off-line, which US-02.5.4 says is not yet decided; the appointment id used only as a
   duplicate key, where US-02.1.3 names date, surgeon, location and session; the S13 message that moves
   a Booking staging only a New row for the new day, the old Booking left for the office to cancel
   (D62; detecting it is US-02.2.3, Future Work); the row's insurer recorded on the Booking by default
   through Phase 21's setter (D28: source data only, no hint against the Contracts); the "Session has started" flag not built,
-  since US-02.5.4 ties the lock to AUTHORISED; the `hospitalSheet` source-text channel added for a
+  since US-02.5.4 ties the lock to AUTHORISED; the 'Hospital sheet' source value added for a
   manual sheet), anything logged rather than fixed (any covered item that left the Future Work lane),
   and the screens worth a look, each with its route and persona (Admin, Matching `/admin/matching` as
   Kirsty W.; the Booking History and stack of a row-created Booking; Mobile Lists Tue 28 Jul AM as Dr
   Souter; Diane Foster's Booking after the update).
 - **Status row** for catch-up Phase 33, and a phase entry with:
-  - the drift-check result against `a68f09b` (items changed or not; OQ-13, OQ-108, OQ-118, OQ-130 and FT-02.1 status; OQ-103 and OQ-44, OQ-49, OQ-78, OQ-87 and OQ-99 built as answered, with how the Booking is put on the Draft List; D17 and D28 as
+  - the drift-check result against `efe123c` (items changed or not; OQ-13, OQ-108, OQ-118, OQ-130 and FT-02.1 status; OQ-103 and OQ-44, OQ-49, OQ-78, OQ-87 and OQ-99 built as answered, with how the Booking is put on the Draft List; D17 and D28 as
     built; whether 21, 23, 25 and 27 were DONE and which fallbacks were used; US-02.5.1 to US-02.5.4
     still Future Work and not built);
   - what was built, and what was removed (`applyEffect` with 20a's feed wording appends, the park
@@ -1540,14 +1448,10 @@ review-and-fix pass (PROGRESS convention 18)**:
      never on another day.
   4. A field the hospital did not supply is never a change (OQ-13's "sometimes do not come
      through"). A hospital note is appended, never overwritten. An NHI difference is shown, never
-     applied. **The hospital's procedure wording is kept as received**, apart from the rooms', and added
-     beside the Procedure's earlier texts (US-02.5.7); it is never corrected and never changes the
-     Contract or the RVG code. It replaces the Procedure's invoice description through 20a's helper,
-     unless a filled-in line description applies or the office edited it (D37 answered; OQ-130's
-     default, D73: an edit is kept, with a note that newer wording has arrived).
+     applied. **The hospital's procedure text replaces the rooms'** on the Procedure with no check against it (US-02.5.7), the replaced text kept in the Booking's change history with its source; it is never corrected and never changes the Contract or the RVG code. It becomes the invoice description through 20a's helper, unless the Contract's invoice description is filled in (the top default) or an admin edited it (D37 answered; OQ-130 answered, D73: an admin's edit always wins, with a note that newer text has arrived).
   5. A hospital row never sets a Contract or an RVG code (US-04.3.6 Proposed; OQ-78: no default
      Contract; OQ-99, D33: no procedure to match): a created Booking has neither unless the office
-     picks them in the panel, and waits on "Needs a Contract" (US-04.3.4). The hospital's insurer and
+     picks them in the panel, and waits on "Needs an invoice destination" (US-04.3.4). The hospital's insurer and
      approval number are recorded on the Booking as source data through Phase 21's setter (D28) and
      never decide who is billed or match against the Contracts (D28, 23 October: no insurer hint on a
      row); who is billed comes from the Contract's holder or the payer on the Booking (D17).
@@ -1559,8 +1463,8 @@ review-and-fix pass (PROGRESS convention 18)**:
      rows; a time change within the same List is a Modification. This replaces the Phase 11 behaviour
      that retimed and moved in place. US-02.5.2's automated handling is Future Work and not built.
   8. Every hospital-pathway channel (import, manual sheet, feed message) stamps `source:
-     'hospitalDownload'`; the channel lives on the row, on the source text (`hospitalDownload`,
-     `hospitalSheet`, `hospitalFeed`) and in the Booking's History.
+     'hospitalDownload'`; the channel lives on the row, on the change-history source (the hospital's list,
+     'Hospital sheet', the hospital's feed) and in the Booking's History.
   9. The samples are labelled fixtures while OQ-13 (how each hospital provides its bookings) is
      open; their wording is AR-35's illustrative wording, not AA's; app copy says "import", per
      US-02.1.1's retitle. Every row and batch carries its `source` (hospital here; rooms for Phase 34's PDF rows, OQ-108 answered, D51).

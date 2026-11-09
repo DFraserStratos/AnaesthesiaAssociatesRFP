@@ -47,13 +47,13 @@ No S1 to S5 figure moves.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware; never a plain `git diff` of the catalogue folder):
+1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.1.1,US-12.1.2,US-12.1.4,US-12.2.2,US-08.4.5,FT-06.1,OQ-14,OQ-52,OQ-111
    ```
 
-   If an item changed after `a68f09b`, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work and say so in
+   If an item changed after `efe123c`, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work and say so in
    the PROGRESS entry. To see why an item says what it says, run `npm --prefix requirements-board run source -- --item <ID> --text` (Node 22.18+).
 2. Confirm the readings:
 

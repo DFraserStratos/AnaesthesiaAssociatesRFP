@@ -159,8 +159,8 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot, commit a68f09b (the tool diffs from
-   the baseline in plan.json to the working tree, so it shows only what changed after a68f09b):
+1. Run the drift check against the plan's catalogue snapshot, commit efe123c (the tool diffs from
+   the baseline in plan.json to the working tree, so it shows only what changed after efe123c):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3
@@ -171,7 +171,7 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
    OQ-47, OQ-71, OQ-42, OQ-60, OQ-29 and OQ-77, and the domain-model lines on the internal ledger, the negative invoice and the remittance
    advice. If an item changed, re-read it and adjust the work items. If US-10.2.5, US-10.2.6 or
    US-10.2.7 is now Retired or Future, drop its work items and record that in the PROGRESS entry. At
-   a68f09b US-10.2.7 is **Proposed** (Greg's weekly cycle, built to), US-10.2.6 is **Verify**
+   efe123c US-10.2.7 is **Proposed** (Greg's weekly cycle, built to), US-10.2.6 is **Verify**
    (approver and its relation to the release open, OQ-47), US-10.2.5 is **Confirmed**, and FT-10.2 is
    37's (read only: nothing here is built for it).
 2. **Questions** (each built as one setting or one store action, so a different answer stays
