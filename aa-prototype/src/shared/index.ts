@@ -23,7 +23,7 @@ export { DemoBadge } from './DemoBadge'
 // Phase 05 — shared surface, UI primitives, schedule row, formatting.
 export { SurfaceProvider, useSurface, BottomSheet, Dialog, type Surface, type SurfaceVariant } from './surface'
 export { Button, TickBadge, SuccessOverlay, FieldLabel, FormError, TextField, TextArea, Segmented, DockSpacer } from './ui'
-export { ListRow, type ListRowRight } from './schedule'
+export { ListRow, ProgressPill, type ListRowRight } from './schedule'
 
 // Catch-up Phase 15a: warnings (triangle, panel, hooks).
 export { useBookingWarnings, useListWarnings, WarningTriangle, WarningsPanel, ClearWarningButton } from './warnings'

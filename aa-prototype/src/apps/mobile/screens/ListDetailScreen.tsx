@@ -4,7 +4,7 @@ import { accent, elevation, neutral, radius, semantic } from '../../../theme/tok
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
-import { removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
+import { editRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
@@ -109,7 +109,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
     dayLabel,
     times !== undefined ? slotTimeRange(times) : undefined,
   ].filter((p): p is string => p !== undefined && p !== '')
-  const canEdit = list.state === 'ACTIVE'
+  // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
+  const canEdit = editRefusal(actor, list) === null
   const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0

@@ -106,9 +106,9 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Submit this list to the office?</div>
           <div style={{ fontSize: 14, lineHeight: '21px', color: neutral.slate }}>
-            Submitting sends every booking on this list to the office for review and billing. You will
-            not be able to change these bookings afterwards; the office makes any corrections from
-            here.
+            Submitting tells the office this list is ready for review and billing. You can still
+            change these bookings until the office authorises the list; the office sees any change
+            at review.
           </div>
           {error !== null && (
             <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>

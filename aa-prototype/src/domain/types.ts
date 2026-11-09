@@ -510,7 +510,8 @@ export interface Notification {
  * clarifying a missing reference with the hospital); the note shows on the
  * review action bar AND in the List's audit trail. There is deliberately NO
  * return-to-anaesthetist action anywhere — a SUBMITTED List flows only forward
- * to AUTHORISED (no Returned state, convention 6). Optional; the seed populates
+ * to AUTHORISED (no Returned state); the anaesthetist can still change it until
+ * then, and the last change stands (catch-up Phase 38a). Optional; the seed populates
  * none, so no PERSIST_VERSION bump.
  */
 export interface ListPhoneNote {

@@ -382,9 +382,10 @@ export function submittedListCount(state: AppState): number {
 
 /**
  * True once the List's billing run has stamped it (Phase 08 drives the stamp).
- * Lists vanish from the anaesthetist's forward views at INVOICE GENERATION,
- * not at AUTHORISED (3rd review #12) — an authorised list is still unbilled
- * and keeps showing under Done with the unbilled cluster (M10).
+ * The office reads it (the office stand-in, the Billing monitor, Review's
+ * recently billed). It no longer decides the anaesthetist's main view: a List
+ * leaves that at AUTHORISED (`hasLeftMainView`, catch-up Phase 38a, D9), and no
+ * anaesthetist screen reads this stamp.
  */
 export function isListBilled(list: List): boolean {
   return list.billedAtISO !== undefined
@@ -402,7 +403,12 @@ export function dashboardFiguresFor(state: AppState, anaesthetistId: string): Da
   return deriveDashboardFigures(seed)
 }
 
-/** Seeded historical backdrop Lists: the rule lives in the domain (catch-up Phase 30), re-exported here. */
+/**
+ * Seeded historical backdrop Lists: the rule lives in the domain (catch-up Phase
+ * 30), re-exported here. Since catch-up Phase 38a they are also the
+ * anaesthetist's browsable history (search and the date lookup reach them);
+ * they stay out of the office surfaces and the main view.
+ */
 export { isBackdropList }
 export function isBackdropInvoice(invoice: Pick<Invoice, 'id'>): boolean {
   // HINV: Dr Souter's seeded history. RBINV: the "Seed a month of BCTIs" demo action (catch-up Phase 16).
@@ -842,8 +848,9 @@ function patientNameFor(state: Pick<AppState, 'masters'>, patientId: string): st
 // ONLY — NEVER `state.xero` (convention 9; the greppable source-scan enforces
 // it for the mobile/web apps). Each ACCPAY invoice is a case→invoice join,
 // attributed to the anaesthetist via booking→list. Outstanding balance is a FLAT
-// list, one row per ACCPAY invoice, no rollup (RFP). The next-day visibility
-// rule: an invoice is visible only the day AFTER it was raised.
+// list, one row per ACCPAY invoice, no rollup (RFP). An invoice shows as soon as
+// it is raised: Xero returns its ID at once, so there is no next-day handover
+// (US-07.4.1, FT-07.4; Greg 19 October; catch-up Phase 38a removed the rule).
 // ---------------------------------------------------------------------------
 
 type MirrorState = Pick<AppState, 'billing' | 'schedule' | 'masters'>
@@ -909,17 +916,16 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
 }
 
 /**
- * Every VISIBLE ACCPAY invoice for an anaesthetist (handed off, raised before
- * today — the RFP's next-day handover), oldest first. The flat, no-rollup list.
+ * Every ACCPAY invoice for an anaesthetist (handed off), oldest first, shown the
+ * moment it is raised: an authorised List's invoices are in balances at once
+ * (catch-up Phase 38a). The flat, no-rollup list.
  */
 export function accpayInvoicesFor(state: MirrorState, anaesthetistId: string, todayISO: string): AccpayInvoiceRow[] {
-  const todayDay = epochDayOf(todayISO)
   const rows: AccpayInvoiceRow[] = []
   for (const c of Object.values(state.billing.cases)) {
     if (anaesthetistIdForCase(state, c) !== anaesthetistId) continue
     const row = accpayRowForCase(state, c, todayISO)
     if (row === undefined) continue
-    if (epochDayOf(row.raisedAtISO) >= todayDay) continue // next-day visibility
     rows.push(row)
   }
   return rows.sort((a, b) => a.raisedAtISO.localeCompare(b.raisedAtISO) || a.invoiceNumber.localeCompare(b.invoiceNumber))

@@ -1,9 +1,22 @@
-import { useMemo, useState } from 'react'
+/**
+ * The anaesthetist's main view on the phone (catch-up Phase 38a; US-07.4.2,
+ * US-07.4.1, US-07.2.1, US-15.0.2). It starts at today: the scroller opens with
+ * the Today heading at its top, upcoming work below, and every earlier List of
+ * hers not yet authorised (that holds a Booking) above it, reached by scrolling
+ * back. Submitted Lists show less prominently and stay editable. A List leaves
+ * when the office authorises it (`hasLeftMainView`), never on the billing stamp;
+ * it is then found by search. Week and Month bound only the forward part.
+ */
+
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
+import { ChevronUp } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
 import { useMovedToMe } from '../../../shared/flows'
-import type { Booking, DisplayKey, List } from '../../../domain/types'
-import { isListBilled, slotViewsForAnaesthetist, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
+import type { AssignedList, Booking, DisplayKey } from '../../../domain/types'
+import { hasLeftMainView, listProgress } from '../../../domain/listProgress'
+import { isAssignedList } from '../../../domain/draftLists'
+import { mainViewFor, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { dayHeading, drSurname, locationName } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
@@ -17,6 +30,13 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'todo', label: 'To-Do' },
   { key: 'done', label: 'Done' },
 ]
+
+const EMPTY_FORWARD: Record<Filter, string> = {
+  week: 'No Lists from today in this window.',
+  month: 'No Lists from today in this window.',
+  todo: 'Nothing left to finish.',
+  done: 'No submitted Lists waiting for the office.',
+}
 
 interface Row {
   /** The session (Slot id), or the List id for a List outside the horizon. */
@@ -33,8 +53,13 @@ interface Row {
   subtitle?: string
   right: ListRowRight
   onClick?: () => void
-  /** "New" on a List a colleague moved to her this week (catch-up Phase 32). */
-  badge?: string
+  /** A submitted List: less prominent, still editable. */
+  quiet?: boolean
+}
+
+interface Section {
+  date: string
+  rows: Row[]
 }
 
 interface ForwardListsScreenProps {
@@ -42,6 +67,18 @@ interface ForwardListsScreenProps {
   personaName: string
   initials: string
   onOpenList: (listId: string) => void
+}
+
+function groupByDate(rows: Row[]): Section[] {
+  const byDate = new Map<string, Row[]>()
+  for (const r of rows) {
+    const arr = byDate.get(r.dateISO)
+    if (arr === undefined) byDate.set(r.dateISO, [r])
+    else arr.push(r)
+  }
+  return [...byDate.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, dayRows]) => ({ date, rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)) }))
 }
 
 export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOpenList }: ForwardListsScreenProps) {
@@ -57,43 +94,29 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
   const todayISO = useToday()
   const [filter, setFilter] = useState<Filter>('week')
 
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const todayRef = useRef<HTMLDivElement>(null)
+
   // Greet by surname ("Kia ora, Dr Souter") — the same short form as the web
   // dashboard, single-sourced in `drSurname`.
   const greetingName = drSurname(personaName)
 
-  const sections = useMemo(() => {
+  const { earlier, forward } = useMemo(() => {
     const bookingsByList = new Map<string, Booking[]>()
     for (const c of Object.values(bookingsRecord)) {
+      if (c.cancellation !== undefined) continue
       const arr = bookingsByList.get(c.listId)
       if (arr === undefined) bookingsByList.set(c.listId, [c])
       else arr.push(c)
     }
+    const activeBookings = (listId: string): Booking[] => bookingsByList.get(listId) ?? []
+    const progressOf = (l: AssignedList) => listProgress(l, activeBookings(l.id), todayISO)
 
-    const weekEnd = format(addDays(parseISO(todayISO), 7), 'yyyy-MM-dd')
-    const monthEnd = format(addDays(parseISO(todayISO), 31), 'yyyy-MM-dd')
+    const slotState = { schedule: { slots: slotsRecord, lists: listsRecord, bookings: bookingsRecord }, appSettings, masters: { slotStatuses } }
+    const forwardTo = format(addDays(parseISO(todayISO), filter === 'month' ? 31 : 7), 'yyyy-MM-dd')
+    const view = mainViewFor(slotState, anaesthetistId, todayISO, forwardTo)
 
-    // Billed lists vanish from every forward view (M10): the billing run's
-    // billedAtISO stamp keys the disappearance, not AUTHORISED — Phase 08
-    // drives the stamp.
-    const mine = Object.values(listsRecord).filter(
-      (l) => l.anaesthetistId === anaesthetistId && !isListBilled(l),
-    )
-    const schedule = { slots: slotsRecord, lists: listsRecord }
-
-    function activeBookings(listId: string): Booking[] {
-      return (bookingsByList.get(listId) ?? []).filter((c) => c.cancellation === undefined)
-    }
-
-    function listInFilter(l: List): boolean {
-      if (filter === 'todo') {
-        return l.state === 'ACTIVE' && activeBookings(l.id).some((c) => !c.completed)
-      }
-      // Done = submitted or authorised and still unbilled (an authorised list
-      // is still unbilled until Phase 08's run stamps it).
-      return l.state === 'SUBMITTED' || l.state === 'AUTHORISED'
-    }
-
-    function surgeonLine(l: List): string {
+    function surgeonLine(l: AssignedList): string {
       const parts: string[] = []
       // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
       const surgeon = l.kind !== 'private' && l.notes !== undefined ? undefined : surgeons[l.surgeonId]
@@ -112,11 +135,11 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
      * assignment or a phone booking never reads Free here.
      */
     function viewRow(v: SlotView): Row | null {
-      if (v.list !== undefined) return isListBilled(v.list) ? null : listRow(v.list)
+      if (v.list !== undefined) return hasLeftMainView(v.list) ? null : listRow(v.list)
       const base = { key: v.slot.id, slotId: v.slot.id, dateISO: v.slot.dateISO, sessionOrder: v.slot.session, statusKey: v.displayKey }
+      const status = resolveDisplayStatus(v.slot.status, slotStatuses)
       // A day off (any closed status): its own row, labelled from the status master.
       if (!v.open) {
-        const status = resolveDisplayStatus(v.slot.status, slotStatuses)
         return {
           ...base,
           variant: 'closed',
@@ -127,7 +150,6 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       }
       // An open session: status only (the office fills it; catch-up Phase 32
       // retired the cover marker: an anaesthetist moves her own Lists instead).
-      const status = resolveDisplayStatus(v.slot.status, slotStatuses)
       return {
         ...base,
         variant: 'open',
@@ -139,26 +161,22 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       }
     }
 
-    function listRow(l: List): Row {
-      // Booked list (private / public / preop).
+    function listRow(l: AssignedList): Row {
       const active = activeBookings(l.id)
       const total = active.length
       const done = active.filter((c) => c.completed).length
       const isPreop = l.kind === 'preop'
       const hospitalName = locationName(l.hospitalId, hospitals)
       const title = isPreop ? 'Pre-op assessment' : hospitalName
+      const progress = progressOf(l)
 
       let right: ListRowRight
-      let countInSubtitle = false
-      if (l.state === 'SUBMITTED' || l.state === 'AUTHORISED' || (total > 0 && done === total)) {
-        right = { kind: 'doneUnbilled' }
-        countInSubtitle = true
-      } else if (total > 0 && l.dateISO <= todayISO && done < total) {
-        right = { kind: 'toFinish', count: total - done }
-        countInSubtitle = true
-      } else {
+      let countInSubtitle = true
+      if (progress === 'toFinish') right = { kind: 'toFinish', count: total - done }
+      else if (progress === 'upcoming') {
         right = { kind: 'count', count: total, statusKey: l.kind }
-      }
+        countInSubtitle = false
+      } else right = { kind: 'progress', progress }
 
       const base = isPreop ? hospitalName : surgeonLine(l)
       const unit = isPreop ? 'appointments' : 'bookings'
@@ -166,32 +184,91 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         ? [base, `${total} ${total === 1 ? unit.replace(/s$/, '') : unit}`].filter(Boolean).join(' · ')
         : base || undefined
 
-      const time = timesForList({ schedule, appSettings, masters: { slotStatuses } }, l).startTime
-      return { key: l.id, slotId: l.slotId, listId: l.id, dateISO: l.dateISO, sessionOrder: l.session, statusKey: l.kind, variant: 'default', session: l.session, time, title, subtitle, right, onClick: () => onOpenList(l.id) }
+      const time = timesForList(slotState, l).startTime
+      return {
+        key: l.id,
+        slotId: l.slotId,
+        listId: l.id,
+        dateISO: l.dateISO,
+        sessionOrder: l.session,
+        statusKey: l.kind,
+        variant: 'default',
+        session: l.session,
+        time,
+        title,
+        subtitle,
+        right,
+        onClick: () => onOpenList(l.id),
+        quiet: progress === 'submitted',
+      }
     }
 
-    // Week and Month walk the sessions from today; To-Do and Done are Lists in any date.
-    const rows =
-      filter === 'todo' || filter === 'done'
-        ? mine.filter(listInFilter).map(listRow)
-        : slotViewsForAnaesthetist({ schedule, appSettings, masters: { slotStatuses } }, anaesthetistId, todayISO, filter === 'week' ? weekEnd : monthEnd)
-            .map(viewRow)
-            .filter((r): r is Row => r !== null)
-
-    // Group by date, then AM before PM within a date.
-    const byDate = new Map<string, Row[]>()
-    for (const r of rows) {
-      const arr = byDate.get(r.dateISO)
-      if (arr === undefined) byDate.set(r.dateISO, [r])
-      else arr.push(r)
+    // To-Do: ACTIVE with a Booking still to complete; Done: submitted (US-07.2.1).
+    // Authorised Lists appear under no chip (they have left the main view).
+    const inChip = (l: AssignedList): boolean => {
+      if (filter === 'todo') return l.state === 'ACTIVE' && activeBookings(l.id).some((c) => !c.completed)
+      if (filter === 'done') return l.state === 'SUBMITTED'
+      return true
     }
-    return [...byDate.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, dayRows]) => ({
-        date,
-        rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)),
-      }))
+
+    const earlierRows = view.earlier.filter(inChip).map(listRow)
+    let forwardRows: Row[]
+    if (filter === 'todo' || filter === 'done') {
+      // Lists from today on, in any date (no window), less any that have left.
+      forwardRows = Object.values(listsRecord)
+        .filter((l): l is AssignedList => isAssignedList(l) && l.anaesthetistId === anaesthetistId && l.dateISO >= todayISO && !hasLeftMainView(l))
+        .filter(inChip)
+        .map(listRow)
+    } else {
+      forwardRows = view.upcoming.map(viewRow).filter((r): r is Row => r !== null)
+    }
+    return { earlier: groupByDate(earlierRows), forward: groupByDate(forwardRows) }
   }, [listsRecord, slotsRecord, appSettings, slotStatuses, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList])
+
+  const earlierCount = earlier.reduce((n, s) => n + s.rows.length, 0)
+  const todaySection = forward[0]?.date === todayISO ? forward[0] : undefined
+  const laterSections = todaySection !== undefined ? forward.slice(1) : forward
+
+  // Open at Today: on first mount and when a chip changes, put the Today heading
+  // at the top of the scroller. A pop back from List or Booking detail keeps the
+  // scroll, since the slide stack keeps this layer mounted.
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current
+    const anchor = todayRef.current
+    if (scroller === null || anchor === null) return
+    scroller.scrollTop = Math.max(0, anchor.offsetTop - 2)
+  }, [filter])
+
+  function showEarlier() {
+    const scroller = scrollerRef.current
+    if (scroller === null) return
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    scroller.scrollTo({ top: 0, behavior: reduce === true ? 'auto' : 'smooth' })
+  }
+
+  function renderRows(rows: Row[]) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {rows.map((r) => (
+          <ListRow
+            key={r.key}
+            statusKey={r.statusKey}
+            session={r.session}
+            time={r.time}
+            title={r.title}
+            subtitle={r.subtitle}
+            right={r.right}
+            variant={r.variant}
+            onClick={r.onClick}
+            quiet={r.quiet === true}
+            {...(r.slotId !== undefined ? { slotId: r.slotId } : {})}
+            {...(r.listId !== undefined ? { listId: r.listId } : {})}
+            {...(r.listId !== undefined && movedToMeIds.has(r.listId) ? { badge: 'New' } : {})}
+          />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -207,6 +284,8 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
           return (
             <button
               key={f.key}
+              type="button"
+              aria-pressed={active}
               onClick={() => setFilter(f.key)}
               style={{
                 height: 38,
@@ -231,52 +310,74 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
           so the optical gap above the bar stays a constant 32px. It is a
           `DockSpacer` at the tail rather than padding here, because trailing
           padding contributes no scrollable extent on WebKit. */}
-      <div data-testid="mobile-lists-scroll" style={{ flex: 1, overflow: 'auto', padding: '0 20px 0' }}>
-        {sections.length === 0 && (
-          <div style={{ marginTop: 28, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>
-            {filter === 'done'
-              ? 'No submitted lists yet.'
-              : filter === 'todo'
-                ? 'Nothing left to finish.'
-                : 'No lists in this window.'}
-          </div>
+      <div ref={scrollerRef} data-testid="mobile-lists-scroll" style={{ flex: 1, overflow: 'auto', padding: '0 20px 0', position: 'relative' }}>
+        {earlierCount > 0 && (
+          <section aria-label="Earlier Lists not yet authorised" data-shot="mobile-main-view-earlier-group">
+            <div style={{ fontSize: 13, fontWeight: 600, color: neutral.slate, margin: '16px 0 0' }}>Earlier, not yet authorised</div>
+            {earlier.map((section) => (
+              <div key={section.date}>
+                <DayHeading>{dayHeading(section.date, todayISO)}</DayHeading>
+                {renderRows(section.rows)}
+              </div>
+            ))}
+            <div aria-hidden style={{ height: 1, background: neutral.line, margin: '20px 0 0' }} />
+          </section>
         )}
-        {sections.map((section) => (
-          <div key={section.date}>
-            <div
+
+        {/* The forward part fills at least the scroller, so Today can sit at its top. */}
+        <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div ref={todayRef} data-testid="mobile-lists-today">
+            <DayHeading>{dayHeading(todayISO, todayISO)}</DayHeading>
+          </div>
+          {earlierCount > 0 && (
+            <button
+              type="button"
+              data-shot="mobile-main-view-earlier"
+              onClick={showEarlier}
               style={{
-                fontSize: 11,
+                alignSelf: 'flex-start',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                minHeight: 44,
+                margin: '-10px 0 0',
+                padding: 0,
+                border: 'none',
+                background: 'none',
+                color: accent.base,
+                fontFamily: 'inherit',
+                fontSize: 13,
                 fontWeight: 600,
-                letterSpacing: '0.06em',
-                color: neutral.mist,
-                margin: '18px 0 8px',
+                cursor: 'pointer',
               }}
             >
-              {dayHeading(section.date, todayISO)}
+              <ChevronUp size={16} strokeWidth={2.4} aria-hidden />
+              {earlierCount} earlier {earlierCount === 1 ? 'List' : 'Lists'} not yet authorised
+            </button>
+          )}
+          {todaySection !== undefined && renderRows(todaySection.rows)}
+          {forward.length === 0 && (
+            <div style={{ marginTop: 20, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>{EMPTY_FORWARD[filter]}</div>
+          )}
+          {laterSections.map((section) => (
+            <div key={section.date}>
+              <DayHeading>{dayHeading(section.date, todayISO)}</DayHeading>
+              {renderRows(section.rows)}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {section.rows.map((r) => (
-                <ListRow
-                  key={r.key}
-                  statusKey={r.statusKey}
-                  session={r.session}
-                  time={r.time}
-                  title={r.title}
-                  subtitle={r.subtitle}
-                  right={r.right}
-                  variant={r.variant}
-                  onClick={r.onClick}
-                  {...(r.slotId !== undefined ? { slotId: r.slotId } : {})}
-                  {...(r.listId !== undefined ? { listId: r.listId } : {})}
-                  {...(r.listId !== undefined && movedToMeIds.has(r.listId) ? { badge: 'New' } : {})}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-        {/* No column gap on this scroller, so the full clearance goes here. */}
-        <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
+          ))}
+          {/* No column gap on this scroller, so the full clearance goes here. */}
+          <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
+        </div>
       </div>
+    </div>
+  )
+}
+
+/** The design's day heading: 11px micro-caps in mist. */
+function DayHeading({ children }: { children: string }) {
+  return (
+    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, margin: '18px 0 8px' }}>
+      {children}
     </div>
   )
 }

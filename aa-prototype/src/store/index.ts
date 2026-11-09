@@ -309,3 +309,7 @@ export {
 } from './integrationActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'
 export * from './selectors'
+// Catch-up Phase 38a: the edit window's completeness check, the main view, the
+// "Changed since submitted" cue, look-back and search (selectors only).
+export { incompleteBookingsOn } from './lifecycle'
+export * from './lookback'

@@ -9,8 +9,8 @@
  * and the Xero side (payer + payee contacts, ACCREC, ACCPAY, payments,
  * disbursements) + the contact-id cache.
  *
- * Live runtime rows are strictly ADDITIVE and kept disjoint by fresh ids + the
- * next-day visibility rule, so aging / GST never double-count. The 8 unpaid
+ * Live runtime rows are strictly ADDITIVE and kept disjoint by fresh ids, so
+ * aging / GST never double-count. The 8 unpaid
  * accounts (converted from the Phase-05 seeded outstanding rows) spread across
  * the aging buckets; a few PAID accounts feed the GST report; one account is a
  * MISSED WEBHOOK (an unmirrored PaymentIn the reconciliation poll catches on the

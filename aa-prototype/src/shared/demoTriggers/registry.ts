@@ -681,7 +681,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message: res.value.billed
-          ? 'Done. The office authorised this List and the billing run raised its invoices. Balances moves the next day: use Next morning on More.'
+          ? 'Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List.'
           : 'The office authorised this List, but the billing run raised no invoices for it.',
       }
     },

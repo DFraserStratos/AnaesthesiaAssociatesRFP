@@ -12,6 +12,7 @@ import {
   addProcedure,
   completeBooking,
   editBooking,
+  editRefusal,
   prepaymentStatusFor,
   raisePreProcedureInvoice,
   removeAttachment,
@@ -303,14 +304,11 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
 
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
-  // Mirror the store's editRefusal so the UI never offers an action the guard
+  // The store's editRefusal decides, so the UI never offers an action the guard
   // would refuse, nor hides one it allows: the office edits ACTIVE and SUBMITTED
-  // (never AUTHORISED); the anaesthetist only their own ACTIVE. This is what lets
-  // the office correct billing setup, edit the patient/times/BTM, amend and
-  // cancel a Booking on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
-  // stays blocked on SUBMITTED. Mobile/web pass an anaesthetist actor, so their
-  // behaviour is unchanged (ACTIVE-only).
-  const canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'ACTIVE' || actor.role === 'office')
+  // (never AUTHORISED), and so does the anaesthetist on their own Lists until the
+  // office authorises them (catch-up Phase 38a, RV-19, D63; the last change stands).
+  const canEdit = !cancelled && editRefusal(actor, list) === null
   const canCapture = canEdit && !booking.completed
   const isOffice = actor.role === 'office'
   const badge = nhiBadge(patient?.nhi)

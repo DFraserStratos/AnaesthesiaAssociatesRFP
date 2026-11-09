@@ -3,12 +3,17 @@ import { ChevronRight } from 'lucide-react'
 import { elevation, neutral, radius, semantic } from '../../theme/tokens'
 import { STATUS_PALETTE } from '../../theme/statusColours'
 import type { DisplayKey } from '../../domain/types'
+import { LIST_PROGRESS_LABEL, type ListProgress } from '../../domain/listProgress'
 import { useDisplayStatus } from '../status/useSlotStatuses'
 import { TickBadge } from '../ui/TickBadge'
 
-/** The right-hand state cluster of a list row (mockup screen 1). */
+/**
+ * The right-hand state cluster of a list row (mockup screen 1). `progress` reads
+ * `LIST_PROGRESS_LABEL` (catch-up Phase 38a), the one source of "Done · unbilled",
+ * "Ready to submit", "Authorised" and "Invoiced"; `toFinish` carries the count.
+ */
 export type ListRowRight =
-  | { kind: 'doneUnbilled' }
+  | { kind: 'progress'; progress: Exclude<ListProgress, 'toFinish' | 'upcoming'> }
   | { kind: 'toFinish'; count: number }
   | { kind: 'count'; count: number; statusKey: DisplayKey }
   | { kind: 'chip'; statusKey: DisplayKey; label: string }
@@ -36,6 +41,13 @@ interface ListRowProps {
   listId?: string
   /** A small neutral pill after the title, e.g. "New" on a List a colleague moved to her (catch-up Phase 32). */
   badge?: string
+  /**
+   * Less prominent than active work: a submitted List (US-07.4.2, FT-07.2). Still a
+   * normal tap target and still editable; only the weight and lift drop.
+   */
+  quiet?: boolean
+  /** A capture hook on the row (`data-shot`). */
+  shot?: string
 }
 
 function Chevron() {
@@ -44,7 +56,7 @@ function Chevron() {
 
 function Pill({ bg, color, children }: { bg: string; color: string; children: ReactNode }) {
   return (
-    <span style={{ padding: '5px 10px', borderRadius: 999, background: bg, fontSize: 11, fontWeight: 600, color }}>
+    <span style={{ padding: '5px 10px', borderRadius: 999, background: bg, fontSize: 11, fontWeight: 600, color, whiteSpace: 'nowrap' }}>
       {children}
     </span>
   )
@@ -52,20 +64,33 @@ function Pill({ bg, color, children }: { bg: string; color: string; children: Re
 
 function RightCluster({ right }: { right: ListRowRight }) {
   if (right.kind === 'custom') return <>{right.node}</>
-  if (right.kind === 'doneUnbilled') {
-    const s = STATUS_PALETTE.free
+  if (right.kind === 'progress') {
+    const label = LIST_PROGRESS_LABEL[right.progress]
+    // Submitted and ready to submit share the design's done tick cluster (stacked,
+    // narrow, no chevron); a submitted row is also quieter (`quiet`).
+    if (right.progress === 'submitted' || right.progress === 'readyToSubmit') {
+      const s = STATUS_PALETTE.free
+      return (
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flex: 'none' }}>
+          <TickBadge size={24} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: s.onTint, whiteSpace: 'nowrap' }}>{label}</span>
+        </span>
+      )
+    }
     return (
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-        <TickBadge size={24} />
-        <span style={{ fontSize: 11, fontWeight: 600, color: s.onTint }}>Done · unbilled</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
+        <Pill bg={neutral.sunken} color={neutral.slate}>
+          {label}
+        </Pill>
+        <Chevron />
       </span>
     )
   }
   if (right.kind === 'toFinish') {
     return (
-      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
         <Pill bg={semantic.warning.tint} color={semantic.warning.onTint}>
-          {right.count} to finish
+          {right.count} {LIST_PROGRESS_LABEL.toFinish.toLowerCase()}
         </Pill>
         <Chevron />
       </span>
@@ -117,6 +142,8 @@ export function ListRow({
   slotId,
   listId,
   badge,
+  quiet = false,
+  shot,
 }: ListRowProps) {
   const resolved = useDisplayStatus(statusKey)
   const c = resolved.visual
@@ -128,9 +155,11 @@ export function ListRow({
       ? { background: c.blockBackground, border: c.border ?? `1px solid ${neutral.line}`, boxShadow: elevation.e0 }
       : isClosed
         ? { background: c.tint, border: `1px solid ${c.rowEdge}`, boxShadow: elevation.e0 }
-        : { background: neutral.surface, border: `1px solid ${neutral.line}`, boxShadow: elevation.e1 }
+        : quiet
+          ? { background: neutral.surface, border: `1px solid ${neutral.line}`, boxShadow: elevation.e0 }
+          : { background: neutral.surface, border: `1px solid ${neutral.line}`, boxShadow: elevation.e1 }
 
-  const titleColor = isOpen || isClosed ? c.onTint : neutral.ink
+  const titleColor = isOpen || isClosed ? c.onTint : quiet ? neutral.slate : neutral.ink
   const subColor = isOpen || isClosed ? c.onTint : neutral.slate
   const sessionColor = isOpen ? c.onTint : neutral.ink
 
@@ -138,8 +167,11 @@ export function ListRow({
   return (
     <Tag
       onClick={onClick}
+      {...(onClick !== undefined ? { type: 'button' as const } : {})}
       data-slot-id={slotId}
       data-list-id={listId}
+      data-quiet={quiet ? 'true' : undefined}
+      data-shot={shot}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -154,11 +186,11 @@ export function ListRow({
       }}
     >
       {!isOpen && (
-        <span style={{ width: 4, height: 46, borderRadius: 99, background: c.solid, flex: 'none' }} aria-hidden />
+        <span style={{ width: 4, height: 46, borderRadius: 99, background: c.solid, flex: 'none', opacity: quiet ? 0.45 : 1 }} aria-hidden />
       )}
       {session !== undefined && (
         <span style={{ width: 46, flex: 'none', display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: sessionColor }}>{session}</span>
+          <span style={{ fontSize: 14, fontWeight: quiet ? 600 : 700, color: quiet ? neutral.slate : sessionColor }}>{session}</span>
           {time !== undefined && (
             <span className="mono" style={{ fontSize: 11, color: isOpen ? c.onTint : neutral.mist, opacity: isOpen ? 0.75 : 1 }}>
               {time}
@@ -168,7 +200,7 @@ export function ListRow({
       )}
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: titleColor }}>{title}</span>
+          <span style={{ fontSize: 16, fontWeight: quiet ? 500 : 600, color: titleColor }}>{title}</span>
           {badge !== undefined && (
             <span data-shot="list-row-badge" style={{ flex: 'none', padding: '2px 8px', borderRadius: 999, background: neutral.sunken, color: neutral.ink, fontSize: 11, fontWeight: 700 }}>
               {badge}

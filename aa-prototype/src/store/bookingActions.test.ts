@@ -104,15 +104,15 @@ describe('createBooking', () => {
     expect(Object.keys(api.getState().schedule.bookings).length).toBe(bookingsBefore)
   })
 
-  it('refuses on a SUBMITTED list for the anaesthetist', () => {
+  it('the anaesthetist may add a Booking to their own SUBMITTED list (catch-up Phase 38a)', () => {
     const api = store()
     const outcome = createBooking(api, MORRISON, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
       operation: 'Test',
       billingRoute: 'hospital',
     })
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
+    expect(outcome.ok).toBe(true)
+    expect(api.getState().schedule.lists[MORRISON_LIST]?.state).toBe('SUBMITTED')
   })
 
   it('refuses a non-owned list', () => {

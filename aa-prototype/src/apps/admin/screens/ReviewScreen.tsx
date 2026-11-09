@@ -9,6 +9,7 @@ import { dayMicroCap, formatCurrency, hhmm, locationName, routeLabel, slotTimeRa
 import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
+import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 
 interface ReviewScreenProps {
   listId: string
@@ -96,6 +97,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
     })
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
   const warningsByBooking = useListWarnings(listId)
+  // The anaesthetist's changes since submit (catch-up Phase 38a): null once authorised.
+  const changed = useChangedSinceSubmitted(listId)
+  const changedIds = new Set(changed?.bookingIds ?? [])
 
   // A Draft List has nothing to review (it can never be submitted).
   if (list === undefined || list.state === 'DRAFT') return null
@@ -104,6 +108,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const hospitalName = locationName(list.hospitalId, masters.hospitals)
   const authorised = list.state === 'AUTHORISED'
 
+  // A Booking the anaesthetist re-opened (or added) on this SUBMITTED List must be
+  // completed again before it can be authorised (authoriseList refuses; catch-up Phase 38a).
+  const incompleteNames = rows
+    .filter((r) => r.booking.cancellation === undefined && !r.booking.completed)
+    .map((r) => masters.patients[r.booking.patientId]?.name ?? 'Unknown patient')
   const listTotals = rows.reduce((acc, r) => ({ units: acc.units + r.totals.units, fee: acc.fee + r.totals.total }), { units: 0, fee: 0 })
   const allFlags: ReviewFlag[] = rows.flatMap((r) => r.flags)
   const unitRate = anaesthetist?.unitValue ?? 0
@@ -202,6 +211,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                 Submitted {hhmm(submitAt)}
               </span>
             )}
+            {changed !== null && <ChangedSinceSubmittedPill cue={changed} />}
           </div>
         </div>
       </div>
@@ -257,6 +267,20 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</span>
                       <WarningTriangle warnings={warningsByBooking.get(booking.id) ?? []} size="sm" />
+                      {changedIds.has(booking.id) && (
+                        <button
+                          type="button"
+                          data-shot="review-changed-booking"
+                          aria-label={`${patient?.name ?? 'Booking'} changed since submitted. Open its history`}
+                          onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })}
+                          style={{ border: `1px solid ${semantic.warning.solid}66`, background: neutral.surface, color: semantic.warning.onTint, borderRadius: 999, padding: '1px 8px', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          Changed
+                        </button>
+                      )}
+                      {!booking.completed && booking.cancellation === undefined && (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>Not complete</span>
+                      )}
                     </div>
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'} · {primary?.description ?? 'Procedure'}{procCount > 1 ? ` · +${procCount - 1} more` : ''}</div>
                   </td>
@@ -308,6 +332,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: elevation.e1, padding: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: 14, fontWeight: 600 }}>{rows.length} booking{rows.length === 1 ? '' : 's'} · {listTotals.units} units · {formatCurrency(listTotals.fee)}</div>
+          {!authorised && incompleteNames.length > 0 && (
+            <div data-testid="review-authorise-blocked" style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
+              Not complete: {incompleteNames.join(', ')}. Complete {incompleteNames.length === 1 ? 'it' : 'them'} before authorising.
+            </div>
+          )}
           {!authorised && allFlags.length > 0 && (
             <div style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{allFlags.length} flag{allFlags.length === 1 ? '' : 's'} open. Check or note them before authorising.</div>
           )}
@@ -320,7 +349,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="secondary" onClick={() => setNoteOpen(true)}>Log phone note</Button>
-            <Button variant="primary" onClick={() => setConfirmOpen(true)} style={{ minHeight: 48, fontSize: 15 }}>Authorise for billing</Button>
+            <Button variant="primary" disabled={incompleteNames.length > 0} onClick={() => setConfirmOpen(true)} style={{ minHeight: 48, fontSize: 15 }}>Authorise for billing</Button>
           </div>
         )}
       </div>

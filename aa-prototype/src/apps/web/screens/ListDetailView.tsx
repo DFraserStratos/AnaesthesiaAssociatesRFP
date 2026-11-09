@@ -3,7 +3,7 @@ import { Check, ChevronLeft, Plus } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
-import { removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
+import { editRefusal, removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
@@ -109,7 +109,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const subline = [surgeon?.name, surgeon?.specialty, dayLabel, times !== undefined ? slotTimeRange(times) : undefined]
     .filter((p): p is string => p !== undefined && p !== '')
     .join(' · ')
-  const canEdit = list.state === 'ACTIVE'
+  // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
+  const canEdit = editRefusal(actor, list) === null
   const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0

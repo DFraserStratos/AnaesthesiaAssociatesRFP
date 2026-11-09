@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
-import { billedLists, invoiceCountsByList, useAppStore } from '../../../store'
+import { billedLists, changedSinceSubmitted, invoiceCountsByList, useAppStore } from '../../../store'
+import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
 import { dayMicroCap, hhmm } from '../../../shared/format'
 import type { AssignedList } from '../../../domain/types'
 import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
@@ -52,6 +53,16 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
         .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO))),
     [listsRecord],
   )
+
+  // The anaesthetist's changes since submit, per queued List (catch-up Phase 38a).
+  const changedByList = useMemo(() => {
+    const map = new Map<string, NonNullable<ReturnType<typeof changedSinceSubmitted>>>()
+    for (const l of submitted) {
+      const cue = changedSinceSubmitted({ schedule, audit }, l.id)
+      if (cue !== null) map.set(l.id, cue)
+    }
+    return map
+  }, [submitted, schedule, audit])
 
   const recentlyBilled = useMemo(() => billedLists({ schedule }).slice(0, 6), [schedule])
   const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])
@@ -114,8 +125,11 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
                     <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {bookingCount[list.id] ?? 0}
                     </td>
-                    <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
-                      {submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}
+                    <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="mono">{submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}</span>
+                        {changedByList.has(list.id) && <ChangedSinceSubmittedPill cue={changedByList.get(list.id)!} />}
+                      </div>
                     </td>
                     <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button

@@ -337,7 +337,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     eventType: 'S14',
     transport: 'hl7v2',
     label: 'S14 · Locked target (manual intervention)',
-    description: 'A modification addressing a Booking that sits on a SUBMITTED List (office-only). Integration writes obey the lifecycle: it is NOT applied, and parks as a manual-intervention item for the office to action. Nothing is lost.',
+    description: 'A modification addressing a Booking that sits on a SUBMITTED List (closed to integrations). Integration writes obey the lifecycle: it is NOT applied, and parks as a manual-intervention item for the office to action. Nothing is lost.',
     correlationAppointmentId: APPT.lockedTarget,
     raw: buildHl7({
       event: 'S14',

@@ -1,3 +1,4 @@
+import { hasLeftMainView } from '../../../domain/listProgress'
 import { useMemo, useState } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { accent, neutral, semantic } from '../../../theme/tokens'
@@ -81,11 +82,11 @@ export function DashboardScreen({
   // The mockup greets by surname ("Kia ora, Dr Souter"); mobile does the same.
   const greetingName = drSurname(personaName)
 
-  // Day summary: today's Lists (a session holding a List counts as booked) +
-  // active bookings + lists ready to submit.
+  // Day summary: today's Lists still on the main view (an authorised List has
+  // left it; catch-up Phase 38a) + active bookings + lists ready to submit.
   const daySummary = useMemo(() => {
     const booked = Object.values(listsRecord).filter(
-      (l) => l.anaesthetistId === anaesthetistId && l.dateISO === todayISO && l.billedAtISO === undefined,
+      (l) => l.anaesthetistId === anaesthetistId && l.dateISO === todayISO && !hasLeftMainView(l),
     )
     let bookings = 0
     let awaiting = 0

@@ -2,6 +2,7 @@
  * Patient intake (the ONE upsert path) + the master-data creation invariants.
  */
 
+import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { editPatient, upsertPatient } from './intake'
@@ -149,13 +150,18 @@ describe('editPatient', () => {
     expect(state.audit.at(-1)?.action).toBe('patient.update')
   })
 
-  it('refuses via a booking on a locked (SUBMITTED) list for the anaesthetist', () => {
+  it('allows the anaesthetist via a booking on their own SUBMITTED list, refuses once AUTHORISED (catch-up Phase 38a)', () => {
     const api = createAppStore()
     const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]
     expect(morrisonBooking).toBeDefined()
     const outcome = editPatient(api, MORRISON, morrisonBooking!.patientId, { phone: '021 000 0000' }, morrisonBooking!.id)
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
+    expect(outcome.ok).toBe(true)
+    api.setState((s) => ({
+      schedule: { ...s.schedule, lists: { ...s.schedule.lists, [MORRISON_LIST]: { ...assigned(s.schedule.lists[MORRISON_LIST]), state: 'AUTHORISED' as const } } },
+    }))
+    const locked = editPatient(api, MORRISON, morrisonBooking!.patientId, { phone: '021 000 0001' }, morrisonBooking!.id)
+    expect(locked.ok).toBe(false)
+    if (!locked.ok) expect(locked.code).toBe('listAuthorised')
   })
 })
 
