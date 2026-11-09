@@ -36,7 +36,7 @@ interface Props {
   onPreview: (id: string | null) => void
 }
 
-/** As a file read would leave it: trimmed, blank sources dropped, no replacement unless Superseded. */
+/** As a file read would leave it: trimmed, blank sources dropped, no replacement unless Retired. */
 const normalise = (a: Artifact): Artifact => ({
   ...a,
   title: a.title.trim(),
@@ -44,7 +44,7 @@ const normalise = (a: Artifact): Artifact => ({
   date: a.date?.trim() || null,
   sources: a.sources.map((s) => s.trim()).filter(Boolean),
   description: tidyText(a.description),
-  supersededBy: a.status === 'Superseded' ? a.supersededBy : null,
+  supersededBy: a.status === 'Retired' ? a.supersededBy : null,
 })
 
 export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
@@ -221,11 +221,11 @@ function DetailsForm({ draft, set, others }: { draft: Artifact; set: (p: Partial
           </select>
         </label>
       </div>
-      {draft.status === 'Superseded' && (
+      {draft.status === 'Retired' && (
         <label className="field">
           <span>Replaced by</span>
           <select className="select" value={draft.supersededBy ?? ''} onChange={(e) => set({ supersededBy: e.target.value || null })}>
-            <option value="">Not said</option>
+            <option value="">Nothing replaces it</option>
             {others.map((r) => (
               <option key={r.data.id} value={r.data.id}>
                 {r.data.title}

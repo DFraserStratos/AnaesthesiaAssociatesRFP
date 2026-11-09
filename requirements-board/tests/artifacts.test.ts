@@ -297,18 +297,20 @@ describe('the check', () => {
         artifact({ id: 'AR-01', kind: 'poster' as never, status: 'Old' as never }),
         artifact({ id: 'AR-02', file: null }),
         artifact({ id: 'AR-03', file: 'artifacts/AR-03.docx' }),
-        artifact({ id: 'AR-04', status: 'Superseded', supersededBy: 'AR-99' }),
+        artifact({ id: 'AR-04', status: 'Retired', supersededBy: 'AR-99' }),
         artifact({ id: 'AR-05', date: '2026-10-32' }),
+        artifact({ id: 'AR-06', status: 'Superseded' as never }),
       ], undefined, (a) => (a.id === 'AR-01' ? facts({ ok: false, error: 'file artifacts/AR-01.svg is missing' }) : svg)),
     )
     expect(e).toEqual([
       'AR-01: kind "poster" is not one of diagram, mockup, screenshot, photo, transcript, note, document',
-      'AR-01: status "Old" is not one of Draft, Current, Superseded, Retired',
+      'AR-01: status "Old" is not one of Draft, Current, Retired',
       'AR-01: file artifacts/AR-01.svg is missing',
       'AR-02: has neither a file nor a mermaid source under ## Source',
       'AR-03: file artifacts/AR-03.docx is not a kind the board shows (.svg, .png, .jpg, .jpeg, .webp, .md, .pdf)',
       'AR-04: superseded_by AR-99, which does not exist',
       'AR-05: date "2026-10-32" is not YYYY-MM-DD, YYYY-MM or YYYY',
+      'AR-06: status "Superseded" is gone: a replaced artifact is Retired, with superseded_by naming its replacement',
     ])
   })
 
@@ -328,19 +330,19 @@ describe('the check', () => {
     ])
   })
 
-  it("checks a card's artifact links and text links, warning on a superseded artifact", () => {
+  it("checks a card's artifact links and text links, warning on a retired artifact and naming its replacement", () => {
     const items = [
       item({ id: 'US-01.1.1', artifacts: ['AR-01#rates', 'AR-02', 'AR-01#nope', 'not-a-ref'], description: 'See [the rates](AR-01#rates) and [this](AR-09).' }),
     ]
     const a = artifact({ id: 'AR-01', regions: [region({ id: 'rates', around: ['text=Two parts'] })] })
-    const b = artifact({ id: 'AR-02', status: 'Superseded', supersededBy: 'AR-01' })
+    const b = artifact({ id: 'AR-02', status: 'Retired', supersededBy: 'AR-01' })
     const issues = run([a, b], items)
     expect(errors(issues)).toEqual([
       'US-01.1.1: artifacts lists AR-01#nope: AR-01 has no region "nope"',
       'US-01.1.1: artifacts entry "not-a-ref" is not AR-nn or AR-nn#region',
       'US-01.1.1: the text links to AR-09: that artifact does not exist',
     ])
-    expect(issues.some((i) => i.severity === 'warning' && /AR-02, which is superseded by AR-01/.test(i.message))).toBe(true)
+    expect(issues.some((i) => i.severity === 'warning' && /AR-02, which is retired and superseded by AR-01/.test(i.message))).toBe(true)
   })
 
   it('warns on a live card listing or linking a retired artifact, and on nothing a retired artifact itself does', () => {
@@ -544,10 +546,13 @@ describe('the artifact index', () => {
   })
 
   it('keeps retired artifacts off the Artifacts tab unless retired artifacts are shown', () => {
-    const live = rec(artifact({ id: 'AR-01', status: 'Superseded', supersededBy: 'AR-02' }))
+    const live = rec(artifact({ id: 'AR-03', status: 'Draft' }))
+    const replaced = rec(artifact({ id: 'AR-01', status: 'Retired', supersededBy: 'AR-03' }))
     const gone = rec(artifact({ id: 'AR-02', status: 'Retired', title: 'Old technical design' }))
     const prefs = { kinds: [], statuses: [], components: [] }
     expect(artifactMatches(live, { ...prefs, showRetired: false }, '')).toBe(true)
+    expect(artifactMatches(replaced, { ...prefs, showRetired: false }, '')).toBe(false)
+    expect(artifactMatches(replaced, { ...prefs, showRetired: true }, '')).toBe(true)
     expect(artifactMatches(gone, { ...prefs, showRetired: false }, '')).toBe(false)
     expect(artifactMatches(gone, { ...prefs, showRetired: false }, 'technical design')).toBe(false)
     expect(artifactMatches(gone, { ...prefs, showRetired: true }, 'technical design')).toBe(true)
@@ -692,7 +697,7 @@ describe('the API', () => {
       a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { record: { ...rec.data, ...patch }, baseRev }, headers: HEADERS })
     expect(() => put({ date: '6 Oct' })).toThrow(/YYYY-MM-DD/)
     expect(() => put({ title: ' ' })).toThrow(/title is empty/)
-    expect(() => put({ status: 'Superseded', supersededBy: 'AR-09' })).toThrow(/does not exist/)
+    expect(() => put({ status: 'Retired', supersededBy: 'AR-09' })).toThrow(/does not exist/)
     expect(() => put({ description: 'Intro\n## Source\nmore' })).toThrow(/## Source/)
     put({ title: 'First' })
     expect(() => put({ title: 'Second' }, rec.rev)).toThrow(expect.objectContaining({ status: 409 }))

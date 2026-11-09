@@ -208,7 +208,7 @@ A two-segment switch at the head of the board's right-hand controls: **Freeform 
 ## Artifacts
 
 The diagrams, transcripts, notes and documents behind the requirements, on their own tab between
-Board and Outstanding items (the count leaves out Superseded ones). Agents write them; the board
+Board and Outstanding items (the count leaves out Retired ones). Agents write them; the board
 edits only their details (below), never the file, its highlights or the links to it.
 
 - **Two layouts, one switch** (Grid · List, kept per browser), both grouped by kind with a count,
@@ -232,7 +232,7 @@ edits only their details (below), never the file, its highlights or the links to
   origin naming itself shown plain, then author, area, **Cited as** (the words sources cite it by), file
   path and size, and the ID bottom right, which copies a link), **History**. The artifact fills the rest.
 - **Edit details**, in the panel's footer as on an item sheet, swaps the tabs for a form: name,
-  kind, status (and Replaced by, when Superseded), date (as written, `2026-10-01`, `2026-10` or
+  kind, status (and Replaced by, when Retired), date (as written, `2026-10-01`, `2026-10` or
   `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and
   Esc, the restored draft, the on-disk conflict and the discard veil all work as they do on a
   card. The file, its highlights and its ID are not in the form.

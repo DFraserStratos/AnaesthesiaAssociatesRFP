@@ -507,7 +507,7 @@ export type ArtifactDetails = Pick<Artifact, (typeof ARTIFACT_EDITABLE)[number]>
 /**
  * The artifact on disk with an untrusted edit's details laid over it: only the editable fields
  * are taken, everything else stays as the file has it. Values are tidied as a file read would
- * (trimmed, an empty date unset), and `superseded_by` only stays on a Superseded artifact.
+ * (trimmed, an empty date unset), and `superseded_by` only stays on a Retired artifact.
  */
 export function withArtifactDetails(current: Artifact, raw: unknown): Artifact {
   const o = (raw ?? {}) as Record<string, unknown>
@@ -522,7 +522,7 @@ export function withArtifactDetails(current: Artifact, raw: unknown): Artifact {
   if (has('components')) next.components = strList(o.components)
   if (has('sources')) next.sources = strList(o.sources).map((s) => s.trim()).filter(Boolean)
   if (has('description')) next.description = tidyText(str(o.description))
-  if (next.status !== 'Superseded') next.supersededBy = null
+  if (next.status !== 'Retired') next.supersededBy = null
   return next
 }
 

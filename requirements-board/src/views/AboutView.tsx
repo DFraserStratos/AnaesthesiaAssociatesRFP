@@ -371,7 +371,7 @@ function Anatomy() {
               </li>
             ))}
           </ul>
-          <p>An artifact is never deleted. One replaced by a newer one is Superseded and points at it; one that no longer reflects the design, with nothing to replace it, is Retired.</p>
+          <p>An artifact is never deleted. One that is no longer the version to go by is Retired: hidden on the Artifacts tab until Show retired is on, and still opened by a link. When a newer artifact replaced it, Replaced by points at that one, and sources citing the old one open the new.</p>
         </div>
         <div className="about-tile">
           <h3>Diff review</h3>

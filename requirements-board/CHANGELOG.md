@@ -2,6 +2,12 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.7.0 · 2026-11-10
+
+- One past status for artifacts: Superseded is folded into Retired. A retired artifact may name its replacement in `superseded_by` (Replaced by in Edit details, "Nothing replaces it" otherwise); with one, the panel shows "by" its title and sources citing it hand on to the replacement, as before. Show retired now hides every past artifact, replaced or not.
+- `check` errors on `status: Superseded` and says what to write instead, and warns on `superseded_by` on an artifact that is not Retired. SCHEMA.md, DESIGN.md, the About page and the add-artifact skill say Retired is the only past status.
+- A saved Artifacts status filter naming a status that no longer exists is dropped on load, so it cannot hide everything.
+
 ## 1.6.0 · 2026-11-10
 
 - Stepped diagrams: an SVG drawing's sidecar can list `steps`, and the board plays them in order. Each step reveals more of the drawing (reveal is cumulative, nothing is hidden again), highlights what it is about while the rest dims, and shows a caption and a small balances table, the rows that changed since the step before marked. With no step chosen the board shows the whole drawing, nothing dimmed; thumbnails, the minimap, visual compare and the Diff review show that finished picture.

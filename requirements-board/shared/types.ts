@@ -127,14 +127,15 @@ export const ARTIFACT_KINDS = ['diagram', 'mockup', 'screenshot', 'photo', 'tran
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number]
 
 /**
- * Current is the baseline and goes unmarked; Superseded keeps the record (and its ID) with a pointer
- * to what replaced it; Retired keeps the record of one that no longer reflects the design and has no
- * replacement (hidden on the Artifacts tab unless retired artifacts are shown).
+ * Current is the baseline and goes unmarked. Retired keeps the record (and its ID) of one that is no
+ * longer the version to go by, hidden on the Artifacts tab unless retired artifacts are shown; when a
+ * newer artifact replaced it, `supersededBy` says which. There is deliberately one past status, not a
+ * second "Superseded" one: whether something replaced it is the pointer's job.
  */
-export const ARTIFACT_STATUSES = ['Draft', 'Current', 'Superseded', 'Retired'] as const
+export const ARTIFACT_STATUSES = ['Draft', 'Current', 'Retired'] as const
 export type ArtifactStatus = (typeof ARTIFACT_STATUSES)[number]
-/** Superseded or Retired: kept for traceability, no longer the version to go by, so links to it show muted. */
-export const isPastArtifact = (status: ArtifactStatus) => status === 'Superseded' || status === 'Retired'
+/** Retired: kept for traceability, no longer the version to go by, so links to it show muted. */
+export const isPastArtifact = (status: ArtifactStatus) => status === 'Retired'
 
 /** How the board shows an artifact, from its file's extension (or its inline mermaid source). */
 export type ArtifactFormat = 'svg' | 'raster' | 'mermaid' | 'markdown' | 'pdf'
@@ -220,7 +221,7 @@ export interface Artifact {
   title: string
   kind: ArtifactKind
   status: ArtifactStatus
-  /** The artifact that replaced this one (Superseded only). */
+  /** The artifact that replaced this one (Retired only, and only when something did). */
   supersededBy: string | null
   /**
    * When the artifact itself was made: a meeting's date for its transcript or notes, a document's

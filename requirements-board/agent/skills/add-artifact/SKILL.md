@@ -48,8 +48,8 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
     when sources cite the printed page and it runs one behind the PDF's (the RFP's printed p.27 is
     PDF p.28; measure it on the document, don't assume);
   - a **diagram** that is the latest drawing of something sources already cite by name
-    (`"Diagram: Billing route"`): that name. When a diagram is superseded, sources citing the old
-    one follow `superseded_by` to the new one by themselves.
+    (`"Diagram: Billing route"`): that name. When a diagram is replaced (retired with
+    `superseded_by`), sources citing the old one follow it to the new one by themselves.
   `--within <heading-slug>` makes points count only under that heading (for a note that numbers each
   section from 1). For a cited name that should open one spot, add `spot: <region-id>` to the entry in
   the sidecar by hand. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
@@ -122,8 +122,10 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
 
 Never delete an artifact or reuse its ID. A new version of the same file: overwrite the file in place
 (history shows the before and after). Something different that replaces it: register the new one,
-then set the old one's `status: Superseded` and `superseded_by: AR-nn`, and move the item links over.
-One that no longer reflects the design, with nothing to replace it: set `status: Retired` (no
-`superseded_by`). The board hides it on the Artifacts tab unless retired artifacts are shown, and
-sources citing it still open it (nothing hands on); take it out of live items' `artifacts:` and text
-links, since `check` warns on those.
+then set the old one's `status: Retired` and `superseded_by: AR-nn`, and move the item links over;
+sources citing the old one hand on to the new. One that no longer reflects the design, with nothing
+to replace it: set `status: Retired` and leave out `superseded_by`; sources citing it still open it
+(nothing hands on). Either way the board hides it on the Artifacts tab unless retired artifacts are
+shown; take it out of live items' `artifacts:` and text links, since `check` warns on those.
+Retired is the only past status: there is no `Superseded` status (`check` errors on one), because
+whether something replaced it is what `superseded_by` says.

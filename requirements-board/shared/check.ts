@@ -224,7 +224,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (!ID_PATTERNS.artifact.test(a.id)) err(a.id, `ID ${a.id} does not match AR-nn`)
     if (!a.title.trim()) err(a.id, 'title is empty')
     if (!ARTIFACT_KINDS.includes(a.kind)) err(a.id, `kind "${a.kind}" is not one of ${ARTIFACT_KINDS.join(', ')}`)
-    if (!ARTIFACT_STATUSES.includes(a.status)) err(a.id, `status "${a.status}" is not one of ${ARTIFACT_STATUSES.join(', ')}`)
+    if ((a.status as string) === 'Superseded') err(a.id, 'status "Superseded" is gone: a replaced artifact is Retired, with superseded_by naming its replacement')
+    else if (!ARTIFACT_STATUSES.includes(a.status)) err(a.id, `status "${a.status}" is not one of ${ARTIFACT_STATUSES.join(', ')}`)
     for (const c of a.components) if (unknownComponent(c)) err(a.id, `component "${c}" is not in the vocabulary (board.config.json)`)
     if (a.sources.length === 0 && !isPastArtifact(a.status)) warn(a.id, 'no source')
     if (a.date === null) warn(a.id, 'no date: when it was made (a meeting, a publication, a drawing)')
@@ -232,8 +233,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (a.supersededBy !== null) {
       if (a.supersededBy === a.id) err(a.id, 'superseded_by names the artifact itself')
       else if (!artById.has(a.supersededBy)) err(a.id, `superseded_by ${a.supersededBy}, which does not exist`)
-      if (a.status !== 'Superseded') warn(a.id, `superseded_by is set but the status is ${a.status}`)
-    } else if (a.status === 'Superseded') warn(a.id, 'superseded, but superseded_by does not say by what')
+      if (a.status !== 'Retired') warn(a.id, `superseded_by is set but the status is ${a.status}, not Retired`)
+    }
 
     const format = artifactFormat(a)
     if (a.file && a.source.trim()) err(a.id, 'has both a file and a mermaid source; keep one')
@@ -320,8 +321,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       if (problem) err(it.id, `artifacts lists ${ref}: ${problem}`)
       else if (!retired(it)) {
         const target = artById.get(parseArtifactRef(ref).id)!
-        if (target.status === 'Superseded') warn(it.id, `artifacts lists ${ref}, which is superseded${target.supersededBy ? ` by ${target.supersededBy}` : ''}`)
-        else if (target.status === 'Retired') warn(it.id, `artifacts lists ${ref}, which is retired`)
+        if (target.status === 'Retired') warn(it.id, `artifacts lists ${ref}, which is retired${target.supersededBy ? ` and superseded by ${target.supersededBy}` : ''}`)
       }
     }
   }

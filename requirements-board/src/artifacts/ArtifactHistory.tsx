@@ -103,7 +103,7 @@ function ArtifactChangeRow({ change: c, rec }: { change: FieldChange; rec: Artif
       )
     case 'supersededBy': {
       const by = c.to ? artifacts[String(c.to)]?.data.title ?? String(c.to) : null
-      return <p className="hist-row">{by ? <>Superseded by <strong>{by}</strong></> : 'No longer marked as superseded'}</p>
+      return <p className="hist-row">{by ? <>Replaced by <strong>{by}</strong></> : 'No longer marked as replaced'}</p>
     }
     case 'author':
       return (

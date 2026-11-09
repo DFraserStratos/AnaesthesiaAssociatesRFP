@@ -167,11 +167,11 @@ function hasRegion(index: SourceIndex, a: Artifact, region: string): boolean {
   return !!f.headings?.some((h) => h.slug === region)
 }
 
-/** Superseded artifacts hand on to their replacement, keeping each spot the replacement also has. */
+/** A retired artifact with a replacement hands on to it, keeping each spot the replacement also has. */
 function latest(index: SourceIndex, a: Artifact, spots: SourceSpot[]): { a: Artifact; spots: SourceSpot[] } {
   const seen = new Set([a.id])
   let cur = a
-  while (cur.status === 'Superseded' && cur.supersededBy && !seen.has(cur.supersededBy)) {
+  while (cur.status === 'Retired' && cur.supersededBy && !seen.has(cur.supersededBy)) {
     const next = index.byId.get(cur.supersededBy)
     if (!next) break
     seen.add(next.id)

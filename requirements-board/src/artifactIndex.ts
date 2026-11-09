@@ -7,7 +7,7 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import { isArtifactId, itemTexts, mentions } from '../shared/links.ts'
 import { stepOf } from '../shared/steps.ts'
-import { ARTIFACT_KINDS, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region, type Step } from '../shared/types.ts'
+import { ARTIFACT_KINDS, ARTIFACT_STATUSES, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region, type Step } from '../shared/types.ts'
 import { useCatalogue, useIndex, type Index } from './store.ts'
 
 export interface ArtifactLink {
@@ -130,7 +130,10 @@ const DEFAULTS: ArtifactPrefs = { layout: 'grid', kinds: [], statuses: [], compo
 function readPrefs(): ArtifactPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY)
-    return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<ArtifactPrefs>) } : DEFAULTS
+    if (!raw) return DEFAULTS
+    const prefs = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<ArtifactPrefs>) }
+    // A status filter saved before a status went away (Superseded, now Retired) would match nothing.
+    return { ...prefs, statuses: prefs.statuses.filter((s) => (ARTIFACT_STATUSES as readonly string[]).includes(s)) }
   } catch {
     return DEFAULTS
   }

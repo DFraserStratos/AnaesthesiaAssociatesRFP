@@ -32,16 +32,15 @@ export const ARTIFACT_KIND_PLURAL: Record<ArtifactKind, string> = {
   document: 'Documents',
 }
 
-/** Current is the baseline: an artifact carries a pill only when it is a draft or has been replaced. */
+/** Current is the baseline: an artifact carries a pill only when it is a draft or retired. */
 export const BASELINE_ARTIFACT_STATUS: ArtifactStatus = 'Current'
-/** Artifact statuses are fixed (not project config); each takes a status tone. Superseded and Retired are struck through like a retired card. */
-export const ARTIFACT_STATUS_TONE: Record<ArtifactStatus, Tone> = { Draft: 'amber', Current: 'green', Superseded: 'hatched', Retired: 'hatched' }
+/** Artifact statuses are fixed (not project config); each takes a status tone. Retired is struck through like a retired card. */
+export const ARTIFACT_STATUS_TONE: Record<ArtifactStatus, Tone> = { Draft: 'amber', Current: 'green', Retired: 'hatched' }
 export const artifactStatusClass = (s: ArtifactStatus) => `tone-${ARTIFACT_STATUS_TONE[s] ?? 'neutral'}`
 export const ARTIFACT_STATUS_HELP: Record<ArtifactStatus, string> = {
   Draft: 'Still being worked on',
   Current: 'The version to go by',
-  Superseded: 'Replaced by a newer artifact, kept for traceability',
-  Retired: 'No longer reflects the design; kept for traceability and hidden from the Artifacts tab unless retired artifacts are shown',
+  Retired: 'No longer the version to go by (replaced by a newer one, or nothing replaces it); kept for traceability and hidden from the Artifacts tab unless retired artifacts are shown',
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
