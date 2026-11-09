@@ -17,6 +17,7 @@
  */
 import { slugify } from './artifacts.ts'
 import { isQuestionId } from './links.ts'
+import { stepOf } from './steps.ts'
 import { artifactFormat, isCanvasFormat, type Artifact, type ArtifactMeta, type Citation, type Heading, type NotePoint } from './types.ts'
 
 /** What a file holds that spots are resolved against. Null fields are unknown. */
@@ -147,17 +148,17 @@ function spotsFor(index: SourceIndex, a: Artifact, c: Citation, rest: Rest): Sou
     return [{ region: linesRegion(from, to), label: from === to ? `Line ${from}` : `Lines ${from} to ${to}`, detail: null, problem }]
   }
   if (c.spot) {
-    const r = a.regions.find((x) => x.id === c.spot)
+    const r = a.regions.find((x) => x.id === c.spot) ?? stepOf(a, c.spot)
     return [{ region: c.spot, label: r?.name ?? f?.headings?.find((h) => h.slug === c.spot)?.text ?? null, detail: null, problem: null }]
   }
   if (c.within) return [{ region: c.within, label: under ?? null, detail: null, problem: null }]
   return [{ region: null, label: null, detail: null, problem: null }]
 }
 
-/** Does the region exist on this artifact (named, or a page, heading or line range of its file)? Unknown facts count as yes. */
+/** Does the region exist on this artifact (named, a step, or a page, heading or line range of its file)? Unknown facts count as yes. */
 function hasRegion(index: SourceIndex, a: Artifact, region: string): boolean {
-  if (a.regions.some((r) => r.id === region)) return true
-  // A drawing's only spots are its named regions.
+  if (a.regions.some((r) => r.id === region) || stepOf(a, region)) return true
+  // A drawing's only spots are its named regions and steps.
   if (isCanvasFormat(artifactFormat(a))) return false
   const f = index.facts(a.id)
   if (!f) return true
@@ -226,7 +227,7 @@ export function citationProblems(a: Artifact, f: SpotFacts | null, isPdf: boolea
     if (/^Notes \d{4}-\d{2}-\d{2} · /.test(c.as)) out.push(`cited_as "${c.as}": a note is cited by its file name already; drop the entry`)
     if (c.pageOffset !== null && (!Number.isInteger(c.pageOffset) || !isPdf)) out.push(`cited_as "${c.as}": page_offset is a whole number, for a PDF`)
     if (c.within && f?.headings && !f.headings.some((h) => h.slug === c.within)) out.push(`cited_as "${c.as}": within "${c.within}" is not a heading in ${a.id}`)
-    if (c.spot && !a.regions.some((r) => r.id === c.spot) && f && !f.headings?.some((h) => h.slug === c.spot)) out.push(`cited_as "${c.as}": spot "${c.spot}" is not a region of ${a.id}`)
+    if (c.spot && !a.regions.some((r) => r.id === c.spot) && !stepOf(a, c.spot) && f && !f.headings?.some((h) => h.slug === c.spot)) out.push(`cited_as "${c.as}": spot "${c.spot}" is not a region of ${a.id}`)
   }
   return out
 }

@@ -7,15 +7,15 @@ import { deflateSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { looseText, markdownFacts, matchSimpleSelector, mermaidNodeIds, parseAnchor, rasterSize, slugify, svgFacts } from '../shared/artifacts.ts'
 import { checkCatalogue, isArtifactDate, type ArtifactFacts } from '../shared/check.ts'
-import { parseArtifact, serialiseArtifact } from '../shared/files.ts'
+import { lintArtifact, parseArtifact, serialiseArtifact } from '../shared/files.ts'
 import { buildArtifactTimeline, diffArtifacts, regionChanges } from '../shared/history.ts'
 import { nextArtifactId } from '../shared/ids.ts'
 import { mentions, pastedTarget } from '../shared/links.ts'
-import { artifactFormat, linesOfRegionId, parseArtifactRef, type Artifact, type ArtifactRec, type Region } from '../shared/types.ts'
+import { artifactFormat, linesOfRegionId, parseArtifactRef, type Artifact, type ArtifactRec, type Region, type Step } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { loadCatalogue, writeItem, writeLayout } from '../server/catalogueFs.ts'
 import { serveArtifactFile } from '../server/cataloguePlugin.ts'
-import { artifactMatches, autoSpots, buildArtifactIndex, spotName } from '../src/artifactIndex.ts'
+import { artifactMatches, autoSpots, buildArtifactIndex, namedSpots, spotName, stepSpots } from '../src/artifactIndex.ts'
 import { buildIndex } from '../src/store.ts'
 import { fitRect, lerpCamera, viewOf, zoomAbout } from '../src/artifacts/camera.ts'
 import { countIn, normQuery, normText, pdfPageText } from '../src/artifacts/find.ts'
@@ -23,6 +23,7 @@ import { artifactDate } from '../src/vocab.ts'
 import { item } from './fixtures.ts'
 
 const region = (over: Partial<Region> & Pick<Region, 'id'>): Region => ({ name: over.id, around: [], box: null, page: null, pad: null, note: '', ...over })
+const step = (over: Partial<Step> & Pick<Step, 'id'>): Step => ({ name: over.id, group: '', caption: '', show: [], highlight: [], moves: [], balances: [], ...over })
 const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => ({
   title: `Artifact ${over.id}`,
   kind: 'diagram',
@@ -35,6 +36,7 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   sources: ['Fixture'],
   file: `artifacts/${over.id}.svg`,
   regions: [],
+  steps: [],
   description: '',
   source: '',
   extra: {},
@@ -96,6 +98,99 @@ describe('the sidecar file', () => {
     expect(linesOfRegionId('L9')).toEqual({ from: 9, to: 9 })
     expect(linesOfRegionId('L9-3')).toBeNull()
     expect(nextArtifactId(['AR-01', 'AR-09', 'US-01.1.1'])).toBe('AR-10')
+  })
+
+  const STEPPED = `---
+id: AR-07
+title: Order flow
+kind: diagram
+status: Current
+date: 2026-10-01
+components: []
+sources:
+  - Fixture
+file: artifacts/files/AR-07.svg
+regions:
+  - id: bank
+    name: Bank
+    around:
+      - "#bank"
+steps:
+  - id: order-placed
+    name: Order placed
+    group: Ordinary order
+    caption: Stock is reserved, see [the story](US-01.1.1).
+    show:
+      - "#s1"
+    highlight:
+      - "#s1"
+      - "#stock"
+    balances:
+      - account: Bank
+        amount: $0
+      - account: Stock
+        amount: "0"
+  - id: paid
+    name: Paid
+---
+
+A flow in steps.
+`
+
+  it('round-trips a stepped diagram byte for byte, steps straight after regions, amounts kept as text', () => {
+    const a = parseArtifact(STEPPED)
+    expect(a.steps).toEqual([
+      step({ id: 'order-placed', name: 'Order placed', group: 'Ordinary order', caption: 'Stock is reserved, see [the story](US-01.1.1).', show: ['#s1'], highlight: ['#s1', '#stock'], balances: [{ account: 'Bank', amount: '$0' }, { account: 'Stock', amount: '0' }] }),
+      step({ id: 'paid', name: 'Paid' }),
+    ])
+    expect(serialiseArtifact(a)).toBe(STEPPED)
+    expect(lintArtifact(STEPPED, a)).toEqual([])
+    // A bare number reads back as text too.
+    expect(parseArtifact(STEPPED.replace('amount: "0"', 'amount: 0')).steps[0]!.balances[1]).toEqual({ account: 'Stock', amount: '0' })
+  })
+
+  it('round-trips moves byte for byte, after highlight and before balances, and writes none when there are none', () => {
+    const withMoves = STEPPED.replace('      - "#stock"\n    balances:', '      - "#stock"\n    moves:\n      - from: "#cart"\n        to: "#s1"\n      - from: "#bank"\n        to: .entry\n    balances:')
+    const a = parseArtifact(withMoves)
+    expect(a.steps[0]!.moves).toEqual([{ from: '#cart', to: '#s1' }, { from: '#bank', to: '.entry' }])
+    expect(a.steps[1]!.moves).toEqual([])
+    expect(serialiseArtifact(a)).toBe(withMoves)
+    expect(lintArtifact(withMoves, a)).toEqual([])
+    // Taking the moves away writes the old sidecar exactly.
+    expect(serialiseArtifact({ ...a, steps: a.steps.map((s) => ({ ...s, moves: [] })) })).toBe(STEPPED)
+  })
+
+  it('writes a sidecar with no steps exactly as before: no steps key at all', () => {
+    const plain = STEPPED.slice(0, STEPPED.indexOf('steps:\n')) + '---\n\nA flow.\n'
+    expect(plain).toContain('regions:\n')
+    const a = parseArtifact(plain)
+    expect(a.steps).toEqual([])
+    expect(serialiseArtifact(a)).toBe(plain)
+    expect(serialiseArtifact(artifact({ id: 'AR-01' }))).not.toContain('steps')
+  })
+
+  it('lints steps the board would read wrongly', () => {
+    const lint = (yaml: string) => {
+      const text = `---\nid: AR-07\ntitle: T\nkind: diagram\n${yaml}\n---\n`
+      return lintArtifact(text, parseArtifact(text))
+    }
+    expect(lint('steps: nope')).toEqual(['steps is not a list, so it is ignored'])
+    expect(lint('steps:\n  - just text')).toEqual(['a step is not a mapping (id, name, show, highlight, moves, caption, balances), so it is ignored'])
+    expect(lint('steps:\n  - id: a\n    name: A\n    moves: nope')).toEqual(['step a: moves is not a list, so it is ignored'])
+    expect(lint('steps:\n  - id: a\n    name: A\n    moves:\n      - "#x to #y"\n      - { from: "#x", to: "#y", speed: 2 }')).toEqual([
+      'step a: a move is not {from, to}, so it is ignored',
+      'step a: a move has keys the board ignores (speed); a move is {from, to}',
+    ])
+    expect(parseArtifact(`---\nid: AR-07\ntitle: T\nkind: diagram\nsteps:\n  - id: a\n    name: A\n    moves:\n      - "#x to #y"\n      - { from: " #x ", to: "#y" }\n---\n`).steps[0]!.moves).toEqual([{ from: '#x', to: '#y' }])
+    expect(lint('steps:\n  - id: a\n    name: A\n    reveal: ["#x"]')).toEqual(['step a has keys the board ignores (reveal)'])
+    expect(lint('steps:\n  - id: a\n    name: A\n    balances: nope')).toEqual(['step a: balances is not a list, so it is ignored'])
+    expect(lint('steps:\n  - id: a\n    name: A\n    balances:\n      - Bank $0\n      - { account: Bank, amount: $0, note: x }')).toEqual([
+      'step a: a balance row is not {account, amount}',
+      'step a: a balance row is not {account, amount}',
+    ])
+    expect(lint('steps:\n  - id: a\n    name: A\n    balances:\n      - { account: Owed, amount: 1.50 }')).toEqual([
+      'step a: the amount for Owed was read as a number (1.5); quote it to keep it exactly',
+    ])
   })
 })
 
@@ -273,6 +368,119 @@ describe('the check', () => {
     expect(errors(issues)).toEqual([])
     expect(issues.some((i) => i.id === 'AR-01' && /US-09.9.9, which does not exist/.test(i.message))).toBe(true)
   })
+
+  describe('steps', () => {
+    const STEP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+<rect id="bank" x="0" y="0" width="100" height="100"/>
+<g id="s1" class="entry"><text x="10" y="120">Stock reserved</text></g>
+<g id="s2" class="entry"><text x="10" y="160">Paid in</text></g>
+<g id="s3"><text x="10" y="200">Totals</text></g>
+</svg>`
+    const stepFacts = facts({ bounds: { x: 0, y: 0, w: 400, h: 300 }, svg: { texts: svgFacts(STEP_SVG).texts, elements: svgFacts(STEP_SVG).elements } })
+    // The fixture card has no source; that warning is not about steps.
+    const runSteps = (artifacts: Artifact[], items = [item({ id: 'US-01.1.1' })]) =>
+      run(artifacts, items, (a) => (a.file?.endsWith('.png') ? facts({ format: 'raster' }) : stepFacts)).filter((i) => i.message !== 'no source')
+    const stepped = (steps: Step[], over: Partial<Artifact> = {}) => artifact({ id: 'AR-01', regions: [region({ id: 'bank', around: ['#bank'] })], steps, ...over })
+
+    it('passes a well-formed stepped diagram, a class matching several elements included', () => {
+      const a = stepped([
+        step({ id: 'reserved', name: 'Stock reserved', show: ['#s1'], highlight: ['#s1', '#bank'], caption: 'See [the story](US-01.1.1) and [the bank](AR-01#bank).', balances: [{ account: 'Bank', amount: '$0' }] }),
+        step({ id: 'paid', name: 'Paid in', show: ['.entry', 'text=Paid in'], highlight: ['.entry'] }),
+        step({ id: 'totals', name: 'Totals', show: ['#s3'] }),
+      ])
+      expect(runSteps([a])).toEqual([])
+    })
+
+    it('takes steps on an SVG drawing only', () => {
+      const a = artifact({ id: 'AR-02', kind: 'screenshot', file: 'artifacts/AR-02.png', steps: [step({ id: 'one', name: 'One' })] })
+      expect(errors(runSteps([a]))).toEqual(['AR-02: has steps, but steps only work on an SVG drawing'])
+    })
+
+    it('names every way a step can be wrong', () => {
+      const a = stepped([
+        step({ id: 'Bad Id', name: 'Bad' }),
+        step({ id: 'twice', name: 'Twice' }),
+        step({ id: 'twice', name: 'Twice again' }),
+        step({ id: 'bank', name: 'Same as the region' }),
+        step({ id: 'p2', name: 'Like a page' }),
+        step({ id: 'nameless', name: '' }),
+        step({ id: 'no-account', name: 'No account', balances: [{ account: '', amount: '$1' }] }),
+        step({ id: 'gone', name: 'Gone', show: ['#nowhere', 'text=Not in the drawing'], highlight: ['.missing'] }),
+      ])
+      expect(errors(runSteps([a]))).toEqual([
+        'AR-01: step Bad Id: the id must be lower-case words joined by hyphens',
+        'AR-01: step twice is listed twice',
+        'AR-01: step bank: the id is taken by a region; steps and regions share one set of spots, so name it differently',
+        'AR-01: step p2: the id is shaped like a page or line spot; name it differently',
+        'AR-01: step nameless has no name',
+        'AR-01: step no-account: a balance row has no account',
+        'AR-01: step gone: show anchor "#nowhere" matches nothing in the drawing',
+        'AR-01: step gone: show anchor "text=Not in the drawing" matches no text in the drawing',
+        'AR-01: step gone: highlight anchor ".missing" matches nothing in the drawing',
+      ])
+    })
+
+    it('warns on a highlight that a later step has not revealed yet, and on a selector it cannot evaluate', () => {
+      const a = stepped([
+        step({ id: 'early', name: 'Early', show: ['#s1'], highlight: ['#s1', '#s2'] }),
+        step({ id: 'later', name: 'Later', show: ['#s2', 'g > text'] }),
+      ])
+      const issues = runSteps([a])
+      expect(errors(issues)).toEqual([])
+      expect(issues.map((i) => i.message)).toEqual([
+        'step early: highlight anchor "#s2" is not revealed until a later step, so it is hidden when highlighted here',
+        'step later: show anchor "g > text" is not checked here; the board resolves it',
+      ])
+    })
+
+    describe('moves', () => {
+      // #s1 shows at the first step, #s2 at the second, #s3 at the third.
+      const flow = (moves: Step['moves'], at = 1) => {
+        const steps = [step({ id: 'one', name: 'One', show: ['#s1'] }), step({ id: 'two', name: 'Two', show: ['#s2'] }), step({ id: 'three', name: 'Three', show: ['#s3'] })]
+        steps[at] = { ...steps[at]!, moves }
+        return runSteps([stepped(steps)])
+      }
+      const said = (issues: ReturnType<typeof runSteps>) => issues.map((i) => `${i.severity} ${i.message}`)
+
+      it('passes a move from something shown to what this step reveals, or to something already there', () => {
+        expect(flow([{ from: '#s1', to: '#s2' }, { from: '#bank', to: 'text=Stock reserved' }])).toEqual([])
+      })
+      it('needs both from and to', () => {
+        expect(said(flow([{ from: '', to: '#s2' }, { from: '#s1', to: ' ' }]))).toEqual(['error step two: move 1 needs both from and to', 'error step two: move 2 needs both from and to'])
+      })
+      it('says when from matches nothing', () => {
+        expect(said(flow([{ from: '#nowhere', to: '#s2' }]))).toEqual(['error step two: move 1: from "#nowhere" matches nothing in the drawing'])
+      })
+      it('says when to matches nothing', () => {
+        expect(said(flow([{ from: '#s1', to: 'text=Not drawn' }]))).toEqual(['error step two: move 1: to "text=Not drawn" matches no text in the drawing'])
+      })
+      it('warns when from matches several elements, since only the first is used', () => {
+        expect(said(flow([{ from: '.entry', to: '#s2' }]))).toEqual(['warning step two: move 1: from ".entry" matches 2 elements, and only the first is used'])
+      })
+      it('warns when from is not revealed until a later step', () => {
+        expect(said(flow([{ from: '#s3', to: '#s2' }]))).toEqual(['warning step two: move 1: from "#s3" is not revealed until a later step, so there is nothing to set off from'])
+      })
+      it('warns when to is not revealed until a later step', () => {
+        expect(said(flow([{ from: '#s1', to: '#s3' }]))).toEqual(['warning step two: move 1: to "#s3" is not revealed until a later step, so nothing travels'])
+      })
+    })
+
+    it("checks the links in a step's caption, as it does the description's (warnings only)", () => {
+      const a = stepped([step({ id: 'one', name: 'One', caption: 'See [the story](US-09.9.9) and [nowhere](AR-01#nope).' })])
+      const issues = runSteps([a])
+      expect(errors(issues)).toEqual([])
+      expect(issues.map((i) => `${i.severity} ${i.message}`)).toEqual([
+        'warning the text links to US-09.9.9, which does not exist',
+        'warning the text links to AR-01#nope: AR-01 has no region "nope"',
+      ])
+    })
+
+    it('takes a step as a spot, in the artifacts field and in text links', () => {
+      const a = stepped([step({ id: 'reserved', name: 'Stock reserved', show: ['#s1'] })])
+      const items = [item({ id: 'US-01.1.1', artifacts: ['AR-01#reserved', 'AR-01#bank'], description: 'See [the step](AR-01#reserved).' })]
+      expect(runSteps([a], items)).toEqual([])
+    })
+  })
 })
 
 describe('links to artifacts', () => {
@@ -324,6 +532,17 @@ describe('the artifact index', () => {
     expect(autoSpots(pdf).map((s) => s.id)).toEqual(['p1', 'p2'])
   })
 
+  it('names a step as a spot, keeps it out of the highlights, and finds it by its words', () => {
+    const a = rec(artifact({ id: 'AR-01', regions: [region({ id: 'bank', name: 'Bank' })], steps: [step({ id: 'reserved', name: 'Stock reserved', caption: 'Nothing has moved in the warehouse.' })] }))
+    expect(spotName(a, 'reserved')).toBe('Stock reserved')
+    expect(spotName(a, 'bank')).toBe('Bank')
+    expect(namedSpots(a).map((s) => s.id)).toEqual(['bank'])
+    expect(stepSpots(a).map((s) => `${s.id}|${s.name}`)).toEqual(['reserved|Stock reserved'])
+    const prefs = { kinds: [], statuses: [], components: [], showRetired: false }
+    expect(artifactMatches(a, prefs, 'stock reserved')).toBe(true)
+    expect(artifactMatches(a, prefs, 'warehouse')).toBe(true)
+  })
+
   it('keeps retired artifacts off the Artifacts tab unless retired artifacts are shown', () => {
     const live = rec(artifact({ id: 'AR-01', status: 'Superseded', supersededBy: 'AR-02' }))
     const gone = rec(artifact({ id: 'AR-02', status: 'Retired', title: 'Old technical design' }))
@@ -346,6 +565,12 @@ describe('history', () => {
     expect(r.added.map((x) => x.id)).toEqual(['z'])
     expect(r.removed.map((x) => x.id)).toEqual(['y'])
     expect(r.changed).toEqual([{ id: 'x', name: 'X2', what: ['renamed', 'moved'] }])
+  })
+
+  it('diffs steps as a field of their own, straight after regions', () => {
+    const a = artifact({ id: 'AR-01', steps: [step({ id: 'one', name: 'One' })] })
+    const b = { ...a, regions: [region({ id: 'x' })], steps: [step({ id: 'one', name: 'One again' })] }
+    expect(diffArtifacts(a, b).map((c) => c.field)).toEqual(['regions', 'steps'])
   })
 
   it("folds the file's commits into the sidecar's, and shows an uncommitted file change", () => {

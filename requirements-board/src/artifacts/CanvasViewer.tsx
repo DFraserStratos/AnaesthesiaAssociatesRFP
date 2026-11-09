@@ -11,7 +11,7 @@
 import { Crosshair, Map as MapIcon, Minus, Plus, Scan } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { HIGHLIGHT } from '../../shared/highlight.ts'
-import type { Rect, Region } from '../../shared/types.ts'
+import type { Rect, Region, StepMove } from '../../shared/types.ts'
 import { GESTURE_GAP_MS, LINE_PX, PINCH_RATE, classifyWheel, type WheelKind } from '../board/trackpad.ts'
 import { useHoverPin } from '../board/useHoverPin.ts'
 import { unionRects } from '../../shared/artifacts.ts'
@@ -19,6 +19,8 @@ import { REGION_MAX_ZOOM, centredAt, fitRect, lerpCamera, limit, minZoom, viewOf
 import type { CanvasContent } from './content.ts'
 import { findRanges, lineRects } from './find.ts'
 import { canvasRegionRect } from './regionsDom.ts'
+import { playFlights, type Flight } from './stepMoves.ts'
+import { STEP_CSS, STEP_FADE, applyStepState, insideOff, type StepView } from './stepsDom.ts'
 import { linkFromEvent, linkRecordIds, type ResolveLink } from './svgLinks.ts'
 
 /** What to find in an artifact, which match is the current one, and where to report how many there are. */
@@ -46,7 +48,7 @@ a.record-id:hover, a.record-id:focus-visible { fill: var(--teal); text-decoratio
 a.record-id:focus { outline: none; }
 a.record-id:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 a.record-id.retired { text-decoration-style: dotted; }
-`
+${STEP_CSS}`
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const EASE_MS = 420
@@ -72,12 +74,20 @@ export interface CanvasViewerProps {
   resolveLink?: ResolveLink
   /** A linked ID was clicked (or Enter pressed on it). */
   onLink?: (id: string) => void
+  /** A stepped diagram's state (`stepState` from `shared/steps.ts`): what is hidden and what is lit. Null or absent is the whole drawing. */
+  stepState?: StepView | null
+  /**
+   * A stepped diagram's moves to fly, once per `key`: set when the reader steps forward onto a step
+   * with moves (or asks to replay it). `before`: the state to start from (a replay), else the
+   * drawing is already at the step. Present at the first paint, it never plays.
+   */
+  flight?: { key: string; moves: StepMove[]; before: StepView | null } | null
 }
 
 /** A press that moves further than this is a text selection, not a click on a link. */
 const CLICK_SLOP_PX = 4
 
-export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, label, onRegionFound, find, resolveLink, onLink }: CanvasViewerProps) {
+export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, label, onRegionFound, find, resolveLink, onLink, stepState = null, flight = null }: CanvasViewerProps) {
   const frameRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -97,6 +107,21 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
   const hoverRef = useRef(false)
   const onLinkRef = useRef(onLink)
   onLinkRef.current = onLink
+  // The step's state, as a key that only changes when the state does (a fresh object every render would not do).
+  const stepKey = stepState && (stepState.hidden.length || stepState.highlight.length) ? JSON.stringify(stepState) : ''
+  const stepRef = useRef(stepState)
+  stepRef.current = stepState
+  // Moves in flight, and the flight asked for last (the one present at the first paint never plays).
+  const flightRef = useRef<Flight | null>(null)
+  const flownKey = useRef(flight?.key ?? null)
+  const flightProp = useRef(flight)
+  flightProp.current = flight
+  // Counts flights landed, so find and the region box measure again once nothing is in the air.
+  const [landed, setLanded] = useState(0)
+  const ground = () => {
+    flightRef.current?.cancel()
+    flightRef.current = null
+  }
 
   const apply = useCallback((c: Camera) => {
     camRef.current = c
@@ -171,6 +196,8 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     svg.addEventListener('pointerover', onOver)
     svg.addEventListener('pointerleave', onLeave)
     svg.addEventListener('focusin', onFocus)
+    // The step's state goes on before the copy is in, so a refresh never flashes the whole drawing.
+    applyStepState(svg, stepRef.current)
     root.replaceChildren(style, svg)
     svgRef.current = svg
     setMounted((n) => n + 1)
@@ -181,6 +208,8 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       svg.removeEventListener('pointerleave', onLeave)
       svg.removeEventListener('focusin', onFocus)
       host.title = ''
+      // A refresh mid-flight: the copy goes with the old drawing, and the new one is static.
+      ground()
       root.replaceChildren()
       svgRef.current = null
     }
@@ -210,6 +239,42 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     if (svgRef.current && cam && pane) svgRef.current.setAttribute('viewBox', viewBoxOf(cam, pane))
   }, [cam, pane, mounted])
 
+  // A stepped diagram's state, on every copy mounted and at every step.
+  useLayoutEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    ground()
+    applyStepState(svg, stepRef.current)
+  }, [mounted, stepKey])
+  // A flight asked for: put the drawing at the step (from the step before, for a replay) and fly
+  // its moves. A new step, a jump or a refresh cancels it first; reduced motion never flies.
+  const flightKey = flight?.key ?? null
+  useLayoutEffect(() => {
+    if (flightKey === flownKey.current) return
+    flownKey.current = flightKey
+    ground()
+    const svg = svgRef.current
+    const f = flightProp.current
+    if (!svg || !f || !flightKey || reducedMotion()) return
+    if (f.before) {
+      applyStepState(svg, f.before)
+      svg.getBoundingClientRect() // the earlier state is drawn, so the step's reveal fades in again
+      applyStepState(svg, stepRef.current)
+    }
+    flightRef.current = playFlights(svg, f.moves, () => {
+      flightRef.current = null
+      setLanded((n) => n + 1)
+    })
+  }, [flightKey])
+  useEffect(() => ground, [])
+  // The fade between steps starts only after the first paint, so a drawing opened at a step never fades in from the whole picture.
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => svg.classList.add(STEP_FADE))))
+    return () => cancelAnimationFrame(id)
+  }, [mounted])
+
   // The region's box, in the drawing's own units: measured once the drawing is in, and again once fonts load.
   useLayoutEffect(() => {
     const svg = svgRef.current
@@ -226,7 +291,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     return () => {
       live = false
     }
-  }, [region, preview, mounted])
+  }, [region, preview, mounted, stepKey, landed])
   const fresh = measured?.tag === `${region?.id ?? ''}|${mounted}` ? measured : null
   const box = fresh?.box ?? null
   const previewBox = fresh?.preview ?? null
@@ -387,12 +452,14 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       const b = new DOMPoint(r.right, r.bottom).matrixTransform(inv)
       return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) }
     }
-    const found = findRanges(svg, query, 'svg')
+    // Text a step has not revealed yet is not there to find.
+    const found = findRanges(svg, query, 'svg', insideOff)
       .map((r) => lineRects(r).map(toContent))
       .filter((rs) => rs.length)
-    setHits(found)
+    // Unchanged by a step: keep the same hits, so the view is not brought back to the current match.
+    setHits((was) => (JSON.stringify(was) === JSON.stringify(found) ? was : found))
     find?.onCount(found.length)
-  }, [query, mounted])
+  }, [query, mounted, stepKey, landed])
 
   // The current match: brought to the middle of the view, close enough in to read.
   const active = find?.active ?? 0

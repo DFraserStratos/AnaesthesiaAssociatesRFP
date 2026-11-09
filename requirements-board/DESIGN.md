@@ -168,7 +168,8 @@ scrolls) and as the modal elsewhere.
   screen is outlined in teal and the rest lightly veiled. Press anywhere to jump the view there;
   hold and drag to sweep along. Undo and redo are keyboard only (Cmd Z, Cmd Shift Z), with no
   toolbar buttons.
-- Motion only on action (sheet open, lineage fade, pan to card); respect reduced motion. Stepping
+- Motion only on action (sheet open, lineage fade, pan to card, a stepped diagram's move when the
+  reader steps forward); respect reduced motion. Stepping
   between records (prev/next sibling, a lineage pill, an open question) swaps the sheet's contents
   in place and skips the entrance, so the page behind never flashes through a re-fading scrim.
 - Mobile is out of scope: this is a desktop tool.
@@ -222,8 +223,9 @@ edits only their details (below), never the file, its highlights or the links to
   date is when the artifact was made (the meeting, the publication, the drawing), not when it was
   filed. No row expands and nothing opens beside the list.
 - **The artifact page** docks a panel on the left like the item sheet (resizable, width kept per
-  browser): Artifacts crumb, the name, kind and status, then tabs: **Highlights** (the named
-  spots, each marked with a tiny red box; a document's own pages or sections below, long lists
+  browser): Artifacts crumb, the name, kind and status, then tabs: a stepped diagram's **Steps**
+  first (below), **Highlights** (the named spots, each marked with a tiny red box; a document's own
+  pages or sections below, long lists
   folded; a row's link button copies a link to that spot, to paste over words in any Markdown
   field), **Linked** (cards that list it, with the spot each links to, then "Mentioned in" and
   outstanding items), **Details** (description, its **Sources** as rows like a card's, an artifact's own
@@ -246,6 +248,40 @@ edits only their details (below), never the file, its highlights or the links to
   buttons, plus + - 0 on the keyboard, beside the minimap button in the same view bar, and a back
   to the highlight button when there is one. The minimap is the drawing itself, the spot outlined
   in red.
+- **Stepped diagrams** (a drawing whose sidecar lists `steps`) play a flow that unfolds. The reveal
+  is cumulative: each step shows more of the drawing and nothing is hidden again, so the file with
+  everything visible is the finished picture, and the minimap, thumbnail, visual compare and Diff
+  review always show the whole drawing. What a step highlights stays full strength, with the panel
+  it sits on (a shape drawn under it and round it, so lit text on the charcoal panel still reads).
+  The rest is set back: washed half way to white by a filter, which looks like 0.5 opacity on the
+  white sheet but stays opaque, so a line drawn behind a dimmed card never shows through it. Half
+  way, not further: a ledger's earlier entries must still read at 11 to 13px while the current step
+  leads. What dims on a dark panel kept as a backdrop fades into that panel at 0.5 opacity instead,
+  since a wash toward white would make it stand out. Hidden parts are invisible but still laid out, and find
+  skips their text. The change fades over 250ms; reduced motion switches it off, and a drawing opened
+  at a step starts there without fading in. **The drawing is never covered**: the step is read in
+  the panel. On the canvas only a slim **step bar** sits bottom left, level with the view bar, in its
+  style and height: `‹ 3 of 8 ›` as the question stepper, the step's name (cut short with an
+  ellipsis, the group and full name in its tooltip), then a quiet Whole drawing. It stops 16px
+  short of the view dock; the hover minimap, being passing, opens over its right end, drawn above
+  it. With no step chosen it is one quiet control, "Step through · 8 steps". The left and
+  right arrows step while the drawing or the bar has focus. A step is a spot like a highlight (in
+  the URL, a link, a copy link) but never shows the red box, and stepping leaves the view where it
+  is. A **Steps** tab comes first in the panel: the steps under their group headings, numbered, each
+  row a highlight row with its number where the red mark would be. The current one is ruled teal
+  and opens in place to its caption as prose (record IDs link) and its balances, a small two-column
+  table with amounts in tabular figures, the rows that changed at this step on a quiet teal tint in
+  full weight; it is kept in sight in the panel as the steps change. Stepping never switches the
+  panel's tab. The Artifacts tab counts steps beside highlights.
+  **Moves**: what a step lists under `moves` travels when the reader steps forward onto it (the
+  bar's next, or the right arrow), and only then: a jump from the panel or a link, stepping back,
+  the whole drawing and reduced motion show the step at once. The travelling mark sets off from its
+  origin's place and size and flies to its own in 700ms, eased in and out, each later move 150ms
+  after the one before, at full strength and drawn above every panel on the way (its origin stays
+  at full strength until it lands). It lands exactly on the static drawing, with nothing left
+  behind; panning or zooming mid-flight keeps it on course, and a new step, a jump or a refresh
+  cancels it cleanly. A quiet Replay in the step bar, shown only for a step with moves, plays them
+  again from the step before. Moves are for what genuinely changes place, not for decoration.
 - **Record IDs drawn in a diagram** (`OQ-47`, `US-06.1.1`, `AR-01`) are links, added by the board
   as it shows the drawing (the file stays plain). The ID keeps its drawn text, size and place, with
   an underline in its own ink, turning teal on hover or focus; the tooltip names the record and its
@@ -375,6 +411,6 @@ except in the pills and swatches. Below 1000px the table stacks, one block per s
 
 Take Playwright screenshots of the board (near, mid and fit zoom), an item sheet, Outline,
 Outstanding items and Artifacts (grid, list, a drawing at a highlight with the minimap open, a
-transcript and a PDF at a spot; `shots/artifacts.mjs`) and Diff review (top, an edited card, an
+stepped diagram whole and at a step, a transcript and a PDF at a spot; `shots/artifacts.mjs`) and Diff review (top, an edited card, an
 added one, an artifact, the open picker, at 1280 and 1440 wide; `shots/diff.mjs`, `shots/diff2.mjs`)
 (`shots/` holds local scratch scripts), and check them against this page.

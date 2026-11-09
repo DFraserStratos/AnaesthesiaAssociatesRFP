@@ -29,6 +29,7 @@ import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
 import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
 import { appKeys, componentNames, DEFAULT_CONFIG, voiceRegex, type BoardConfig } from './config.ts'
 import { isAnswered, isRetired, statusCodes } from './statuses.ts'
+import { stepOf, stepState } from './steps.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
 export const ID_PATTERNS = {
@@ -162,9 +163,9 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
   }
   const factsOf = new Map<string, ArtifactFacts | null>()
   for (const a of artifacts) factsOf.set(a.id, artifactFacts ? artifactFacts(a) : null)
-  /** Region IDs that resolve: the named ones, plus each PDF page and Markdown heading. */
+  /** Region IDs that resolve: the named ones and the steps, plus each PDF page and Markdown heading. */
   const regionExists = (a: Artifact, region: string) => {
-    if (a.regions.some((r) => r.id === region)) return true
+    if (a.regions.some((r) => r.id === region) || stepOf(a, region)) return true
     const f = factsOf.get(a.id)
     const page = pageOfRegionId(region)
     if (page !== null) return !f || !f.pdf ? (f ? false : true) : page >= 1 && page <= f.pdf.pages.length
@@ -178,6 +179,45 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (!a) return 'that artifact does not exist'
     if (region !== null && !regionExists(a, region)) return `${a.id} has no region "${region}"`
     return null
+  }
+
+  /**
+   * One anchor of a region's `around` or a step's `show` / `highlight` / `moves`, against what the
+   * file holds. `many`: what to say when it matches more than one thing (a region's box spans them
+   * all; a move sets off from the first), or null when that is fine (a step often reveals a class or
+   * several elements).
+   */
+  const checkAnchor = (a: Artifact, format: ArtifactFormat | null, f: ArtifactFacts | null | undefined, label: string, anchor: string, opts: { many: 'box' | 'first' | null; page?: number | null; pdfPage?: { loose: string } }) => {
+    const spans = (n: number, what: string) => (opts.many === 'first' ? `${label} matches ${n} ${what}, and only the first is used` : `${label} matches ${n} ${what}, and the box spans them all`)
+    const { kind, value } = parseAnchor(anchor)
+    if (!value.trim()) {
+      err(a.id, `${label} is empty`)
+      return
+    }
+    if (format && !ANCHOR_FORMATS[kind].includes(format)) {
+      err(a.id, `${label} does not apply to ${format === 'raster' ? 'an image' : `a ${format === 'markdown' ? 'Markdown document' : format.toUpperCase()}`}${format === 'raster' ? '; use a box' : ''}`)
+      return
+    }
+    if (!f) return
+    if (kind === 'text' && f.svg) {
+      const n = f.svg.texts.filter((t) => t === normText(value)).length
+      if (!n) err(a.id, `${label} matches no text in the drawing`)
+      else if (n > 1 && opts.many) warn(a.id, spans(n, 'texts'))
+    } else if (kind === 'css' && f.svg) {
+      const n = matchSimpleSelector(value, f.svg.elements)
+      if (n === 0) err(a.id, `${label} matches nothing in the drawing`)
+      else if (n === null) warn(a.id, `${label} is not checked here; the board resolves it`)
+      else if (n > 1 && opts.many) warn(a.id, spans(n, 'elements'))
+    } else if (kind === 'node') {
+      if (f.nodeIds === null) warn(a.id, `${label} is not checked: only flowchart node IDs are read`)
+      else if (f.nodeIds && !f.nodeIds.has(value.trim())) err(a.id, `${label}: the diagram has no node ${value.trim()}`)
+    } else if (kind === 'heading' && f.markdown) {
+      if (!f.markdown.headings.some((h) => h.text === normText(value))) err(a.id, `${label} matches no heading in the document`)
+    } else if (kind === 'quote') {
+      const q = looseText(value)
+      if (f.markdown && !f.markdown.loose.includes(q)) err(a.id, `${label} is not in the document`)
+      if (f.pdf && opts.pdfPage && !opts.pdfPage.loose.includes(q)) err(a.id, `${label} is not on page ${opts.page}`)
+    }
   }
 
   for (const a of artifacts) {
@@ -230,39 +270,40 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
         }
       }
 
-      for (const anchor of r.around) {
-        const { kind, value } = parseAnchor(anchor)
-        const label = `${where}: anchor "${anchor}"`
-        if (!value.trim()) {
-          err(a.id, `${label} is empty`)
-          continue
-        }
-        if (format && !ANCHOR_FORMATS[kind].includes(format)) {
-          err(a.id, `${label} does not apply to ${format === 'raster' ? 'an image' : `a ${format === 'markdown' ? 'Markdown document' : format.toUpperCase()}`}${format === 'raster' ? '; use a box' : ''}`)
-          continue
-        }
-        if (!f) continue
-        if (kind === 'text' && f.svg) {
-          const n = f.svg.texts.filter((t) => t === normText(value)).length
-          if (!n) err(a.id, `${label} matches no text in the drawing`)
-          else if (n > 1) warn(a.id, `${label} matches ${n} texts, and the box spans them all`)
-        } else if (kind === 'css' && f.svg) {
-          const n = matchSimpleSelector(value, f.svg.elements)
-          if (n === 0) err(a.id, `${label} matches nothing in the drawing`)
-          else if (n === null) warn(a.id, `${label} is not checked here; the board resolves it`)
-          else if (n > 1) warn(a.id, `${label} matches ${n} elements, and the box spans them all`)
-        } else if (kind === 'node') {
-          if (f.nodeIds === null) warn(a.id, `${label} is not checked: only flowchart node IDs are read`)
-          else if (f.nodeIds && !f.nodeIds.has(value.trim())) err(a.id, `${label}: the diagram has no node ${value.trim()}`)
-        } else if (kind === 'heading' && f.markdown) {
-          if (!f.markdown.headings.some((h) => h.text === normText(value))) err(a.id, `${label} matches no heading in the document`)
-        } else if (kind === 'quote') {
-          const q = looseText(value)
-          if (f.markdown && !f.markdown.loose.includes(q)) err(a.id, `${label} is not in the document`)
-          if (f.pdf && pdfPage && !pdfPage.loose.includes(q)) err(a.id, `${label} is not on page ${r.page}`)
-        }
-      }
+      for (const anchor of r.around) checkAnchor(a, format, f, `${where}: anchor "${anchor}"`, anchor, { many: 'box', page: r.page, pdfPage })
     }
+
+    if (a.steps.length && format !== 'svg') err(a.id, `has steps, but steps only work on an SVG drawing`)
+    const stepIds = new Set<string>()
+    a.steps.forEach((s, i) => {
+      const where = `step ${s.id || '(no id)'}`
+      if (!isRegionId(s.id)) err(a.id, `${where}: the id must be lower-case words joined by hyphens`)
+      else if (stepIds.has(s.id)) err(a.id, `${where} is listed twice`)
+      else if (seen.has(s.id)) err(a.id, `${where}: the id is taken by a region; steps and regions share one set of spots, so name it differently`)
+      else if (pageOfRegionId(s.id) !== null || linesOfRegionId(s.id)) err(a.id, `${where}: the id is shaped like a page or line spot; name it differently`)
+      stepIds.add(s.id)
+      if (!s.name) err(a.id, `${where} has no name`)
+      if (s.balances.some((b) => !b.account)) err(a.id, `${where}: a balance row has no account`)
+      if (format !== 'svg') return
+      for (const anchor of s.show) checkAnchor(a, format, f, `${where}: show anchor "${anchor}"`, anchor, { many: null })
+      const { hidden } = stepState(a.steps, i)
+      for (const anchor of s.highlight) {
+        checkAnchor(a, format, f, `${where}: highlight anchor "${anchor}"`, anchor, { many: null })
+        if (hidden.includes(anchor.trim())) warn(a.id, `${where}: highlight anchor "${anchor}" is not revealed until a later step, so it is hidden when highlighted here`)
+      }
+      // A move: the `to` element(s) fly from the `from` element's place on stepping forward onto this step.
+      s.moves.forEach((m, j) => {
+        const mv = `${where}: move ${j + 1}`
+        if (!m.from.trim() || !m.to.trim()) {
+          err(a.id, `${mv} needs both from and to`)
+          return
+        }
+        checkAnchor(a, format, f, `${mv}: from "${m.from}"`, m.from, { many: 'first' })
+        checkAnchor(a, format, f, `${mv}: to "${m.to}"`, m.to, { many: null })
+        if (hidden.includes(m.from.trim())) warn(a.id, `${mv}: from "${m.from}" is not revealed until a later step, so there is nothing to set off from`)
+        if (hidden.includes(m.to.trim())) warn(a.id, `${mv}: to "${m.to}" is not revealed until a later step, so nothing travels`)
+      })
+    })
   }
 
   // Items point at artifacts in their frontmatter; the board shows the link on both sides.
@@ -308,7 +349,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
   }
   for (const it of items) linksIn(it.id, itemTexts(it), !retired(it))
-  for (const a of artifacts) linksIn(a.id, [a.description], !isPastArtifact(a.status), true)
+  // A step's caption is Markdown like the description, so its links get the same checks.
+  for (const a of artifacts) linksIn(a.id, [a.description, ...a.steps.map((s) => s.caption)], !isPastArtifact(a.status), true)
   for (const q of questions) linksIn(q.id, [q.question, q.answer], !isAnswered(config, q))
 
   // Voice: project patterns that mark provenance or decision history in a description (board.config.json `voice`).

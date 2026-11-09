@@ -1,5 +1,6 @@
 /**
- * The artifact page's side panel: the artifact's name and kind, then four tabs. Highlights lists
+ * The artifact page's side panel: the artifact's name and kind, then four tabs (five for a stepped
+ * diagram, whose Steps come first: its steps under their groups, each a spot). Highlights lists
  * the spots cards can link to (the named red-box regions, then a document's own pages or
  * sections); Linked lists the cards that point here; Details holds the rest of its facts; History
  * its changes. Edit details changes the facts about the artifact (name, kind, status, date, author,
@@ -11,8 +12,9 @@ import { useNavigate } from 'react-router-dom'
 import { isArtifactDate } from '../../shared/check.ts'
 import { tidyText } from '../../shared/files.ts'
 import { isRetired, statusClasses } from '../../shared/statuses.ts'
-import { ARTIFACT_KINDS, ARTIFACT_STATUSES, type Artifact, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item } from '../../shared/types.ts'
-import { autoSpots, linkCount, namedSpots, spotName, useArtifactIndex, type ArtifactLink, type Spot } from '../artifactIndex.ts'
+import { changedBalances, stepGroups, stepIndex } from '../../shared/steps.ts'
+import { ARTIFACT_KINDS, ARTIFACT_STATUSES, type Artifact, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Step } from '../../shared/types.ts'
+import { autoSpots, linkCount, namedSpots, spotName, stepSpots, useArtifactIndex, type ArtifactLink, type Spot } from '../artifactIndex.ts'
 import { ArtifactRowsSection } from '../components/ArtifactRows.tsx'
 import { ArtifactIcon, Glyph, ItemName, StatusLabel } from '../components/bits.tsx'
 import { EditActions, EditBanners, discardConfirm } from '../components/EditChrome.tsx'
@@ -25,7 +27,7 @@ import { useCatalogue, useComponents, useConfig, useView } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, ARTIFACT_STATUS_HELP, BASELINE_ARTIFACT_STATUS, artifactDate } from '../vocab.ts'
 import { ArtifactHistory } from './ArtifactHistory.tsx'
 
-export type PanelTab = 'spots' | 'linked' | 'details' | 'history'
+export type PanelTab = 'steps' | 'spots' | 'linked' | 'details' | 'history'
 
 interface Props {
   rec: ArtifactRec
@@ -56,8 +58,10 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
   const auto = autoSpots(rec)
   const links = ix.links.get(a.id) ?? []
   const asked = ix.questions.get(a.id) ?? []
-  const [tab, setTab] = useState<PanelTab>(named.length || auto.length ? 'spots' : 'details')
-  useEffect(() => setTab(named.length || auto.length ? 'spots' : 'details'), [a.id])
+  const stepped = stepSpots(rec)
+  const firstTab: PanelTab = stepped.length ? 'steps' : named.length || auto.length ? 'spots' : 'details'
+  const [tab, setTab] = useState<PanelTab>(firstTab)
+  useEffect(() => setTab(firstTab), [a.id])
   const superseder = a.supersededBy ? ix.byId.get(a.supersededBy) : undefined
   const open = useOpen()
   const confirm = discardConfirm(ed, a.title)
@@ -83,6 +87,7 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
   }, [])
 
   const tabs: [PanelTab, string, number | null][] = [
+    ...(stepped.length ? [['steps', 'Steps', stepped.length] as [PanelTab, string, number]] : []),
     ['spots', 'Highlights', named.length || null],
     ['linked', 'Linked', linkCount(ix, a.id) + asked.length || null],
     ['details', 'Details', null],
@@ -133,6 +138,7 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
         </div>
       ) : (
         <div className="artifact-panel-body" role="tabpanel">
+          {tab === 'steps' && <Steps rec={rec} spot={spot} links={links} onSpot={onSpot} />}
           {tab === 'spots' && <Spots rec={rec} named={named} auto={auto} spot={spot} links={links} onSpot={onSpot} onPreview={onPreview} />}
           {tab === 'linked' && <Linked rec={rec} links={links} asked={asked} onSpot={onSpot} />}
           {tab === 'details' && <Details rec={rec} />}
@@ -314,7 +320,105 @@ function Spots({ rec, named, auto, spot, links, onSpot, onPreview }: { rec: Arti
   )
 }
 
-function SpotRow({ rec, s, active, used, onSpot, onPreview, children }: { rec: ArtifactRec; s: Spot; active: boolean; used: number; onSpot: (id: string | null) => void; onPreview: (id: string | null) => void; children?: ReactNode }) {
+/**
+ * A stepped diagram's steps, numbered, under their groups: each a spot, as a highlight is, but
+ * marked by its number (no red, which is the region box's). The step shown opens in place to its
+ * caption and balances, which is where the step is read; the drawing carries only a slim bar.
+ */
+function Steps({ rec, spot, links, onSpot }: { rec: ArtifactRec; spot: string | null; links: ArtifactLink[]; onSpot: (id: string | null) => void }) {
+  const usedBy = (id: string) => new Set(links.filter((l) => l.region === id).map((l) => l.item.id)).size
+  const spots = new Map(stepSpots(rec).map((s) => [s.id, s]))
+  const steps = rec.data.steps
+  // The step shown, kept in sight in the panel as it changes.
+  const list = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    // Scrolled by hand within the panel body: scrollIntoView would also move clipped ancestors.
+    const row = list.current?.querySelector('.spot-row.is-active')
+    const body = row?.closest('.artifact-panel-body')
+    if (!row || !body) return
+    const r = row.getBoundingClientRect()
+    const b = body.getBoundingClientRect()
+    const pad = 12
+    const top = r.top < b.top + pad || r.height > b.height - 2 * pad ? r.top - b.top - pad : r.bottom > b.bottom - pad ? r.bottom - b.bottom + pad : 0
+    if (!top) return
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+    body.scrollBy({ top, behavior: reduce ? 'auto' : 'smooth' })
+  }, [spot])
+  return (
+    <div ref={list}>
+      {stepGroups(rec.data.steps).map((g, gi) => (
+        <section key={`${gi}|${g.group}`} className="section step-group-list">
+          {g.group && (
+            <h3 className="section-head">
+              {g.group} <span className="count">{g.steps.length}</span>
+            </h3>
+          )}
+          <div className="spot-list" role="list">
+            {g.steps.map(({ step, index }) => (
+              <SpotRow
+                key={step.id}
+                rec={rec}
+                s={spots.get(step.id)!}
+                active={spot === step.id}
+                used={usedBy(step.id)}
+                onSpot={onSpot}
+                onPreview={() => {}}
+                mark={<StepNum n={index + 1} />}
+                detail={spot === step.id ? <StepDetail steps={steps} index={index} /> : null}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+/** The step shown, read in full: its caption (record IDs link) and its balances, the ones that changed at this step marked. */
+function StepDetail({ steps, index }: { steps: Step[]; index: number }) {
+  const step = steps[index]!
+  const changed = changedBalances(steps, index)
+  if (!step.caption && !step.balances.length) return null
+  return (
+    <div className="step-detail">
+      {step.caption && <Prose text={step.caption} small />}
+      {step.balances.length > 0 && (
+        <table className="step-balances">
+          <caption className="sr-only">Balances at this step</caption>
+          <tbody>
+            {step.balances.map((b) => {
+              const moved = changed.has(b.account)
+              return (
+                <tr key={b.account} className={moved ? 'is-changed' : undefined} title={moved ? 'Changed at this step' : undefined}>
+                  <th scope="row">
+                    {b.account}
+                    {moved && <span className="sr-only"> (changed)</span>}
+                  </th>
+                  <td>{b.amount}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
+/** A step's number, where a highlight has its tiny red box. */
+const StepNum = ({ n, small }: { n: number; small?: boolean }) => (
+  <span className={`step-num${small ? ' sm' : ''}`} aria-hidden>
+    {n}
+  </span>
+)
+
+/** A linked spot's mark: a step's number, or the tiny red box of a highlight. */
+const LinkMark = ({ rec, region }: { rec: ArtifactRec; region: string }) => {
+  const i = stepIndex(rec.data, region)
+  return i >= 0 ? <StepNum n={i + 1} small /> : <span className="spot-mark" aria-hidden />
+}
+
+function SpotRow({ rec, s, active, used, onSpot, onPreview, mark, detail, children }: { rec: ArtifactRec; s: Spot; active: boolean; used: number; onSpot: (id: string | null) => void; onPreview: (id: string | null) => void; mark?: ReactNode; detail?: ReactNode; children?: ReactNode }) {
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
@@ -323,9 +427,9 @@ function SpotRow({ rec, s, active, used, onSpot, onPreview, children }: { rec: A
   }, [copied])
   const copy = () => void navigator.clipboard?.writeText(artifactUrl(rec.data.id, s.id)).then(() => setCopied(true), () => {})
   return (
-    <div className={`spot-row${active ? ' is-active' : ''}${s.auto ? ' auto' : ''}`} role="listitem" style={s.depth ? { paddingLeft: 10 + (s.depth - 1) * 12 } : undefined}>
+    <div className={`spot-row${active ? ' is-active' : ''}${s.auto ? ' auto' : ''}${s.step ? ' is-step' : ''}`} role="listitem" style={s.depth ? { paddingLeft: 10 + (s.depth - 1) * 12 } : undefined}>
       <button className="spot-go" onClick={() => onSpot(s.id)} onPointerEnter={() => onPreview(s.id)} onPointerLeave={() => onPreview(null)} aria-current={active || undefined} title={`${rec.data.id}#${s.id}`}>
-        {!s.auto && <span className="spot-mark" aria-hidden />}
+        {mark ?? (!s.auto && <span className="spot-mark" aria-hidden />)}
         <span className="spot-text">
           <span className="spot-name">{s.name}</span>
           {children}
@@ -339,6 +443,7 @@ function SpotRow({ rec, s, active, used, onSpot, onPreview, children }: { rec: A
       <button className="spot-copy copy-link" onClick={copy} title="Copy a link to this spot, to paste over text in a description or note" aria-label={`Copy a link to ${s.name}`}>
         {copied ? <span className="copied">Copied</span> : <Link2 size={13} />}
       </button>
+      {detail}
     </div>
   )
 }
@@ -360,7 +465,7 @@ function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: Artifa
       </button>
       {l.region ? (
         <button className="chip spot-chip" onClick={() => onSpot(l.region)} title="Show this spot">
-          <span className="spot-mark" aria-hidden />
+          <LinkMark rec={rec} region={l.region} />
           <span className="spot-chip-name">{spotName(rec, l.region) ?? l.region}</span>
         </button>
       ) : (
@@ -393,7 +498,7 @@ function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: Artifa
                 </button>
                 {region ? (
                   <button className="chip spot-chip" onClick={() => onSpot(region)}>
-                    <span className="spot-mark" aria-hidden />
+                    <LinkMark rec={rec} region={region} />
                     <span className="spot-chip-name">{spotName(rec, region) ?? region}</span>
                   </button>
                 ) : (

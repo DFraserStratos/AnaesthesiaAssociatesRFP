@@ -175,6 +175,45 @@ export interface Region {
   note: string
 }
 
+/** One row of a step's balances table: plain text both sides (`Bank`, `$100`). */
+export interface StepBalance {
+  account: string
+  amount: string
+}
+
+/**
+ * Something that travels at a step: on stepping forward onto the step, the `to` element(s) set
+ * off from the `from` element's place and size and fly to their own. Both are anchors (as in
+ * `show`); `from` uses its first match, and each match of `to` flies.
+ */
+export interface StepMove {
+  from: string
+  to: string
+}
+
+/**
+ * One step of a stepped diagram (an SVG only). Reveal is cumulative: anything a step's `show`
+ * names starts hidden and stays revealed from that step on. `highlight` keeps its anchors at full
+ * strength at this step only, and the rest dims. A step is a spot, in the same namespace as region
+ * IDs (`AR-01#step-id`). See `shared/steps.ts`.
+ */
+export interface Step {
+  /** Same shape as a region ID (`isRegionId`). */
+  id: string
+  name: string
+  /** A section label; consecutive steps with one label group together. '' when none. */
+  group: string
+  /** Markdown, links allowed. '' when none. */
+  caption: string
+  /** Anchors revealed at this step and kept revealed after. */
+  show: string[]
+  /** Anchors at full strength at this step only. */
+  highlight: string[]
+  /** What travels on arriving at this step by stepping forward, in order. */
+  moves: StepMove[]
+  balances: StepBalance[]
+}
+
 export interface Artifact {
   id: string
   /** The artifact's name, independent of its file name. */
@@ -204,6 +243,8 @@ export interface Artifact {
    */
   file: string | null
   regions: Region[]
+  /** A stepped diagram's steps, in order (SVG only); empty for any other artifact. */
+  steps: Step[]
   /** Markdown, before any `## Source` section. */
   description: string
   /** The mermaid source (the fenced block under `## Source`), or empty. */

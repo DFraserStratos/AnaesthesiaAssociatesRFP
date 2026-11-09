@@ -1,7 +1,7 @@
 /**
  * The Diff review page: marked Markdown that still parses (sentence folds, tables, links), the
  * page's order when a filter hides a changed parent, refs named as the commit list names them,
- * and the changes no field list may drop.
+ * the changes no field list may drop, a stepped diagram's steps among them.
  */
 import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
@@ -11,7 +11,8 @@ import type { CatalogueCommit, DiffRecord } from '../shared/diff.ts'
 import { EMPTY_TREE } from '../shared/diff.ts'
 import { MARK_CLOSE as C, MARK_OPEN as O, markPair, sentenceFold, splitBlocks } from '../shared/proseDiff.ts'
 import { resolveSource } from '../shared/sources.ts'
-import type { Artifact, ArtifactRec, Item } from '../shared/types.ts'
+import { stepChanges } from '../shared/steps.ts'
+import type { Artifact, ArtifactRec, Item, Step } from '../shared/types.ts'
 import { sourceIndexAt, sourceIndexOf } from '../src/sourceRows.ts'
 import { remarkDiffMarks } from '../src/diff/diffMarks.ts'
 import { ALL_FILTERS, canonicalRef, entriesOf, pageRows, passes } from '../shared/diffModel.ts'
@@ -153,6 +154,7 @@ describe('artifact changes', () => {
     citedAs: [{ as: 'Plan p.', pageOffset: null, within: null, spot: null }],
     file: null,
     regions: [],
+    steps: [],
     description: '',
     source: '',
     extra: {},
@@ -161,6 +163,26 @@ describe('artifact changes', () => {
     const after = { ...art, citedAs: [{ as: 'The plan p.', pageOffset: null, within: null, spot: null }] }
     const [e] = entriesOf({ records: [{ kind: 'artifact', id: 'AR-01', before: art, after, fileBefore: null, fileAfter: null }] })
     expect(e?.changes.map((c) => c.field)).toEqual(['citedAs'])
+  })
+
+  describe("a stepped diagram's steps", () => {
+    const step = (id: string, name: string, caption = ''): Step => ({ id, name, group: 'Ordinary invoice', caption, show: [], highlight: [], moves: [], balances: [] })
+    const before = [step('invoice', 'Invoice', 'Cr Sales'), step('gone', 'Old step'), step('bill', 'Bill to Nick'), step('pays', 'Patient pays'), step('pay-nick', 'Pay Nick')]
+    // Invoice renamed and re-captioned, Old step removed, Bill to Nick moved after Pay Nick, Check added.
+    const after = [step('invoice', 'Raise the invoice', 'Cr Sales, Dr Debtors'), step('pays', 'Patient pays'), step('pay-nick', 'Pay Nick'), step('bill', 'Bill to Nick'), step('check', 'Check')]
+
+    it('keeps an artifact whose only change is its steps', () => {
+      const [e] = entriesOf({ records: [{ kind: 'artifact', id: 'AR-01', before: { ...art, steps: before }, after: { ...art, steps: after }, fileBefore: null, fileAfter: null }] })
+      expect([e?.change, e?.changes.map((c) => c.field)]).toEqual(['edited', ['steps']])
+    })
+
+    it("gives the card's steps cell what changed about each step kept, a move in the order included", () => {
+      const ch = stepChanges(before, after)
+      expect([ch.added.map((s) => s.name), ch.removed.map((s) => s.name)]).toEqual([['Check'], ['Old step']])
+      expect(ch.changed.map((c) => `${c.name} · ${c.what.join(', ')}`)).toEqual(['Raise the invoice · renamed, caption changed', 'Bill to Nick · moved'])
+      // A card added or removed stands in for its other side: nothing reads as changed.
+      expect(stepChanges(after, after)).toEqual({ added: [], removed: [], changed: [] })
+    })
   })
 })
 
@@ -178,6 +200,7 @@ describe('sources read at a side', () => {
     citedAs: [{ as, pageOffset: null, within: null, spot: null }],
     file,
     regions: [],
+    steps: [],
     description: '',
     source: '',
     extra: {},

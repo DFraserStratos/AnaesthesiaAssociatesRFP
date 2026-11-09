@@ -9,7 +9,7 @@ argument-hint: "<the file or mermaid source> [what it is, who made it, which req
 An artifact is anything requirements point at: a diagram, a mockup, a screenshot, a photo, a
 transcript, a note, a document. The Requirements Board shows it on its Artifacts tab (agents write
 artifacts as files; the board's Edit details changes only the sidecar's title, kind, status, date,
-author, components, sources and description, never the file or its regions) and draws a red box round any spot a requirement links
+author, components, sources and description, never the file, its regions or its steps) and draws a red box round any spot a requirement links
 to. The format is under **Artifact file** in `REQ/SCHEMA.md`; read it first. Sidecars live in
 `REQ/artifacts/`, the artifact files themselves in `REQ/artifacts/files/` (notes stay in `REQ/notes/`).
 
@@ -79,6 +79,14 @@ line count, a PDF's page count, a diagram's node ids. Choose anchors from that.
   - `note:` a line on what the spot shows, when the name alone doesn't say.
 - Documents need no region for a whole section, page or line range: those are spots already
   (`#<heading-slug>`, `#p27`, `#L27-33`).
+- **Steps**, for an SVG drawing of a flow that unfolds: a `steps` list (after `regions`) makes it a
+  stepped diagram the board plays one step at a time, each step revealing and highlighting more of
+  the drawing, with a caption and running balances. A step is a spot like a region (`AR-nn#step-id`;
+  the two share one set of ids), and a drawing can have both: regions for its standing parts, steps
+  for what happens. A step can also list `moves`, `from` and `to` anchors for something that
+  travels at that step, which the board flies from one to the other. The format is Steps under
+  Artifact file in `REQ/SCHEMA.md`; the `svg-diagram` skill says how to draw one so that its steps
+  and moves work (each step's marks grouped under an id).
 
 ## 3. Link requirements to it
 
@@ -105,6 +113,9 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
 - Optionally open `<dev server>/#/artifacts/AR-nn?region=<spot>` to see the red box land (the
   board's dev server must be running; "This repo"). For many regions, the read-only spec
   `BOARD/e2e/artifacts-real.spec.ts` opens every one (`BOARD_E2E_REAL=1 npx playwright test` in BOARD).
+- A stepped diagram: with the dev server running, `npm --prefix BOARD run artifact:steps -- AR-nn`
+  screenshots the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...) and
+  prints where; read every one.
 - Report the new ID, its regions and the items linked, briefly.
 
 ## Replacing or retiring one

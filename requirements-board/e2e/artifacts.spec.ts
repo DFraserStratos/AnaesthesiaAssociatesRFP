@@ -2,7 +2,8 @@
 /**
  * Artifacts, over the fixture catalogue (port 5182): the tab and its two layouts, the canvas
  * viewer (sanitised SVG, selectable text, pan and zoom without moving the page, the minimap), the
- * red box from a card's link, mermaid, Markdown and PDF spots, the Linked tab, and history.
+ * red box from a card's link, mermaid, Markdown and PDF spots, the Linked tab, history, and a
+ * stepped diagram (its step bar, the arrow keys, its Steps tab, find and refreshes at a step).
  */
 import { execSync } from 'node:child_process'
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -27,7 +28,7 @@ test.beforeEach(async ({ page, request, context }) => {
       const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
       return `${Object.keys(snap.artifacts ?? {}).length}|${snap.items['US-01.1.1']?.data.artifacts.join(',')}`
     })
-    .toBe('5|AR-01#totals,AR-03')
+    .toBe('6|AR-01#totals,AR-03')
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto('/')
   await page.evaluate(() => localStorage.clear())
@@ -35,13 +36,15 @@ test.beforeEach(async ({ page, request, context }) => {
 
 test('the Artifacts tab sits between Board and Outstanding items, and lists every artifact by kind', async ({ page }) => {
   await page.goto('/#/artifacts')
-  await expect(page.locator('.tabs .tab')).toHaveText([/^Board/, /^Artifacts\s*5/, /^Outstanding items/, /^Outline/, /^Diff review/])
-  await expect(page.locator('.plate')).toHaveCount(5)
-  await expect(page.locator('.group-head')).toHaveText([/Diagrams\s*2/, /Screenshots\s*1/, /Notes\s*1/, /Documents\s*1/])
+  await expect(page.locator('.tabs .tab')).toHaveText([/^Board/, /^Artifacts\s*6/, /^Outstanding items/, /^Outline/, /^Diff review/])
+  await expect(page.locator('.plate')).toHaveCount(6)
+  await expect(page.locator('.group-head')).toHaveText([/Diagrams\s*3/, /Screenshots\s*1/, /Notes\s*1/, /Documents\s*1/])
   await expect(page.locator('.plate', { hasText: 'Fixture drawing' }).locator('.artifact-date')).toHaveText('6 Oct 2026')
   await expect(page.locator('.plate', { hasText: 'Fixture document' }).locator('.artifact-date')).toHaveText('2021')
   // Newest first within a kind.
-  await expect(page.locator('.group', { hasText: 'Diagrams' }).locator('.plate-title')).toHaveText(['Fixture drawing', 'Fixture flow'])
+  await expect(page.locator('.group', { hasText: 'Diagrams' }).locator('.plate-title')).toHaveText(['Fixture drawing', 'Fixture flow', 'Fixture steps'])
+  // A stepped diagram counts its steps beside its highlights.
+  await expect(page.locator('.plate', { hasText: 'Fixture steps' }).locator('.badge[title="3 steps"]')).toHaveText('3')
   await page.getByRole('button', { name: /^Notes/ }).click()
   await expect(page.locator('.plate')).toHaveCount(1)
   await expect(page.locator('.plate-title')).toHaveText('Fixture note')
@@ -51,9 +54,9 @@ test('the list layout is remembered: a row per artifact, and one click opens its
   await page.goto('/#/artifacts')
   await page.getByRole('radio', { name: /List/ }).click()
   await page.reload()
-  await expect(page.locator('.artifact-row')).toHaveCount(5)
+  await expect(page.locator('.artifact-row')).toHaveCount(6)
   await expect(page.locator('.plate')).toHaveCount(0)
-  await expect(page.locator('.artifact-row .thumb')).toHaveCount(5)
+  await expect(page.locator('.artifact-row .thumb')).toHaveCount(6)
   await expect(page.locator('.artifact-row', { hasText: 'Fixture flow' }).locator('.artifact-row-date')).toHaveText('October 2026')
   await page.locator('.artifact-row', { hasText: 'Fixture drawing' }).click()
   await expect(page).toHaveURL(/#\/artifacts\/AR-01$/)
@@ -363,6 +366,302 @@ test('find works in mermaid, Markdown and PDF artifacts too, and an image has no
   await page.goto('/#/artifacts/AR-02')
   await expect(page.locator('.canvas-frame')).toBeVisible()
   await expect(page.locator('.find-bar')).toHaveCount(0)
+})
+
+test.describe('a stepped diagram', () => {
+  /** The step classes on an element of the drawing shown (inside the viewer's shadow root). */
+  const marks = (page: Page, sel: string) =>
+    page.locator('.canvas-host').evaluate((h, sel) => {
+      const el = h.shadowRoot!.querySelector(sel)
+      // A move's marks (flying, from) come and go with a flight; the moves tests check them.
+      return el ? [...el.classList].filter((c) => c.startsWith('rb-step-') && c !== 'rb-step-flying' && c !== 'rb-step-from').sort().join(' ') : null
+    }, sel)
+  const bar = (page: Page) => page.locator('.step-bar')
+  /** The step read in the panel: the active row of the Steps tab, opened to its caption and balances. */
+  const detail = (page: Page) => page.locator('.step-group-list .spot-row.is-active .step-detail')
+  const open = async (page: Page, spot = '') => {
+    await page.goto(`/#/artifacts/AR-06${spot ? `?region=${spot}` : ''}`)
+    await expect(page.locator('.canvas-host svg text', { hasText: 'Trust account' })).toBeVisible()
+  }
+
+  test('the step bar steps through it: the URL, the reveal, the highlight, the step read in the panel, and back to the whole drawing', async ({ page }) => {
+    await open(page)
+    await expect(marks(page, '#payout-entries')).resolves.toBe('')
+    const start = bar(page).getByRole('button', { name: 'Step through · 3 steps' })
+    await expect(start).toBeVisible()
+    const view = await viewBox(page)
+
+    await start.click()
+    await expect(page).toHaveURL(/#\/artifacts\/AR-06\?region=invoice$/)
+    await expect(bar(page).locator('.step-count')).toHaveText('1 of 3')
+    await expect(bar(page).locator('.step-bar-name')).toHaveText('Invoice raised')
+    await expect(bar(page).locator('.step-bar-name')).toHaveAttribute('title', 'Ordinary invoice · Invoice raised')
+    await expect(bar(page).getByRole('button', { name: 'Previous step' })).toBeDisabled()
+    // The bar holds no caption or balances: the step is read in the panel, its row opened in place.
+    await expect(bar(page).locator('.prose, table')).toHaveCount(0)
+    await expect(page.locator('.step-detail')).toHaveCount(1)
+    await expect(page.locator('.step-group-list', { has: page.locator('.spot-row.is-active .step-detail') }).locator('.section-head')).toHaveText(/Ordinary invoice/)
+    await expect(marks(page, '#invoice-entries')).resolves.toBe('rb-step-lit')
+    await expect(marks(page, '#trust')).resolves.toBe('rb-step-path')
+    await expect(marks(page, '#payment-entries')).resolves.toBe('rb-step-off')
+    await expect(marks(page, '#payout-entries')).resolves.toBe('rb-step-off')
+    await expect(marks(page, 'svg')).resolves.toBe('rb-step-fade rb-step-focus')
+    // The caption is prose: a record ID in it is a link to the record.
+    await expect(detail(page).locator('.prose a', { hasText: 'Story 1.1.1' })).toBeVisible()
+    await expect(detail(page).locator('.step-balances tr')).toHaveCount(2)
+    await expect(detail(page).locator('.step-balances tr.is-changed')).toHaveCount(0)
+
+    await bar(page).getByRole('button', { name: 'Next step' }).click()
+    await expect(page).toHaveURL(/region=payment$/)
+    await expect(bar(page).locator('.step-count')).toHaveText('2 of 3')
+    await expect(bar(page).locator('[aria-live]')).toHaveText('Step 2 of 3: Patient pays. The money lands in the trust account.')
+    await expect(marks(page, '#payment-entries')).resolves.toBe('rb-step-lit')
+    await expect(marks(page, '#invoice-entries')).resolves.toBe('')
+    await expect(marks(page, '#payout-entries')).resolves.toBe('rb-step-off')
+    await expect(detail(page).locator('.step-balances tr.is-changed th')).toHaveText([/^Trust/, /^Debtors/])
+    await expect(page.locator('.step-detail')).toHaveCount(1)
+
+    await bar(page).getByRole('button', { name: 'Next step' }).click()
+    await expect(page).toHaveURL(/region=payout$/)
+    await expect(page.locator('.step-group-list', { has: page.locator('.spot-row.is-active .step-detail') }).locator('.section-head')).toHaveText(/Payout/)
+    await expect(bar(page).getByRole('button', { name: 'Next step' })).toBeDisabled()
+    await expect(detail(page).locator('.step-balances tr.is-changed th')).toHaveText([/^Trust/])
+    // Stepping leaves the view where it was, and shows no red box.
+    expect(await viewBox(page)).toBe(view)
+    await expect(page.locator('.region-box')).toHaveCount(0)
+
+    await bar(page).getByRole('button', { name: 'Whole drawing' }).click()
+    await expect(page).toHaveURL(/#\/artifacts\/AR-06$/)
+    await expect(start).toBeVisible()
+    await expect(page.locator('.step-detail')).toHaveCount(0)
+    expect(await page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.querySelectorAll('[class*="rb-step-"]:not(svg)').length)).toBe(0)
+    await expect(marks(page, 'svg')).resolves.toBe('rb-step-fade')
+  })
+
+  test('the bar sits level with the view bar and stops short of the dock; the open minimap draws over it', async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 800 })
+    await open(page, 'payment')
+    const b = await boxOf(page, '.step-bar')
+    const v = await boxOf(page, '.canvas-dock .view-bar')
+    expect(Math.abs(b.y + b.height - (v.y + v.height))).toBeLessThan(1.5)
+    expect(Math.abs(b.height - v.height)).toBeLessThan(1.5)
+    expect(b.x + b.width).toBeLessThanOrEqual(v.x - 15)
+    // A long name is cut short, never pushing the bar wider.
+    await expect(bar(page).locator('.step-bar-name')).toHaveCSS('text-overflow', 'ellipsis')
+    // The hover minimap is passing: it opens over the bar's right end, on top, and takes the presses there.
+    await page.getByRole('button', { name: 'Minimap' }).click()
+    await expect(page.locator('.canvas-dock .minimap')).toBeVisible()
+    await page.waitForTimeout(250)
+    const m = await boxOf(page, '.canvas-dock .minimap')
+    expect(m.x).toBeLessThan(b.x + b.width)
+    const at = { x: (m.x + b.x + b.width) / 2, y: Math.max(b.y, m.y) + 8 }
+    expect(await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.minimap'), at)).toBe(true)
+  })
+
+  test('stepping from the bar leaves the panel on the tab the reader chose', async ({ page }) => {
+    await open(page, 'invoice')
+    await page.getByRole('tab', { name: /Details/ }).click()
+    await bar(page).getByRole('button', { name: 'Next step' }).click()
+    await expect(page).toHaveURL(/region=payment$/)
+    await expect(page.getByRole('tab', { name: /Details/ })).toHaveAttribute('aria-selected', 'true')
+    await page.locator('.canvas-frame').focus()
+    await page.keyboard.press('ArrowRight')
+    await expect(page).toHaveURL(/region=payout$/)
+    await expect(page.getByRole('tab', { name: /Details/ })).toHaveAttribute('aria-selected', 'true')
+    await page.getByRole('tab', { name: /Steps/ }).click()
+    await expect(detail(page)).toContainText('The doctor is paid from trust.')
+  })
+
+  test('dimmed parts fade between steps, and not at all under reduced motion', async ({ page }) => {
+    const fade = () => page.locator('.canvas-host').evaluate((h) => getComputedStyle(h.shadowRoot!.querySelector('#ledger')!).transitionDuration)
+    await open(page, 'invoice')
+    await expect.poll(() => marks(page, 'svg')).toBe('rb-step-fade rb-step-focus')
+    expect(await fade()).toMatch(/^0\.25s/)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    expect(await fade()).toMatch(/^0s/)
+  })
+
+  test('the arrow keys step, from the drawing or the bar', async ({ page }) => {
+    await open(page)
+    await page.locator('.canvas-frame').focus()
+    await page.keyboard.press('ArrowRight')
+    await expect(page).toHaveURL(/region=invoice$/)
+    await page.keyboard.press('ArrowRight')
+    await expect(page).toHaveURL(/region=payment$/)
+    await page.keyboard.press('ArrowLeft')
+    await expect(page).toHaveURL(/region=invoice$/)
+    // Not with a modifier held.
+    await page.keyboard.press('Shift+ArrowRight')
+    await expect(page).toHaveURL(/region=invoice$/)
+    // From the bar: the last step disables Next, and the keys still step.
+    await bar(page).getByRole('button', { name: 'Next step' }).click()
+    await bar(page).getByRole('button', { name: 'Next step' }).click()
+    await expect(page).toHaveURL(/region=payout$/)
+    await page.keyboard.press('ArrowLeft')
+    await expect(page).toHaveURL(/region=payment$/)
+    // Not while typing in the find box.
+    await page.getByPlaceholder('Find in this diagram').fill('entry')
+    await page.getByPlaceholder('Find in this diagram').press('ArrowRight')
+    await expect(page).toHaveURL(/region=payment$/)
+  })
+
+  test("find leaves out what a step has not revealed yet", async ({ page }) => {
+    await open(page, 'invoice')
+    const box = page.getByPlaceholder('Find in this diagram')
+    await box.fill('payout')
+    await expect(page.locator('.find-bar .search-count')).toHaveText('No matches')
+    await box.fill('entry')
+    await expect(page.locator('.find-bar .search-count')).toHaveText('1 of 1')
+    await bar(page).getByRole('button', { name: 'Next step' }).click()
+    await expect(page.locator('.find-bar .search-count')).toHaveText('1 of 2')
+    await bar(page).getByRole('button', { name: 'Whole drawing' }).click()
+    await expect(page.locator('.find-bar .search-count')).toHaveText('1 of 3')
+  })
+
+  test('the step holds through a catalogue refresh', async ({ page }) => {
+    await open(page, 'payment')
+    await expect(marks(page, '#payment-entries')).resolves.toBe('rb-step-lit')
+    // Tag the drawing shown, so the copy a refresh mounts in its place can be told apart.
+    await page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.querySelector('svg')!.setAttribute('data-probe', 'old'))
+    const base = fixtureItems().find((i) => i.id === 'US-01.1.3')!
+    writeItem({ ...base, title: 'Story renamed on disk' }, FIXTURE_DIR)
+    await expect.poll(() => page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.querySelector('svg')?.getAttribute('data-probe') ?? 'new'), { timeout: 10_000 }).toBe('new')
+    await expect(marks(page, '#payment-entries')).resolves.toBe('rb-step-lit')
+    await expect(marks(page, '#payout-entries')).resolves.toBe('rb-step-off')
+    await expect(bar(page).locator('.step-count')).toHaveText('2 of 3')
+  })
+
+  test('a link to a step opens on it: no red box, no flag, the whole drawing in view', async ({ page }) => {
+    await open(page)
+    await page.waitForTimeout(300)
+    const whole = await viewBox(page)
+    await open(page, 'payout')
+    await expect(bar(page).locator('.step-count')).toHaveText('3 of 3')
+    await expect(bar(page).locator('.step-bar-name')).toHaveText('Doctor paid')
+    await expect(marks(page, '#payout-entries')).resolves.toBe('rb-step-lit')
+    await expect(marks(page, '#invoice-entries')).resolves.toBe('')
+    await expect(page.locator('.region-box')).toHaveCount(0)
+    await expect(page.locator('.viewer-flag')).toHaveCount(0)
+    await expect.poll(() => viewBox(page)).toBe(whole)
+  })
+
+  /** What is flying: the copies in the drawing, the flight animations on them, and the marks on the real elements. */
+  const inFlight = (page: Page) =>
+    page.locator('.canvas-host').evaluate((h) => {
+      const root = h.shadowRoot!
+      const flights = root.getAnimations().filter((a) => !(a instanceof CSSTransition))
+      return {
+        copies: root.querySelectorAll('.rb-step-flight').length,
+        playing: flights.filter((a) => a.playState === 'running').length,
+        marked: root.querySelectorAll('.rb-step-flying, .rb-step-from').length,
+      }
+    })
+  const grounded = { copies: 0, playing: 0, marked: 0 }
+  const stepForward = async (page: Page) => bar(page).getByRole('button', { name: 'Next step' }).click()
+
+  test('stepping forward flies what moves, from where it sets off to where it lands, and leaves nothing behind', async ({ page }) => {
+    await open(page, 'invoice')
+    await expect.poll(() => inFlight(page)).toEqual(grounded)
+    await stepForward(page)
+    await expect(page).toHaveURL(/region=payment$/)
+    // In the air: a copy flies above everything while the real entry waits hidden, the start at full strength.
+    expect(await inFlight(page)).toEqual({ copies: 1, playing: 1, marked: 2 })
+    const at = await page.locator('.canvas-host').evaluate((h) => {
+      const root = h.shadowRoot!
+      const [anim] = root.getAnimations().filter((a) => !(a instanceof CSSTransition))
+      anim!.pause()
+      const box = (el: Element) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } }
+      const copy = root.querySelector('.rb-step-flight')!
+      anim!.currentTime = 0
+      const start = box(copy)
+      anim!.currentTime = 700
+      const end = box(copy)
+      anim!.play()
+      return { start, end, from: box(root.querySelector('#invoice-entries')!), to: box(root.querySelector('#payment-entries')!), last: root.querySelector('svg')!.lastElementChild === copy, flying: root.querySelector('#payment-entries')!.classList.contains('rb-step-flying') }
+    })
+    // It sets off from the start's centre and lands on its own place, drawn last of all.
+    expect(Math.abs(at.start.x - at.from.x) + Math.abs(at.start.y - at.from.y)).toBeLessThan(2)
+    expect(Math.abs(at.end.x - at.to.x) + Math.abs(at.end.y - at.to.y)).toBeLessThan(2)
+    expect(at.last).toBe(true)
+    expect(at.flying).toBe(true)
+    // Landed: nothing left on the drawing but the static step.
+    await expect.poll(() => inFlight(page), { timeout: 3000 }).toEqual(grounded)
+    expect(await page.locator('.canvas-host').evaluate((h) => { const el = h.shadowRoot!.querySelector('#payment-entries')!; return `${el.getAttribute('style') ?? ''}|${el.getAttribute('transform') ?? ''}` })).toBe('|')
+    await expect(marks(page, '#payment-entries')).resolves.toBe('rb-step-lit')
+  })
+
+  test('stepping back, a jump from the panel, a link to a step and reduced motion fly nothing; Replay flies again', async ({ page }) => {
+    await open(page, 'payout')
+    expect(await inFlight(page)).toEqual(grounded)
+    await bar(page).getByRole('button', { name: 'Previous step' }).click()
+    await expect(page).toHaveURL(/region=payment$/)
+    expect(await inFlight(page)).toEqual(grounded)
+    // A jump to the very next step from the panel is still a jump.
+    await page.locator('.spot-row', { hasText: 'Doctor paid' }).locator('.spot-go').click()
+    await expect(page).toHaveURL(/region=payout$/)
+    expect(await inFlight(page)).toEqual(grounded)
+    // Replay is there for a step with moves, and flies them again from the step before.
+    const replay = bar(page).getByRole('button', { name: 'Replay this step' })
+    await expect(replay).toHaveAttribute('title', 'Replay this step')
+    await replay.click()
+    expect(await inFlight(page)).toEqual({ copies: 1, playing: 1, marked: 2 })
+    await expect.poll(() => inFlight(page), { timeout: 3000 }).toEqual(grounded)
+    // The first step has no moves, so no Replay.
+    await page.locator('.spot-row', { hasText: 'Invoice raised' }).locator('.spot-go').click()
+    await expect(bar(page).getByRole('button', { name: 'Replay this step' })).toHaveCount(0)
+    // Reduced motion: stepping forward simply arrives.
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await stepForward(page)
+    await expect(page).toHaveURL(/region=payment$/)
+    expect(await inFlight(page)).toEqual(grounded)
+  })
+
+  test('a new step mid-flight, or a catalogue refresh mid-flight, leaves the right static state', async ({ page }) => {
+    await open(page, 'invoice')
+    await stepForward(page)
+    await page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.getAnimations().forEach((a) => a.pause()))
+    // Stepping on cancels the first flight and flies its own.
+    await stepForward(page)
+    await expect(page).toHaveURL(/region=payout$/)
+    expect(await inFlight(page)).toEqual({ copies: 1, playing: 1, marked: 2 })
+    await page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.getAnimations().forEach((a) => a.pause()))
+    await page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.querySelector('svg')!.setAttribute('data-probe', 'old'))
+    const base = fixtureItems().find((i) => i.id === 'US-01.1.3')!
+    writeItem({ ...base, title: 'Renamed mid-flight' }, FIXTURE_DIR)
+    await expect.poll(() => page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.querySelector('svg')?.getAttribute('data-probe') ?? 'new'), { timeout: 10_000 }).toBe('new')
+    expect(await inFlight(page)).toEqual(grounded)
+    await expect(marks(page, '#payout-entries')).resolves.toBe('rb-step-lit')
+    await expect(marks(page, '#payment-entries')).resolves.toBe('')
+  })
+
+  test('the Steps tab comes first, lists the steps under their groups, and goes to one', async ({ page, request }) => {
+    const base = fixtureItems().find((i) => i.id === 'US-01.1.3')!
+    writeItem({ ...base, artifacts: ['AR-06#payout'] }, FIXTURE_DIR)
+    await expect.poll(async () => ((await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot).items['US-01.1.3']?.data.artifacts.join(',')).toBe('AR-06#payout')
+    await open(page)
+    await expect(page.locator('.panel-tabs .tab').first()).toHaveText(/^Steps\s*3/)
+    await expect(page.getByRole('tab', { name: /Steps/ })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.locator('.step-group-list .section-head')).toHaveText([/Ordinary invoice\s*2/, /Payout\s*1/])
+    await expect(page.locator('.step-group-list .spot-row .step-num')).toHaveText(['1', '2', '3'])
+    const row = page.locator('.spot-row', { hasText: 'Patient pays' })
+    await row.locator('.spot-go').click()
+    await expect(page).toHaveURL(/region=payment$/)
+    await expect(row).toHaveClass(/is-active/)
+    await expect(bar(page).locator('.step-count')).toHaveText('2 of 3')
+    await row.hover()
+    await row.locator('.spot-copy').click()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/#\/artifacts\/AR-06\?region=payment$/)
+    // A card linking to a step: its chip on the Linked tab names the step and goes to it.
+    await page.getByRole('tab', { name: /Linked/ }).click()
+    const chip = page.locator('.linked-row', { hasText: 'Story 1.1.3' }).locator('.spot-chip')
+    await expect(chip).toHaveText(/Doctor paid/)
+    await chip.click()
+    await expect(page).toHaveURL(/region=payout$/)
+    await expect(bar(page).locator('.step-count')).toHaveText('3 of 3')
+    // Highlights still lists the regions.
+    await page.getByRole('tab', { name: /Highlights/ }).click()
+    await expect(page.locator('.spot-row', { hasText: 'Our ledger' })).toBeVisible()
+  })
 })
 
 test.describe('history', () => {

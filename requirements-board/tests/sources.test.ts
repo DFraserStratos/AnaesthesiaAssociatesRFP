@@ -20,6 +20,7 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   sources: ['Fixture'],
   file: `artifacts/files/${over.id}.pdf`,
   regions: [],
+  steps: [],
   description: '',
   source: '',
   extra: {},
@@ -192,6 +193,25 @@ describe('the check on sources', () => {
       'error AR-01: cited_as "Spec" is also claimed by AR-02',
       'error AR-02: cited_as "Spec" is also claimed by AR-01',
     ])
+  })
+})
+
+describe('a step as a cited spot', () => {
+  const steps = [{ id: 'paid-in', name: 'Paid in', group: '', caption: '', show: ['#paid'], highlight: [], moves: [], balances: [] }]
+  const old = artifact({ id: 'AR-30', kind: 'diagram', file: 'artifacts/files/AR-30.svg', status: 'Superseded', supersededBy: 'AR-31', steps, citedAs: [cite('Diagram: Old flow', { spot: 'paid-in' })] })
+  const flow = artifact({ id: 'AR-31', kind: 'diagram', file: 'artifacts/files/AR-31.svg', steps, citedAs: [cite('Diagram: Order flow', { spot: 'paid-in' }), cite('Diagram: Wrong', { spot: 'nope' })] })
+  const index = buildSourceIndex([old, flow], () => ({ pages: null, headings: null, points: null, lines: null }))
+
+  it("opens a step that cited_as names, by the step's name, and keeps it across a supersede", () => {
+    expect(resolveSource(index, 'Diagram: Order flow')).toMatchObject({ id: 'AR-31', spots: [{ region: 'paid-in', label: 'Paid in', problem: null }] })
+    expect(resolveSource(index, 'Diagram: Old flow')).toMatchObject({ id: 'AR-31', spots: [{ region: 'paid-in', label: 'Paid in' }] })
+  })
+
+  it('takes a step as a cited_as spot in the check, and still flags a spot that is neither region nor step', () => {
+    const issues = checkCatalogue({ items: [], questions: [], artifacts: [old, flow], artifactFacts: () => ({ format: 'svg', ok: true, bounds: null }) })
+      .filter((i) => /cited_as/.test(i.message))
+      .map((i) => `${i.severity} ${i.id}: ${i.message}`)
+    expect(issues).toEqual(['error AR-31: cited_as "Diagram: Wrong": spot "nope" is not a region of AR-31'])
   })
 })
 

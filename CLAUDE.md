@@ -95,7 +95,8 @@ Not the place to edit requirements:
   as pills): read it before any visual change to the board.
   **Artifacts** (its Artifacts tab) are the diagrams, transcripts, notes and documents behind the
   requirements: a sidecar `REQ/artifacts/AR-nn.md` each (its file in `REQ/artifacts/files/`), with named highlight regions that
-  items link to (`artifacts: [AR-01#price-rules]`, or a `[words](AR-01#price-rules)` text link). The
+  items link to (`artifacts: [AR-01#price-rules]`, or a `[words](AR-01#price-rules)` text link); an SVG
+  diagram's sidecar can also list steps the board plays through (stepped diagrams), linkable like regions. The
   board edits only their details (name, kind, status, date, author, area, sources, description) and
   never makes or edits the artifact itself; agents add them, and write their files and regions, with the `add-artifact` skill
   (`npm --prefix requirements-board run artifact:new`), and the `svg-diagram` skill saves new

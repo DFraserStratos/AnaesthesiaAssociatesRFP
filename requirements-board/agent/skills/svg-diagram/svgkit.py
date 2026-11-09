@@ -13,7 +13,15 @@ Import it from a generator script:
 
 Every helper appends raw SVG to the diagram. Coordinates are absolute pixels. Nothing is measured
 for you: SVG cannot measure text, so render the PNG (render.mjs) and look at it.
+
+To name a part made of several primitives (a card and its texts, one step's marks), draw it inside
+a group, so a region or a step can point at the whole part as `#id` or `.class`:
+
+    with d.group(id="stage-3"):
+        d.card(...)
+        d.lines(...)
 """
+from contextlib import contextmanager
 
 FONT = "'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"
 
@@ -61,6 +69,19 @@ class Diagram:
     # ---------- primitives ----------
     def raw(self, s):
         self.out.append(s)
+
+    @contextmanager
+    def group(self, id=None, cls=None):
+        """Wrap everything drawn inside the `with` block in one `<g>`, so the part has one name:
+        `#id` for an artifact region's anchor or a step's `show` and `highlight`, `.cls` for a set
+        of parts (several classes: space-separated). Groups nest. A group draws nothing itself."""
+        i = f' id="{id}"' if id else ""
+        c = f' class="{esc(cls)}"' if cls else ""
+        self.raw(f"<g{i}{c}>")
+        try:
+            yield self
+        finally:
+            self.raw("</g>")
 
     def rect(self, x, y, w, h, fill, stroke=None, r=10, sw=1.2, dash=None, id=None):
         st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""

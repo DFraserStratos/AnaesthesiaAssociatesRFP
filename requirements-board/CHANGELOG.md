@@ -2,6 +2,20 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.6.0 · 2026-11-10
+
+- Stepped diagrams: an SVG drawing's sidecar can list `steps`, and the board plays them in order. Each step reveals more of the drawing (reveal is cumulative, nothing is hidden again), highlights what it is about while the rest dims, and shows a caption and a small balances table, the rows that changed since the step before marked. With no step chosen the board shows the whole drawing, nothing dimmed; thumbnails, the minimap, visual compare and the Diff review show that finished picture.
+- A slim step bar on the canvas, bottom left, level with the view bar: "3 of 8" with previous and next, the step's name, and Whole drawing; with no step chosen it offers Step through. It never covers the drawing: the step is read in the panel. The left and right arrow keys step while the drawing or the bar has focus. The fade between steps is skipped under reduced motion. What dims is washed half way to white and stays opaque, so nothing behind it shows through; on a dark panel it fades into the panel instead.
+- A Steps tab in the artifact panel, first when an artifact has steps: the steps under their groups, a click to go, a link to copy; the step shown opens in place to its caption and balances. The Artifacts tab counts an artifact's steps beside its highlights.
+- Moves: a step can list `moves`, each `from` and `to` anchors, for something that travels at that step. Stepping forward onto the step, each `to` element flies from the `from` element's place and size to its own (about 700ms each, a stagger apart), drawn above the rest of the drawing on the way, and lands exactly on the static drawing. Jumping to a step, stepping back, the whole drawing and reduced motion skip the flight; a Replay button in the step bar plays it again. The check errors on a move missing `from` or `to` or an anchor that matches nothing, and warns on a `from` matching several elements and on a `from` or `to` a later step reveals.
+- A step is a spot, like a region: `AR-nn#step-id` in an item's `artifacts` and in text links, `?region=step-id` in the board's address. Steps and regions share one set of ids.
+- Check rules: steps only on an SVG drawing; a step's id shaped like a region's, listed once, not a region's id, not shaped like a page or line spot; a name; an account on every balance row; every `show` and `highlight` anchor matching something in the drawing (errors); a highlight on something a later step reveals (a warning); links in captions checked as a description's are. SCHEMA.md has a Steps section.
+- History and the Diff review show a change to an artifact's steps as named steps added, removed, changed or moved, not raw data.
+- svgkit: `with d.group(id=..., cls=...)` wraps a part's primitives in one `<g>`, so a region or a step can name a whole card with its texts. Groups nest. Existing generators draw exactly as before.
+- `npm run artifact:steps -- AR-nn [--out <dir>] [--url <base>]` screenshots a stepped diagram in the running board, the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...), at a laptop size, to check every step by eye. It says so plainly when the board is not running.
+- The svg-diagram skill has a Stepped diagrams section (when one earns its place, draw the finished picture first, group each step's marks, write `steps`, check every step); the add-artifact skill covers steps beside regions.
+- The starter's loop diagram is the worked example: its cards are grouped and its sidecar steps through the loop in two groups, with running balances. `__pycache__` folders stay out of git and out of the exported kit.
+
 ## 1.5.1 · 2026-11-10
 
 - Diff review: each card's title row shows the record's ID, quiet beside the title; a click copies the ID.
