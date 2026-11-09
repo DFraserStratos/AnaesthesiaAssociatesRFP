@@ -466,6 +466,13 @@
   font-size: calc(var(--dh3) + 2.5px);
   font-weight: 700;
 }
+.diff-card-id {
+  flex-shrink: 0;
+  padding: 2px 4px;
+  font: 500 12px/1 var(--mono);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
 .diff-card.viewed .diff-card-title h3 {
   color: var(--ink-3);
   font-weight: 500;

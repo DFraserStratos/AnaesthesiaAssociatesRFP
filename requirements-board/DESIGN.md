@@ -319,7 +319,8 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
   quiet "Changed, hidden by the filters" pill. Branches with nothing changed don't show. Then Outstanding items (in their
   tab's group order), then Artifacts (by kind).
 - **A card** is a white sheet with its type's top rule (artifacts indigo, outstanding items amber).
-  Head: type mark and title, then only marks worth noticing: Added, Removed, Moved, Minor, as squared
+  Head: type mark, title and the ID quiet in mono (a click copies the ID itself, "Copied" for a
+  moment), then only marks worth noticing: Added, Removed, Moved, Minor, as squared
   outlined tags so they never read as a status pill. Right: Whole card, Open (not for a removed one),
   the Viewed tick. Body: a grid of rows, Before | seam | After. The before column sits a shade back
   (`--card-soft`), the after one full white. **The seam** is a hairline with a short band on every row

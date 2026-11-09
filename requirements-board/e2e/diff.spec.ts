@@ -99,6 +99,12 @@ test('uncommitted edits arrive live, and the tab counts them', async ({ page }) 
   // Field names are tags on the seam. Whole card shows unchanged fields too: short ones on the
   // summary line, the rest as rows. Viewed folds the card and survives a reload.
   await expect(card.locator('.diff-tag')).toHaveText(['Title', 'Acceptance criteria'])
+  // The ID sits by the title, and a click copies it.
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await card.locator('.diff-card-id').click()
+  await expect(card.locator('.diff-card-id')).toHaveText('Copied')
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('US-02.1.2')
+  await expect(card.locator('.diff-card-id')).toHaveText('US-02.1.2')
   await expect(card.locator('.diff-summary')).toHaveCount(0)
   await card.getByRole('button', { name: 'Whole card' }).click()
   await expect(card.locator('.diff-summary .diff-sum', { hasText: 'Area' })).toHaveCount(1)

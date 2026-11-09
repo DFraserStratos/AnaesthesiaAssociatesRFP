@@ -2,6 +2,10 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.5.1 · 2026-11-10
+
+- Diff review: each card's title row shows the record's ID, quiet beside the title; a click copies the ID.
+
 ## 1.5.0 · 2026-11-06
 
 - Diff review, a new tab after Outline: the catalogue compared between two versions in git. Every changed epic, feature, story, outstanding item and artifact is a card with before on the left and after on the right, paired paragraph by paragraph, the changed words struck on a rose tint or set on a green one, status, lineage, area and link rows drawn as on the sheet. A paragraph mostly rewritten is tinted whole.

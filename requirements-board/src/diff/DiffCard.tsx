@@ -5,7 +5,7 @@
  * removed record keeps both columns: a placeholder opposite the whole card.
  */
 import { ArrowUpRight, Maximize2, Minimize2 } from 'lucide-react'
-import { Fragment, memo, useMemo, type ReactNode } from 'react'
+import { Fragment, memo, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { shownOf, type ArtifactEntry, type Entry, type ItemEntry, type QuestionEntry } from '../../shared/diffModel.ts'
 import { isMinorChange, setDiff } from '../../shared/history.ts'
 import type { Artifact, Citation, Item, Question } from '../../shared/types.ts'
@@ -272,6 +272,22 @@ function guessHeight(entry: Entry): number {
  * The card; memoised, so it redraws only when its own props change. `pending`: not drawn yet (the
  * page fills its cards in a few at a time), only its head and a space about its height.
  */
+/** The record's ID, quiet beside its title: a click copies the ID itself, to paste anywhere. */
+function CopyId({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 1600)
+    return () => clearTimeout(t)
+  }, [copied])
+  const copy = () => void navigator.clipboard?.writeText(id).then(() => setCopied(true), () => {})
+  return (
+    <button type="button" className="copy-link diff-card-id" onClick={copy} title={`Copy ${id}`} aria-label={copied ? `${id} copied` : `Copy ${id}`}>
+      {copied ? 'Copied' : id}
+    </button>
+  )
+}
+
 export const DiffCard = memo(function DiffCard({
   entry,
   expanded,
@@ -311,9 +327,10 @@ export const DiffCard = memo(function DiffCard({
       style={{ containIntrinsicSize: `auto ${viewed ? 60 : guess}px` }}
     >
       <header className="diff-card-head">
-        <div className="diff-card-title" title={entry.id}>
+        <div className="diff-card-title">
           <RecordMark mark={mark} size={entry.kind === 'item' ? (entry.type === 'epic' ? 17 : 15) : 16} />
           <h3>{entry.title}</h3>
+          <CopyId id={entry.id} />
           {entry.change === 'added' && <span className="diff-pill add">Added</span>}
           {entry.change === 'removed' && <span className="diff-pill del">Removed</span>}
           {entry.kind === 'item' && entry.moved && <span className="diff-pill moved">Moved</span>}
