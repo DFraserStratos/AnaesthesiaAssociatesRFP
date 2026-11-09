@@ -12,6 +12,7 @@ import {
   QUESTION_KINDS,
   VIEWPORTS,
   artifactFormat,
+  isPastArtifact,
   linesOfRegionId,
   pageOfRegionId,
   parseArtifactRef,
@@ -26,7 +27,7 @@ import {
 } from './types.ts'
 import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
 import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
-import { appKeys, componentNames, DEFAULT_CONFIG, type BoardConfig } from './config.ts'
+import { appKeys, componentNames, DEFAULT_CONFIG, voiceRegex, type BoardConfig } from './config.ts'
 import { isAnswered, isRetired, statusCodes } from './statuses.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
@@ -185,7 +186,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (!ARTIFACT_KINDS.includes(a.kind)) err(a.id, `kind "${a.kind}" is not one of ${ARTIFACT_KINDS.join(', ')}`)
     if (!ARTIFACT_STATUSES.includes(a.status)) err(a.id, `status "${a.status}" is not one of ${ARTIFACT_STATUSES.join(', ')}`)
     for (const c of a.components) if (unknownComponent(c)) err(a.id, `component "${c}" is not in the vocabulary (board.config.json)`)
-    if (a.sources.length === 0 && a.status !== 'Superseded') warn(a.id, 'no source')
+    if (a.sources.length === 0 && !isPastArtifact(a.status)) warn(a.id, 'no source')
     if (a.date === null) warn(a.id, 'no date: when it was made (a meeting, a publication, a drawing)')
     else if (!isArtifactDate(a.date)) err(a.id, `date "${a.date}" is not YYYY-MM-DD, YYYY-MM or YYYY`)
     if (a.supersededBy !== null) {
@@ -276,9 +277,10 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       }
       const problem = artifactRefProblem(ref)
       if (problem) err(it.id, `artifacts lists ${ref}: ${problem}`)
-      else if (!retired(it) && artById.get(parseArtifactRef(ref).id)!.status === 'Superseded') {
-        const by = artById.get(parseArtifactRef(ref).id)!.supersededBy
-        warn(it.id, `artifacts lists ${ref}, which is superseded${by ? ` by ${by}` : ''}`)
+      else if (!retired(it)) {
+        const target = artById.get(parseArtifactRef(ref).id)!
+        if (target.status === 'Superseded') warn(it.id, `artifacts lists ${ref}, which is superseded${target.supersededBy ? ` by ${target.supersededBy}` : ''}`)
+        else if (target.status === 'Retired') warn(it.id, `artifacts lists ${ref}, which is retired`)
       }
     }
   }
@@ -293,7 +295,10 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       if (isArtifactId(m.id)) {
         const problem = artifactRefProblem(m.id)
         if (problem) (m.bare ? warn : fail)(id, `the text ${how} ${m.id}: ${problem}`)
-        else if (live && !m.bare && artById.get(parseArtifactRef(m.id).id)!.status === 'Superseded') warn(id, `the text links to ${m.id}, which is superseded`)
+        else if (live && !m.bare) {
+          const status = artById.get(parseArtifactRef(m.id).id)!.status
+          if (isPastArtifact(status)) warn(id, `the text links to ${m.id}, which is ${status.toLowerCase()}`)
+        }
       } else if (isQuestionId(m.id)) {
         if (!qIds.has(m.id)) warn(id, `the text ${how} ${m.id}, which does not exist`)
       } else if (!byId.has(m.id)) {
@@ -303,8 +308,25 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
   }
   for (const it of items) linksIn(it.id, itemTexts(it), !retired(it))
-  for (const a of artifacts) linksIn(a.id, [a.description], a.status !== 'Superseded', true)
+  for (const a of artifacts) linksIn(a.id, [a.description], !isPastArtifact(a.status), true)
   for (const q of questions) linksIn(q.id, [q.question, q.answer], !isAnswered(config, q))
+
+  // Voice: project patterns that mark provenance or decision history in a description (board.config.json `voice`).
+  // Only the description, and only on live cards: Notes and sources are where that history belongs.
+  const voiceRules = config.voice.descriptionWarnings.flatMap((rule) => {
+    const re = voiceRegex(rule)
+    return typeof re === 'string' ? [] : [{ rule, re }]
+  })
+  if (voiceRules.length) {
+    for (const it of items) {
+      if (retired(it) || !it.description) continue
+      for (const { rule, re } of voiceRules) {
+        re.lastIndex = 0
+        const m = re.exec(it.description)
+        if (m) warn(it.id, `description has ${rule.message} ("${snippet(m[0])}"): move provenance and history to Notes`)
+      }
+    }
+  }
 
   for (const q of questions) {
     if (!ID_PATTERNS.question.test(q.id)) err(q.id, `ID ${q.id} does not match OQ-nn`)
@@ -335,6 +357,12 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
   }
 
   return issues
+}
+
+/** Matched text for a message: one line, at most about 40 characters. */
+function snippet(text: string, max = 40): string {
+  const t = text.replace(/\s+/g, ' ').trim()
+  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t
 }
 
 /** What the check knows of a file, as the source resolver reads it. */

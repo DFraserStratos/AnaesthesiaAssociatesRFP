@@ -3204,7 +3204,7 @@ mark {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.plate.is-superseded .thumb > * {
+.plate.is-past .thumb > * {
   filter: grayscale(1);
   opacity: 0.55;
 }
@@ -3358,7 +3358,7 @@ mark {
   font-size: 12.5px;
   color: var(--ink-2);
 }
-.artifact-row.is-superseded .thumb > * {
+.artifact-row.is-past .thumb > * {
   filter: grayscale(1);
   opacity: 0.55;
 }

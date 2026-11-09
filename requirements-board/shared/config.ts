@@ -54,6 +54,24 @@ export interface CaptureConfig {
   startHint?: string
 }
 
+/**
+ * A voice rule: a project-defined pattern that, found in an item's description, makes the check warn.
+ * The catalogue's voice keeps decision history and provenance out of descriptions; these are its backstop.
+ */
+export interface VoiceRule {
+  /** A JavaScript regular expression source, e.g. `\bour reading\b` (`"\\bour reading\\b"` in the JSON file). */
+  pattern: string
+  /** Regular expression flags. Unset in the file: `i`. */
+  flags: string
+  /** A short noun phrase naming what was found, e.g. `an "our reading" marker`. */
+  message: string
+}
+
+export interface VoiceConfig {
+  /** Checked against the description of every live epic, feature and story. */
+  descriptionWarnings: VoiceRule[]
+}
+
 export interface BoardConfig {
   board: {
     /** The board's own name, in the masthead and the browser tab. */
@@ -75,6 +93,8 @@ export interface BoardConfig {
   questionStatuses: StatusDef[]
   questionKinds: Partial<Record<QuestionKind, Wording>>
   capture: CaptureConfig | null
+  /** Patterns the check warns on in descriptions. Edited by hand in the file. */
+  voice: VoiceConfig
 }
 
 /** What the Settings page may change: each field sent replaces that field, the rest of the file stays as written. */
@@ -93,6 +113,7 @@ export const DEFAULT_CONFIG: BoardConfig = {
   questionStatuses: DEFAULT_QUESTION_STATUSES,
   questionKinds: {},
   capture: null,
+  voice: { descriptionWarnings: [] },
 }
 
 export const DEFAULT_KIND_HELP: Record<QuestionKind, string> = {
@@ -167,6 +188,7 @@ export function parseConfig(text: string): { config: BoardConfig; problems: stri
   config.questionStatuses = parseStatusList(raw.questionStatuses, 'question', 'questionStatuses', problems)
   config.questionKinds = wordings(raw.questionKinds, QUESTION_KINDS, 'questionKinds', problems)
   config.capture = raw.capture === undefined ? null : capture(raw.capture, config.screenshotApps, problems)
+  config.voice = voice(raw.voice, problems)
   return { config, problems }
 }
 
@@ -190,6 +212,53 @@ function wordings<K extends string>(raw: unknown, keys: readonly K[], field: str
     if (str(v.label)) w.label = str(v.label)
     if (str(v.help)) w.help = str(v.help)
     out[k as K] = w
+  }
+  return out
+}
+
+/** The default flags of a voice rule. */
+export const VOICE_FLAGS = 'i'
+
+/** Compile a voice rule, or say why it does not compile. */
+export function voiceRegex(rule: Pick<VoiceRule, 'pattern' | 'flags'>): RegExp | string {
+  try {
+    return new RegExp(rule.pattern, rule.flags)
+  } catch (e) {
+    return (e as Error).message
+  }
+}
+
+function voice(raw: unknown, problems: string[]): VoiceConfig {
+  const out: VoiceConfig = { descriptionWarnings: [] }
+  if (raw === undefined) return out
+  if (!isObj(raw)) {
+    problems.push('voice must be an object')
+    return out
+  }
+  if (raw.descriptionWarnings === undefined) return out
+  if (!Array.isArray(raw.descriptionWarnings)) {
+    problems.push('voice.descriptionWarnings must be a list of { pattern, flags, message }')
+    return out
+  }
+  for (const r of raw.descriptionWarnings) {
+    const pattern = isObj(r) && typeof r.pattern === 'string' && r.pattern.trim() ? r.pattern : undefined
+    const message = isObj(r) ? str(r.message) : undefined
+    if (!pattern || !message) {
+      problems.push(`voice.descriptionWarnings: ${JSON.stringify(r)} needs a pattern and a message`)
+      continue
+    }
+    const o = r as Record<string, unknown>
+    if (o.flags !== undefined && typeof o.flags !== 'string') {
+      problems.push(`voice.descriptionWarnings: "${message}" flags must be a string, such as "i"`)
+      continue
+    }
+    const flags = typeof o.flags === 'string' ? o.flags : VOICE_FLAGS
+    const re = voiceRegex({ pattern, flags })
+    if (typeof re === 'string') {
+      problems.push(`voice.descriptionWarnings: "${message}" is not a valid regular expression (${re}); it is not checked`)
+      continue
+    }
+    out.descriptionWarnings.push({ pattern, flags, message })
   }
   return out
 }

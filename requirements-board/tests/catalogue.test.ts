@@ -7,7 +7,7 @@ import { depthFirst, parseCsv, questionsCsv, requirementsCsv } from '../shared/c
 import { itemRoundTripProblems, parseItem, parseQuestion, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { nextItemId, nextQuestionId } from '../shared/ids.ts'
 import type { Item, Question } from '../shared/types.ts'
-import { DEFAULT_CONFIG } from '../shared/config.ts'
+import { DEFAULT_CONFIG, parseConfig } from '../shared/config.ts'
 import { FIXTURE_CONFIG } from './fixtures.ts'
 import { storiesDir, loadCatalogue, questionsDir, serialiseLayout, writeItem } from '../server/catalogueFs.ts'
 
@@ -234,6 +234,38 @@ describe('check rules', () => {
     expect(msgs([epic, feature, item({ swimlane: 'MVP' })], ['MVP']).some((m) => m.includes('swimlane'))).toBe(false)
     expect(msgs([epic, feature, item({ swimlane: 'Phase 9' })]).some((m) => m.includes('swimlane'))).toBe(false) // no lane list: not checked
     expect(hasErrors(checkCatalogue({ items: [epic, feature, item({ swimlane: 'Phase 9' })], questions: [], lanes: [] }))).toBe(false)
+  })
+
+  it('warns once per voice rule on a live description, never on Notes or a retired card', () => {
+    const config = parseConfig(
+      JSON.stringify({
+        voice: {
+          descriptionWarnings: [
+            { pattern: '\\bour reading\\b', message: 'an "our reading" marker' },
+            { pattern: '^Update \\d{4}-\\d{2}-\\d{2}', flags: 'im', message: 'an update paragraph' },
+          ],
+        },
+      }),
+    ).config
+    const voice = (items: Item[]) =>
+      checkCatalogue({ items: [epic, feature, ...items], questions: [], config })
+        .filter((i) => i.message.startsWith('description has'))
+        .map((i) => `${i.severity} ${i.id} ${i.message}`)
+    expect(voice([item({ description: 'Books a slot (Our Reading, twice: our reading).\n\nUpdate 2026-11-05: changed.' })])).toEqual([
+      'warning US-01.1.1 description has an "our reading" marker ("Our Reading"): move provenance and history to Notes',
+      'warning US-01.1.1 description has an update paragraph ("Update 2026-11-05"): move provenance and history to Notes',
+    ])
+    expect(voice([item({ description: 'Books a slot.', notes: 'Our reading of the RFP.\n\nUpdate 2026-11-05: changed.' })])).toEqual([])
+    expect(voice([item({ description: 'Books a slot (our reading).', status: '5' })])).toEqual([]) // retired
+    expect(voice([{ ...feature, description: 'Our reading.' }])).toEqual(['warning FT-01.1 description has an "our reading" marker ("Our reading"): move provenance and history to Notes'])
+    // No rules configured: nothing to check.
+    expect(checkCatalogue({ items: [epic, feature, item({ description: 'our reading' })], questions: [] }).some((i) => i.message.startsWith('description has'))).toBe(false)
+  })
+
+  it('trims a long match to about 40 characters', () => {
+    const config = parseConfig(JSON.stringify({ voice: { descriptionWarnings: [{ pattern: 'said .*', message: 'a remark' }] } })).config
+    const msg = checkCatalogue({ items: [epic, feature, item({ description: `He said ${'x'.repeat(80)}` })], questions: [], config }).find((i) => i.message.startsWith('description has'))!.message
+    expect(msg).toBe(`description has a remark ("said ${'x'.repeat(34)}…"): move provenance and history to Notes`)
   })
 
   it('passes a clean tree', () => {

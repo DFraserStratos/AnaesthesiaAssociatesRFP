@@ -77,6 +77,7 @@ function catalogue() {
     artifact({ id: 'AR-20', kind: 'diagram', file: 'artifacts/files/AR-20.svg', status: 'Superseded', supersededBy: 'AR-24', regions: [{ id: 'old-only', name: 'Old', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Billing route', { spot: 'old-only' })] }),
     artifact({ id: 'AR-24', kind: 'diagram', file: 'artifacts/files/AR-24.svg', regions: [{ id: 'setup', name: 'Order setup', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Setup', { spot: 'setup' })] }),
     artifact({ id: 'AR-16', citedAs: [cite('Data files')] }),
+    artifact({ id: 'AR-40', kind: 'document', file: 'artifacts/files/AR-40.pdf', status: 'Retired', citedAs: [cite('Technical design v6')] }),
   ]
   const facts: Record<string, SpotFacts> = {
     'AR-15': { pages: 50, headings: null, points: null, lines: null },
@@ -138,6 +139,10 @@ describe('resolving a source', () => {
 
   it('hands a superseded artifact on to its replacement, dropping a spot the replacement lacks', () => {
     expect(at('Diagram: Billing route')).toMatchObject({ id: 'AR-24', spots: [{ region: null, label: null }] })
+  })
+
+  it('resolves a source to a retired artifact as it stands: nothing hands on', () => {
+    expect(at('Technical design v6 p.4')).toMatchObject({ id: 'AR-40' })
   })
 
   it("shows an artifact's own origin plain, a question as a question, and a non-citation plain", () => {

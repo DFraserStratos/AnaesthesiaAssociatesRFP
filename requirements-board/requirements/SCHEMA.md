@@ -80,7 +80,7 @@ About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
 | `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
 | `related` | Optional: items this one is related to, by ID (epics, features, stories; never an `OQ-nn`). A relation is **stored on one side only** and the board shows it on both cards, so list it on whichever card you are editing and never on both (`check` warns). Omitted when empty. For couplings the text doesn't name (a setting and the rule that reads it, a UI story and its engine story, the step before or after); a card the text already links to needs no entry. See Links below. |
-| `artifacts` | Optional: artifacts this item points at, as `AR-nn` (the whole artifact) or `AR-nn#spot` (a highlighted spot in it: a named region, a PDF page `p27`, a Markdown heading slug, or a line range `L27-33`). Shown on the item's sheet under Artifacts, and on the artifact's Linked tab. Each must exist (`check` errors otherwise); linking to a Superseded artifact warns. Agents add these; the board keeps them on every save. Omitted when empty. See Artifact file below. |
+| `artifacts` | Optional: artifacts this item points at, as `AR-nn` (the whole artifact) or `AR-nn#spot` (a highlighted spot in it: a named region, a PDF page `p27`, a Markdown heading slug, or a line range `L27-33`). Shown on the item's sheet under Artifacts, and on the artifact's Linked tab. Each must exist (`check` errors otherwise); linking to a Superseded or Retired artifact warns. Agents add these; the board keeps them on every save. Omitted when empty. See Artifact file below. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is one of the `screenshotApps` keys in `board.config.json` and groups the board's gallery; a shot's `viewport` should match its app's. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the board's capture runner (`scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
 Body: the description, written in the catalogue's voice (`VOICE.md`: who or what acts and what
@@ -157,7 +157,7 @@ reader** after ` · ` or in brackets:
 - **Which artifact.** A note answers to `Notes <date> · <words>` when the words slug to its file name
   (`notes/<date>-<slug>.md`), with no setup. Any other artifact lists the prefixes it answers to in
   its `cited_as` (Artifact file below); the longest prefix that fits wins. A superseded artifact hands
-  on to its `superseded_by`. A source on an artifact that names that same artifact (a transcript's own
+  on to its `superseded_by`; a retired one hands on to nothing, and a source citing it opens it as it is. A source on an artifact that names that same artifact (a transcript's own
   `Recording ...`) shows plain.
 - **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or `#2 #16`: numbered
   points. `L27-33`: lines. Nothing: the entry's `spot`, else its `within` section, else the whole artifact.
@@ -247,7 +247,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `id` | `AR-nn`. Must match the file name. Never reused, never renumbered. |
 | `title` | The artifact's name, independent of its file's name. Sentence case. |
 | `kind` | `diagram`, `mockup`, `screenshot`, `photo`, `transcript`, `note` or `document`: what it is, for its icon and for filtering. |
-| `status` | `Current` (the baseline, unmarked on the board), `Draft`, or `Superseded`. |
+| `status` | `Current` (the baseline, unmarked on the board), `Draft`, `Superseded` (replaced: see `superseded_by`), or `Retired` (no longer reflects the design and nothing replaces it; kept for traceability, hidden on the Artifacts tab unless retired artifacts are shown, and still opened by a link or URL). A live item listing or linking a Superseded or Retired artifact warns; neither needs a source, and links in their own descriptions are not held to the live rules. |
 | `superseded_by` | Superseded only: the `AR-nn` that replaced it. |
 | `date` | When the artifact itself was made, not when it was filed: a meeting's date for its transcript and notes, a document's publication, a diagram's drawing. `YYYY-MM-DD`, or `YYYY-MM` or `YYYY` (quoted, `"2021"`) when that is all that is known. Shown on the Artifacts tab, which lists each kind newest first. `check` warns when it is missing. |
 | `author` | Optional: who made it. |
@@ -328,7 +328,8 @@ Every field is optional; with no file the board runs on neutral defaults.
     { "code": 2, "label": "Answered", "heading": "Answered", "help": "Settled", "tone": "green", "role": "answered" }
   ],
   "questionKinds": { "missing-source": { "help": "..." } },
-  "capture": { "recipes": "capture/recipes", "report": "capture/REPORT.md", "steps": "capture/steps.ts", "apps": { "web": { "url": "http://localhost:3000", "setupRoute": "/", "hideCss": "" } } }
+  "capture": { "recipes": "capture/recipes", "report": "capture/REPORT.md", "steps": "capture/steps.ts", "apps": { "web": { "url": "http://localhost:3000", "setupRoute": "/", "hideCss": "" } } },
+  "voice": { "descriptionWarnings": [{ "pattern": "\\bour reading\\b", "flags": "i", "message": "an \"our reading\" marker" }] }
 }
 ```
 
@@ -351,8 +352,17 @@ can't be removed, and a new status takes the next free number, fixed once saved 
 shows only in a quiet "No." column). To change a code across the files use
 `npm --prefix requirements-board run statuses:recode -- --items old=new,... --questions old=new,...` (it rewrites only `status:` lines and the board's history journal, and records
 the run in `status-recodes.json` so diffs across it read a pure relabel as no change). `questionKinds`
-changes only the wording beside a kind (`help`). `capture` is described in the board's README. A malformed entry is a `check`
-error and is left at its default.
+changes only the wording beside a kind (`help`). `capture` is described in the board's README.
+`voice.descriptionWarnings` is the check's backstop for the voice in `VOICE.md`: each entry is
+`{ pattern, flags?, message }`, where `pattern` is a JavaScript regular expression (backslashes
+doubled in JSON), `flags` defaults to `i`, and `message` is a short noun phrase naming what was
+found. The check matches each pattern against the description (the text before the first `## `
+section) of every epic, feature and story that is not retired, and warns once per rule per item:
+`description has <message> ("<matched text>"): move provenance and history to Notes`. Notes,
+acceptance criteria, questions and artifacts are not checked. Use it for provenance and decision
+history that keep slipping into descriptions (decision numbers, "our reading", who said what on
+which day). The file is edited by hand; the Settings page keeps the block as written. A malformed
+entry is a `check` error and is left at its default (a pattern that does not compile is dropped).
 
 ## Rules the tools enforce
 
@@ -376,7 +386,8 @@ over it.
 
 - **No deletes for items.** Retire an item by setting its status to the one with role `retired` (6 here); the ID stays taken.
 - **No deletes for artifacts.** Replace one by setting `status: Superseded` and `superseded_by`;
-  the ID stays taken. The board never creates artifacts and never changes their files or
+  one that no longer reflects the design and has no replacement is set to `status: Retired`. Either
+  way the ID stays taken. The board never creates artifacts and never changes their files or
   regions, only their details: add them and change those as files (the `add-artifact` skill, or
   the board's `npm run artifact:new`).
 - **Questions can be deleted** (the board's Delete, or remove the file): no other file changes. A

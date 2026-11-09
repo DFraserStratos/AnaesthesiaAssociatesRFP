@@ -3,7 +3,7 @@ import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'rea
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { STARTER_PROJECT_NAME } from '../shared/config.ts'
 import { isOpenQuestion } from '../shared/statuses.ts'
-import type { CatalogueEvent } from '../shared/types.ts'
+import { isPastArtifact, type CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
 import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
@@ -113,7 +113,7 @@ function Masthead({ connected }: { connected: boolean }) {
   const index = useIndex()
   const shown = useShownIndex()
   const artifacts = useArtifactIndex()
-  const liveArtifacts = artifacts.list.filter((r) => r.data.status !== 'Superseded').length
+  const liveArtifacts = artifacts.list.filter((r) => !isPastArtifact(r.data.status)).length
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)

@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 40 2460 1322" width="2460" height="1322" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>Contract model ERD (flat Contracts)</title>
+<rect x="0" y="0" width="2460" height="1385" rx="0" fill="#F3F6FA"/>
+<defs>
+<marker id="many" viewBox="0 0 26 26" refX="26" refY="13" markerWidth="26" markerHeight="26" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M26,4 L12,13 L26,22 M12,13 L26,13" fill="none" stroke="#55555E" stroke-width="1.6"/><circle cx="6" cy="13" r="4" fill="#F3F6FA" stroke="#55555E" stroke-width="1.6"/></marker>
+<marker id="onemany" viewBox="0 0 26 26" refX="26" refY="13" markerWidth="26" markerHeight="26" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M26,4 L12,13 L26,22 M12,13 L26,13 M7,4 L7,22" fill="none" stroke="#55555E" stroke-width="1.6"/></marker>
+<marker id="one" viewBox="0 0 26 26" refX="26" refY="13" markerWidth="26" markerHeight="26" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M15,4 L15,22 M20,4 L20,22" fill="none" stroke="#55555E" stroke-width="1.6"/></marker>
+<marker id="zeroone" viewBox="0 0 26 26" refX="26" refY="13" markerWidth="26" markerHeight="26" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M19,4 L19,22" fill="none" stroke="#55555E" stroke-width="1.6"/><circle cx="9" cy="13" r="4" fill="#F3F6FA" stroke="#55555E" stroke-width="1.6"/></marker>
+</defs>
+<g id="e-funding-tag">
+<rect x="60" y="60" width="400" height="128" rx="10" fill="#FFFFFF" stroke="#8FCBA2" stroke-width="1.6"/>
+<path d="M60.8,112 L60.8,70 Q60.8,60.8 70,60.8 L450,60.8 Q459.2,60.8 459.2,70 L459.2,112 Z" fill="#C4EDD2"/>
+<text x="80" y="93" font-size="19" font-weight="800" fill="#1D6B3B" text-anchor="start">FUNDING_TAG</text>
+<text x="440" y="92" font-size="14" font-weight="600" fill="#1D6B3B" text-anchor="end">AA's list</text>
+<text x="80" y="135" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">id</text>
+<text x="440" y="135" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">PK</text>
+<rect x="61.5" y="146" width="397" height="34" rx="0" fill="#F1F9F3"/>
+<text x="80" y="169" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">code</text>
+<text x="440" y="169" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">SXAP, HNZ, ACC</text>
+</g>
+<g id="e-party">
+<rect x="60" y="270" width="500" height="298" rx="10" fill="#FFFFFF" stroke="#B9AAEE" stroke-width="1.6"/>
+<path d="M60.8,322 L60.8,280 Q60.8,270.8 70,270.8 L550,270.8 Q559.2,270.8 559.2,280 L559.2,322 Z" fill="#DDD4FA"/>
+<text x="80" y="303" font-size="19" font-weight="800" fill="#4B3A8C" text-anchor="start">PARTY</text>
+<text x="540" y="302" font-size="14" font-weight="600" fill="#4B3A8C" text-anchor="end">holds Contracts</text>
+<text x="80" y="345" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">id</text>
+<text x="540" y="345" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">PK</text>
+<rect x="61.5" y="356" width="497" height="34" rx="0" fill="#F6F3FE"/>
+<text x="80" y="379" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">kind</text>
+<text x="540" y="379" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">hospital, insurer, funder, surgeon or group, anaesthetist, AA</text>
+<text x="80" y="413" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">name</text>
+<text x="540" y="413" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">shown on the step rail</text>
+<rect x="61.5" y="424" width="497" height="34" rx="0" fill="#F6F3FE"/>
+<text x="80" y="447" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">billingName</text>
+<text x="540" y="447" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">printed on its invoices</text>
+<text x="80" y="481" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">emailOrPostalAddress</text>
+<text x="540" y="481" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">where its invoices go</text>
+<rect x="61.5" y="492" width="497" height="34" rx="0" fill="#F6F3FE"/>
+<text x="80" y="515" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">invoiceDelivery</text>
+<text x="540" y="515" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">email or post for now (OQ-114)</text>
+<text x="80" y="549" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">hospitalId</text>
+<text x="540" y="549" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK, a hospital party only</text>
+</g>
+<g id="e-contract">
+<rect x="700" y="60" width="600" height="604" rx="10" fill="#FFFFFF" stroke="#B9AAEE" stroke-width="1.6"/>
+<path d="M700.8,112 L700.8,70 Q700.8,60.8 710,60.8 L1290,60.8 Q1299.2,60.8 1299.2,70 L1299.2,112 Z" fill="#DDD4FA"/>
+<text x="720" y="93" font-size="19" font-weight="800" fill="#4B3A8C" text-anchor="start">CONTRACT</text>
+<text x="1280" y="92" font-size="14" font-weight="600" fill="#4B3A8C" text-anchor="end">one priced item</text>
+<text x="720" y="135" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">id</text>
+<text x="1280" y="135" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">PK</text>
+<rect x="701.5" y="146" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="169" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">aaCode</text>
+<text x="1280" y="169" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">UK, the AA code (OQ-66)</text>
+<text x="720" y="203" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">name</text>
+<text x="1280" y="203" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">shown on the step rail</text>
+<rect x="701.5" y="214" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="237" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">pricingKind</text>
+<text x="1280" y="237" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK, one of five, set at creation</text>
+<text x="720" y="271" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">fundingTagId</text>
+<text x="1280" y="271" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK, 0 or 1</text>
+<rect x="701.5" y="282" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="305" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">holderId</text>
+<text x="1280" y="305" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK, the party that holds it</text>
+<text x="720" y="339" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">billsHolderOrPayer</text>
+<text x="1280" y="339" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">its holder, or the Booking's payer</text>
+<rect x="701.5" y="350" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="373" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">prepaid</text>
+<text x="1280" y="373" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">Payment type Prepaid; fixed for life</text>
+<text x="720" y="407" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">rate</text>
+<text x="1280" y="407" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">RVG at the Contract's rate only</text>
+<rect x="701.5" y="418" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="441" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">discountPct</text>
+<text x="1280" y="441" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">RVG less a discount only</text>
+<text x="720" y="475" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">anaesthetistMayOverridePrice</text>
+<text x="1280" y="475" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">RVG pricing only</text>
+<rect x="701.5" y="486" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="509" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">defaultRvgCode</text>
+<text x="1280" y="509" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">optional RVG group; may be shared</text>
+<text x="720" y="543" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">holderReferenceCode</text>
+<text x="1280" y="543" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">the holder's own code; searchable</text>
+<rect x="701.5" y="554" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="577" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">invoiceDescription</text>
+<text x="1280" y="577" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">becomes the Procedure's</text>
+<text x="720" y="611" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">status</text>
+<text x="1280" y="611" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">Active or Disabled</text>
+<rect x="701.5" y="622" width="597" height="34" rx="0" fill="#F6F3FE"/>
+<text x="720" y="645" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">systemRole</text>
+<text x="1280" y="645" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">No contract · RVG and the fallbacks</text>
+</g>
+<g id="e-pricing-kind">
+<rect x="1440" y="60" width="460" height="230" rx="10" fill="#FFFFFF" stroke="#B4B3BE" stroke-width="1.6"/>
+<path d="M1440.8,112 L1440.8,70 Q1440.8,60.8 1450,60.8 L1890,60.8 Q1899.2,60.8 1899.2,70 L1899.2,112 Z" fill="#E6E5EC"/>
+<text x="1460" y="93" font-size="19" font-weight="800" fill="#3C3C46" text-anchor="start">PRICING_KIND</text>
+<text x="1880" y="92" font-size="14" font-weight="600" fill="#3C3C46" text-anchor="end">fixed list</text>
+<text x="1460" y="135" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">RVG at the anaesthetist's rate</text>
+<text x="1880" y="135" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">BTM × own rate</text>
+<rect x="1441.5" y="146" width="457" height="34" rx="0" fill="#F6F6F8"/>
+<text x="1460" y="169" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">RVG at the Contract's rate</text>
+<text x="1880" y="169" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">BTM × its rate</text>
+<text x="1460" y="203" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">RVG less a discount</text>
+<text x="1880" y="203" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">own rate, less %</text>
+<rect x="1441.5" y="214" width="457" height="34" rx="0" fill="#F6F6F8"/>
+<text x="1460" y="237" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">Fixed price</text>
+<text x="1880" y="237" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">the price range in force</text>
+<text x="1460" y="271" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">Open price</text>
+<text x="1880" y="271" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">typed; fallbacks only</text>
+</g>
+<g id="e-price-range">
+<rect x="1440" y="350" width="460" height="196" rx="10" fill="#FFFFFF" stroke="#B9AAEE" stroke-width="1.6"/>
+<path d="M1440.8,402 L1440.8,360 Q1440.8,350.8 1450,350.8 L1890,350.8 Q1899.2,350.8 1899.2,360 L1899.2,402 Z" fill="#DDD4FA"/>
+<text x="1460" y="383" font-size="19" font-weight="800" fill="#4B3A8C" text-anchor="start">PRICE_RANGE</text>
+<text x="1880" y="382" font-size="14" font-weight="600" fill="#4B3A8C" text-anchor="end">fixed price only</text>
+<text x="1460" y="425" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">contractId</text>
+<text x="1880" y="425" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK, fixed price only</text>
+<rect x="1441.5" y="436" width="457" height="34" rx="0" fill="#F6F3FE"/>
+<text x="1460" y="459" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">start</text>
+<text x="1880" y="459" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">may be in the past</text>
+<text x="1460" y="493" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">price</text>
+<text x="1880" y="493" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">ex GST</text>
+<rect x="1441.5" y="504" width="457" height="34" rx="0" fill="#F6F3FE"/>
+<text x="1460" y="527" font-size="14.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">ends the day before the next range starts</text>
+</g>
+<g id="e-invoice-destination">
+<rect x="1440" y="606" width="460" height="162" rx="10" fill="#FFFFFF" stroke="#8E8D99" stroke-width="1.6" stroke-dasharray="8 6"/>
+<path d="M1440.8,658 L1440.8,616 Q1440.8,606.8 1450,606.8 L1890,606.8 Q1899.2,606.8 1899.2,616 L1899.2,658 Z" fill="#E6E5EC"/>
+<text x="1460" y="639" font-size="19" font-weight="800" fill="#3C3C46" text-anchor="start">INVOICE_DESTINATION</text>
+<text x="1880" y="638" font-size="14" font-weight="600" fill="#3C3C46" text-anchor="end">worked out, never stored</text>
+<text x="1460" y="681" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">Patient</text>
+<text x="1880" y="681" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">Payment type: Standard or Prepaid</text>
+<rect x="1441.5" y="692" width="457" height="34" rx="0" fill="#F6F6F8"/>
+<text x="1460" y="715" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">the List's hospital</text>
+<text x="1880" y="715" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">by its funding tags</text>
+<text x="1460" y="749" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">Special</text>
+<text x="1880" y="749" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">everything else</text>
+</g>
+<g id="e-specialty">
+<rect x="2040" y="260" width="360" height="128" rx="10" fill="#FFFFFF" stroke="#8FCBA2" stroke-width="1.6"/>
+<path d="M2040.8,312 L2040.8,270 Q2040.8,260.8 2050,260.8 L2390,260.8 Q2399.2,260.8 2399.2,270 L2399.2,312 Z" fill="#C4EDD2"/>
+<text x="2060" y="293" font-size="19" font-weight="800" fill="#1D6B3B" text-anchor="start">SPECIALTY</text>
+<text x="2380" y="292" font-size="14" font-weight="600" fill="#1D6B3B" text-anchor="end">AA's list</text>
+<text x="2060" y="335" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">id</text>
+<text x="2380" y="335" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">PK</text>
+<rect x="2041.5" y="346" width="357" height="34" rx="0" fill="#F1F9F3"/>
+<text x="2060" y="369" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">name</text>
+<text x="2380" y="369" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">broad specialty</text>
+</g>
+<g id="e-surgeon">
+<rect x="2040" y="550.0" width="240" height="52" rx="10" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.6"/>
+<text x="2160.0" y="583.0" font-size="18" font-weight="800" fill="#1D6B3B" text-anchor="middle">SURGEON</text>
+</g>
+<g id="e-anaesthetist">
+<rect x="2040" y="774.0" width="240" height="52" rx="10" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.6"/>
+<text x="2160.0" y="807.0" font-size="18" font-weight="800" fill="#1D6B3B" text-anchor="middle">ANAESTHETIST</text>
+</g>
+<g id="e-booking-procedure">
+<rect x="700" y="880" width="600" height="400" rx="10" fill="#FFFFFF" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="8 6"/>
+<path d="M700.8,932 L700.8,890 Q700.8,880.8 710,880.8 L1290,880.8 Q1299.2,880.8 1299.2,890 L1299.2,932 Z" fill="#FFE9C2"/>
+<text x="720" y="913" font-size="19" font-weight="800" fill="#9A4A0B" text-anchor="start">BOOKING_PROCEDURE</text>
+<text x="1280" y="912" font-size="14" font-weight="600" fill="#9A4A0B" text-anchor="end">the Procedure</text>
+<text x="720" y="955" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">id</text>
+<text x="1280" y="955" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">PK</text>
+<rect x="701.5" y="966" width="597" height="34" rx="0" fill="#FFF8EA"/>
+<text x="720" y="989" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">contractId</text>
+<text x="1280" y="989" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK, exactly one</text>
+<text x="720" y="1023" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">rvgCode</text>
+<text x="1280" y="1023" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">required on RVG pricing</text>
+<rect x="701.5" y="1034" width="597" height="34" rx="0" fill="#FFF8EA"/>
+<text x="720" y="1057" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">isPrimary</text>
+<text x="1280" y="1057" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">1 primary per Booking</text>
+<text x="720" y="1091" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">invoiceDescription</text>
+<text x="1280" y="1091" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">an admin's edit always wins</text>
+<rect x="701.5" y="1102" width="597" height="34" rx="0" fill="#FFF8EA"/>
+<text x="720" y="1125" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">price</text>
+<text x="1280" y="1125" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">follows the Contract until typed</text>
+<text x="720" y="1159" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">prepaidAmount</text>
+<text x="1280" y="1159" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">prepaid Contract only</text>
+<rect x="701.5" y="1170" width="597" height="34" rx="0" fill="#FFF8EA"/>
+<text x="720" y="1193" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">prepaymentInvoiceId</text>
+<text x="1280" y="1193" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">FK</text>
+<text x="720" y="1227" font-size="16" font-weight="400" fill="#1B1B1F" text-anchor="start">pricingSnapshot</text>
+<text x="1280" y="1227" font-size="14" font-weight="400" fill="#55555E" text-anchor="end">frozen at AUTHORISED</text>
+<rect x="701.5" y="1238" width="597" height="34" rx="0" fill="#FFF8EA"/>
+<text x="720" y="1261" font-size="14.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">… other booking data</text>
+</g>
+<g id="e-rvg-group">
+<rect x="1440" y="880" width="240" height="52" rx="10" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.6"/>
+<text x="1560.0" y="913" font-size="18" font-weight="800" fill="#1D6B3B" text-anchor="middle">RVG_GROUP</text>
+</g>
+<g id="e-invoice">
+<rect x="60" y="700" width="160" height="52" rx="10" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="8 6"/>
+<text x="140.0" y="733" font-size="18" font-weight="800" fill="#9A4A0B" text-anchor="middle">INVOICE</text>
+</g>
+<g id="e-booking">
+<rect x="400" y="880" width="160" height="52" rx="10" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="8 6"/>
+<text x="480.0" y="913" font-size="18" font-weight="800" fill="#9A4A0B" text-anchor="middle">BOOKING</text>
+</g>
+<g id="e-payer">
+<rect x="60" y="880" width="160" height="52" rx="10" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="8 6"/>
+<text x="140.0" y="913" font-size="18" font-weight="800" fill="#9A4A0B" text-anchor="middle">PAYER</text>
+</g>
+<g id="e-list">
+<rect x="400" y="1120" width="160" height="52" rx="10" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="8 6"/>
+<text x="480.0" y="1153" font-size="18" font-weight="800" fill="#9A4A0B" text-anchor="middle">LIST</text>
+</g>
+<g id="e-hospital">
+<rect x="60" y="1120" width="160" height="52" rx="10" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.6"/>
+<text x="140.0" y="1153" font-size="18" font-weight="800" fill="#1D6B3B" text-anchor="middle">HOSPITAL</text>
+</g>
+<path d="M560,299.0 L700,299.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="630" y="289.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">holds</text>
+<path d="M700,265.0 L640,265.0 L640,86.0 L460,86.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#zeroone)"/>
+<text x="472" y="76.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">tagged</text>
+<path d="M260,188 L260,270" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#many)"/>
+<text x="274" y="225" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">suggested by an insurer or funder</text>
+<path d="M60,528 L30,528 L30,1146.0 L60,1146.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#zeroone)" marker-end="url(#zeroone)"/>
+<text x="44" y="1022.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">bills for</text>
+<text x="44" y="1040.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">(a hospital party)</text>
+<path d="M140,568 L140,700" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#zeroone)" marker-end="url(#many)"/>
+<text x="152" y="598" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">billed when its Contract</text>
+<text x="152" y="616" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">bills its holder</text>
+<path d="M140,880 L140,752" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#zeroone)" marker-end="url(#many)"/>
+<text x="152" y="800" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">billed when the Contract</text>
+<text x="152" y="818" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">bills the payer</text>
+<path d="M440,880 L440,726.0 L220,726.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="256" y="698.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">1 per billable party</text>
+<text x="256" y="716.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">(+ prepayment)</text>
+<path d="M520,568 L520,880" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#zeroone)" marker-end="url(#many)"/>
+<text x="532" y="688" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">insurer or funder</text>
+<text x="532" y="706" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">(suggests a path only)</text>
+<path d="M400,906.0 L220,906.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#one)"/>
+<text x="310.0" y="896.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">names</text>
+<text x="310.0" y="930.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">(prefilled from patient)</text>
+<path d="M560,906.0 L700,906.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#onemany)"/>
+<text x="572" y="932.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">1 primary +</text>
+<text x="572" y="950.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">0..n additional</text>
+<path d="M480,1120 L480,932" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="492" y="1031.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">contains</text>
+<path d="M400,1146.0 L220,1146.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<text x="310.0" y="1136.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">at</text>
+<path d="M1000,664 L1000,880" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="1012" y="734" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">prices (exactly 1 each)</text>
+<path d="M1230,664 L1230,840 L1560,840 L1560,880" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#zeroone)"/>
+<text x="1572" y="866" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">default RVG code</text>
+<path d="M1300,906.0 L1440,906.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#zeroone)"/>
+<text x="1312" y="896.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">base units</text>
+<path d="M1300,231.0 L1440,231.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<text x="1370" y="221.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">priced by</text>
+<path d="M1300,320.0 L2040,320.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#many)"/>
+<text x="1456" y="311.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">applies to (none means every specialty)</text>
+<path d="M1300,406.0 L1440,406.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="1370" y="378.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">price ranges</text>
+<text x="1370" y="396.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">(1 or more)</text>
+<path d="M1300,576.0 L2040,576.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#many)"/>
+<text x="1456" y="567.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">linked surgeons</text>
+<path d="M1300,640 L1440,640" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<text x="1370" y="630" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">falls under</text>
+<text x="1370" y="666" font-size="15" font-weight="400" fill="#55555E" text-anchor="middle">(worked out)</text>
+<path d="M1275,664 L1275,800 L2040,800" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#zeroone)"/>
+<text x="1456" y="791" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">linked anaesthetist (at most one)</text>
+<path d="M2160,550.0 L2160,388" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#onemany)"/>
+<text x="2172" y="452" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">practises</text>
+<text x="2172" y="470" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">(a list, usually one)</text>
+<path d="M520,1172 L520,1320 L2160,1320 L2160,826.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<text x="2172" y="976.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">anaesthetist</text>
+<text x="2172" y="994.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">(through its Slot)</text>
+<path d="M440,1172 L440,1340 L2340,1340 L2340,576.0 L2280,576.0" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<text x="2350" y="958.0" font-size="15" font-weight="400" fill="#55555E" text-anchor="start">surgeon</text>
+<text x="1440" y="982" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">Key</text>
+<rect x="1440" y="1000" width="22" height="22" rx="4" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.6"/>
+<text x="1474" y="1017" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">Master data and AA's lists</text>
+<rect x="1440" y="1032" width="22" height="22" rx="4" fill="#DDD4FA" stroke="#B9AAEE" stroke-width="1.6"/>
+<text x="1474" y="1049" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">Contract data: who holds it, how it is priced</text>
+<rect x="1440" y="1064" width="22" height="22" rx="4" fill="#E6E5EC" stroke="#B4B3BE" stroke-width="1.6"/>
+<text x="1474" y="1081" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">A fixed list</text>
+<rect x="1440" y="1096" width="22" height="22" rx="4" fill="#E6E5EC" stroke="#8E8D99" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="1474" y="1113" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">Worked out, never stored</text>
+<rect x="1440" y="1128" width="22" height="22" rx="4" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="1474" y="1145" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">Booking data, shown for context</text>
+<path d="M1820,1011 L1900,1011" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="1914" y="1016" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">exactly one to zero or many</text>
+<path d="M1820,1043 L1900,1043" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#zeroone)" marker-end="url(#many)"/>
+<text x="1914" y="1048" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">zero or one to zero or many</text>
+<path d="M1820,1075 L1900,1075" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#onemany)"/>
+<text x="1914" y="1080" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">exactly one to one or many</text>
+<path d="M1820,1107 L1900,1107" fill="none" stroke="#55555E" stroke-width="1.6" marker-start="url(#zeroone)" marker-end="url(#zeroone)"/>
+<text x="1914" y="1112" font-size="15" font-weight="400" fill="#1B1B1F" text-anchor="start">zero or one to zero or one</text>
+<path d="M1450 1172 H1440 V1274 H1450" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1456" y="1194" font-size="14.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">AA holds No contract · RVG and the two Patient fallbacks.</text>
+<text x="1456" y="1214" font-size="14.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">A Procedure with no Contract shows Needs an invoice destination.</text>
+<text x="1456" y="1234" font-size="14.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Boxes with no fields are defined elsewhere in the domain model.</text>
+<text x="1456" y="1254" font-size="14.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Ledger, modifiers and Slots are left off.</text>
+</svg>

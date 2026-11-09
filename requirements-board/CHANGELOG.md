@@ -22,6 +22,20 @@ Bump `version` in `package.json` and add an entry here before each kit export.
 - `/history-blob/<sha>?artifact=<ID>&file=<path>` serves an earlier version of an artifact's file as the type it had then.
 - A change to an artifact's Cited as list now shows in its history and in the Diff review.
 
+## 1.4.0 · 2026-11-06
+
+- Voice check: `board.config.json` can list `voice.descriptionWarnings`, project patterns (`{ pattern, flags, message }`) for provenance and decision history that belong in Notes. The check warns once per rule when one is found in the description of a live epic, feature or story, quoting the match; Notes, questions and artifacts are not checked. A pattern that does not compile is a config error and is dropped. The Settings page keeps the block as written.
+- SCHEMA.md, the README, ADOPTING.md and About describe it; the starter config carries a generic "our reading" rule.
+
+## 1.3.0 · 2026-11-05
+
+- Artifacts can be Retired: one that no longer reflects the design and has nothing to replace it keeps its record and ID for traceability, with no `superseded_by` and nothing handed on (a source citing it still opens it).
+- The Artifacts tab hides retired artifacts, and leaves them out of its counts, until Show retired is on (kept per browser). Shown, they are muted like a superseded one; a link or URL opens one either way.
+- Links to a retired artifact show muted, as to a superseded one, and the masthead's artifact count leaves it out.
+- The check warns when a live card lists or links a retired artifact, or a live artifact's description links one. A retired artifact needs no source, and links in its own description are not held to the live rules.
+- About lists the artifact statuses; SCHEMA.md and the `add-artifact` skill say when to retire an artifact rather than supersede it.
+- PDFs still read after Node is upgraded under a running dev server: the PDF reader runs with whichever `node` is on the PATH when the server's own binary has gone, instead of failing every PDF and every `#pN` page link.
+
 ## 1.2.0 · 2026-11-04
 
 - The build plan page (`update-build-plan`'s `build-index.mjs`) is cut to the essentials: a headline saying what to start, a map of every phase by track and wave (done, safe to start, safe once its dependencies land, wait, later), "Start now" cards with the kick-off prompt one click away, and an "Unblocked, but wait" list. Every phase, the sequencing rules, how a phase runs, milestones, parked items and the gap analysis sit behind collapsed sections.

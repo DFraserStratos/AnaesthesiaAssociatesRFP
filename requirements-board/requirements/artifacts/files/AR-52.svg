@@ -67,8 +67,8 @@
 <circle cx="534" cy="156" r="12" fill="#3B8FD6"/>
 <text x="534" y="161.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
 <text x="556" y="161" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Prepayment invoice approved</text>
-<text x="556" y="182" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The Booking is on a prepaid Contract. An admin</text>
-<text x="556" y="199" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">approves the invoice (a step AA can switch off).</text>
+<text x="556" y="182" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The office picks a Contract under Payment type: Prepaid.</text>
+<text x="556" y="199" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">An admin approves the invoice (a step AA can switch off).</text>
 <rect x="556.0" y="214" width="189.60000000000002" height="24" rx="12.0" fill="#E6E5EC" stroke="#C9C8D2" stroke-width="1.2"/>
 <text x="650.8" y="230.32" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Nothing in the books yet</text>
 <rect id="pp-2" x="510" y="264" width="410" height="120" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>

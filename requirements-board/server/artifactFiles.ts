@@ -4,7 +4,7 @@
  * (`ArtifactFacts`) and the board (`ArtifactMeta`).
  */
 import { execFileSync } from 'node:child_process'
-import { readFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { looseText, markdownFacts, mermaidNodeIds, rasterSize, svgFacts } from '../shared/artifacts.ts'
@@ -34,6 +34,15 @@ function repoOf(data: string): string {
   }
 }
 const PDF_SCRIPT = join(here, 'pdfFacts.ts')
+
+/**
+ * The Node binary to run a helper script with: this process's own, unless it has gone from disk
+ * (a package manager upgraded Node under a long-running dev server), then whichever `node` is on
+ * the PATH.
+ */
+export function nodeBinary(): string {
+  return existsSync(process.execPath) ? process.execPath : 'node'
+}
 
 export const ARTIFACT_MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
@@ -71,7 +80,7 @@ function fail(format: ArtifactFormat | null, error: string, meta: ArtifactMeta =
 
 function readPdf(abs: string): { pages: { w: number; h: number; text: string }[] } | { error: string } {
   try {
-    const out = execFileSync(process.execPath, [PDF_SCRIPT, abs], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })
+    const out = execFileSync(nodeBinary(), [PDF_SCRIPT, abs], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })
     return JSON.parse(out) as { pages: { w: number; h: number; text: string }[] } | { error: string }
   } catch (e) {
     return { error: (e as Error).message.split('\n')[0]! }

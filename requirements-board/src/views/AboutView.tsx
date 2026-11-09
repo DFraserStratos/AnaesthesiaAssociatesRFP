@@ -3,10 +3,10 @@ import { useEffect, type MouseEvent } from 'react'
 import Markdown from 'react-markdown'
 import { Link, useSearchParams } from 'react-router-dom'
 import changelog from '../../CHANGELOG.md?raw'
-import { firstLaneName } from '../../shared/types.ts'
+import { ARTIFACT_STATUSES, firstLaneName } from '../../shared/types.ts'
 import { StatusLabel, TypeIcon } from '../components/bits.tsx'
 import { useCatalogue, useConfig } from '../store.ts'
-import { typeClass } from '../vocab.ts'
+import { ARTIFACT_STATUS_HELP, typeClass } from '../vocab.ts'
 
 /**
  * How to use the board: what it is, the loop a team goes round with it and the agent skills, what
@@ -359,6 +359,15 @@ function Anatomy() {
           <p>
             The diagrams, transcripts, notes and documents behind the requirements, on the <Link to="/artifacts">Artifacts</Link> tab. A region is a named, highlighted spot in one; a requirement can link straight to it.
           </p>
+          <ul className="about-statuses">
+            {ARTIFACT_STATUSES.map((s) => (
+              <li key={s}>
+                <StatusLabel status={s} kind="artifact" />
+                <span>{ARTIFACT_STATUS_HELP[s]}</span>
+              </li>
+            ))}
+          </ul>
+          <p>An artifact is never deleted. One replaced by a newer one is Superseded and points at it; one that no longer reflects the design, with nothing to replace it, is Retired.</p>
         </div>
         <div className="about-tile">
           <h3>Diff review</h3>
@@ -374,7 +383,7 @@ function Anatomy() {
         <div className="about-tile">
           <h3>Outline and checks</h3>
           <p>
-            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. <em>Checks pass</em> in the masthead turns red when a file is wrong; click it to see why.
+            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. <em>Checks pass</em> in the masthead turns red when a file is wrong; click it to see why. It also warns when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>.
           </p>
         </div>
       </div>
@@ -388,8 +397,8 @@ const FOLDERS: [string, string][] = [
   ['notes/', 'What each meeting or decision said, filed by /update-requirements'],
   ['changes/', 'A change log per update: what changed and why'],
   ['artifacts/', 'A sidecar per artifact (AR-01), its file in artifacts/files/'],
-  ['VOICE.md', 'How requirements are written; the skills follow it (edit it in Settings)'],
-  ['board.config.json', 'Board and project name, components and statuses (Settings edits it)'],
+  ['VOICE.md', 'How requirements are written; the skills follow it (edit it in Settings), and the check warns on the voice patterns in board.config.json'],
+  ['board.config.json', 'Board and project name, components and statuses (Settings edits it); voice patterns for the check (by hand)'],
   ['board-layout.json', 'Swimlanes and any cards you placed by hand'],
   ['SCHEMA.md', 'The file format: read it before editing files by hand'],
   ['domain-model.md', 'The narrative model of the system, once there is one'],

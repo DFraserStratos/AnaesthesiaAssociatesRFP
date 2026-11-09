@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildSourceIndex, resolveSource, spotFactsOfMeta, type SourceResolution } from '../shared/sources.ts'
 import { linesOfRegionId, pageOfRegionId, type ArtifactRec } from '../shared/types.ts'
-import { REPO_ROOT } from '../server/artifactFiles.ts'
+import { nodeBinary, REPO_ROOT } from '../server/artifactFiles.ts'
 import { loadCatalogue } from '../server/catalogueFs.ts'
 
 const argv = process.argv.slice(2)
@@ -39,7 +39,7 @@ const pdfPages = new Map<string, string[]>()
 const pdfText = (path: string, page: number) => {
   if (!pdfPages.has(path)) {
     const script = join(dirname(fileURLToPath(import.meta.url)), '../server/pdfFacts.ts')
-    const out = JSON.parse(execFileSync(process.execPath, [script, join(REPO_ROOT, path)], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })) as { pages?: { text: string }[] }
+    const out = JSON.parse(execFileSync(nodeBinary(), [script, join(REPO_ROOT, path)], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })) as { pages?: { text: string }[] }
     pdfPages.set(path, (out.pages ?? []).map((p) => p.text))
   }
   return pdfPages.get(path)![page - 1] ?? ''

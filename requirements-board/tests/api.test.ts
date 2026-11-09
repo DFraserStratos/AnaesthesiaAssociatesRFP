@@ -474,6 +474,15 @@ describe('the status settings', () => {
     expect(readFileSync(itemPath('EP-01', root), 'utf8')).toMatch(/^status: 1$/m)
   })
 
+  it('keeps the hand-edited voice rules when Settings saves', () => {
+    const voice = { descriptionWarnings: [{ pattern: '\\bour reading\\b', message: 'an "our reading" marker' }] }
+    writeFileSync(configPath(root), JSON.stringify({ project: { name: 'Acme' }, voice }, null, 2))
+    const a = api()
+    put(a, { project: { name: 'Acme Two' } })
+    expect(JSON.parse(readFileSync(configPath(root), 'utf8')).voice).toEqual(voice)
+    expect(a.getState().config.voice.descriptionWarnings).toEqual([{ ...voice.descriptionWarnings[0], flags: 'i' }])
+  })
+
   it('keeps short entries on one line', () => {
     put(api(), { questionStatuses: DEFAULT_QUESTION_STATUSES })
     const text = readFileSync(configPath(root), 'utf8')

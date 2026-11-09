@@ -247,7 +247,11 @@ gallery has one tab per app present, in that order; untagged images fall back to
 - `statuses` and `questionStatuses`: ordered lists of `{ code, label, help, tone, role?, settle? }`
   (format in `SCHEMA.md`); files store only the number;
 - `questionKinds`: `{ "<kind>": { "label", "help" } }`, the wording beside each question kind;
-- `capture`: see Capturing screenshots.
+- `capture`: see Capturing screenshots;
+- `voice`: `{ "descriptionWarnings": [{ "pattern", "flags", "message" }] }`, project patterns
+  (JavaScript regular expressions, `flags` default `i`) that make the check warn when one is found
+  in a live item's description, e.g. a decision number or "our reading" that belongs in Notes.
+  Edited by hand (format in `SCHEMA.md`).
 
 The server reads it with the catalogue and reloads it live; a malformed entry is reported by the
 check and left at its default. The Settings page edits `board`, `project`, `components` and the two

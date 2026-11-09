@@ -112,3 +112,7 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
 Never delete an artifact or reuse its ID. A new version of the same file: overwrite the file in place
 (history shows the before and after). Something different that replaces it: register the new one,
 then set the old one's `status: Superseded` and `superseded_by: AR-nn`, and move the item links over.
+One that no longer reflects the design, with nothing to replace it: set `status: Retired` (no
+`superseded_by`). The board hides it on the Artifacts tab unless retired artifacts are shown, and
+sources citing it still open it (nothing hands on); take it out of live items' `artifacts:` and text
+links, since `check` warns on those.

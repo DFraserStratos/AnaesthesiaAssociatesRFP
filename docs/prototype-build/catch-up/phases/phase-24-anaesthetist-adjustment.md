@@ -16,6 +16,7 @@
 [DM-14](../analysis/domain-model-delta.md#dm-14) price changes are edits of those values: the anaesthetist where the flag allows and the price is neither fixed nor prepaid, the office on any ·
 [RV-03](../analysis/reverse-check.md#rv-03-rate-x-time-billing-line-and-the-method-3-individual-arrangement-gate) the rate x time line and its Method 3 gate go ·
 [RV-04](../analysis/reverse-check.md#rv-04-anaesthetist-price-adjustment-reason-mandatory-offered-on-every-contract-and-on-prepaid-and-fixed-prices-no-per-contract-flag) the reasoned, always-offered adjustment is reworked (flag, not fixed, not prepaid) ·
+[US-03.3.10](../../../../requirements-board/requirements/stories/US-03.3.10.md) See what the price comes to: live as times and modifiers are entered, every Contract, visible but not prominent (added by hand 2026-11-10 from the 5 November meeting #34; not yet through `/update-build-plan`) ·
 [RV-29](../analysis/reverse-check.md#rv-29-the-anaesthetists-booking-shows-no-calculation-units-or-price) the anaesthetist sees the price and calculation.
 
 **Carried across without regression, with parity tests:**
@@ -79,8 +80,15 @@ the price invoiced and raises no difference by itself (US-05.4.2, FT-05.4; OQ-16
 **No reason anywhere** (priceOverride and its reason go, RV-04). Every change is audited and flagged
 at office review; the last change stands, neither side outranking the other.
 
-**The anaesthetist sees the price and its calculation** (RV-29): the 2026-09-28 "no calculation"
-ruling is superseded where the catalogue shows a price; log it for Donald.
+**The anaesthetist sees the price and its calculation** (RV-29, US-03.3.10): the 2026-09-28 "no calculation"
+ruling is superseded where the catalogue shows a price; log it for Donald. US-03.3.10 makes it a
+Ben and Vanessa request that Donald accepted on 5 November ("I can try and resurrect that"): the figure
+**changes as the anaesthetist adds time or modifiers**, shows for **every Contract** (RVG-priced and
+fixed alike, read-only unless the Contract allows a change), and is **visible but not prominent**: no
+prompt, pop-up or confirmation, "not in your face". This **restores the calculation widget the
+prototype had from Phase 05 to 28 September 2026** (the ticking phone dock and the web rail panel);
+its last good version is commit `d1562b4c`. Rebuild from that code rather than from scratch: see
+"The earlier calculation widget" under Reference.
 
 **The rate x time line goes** (RV-03): the line, its `rateTime` basis, the Method 3 flag and gate. The
 Aria Contract and its two Bookings are re-expressed on Aria's $26.50 fixed-rate lines. Other billing
@@ -157,6 +165,37 @@ no reason.
 **Analysis.** `../analysis/domain-model-delta.md` (DM-50, DM-14), `../analysis/reverse-check.md`
 (RV-03, RV-04, RV-29), `../epics/EP-03.md`, `EP-04.md`, `EP-05.md`, and the code maps
 `prototype-map-domain.md`, `-shared.md`, `-admin.md`, `-store-seed.md`.
+
+**The earlier calculation widget (restore from git).** The anaesthetist's running units-and-fee widget
+was built, tuned on both surfaces over many commits, put behind a harness setting, then removed. Its
+**last good version is `d1562b4c`** (28 Sep 2026, the parent of the removal). The trail, oldest first:
+
+| Commit | Date | What it did |
+|---|---|---|
+| `7bd4f023` | 23 Jul | Phase 5: first version, `FeeSummaryPanel.tsx` inline under each capture block, `CardTotalPanel.tsx` begun |
+| `b0c2271f` | 27 Jul | "Fixed card view for web app": `CardTotalPanel` on the web Card view |
+| `931e93bf` | 28 Jul | "Pinned calculation widget on mobile": the phone dock `CardTotalStrip.tsx` (procedure chips, max 3; value tick and green flash shared with the panel), `FeeSummaryPanel` deleted, the dock height measured in `SurfaceProvider`; `dock-options.html` holds the layout options considered |
+| `d0e8d1e5` | 29 Jul | Web: the total panel and Mark complete split into separate, matching-width siblings |
+| `58688684` | 29 Jul | Web: Mark complete concentricity, `WEB_COMMIT_HALO` (12px halo, 26px lower corners) |
+| `3ebe38ab` | 29 Jul | The Off / Units / Fee harness setting: `shell/CardCalculationControl.tsx`, `shell.cardCalculationMode`, `CardTotalDisplayMode`, the units-only strip, the completion overlay following the mode; `visual/card-calculation-display.spec.ts` |
+| `5de36bca` | 29 Jul | Mobile: History button moved; the fold that pays for the pinned total |
+| `101a82b9`, `e0ac2a14`, `06bd329d` | 30 Jul to 3 Aug | PWA: the dock above the keyboard (`--aa-keyboard-inset`), `--aa-dock-height` published by the measured dock, `DockSpacer`; the PWA More panel's Card calculation card |
+| `384c3686` | 28 Sep | **Removed** ("Remove time cal widget"): `CardTotalStrip.tsx`, `CardCalculationControl.tsx`, the PWA card, `shell.cardCalculationMode`, the Units path; the phone's `CardTotal` became `() => null`, `showCardTotal` false for the anaesthetist |
+| `98bfd5c5` | 2 Oct | Phase 15 rename only: `CardTotalPanel` became `BookingTotalPanel` (office-only since `384c3686`) |
+
+Read them with `git show d1562b4c:aa-prototype/src/shared/capture/CardTotalStrip.tsx` (likewise
+`CardTotalPanel.tsx`, `shared/surface/SurfaceProvider.tsx`, `shared/surface/context.ts`,
+`shared/capture/CompletionOverlay.tsx`, `shell/CardCalculationControl.tsx`,
+`visual/card-calculation-display.spec.ts`), `git show 384c3686` for exactly what the removal took out,
+and the PROGRESS.md Decisions-log entries of 2026-07-29 (the Off / Units / Fee control; the web total
+and completion action as separate controls with a curved sticky halo) and 2026-09-28 (the removal) for
+the tuning and why. Still in the code today and not to be rebuilt: the measured dock and
+`--aa-dock-height`, `DockSpacer`, the keyboard inset and `WEB_COMMIT_HALO`. Map old names through the
+Phase 15 rename (Card to Booking: `CardTotalProps` to `BookingTotalProps`, `cardFee` to `bookingFee`,
+`CardDetailBody` to `BookingDetailBody`, `CardDetailScreen` to `BookingDetailScreen`). **Do not
+restore** the Off / Units / Fee setting, `shell.cardCalculationMode` or the PWA card: US-03.3.10 shows
+the price always, with prominence, not a switch, keeping it out of the way; and drop the rate x time
+fee-line handling (`linesArePerProcedure` for fee lines), which this phase removes.
 
 **Code entry points** (names, since 15b to 23 move lines):
 - Engine: `src/domain/billing/fee.ts` (`feeFor`, its `rateTime` branch and override block,
@@ -338,7 +377,17 @@ no reason.
    - **No reason** field or copy anywhere. Delete "Adjustment and charge", "Percentage adjustments are
      set by the office.", "Adjustment $", "Charge $", "Charge amount $".
    - **Booking total:** `showBookingTotal` shows the total to the anaesthetist too; the web List table's
-     Units and Fee columns stay, now consistent with the Booking detail.
+     Units and Fee columns stay, now consistent with the Booking detail. On mobile that alone shows
+     nothing, because the phone surface's `BookingTotal` is `() => null` since `384c3686`: restore the
+     dock strip from `d1562b4c` (`CardTotalStrip.tsx` as `shared/capture/BookingTotalStrip.tsx`) with its
+     value tick and flash, the procedure chips (max 3, then a count) and the measured dock height, Fee
+     presentation only. On web, `BookingTotalPanel` already renders for the office; show it in the
+     anaesthetist's rail with the separate Mark complete sibling and halo as they stand. The completion
+     overlay's `showCalculation` follows. US-03.3.10: it ticks as times and modifiers change, shows on
+     every Contract including a fixed price, and stays quiet (the compact strip, never a sheet, toast or
+     confirm). Retire `visual/booking-calculation-display.spec.ts`'s "Mark complete alone" tests in favour
+     of the restored ones from `d1562b4c`'s `card-calculation-display.spec.ts`, Fee mode only.
+     Hooks: keep `booking-calculation`; add `data-shot="booking-total-strip"` on the phone dock.
    - Anchors: replace `'priceOverride'` with `'pricing'` in `BtmCaptureBlock`'s anchored set;
      `validationTarget` on the card. `BillingLinesCard` stays its `Pair` partner.
    - Hooks: `data-shot="price-card"`, `data-state` `editable`, `fixed` (a fixed price or fixed rate, read-only), `discount-fixed`,
@@ -476,6 +525,12 @@ The agent runs every item itself in the running app with evidence; none is hande
       Fee cell's "Contract $x"; authorise (S2 Beat 4): the invoice has the discount line.
 - [ ] **Contract catalogue.** No contract (RVG) shows "Anaesthetist can change pricing"; Aria and the
       fixed-price Contracts "Fixed for the anaesthetist".
+- [ ] **Price as entered (US-03.3.10).** Mobile, an RVG Booking: the pinned dock strip shows units and
+      price; claim a modifier and the figure ticks up with no prompt; add time, it ticks again. A
+      fixed-price Booking's strip shows the fixed price. The strip matches `d1562b4c`'s look (compare
+      against a screenshot taken from a `git worktree` of `d1562b4c`); on PWA, the dock rides above the
+      keyboard. Web: the anaesthetist's rail shows the total panel above Mark complete, matching widths,
+      halo intact, sticky.
 - [ ] **Web parity.** The anaesthetist web app shows the same card, states and copy on the same Bookings.
 - [ ] **Scripted beats unbroken.** S1 Beat 3, S2 Beat 4, S3 Beat 1, S4 and S5 Beat 1 run as scripted.
 - [ ] No en or em dashes in new copy; teal on every new action; crimson nowhere new.
@@ -600,8 +655,9 @@ Decisions log settles.
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry), each with its route and persona:
-  - the anaesthetist now sees the price, its calculation and the Booking total (RV-29, superseding his
-    2026-09-28 ruling): Donald to confirm;
+  - the anaesthetist now sees the price, its calculation and the Booking total (RV-29, US-03.3.10,
+    superseding his 2026-09-28 ruling; the widget restored from `d1562b4c` without the Off / Units / Fee
+    setting): Donald to confirm, and Greg to hear of it (US-03.3.10 reverses his early steer);
   - a held price and a discount never coexist (setting one clears the other);
   - the anaesthetist's gate is the flag AND not a fixed price AND not prepaid (D65, D30), their own price
     list's fixed lines read-only to her, and the office's change of a fixed or prepaid price raises no
@@ -629,5 +685,6 @@ Decisions log settles.
     discount line.
   - **39b:** the rate x time line is gone and US-03.3.7's recipe absent; remove BillingLine; time-priced
     events reuse `priceProcedure`'s calculated step.
-  - **43a:** keep the anaesthetist's Price section, its calculation and its read-only state.
+  - **43a:** keep the anaesthetist's Price section, its calculation and its read-only state, and the
+    restored dock strip and web total (US-03.3.10: visible, not prominent).
   - **44:** re-script the S1 Beat 3 aside and the S2 Beat 4 note.

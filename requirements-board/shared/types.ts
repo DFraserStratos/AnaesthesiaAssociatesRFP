@@ -126,9 +126,15 @@ export type CatalogueEvent =
 export const ARTIFACT_KINDS = ['diagram', 'mockup', 'screenshot', 'photo', 'transcript', 'note', 'document'] as const
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number]
 
-/** Current is the baseline and goes unmarked; Superseded keeps the record (and its ID) with a pointer to what replaced it. */
-export const ARTIFACT_STATUSES = ['Draft', 'Current', 'Superseded'] as const
+/**
+ * Current is the baseline and goes unmarked; Superseded keeps the record (and its ID) with a pointer
+ * to what replaced it; Retired keeps the record of one that no longer reflects the design and has no
+ * replacement (hidden on the Artifacts tab unless retired artifacts are shown).
+ */
+export const ARTIFACT_STATUSES = ['Draft', 'Current', 'Superseded', 'Retired'] as const
 export type ArtifactStatus = (typeof ARTIFACT_STATUSES)[number]
+/** Superseded or Retired: kept for traceability, no longer the version to go by, so links to it show muted. */
+export const isPastArtifact = (status: ArtifactStatus) => status === 'Superseded' || status === 'Retired'
 
 /** How the board shows an artifact, from its file's extension (or its inline mermaid source). */
 export type ArtifactFormat = 'svg' | 'raster' | 'mermaid' | 'markdown' | 'pdf'

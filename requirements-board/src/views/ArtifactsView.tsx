@@ -2,12 +2,13 @@
  * Every artifact, grouped by kind, two ways (kept per browser): Grid, the light table, each artifact
  * a plate showing the thing itself; List, one row each, its picture small beside its name and a
  * line of its description. Either way one click opens the artifact's own page. Search covers
- * names, descriptions, highlights, sources and file paths.
+ * names, descriptions, highlights, sources and file paths. Retired artifacts stay off the tab (and
+ * out of its counts) unless Show retired is on; a link or URL still opens one.
  */
 import { Crosshair, LayoutGrid, Link2, Rows3, Search } from 'lucide-react'
 import { useState } from 'react'
-import { ARTIFACT_KINDS, ARTIFACT_STATUSES, type ArtifactKind, type ArtifactRec } from '../../shared/types.ts'
-import { artifactMatches, linkCount, useArtifactIndex, useArtifactView, type ArtifactIndex } from '../artifactIndex.ts'
+import { ARTIFACT_KINDS, ARTIFACT_STATUSES, isPastArtifact, type ArtifactKind, type ArtifactRec } from '../../shared/types.ts'
+import { artifactMatches, artifactShown, linkCount, useArtifactIndex, useArtifactView, type ArtifactIndex } from '../artifactIndex.ts'
 import { Thumb } from '../artifacts/Thumb.tsx'
 import { ArtifactIcon, Highlight, StatusLabel } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
@@ -21,9 +22,14 @@ export function ArtifactsView() {
   const [query, setQuery] = useState('')
   const shown = ix.list.filter((r) => artifactMatches(r, view, query))
   const groups = ARTIFACT_KINDS.map((kind) => ({ kind, list: shown.filter((r) => r.data.kind === kind) })).filter((g) => g.list.length)
-  const kindsPresent = ARTIFACT_KINDS.filter((k) => ix.list.some((r) => r.data.kind === k))
-  const componentsPresent = components.filter((c) => ix.list.some((r) => r.data.components.includes(c)))
-  const statusesPresent = ARTIFACT_STATUSES.filter((s) => ix.list.some((r) => r.data.status === s))
+  // What is on the tab at all: retired artifacts only while Show retired is on.
+  const onShow = ix.list.filter((r) => artifactShown(r, view))
+  const retiredCount = ix.list.filter((r) => r.data.status === 'Retired').length
+  const kindsPresent = ARTIFACT_KINDS.filter((k) => onShow.some((r) => r.data.kind === k))
+  const componentsPresent = components.filter((c) => onShow.some((r) => r.data.components.includes(c)))
+  // Retired is offered only while retired artifacts are on show (or still picked, so it can be cleared).
+  const statusesPresent = ARTIFACT_STATUSES.filter((s) => onShow.some((r) => r.data.status === s) || view.statuses.includes(s))
+  const toggleRetired = () => view.set({ showRetired: !view.showRetired, ...(view.showRetired && view.statuses.includes('Retired') ? { statuses: [] } : {}) })
   const toggleKind = (k: ArtifactKind) => view.set({ kinds: view.kinds.includes(k) ? view.kinds.filter((x) => x !== k) : [...view.kinds, k] })
 
   const tools = (
@@ -38,7 +44,7 @@ export function ArtifactsView() {
           <button key={k} className="btn sm ty-artifact kind-toggle" aria-pressed={view.kinds.includes(k)} onClick={() => toggleKind(k)}>
             <ArtifactIcon kind={k} size={13} />
             {ARTIFACT_KIND_PLURAL[k]}
-            <span className="mono kind-count">{ix.list.filter((r) => r.data.kind === k).length}</span>
+            <span className="mono kind-count">{onShow.filter((r) => r.data.kind === k).length}</span>
           </button>
         ))}
       </div>
@@ -58,6 +64,17 @@ export function ArtifactsView() {
           ))}
         </select>
       )}
+      {(retiredCount > 0 || view.showRetired) && (
+        <button
+          className="btn sm kind-toggle"
+          aria-pressed={view.showRetired}
+          onClick={toggleRetired}
+          title={`${retiredCount} retired artifact${retiredCount === 1 ? '' : 's'}: no longer reflecting the design, kept for traceability`}
+        >
+          Show retired
+          <span className="mono kind-count">{retiredCount}</span>
+        </button>
+      )}
       <span className="toolbar-spacer" />
       <div className="mode-switch" role="radiogroup" aria-label="Layout">
         <button role="radio" aria-checked={view.layout === 'grid'} onClick={() => view.set({ layout: 'grid' })} title="Grid: every artifact as a picture">
@@ -72,6 +89,8 @@ export function ArtifactsView() {
 
   const empty = !ix.list.length ? (
     <p className="empty">No artifacts yet. An agent adds one as a file in the catalogue's artifacts folder (see the catalogue's SCHEMA.md).</p>
+  ) : !onShow.length ? (
+    <p className="empty">Every artifact is retired. Show retired to see them.</p>
   ) : !groups.length ? (
     <p className="empty">Nothing matches.</p>
   ) : null
@@ -118,7 +137,7 @@ function Plate({ rec, ix, query }: { rec: ArtifactRec; ix: ArtifactIndex; query:
   const open = useOpen()
   const a = rec.data
   return (
-    <button className={`plate ty-artifact${a.status === 'Superseded' ? ' is-superseded' : ''}`} onClick={() => open.artifact(a.id)} title={a.id}>
+    <button className={`plate ty-artifact${isPastArtifact(a.status) ? ' is-past' : ''}`} onClick={() => open.artifact(a.id)} title={a.id}>
       <Thumb rec={rec} />
       <span className="plate-title">
         <Highlight text={a.title} query={query} />
@@ -143,7 +162,7 @@ function Row({ rec, ix, query }: { rec: ArtifactRec; ix: ArtifactIndex; query: s
   const a = rec.data
   const line = excerpt(a.description, 180)
   return (
-    <button className={`artifact-row ty-artifact${a.status === 'Superseded' ? ' is-superseded' : ''}`} onClick={() => open.artifact(a.id)} title={a.id}>
+    <button className={`artifact-row ty-artifact${isPastArtifact(a.status) ? ' is-past' : ''}`} onClick={() => open.artifact(a.id)} title={a.id}>
       <Thumb rec={rec} />
       <span className="artifact-row-text">
         <span className="artifact-row-title">

@@ -106,6 +106,8 @@ export interface ArtifactPrefs {
   kinds: ArtifactKind[]
   statuses: ArtifactStatus[]
   components: string[]
+  /** Retired artifacts on the Artifacts tab: hidden unless this is on. */
+  showRetired: boolean
   /** The artifact page's side panel, in percent of the width. */
   panelW: number | null
   /** A PDF's page thumbnails, down its right side. */
@@ -113,7 +115,7 @@ export interface ArtifactPrefs {
 }
 
 const PREFS_KEY = 'requirements-board:artifacts'
-const DEFAULTS: ArtifactPrefs = { layout: 'grid', kinds: [], statuses: [], components: [], panelW: null, pdfPages: true }
+const DEFAULTS: ArtifactPrefs = { layout: 'grid', kinds: [], statuses: [], components: [], showRetired: false, panelW: null, pdfPages: true }
 
 function readPrefs(): ArtifactPrefs {
   try {
@@ -141,9 +143,13 @@ export const useArtifactView = create<ArtifactViewState>((set, get) => ({
   },
 }))
 
+/** Is an artifact on the Artifacts tab at all? A retired one only while retired artifacts are shown. */
+export const artifactShown = (rec: ArtifactRec, p: Pick<ArtifactPrefs, 'showRetired'>) => p.showRetired || rec.data.status !== 'Retired'
+
 /** Does an artifact pass the filters and the search? */
-export function artifactMatches(rec: ArtifactRec, p: Pick<ArtifactPrefs, 'kinds' | 'statuses' | 'components'>, query: string): boolean {
+export function artifactMatches(rec: ArtifactRec, p: Pick<ArtifactPrefs, 'kinds' | 'statuses' | 'components' | 'showRetired'>, query: string): boolean {
   const a = rec.data
+  if (!artifactShown(rec, p)) return false
   if (p.kinds.length && !p.kinds.includes(a.kind)) return false
   if (p.statuses.length && !p.statuses.includes(a.status)) return false
   if (p.components.length && !a.components.some((c) => p.components.includes(c))) return false

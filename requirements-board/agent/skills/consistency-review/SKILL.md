@@ -33,12 +33,17 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   example of every output, including `fixups.json` and `question-fixups.json`. Pass
   `--storage-key aa-consistency-review` to `build-review.mjs`.
 - People: **Donald** (Donald Fraser, Stratos) is the product owner and decides; **Greg** (Greg Smith,
-  Peritia, the RFP author) wrote the pricing model documents (v4, v6, executive summary); **Ben** is
+  Peritia, the RFP author) wrote the pricing model documents (v4, v6, executive summary), retired on
+  5 November 2026 (AR-28, AR-29, AR-30) when Donald's flat Contract model replaced them; **Ben** is
   the AA principal; **Vanessa** is the AA office administrator. Unanswered points for Ben or Vanessa
   become open questions with `owner: Donald to ask <name>`.
 - Source ranking (confirmed by Donald): Donald's typed statements and explicit instructions >
   what Donald and Greg (or AA staff) agreed in meetings > Greg's v6 documents > older catalogue
-  readings > the RFP. Within a level, newer beats older.
+  readings > the RFP. Within a level, newer beats older. Since 5 November 2026 Greg's v6 documents
+  are retired: they still count for facts about the business (who pays, prepayment, the ledger), never
+  for the Contract structure, which is Donald's decisions D1 to D11 (Notes 2026-11-05 · Donald
+  contract model decisions). The contract model proposal's assumptions (A2 to A49, artifact AR-58)
+  are catalogue-level readings, not decisions.
 - Settled rulings that must be in the rulings list so agents never "fix" them back (memory:
   no-layered-price-precedence, user-statements-outrank-catalogue).
 - Follow-on skill: `update-build-plan <commit>`, once the user has committed the applied changes.
@@ -57,21 +62,28 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
       { "id": "rfp", "desc": "the original RFP." }
     ],
     "fixedRulings": [
-      "The Contract currently on a Procedure sets how it is priced; a pricing change is a change to a new Contract (or Contract version). The layered \"which price wins\" step order (RVG calculation, then contract price, then anaesthetist entry, then admin override) is not adopted. Requirement bodies (descriptions, acceptance criteria) never state a precedence or override order; at most a Technical discussion line says the step order is not adopted. Never criticise Greg's model.",
+      "The Contract currently on a Procedure sets how it is priced. Contracts are flat (Donald, 5 November 2026, D1 to D11): one Contract per priced item, held by a Party, with its own undated settings; there is no Contract header, no contract lines, no Contract versions, no line keys and no relinking. A fixed price changes through dated price ranges, which may be backdated; any other setting that must change from a date means a new Contract, and the old one is disabled. Contracts are Active or Disabled, never deleted. The layered \"which price wins\" step order (RVG calculation, then contract price, then anaesthetist entry, then admin override) is not adopted. Requirement bodies (descriptions, acceptance criteria) never state a precedence or override order; at most a Technical discussion line says the step order is not adopted. Never criticise Greg's model.",
       "Donald's direct statements outrank the catalogue, which outranks the RFP. RFP-derived concepts are stale unless the catalogue or Donald confirms them.",
-      "Splitting a fee between parties, or adding an extra invoice, is a UI action against a Procedure's Contract, not a Contract setting."
+      "Splitting a fee between parties, or adding an extra invoice, is a UI action against a Procedure's Contract, not a Contract setting.",
+      "Greg's v6 documents (AR-28, AR-29, AR-30) are retired: no live item links to them, and nothing is changed to agree with them. Where an item follows the v6 structure (lines, versions, line keys, staged schedule changes, upload in the first release), the flat model wins.",
+      "Voice (REQ/VOICE.md): stories are the only cards that hold requirements; epics and features give the broad theme only and never list their stories. A description reads as current, with history, names, dates, decision numbers and \"our reading\" markers in Notes."
     ],
-    "topics": ["Pricing and price calculation", "Contracts (structure, versions, flags, lines)", "Prepayment", "RVG codes, units and modifiers", "Billable parties and who pays", "Invoices and the invoice engine", "Payments, disbursement and AA fees", "Xero", "Bookings and procedure capture", "Booking intake and change handling", "Lists and List lifecycle states", "List approval", "Schedule canvas and slots", "Patients and NHI", "Health systems integration and hospital data", "Anaesthetist profile and reporting", "Admin oversight and master data", "Non-functional", "Terminology and naming"]
+    "topics": ["Pricing and price calculation", "Contracts (Parties, settings, pricing kinds, price ranges, specialties, funding tags, fallbacks)", "Contract selection and the step rail", "Prepayment", "RVG codes, units and modifiers", "Billable parties and who pays", "Invoices and the invoice engine", "Payments, disbursement and AA fees", "Xero", "Bookings and procedure capture", "Booking intake and change handling", "Lists and List lifecycle states", "List approval", "Schedule canvas and slots", "Patients and NHI", "Health systems integration and hospital data", "Anaesthetist profile and reporting", "Admin oversight and master data", "Non-functional", "Terminology and naming"]
   },
   "review": {
     "owner": "Donald",
     "houseRules": [
-      "F-1: never write a price step order or precedence into a description or acceptance criteria; never criticise Greg's model. A Technical discussion line saying the price step order is not adopted is required by F-1: never flag it."
+      "F-1: never write a price step order or precedence into a description or acceptance criteria; never criticise Greg's model. A Technical discussion line saying the price step order is not adopted is required by F-1: never flag it.",
+      "Voice (REQ/VOICE.md): descriptions read as current, with no history, names, dates, decision numbers or provenance markers (those go in Notes); epics and features give the broad theme only and never list their stories. Flag a description that breaks this; never fix drift by adding history to a description."
     ],
-    "protectedArtifacts": [{ "id": "AR-30", "reason": "Greg Smith's own ERD (his v6 document)" }],
-    "diagramNote": "A diagram dated before 2026-10-16 likely predates the pricing changes.",
+    "protectedArtifacts": [
+      { "id": "AR-28", "reason": "Greg Smith's v6 executive summary: retired 2026-11-05, kept as a record; never edit or link it" },
+      { "id": "AR-29", "reason": "Greg Smith's v6 technical design: retired 2026-11-05, kept as a record; never edit or link it" },
+      { "id": "AR-30", "reason": "Greg Smith's v6 ERD: retired 2026-11-05, kept as a record; never edit or link it" }
+    ],
+    "diagramNote": "A diagram dated before 2026-11-05 likely predates the flat Contract model (Parties, one Contract per priced item, price ranges, the step rail); AR-61 is its ERD.",
     "groups": [
-      { "name": "Pricing, Contracts and prepayment", "topics": ["RVG, units and modifiers", "Multi-procedure Bookings", "Contracts: what they are, flags, holders, lines", "Contract selection", "Billable party and payer", "Pricing and who may change it", "Prepayment"] },
+      { "name": "Pricing, Contracts and prepayment", "topics": ["RVG, units and modifiers", "Multi-procedure Bookings", "Contracts: Parties, settings, pricing kinds, price ranges, specialties, funding tags, fallbacks", "Contract selection and the step rail", "Billable party and payer", "Pricing and who may change it", "Prepayment"] },
       { "name": "Schedule, Lists and Bookings", "topics": ["Schedule, Slots and availability", "Lists and the List lifecycle", "Draft Lists", "Moving Lists and Bookings; preferences; tiers", "Booking intake and change handling", "Bookings, Procedures and descriptions"] },
       { "name": "Billing, money and everything else", "topics": null }
     ]
@@ -85,6 +97,11 @@ stage 1 and adjust (a group with `topics: null` takes every topic no other group
 ## Ground rules
 
 - Read `REQ/SCHEMA.md` first (item format, sources, statuses, question shape). Do not commit or push.
+- Every edit this skill proposes follows `REQ/VOICE.md`: a story's description says what the system
+  does, for whom, and why, as if it had always worked this way, with history, names, dates and
+  provenance in Notes; epics and features give only the broad theme of what sits under them. A
+  proposed fix never adds history or an "Update" paragraph to a description. Pass this to the
+  workflows in `houseRules`.
 - Ranking: the "This repo" source ranking; within a level newer beats older. A newer statement at a
   lower level does not override an older higher one: it is a conflict for the user.
 - **Open questions never drive edits; answered ones can.** Anything unclear becomes a new question,

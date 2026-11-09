@@ -46,6 +46,14 @@ Requirements Board, which edits the same files), then run `npm run check` from t
 catalogue supersedes the RFP wherever they differ. Every file the catalogue cites (transcripts,
 pricing documents, the RVG, the RFP PDF) lives in `REQ/artifacts/files/`, not elsewhere in `docs/`.
 
+**Before writing any requirement text, read `REQ/VOICE.md`, its model story included.** Stories are
+the only cards that hold requirements; epics and features give only the broad theme of what sits
+under them, never a list of their stories. A story's description says what the system does, for
+whom, and a short why, as if it had always worked this way: history, who decided what, dates,
+decision numbers and "our reading" markers go in Notes and `sources`, never the description. When a
+decision changes a story, rewrite it; never add an "Update" paragraph. Brief any subagent that writes
+requirement text with this rule.
+
 Not the place to edit requirements:
 - `requirements-board/` outside `requirements/` is the app, its scripts and its agent skills.
 - `REQ/reference/RFP.md` is the original RFP: historical input, read-only.
@@ -104,6 +112,10 @@ Not the place to edit requirements:
   - `REQUIREMENTS.md` — the prototype's numbered build checklist against the RFP (P/D/M/W/A/B/X/I/N).
     Not the system's requirements; those are the catalogue above.
   - `prototype-review/` — the 2026-07-27 whole-RFP conformance review; start at `00-SUMMARY.md`.
+  - `contract-model-proposal.md` — the working copy of the flat Contract model's full design (5 November
+    2026): entities, step rail, fallbacks, worked examples, seed mapping, Donald's decisions D1 to D11,
+    the section 11.1 assumptions (our reading, not decisions) and open points. Read it for the why behind
+    EP-04 and the domain model's contract sections. The catalogue cites its snapshot, artifact AR-58.
   - `ROADMAP.md`, `phases/phase-00…13.md`, `index.html` — the build plan (historical, but the phase
     docs remain the best account of why each surface is the way it is).
 - **Demo guide** — `docs/demo-guide/`: personas, workflows, the S1 to S5 run sheet and the presenter

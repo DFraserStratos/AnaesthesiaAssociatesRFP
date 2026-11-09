@@ -81,9 +81,9 @@
 <text x="1077.0" y="337.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">View Schedule,</text>
 <text x="1077.0" y="355.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Lists and Bookings</text>
 <path d="M1077.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1077.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">See upcoming allocated work,</text>
-<text x="1077.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">including Lists, Bookings,</text>
-<text x="1077.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Procedures and Contracts.</text>
+<text x="1077.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">See upcoming allocated work:</text>
+<text x="1077.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Lists, Bookings and each</text>
+<text x="1077.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Procedure's Contract.</text>
 </g>
 <path d="M1162 341.0 H1214" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="1188.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -104,9 +104,10 @@
 <text x="1521.0" y="337.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Complete Procedure</text>
 <text x="1521.0" y="355.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">and Billing Details</text>
 <path d="M1521.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1521.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Review the Procedure and</text>
-<text x="1521.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract; record times, BTM</text>
-<text x="1521.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">data and billable details.</text>
+<text x="1521.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Check each Procedure's</text>
+<text x="1521.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract; on an RVG price,</text>
+<text x="1521.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">record the RVG code, time</text>
+<text x="1521.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">and modifiers.</text>
 </g>
 <path d="M1606 341.0 H1658" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="1632.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -143,9 +144,10 @@
 <text x="2219.0" y="337.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Correct or Resolve</text>
 <text x="2219.0" y="355.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Billing Information</text>
 <path d="M2219.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="2219.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Resolve missing or incorrect</text>
-<text x="2219.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract, reference or other</text>
-<text x="2219.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">billing information.</text>
+<text x="2219.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Resolve “Needs an invoice</text>
+<text x="2219.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">destination”, a wrong</text>
+<text x="2219.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract, reference or other</text>
+<text x="2219.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">billing information.</text>
 </g>
 <path d="M2304 341.0 H2356" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="2330.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -181,10 +183,10 @@
 <text x="2917.0" y="337.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Resolve Who</text>
 <text x="2917.0" y="355.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Gets Billed</text>
 <path d="M2917.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="2917.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Read the billable party from</text>
-<text x="2917.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">each Procedure's locked</text>
-<text x="2917.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract: the holder, or</text>
-<text x="2917.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">the Booking's payer.</text>
+<text x="2917.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Each Procedure's Contract,</text>
+<text x="2917.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">frozen at AUTHORISED, bills</text>
+<text x="2917.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">its holder (a Party) or the</text>
+<text x="2917.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">payer on the Booking.</text>
 </g>
 <path d="M3002 341.0 H3054" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="3028.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -193,10 +195,10 @@
 <rect x="3054" y="310" width="170" height="62" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
 <text x="3139.0" y="346.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Calculate Charges</text>
 <path d="M3139.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="3139.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Apply the relevant Contract,</text>
-<text x="3139.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">RVG, fixed-price, discount</text>
-<text x="3139.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">or other permitted billing</text>
-<text x="3139.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">rules.</text>
+<text x="3139.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Apply each Contract's pricing</text>
+<text x="3139.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">kind: RVG at a rate, RVG less</text>
+<text x="3139.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">a discount, the fixed price in</text>
+<text x="3139.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">force, or an open price.</text>
 </g>
 <path d="M3224 341.0 H3276" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="3250.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -226,11 +228,11 @@
 <text x="3645.0" y="93.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Invoice Sent to</text>
 <text x="3645.0" y="111.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Billable Party</text>
 <path d="M3645.0 128 V142" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="3645.0" y="156" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">The Billing/Invoice Engine</text>
-<text x="3645.0" y="172" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">sends the invoice to the</text>
-<text x="3645.0" y="188" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">billable party: a contract</text>
-<text x="3645.0" y="204" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">holder, insurer, patient or</text>
-<text x="3645.0" y="220" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">other payer.</text>
+<text x="3645.0" y="156" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Sent to the billable party:</text>
+<text x="3645.0" y="172" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">the Contract's holder (a</text>
+<text x="3645.0" y="188" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Party, such as a hospital or</text>
+<text x="3645.0" y="204" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">insurer) or the payer on</text>
+<text x="3645.0" y="220" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">the Booking.</text>
 </g>
 <g id="ledger">
 <rect x="3560" y="310" width="170" height="62" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>

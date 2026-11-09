@@ -8,7 +8,7 @@
 import { idMentions, isArtifactId, isQuestionId } from '../../shared/links.ts'
 import type { BoardConfig } from '../../shared/config.ts'
 import { isRetired, statusLabel } from '../../shared/statuses.ts'
-import type { ArtifactRec, Item, Question } from '../../shared/types.ts'
+import { isPastArtifact, type ArtifactRec, type Item, type Question } from '../../shared/types.ts'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 /** Elements whose own text is drawn as text. */
@@ -23,7 +23,7 @@ export interface DiagramLink {
   title: string
   /** The hover tooltip: the record's name and status, as a link in Markdown shows. */
   tip?: string
-  /** A retired card or a superseded artifact: still a link, but muted. */
+  /** A retired card or a superseded or retired artifact: still a link, but muted. */
   retired?: boolean
 }
 
@@ -41,7 +41,7 @@ export function catalogueResolver(index: { byId: Map<string, Item>; questions: Q
     if (id === selfId) return null
     if (isArtifactId(id)) {
       const a = artifacts[id]?.data
-      return a ? { href: `#/artifacts/${encodeURIComponent(id)}`, title: a.title, tip: `${a.title} · ${a.status}`, retired: a.status === 'Superseded' } : null
+      return a ? { href: `#/artifacts/${encodeURIComponent(id)}`, title: a.title, tip: `${a.title} · ${a.status}`, retired: isPastArtifact(a.status) } : null
     }
     const question = isQuestionId(id)
     const rec = question ? questions.get(id) : index.byId.get(id)

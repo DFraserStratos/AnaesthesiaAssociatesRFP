@@ -45,5 +45,15 @@
     },
     "startHint": "Start both with `npm run dev` at the repo root (prototype on 5173, PWA on 5174)."
   },
+  "voice": {
+    "descriptionWarnings": [
+      { "pattern": "\\bour reading\\b", "message": "an \"our reading\" marker" },
+      { "pattern": "\\bAR-\\d+[ #]?A\\d+\\b", "message": "an assumption reference" },
+      { "pattern": "\\b(decision|Donald's) D\\d+\\b", "message": "a decision number" },
+      { "pattern": "\\b(Ben|Vanessa|Greg|Donald|Michael|Shane),? \\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December)\\b", "message": "a dated remark by a person" },
+      { "pattern": "\\bNotes \\d{4}-\\d{2}-\\d{2}\\b", "message": "a note citation" },
+      { "pattern": "^Update \\d{4}-\\d{2}-\\d{2}", "flags": "im", "message": "an update paragraph" }
+    ]
+  },
   "board": { "name": "Requirements board" }
 }

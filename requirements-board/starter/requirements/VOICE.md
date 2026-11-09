@@ -9,16 +9,48 @@ links) is in `SCHEMA.md`; this file is about the words.
 - A short name in sentence case: "Record a cancellation", "Two Pick Lists per warehouse per day".
 - Name the thing or the action, not the screen or the ticket: no "As a...", no "Feature:", no IDs.
 
+## Which cards hold requirements
+
+- **Stories are the only cards that hold requirements.** Every rule, behaviour and acceptance
+  criterion lives in a story.
+- **Epics and features give the broad theme** of what sits under them, and why it matters: a short
+  paragraph or two. They do not list or summarise their stories one by one, and they carry no
+  rules, detail or acceptance criteria. A reader opens the stories for the detail.
+
 ## The description
 
-- **Open with who or what acts, and what happens**, in the present tense: "The customer can see which Price list applies to each Order line...", "The Order Engine records a cancellation...".
-  A person by their role, the system by its component's name.
-- **Then why, in its own paragraph**, usually starting "This is so...".
+The description says what the system does, as if it had always worked this way. A new developer,
+or someone at the client, should understand it without knowing any of the history behind it.
+
+- **Open with who or what acts, and what happens**, in the present tense: "The customer can see which Price list applies to each Order line...", "The Order Engine records a cancellation...". A person by their role, the system by its component's name. One to three sentences.
+- **Then why, in its own paragraph**, usually one sentence starting "This is so...".
+- **Then only the rules that are requirements**: edge cases and exceptions in short paragraphs or bullets.
 - Not the "As a ..., I ..., so that ..." template.
 - Plain language. One idea per paragraph, a blank line between paragraphs, and bullets instead of
   long comma chains.
 - Say what is true, not what "should" or "will" happen: "The cancelled Order is never removed", not "The system should not remove...".
-- Edge cases and exceptions get their own short paragraph after the main behaviour.
+
+What never goes in a description:
+
+- **History**: what the story replaces, what an earlier model did, what was retired or reversed.
+- **Who said or decided what**: names, dates, meetings, quotes, decision numbers.
+- **Provenance markers**: "(our reading)", "(Notes 2026-05-04 #3)". The sources list says where a
+  requirement came from. When part of a story is our reading rather than a decision, say so in one
+  line in Notes.
+- **Update paragraphs**: when a decision changes a story, rewrite the description so it reads as
+  current. Never add an "Update" paragraph or layer new text over old.
+
+### The model to follow
+
+> A dispatcher can add an evening Pick List: one after the day's last wave, created on the day if
+> need be. Like any Pick List it has a picker, a zone and a day, and its own start time. The picker
+> sees it after their day's other Pick Lists, and its Order lines are picked and shipped as on any
+> other Pick List.
+>
+> This is so urgent late orders are picked and shipped through Pick Lists like everything else.
+
+Its Notes hold the rest: who asked for it and when, their words, and which part is our reading.
+Its Technical discussion holds what is still to design.
 
 ## Words
 
@@ -37,7 +69,9 @@ links) is in `SCHEMA.md`; this file is about the words.
 
 - **Technical discussion:** how it might be built, and choices still open, not what the user sees.
 - **Notes:** who said what and when ("Sam, 16 October: ..."), quoting people's own words where
-  they matter. Keep the speaker's wording; fix spelling and drop filler.
+  they matter. Keep the speaker's wording; fix spelling and drop filler. This is also where the
+  history goes, briefly, and the one line of "our readings". Keep it short: Notes explain the
+  story, they are not a log of every discussion.
 
 ## Questions
 

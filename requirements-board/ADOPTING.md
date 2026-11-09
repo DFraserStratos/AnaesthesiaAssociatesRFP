@@ -59,6 +59,10 @@ README ("Project config"). Ask the user for anything you can't infer:
   history, and records the run in `requirements/status-recodes.json` so diffs read a pure relabel as no change.
 - `questionKinds["missing-source"].help`: the kinds of source this project cites.
 - `screenshotApps` and `capture`: only if the project has an app to screenshot (step 6).
+- `voice.descriptionWarnings` (optional, edited by hand): patterns the check warns on in a live
+  item's description, for provenance and decision history that belong in Notes (decision numbers,
+  "our reading", a person's dated remark). Start empty and add a rule when a habit keeps recurring;
+  format in `SCHEMA.md`.
 
 ## 4. Rewrite the skills' "This repo" blocks
 

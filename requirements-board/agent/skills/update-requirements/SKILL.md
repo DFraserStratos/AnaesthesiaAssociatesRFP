@@ -51,6 +51,13 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   `OQ-nn`. Check one with `npm --prefix BOARD run source -- "<source>"`.
 - Notes are append only: never edit an existing note, except the one this run creates.
 - Keep the user's own wording when quoting their answers and notes (fix spelling, drop filler).
+- **Requirements read as current, never as a decision log.** A story's description says what the
+  system does, for whom, and a short why, as if it had always worked this way (`REQ/VOICE.md`, "The
+  description", and its model story). History, who decided what, decision numbers, "our reading"
+  markers and meeting quotes go in Notes and `sources`, never the description. Stories hold the
+  requirements; epics and features give only the broad theme. Every subagent that writes or reviews
+  requirement text is told this in its brief and reads VOICE.md's model before writing: a file in a
+  reading list is not enough.
 - Do not commit or push.
 - You are the orchestrator: keep your own context for plumbing and decisions, and give the reading,
   drafting and checking to subagents with fresh context. This skill authorises the Workflow tool (load
@@ -131,8 +138,15 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
    the scratchpad.
 2. **Editors (one per epic touched, in parallel):** no two agents edit the same file. Each agent creates
    new IDs only under its own epic. Moves between epics are done afterwards, one at a time. Each editor:
-   - puts the decision in the requirement itself (description, acceptance criteria, technical discussion,
-     notes), in the catalogue's voice (`REQ/VOICE.md`);
+   - reads `REQ/VOICE.md` first, its model story included;
+   - **rewrites** each affected item so it reads as current: the description says what the system now
+     does, for whom, and why; the acceptance criteria test it. Never add to an old description or
+     layer an "Update" paragraph over it (that is for question answers only);
+   - keeps the decision's trail out of the description: the note or question goes in `sources`, who
+     said what goes in Notes, and anything that is our reading rather than a decision is one line in
+     Notes ("Our readings (<document>): ...");
+   - leaves epics and features as a broad theme of what sits under them: no list of their stories, no
+     rules or detail (those go in the stories);
    - adds the note or question to `sources` in date order, quoted only when it contains `#` or `: `
      (`- "Notes 2026-10-01 · Client meeting #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
    - writes each source in a form that resolves (Ground rules), so it opens its spot;
@@ -149,8 +163,16 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
    - Is the shape right per SCHEMA, and the wording per VOICE.md?
    - Do the existing acceptance criteria still hold?
    - Are there links to retired items?
-4. **`domain-model.md`:** one agent plus a reviewer, if the model changed.
-5. **New questions:** add an OQ for each genuinely unresolved matter, with `affects` set to existing items.
+4. **Voice reviewer per epic (fresh, after the accuracy review):** one question per item: could a new
+   developer, or someone at the client, read this description without knowing any of the history?
+   It compares each edited item with VOICE.md's model story and fixes in place: history, names and
+   dates, decision numbers, provenance markers or update paragraphs in a description go to Notes; an
+   epic or feature that lists its stories or carries detail is cut back to its theme. It never changes
+   a requirement's meaning, an acceptance criterion's meaning, a status or a source. The check's
+   voice warnings (if `board.config.json` defines `voice.descriptionWarnings`) must be clear for every
+   edited item.
+5. **`domain-model.md`:** one agent plus a reviewer, if the model changed.
+6. **New questions:** add an OQ for each genuinely unresolved matter, with `affects` set to existing items.
 
 ## Stage 5: finish
 

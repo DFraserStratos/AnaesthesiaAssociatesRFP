@@ -80,6 +80,54 @@ describe('board.config.json', () => {
   })
 })
 
+describe('voice rules', () => {
+  it('reads the description warnings, with the flags defaulting to i', () => {
+    const { config, problems } = parseConfig(
+      JSON.stringify({
+        voice: {
+          descriptionWarnings: [
+            { pattern: '\\bour reading\\b', message: 'an "our reading" marker' },
+            { pattern: '^Update \\d{4}', flags: 'im', message: 'an update paragraph' },
+          ],
+        },
+      }),
+    )
+    expect(problems).toEqual([])
+    expect(config.voice.descriptionWarnings).toEqual([
+      { pattern: '\\bour reading\\b', flags: 'i', message: 'an "our reading" marker' },
+      { pattern: '^Update \\d{4}', flags: 'im', message: 'an update paragraph' },
+    ])
+  })
+
+  it('has no rules when the block is missing', () => {
+    expect(parseConfig('{}').config.voice).toEqual({ descriptionWarnings: [] })
+    expect(parseConfig(JSON.stringify({ voice: {} })).config.voice).toEqual({ descriptionWarnings: [] })
+    expect(parseConfig('{}').problems).toEqual([])
+  })
+
+  it('drops a rule that does not compile or is incomplete, and says so', () => {
+    const { config, problems } = parseConfig(
+      JSON.stringify({
+        voice: {
+          descriptionWarnings: [
+            { pattern: '(unclosed', message: 'a broken rule' },
+            { pattern: 'x', flags: 'q', message: 'a bad flag' },
+            { pattern: 'x' },
+            { pattern: 'ok', message: 'a good rule' },
+          ],
+        },
+      }),
+    )
+    expect(config.voice.descriptionWarnings).toEqual([{ pattern: 'ok', flags: 'i', message: 'a good rule' }])
+    expect(problems).toHaveLength(3)
+    expect(problems[0]).toMatch(/^voice\.descriptionWarnings: "a broken rule" is not a valid regular expression/)
+    expect(problems[1]).toMatch(/^voice\.descriptionWarnings: "a bad flag" is not a valid regular expression/)
+    expect(problems[2]).toBe('voice.descriptionWarnings: {"pattern":"x"} needs a pattern and a message')
+    expect(parseConfig(JSON.stringify({ voice: [] })).problems).toEqual(['voice must be an object'])
+    expect(parseConfig(JSON.stringify({ voice: { descriptionWarnings: {} } })).problems).toEqual(['voice.descriptionWarnings must be a list of { pattern, flags, message }'])
+  })
+})
+
 describe('statuses', () => {
   const read = (statuses: unknown, questionStatuses?: unknown) => parseConfig(JSON.stringify({ statuses, questionStatuses }))
 

@@ -1,11 +1,11 @@
 # AA Future-State Domain Model
 
 Companion to the requirements catalogue in this folder. This is the narrative and structural reading of the future state
-as understood on 2026-09-24, updated 2026-10-02, 2026-10-07, 2026-10-18, 2026-10-19, 2026-10-28 and 2026-11-04, built from the RFP, the six future-state diagrams, the meeting notes
+as understood on 2026-09-24, updated 2026-10-02, 2026-10-07, 2026-10-18, 2026-10-19, 2026-10-28, 2026-11-04 and 2026-11-05, built from the RFP, the six future-state diagrams, the meeting notes
 with AA's lead administrator, the Q&A of 2026-09-24, the meeting with Greg (RFP author) and the Requirements Board
-answers of 2026-10-01, the AA meeting with Greg of 2026-10-02 and its question answers (OQ-62 to OQ-75), the afternoon AA requirements review with Greg of 2026-10-02 (Notes 2026-10-02 · AA requirements review with Greg), the directors' answers of 2026-10-06 (Notes 2026-10-06 · AA directors meeting), the AA meeting with Greg and the AA client meeting of 2026-10-07 (Notes 2026-10-07 · AA meeting with Greg; Notes 2026-10-07 · AA client meeting), the AA meetings with Greg of 2026-10-14, 2026-10-16 and 2026-10-19 (Notes 2026-10-14 · AA meeting with Greg; Notes 2026-10-16 · AA meeting with Greg; Notes 2026-10-19 · AA meeting with Greg) and the board edits Donald made during the second, the AA meeting with Ben and Vanessa of 2026-10-27 (Notes 2026-10-27 · AA meeting with Ben and Vanessa), the AA meeting with Greg of 2026-10-28 (Notes 2026-10-28 · AA meeting with Greg) with the board edits Donald made during it, Donald's working decisions of 2026-11-04 for the build, not yet seen by Greg or AA (Notes 2026-11-04 · Donald working decisions), the pricing model executive summary v6 ([AR-28](artifacts/AR-28.md)) (Notes 2026-10-16 · Pricing model documents v6 #10), and the real fee schedules in `../../docs/discovery-reference/Data files/`. Where this document and the RFP disagree, this document wins.
+answers of 2026-10-01, the AA meeting with Greg of 2026-10-02 and its question answers (OQ-62 to OQ-75), the afternoon AA requirements review with Greg of 2026-10-02 (Notes 2026-10-02 · AA requirements review with Greg), the directors' answers of 2026-10-06 (Notes 2026-10-06 · AA directors meeting), the AA meeting with Greg and the AA client meeting of 2026-10-07 (Notes 2026-10-07 · AA meeting with Greg; Notes 2026-10-07 · AA client meeting), the AA meetings with Greg of 2026-10-14, 2026-10-16 and 2026-10-19 (Notes 2026-10-14 · AA meeting with Greg; Notes 2026-10-16 · AA meeting with Greg; Notes 2026-10-19 · AA meeting with Greg) and the board edits Donald made during the second, the AA meeting with Ben and Vanessa of 2026-10-27 (Notes 2026-10-27 · AA meeting with Ben and Vanessa), the AA meeting with Greg of 2026-10-28 (Notes 2026-10-28 · AA meeting with Greg) with the board edits Donald made during it, Donald's working decisions of 2026-11-04 for the build, not yet seen by Greg or AA (Notes 2026-11-04 · Donald working decisions), the AA meeting with Ben and Vanessa of 2026-11-05 over the contract picker mock (Meeting 2026-11-05 · Ben and Vanessa) and the decisions on the Contract model Donald made after it (Donald's decisions 2026-11-05), which are his and not yet agreed by Greg or AA beyond what the meeting shows, Greg's pricing model executive summary v6, now retired (Notes 2026-10-16 · Pricing model documents v6 #10), and the real fee schedules in `../../docs/discovery-reference/Data files/`. Where this document and the RFP disagree, this document wins.
 
-The Contract structure here (RVG groups, contract holders, Contracts and their lines, and the booking procedure priced under them) follows the technical design v6 and its ERD ([AR-29](artifacts/AR-29.md), [AR-30](artifacts/AR-30.md)), Greg's proposal for the development team, which replaces the draft v4 (Notes 2026-10-16 · Pricing model documents v6 #10, #12). Where it shapes a relationship below, this document says so. The requirements themselves stay in plain words: the design's field names are given for orientation only, not as requirements. How a Procedure is priced is in §3.
+The Contract structure here (parties, Contracts with their settings and price ranges, specialties and funding tags, and the Procedure priced under exactly one Contract) follows Donald's decisions of 2026-11-05, made after that day's meeting with Ben and Vanessa (Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05). It replaces the earlier reading of the technical design v6 and its ERD, Greg's proposal, and of the draft v4: there are no contract lines, Contract versions, line keys, staged schedule changes or schedule uploads. Those documents remain sources for facts about the business (who pays, prepayment, the ledger), not for the structure. The model is deliberately prototype-grade: structured just enough for booking setup, the anaesthetist's capture, the billing engine, invoicing, prepayment, the AA Holding account and office review to work. Where the decisions leave a gap, this document gives our reading and says so. The requirements themselves stay in plain words: field names are given for orientation only, not as requirements. How a Procedure is priced is in §3.
 
 ## 1. What changed since the RFP
 
@@ -14,38 +14,38 @@ The Contract structure here (RVG groups, contract holders, Contracts and their l
 | Card | **Booking**. "Card" now only means the physical hospital or surgeon card. | Notes; Q&A #11 |
 | Billing Engine | **Billing/Invoice Engine** | Q&A #11 |
 | List states DRAFT → SUBMITTED → AUTHORISED, DRAFT being an assigned List still being worked | **DRAFT → ACTIVE → SUBMITTED → AUTHORISED**: DRAFT is a Draft List with no anaesthetist; ACTIVE is a List with all five of its pairing (anaesthetist, surgeon, hospital, day, session), where the anaesthetist completes Bookings and submits | Notes 2026-10-07 · List lifecycle states #1 to #3 |
-| Each Procedure has a *billing route* (Hospital / Billable Party / Insurer), set explicitly, plus a separately looked-up *governing Contract* of type 1, 2 or 3 | Each Procedure selects exactly **one Contract**. The Contract defines rules and pricing, and through its contract holder (an insurer, a hospital, a surgeon, or an anaesthetist; AA itself holds No contract (RVG)) decides who is invoiced: the holder's own billable party, or the payer named on the Booking (OQ-67). There is no separate route step. The words "first party" and "third party" are dropped, since the cases are not truly that. | Diagrams 3 and 7; Q&A #2, #3; Notes 2026-09-29 #24; Notes 2026-10-02 #8; Notes 2026-10-07 · AA meeting with Greg #51; Notes 2026-10-07 · Pricing model documents #11, #22; Notes 2026-10-14 · AA meeting with Greg #10, #30; Notes 2026-10-16 · Pricing model documents v6 #22, #24 |
-| Counterparty resolved by the engine when the List is AUTHORISED | Contract applied at **booking setup** by admin, and mandatory there: the office's main job is to identify who pays and then the Contract, and its line where it has lines (the working direction is a step rail, see Selection in §2). The anaesthetist may change it; the office sees the change at review. Engine reads the locked Contract. | Diagram 7; Q&A #4; Notes 2026-10-07 · AA meeting with Greg #55; Notes 2026-10-16 · AA meeting with Greg #39, #48; Notes 2026-11-04 · Donald working decisions #9 |
+| Each Procedure has a *billing route* (Hospital / Billable Party / Insurer), set explicitly, plus a separately looked-up *governing Contract* of type 1, 2 or 3 | Each Procedure selects exactly **one Contract**. The Contract defines rules and pricing, and decides who is invoiced: each Contract is held by a **party** (a hospital, an insurer or funder, a surgeon or surgeon group, an anaesthetist, or AA, which holds the built-in No contract · RVG) and has its own setting, **bills its holder** or **bills the payer** named on the Booking (OQ-67). There is no separate route step. The words "first party" and "third party" are dropped, since the cases are not truly that. | Diagrams 3 and 7; Q&A #2, #3; Notes 2026-09-29 #24; Notes 2026-10-02 #8; Notes 2026-10-07 · AA meeting with Greg #51; Notes 2026-10-07 · Pricing model documents #11, #22; Notes 2026-10-14 · AA meeting with Greg #10, #30; Notes 2026-10-16 · Pricing model documents v6 #22, #24; Donald's decisions 2026-11-05 |
+| Counterparty resolved by the engine when the List is AUTHORISED | Contract applied at **booking setup** by admin, and mandatory there: the office's main job is to say where the invoice goes and then pick the Contract, on a **step rail** (where does the invoice go, then the payment type or the hospital's funding tag, then the Contract; see Selection in §2). A Procedure with no Contract shows "Needs an invoice destination", Ben's wording. The anaesthetist may change it; the office sees the change at review. The engine reads the Contract, frozen in the pricing snapshot at AUTHORISED. | Diagram 7; Q&A #4; Notes 2026-10-07 · AA meeting with Greg #55; Notes 2026-10-16 · AA meeting with Greg #39, #48; Notes 2026-11-04 · Donald working decisions #9; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
 | Secondary procedures in a split-billing episode charge **time units only** | Base units only on the **primary**; time on **every** procedure; modifiers on the primary **unless total modifier units exceed 4**, then split as evenly as possible across all procedures with the remainder to the primary (7 over 3 is 3, 2, 2). No Contract changes this rule (OQ-90). | Notes; Q&A #1; Notes 2026-10-19 · AA meeting with Greg #10 |
-| `priceOverride` on the Procedure | **The Contract on the Procedure sets its values.** Choosing the Contract (and its line) fills in the Procedure's price, rate and discount; from then on they are values on the Procedure. The anaesthetist may change the price, rate or discount only where the Contract lets them (its editable setting: typically yes on Contracts priced from RVG units, no on a hospital's fixed-price Contract (where no discount may be added either) or a surgeon's fixed fee). The office can change any price at any time, the way a fixed price is changed without changing the Contract (the anaesthetist may depart from it only where that Contract's flag allows it, a flag AA sets per Contract: OQ-107). No reason is needed; every change is audited and flagged at review, and the last change stands: neither side has more authority than the other. BTM is optional on a fixed price. Whether the anaesthetist may change a Contract's price, rate or discount is a flag on each Contract, set by AA, not a global rule (OQ-89, OQ-107). A prepaid Contract is never editable and cannot carry the price override setting (OQ-96). A fixed price never allows the anaesthetist's price override, whatever the flag (OQ-117); the office's price change is unaffected. | Diagram 7; Q&A #3, #6; Notes 2026-10-14 · AA meeting with Greg #23, #24, #39; Notes 2026-10-16 · AA meeting with Greg #10, #54, #55; Notes 2026-10-16 · Pricing model documents v6 #11, #27; Notes 2026-10-19 · AA meeting with Greg #9, #20; Notes 2026-10-28 · AA meeting with Greg #1 |
+| `priceOverride` on the Procedure | **The Contract on the Procedure sets its price.** Each Contract has a **pricing kind**: RVG at the anaesthetist's own unit rate, RVG at the Contract's rate, RVG less the Contract's discount, a fixed price (held in dated price ranges) or an open price (no price of its own; the amount is typed on the Procedure). The Procedure's price follows from it (§3). On a Contract priced from RVG units, the anaesthetist may override the price only where that Contract's setting allows it, a setting AA keeps per Contract, not a global rule (OQ-107); the RVG code, time and modifiers stay recorded and visible beside the override, so a price can later be explained by its RVG (Ben, 5 November). A fixed price never allows the anaesthetist's override (OQ-117), and a prepaid Contract cannot carry the setting (OQ-96). The office can change any price on any Contract until the List is authorised (on a prepaid Procedure, until its prepayment invoice is raised), the way a fixed price is changed without changing the Contract. Rate and discount are settings on the Contract, not values edited on a Procedure: the office changes the price instead (our reading). No reason is needed; every change is audited and flagged at review, and the last change stands: neither side has more authority than the other. On a fixed or open price the form collapses: an RVG code may be recorded for reference only, with no time or modifiers. | Diagram 7; Q&A #3, #6; Notes 2026-10-14 · AA meeting with Greg #23, #24, #39; Notes 2026-10-16 · AA meeting with Greg #10, #54, #55; Notes 2026-10-16 · Pricing model documents v6 #11, #27; Notes 2026-10-19 · AA meeting with Greg #9, #20; Notes 2026-10-28 · AA meeting with Greg #1; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
 | Xero as accounts receivable with the engine's database as a mirror for the app | The engine's **internal ledger is the system of record**. Xero is an AR and banking service mirroring ledger pairs. Patient history survives Xero contact archiving. | Q&A #9 |
 | Payment to anaesthetist implied a fee deducted | **AA's fee is a separate invoice from AA to the anaesthetist**, managed by the system, distinct from any procedure's receivable and payable. A monthly fee invoice run raises one per anaesthetist: fixed charges (possibly several items) plus a charge per BCTI issued to them, set on a settings page; not a percentage cut of the payable. The fixed schedule, whether only paid invoices count and whether the fee nets against payables are open (OQ-60); Greg's view, to confirm with AA's accountant, is that only paid invoices count and the fee is always a separate invoice paid into a separate bank account, never netted. | Q&A #8; Notes 2026-10-01 #1; Notes 2026-10-02 #1 |
-| "Self-funded, pre-payment required" as a patient category | **Prepayment is a first-class flow**: triggered when the office picks a Contract flagged as prepaid (normally the anaesthetist's own price list, or a surgeon's, identified by practitioner ID), never by a setting on the anaesthetist's profile. In practice the payer on the Booking prepays, but the system does not forbid a Contract that bills its holder from being prepaid (OQ-73); prepayment invoice when an admin approves it (an optional workflow step AA can switch off), tracking, alerts. The prepaid amount is the price on that Contract's line, which must be above zero: the full amount, never a deposit or a part (OQ-04, OQ-76). A prepaid Contract is never editable by the anaesthetist; the office can still change any price (OQ-96). The prepayment invoice, and its pair, are generated when an admin approves it (the office picks the prepaid Contract, then approves the invoice where outgoing invoices are approved), and it is then sent with the letter. The pair is a receivable from the payer named on the Booking and a payable to the **AA Holding account**, an accounts payable creditor alongside the anaesthetists, not to the anaesthetist (OQ-80). There is no settlement against a final BTM amount: nothing more is invoiced or credited automatically (see §3). | Diagram 7; Notes; Q&A #5; Notes 2026-10-01 #32, #50; Notes 2026-10-02 #14, #17; Notes 2026-10-06 · AA directors meeting #1, #4, #9; Notes 2026-10-07 · Pricing model documents #1, #35; Notes 2026-10-16 · AA meeting with Greg #20, #22; Notes 2026-10-16 · Pricing model documents v6 #4, #28; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-28 · AA meeting with Greg #1, #6, #43, #44, #46, #47, #63 |
+| "Self-funded, pre-payment required" as a patient category | **Prepayment is a first-class flow**: triggered when the office picks a Contract flagged as prepaid under Patient › Prepaid (normally an item on the anaesthetist's own price list, or a surgeon's, the Contract linked to that practitioner; or the Prepaid · Fixed price fallback, where the office types the amount), never by a setting on the anaesthetist's profile. A prepaid Contract bills the payer on the Booking and is never priced from RVG units (Donald's decisions 2026-11-05), so OQ-73's holder-billed prepaid Contract can no longer be picked and needs re-answering; prepayment invoice when an admin approves it (an optional workflow step AA can switch off), tracking, alerts. The prepaid amount is the Procedure's price when the prepayment invoice is raised (the price range in force, or the typed amount), which must be above zero: the full amount, never a deposit or a part (OQ-04, OQ-76). A prepaid Contract never allows the anaesthetist's price override (OQ-96); the office can change the price until the prepayment invoice is raised, after which the invoiced amount stands (our reading). The prepayment invoice, and its pair, are generated when an admin approves it (the office picks the prepaid Contract, then approves the invoice where outgoing invoices are approved), and it is then sent with the letter. The pair is a receivable from the payer named on the Booking and a payable to the **AA Holding account**, an accounts payable creditor alongside the anaesthetists, not to the anaesthetist (OQ-80). There is no settlement against a final BTM amount: nothing more is invoiced or credited automatically (see §3). | Diagram 7; Notes; Q&A #5; Notes 2026-10-01 #32, #50; Notes 2026-10-02 #14, #17; Notes 2026-10-06 · AA directors meeting #1, #4, #9; Notes 2026-10-07 · Pricing model documents #1, #35; Notes 2026-10-16 · AA meeting with Greg #20, #22; Notes 2026-10-16 · Pricing model documents v6 #4, #28; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-28 · AA meeting with Greg #1, #6, #43, #44, #46, #47, #63; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
 | Hospital HL7 integrations exist but are unreliable | **Two hospitals are integrated with the current system; everything else is manual.** Which two is still open: the catalogue names St George's and Southern Cross, and Ben named Forte (OQ-109). The first release builds both intake sources, each landing on the same review-and-merge screen: the hospital booking downloads, taken however each hospital provides them, and the surgeons' rooms' PDF lists, read and ingested (OQ-108). It syncs both integrated hospitals (assumed for the build, OQ-109 part 2). The screen has no pull buttons, schedules or sync on open, and nothing is applied silently: the office accepts unmatched rows as new and approves the differences on matched Bookings. More hospital feeds, automatic matching and HL7/FHIR are Future Work, and PDFs are still needed alongside them. NHI lookup is in scope. | Q&A #4; Notes 2026-09-29 #13, #14; Notes 2026-10-01 #7; Notes 2026-10-02 · AA requirements review with Greg #34, #35, #65; Notes 2026-11-04 · Donald working decisions #7, #8 |
-| Patient master implied | **Patient record keyed on NHI**. Who is billed is set through the Contract: its holder's billable party, or the **payer named on the Booking**, prefilled from the patient and changeable to a parent, guardian or other party, such as a benefactor or a family trust. The NHI is mandatory, with no blank, and is the patient identifier throughout: a Booking cannot be saved without one, and an incoming Booking that has none waits at intake until the office adds it (OQ-49); meanwhile a stub stands in its place on its List, seen by the anaesthetist and the office, until the office resolves it, and a stub is not a Booking (OQ-118). Admins see patient outstanding bills and are alerted to patients with outstanding balances: a mild alert under the threshold (90 days from the invoice date, may move), a strong one above it, a mild one for a credit balance, and staff can always wave it through (OQ-41, OQ-74); the anaesthetist sees the alert too, on their List. Demographics and ethnicity are held where supplied, never required. The anaesthetist sees the NHI for Health Connect lookup. | Notes; Q&A #9, #13; Notes 2026-09-29 #10, #26, #35; Notes 2026-10-01 #17, #23, #62; Notes 2026-10-02 #15; Notes 2026-10-07 · Pricing model documents #11; Notes 2026-10-16 · AA meeting with Greg #3; Notes 2026-10-19 · AA meeting with Greg #1; Notes 2026-10-28 · AA meeting with Greg #25, #29, #37; Notes 2026-11-04 · Donald working decisions #1 |
+| Patient master implied | **Patient record keyed on NHI**. Who is billed is set through the Contract: its holder, or the **payer named on the Booking**, prefilled from the patient and changeable to a parent, guardian or other party, such as a benefactor or a family trust. The NHI is mandatory, with no blank, and is the patient identifier throughout: a Booking cannot be saved without one, and an incoming Booking that has none waits at intake until the office adds it (OQ-49); meanwhile a stub stands in its place on its List, seen by the anaesthetist and the office, until the office resolves it, and a stub is not a Booking (OQ-118). Admins see patient outstanding bills and are alerted to patients with outstanding balances: a mild alert under the threshold (90 days from the invoice date, may move), a strong one above it, a mild one for a credit balance, and staff can always wave it through (OQ-41, OQ-74); the anaesthetist sees the alert too, on their List. Demographics and ethnicity are held where supplied, never required. The anaesthetist sees the NHI for Health Connect lookup. | Notes; Q&A #9, #13; Notes 2026-09-29 #10, #26, #35; Notes 2026-10-01 #17, #23, #62; Notes 2026-10-02 #15; Notes 2026-10-07 · Pricing model documents #11; Notes 2026-10-16 · AA meeting with Greg #3; Notes 2026-10-19 · AA meeting with Greg #1; Notes 2026-10-28 · AA meeting with Greg #25, #29, #37; Notes 2026-11-04 · Donald working decisions #1 |
 | Office monitoring of the billing flow | Retained, plus **ledger balance tools** (whole ledger, per anaesthetist, per patient) in the Admin App. | Q&A #12 |
 | Two Lists per active anaesthetist per day, unassigned until a surgeon and hospital are set | Three distinct things: a **Slot** (a box for the AM or PM session, created and stored per active anaesthetist per day across a rolling schedule, four months ahead in current practice, its length a rarely changed setting; defaults to free and has a status from a user-maintained list until a List is put in it, and the List then shows in place of the status), an **active List** (assigned to an anaesthetist, put into a Slot, holds Bookings, follows the one-surgeon, one-hospital rule) and a **Draft List** (a List created with no anaesthetist: its surgeon, hospital, day and session are required; it also arises when an anaesthetist moves a List to the office (including marking its Slot unavailable), and when a recurring booking lands on an unavailable Slot; shown prominently in the Admin App, a major feature for AA staff; only ever assigned by an admin, never offered to anaesthetists to claim, OQ-86). Slots and Lists are both children of the day. This is the logical model; how it is stored is for the developers, and the word "slot" never appears in the UI (OQ-64). | Notes 2026-09-29 #17, #36; Notes 2026-10-01 #9, #13, #15, #20, #42; Notes 2026-10-02 #5, #23, #29, #30; Notes 2026-10-02 · AA requirements review with Greg #1, #20, #61; Notes 2026-10-07 · AA client meeting #12 |
 | Permanent Lists and List templates | **Recurring bookings**: the standing intersection of a hospital, an anaesthetist and a surgeon (day of week, AM or PM), painted onto Lists. The term replaces "template", "permanent booking" and "Permanent List". | Notes 2026-10-01 #44 |
 | An anaesthetist hands a List to a colleague by a swap request the office confirms | An anaesthetist **moves their own List** without office confirmation: to the AA office, where it becomes a Draft List, or pushed into a colleague's free Slot, with no acceptance needed (a high-trust system). The office is told through a **shared notification pool** in the Admin App and offered the cover-change update email; the colleague sees the List appear with a notice (OQ-65). An anaesthetist can also move a **single Booking** to a colleague who is free in that Slot: the move creates a List in the colleague's Slot holding it, and a Booking is never moved into another anaesthetist's existing List (OQ-85). Whoever moves a List off a Slot, the anaesthetist or the office, is asked whether the vacated Slot becomes free or unavailable (OQ-84). | Notes 2026-10-01 #15; Notes 2026-10-02 #6, #18; Notes 2026-10-02 · AA requirements review with Greg #3; Notes 2026-10-19 · AA meeting with Greg #6, #7, #16, #17 |
 | Who did a List's procedures not stated | **Whoever submits a List did its procedures.** If another anaesthetist does a Booking, it is moved to a List of theirs, even a one-Booking List; the payable follows the Booking. A prepaid Booking's payable is the AA Holding account, so it does not move: nothing detects the move or recalculates anything, and the prepayment is transferred from the AA Holding account to whoever did the List. | Notes 2026-10-01 #16, #38; Notes 2026-10-06 · AA directors meeting #10; Notes 2026-10-28 · AA meeting with Greg #63 |
 | A List leaves the anaesthetist's view once the office approves it for invoicing | The anaesthetist can still see and edit a submitted List until it is authorised; submitting still tells the office it has a job to do. Once authorised, the List is handed to invoicing and leaves the anaesthetist's main view (Lists not yet authorised, and upcoming work), and is found through a search, by patient name first and by NHI too, so an old Booking can be checked when an invoice is queried (OQ-31). | Notes 2026-10-07 · AA client meeting #2, #16; Notes 2026-10-16 · AA meeting with Greg #26, #33, #49 |
-| No surgeon master data beyond a name | Surgeons' rooms and surgeons are master data; a surgeon belongs to one or more rooms (OQ-128), and which room's contacts apply to a given Booking is open (OQ-127); each surgeon has a profile (NZ medical registration number and one HPI CPN identifier). **Private two-way preferences** (formerly the blacklist; a better name is still to choose) are kept by admin staff on surgeon and anaesthetist profiles: pairings someone does not want and pairings someone prefers. They are never shown to anaesthetists, and neither side learns of the other's. When admin assign or move a List, available anaesthetists with a conflict are shown separately from those without: information for the decision, never a block. There is no warning when an anaesthetist hands their own List to a colleague (OQ-43). Each anaesthetist also carries an admin-only **priority tier** (four tiers, Bronze the default; names provisional, OQ-102) that orders assignment suggestions, shuffled within a tier. The anaesthetist profile also holds the HPI CPN. | Notes 2026-09-29 #15, #16; Notes 2026-10-01 #19, #26; Notes 2026-10-07 · AA client meeting #4, #19 to #23; Notes 2026-11-04 · Donald working decisions #4 |
+| No surgeon master data beyond a name | Surgeons' rooms and surgeons are master data; a surgeon belongs to one or more rooms (OQ-128), and which room's contacts apply to a given Booking is open (OQ-127); each surgeon has a profile (NZ medical registration number and one HPI CPN identifier) and holds a list of **specialties**, usually one, from an AA-maintained list of broad specialties (Ophthalmology, General surgery, Plastic surgery, ENT, Gynaecology, Orthopaedics and so on; no subspecialties), which narrows the Contracts offered on their Lists. **Private two-way preferences** (formerly the blacklist; a better name is still to choose) are kept by admin staff on surgeon and anaesthetist profiles: pairings someone does not want and pairings someone prefers. They are never shown to anaesthetists, and neither side learns of the other's. When admin assign or move a List, available anaesthetists with a conflict are shown separately from those without: information for the decision, never a block. There is no warning when an anaesthetist hands their own List to a colleague (OQ-43). Each anaesthetist also carries an admin-only **priority tier** (four tiers, Bronze the default; names provisional, OQ-102) that orders assignment suggestions, shuffled within a tier. The anaesthetist profile also holds the HPI CPN. | Notes 2026-09-29 #15, #16; Notes 2026-10-01 #19, #26; Notes 2026-10-07 · AA client meeting #4, #19 to #23; Notes 2026-11-04 · Donald working decisions #4; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
 | No cancellation fee mentioned | AA charges no cancellation fees; a cancelled Booking's loss is taken. | Notes 2026-09-29 #1 |
-| Prepaid amount worked out by the office from a local table, six or seven time units chosen by the anaesthetist's rate | The prepaid amount is the **price on the prepaid Contract's line**, normally the anaesthetist's own price list (a surgeon's can be prepaid too, identified by practitioner ID): one line and price for each procedure they price this way, and a prepay line's price must be above zero. Greg: "technically it's an estimate, but it's the anaesthetist's price." Nothing is estimated from units (OQ-04, OQ-38). The anaesthetist sees the prepaid amount on the Booking. The office creates and maintains these Contracts, from the price list each anaesthetist supplies; anaesthetists do not create or edit Contracts in the app (OQ-91). Letters come from standard templates (OQ-58). A prepaid Procedure keeps the price on its issued prepayment invoice when the Contract's price changes before the procedure: a new Contract version does not relink it. Ben confirmed it on 27 October: "You would honour the money that's been prepaid, because that's the quote that the patient's been given" (OQ-104). | Notes 2026-09-29 #2; Notes 2026-10-06 · AA directors meeting #4, #5, #9; Notes 2026-10-07 · AA client meeting #3, #8, #17, #18; Notes 2026-10-07 · AA meeting with Greg #34, #36; Notes 2026-10-07 · Pricing model documents #35; Typed decision 2026-10-08 · Donald (product owner); Notes 2026-10-14 · AA meeting with Greg #5, #26; Notes 2026-10-16 · AA meeting with Greg #4, #20; Notes 2026-10-16 · Pricing model documents v6 #4; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-27 · AA meeting with Ben and Vanessa #1; Notes 2026-10-28 · AA meeting with Greg #44, #46 |
+| Prepaid amount worked out by the office from a local table, six or seven time units chosen by the anaesthetist's rate | The prepaid amount is the **price of the prepaid Contract** when its prepayment invoice is raised. Normally that is an item on the anaesthetist's own price list (a surgeon's can be prepaid too, the Contract linked to that surgeon): each item they price this way is a prepaid fixed-price Contract of its own, linked to them, whose price must be above zero. Where nothing is priced in advance, the office picks the Prepaid · Fixed price fallback and types the amount (Ben: "Oh, just make it two grand", 5 November). Greg: "technically it's an estimate, but it's the anaesthetist's price." Nothing is estimated from units (OQ-04, OQ-38). The anaesthetist sees the prepaid amount on the Booking. The office creates and maintains these Contracts, from the price list each anaesthetist supplies; anaesthetists do not create or edit Contracts in the app (OQ-91). Letters come from standard templates (OQ-58). A prepaid Procedure keeps the price on its issued prepayment invoice when the Contract's price changes before the procedure: a later price range does not move it. Ben confirmed it on 27 October: "You would honour the money that's been prepaid, because that's the quote that the patient's been given" (OQ-104). | Notes 2026-09-29 #2; Notes 2026-10-06 · AA directors meeting #4, #5, #9; Notes 2026-10-07 · AA client meeting #3, #8, #17, #18; Notes 2026-10-07 · AA meeting with Greg #34, #36; Notes 2026-10-07 · Pricing model documents #35; Typed decision 2026-10-08 · Donald (product owner); Notes 2026-10-14 · AA meeting with Greg #5, #26; Notes 2026-10-16 · AA meeting with Greg #4, #20; Notes 2026-10-16 · Pricing model documents v6 #4; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-27 · AA meeting with Ben and Vanessa #1; Notes 2026-10-28 · AA meeting with Greg #44, #46; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
 | Availability conflicts undecided (hard block or warning) | Soft warning for a hospital closure only: the Booking stays, and a conflict is flagged and coloured. An anaesthetist never keeps a List on a Slot they mark unavailable, whether planned or short-notice sickness: the system makes them return the List to the office (it becomes a Draft List) or assign it to a colleague there and then, so unavailability never leaves a conflict (OQ-64, OQ-81). A recurring booking landing on an unavailable Slot becomes a Draft List instead. Generation paints the anaesthetist's calendar first, then recurring bookings. | Notes 2026-09-29 #3; Notes 2026-10-02 #5, #27, #45; Notes 2026-10-02 · AA requirements review with Greg #1; Notes 2026-10-19 · AA meeting with Greg #5 |
 | Anaesthetist bank details location open | Held in the system, on the anaesthetist's profile; the only billing setting there is the unit rate (a dollar value per RVG unit), the rest being identity, contact and bank details. No GST period and no prepaid procedures. | Notes 2026-09-29 #4; Notes 2026-10-16 · AA meeting with Greg #22, #25 |
-| Office price override gated by the Contract | The office can always change any price, rate or discount, including a fixed fee (authorised, not hard-coded). It has no special authority: the office is normally the last to touch a Booking, and the last change stands. | Notes 2026-09-29 #5; Notes 2026-10-14 · AA meeting with Greg #24, #39; Notes 2026-10-16 · AA meeting with Greg #10 |
-| Prepayment refund handled ad hoc between anaesthetists | Prepaid money is not paid to the anaesthetist until the procedure is done: the prepayment invoice's payable is to the **AA Holding account**, an accounts payable creditor in the payables sub-ledger alongside each anaesthetist (Greg: "a fake anaesthetist"), not a bank account and not a Xero ledger account. The money itself sits in AA's **trust account**, the bank account. Cancelling a prepaid Booking automatically credits its prepayment invoice if unpaid, or refunds it in full if paid; a prepaid Procedure whose Contract is changed to one not flagged as prepaid after the prepayment invoice is sent or paid is handled the same way (OQ-119). A Booking moved to another anaesthetist keeps the agreed prepaid amount and the anaesthetist who does it is paid, wearing or benefiting from any difference: the new anaesthetist claims the prepaid amount, the payable does not move because it is the AA Holding account, and nothing is recalculated (OQ-70, OQ-80; Ben confirmed it on 27 October). The patient may be sent an informational email that their anaesthetist has changed. Prepayment is two steps: the money is collected against the AA Holding account, then, when the List is authorised (the engine acts only then), it is moved by a journal transfer (an accounting move, not a payment) to the anaesthetist who did the procedure. The AA Holding account is never paid itself, and money leaves it only through the system (a transfer or a refund the system raises); the payments themselves are made in Xero, which the system tracks (OQ-111). A prepaid Contract is never editable, so the price stands; any difference is a second invoice or credit raised by hand, and the office can still change any price (OQ-96). | Notes 2026-09-29 #6; Notes 2026-10-01 #2, #16, #57; Notes 2026-10-02 #11; Notes 2026-10-06 · AA directors meeting #10; Notes 2026-10-19 · AA meeting with Greg #4, #15; Notes 2026-10-27 · AA meeting with Ben and Vanessa #2; Notes 2026-10-28 · AA meeting with Greg #1, #8, #47, #57, #62, #63, #64, #65; Notes 2026-11-04 · Donald working decisions #2, #5 |
+| Office price override gated by the Contract | The office can always change any price, including a fixed fee (authorised, not hard-coded); a Contract's rate and discount are settings the office edits on the Contract itself (Donald's decisions 2026-11-05), and a prepaid Procedure's price stands once its prepayment invoice is raised (our reading). It has no special authority: the office is normally the last to touch a Booking, and the last change stands. | Notes 2026-09-29 #5; Notes 2026-10-14 · AA meeting with Greg #24, #39; Notes 2026-10-16 · AA meeting with Greg #10 |
+| Prepayment refund handled ad hoc between anaesthetists | Prepaid money is not paid to the anaesthetist until the procedure is done: the prepayment invoice's payable is to the **AA Holding account**, an accounts payable creditor in the payables sub-ledger alongside each anaesthetist (Greg: "a fake anaesthetist"), not a bank account and not a Xero ledger account. The money itself sits in AA's **trust account**, the bank account. Cancelling a prepaid Booking automatically credits its prepayment invoice if unpaid, or refunds it in full if paid; a prepaid Procedure whose Contract is changed to one not flagged as prepaid after the prepayment invoice is sent or paid is handled the same way (OQ-119). A Booking moved to another anaesthetist keeps the agreed prepaid amount and the anaesthetist who does it is paid, wearing or benefiting from any difference: the new anaesthetist claims the prepaid amount, the payable does not move because it is the AA Holding account, and nothing is recalculated (OQ-70, OQ-80; Ben confirmed it on 27 October). The patient may be sent an informational email that their anaesthetist has changed. Prepayment is two steps: the money is collected against the AA Holding account, then, when the List is authorised (the engine acts only then), it is moved by a journal transfer (an accounting move, not a payment) to the anaesthetist who did the procedure. The AA Holding account is never paid itself, and money leaves it only through the system (a transfer or a refund the system raises); the payments themselves are made in Xero, which the system tracks (OQ-111). A prepaid Contract never allows the anaesthetist's price override, so the price stands; any difference is a second invoice or credit raised by hand (OQ-96). The office can change the price until the prepayment invoice is raised, after which the invoiced amount stands (our reading of Donald's decisions 2026-11-05). | Notes 2026-09-29 #6; Notes 2026-10-01 #2, #16, #57; Notes 2026-10-02 #11; Notes 2026-10-06 · AA directors meeting #10; Notes 2026-10-19 · AA meeting with Greg #4, #15; Notes 2026-10-27 · AA meeting with Ben and Vanessa #2; Notes 2026-10-28 · AA meeting with Greg #1, #8, #47, #57, #62, #63, #64, #65; Notes 2026-11-04 · Donald working decisions #2, #5 |
 | Unpaid-patient alert on any unpaid invoice | Alert on patients with outstanding balances: mild under a threshold, strong above it (90 days to start, may move); the threshold applies only to amounts owing. The days count from the invoice date, and a credit balance raises a mild warning (OQ-74). | Notes 2026-09-29 #10; Notes 2026-10-01 #17; Notes 2026-10-02 #15 |
-| Late billing lines added by the anaesthetist as supplementary invoices; adhoc billing after invoicing was open (OQ-24) | **Additional invoices** are a free-form function (description, quantity, amount; no pricing rules), created by admin staff (and, where a prepaid or fixed-price procedure's work differed, by the anaesthetist) to any billable party, recorded as an **event** on a Procedure and traceable to the original; no Contract or pricing rules; used for supplementary charges and for splitting a combined fixed-price Procedure. Like every event they go through the one standard review step (OQ-63). The function has a **credit note option**: the original is credited to any party, the original billable party included, then new additional invoices are raised (OQ-72). The rebilled invoices must equal the credited one, and the credit reverses the linked payable to the anaesthetist (OQ-77 parts 1 and 2); a split asked for before the combined invoice is sent, while the List is not yet authorised and handed to billing, is a normal admin edit of the Booking's Procedures, Contracts and prices, with no credit (OQ-77). Nothing is invoiced or credited automatically after a prepaid procedure or on any fixed-price Contract: where the work differed, the anaesthetist (or the office) raises an additional invoice or credit note by hand. Each additional invoice raised after the original has gone is an invoice of its own, with its own ledger pair, Xero pair and anaesthetist payable; like every event, it is billed in the next run and never held for the Procedure's own invoice (see Events; OQ-121; Notes 2026-10-16 · AA meeting with Greg #59, #61). | Notes 2026-09-29 #8, #18, #23, #29; Notes 2026-10-01 #21; Notes 2026-10-02 #4, #13, #32, #33; Notes 2026-10-06 · AA directors meeting #1, #2, #10; Notes 2026-10-07 · AA client meeting #9; Notes 2026-10-19 · AA meeting with Greg #2; Notes 2026-11-04 · Donald working decisions #3 |
+| Late billing lines added by the anaesthetist as supplementary invoices; adhoc billing after invoicing was open (OQ-24) | **Additional invoices** are a free-form function (description, quantity, amount; no pricing rules), created by admin staff (and, where a prepaid or fixed-price procedure's work differed, by the anaesthetist) to any billable party, recorded as an **event** on a Procedure and traceable to the original; no Contract or pricing rules; used for supplementary charges and for splitting a combined fixed-price Procedure. Like every event they go through the one standard review step (OQ-63). The function has a **credit note option**: the original is credited to any party, the original billable party included, then new additional invoices are raised (OQ-72). The rebilled invoices must equal the credited one, and the credit reverses the linked payable to the anaesthetist (OQ-77 parts 1 and 2); a split asked for before the combined invoice is sent, while the List is not yet authorised and handed to billing, is a normal admin edit of the Booking's Procedures, Contracts and prices, with no credit (OQ-77). Nothing is invoiced or credited automatically after a prepaid procedure or on any fixed-price or open-price Contract: where the work differed, the anaesthetist (or the office) raises an additional invoice or credit note by hand. Each additional invoice raised after the original has gone is an invoice of its own, with its own ledger pair, Xero pair and anaesthetist payable; like every event, it is billed in the next run and never held for the Procedure's own invoice (see Events; OQ-121; Notes 2026-10-16 · AA meeting with Greg #59, #61). | Notes 2026-09-29 #8, #18, #23, #29; Notes 2026-10-01 #21; Notes 2026-10-02 #4, #13, #32, #33; Notes 2026-10-06 · AA directors meeting #1, #2, #10; Notes 2026-10-07 · AA client meeting #9; Notes 2026-10-19 · AA meeting with Greg #2; Notes 2026-11-04 · Donald working decisions #3 |
 | No self-service for late lines (today the anaesthetist rings or emails the office) | **Events**: everything recorded against a Procedure after it is set up (pre-op, post-op, billing events, additional invoices, credits) is an event, its own element attached to the original Procedure, linked in reference rather than in time, and visible on it in both apps. The "other billing lines" (post-op, nerve catheters, pain consults) are merged into events. The anaesthetist mostly adds pre-op and post-op events themselves (self-service), and the admin team can too; each is a time recording or a fixed fee with its own date and time, no other modifiers, and a tick box for whether it will be invoiced. A **billing event** is a free-form way to invoice against a Procedure and its Contract: a charge with a free-text description, or a credit. A billable event is its own line item, through the one standard review step (OQ-63). An event marked for invoicing is billed in the next billing run and never held for the Procedure's own invoice: it goes on the same invoice as other lines for the same billable party in that run where it can, otherwise it is an invoice of its own, with no rules by kind of event (OQ-121). Events appear on no List or schedule, even when dated differently: they live with the Booking. A refund can also show as an event, best done on the web. Covers pain management after the procedure and ACC pre-op assessments. The name "events" is kept for now. | Notes 2026-10-01 #6, #34, #61; Notes 2026-10-02 #4, #24, #25, #44; Notes 2026-10-16 · AA meeting with Greg #45, #59, #61, #62; Notes 2026-10-28 · AA meeting with Greg #23, #24; Notes 2026-11-04 · Donald working decisions #3 |
 | Correction after invoicing by credit note and re-issue, policy open (OQ-28) | A wrong invoice is **credited in full, then rebilled**; never retracted, edited or partly adjusted. Additional invoice is reserved for supplementary charges and splits. A refund after the anaesthetist has been paid is a credit note to the billable party and a **negative invoice** to the anaesthetist, netted in their next payment run and shown on the remittance advice (OQ-42). With no later payment to net against, it is handled outside the system (OQ-71). A credit note is not a refund: a refund of a resulting credit happens outside the system. Whether a prepayment invoice can be credited in part, when only part of the prepaid work was done, is open (OQ-97). | Notes 2026-09-29 #9, #12, #34; Notes 2026-10-01 #18; Notes 2026-10-02 #12, #33; Notes 2026-10-06 · AA directors meeting #10 |
 | No path for telling hospitals about Booking changes | An on-demand button on any Booking in the Admin App lets the admin **draft an update email** via a mailto link (plain text, about 2,000 characters), prefilled with a subject, boilerplate, the changes the admin picks (one or many) from the Booking's change history and, where known, the To address (OQ-69). Contact emails are held for hospitals and surgeons' rooms. The system sends nothing. It is addressed to the hospital contact for a cover change and to the surgeon's room for a Booking change (OQ-46). Proposed: user-configurable templates, one per kind of change. Manual in the MVP; sending change emails automatically is later work (OQ-82). | Notes 2026-09-29 #19; Notes 2026-10-01 #22; Notes 2026-10-02 #10, #31; Notes 2026-10-07 · AA client meeting #11, #13, #25 |
-| The Contract decides who is invoiced | The Contract decides who is billed, through its **contract holder**, with as many Contracts as AA needs (OQ-67). A holder that pays AA itself (an insurer, a hospital) is billed through its own billable party record; a holder that only sets the price (a surgeon's fixed-fee arrangement, an anaesthetist's own price list) leaves the **payer on the Booking** to be billed, as No contract (RVG) does. The only per-Booking choices are the Contract and the payer named on the Booking; splitting one Procedure's fee between two payers is an action on the Booking, not a Contract setting (US-08.2.3). Billable parties are held as reference records (hospitals, surgeons, insurers and patients; a guardian or other payer is entered as the Booking's payer), and no invoice email sits on the Contract. Insurers are contract holders like any other: there is no insurer master list. Each contract holder has a setting for how its invoices are delivered, by email or another output (OQ-114). A holder linked to an anaesthetist or a surgeon has its Contracts offered only on that person's Bookings. No contract (RVG) is held by AA, which is never billed, so it bills the payer on the Booking (OQ-78). A Contract stays one unit: how it prices and who it bills are not picked separately, so two Contracts with the same pricing but different payers are two Contracts. | Notes 2026-09-29 #24; Notes 2026-10-01 #29; Notes 2026-10-02 #4, #8, #41; Notes 2026-10-07 · AA meeting with Greg #7, #26, #29; Notes 2026-10-07 · Pricing model documents #11, #22, #34; Typed decision 2026-10-05 · Donald (product owner); Notes 2026-10-14 · AA meeting with Greg #13, #31; Notes 2026-10-16 · AA meeting with Greg #64; Notes 2026-10-16 · Pricing model documents v6 #15, #24; Notes 2026-10-28 · AA meeting with Greg #3, #40 |
-| Contracts filtered by the patient's insurer or funding source | Where a Booking is insured, the **insurer and the insurance approval number** (the reference the insurer gives when it accepts the claim) are fields on the Booking, shown on the matching screen and editable by the office and by the anaesthetist on the day; where the Booking holds an approval number, the anaesthetist sees the number itself. A missing approval number on an insured Booking is a warning (OQ-93). A code such as SXAP from the rooms or the hospital says the hospital is arranging the cover and is the billable party, not that the cover is approved. Insurance does not narrow the Contract list, and the missing approval number is the only insurance warning (OQ-93). The Contract decides who is billed. The office identifies who pays and then the Contract, and its line where it has lines. The working direction, a guess and not agreed, is a step rail asking who the invoice goes to (the patient, the List's hospital, or a special contract), then whether it is prepaid or under which Contract, then the price; the office's job ends at the Contract, and a Contract priced from the RVG goes to the anaesthetist for the RVG code. The list shows Contracts, not lines: No contract (RVG) first, then the hospital's Contracts, then any surgeons' and anaesthetists' arrangements, those valid on the procedure date whose holder fits the Booking. The RVG code is optional for the office; picked first, it finds the lines carrying it as their default RVG code. Holder codes are kept as searchable references, and every Contract carries a short structured AA code (format still to be designed) (OQ-66). | Notes 2026-10-01 #10, #27, #29; Notes 2026-10-02 #7; Notes 2026-10-07 · AA meeting with Greg #2, #6, #27; Notes 2026-10-07 · Pricing model documents #11, #34; Notes 2026-10-14 · AA meeting with Greg #3, #19, #32, #33; Notes 2026-10-16 · AA meeting with Greg #1, #39, #40; Notes 2026-10-16 · Pricing model documents v6 #5, #31; Notes 2026-10-23 · AA meeting with Greg #1; Notes 2026-10-28 · AA meeting with Greg #4, #41; Notes 2026-11-04 · Donald working decisions #6, #9 |
-| The default Contract | **No contract (RVG)** is the one default for the whole system: standard RVG pricing at the anaesthetist's own unit value, offered first. Behind the scenes it is a Contract like any other, held by AA, whose holder is never billed, so every Procedure is priced the same way: exactly one, carrying no practice-wide prices, and it never expires. It bills the payer on the Booking (OQ-78); insured patients who claim the money back themselves are billed under it. There are no hospital, insurer or per-procedure default Contracts. It carries no routine procedures as lines in the first release; loading frequently performed procedures as lines of it is a possible later option (OQ-106). No competition-law rule stops other Contracts carrying fixed prices: AA accepts vendors' price offers (for example ACC's negotiated rates) as Contracts. | Notes 2026-09-29 #24; Notes 2026-10-07 · AA meeting with Greg #7, #54, #59, #60, #61; Notes 2026-10-07 · Pricing model documents #2, #10, #37; Notes 2026-10-14 · AA meeting with Greg #17, #19; Notes 2026-10-16 · Pricing model documents v6 #15, #22, #51; Notes 2026-10-28 · AA meeting with Greg #15 |
-| Contract prices have one Contract-level effective date | Each **Contract is a series of dated versions**, its dates shared by all its lines. Every change, a correction to some lines or a periodic renewal of the whole schedule, creates a new version from a date the office chooses, never in the past and never backdated; nothing is deleted. The previous version ends the day before, versions never overlap or leave a gap, and a Contract may have only one future-dated version, which can be corrected freely until it takes effect. The version in force on the procedure date prices it (OQ-48). On submit, un-invoiced Procedures dated on or after the new version's start are relinked to the new version's line with the same line key; any with no match are listed for the office to resolve. A prepaid Procedure is not relinked: it keeps the price on its issued prepayment invoice. One procedure can have different prices under different arrangements, each its own Contract. How the office keeps a Contract's prices and dates current day to day (whole-Contract dated versions, a date on each line, or editing in place with an audit trail) is open, for Vanessa (OQ-131). | Notes 2026-09-29 #25; Notes 2026-10-07 · AA meeting with Greg #39, #40; Notes 2026-10-07 · AA client meeting #6; Notes 2026-10-07 · Pricing model documents #18, #23, #36; Notes 2026-10-16 · AA meeting with Greg #15, #16; Notes 2026-10-16 · Pricing model documents v6 #42, #43, #47; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-23 · AA meeting with Greg #85; Notes 2026-11-04 · Donald working decisions #10 |
-| Base units come from the RVG code | Base units sit on the **RVG group** (as published, plus AA's own), and a **Contract line** may state its own for that Contract (OQ-62); position loadings are modifiers (OQ-06). There is no procedure list: the RVG groups are the one master list, and the procedure on a Booking is the text received (OQ-88). The anaesthetist picks the RVG code with a type-ahead showing each row's code, short description and base units; the office may enter one if they know it. RVG groups are seeded once from spreadsheets, then maintained by hand, so a rare RVG change is applied by hand. A base unit overridden consistently means AA changes its own data. | Notes 2026-09-29 #30; Notes 2026-10-01 #4, #59; Notes 2026-10-07 · AA meeting with Greg #62; Notes 2026-10-07 · Pricing model documents #8, #21; Notes 2026-10-14 · AA meeting with Greg #1, #19, #20; Notes 2026-10-16 · AA meeting with Greg #21; Notes 2026-10-16 · Pricing model documents v6 #1, #23 |
+| The Contract decides who is invoiced | The Contract decides who is billed, through its own setting, with as many Contracts as AA needs (OQ-67): it **bills its holder** (the party that holds it pays AA itself: a hospital, an insurer or funder, a surgeon group billed directly) or it **bills the payer on the Booking** (a surgeon's fixed fee, an anaesthetist's own price list, No contract · RVG). Holders are **parties**: one shared record for each hospital, insurer or funder, surgeon or surgeon group, anaesthetist, and AA, holding the billing name and details and how its invoices are delivered, by email or another output (OQ-114). Insurers are parties like any other: there is no separate insurer master list. A Contract held by AA or an anaesthetist always bills the payer (our reading). The only per-Booking choices are the Contract and the payer named on the Booking; splitting one Procedure's fee between two payers is an action on the Booking, not a Contract setting (US-08.2.3). No invoice email sits on the Contract. Where a Contract is offered is set on the Contract itself: a hospital's Contracts on that hospital's Lists; a Contract linked to surgeons, or to one anaesthetist, on those people's Lists; an insurer's or funder's Contract with no links on every List; and in each case only where the Contract's specialties include the List surgeon's, or it has none. No contract · RVG is held by AA, which is never billed, so it bills the payer on the Booking (OQ-78). A Contract stays one unit: how it prices and who it bills are not picked separately, so two Contracts with the same pricing but different payers are two Contracts. | Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05; Notes 2026-09-29 #24; Notes 2026-10-01 #29; Notes 2026-10-02 #4, #8, #41; Notes 2026-10-07 · AA meeting with Greg #7, #26, #29; Notes 2026-10-07 · Pricing model documents #11, #22, #34; Typed decision 2026-10-05 · Donald (product owner); Notes 2026-10-14 · AA meeting with Greg #13, #31; Notes 2026-10-16 · AA meeting with Greg #64; Notes 2026-10-16 · Pricing model documents v6 #15, #24; Notes 2026-10-28 · AA meeting with Greg #3, #40 |
+| Contracts filtered by the patient's insurer or funding source | Where a Booking is insured, the **insurer and the insurance approval number** (the reference the insurer gives when it accepts the claim) are fields on the Booking, shown on the matching screen and editable by the office and by the anaesthetist on the day; where the Booking holds an approval number, the anaesthetist sees the number itself. A missing approval number on an insured Booking is a warning (OQ-93). A code such as SXAP from the rooms or the hospital says the hospital is arranging the cover and is the billable party, not that the cover is approved; SXAP, HNZ and ACC are now **funding tags** on the hospital's Contracts. Insurance does not narrow the Contract list, and the missing approval number is the only insurance warning (OQ-93): the Booking's insurer or funder only marks one path on the step rail as "Suggested". The Contract decides who is billed. The office picks it on a **step rail**: where does the invoice go (Patient, the List's hospital, or Special), then the payment type (Standard or Prepaid) or the hospital's funding tag, then the Contract itself, found by typing (Ben: "CAT", and cataract comes up), or an "Other price" toggle that picks an open price for an amount typed on the Procedure. A step with only one possible answer fills itself in. The office's job ends at the Contract, and a Contract priced from the RVG goes to the anaesthetist for the RVG code, time and modifiers. Holder codes are kept as searchable references, typing an RVG code finds the Contracts that carry it as their default, and every Contract carries a short structured AA code (format still to be designed) (OQ-66). | Notes 2026-10-01 #10, #27, #29; Notes 2026-10-02 #7; Notes 2026-10-07 · AA meeting with Greg #2, #6, #27; Notes 2026-10-07 · Pricing model documents #11, #34; Notes 2026-10-14 · AA meeting with Greg #3, #19, #32, #33; Notes 2026-10-16 · AA meeting with Greg #1, #39, #40; Notes 2026-10-16 · Pricing model documents v6 #5, #31; Notes 2026-10-23 · AA meeting with Greg #1; Notes 2026-10-28 · AA meeting with Greg #4, #41; Notes 2026-11-04 · Donald working decisions #6, #9; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
+| The default Contract | **No contract · RVG** is the one built-in default for the whole system: standard RVG pricing at the anaesthetist's own unit value, offered first under Patient › Standard, with the anaesthetist's price override allowed. Behind the scenes it is a Contract like any other, held by AA, whose holder is never billed, so every Procedure is priced the same way: exactly one, carrying no practice-wide prices, never disabled, and found by its system role, never by its name. It bills the payer on the Booking (OQ-78); insured patients who claim the money back themselves are billed under it. Beside it, every invoice destination has exactly one **open-price fallback**, created by the system, with no price of its own: No contract · Fixed price (Patient, Standard) and Prepaid · Fixed price (Patient, Prepaid), both held by AA; one for each hospital and funding tag (for example Forte · SXAP · Fixed price, billing Forte); and one for each Special holder (for example NIB · Fixed price). The "Other price" toggle picks it, and the amount is typed on the Procedure. This reverses "no hospital, insurer or per-procedure default Contracts" (OQ-78 needs re-answering on that point). There are no lines: a routine procedure with its own price is a Contract of its own (OQ-106 is moot). No competition-law rule stops other Contracts carrying fixed prices: AA accepts vendors' price offers (for example ACC's negotiated rates) as Contracts. | Notes 2026-09-29 #24; Notes 2026-10-07 · AA meeting with Greg #7, #54, #59, #60, #61; Notes 2026-10-07 · Pricing model documents #2, #10, #37; Notes 2026-10-14 · AA meeting with Greg #17, #19; Notes 2026-10-16 · Pricing model documents v6 #15, #22, #51; Notes 2026-10-28 · AA meeting with Greg #15; Donald's decisions 2026-11-05 |
+| Contract prices have one Contract-level effective date | **Contracts are edited in place, and only a fixed price is dated.** None of a Contract's settings is dated: a change is an audited edit, and a setting that must change from a date means a new Contract, the old one then being Disabled. A fixed-price Contract holds one or more **price ranges**, each a start date and a price: a range ends the day before the next one starts, so ranges never overlap or leave a gap, and a start may be in the past (entered on 5 November, "this price from 1 October"). The range in force on the procedure date gives the price, and a Procedure follows it until something holds the price: $500 when booked, a $550 range from before the procedure, invoiced $550. A prepaid Procedure keeps the price on its prepayment invoice (OQ-104), a price a person typed keeps the edit, and the snapshot at AUTHORISED freezes everything. One procedure can have different prices under different arrangements, each its own Contract. This answers how the office keeps prices current (OQ-131): Vanessa finds each Contract on screen and edits it (Meeting 2026-11-05 · Ben and Vanessa). Price ranges were Donald's idea at the 23 October meeting with Greg, here without a code per range. | Donald's decisions 2026-11-05; Meeting 2026-11-05 · Ben and Vanessa; Notes 2026-09-29 #25; Notes 2026-10-07 · AA client meeting #6; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-23 · AA meeting with Greg #53, #55, #59, #85; Notes 2026-11-04 · Donald working decisions #10 |
+| Base units come from the RVG code | Base units sit on the **RVG group** (as published, plus AA's own); a Contract does not state its own (Donald's decisions 2026-11-05 have no such setting, so OQ-62 needs re-answering); position loadings are modifiers (OQ-06). There is no procedure list: the RVG groups are the one master list, and the procedure on a Booking is the text received (OQ-88). The anaesthetist picks the RVG code with a type-ahead showing each row's code, short description and base units; the office may enter one if they know it. RVG groups are seeded once from spreadsheets, then maintained by hand, so a rare RVG change is applied by hand. A base unit overridden consistently means AA changes its own data. | Notes 2026-09-29 #30; Notes 2026-10-01 #4, #59; Notes 2026-10-07 · AA meeting with Greg #62; Notes 2026-10-07 · Pricing model documents #8, #21; Notes 2026-10-14 · AA meeting with Greg #1, #19, #20; Notes 2026-10-16 · AA meeting with Greg #21; Notes 2026-10-16 · Pricing model documents v6 #1, #23 |
 | Billable party defaults to the patient | Every Booking names a **payer**, prefilled from the patient and changeable by the office or the anaesthetist to a parent, guardian or other party, such as a benefactor or a family trust; the payer is billed whenever the Contract does not bill its holder, and needs an email or a postal address (NZ Post standard). A patient under 18 as the payer is a **mild warning** to AA staff, clearable from the dashboard, not a block (no warning when the billable party is, say, a hospital); the office checks the guardian's contact details (OQ-54). A guardian's or other payer's details are held as the Booking's payer, kept for the life of the debt and then archived. | Notes 2026-09-29 #20; Notes 2026-10-01 #28; Notes 2026-10-07 · AA meeting with Greg #25; Notes 2026-10-07 · Pricing model documents #11, #25, #34; Notes 2026-10-28 · AA meeting with Greg #29, #34 |
 | Billing failure scope open (OQ-05) | Failure is **per Booking**: other Bookings on the List still invoice. If any Procedure's billable party fails, the whole Booking is held back for AA admin staff to fix manually. | Notes 2026-10-01 #3 |
 | No common warning model | **One warning routine** checks conditions and raises warnings, several per Booking if need be, of a before-procedure or after-procedure kind, mild or strong. They show on the admin dashboard as a to-do list, where they can be cleared, and as a small warning flag on the Booking in both apps, visually clear when the anaesthetist opens the Booking, much like the prototype; no confirm step on submit. Warnings are soft, never blocks. A settings page for thresholds, active warnings and switching off check steps is built only when AA asks. | Notes 2026-10-01 #28, #30, #31, #32, #47, #65; Notes 2026-10-02 · AA requirements review with Greg #15, #16 |
@@ -53,7 +53,7 @@ The Contract structure here (RVG groups, contract holders, Contracts and their l
 | No GST schedule mentioned | A monthly **GST report** for each anaesthetist's GST return: a list of the payments AA passed to them in the month, with the GST component of each. It lists payments, not invoices sent, since an invoice may be paid in part (for example on a repayment plan). There is no GST period. Wanted early; release slot unconfirmed. | Notes 2026-10-01 #40; Notes 2026-10-16 · AA meeting with Greg #22, #24 |
 | Fee schedules quoted GST inclusive, exclusive or both | Every price is held **GST exclusive**; GST is calculated when needed and goes at the foot of the invoice. | Notes 2026-10-07 · AA meeting with Greg #32 |
 | Payment day and cycle not settled | Proposed: a **weekly payment cycle** identified by ISO week number (Friday close and ledger snapshot, Monday for the office to resolve issues, payment on Tuesday, anomalies rolled into the next cycle). The prototype and requirements build to it; it stays a question for AA's accountant (OQ-47). | Notes 2026-10-07 · AA client meeting #5, #15 |
-| RFP response: master and reference data migrated at cutover | Clean cut. Reference data loaded once by a one-off data load (what is loaded, and from where, is not yet clear), then maintained by hand. Separately, a mechanism to **upload a Contract's schedule** is a requirement, for Contracts only. Greg's v6 proposal: the office maintains one Contract at a time on a header and lines screen; edits and uploads (in the AA template, **Alter** to change some lines or **Replace** for a whole new schedule) are staged on a review dashboard and submitted together, creating a new dated version. Whether the upload is in the first release is open (OQ-100). | Notes 2026-09-29 #27, #28; Notes 2026-10-07 · AA meeting with Greg #48, #62; Notes 2026-10-16 · AA meeting with Greg #17, #18; Notes 2026-10-16 · Pricing model documents v6 #40 to #46 |
+| RFP response: master and reference data migrated at cutover | Clean cut. Reference data loaded once by a one-off data load (what is loaded, and from where, is not yet clear), then maintained by hand. Bulk upload and export of Contracts are out of scope for now, Future Work (Donald's decisions 2026-11-05; OQ-100 to answer): Vanessa wants to maintain prices by finding each item and editing it on screen ("That's what I'd love to do"). Ben wants a safe, secure source of truth for the contracts; Donald's position is that the system is that source of truth, backed up by its hosting (Meeting 2026-11-05 · Ben and Vanessa). | Notes 2026-09-29 #27, #28; Notes 2026-10-07 · AA meeting with Greg #48, #62; Notes 2026-10-16 · AA meeting with Greg #17, #18; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05 |
 
 Everything else in the RFP (Xero pairing, NHI change, archiving, time tiers,
 per-anaesthetist unit value, roles, audit) carries forward unchanged, except that the audit trail
@@ -85,18 +85,23 @@ erDiagram
   BOOKING }o--|| PATIENT : for
   BOOKING ||--|| PAYER : "names (prefilled from patient)"
   BOOKING ||--|{ BOOKING_PROCEDURE : "1 primary + 0..n additional (the catalogue's Procedure)"
+  BOOKING }o--o| PARTY : "insurer or funder (suggests a path only)"
   CONTRACT ||--o{ BOOKING_PROCEDURE : "prices (exactly 1 each)"
-  CONTRACT_LINE |o--o{ BOOKING_PROCEDURE : "priced under (optional; line of its Contract)"
   RVG_GROUP |o--o{ BOOKING_PROCEDURE : "base units from"
-  RVG_GROUP |o--o{ CONTRACT_LINE : "default RVG code"
-  CONTRACT_HOLDER ||--o{ CONTRACT : "holds (AA holds No contract (RVG))"
-  CONTRACT_HOLDER }o--o| BILLABLE_PARTY : "billed when it is the billable party"
-  CONTRACT_HOLDER }o--o{ PRACTITIONER : "linked anaesthetist, or one or more surgeons"
-  CONTRACT |o--o| CONTRACT : "revised by (forward link to the next dated version)"
-  CONTRACT ||--o{ CONTRACT_LINE : "contains (may hold none)"
-  BOOKING_PROCEDURE ||--o{ BOOKING_MODIFIER : "itemised, with explanation [our addition, not in ERD v6 (AR-30)]"
-  MODIFIER ||--o{ BOOKING_MODIFIER : "chosen; age and included modifiers pre-applied, none locked [our addition, not in ERD v6 (AR-30)]"
-  RVG_GROUP }o--o{ MODIFIER : "included in base units (P1 on Neuro, Spine) [our addition, not in ERD v6 (AR-30)]"
+  RVG_GROUP |o--o{ CONTRACT : "default RVG code"
+  PARTY ||--o{ CONTRACT : "holds (AA holds No contract and the Patient fallbacks)"
+  PARTY |o--o| HOSPITAL : "bills for (a hospital party)"
+  CONTRACT ||--o{ PRICE_RANGE : "priced by (fixed price only, 1 or more)"
+  CONTRACT }o--o{ SPECIALTY : "applies to (none means every specialty)"
+  SURGEON }o--|{ SPECIALTY : "practises (usually one)"
+  CONTRACT }o--o| FUNDING_TAG : "tagged (SXAP, HNZ, ACC)"
+  CONTRACT }o--o{ SURGEON : "linked surgeons"
+  CONTRACT }o--o| ANAESTHETIST : "linked anaesthetist (at most one)"
+  PARTY |o--o{ INVOICE : "billed when its Contract bills its holder"
+  PAYER |o--o{ INVOICE : "billed when the Contract bills the payer"
+  BOOKING_PROCEDURE ||--o{ BOOKING_MODIFIER : "itemised, with explanation [our addition, not in Greg's ERD v6]"
+  MODIFIER ||--o{ BOOKING_MODIFIER : "chosen; age and included modifiers pre-applied, none locked [our addition, not in Greg's ERD v6]"
+  RVG_GROUP }o--o{ MODIFIER : "included in base units (P1 on Neuro, Spine) [our addition, not in Greg's ERD v6]"
   BOOKING_PROCEDURE ||--o{ EVENT : "pre-op, post-op, billing event, additional invoice, credit, refund"
   ANAESTHETIST ||--|| PROFILE : "unit $"
   BOOKING ||--o{ INVOICE : "1 per distinct billable party (+ prepayment)"
@@ -114,7 +119,7 @@ erDiagram
 
 **Hierarchy:** Day → Slot → List → Booking → Procedure (a booking procedure) → priced under exactly one Contract, with events on the Procedure. Slots and Lists are both children of the day: a List is put into a Slot. This is the logical model; how it is stored is for the developers. A Draft List sits outside the Slots until assigned (Notes 2026-10-01 #27, #42; Notes 2026-10-02 #4, #5, #23, #29).
 
-**Procedures and Contracts.** The master data is the RVG group, and contract holder → Contract (a series of dated versions) → contract line. Each RVG group is as published plus AA's own, with base units (required, above 0) and modifier units (default 0). A contract holder is an insurer, a hospital, a surgeon, or an anaesthetist (AA itself holds No contract (RVG)), and holds many Contracts. A Contract is a dated version (start, optional end, and a forward link to the version that revised it) holding contract lines; it may hold none, as a hospital's plain RVG Contract does. A line sets the terms for a group of procedures (for example "Cataracts" or "Facelift plus 1 add on"), may reference an RVG group as its default RVG code, and stands alone: lines do not nest, and several may share an RVG code. There is no procedure level: no procedure list sits between the text received and the RVG (OQ-88). Each Procedure on a Booking is priced under exactly one Contract and, where the Contract has lines, one of its lines. This shape is the technical design v6 and its ERD ([AR-29](artifacts/AR-29.md), data model; [AR-30](artifacts/AR-30.md)), Greg's proposal. The design's ERD has no entity for modifiers; BOOKING_MODIFIER, MODIFIER and the RVG group's "included" link are our addition, labelled so in the diagram, not part of ERD v6 (AR-30), and whether any modifier is applied and locked is open (OQ-95) (Notes 2026-10-06 · AA directors meeting #7; Notes 2026-10-14 · AA meeting with Greg #1, #29, #30; Notes 2026-10-16 · AA meeting with Greg #21; Notes 2026-10-16 · Pricing model documents v6 #1, #2, #12, #23 to #26, #52).
+**Procedures and Contracts.** The master data is the RVG group, and party → Contract (→ price ranges, for a fixed price). Each RVG group is as published plus AA's own, with base units (required, above 0) and modifier units (default 0). A **party** is the shared record for anyone who holds Contracts: a hospital, an insurer or funder, a surgeon or surgeon group, an anaesthetist, or AA (which holds No contract · RVG and the two Patient fallbacks). A hospital's party points at the hospital master record, which is how "held by the List's hospital" is tested; surgeons and anaesthetists are tied to Contracts by each Contract's own links, not through a party, and a surgeon group's party has no link to the group's membership (our reading). A **Contract** is one priced item with its own settings: there is no parent schedule or price list and no contract lines, so a holder's schedule document (for example "SXAP Ptosis and Blephs") becomes many separate Contracts, one per item. Ben and Vanessa call these "procedures"; the model keeps the name Contract. A Contract may name an RVG group as its default RVG code, and several may share one. It holds zero or more **specialties** from an AA-maintained list (none means every specialty) and at most one **funding tag** (SXAP, HNZ, ACC, from another AA-maintained list); a surgeon holds one or more specialties. Only a fixed-price Contract is dated, through its price ranges. There is no procedure level: no procedure list sits between the text received and the RVG (OQ-88). Each Procedure on a Booking is priced under exactly one Contract (Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05). Greg's ERD v6 had no entity for modifiers; BOOKING_MODIFIER, MODIFIER and the RVG group's "included" link are our addition, labelled so in the diagram, and whether any modifier is applied and locked is open (OQ-95) (Notes 2026-10-06 · AA directors meeting #7; Notes 2026-10-14 · AA meeting with Greg #1, #29, #30; Notes 2026-10-16 · AA meeting with Greg #21; Notes 2026-10-16 · Pricing model documents v6 #1, #2, #12, #23 to #26, #52).
 
 **Terms.** A Procedure on a Booking is what the design calls a *booking procedure*. The catalogue keeps "Procedure" for it. A lower-case "procedure" no longer names an entry on a procedure list, since there is none: the procedure on a Booking is the text received from the rooms or the hospital, a free-text field the anaesthetist reads as an input to choosing the Contract and the RVG code (Notes 2026-10-16 · AA meeting with Greg #21, #35, #44). *Time entry* is the design's name for the anaesthetist filling in the Booking (the business says "filling in the card"). The design retires "Card" too, in favour of Booking. The naming is still to settle (Notes 2026-10-07 · AA client meeting #32; Notes 2026-10-16 · Pricing model documents v6 #12, #22).
 
@@ -152,6 +157,24 @@ erDiagram
   an anaesthetist and a surgeon on a day of week and session) or made ad hoc: an admin puts an ad hoc
   List into a free Slot. A recurring booking creates its List at the far end of the rolling schedule, before any Bookings
   exist, so a List can hold no Bookings (Notes 2026-10-02 #28; Notes 2026-10-02 · AA requirements review with Greg #20).
+- **Proposed: a session split between two surgeons.** Two surgeons sometimes share an AM or PM
+  session; today their Bookings sit on one List, with the second surgeon's cases marked in
+  brackets. Donald's working idea, not yet agreed with AA or Greg, is that an admin splits the Slot
+  into an A and a B List (AM A and AM B, or PM A and PM B), each with its own surgeon under the
+  one-surgeon, one-hospital rule, and never more than two (US-01.1.5). Most sessions are never
+  split. If agreed, a split Slot is the one exception to one List per Slot, and the diagram's
+  "holds at most one" changes with it; until then that rule stands. Whether the halves have their
+  own times, whether a half can go to another anaesthetist (our reading: then it is a List in that
+  anaesthetist's own Slot), and how a List already holding Bookings is split are not worked out
+  (Notes 2026-11-05 · AA meeting with Ben and Vanessa #28).
+- **Out-of-hours List**: a List after the PM session, with its own start time, for emergency or
+  late cases in any specialty, sometimes created the same day, in the evening. Like any List it has an
+  anaesthetist, surgeon, hospital and day, shows on the anaesthetist's day after their AM and PM
+  Lists, and its Bookings are recorded and billed as on any other List (our reading). Asked for by
+  Vanessa, to check with AA (US-01.1.6). Whether it is a third kind of Slot or a List outside the
+  Slots, its default times, who creates one when the office is closed, and how the availability
+  finder treats the evening are not yet designed (Notes 2026-11-05 · AA meeting with Ben and
+  Vanessa #29).
 - **Draft List**: a List created with no anaesthetist. Its surgeon, hospital, day and session are
   always known when it is created and all four are required. Bookings can be added before an
   anaesthetist is assigned. It arises when a surgeon's room needs an anaesthetist and none is
@@ -207,7 +230,7 @@ erDiagram
 - Names a **payer**, prefilled from the patient and editable by the office or the anaesthetist to a
   parent, guardian or other party, such as a benefactor or a family trust; the payer needs an email
   or a postal address (NZ Post standard). Each Procedure's Contract decides who is billed: its
-  holder's billable party when the holder pays AA itself, otherwise this payer (OQ-54, OQ-67) (Notes
+  holder when the Contract bills its holder, otherwise this payer (OQ-54, OQ-67) (Notes
   2026-10-07 · Pricing model documents #11, #25, #34; Notes 2026-10-28 · AA meeting with Greg #29, #34).
 - Holds the **insurer and the insurance approval number** where it is insured: fields on the
   Booking, shown on the matching screen when it comes in (the rooms should send the approval number
@@ -224,23 +247,30 @@ erDiagram
   information that reaches AA (Notes 2026-10-14 · AA meeting with Greg #3, #14; Notes 2026-10-16 ·
   AA meeting with Greg #1, #57; Notes 2026-10-16 · Pricing model documents v6 #5; Notes 2026-10-28 · AA meeting with Greg #4, #40, #41,
   #42; Notes 2026-11-04 · Donald working decisions #6).
-- Each of its Procedures keeps the descriptions received from the surgeon's rooms and from the
-  hospital (whose list, received the day before, often expands the abbreviations), kept apart, plus
-  an **invoice description**, the wording the invoice prints (see Procedure) (Notes 2026-10-07 · AA
-  client meeting #29; Notes 2026-10-08 · Procedure picker and source text #7; Notes 2026-10-16 · AA
-  meeting with Greg #36, #38).
+- Each of its Procedures keeps its **procedure text**, the surgeon's rooms' description until the
+  hospital's (whose list, received the day before, often expands the abbreviations) replaces it,
+  plus an **invoice description**, the wording the invoice prints (see Procedure) (Notes 2026-10-07
+  · AA client meeting #29; Notes 2026-10-08 · Procedure picker and source text #7; Notes 2026-10-16
+  · AA meeting with Greg #36, #38; Notes 2026-11-05 · AA meeting with Ben and Vanessa #30).
 - Carries prepayment state, from any of its Procedures on a Contract flagged as prepaid (detected
-  per Procedure, not across the Booking): required, the prepaid amount (the line's price, shown to
-  the anaesthetist), prepayment invoice (Notes 2026-10-06 · AA directors meeting #5; Notes
-  2026-10-16 · AA meeting with Greg #20; Notes 2026-10-16 · Pricing model documents v6 #4, #28;
-  Notes 2026-10-28 · AA meeting with Greg #45).
+  per Procedure, not across the Booking): required, the prepaid amount (the Procedure's price when
+  its prepayment invoice is raised, shown to the anaesthetist), prepayment invoice; the amount and
+  the invoice are cleared if the prepayment is credited or refunded (Notes 2026-10-06 · AA directors
+  meeting #5; Notes 2026-10-16 · AA meeting with Greg #20; Notes 2026-10-16 · Pricing model
+  documents v6 #4, #28; Notes 2026-10-28 · AA meeting with Greg #45; Donald's decisions 2026-11-05).
 - Carries any open **warnings** (shown as a small flag in both apps; see Warnings below), and may
   carry a free-text note anyone can read, as a List may (Notes 2026-10-28 · AA meeting with Greg #39).
 - Takes inbound changes (the rooms' List PDFs and the hospital's list, through a review and merge
   step for the office), like the anaesthetist's and the office's own changes, until the List is
   AUTHORISED, the last change standing; then immutable. Append-only change history, from which
   the admin picks the changes an on-demand update email reports (OQ-69) (Notes 2026-10-16 · AA
-  meeting with Greg #14, #26, #49).
+  meeting with Greg #14, #26, #49). The office opens that history from each Booking, one step away
+  behind a history button rather than on the face of the page: every change to the Booking and its
+  Procedures, with when it was made, who made it (the named user, or the hospital's
+  list or integration it came from) and what changed, including any procedure text a hospital's
+  list replaced. Each office user signs in as themselves, so every entry names a person, not a
+  shared office login (our reading). Whether the anaesthetist sees the history too is not settled
+  (US-02.5.8; Notes 2026-11-05 · AA meeting with Ben and Vanessa #30, #33).
 - Sources: hospitals (imported however each hospital provides them), surgeons' rooms, admin entry
   by hand, and the anaesthetist ad hoc (including in theatre). Both intake sources are in the first
   release: the hospital booking downloads and the surgeons' rooms' PDF lists, read and ingested,
@@ -260,35 +290,52 @@ erDiagram
 
 ### Procedure
 
-- One procedure performed on one Booking (the design's *booking procedure*). Holds the descriptions
-  received and an invoice description; the selected **Contract** and, where it has lines, one of
-  its lines; an optional RVG code; base, time and modifier units; its price, rate and discount;
-  start and finish times; and itemised modifiers (the ASA grade is one of the optional modifiers,
-  not a separate field, FT-03.3). Choosing the Contract (and line) and the RVG code fills in its
-  starting values (§3); from then on they are the Procedure's own values (Notes 2026-10-16 · AA
-  meeting with Greg #47; Notes 2026-10-16 · Pricing model documents v6 #29).
-- The RVG code is optional. The office may enter one if they know it, otherwise it is left for the
-  anaesthetist, who normally picks one on an RVG Contract to get the base units; on a fixed-price
-  Contract none is needed. The office may also leave the line blank for the anaesthetist; the
-  Contract is what must be set (OQ-99) (Notes 2026-10-14 · AA meeting with Greg #19, #32; Notes
-  2026-10-16 · AA meeting with Greg #39, #57; Notes 2026-10-16 · Pricing model documents v6 #7).
-- **Received descriptions**: the procedure text exactly as each originating system sent it (the
-  rooms' PDF, the hospital's list or feed, email), or typed "as given" on manual entry. Never edited
-  or overwritten; a later update with different wording is added beside it, with its source system
-  and time, and the rooms' and the hospital's are kept apart. Shown above the RVG code and the
+- One procedure performed on one Booking (the design's *booking procedure*). Holds the procedure
+  text and an invoice description; the selected **Contract**; an RVG code; base, time and
+  modifier units; its price; start and finish times; and itemised modifiers (the ASA grade is one
+  of the optional modifiers, not a separate field, FT-03.3). Choosing the Contract fills in the RVG
+  code from the Contract's default RVG code where none is set yet, and the Contract's pricing kind
+  decides what the Procedure needs (§3). A price a person types (an anaesthetist's override, an
+  office change, or the amount on an open price) is the Procedure's own value from then on (Notes
+  2026-10-16 · AA meeting with Greg #47; Notes 2026-10-16 · Pricing model documents v6 #29;
+  Donald's decisions 2026-11-05).
+- The office's job ends at the Contract: it is what must be set at setup, and the RVG code is not
+  the office's job, though they may enter one if they know it (OQ-99). On a Contract priced from
+  RVG units the RVG code, the start and finish times and the modifiers step are required, filled
+  in by the anaesthetist; completing the modifiers step with none is a valid answer (our reading).
+  On a fixed or open price the form collapses: an RVG code may be picked for reference only, with
+  no time or modifiers (Ben: "if I'm just doing a price, I don't want to fill out any of this
+  rubbish") (Notes 2026-10-14 · AA meeting with Greg #19, #32; Notes 2026-10-16 · AA meeting with
+  Greg #39, #57; Notes 2026-10-16 · Pricing model documents v6 #7; Meeting 2026-11-05 · Ben and
+  Vanessa; Donald's decisions 2026-11-05).
+- **Procedure text**: the procedure text exactly as the originating system sent it (the rooms' PDF,
+  the hospital's list or feed, email), or typed "as given" on manual entry. Nobody edits it by
+  hand. It starts as the surgeon's rooms' description; when the hospital's list arrives, usually the
+  day before, the hospital's description replaces it, taken as the source of truth with no check
+  against the rooms' wording, and a later update with different wording replaces it again in the
+  same way (in the first release, when the office applies the change on the matching screen). Each
+  replaced text is kept in the Booking's change history with its source system and time, so the
+  rooms' original can always be seen there. Until 5 November the rooms' and the hospital's texts
+  were kept side by side, neither overwritten (US-02.5.7; Notes 2026-11-05 · AA meeting with Ben
+  and Vanessa #30). Shown above the RVG code and the
   Contract on the booking screens, though the views need not look the same in every app. **Invoice
   description**: the wording the invoice prints, set by a series of defaults (OQ-103): it starts as
   the surgeon's rooms' description; the hospital's description replaces it whenever one arrives
-  (until then, or if none ever arrives, the rooms' text stays); and where the chosen Contract line
+  (until then, or if none ever arrives, the rooms' text stays); and where the chosen Contract
   has an invoice description filled in, that becomes the default instead. The RVG code plays no
-  part. AA admins can edit it at any time, as free text, without changing the received texts. ERD v6 (AR-30) has neither field; the
+  part. AA admins can edit it at any time, as free text, without changing the procedure text, and
+  an admin's edit always stands: a later hospital description does not replace it, nor a Contract's
+  invoice description, and choosing or changing the Contract does not replace an admin's edit
+  (OQ-130, Donald's ruling, not yet confirmed by AA or Greg; Notes 2026-11-05 · Donald contract
+  model decisions #13). Greg's ERD v6 had neither field; the
   technical design's text adds a booking description and an invoice description (US-02.5.7,
   US-03.1.9, US-08.4.6; Notes 2026-10-08 · Procedure picker and source text #6 to #8; Notes
   2026-10-14 · AA meeting with Greg #18; Notes 2026-10-16 · AA meeting with Greg #36 to #38, #41;
   Notes 2026-10-16 · Pricing model documents v6 #8, #29; Notes 2026-10-23 · AA meeting with Greg #3,
   #16, #47, #87).
-- Exactly one Contract, the version in force on the procedure date (OQ-48). Snapshot of the Contract
-  version taken at AUTHORISED.
+- Exactly one Contract. On a fixed price, the price range in force on the procedure date (the
+  List's date) gives the price (OQ-48). The pricing snapshot taken at AUTHORISED copies the
+  Contract's settings as they then were, since Contracts are edited in place (§3).
 - **Modifiers.** The anaesthetist chooses modifiers from the RVG modifier table plus AA's own, and
   claimed modifier units need a short explanation, because insurers ask for one. Modifier units are
   0 by default, a value held quietly on the RVG group that the user never sees. Whether the system
@@ -319,152 +366,227 @@ erDiagram
   (OQ-121). Every event
   goes through the same standard review step (OQ-63) (Notes 2026-10-16 · AA meeting with Greg #45,
   #59, #61, #62; Notes 2026-10-28 · AA meeting with Greg #23, #24, #31; Notes 2026-11-04 · Donald working decisions #3).
+- AA also bills, through the system, a **pre-op consult held in AA's own room**, the one charge of
+  its kind beside the anaesthetists' procedures. It is not the ACC pre-op assessment above. What is
+  billed, to whom, at what price and how it is recorded (an event, an additional invoice, a Booking
+  of its own or a charge to the anaesthetist for the room) are open (OQ-138; US-03.7.4; Notes
+  2026-11-05 · AA meeting with Ben and Vanessa #35).
 
 ### Contract
 
 In plain words, a **Contract** is a structure in the system that sets how a procedure is paid for
 and who pays; it is not necessarily a legal contract. AA is the party in the centre, and everyone
-else with an arrangement is a **contract holder**. The Procedure says what was done; the Contract
-says how it is paid for. The same work can be paid for under many Contracts, and changing the
-Contract never changes the text received (Notes 2026-10-07 · AA meeting with Greg #8, #22; Notes
-2026-10-07 · Pricing model documents #9, #10).
+else with an arrangement is a **party** that holds Contracts. Each Contract is one priced item: Ben
+and Vanessa call them "procedures" ("Our procedures will have [specialties]... if you want to call
+them contracts, that's fine as well. But we think of them as procedures"); the model keeps the name
+Contract, and the screens use Ben's wording where it matters ("Needs an invoice destination"). The
+Procedure says what was done; the Contract says how it is paid for. The same work can be paid for
+under many Contracts, and changing the Contract never changes the text received (Notes 2026-10-07 ·
+AA meeting with Greg #8, #22; Notes 2026-10-07 · Pricing model documents #9, #10; Meeting
+2026-11-05 · Ben and Vanessa).
 
-The Contract answers: *how is this priced, what rules apply, who gets the invoice, and what extra
-information do we need to collect?* The reusable Contract (master data) stays separate from the
-per-Booking **billing context** captured on the Procedure: the Contract names only the references its holder needs on invoices,
-and the Booking *holds* the values (the payer, the insurer and approval number, recorded units, the
-price, rate and discount).
+The Contract answers: *how is this priced, what rules apply, who gets the invoice?* The reusable
+Contract (master data) stays separate from the per-Booking **billing context** captured on the
+Procedure: the Booking *holds* the values (the payer, the insurer and approval number, recorded
+units, the price).
 
-The tables below follow the technical design v6 and its ERD ([AR-29](artifacts/AR-29.md),
-[AR-30](artifacts/AR-30.md)), Greg's proposal. The field names are the design's, for orientation;
-the requirements stay in plain words (Notes 2026-10-16 · Pricing model documents v6 #22 to #30).
+The tables below follow Donald's decisions of 2026-11-05, made after the meeting with Ben and
+Vanessa over the contract picker mock, and replace the earlier tables read from the technical design
+v6 and its ERD: there are no contract
+lines, Contract versions, line keys, relinking or staged schedule changes. The model is
+prototype-grade, structured just enough for the rest of the system to work. How the office keeps
+prices current (OQ-131) is answered by the price ranges below: settings are edited in place and
+audited, only a fixed price is dated, and Vanessa finds each Contract on screen to change it. The
+field names are for orientation; the requirements stay in plain words (Meeting 2026-11-05 · Ben and
+Vanessa; Donald's decisions 2026-11-05).
 
-How the office keeps a Contract's prices and dates current day to day is open, for Vanessa: whole-Contract
-dated versions (as the version rows below have it), a date on each line, or editing in place with
-an audit trail (OQ-131). It does not change how a Contract is picked for a Procedure (Notes
-2026-10-23 · AA meeting with Greg #85; Notes 2026-11-04 · Donald working decisions #10).
-
-**Contract holder (master data)**
+**Party (master data)**
 
 | Field | Notes |
 | --- | --- |
-| name | For example Southern Cross, Merivale Plastics, Dr B. Smith prepay list. AA itself holds No contract (RVG). |
-| who it is | An insurer, a hospital, a surgeon, or an anaesthetist for their own price list. A surgeon's arrangement is held against the individual surgeon, not the rooms: a holder may be named for a rooms, but its Contracts are applied to individual surgeons, and holding Contracts by rooms is not a requirement (OQ-105). The arrangement is one Contract linked to every surgeon it covers, not one Contract per surgeon (Donald, 29 October). Insurers are contract holders like any other: there is no insurer master list and no "accepts direct claims" flag. "First party" and "third party" are not used. Whether the holder is billed is set on each holder (below), not fixed by the kind of holder. Surgeons' arrangements are Contracts like any other. |
-| holder is billable party (`is_billable_party`) | Yes when AA invoices the holder (an insurer, a hospital acting as agent for one): its billable party record is billed. No when it only sets the price (a surgeon's fixed-fee arrangement, an anaesthetist's price list, No contract (RVG)): the payer on the Booking is billed. |
-| billable party (`billable_party_id`) | A reference to a billable party record (hospitals, surgeons, insurers and patients; a guardian or other payer is entered as the Booking's payer, not held as a record), required when the holder is billed. One record may serve more than one holder, which is unusual. No invoice email sits on the Contract (OQ-67). |
-| invoice delivery | How the holder's invoices are delivered: by email or another output (for example a portal or an insurer's API). A flag on the contract holder or its billable party; what the other outputs are is open (OQ-114). |
-| practitioner (`practitioner_id`) | Optional: the practitioners its Contracts belong to, one anaesthetist or one or more surgeons, so they are offered only on those people's Bookings. The v6 design holds one practitioner; one Contract linked to several surgeons goes beyond it (Donald, 29 October). An anaesthetist's price list is created and kept by the office, from the list the anaesthetist supplies (OQ-91). A prepaid price list can be an anaesthetist's or a surgeon's, identified by practitioner ID. A surgeon's fixed-price arrangement is found this way: the office picks it from the Contract list filtered by the surgeon's and the anaesthetist's practitioner IDs, and one linked to several surgeons shows for any of them (OQ-105). |
+| name | The short name shown on the step rail: for example Christchurch Eye Surgery, Forte Health, NIB, Merivale Plastic Surgery, an anaesthetist's own name for their price list. AA itself holds No contract · RVG and the two Patient fallbacks. |
+| kind | A hospital, an insurer (NIB, Southern Cross Health Society), a funder (ACC, Health NZ, NZDF, Veterans Affairs), a surgeon or surgeon group, an anaesthetist, or AA (exactly one). Insurers are parties like any other: there is no separate insurer master list and no "accepts direct claims" flag. "First party" and "third party" are not used. A surgeon's arrangement is linked to the individual surgeons it covers, not the rooms: holding Contracts by rooms is not a requirement (OQ-105), and the links sit on each Contract (below). Insurer and funder as two kinds, with the approval-number warning only for an insurer, is our reading. |
+| billing name and details | The name printed on invoices to the party, and the email or postal address they go to; required once the party holds a Contract that bills its holder (our reading). The party is itself the billing record: there is no separate billable party record behind it. No invoice email sits on the Contract (OQ-67). |
+| invoice delivery | How the party's invoices are delivered: by email or post for now; what other outputs there are (a portal, an insurer's API) is open (OQ-114). |
+| hospital | A hospital's party points at the hospital master record, which is how a Contract held by the List's hospital is found. AA's rooms are never a party (our reading). |
 
 Sources: Notes 2026-10-07 · AA meeting with Greg #22, #29; Notes 2026-10-14 · AA meeting with
-Greg #10, #13, #30, #31, #35; Notes 2026-10-16 · AA meeting with Greg #9; Notes 2026-10-16 ·
-Pricing model documents v6 #15, #22, #24; Notes 2026-10-23 · AA meeting with Greg #5, #10; Notes 2026-10-28 · AA meeting with Greg #3, #46; Typed
-decision 2026-10-29 · Donald (product owner).
+Greg #10, #13, #30, #31, #35; Notes 2026-10-16 · AA meeting with Greg #9; Notes 2026-10-23 · AA
+meeting with Greg #5, #10; Notes 2026-10-28 · AA meeting with Greg #3, #46; Typed decision
+2026-10-29 · Donald (product owner); Donald's decisions 2026-11-05.
 
 **Contract (master data)**
 
+None of these settings is dated: a change is an audited edit, and a setting that must change from a
+given date means creating a new Contract (and disabling the old one when it is no longer needed).
+
 | Field | Notes |
 | --- | --- |
-| id, aaCode, name | Every Contract carries AA's own unique identifier (`aaCode`), a short structured code; holder codes are kept as references and do not replace it. The code format is part of designing the Contract (OQ-66). The v6 design has no code beyond the name and a system version number. |
-| holder | The contract holder; AA for No contract (RVG). |
-| version: valid from, valid to, revised by | Each Contract is kept as a series of **dated versions**. Every change, a correction or mid-term update to some lines or a periodic renewal of the whole schedule, creates a new version from a date the office chooses: it has no default, cannot be in the past and is never backdated, and nothing is deleted. On submit the previous version ends the day before; versions never overlap or leave a gap, and a Contract ends without a successor only when the office enters an end date. A Contract may have only one future-dated version, freely corrected or withdrawn until it takes effect; after that an error is corrected with a new version. A forward link points from each version to the one that revised it. All lines share the Contract's dates. The version in force on the procedure date prices it (OQ-48); old invoices reproduce. Fee schedules change on fixed dates (1 April, 1 June, 1 October). |
-| default (`is_default`) | Exactly one Contract is **No contract (RVG)**: held by AA, never billed, carrying no practice-wide prices, never expiring, offered first, found by this flag and never by its name. It bills the payer on the Booking (OQ-78). A holder's plain RVG Contract with no lines is offered by context in the same way (OQ-98). It carries no routine procedures as lines in the first release; that is a possible later option (OQ-106). |
-| editable (`is_editable`) | Whether the anaesthetist may change the price, rate or discount on Procedures under this Contract: typically yes on Contracts priced from RVG units, no on a hospital's fixed-price Contract (where no discount can be added either) or a surgeon's fixed fee. A fixed price never allows the anaesthetist's price override, whatever this flag says (OQ-117). A prepaid Contract is never editable and cannot carry the price override setting (OQ-96). The office can change any price on any Contract. |
-| prepaid (`is_prepay`) | Picking a Contract flagged as prepaid starts the prepayment (letter and invoice), and its line's price, which must be above zero, is the prepaid amount. Normally the anaesthetist's own price list, or a surgeon's. Never a part or a deposit, and never editable by the anaesthetist (OQ-96). In practice the payer on the Booking prepays, but a Contract that bills its holder is not forbidden from being prepaid (OQ-73). |
-| typical arrangements | There are no kinds or categories of Contract: these settings make the five typical arrangements (table below), and other combinations can be set up for specific billing needs, such as standard RVG pricing less a fixed discount. ACC is a holder with ACC pricing. A Contract stays one unit: a hospital can hold several Contracts for the same procedure, one billed to ACC and one to an insurer, each a Contract of its own. |
-| context | A Contract is offered when it is valid on the procedure date and its holder fits the Booking: the List's hospital, or, for a holder linked to practitioners, that anaesthetist's Bookings or a Booking with any linked surgeon. It need not have a line for the procedure. The exact rules are to be designed and tested with AA. |
-| pricing terms | No pricing-basis field: the price follows from what the Contract's line sets, or from nothing for a Contract with no lines (§3). **RVG pricing** (nothing set): BTM × the anaesthetist's own unit value. **Fixed price**: the line's price; BTM optional, kept for reference if recorded. **Fixed-rate Contract**: BTM × the Contract's rate. **Fixed-discount Contract**: BTM × the anaesthetist's own unit value less the Contract's discount (for example a hospital at standard RVG pricing less 20%). |
-| requiredBookingInputs | No separate field: the configurable required booking inputs are retired. What remains is the references a Contract's holder needs on its invoices, such as an insurer member number or the holder's own reference (for example SXAP), which the Contract names and the Booking then asks for (US-04.2.2). No invoice email sits here, only a billable party (Notes 2026-10-07 · AA meeting with Greg #10, #25, #33; Notes 2026-10-14 · AA meeting with Greg #2). |
-| invoiceLayout | Contract holder layout vs patient layout: the hospital's invoice adds the BTM breakdown and a few fields to cross-match (Notes 2026-10-14 · AA meeting with Greg #6). |
-| deliveryMethod | Not a Contract setting: how invoices are delivered is set on the contract holder or its billable party (above; OQ-114). |
+| id, aaCode, name | Every Contract carries AA's own unique identifier (`aaCode`), a short structured code; holder codes are kept as references and do not replace it. The code format is part of designing the Contract (OQ-66). The name is what the step rail shows (for example "Cataract IOL (LA by Anaesthetist)", "Forte' SXAP", "No contract · RVG"). |
+| holder | The party that holds it. |
+| bills holder or payer | Whether the Contract **bills its holder** (the holder pays AA itself) or **bills the payer** named on the Booking (the holder only sets the price). A Contract held by AA or an anaesthetist always bills the payer, and so does a prepaid Contract (our reading). Drives the invoice layout (below). |
+| funding tag | Optional, from an AA-maintained list (SXAP, HNZ, ACC, ...). On a Contract that bills a hospital it decides that the Contract sits under Hospital on the step rail, under that tag. The tag also lets the Booking's insurer or funder suggest a path (Southern Cross Health Society for SXAP, ACC for ACC, Health NZ for HNZ). |
+| specialties | Zero or more from AA's list of broad specialties; none means every specialty (RVG arrangements, the built-ins). The step rail hides a Contract whose specialties do not include the List surgeon's; there is no "show all". A procedure done by more than one specialty (a breast reduction, by a plastic or a general surgeon) carries both (Ben, 5 November). |
+| linked practitioners | Zero or more surgeons and at most one anaesthetist, on whose Lists the Contract is offered. One Contract is linked to every surgeon it covers, not one per surgeon (Donald, 29 October). An anaesthetist's own price list is created and kept by the office, from the list the anaesthetist supplies (OQ-91), each item a Contract linked to that anaesthetist, so an anaesthetist sees only their own. A hospital's Contract carries no links, and a Contract held by a surgeon, surgeon group or anaesthetist needs at least one (our reading). |
+| prepaid | Fixed for the life of the Contract. A prepaid Contract appears only under Patient › Prepaid, never elsewhere, and picking it starts the prepayment (letter and invoice); its price must be above zero. It is priced at a fixed or open price, never from RVG units. The anaesthetist can never override its price (OQ-96). OQ-73 allowed a prepaid Contract that bills its holder; one could no longer be picked, so OQ-73 needs re-answering. |
+| anaesthetist may override the price | Only on a Contract priced from RVG units: whether the anaesthetist may type a price of their own, the RVG detail staying recorded and visible beside it. A fixed price never allows it (OQ-117), nor a prepaid Contract (OQ-96). The office can change any price on any Contract. Whether to allow it is AA's call per Contract (OQ-107). |
+| pricing kind, rate, discount | One of five pricing kinds (below), set when the Contract is created (our reading). The rate or discount, where the kind uses one, is undated: a change is an audited edit. |
+| price ranges | Fixed price only: one or more, each a start date and a price (below). |
+| holder reference code | Optional: the holder's own code for the item, kept for reference, printed on the holder's invoices and searchable when picking (type `8942` to find it). Real examples from `Data files/`: SXAP `AP0126 Blepharoplasty unilateral LA`, CES `HNZCATall`, ACC `OPT101`, Merivale `Abdominoplasty simple`. Not a unique key, since a holder's codes repeat across items (our reading); the AA code is the key. |
+| invoice description | Optional: where filled in, it becomes the Procedure's invoice description when the Contract is chosen; if blank, the hospital's or the rooms' description is used (see Procedure; OQ-103). |
+| default RVG code | Optional: the RVG group the Contract refers to. It fills in the Procedure's RVG code when the Contract is picked and none is set, and lets a search by RVG code find the Contract. Several Contracts may share one; a fixed-price Contract needs none, though one can be given. |
+| status | Active or Disabled. Disabled hides it from the step rail; Procedures already on it keep it and bill as normal (our reading; whether they should be flagged at review is open). It replaces end dates and retirement. |
+| system role | Marks the one built-in, No contract · RVG, found by this role and never by its name. The open-price fallbacks are made and kept by the system (below); the office may rename a system Contract and edit its invoice description and AA code, nothing else (our reading). |
+| invoiceLayout | Not a setting: worked out from bills holder or payer. A holder's invoice adds the BTM breakdown and a few fields to cross-match; the payer's is the patient layout (Notes 2026-10-14 · AA meeting with Greg #6). |
+| deliveryMethod | Not a Contract setting: how invoices are delivered is set on the party (above; OQ-114). |
 | gstTreatment | Every price held GST exclusive; GST is calculated when needed and goes at the foot of the invoice. |
+| references the holder needs | The earlier model let a Contract name references its holder needs on invoices (an insurer member number, a claim reference, a purchase order) for the Booking to ask for (US-04.2.2). Donald's decisions have no such setting: for now the Booking keeps only the insurer approval number, and whether to add one later is open (our reading). |
 
-Sources: Notes 2026-10-06 · AA directors meeting #6, #7, #11; Notes 2026-10-07 · AA meeting with
-Greg #23, #24, #32, #35, #38, #39, #40, #53; Notes 2026-10-07 · Pricing model documents #2, #18,
-#23, #26, #27, #37, #38; Notes 2026-10-14 · AA meeting with Greg #19, #27, #28, #29, #36; Notes
-2026-10-16 · AA meeting with Greg #5, #15, #16, #20, #64; Notes 2026-10-16 · Pricing model
-documents v6 #2, #15, #25, #27, #28, #42, #43; Notes 2026-10-28 · AA meeting with Greg #1, #3, #6, #44, #46.
+Every change to a Contract or its price ranges is audited. Sources: Notes 2026-10-06 · AA directors
+meeting #6, #7, #11; Notes 2026-10-07 · AA meeting with Greg #23, #24, #32, #35, #53; Notes
+2026-10-07 · Pricing model documents #2, #26, #27, #37, #38; Notes 2026-10-14 · AA meeting with
+Greg #19, #27, #28, #36; Notes 2026-10-16 · AA meeting with Greg #5, #20, #64; Notes 2026-10-28 ·
+AA meeting with Greg #1, #3, #6, #44, #46; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions
+2026-11-05.
 
-**Typical arrangements** (from the settings above; other combinations can be set up)
+**Pricing kinds** (all prices ex GST; BTM is the base, time and modifier units)
 
-| Arrangement | Who pays | Price based on | Anaesthetist can change price | Prepaid |
-| --- | --- | --- | --- | --- |
-| No contract (RVG) | the payer on the Booking (the patient, or a guardian) | RVG units × the anaesthetist's own unit value | yes | no |
-| A hospital's RVG Contract | the hospital | RVG units | yes | no |
-| A hospital's fixed-price Contract | the hospital | the Contract's price or rate | no | no |
-| An anaesthetist's prepay price list | the payer on the Booking | the anaesthetist's own price | no | yes |
-| A surgeon's fixed-fee arrangement | the payer on the Booking | the surgeon's fixed fee | no | no |
-
-Sources: Notes 2026-10-14 · AA meeting with Greg #22, #23, #28; Notes 2026-10-16 · Pricing model
-documents v6 #16, #30; Notes 2026-10-28 · AA meeting with Greg #1 ([AR-28](artifacts/AR-28.md), typical arrangements; [AR-29](artifacts/AR-29.md),
-contract behaviour flags).
-
-**Contract line** (children of a Contract, which may have none; each line stands alone; a blank
-means the line does not set that value, and 0 is a value)
-
-| Field | Notes and real examples from `Data files/` |
+| Kind | Price on a Procedure |
 | --- | --- |
-| line key | Generated by the system, unique and never reused. A line copied into a new version keeps it, which is how Procedures are relinked across versions. |
-| reference code, description | The holder's own code for the line, optional and unique within the Contract, kept for reference, searchable when picking a Contract (type `8942` to filter to it) and used to match a holder's file: SXAP `AP0126 Blepharoplasty unilateral LA`; CES `HNZCATall`; ACC `OPT101`; Merivale `Abdominoplasty simple`. The description, where filled in, becomes the Procedure's invoice description when the line is chosen; if blank, the hospital's or the rooms' description is used (see Procedure; OQ-103). |
-| default RVG code | Optional: the RVG group the line refers to. It fills in the Procedure's RVG code when the line is picked, and lets a search by RVG code find the line. Several lines may share one. Fixed-price lines need none, though one can be given. |
-| price | Ex GST. A fixed price, or a prepaid amount, for the work; BTM is then not needed. |
-| rate | A unit rate in place of the anaesthetist's (a fixed-rate Contract). |
-| discount | A percentage off the calculated price (a fixed-discount Contract), shown as its own invoice line. |
-| base units, modifier units | The line's own figures, in place of the RVG group's, for this Contract. 0 is a value (some Contracts may zero modifiers). |
+| RVG at the anaesthetist's rate | BTM × the anaesthetist's own unit rate. No contract · RVG, and a hospital's or insurer's plain RVG Contract. |
+| RVG at the Contract's rate | BTM × the Contract's own rate (formerly a fixed-rate Contract; for example Unisports Ortho). |
+| RVG less a discount | BTM × the anaesthetist's own unit rate, less the Contract's discount, shown as its own invoice line (formerly a fixed-discount Contract; for example a hospital at standard RVG pricing less 20%). |
+| Fixed price | The price of the price range in force on the procedure date. No time or modifiers; an RVG code for reference only. |
+| Open price | No price of its own: the amount is typed on the Procedure. Used only by the open-price fallbacks, which the system creates; the office does not create open-price Contracts (our reading). |
 
-Removed from the line: a procedure (there is no procedure list), the time band (a Contract or its
-line has no concept of one; time is only an optional recording from the anaesthetist, OQ-89; how a
-schedule such as CES vitrectomy, up to 60 / 61-90 / 90-120 min then $100 per extra 15 min, is
-expressed is not settled), the add-on flag, the quantity rule, the price tier and a line-level effective
-date (all lines share the Contract's dates). Our reading: a holder's alternative price columns,
-such as CES HNZ "commitment" and "panel", become Contracts of their own (Notes 2026-10-07 · AA
-meeting with Greg #5, #30, #31; Notes 2026-10-14 · AA meeting with Greg #29, #37; Notes 2026-10-16 ·
-AA meeting with Greg #40; Notes 2026-10-16 · Pricing model documents v6 #3, #26, #44; Notes
-2026-10-19 · AA meeting with Greg #9, #20).
+**Price ranges** (fixed-price Contracts only)
+
+A fixed-price Contract has at least one price range; no other kind has any. A range has a start date
+and a price: its end is implied, the day before the next range's start, so ranges can never overlap
+or leave a gap after the first start, and the last runs on with no end. The start may be in the past
+("this price from 1 October", entered on 5 November). The range in force on a date is the one with
+the latest start on or before it. Changing a price from a date means adding a range with that start;
+correcting a mistake means editing or deleting a range (never the last one). There is no code or
+other setting per range: the holder reference code is an undated setting of the Contract. A
+fixed-price Contract with no range in force on a List's date is not offered on that List (our
+reading). Price ranges were Donald's idea at the 23 October meeting with Greg (Notes 2026-10-23 · AA
+meeting with Greg #53, #55, #59; Donald's decisions 2026-11-05).
+
+**Invoice destinations** (step 1 of the step rail, worked out from the Contract's own settings, never
+stored; they replace the earlier "typical arrangements")
+
+| Destination | Which Contracts | Examples | Step 2 |
+| --- | --- | --- | --- |
+| Patient | Every Contract that bills the payer on the Booking | No contract · RVG; an anaesthetist's prepay price list; a surgeon's fixed fees, such as Merivale's, which move here from Special | Payment type: **Standard** (first, the normal pathway) or **Prepaid** |
+| Hospital (the List's hospital) | A Contract that bills the List's hospital and carries a funding tag | the items of CES's SXAP, HNZ and ACC schedules (fixed price, one Contract each); Forte' SXAP (RVG at the anaesthetist's rate) | The funding tags that hospital actually has |
+| Special | Everything else | An untagged hospital-billed Contract (STG Bariatric, SX Charity Trust); a surgeon group billed directly (Unisports); an insurer or funder billed directly (NIB, NZDF, Veterans Affairs) | Pick the Contract directly |
+
+Any pricing kind can sit under any destination, except that Prepaid holds no Contract priced from RVG
+units. Many insurance jobs are plain RVG paid by the insurer: a Special insurer Contract priced at the
+anaesthetist's rate, such as NIB.
+
+**Built-ins and open-price fallbacks**
+
+| System Contract | Holder | Bills | Pricing | Where it sits |
+| --- | --- | --- | --- | --- |
+| No contract · RVG (the built-in) | AA | the payer | RVG at the anaesthetist's rate, override allowed | Patient › Standard, offered first on every List |
+| No contract · Fixed price | AA | the payer | open price | Patient › Standard, through the toggle |
+| Prepaid · Fixed price | AA | the payer | open price, prepaid | Patient › Prepaid, through the toggle: Ben's ad hoc prepay ("just make it two grand") |
+| one per hospital and funding tag, for example Forte · SXAP · Fixed price | the hospital | the hospital | open price, tagged | Hospital › that tag, through the toggle |
+| one per Special holder, for example NIB · Fixed price | that holder | that holder | open price | Special, through the toggle once one of that holder's Contracts is picked |
+
+Every invoice destination has exactly one open-price fallback, created by the system when the first
+Contract for that destination exists; a fallback is never disabled or deleted, has no specialties
+and no links, and is never a row of its own on the step rail (our reading). Its "· Fixed price"
+name is Donald's: the person types a fixed amount, though the Contract itself is an open price. The
+anaesthetist may type the amount only on No contract · Fixed price; amounts on hospital, tag and
+Special fallbacks are the office's, so a hospital or insurer is never billed a figure the
+anaesthetist typed (our reading). No contract · RVG is exactly one, never billed itself, never
+expires and is found by its role (OQ-78). OQ-78's "no hospital, insurer or per-procedure default
+Contracts" no longer holds for the fallbacks (Donald's decisions 2026-11-05; Notes 2026-10-07 · AA
+meeting with Greg #7, #54; Notes 2026-10-14 · AA meeting with Greg #17, #19).
+
+**Schedules as Contracts**
+
+A holder's schedule document becomes one Contract per item, with no grouping above them. Each item's
+code becomes the Contract's holder reference code and its description the Contract's invoice
+description. A holder's alternative price columns, such as CES HNZ "commitment" and "panel", become
+Contracts of their own. A schedule priced by time band becomes one fixed-price Contract per band,
+as the CES vitrectomy schedule (up to 60 / 61-90 / 90-120 min, then $100 per extra 15 min) is seeded.
+The fee files are a sample for the prototype, so these are seed readings, not questions for AA:
+there is no real data to question until the system exists (Donald's decisions 2026-11-05). There is
+no add-on flag, quantity rule or price tier. A **combination** (for example the Merivale "Facelift
+plus 1 add on" at $3,400 ex GST) is simply a fixed-price Contract of its own; once it is chosen,
+history shows only the Contract (OQ-53). Fee extras in the schedules (a GA add-on fee, "per 15
+minutes over 120", "per area") are not Contracts: they are billing events or additional invoices on
+the Procedure, with the amount typed (our reading). A Contract does not state its own base or
+modifier units (OQ-62 needs re-answering). Add-ons as a concept, and bulk upload and export of
+Contracts, are out of scope for now (Notes 2026-10-07 · AA meeting with Greg #5, #30, #31; Notes
+2026-10-14 · AA meeting with Greg #29, #37; Notes 2026-10-16 · AA meeting with Greg #40; Notes
+2026-10-19 · AA meeting with Greg #9, #20; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions
+2026-11-05).
 
 **Procedure billing context** (instance values, on the Procedure / Booking)
 
 | Field | Notes |
 | --- | --- |
-| received descriptions, invoice description | The rooms' and the hospital's descriptions as received, kept apart, and the invoice description. |
-| contract, contract line | The Contract version in force on the procedure date and, where it has lines, one of them, which must belong to it. The office sets them and the anaesthetist may change them; locked at AUTHORISED. |
-| RVG code | Optional; the anaesthetist normally picks one on an RVG Contract to get the base units. |
+| procedure text, invoice description | The procedure text as received: the hospital's once it arrives, otherwise the rooms' (each replaced text kept in the change history); and the invoice description the invoice prints (see Procedure). |
+| contract | Exactly one Contract. The office sets it and the anaesthetist may change it; frozen in the pricing snapshot at AUTHORISED. Missing, the Booking shows "Needs an invoice destination". |
+| RVG code | Required on a Contract priced from RVG units, picked by the anaesthetist for the base units; reference only on a fixed or open price. |
 | payer | On the Booking: prefilled from the patient, editable by the office or the anaesthetist to a parent, guardian or other party (a benefactor, a family trust); needs an email or a postal address; billed when the Contract does not bill its holder. |
-| insurer, approval number | Fields on an insured Booking, shown on the matching screen and editable by the office and by the anaesthetist on the day; a missing approval number is a warning (OQ-93). The v6 design holds an insurer and an "insurance acceptance" reference on the booking procedure. |
-| prepaymentRequired, prepaidAmount, prepaymentInvoiceId | On the Booking, from a Procedure on a prepaid Contract; prepaidAmount is the line's price, shown to the anaesthetist. |
-| recorded BTM, modifiers with explanation | Base and modifier units start from the line or the RVG code; time units come from the start and finish times. Each claimed modifier needs a short explanation. BTM is optional on a fixed price. |
-| price, rate, discount | Filled in from the Contract's line when it is chosen; then values on the Procedure, changed by the anaesthetist where the Contract is editable (never a fixed price, OQ-117) and by the office on any Contract. No reason is needed; each change is audited and flagged at review, and the last change stands. Reset when the Contract changes. |
-| insurerMemberNumber, claimReference, purchaseOrder | As required by the Contract. |
+| insurer, approval number | Fields on an insured Booking, shown on the matching screen and editable by the office and by the anaesthetist on the day; a missing approval number is a warning (OQ-93). The insurer or funder is a party, and only suggests a path on the step rail. The v6 design holds an insurer and an "insurance acceptance" reference on the booking procedure. |
+| prepaymentRequired, prepaidAmount, prepaymentInvoiceId | From a Procedure on a prepaid Contract; prepaidAmount is the Procedure's price when the prepayment invoice is raised, shown to the anaesthetist, and from then on is its price. Cleared if the prepayment is credited or refunded. |
+| recorded BTM, modifiers with explanation | On a Contract priced from RVG units: base units from the RVG code (editable), time units from the start and finish times, and modifiers, each claimed one with a short explanation. None of these is asked for on a fixed or open price. |
+| price | Worked out from the Contract (§3) and following it (the range in force, the Contract's rate or discount) until a person types one: the anaesthetist where the Contract allows the override, or on No contract · Fixed price; the office on any Contract. No reason is needed; each change is audited and flagged at review, and the last change stands. A prepaid Procedure's price is its prepayment invoice's once raised. Cleared when the Contract changes. |
 | pricing snapshot | Set at authorisation (§3). |
 
-**Selection.** At booking setup the office's main job is to identify who pays and then the
-Contract, and, where the Contract has lines, the line that fits. Setting
-the Contract is mandatory; the RVG code is not the office's job. The list shows Contracts, not
-lines: **No contract (RVG)** always first, then the hospital's Contracts, then any surgeons' and
-anaesthetists' arrangements, limited to those valid on the procedure date whose holder fits the
-Booking (the List's hospital, and Contracts that belong to the Booking's anaesthetist or are linked to
-its surgeon, found by practitioner ID, so an anaesthetist sees only their own). Picking a Contract leads down to
-its lines. The working direction is a step rail, one question at a time: who the invoice goes to
-(the patient, the List's hospital, or a special contract), then whether it is prepaid or under
-which Contract, then the price. The office's job ends at the Contract: a Contract priced from the
-RVG goes to the anaesthetist to fill in the RVG code, and a fixed-price Contract needs none. This
-is a guess, not a decision (Donald, 4 November). Where an RVG code has been picked, it finds the
-lines carrying it as their default RVG code. Insurance
-on the Booking does not narrow the list (OQ-93), and a holder's own code can be typed to find its
-Contract (OQ-66). The order and shape of the steps are still to be designed and tested with AA, as
-is the list length: Greg expects about
-a dozen Contracts on a hospital and one on an anaesthetist, Donald expects more without an
-intermediate list, and at the last level "you don't have a choice but to scroll through that list".
-The anaesthetist may change the Contract, its line, the RVG code, and the price, rate or discount
-where permitted, until the List is authorised, with no reason needed; each change is audited and
-flagged at office review, and changing the Contract resets the starting values (§3). When
-pre-approval falls through on the day, the anaesthetist changes to No contract (RVG) and the payer
-is billed. A **combination** (for example the Merivale "Facelift plus 1 add on" at $3,910) is a
-fixed-price line of its own; once it is chosen, history shows only the Contract (OQ-53). Each
-Procedure on a Booking is priced on its own Contract, and many insurance jobs are plain RVG paid by
-the insurer (Notes 2026-10-01 #29, #64; Notes 2026-10-02 #7; Notes 2026-10-07 · AA meeting with
-Greg #2, #16, #24, #52, #53, #55; Notes 2026-10-07 · AA client meeting #27; Notes 2026-10-14 · AA
-meeting with Greg #15, #32, #33, #34; Notes 2026-10-16 · AA meeting with Greg #39, #40, #49, #51;
-Notes 2026-10-16 · Pricing model documents v6 #2, #17, #31; Notes 2026-11-04 · Donald working decisions #9).
+**Selection.** At booking setup the office's main job is to say where the invoice goes and then pick
+the Contract; setting the Contract is mandatory, and the RVG code is not the office's job. The office
+picks it on a **step rail**, one question at a time (Donald's decisions 2026-11-05, from the contract
+picker mock's default "step rail" shown to Ben and Vanessa on 5 November):
+
+- **Candidates.** The Contracts offered on a List are the Active ones that fit it: held by the List's
+  hospital; or linked to the List's surgeon or anaesthetist; or an insurer's or funder's Contract with
+  no links (offered on every List, as No contract · RVG is); and in every case only where the
+  Contract's specialties include the List surgeon's, or it has none. There is no "show all". Insurance
+  on the Booking does not narrow the list (OQ-93).
+- **Step 1, "Where does the invoice go?"**: Patient, the List's hospital, or Special, worked out from
+  each candidate's settings (Invoice destinations, above). Each option shows how many Contracts it
+  holds. The List's hospital is offered whenever it has tagged Contracts, even when the specialty
+  filter leaves none for this surgeon, so its fallback stays reachable (our reading).
+- **Step 2**: under Patient, "Payment type": Standard (first) or Prepaid, the wording Ben asked for
+  over "Prepaid? / Not prepaid" ("90% or 95% of what we do is just the normal pathway"); under the
+  hospital, the funding tags it actually has; under Special, the Contract itself.
+- **Step 3**: pick the Contract, searching by typing (Ben: "CAT", and cataract comes up) over the
+  name, the holder reference code, the invoice description, the AA code and the default RVG code
+  (our reading of what is searched); No contract · RVG is pinned first under Patient › Standard. Or
+  flip the "Other price" toggle (Ben's words), which picks the destination's open-price fallback, and
+  type the amount. Contracts priced from RVG units never appear under Prepaid.
+- A step with only one possible answer fills itself in; a step 3 with no Contracts fills in the
+  fallback. The Booking's insurer or funder marks one path "Suggested", never narrowing it. A
+  Procedure with no Contract shows "Needs an invoice destination", Ben's wording in place of "Needs
+  a contract".
+
+The office's job ends at the Contract: a Contract priced from the RVG goes to the anaesthetist for
+the RVG code, time and modifiers, and a fixed-price Contract needs none (Ben, of an eye schedule:
+"if it's a fixed price, that has to be clicked. So that could be the admin team"). A holder's own
+code can be typed to find its Contract (OQ-66). The specialty filter and typing are the answer to the
+list-length concern: Greg expected about a dozen Contracts on a hospital and one on an anaesthetist,
+Donald expected more, and CES's SXAP schedule alone is dozens of items. The anaesthetist may change
+the Contract, the RVG code, and the price where the Contract allows, until the List is authorised,
+with no reason needed; each change is audited and flagged at office review, and changing the
+Contract clears a typed price (recorded RVG detail is kept). Only the office moves a Procedure onto
+or off a prepaid Contract (our reading). The anaesthetist who records RVG but charges his own price
+has two routes to the same price: stay on No contract · RVG, record the RVG code, time and modifiers,
+and override the price; or choose No contract · Fixed price, type the price and optionally record
+the RVG code for reference. When pre-approval falls through on the day, the anaesthetist changes to
+No contract · RVG and the payer is billed. A Booking moved to another List keeps every Procedure's
+Contract, and one that no longer fits the new List is flagged at review, never re-picked (our
+reading). Each Procedure on a Booking is priced on its own Contract (Notes 2026-10-01 #29, #64;
+Notes 2026-10-02 #7; Notes 2026-10-07 · AA meeting with Greg #2, #16, #24, #52, #53, #55; Notes
+2026-10-07 · AA client meeting #27; Notes 2026-10-14 · AA meeting with Greg #15, #32, #33, #34;
+Notes 2026-10-16 · AA meeting with Greg #39, #40, #49, #51; Notes 2026-11-04 · Donald working
+decisions #9; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05).
 
 ### RVG groups and modifier master
 
@@ -478,8 +600,8 @@ Notes 2026-10-16 · Pricing model documents v6 #2, #17, #31; Notes 2026-11-04 ·
   short description and base units, since the same code can appear on more than one row with
   different values (Notes 2026-10-14 · AA meeting with Greg #1, #20, #21; Notes 2026-10-16 ·
   Pricing model documents v6 #1, #23).
-- **Base units** sit on the RVG group, and a contract line may state its own for that Contract
-  (OQ-62). A Procedure takes them when its RVG code is chosen, and the anaesthetist may change them.
+- **Base units** sit on the RVG group; a Contract does not state its own (OQ-62 needs re-answering
+  under Donald's decisions 2026-11-05). A Procedure takes them when its RVG code is chosen, and the anaesthetist may change them.
   The RVG guide is only a guide (the same code appears with different base units), and AA can set
   any base units regardless of it; a base unit overridden consistently means AA changes its own
   data. An anaesthetist may enter base units outside a code's range, which raises an
@@ -510,12 +632,13 @@ Notes 2026-10-16 · Pricing model documents v6 #2, #17, #31; Notes 2026-11-04 ·
   resolved is not settled. NHI and other PII never go to Xero, which
   holds only a unique ID linking back to the system's invoices (OQ-30).
 - Billable party: whoever receives the invoice for a Procedure, decided by its Contract (OQ-67). A
-  Contract whose holder pays AA itself bills the holder's billable party record; otherwise the
-  payer on the Booking is billed. Billable parties are reference records (hospitals, surgeons,
-  insurers and patients; a guardian or other payer is entered as the Booking's payer). Insurers are
-  contract holders like any other, with no insurer master list. The invoice email belongs to the billable party or the payer,
+  Contract that bills its holder bills the holder's party record, with its billing name, contact
+  details and delivery method; otherwise the payer on the Booking is billed. Parties cover
+  hospitals, insurers and funders, surgeons and surgeon groups, anaesthetists and AA; a guardian or
+  other payer is entered as the Booking's payer, not held as a party. Insurers are parties like any
+  other, with no separate insurer master list. The invoice email belongs to the party or the payer,
   never to the Contract (Notes 2026-10-07 · AA meeting with Greg #29; Notes 2026-10-07 · Pricing
-  model documents #11, #22, #34).
+  model documents #11, #22, #34; Donald's decisions 2026-11-05).
 - Payer: every Booking names one, prefilled from the patient and editable by the office or the
   anaesthetist to a parent, guardian or other party, such as a benefactor or a family trust; it is
   used whenever the Contract does not bill its holder. It needs an email or a postal address (in
@@ -547,6 +670,13 @@ Notes 2026-10-16 · Pricing model documents v6 #2, #17, #31; Notes 2026-11-04 ·
   Number): for an individual practitioner the CPN and the HPI practitioner number are one
   identifier, the surgeon's unique index. HPI (Health Provider Index) identifies practitioners and
   facilities and is not the patient's NHI (OQ-52).
+- A surgeon holds a list of **specialties**, at least one and usually one, from AA's list of broad
+  specialties (Ophthalmology, General surgery, Plastic surgery, ENT, Gynaecology, Orthopaedics and
+  so on; no subspecialties: "we can just say general surgery"). AA attaches them from its surgeon
+  spreadsheet, so they are not inferred from incoming Lists. A List's specialties are its surgeon's,
+  and they narrow the Contracts offered on it (see Contract). Ben knows of no private surgeon with
+  two surgical specialties, but the list allows more (Meeting 2026-11-05 · Ben and Vanessa; Donald's
+  decisions 2026-11-05; Notes 2026-11-03 · Ben specialist list email #5).
 - **Preferences** (formerly the blacklist; a better name is still to choose) are private and
   two-way: held by admin staff on surgeon and anaesthetist profiles, they record pairings someone
   does not want to work with (in either direction) and pairings someone prefers. They are never
@@ -622,8 +752,8 @@ Notes 2026-10-16 · Pricing model documents v6 #2, #17, #31; Notes 2026-11-04 ·
   Contracts and prices, with no credit (OQ-77 part 3). Proposed: the rebill starts from a draft
   copy of the original's lines (Notes 2026-10-07 · AA client meeting #9; Notes 2026-10-07 · AA
   meeting with Greg #3; Notes 2026-10-19 · AA meeting with Greg #2).
-- No invoice or credit is raised automatically after a prepaid procedure or on a fixed-price
-  Contract; the anaesthetist or the office raises one by hand where the work differed (Notes
+- No invoice or credit is raised automatically after a prepaid procedure or on a fixed-price or
+  open-price Contract; the anaesthetist or the office raises one by hand where the work differed (Notes
   2026-10-06 · AA directors meeting #1, #2, #10).
 - A prepaid Procedure is **left off the final invoice**: no prepayment is deducted, and a Booking
   that mixes prepaid and not-prepaid Procedures is invoiced for the not-prepaid ones only (OQ-116).
@@ -681,26 +811,21 @@ Notes 2026-10-16 · Pricing model documents v6 #2, #17, #31; Notes 2026-11-04 ·
 
 - Clean cut, not a full migration: decide what is useful rather than migrating everything.
 - Reference data is loaded once from controlled spreadsheets in AA-defined templates: hospitals,
-  surgeons and rooms, anaesthetists, RVG groups with their base units, modifiers, contract holders,
-  Contracts and their lines (Notes 2026-10-02 · AA requirements review with Greg #10, #77).
+  surgeons (with their specialties) and rooms, anaesthetists, RVG groups with their base units,
+  modifiers, the specialty list and the funding tag list, parties, and Contracts with their
+  settings and price ranges (Notes 2026-10-02 · AA requirements review with Greg #10, #77;
+  Donald's decisions 2026-11-05). The open-price fallbacks are created by the system, not loaded.
   Loading must be repeatable, so test environments can be wiped and reloaded. The mechanism is
   a developer-run import for the first release (the v6 design suggests the same), then
-  office screens to create, edit and retire records (Notes 2026-10-07 · AA meeting with Greg #62;
-  Notes 2026-10-16 · Pricing model documents v6 #9, #48).
-- Separate from the seed, a mechanism to **upload a Contract's schedule** is a requirement, for
-  Contracts only. Greg's v6 proposal, which he calls "a strategy" the developers may find too
-  difficult or expensive: the office maintains one Contract at a time on a header and lines screen
-  (US-04.1.6); edits on screen and uploads in the AA template (one row per line) are not applied
-  straight away but staged on a review dashboard for that Contract, then submitted together, all
-  or nothing, creating a new dated version. **Alter** (a correction or mid-term update to some
-  lines) starts from a copy of every current line and applies each row by its Operation (Add,
-  Alter, Remove); **Replace** (a periodic renewal) starts empty, and the rows form the new
-  schedule. Rows match on the line key, otherwise the holder's reference code, and exporting the
-  current Contract to the template is recommended for the MVP. The dashboard shows header and line
-  changes, errors that block submit and warnings that do not. Whether the upload is in the first
-  release is not settled (OQ-100) (Notes 2026-10-07 · AA meeting with Greg #41, #43, #47, #48;
-  Notes 2026-10-14 · AA meeting with Greg #41; Notes 2026-10-16 · AA meeting with Greg #17, #18;
-  Notes 2026-10-16 · Pricing model documents v6 #40 to #46, #55).
+  office screens to create, edit and disable records, every change audited (Notes 2026-10-07 · AA
+  meeting with Greg #62; Notes 2026-10-16 · Pricing model documents v6 #9, #48).
+- Bulk upload and export of Contracts, and the staged schedule changes of Greg's v6 proposal, are
+  out of scope for now, Future Work (Donald's decisions 2026-11-05; OQ-100 to answer). Vanessa
+  wants to maintain prices by finding each item and editing it on screen: a new item is a new
+  Contract, a changed price a new price range, a dropped item a Disabled Contract. Ben wants a
+  safe, secure source of truth for the contracts kept somewhere; Donald's position is that the
+  system is that source of truth, backed up by its hosting, and Ben will be guided by Vanessa
+  (Meeting 2026-11-05 · Ben and Vanessa).
 
 ## 3. Calculation rules
 
@@ -710,37 +835,60 @@ Donald's decision of 2026-10-18; the documents' step order is not adopted for th
 2026-10-16 · Pricing model documents v6 #11, #14, #33).
 
 ```
-choosing the Contract (and its line) and the RVG code fills in the Procedure's own values,
-from the Contract version in force on the procedure date:
-  base units, modifier units: set on the Procedure from the line's figures or the RVG code's
-                              (a blank is not set; 0 is a value)
-  price, rate, discount:      set on the Procedure from the line (none where the line sets none)
+the Contract's pricing kind decides how the Procedure is priced:
+  RVG at the anaesthetist's rate:  (B + T + M) x the anaesthetist's own $ per unit
+  RVG at the Contract's rate:      (B + T + M) x the Contract's rate
+  RVG less a discount:             (B + T + M) x the anaesthetist's own $ per unit x (1 - discount)
+                                   discount as a fraction (20% is 0.2), shown as its own invoice line
+  fixed price:                     the price of the price range in force on the procedure date
+  open price:                      none of its own; the amount is typed on the Procedure
 
-these are then the Procedure's own values:
-  changed by whoever is permitted (the anaesthetist where the Contract is editable and the
-  price is not fixed,
-  the office on any Contract); no reason needed; audited; the last change stands
-  reset to the new starting values when the Contract (or its line) changes
+  B, T, M: base units from the RVG code (editable), time units from the start and finish times,
+  modifier units from the modifiers, after the multi-procedure rule below; only Contracts priced
+  from RVG units carry them
 
-the fee is the Procedure's price where it has one (BTM optional, kept for reference if recorded),
-otherwise (B + T + M) x rate x (1 - discount)
-    rate     = set by the Contract line, or else the anaesthetist's own $ per unit
-    discount = the Procedure's discount as a fraction (20% is 0.2), shown as its own invoice line
-  a price of 0 gives a no-charge invoice; BTM is still recorded if entered
+the Procedure's price at any moment, first match wins:
+  the pricing snapshot was taken at AUTHORISED          -> the snapshot's price
+  prepaid Contract, prepayment invoice raised           -> the prepaid amount
+  a person typed a price (an anaesthetist's override,
+    an office change, an open-price amount)             -> that price
+  otherwise                                             -> worked out from the pricing kind above,
+                                                           so it follows a new price range or an
+                                                           edited rate or discount
+  nothing can be worked out                             -> "Needs a price"
+
+typed prices: the anaesthetist only on an RVG Contract that allows the override, or on
+  No contract · Fixed price; the office on any Contract; no reason needed; audited and flagged
+  at review; the last change stands
+changing the Contract clears a typed price; recorded RVG detail is kept
+a price of 0 gives a no-charge invoice
 ```
 
-- Each Procedure is priced on its own Contract when the List is authorised, using the Contract
-  version in force on the procedure date; where the Contract was revised after the Booking was
-  made, its values are refreshed from the revised line (OQ-48), except on a prepaid Procedure, which keeps the price on its issued prepayment invoice. Time entry does not accept a price
-  or discount from the anaesthetist on a Contract that is not editable. Submission is rejected when
-  no price can be worked out; where the Contract is not valid on the procedure date and cannot be
-  resolved, the original values are used and a warning is flagged. The anaesthetist needs a way to
-  forward an incomplete Procedure to the office (Notes 2026-10-16 · Pricing model documents v6 #33,
-  #37).
-- The **pricing snapshot** stores the Contract version (each version is its own record), the values
-  on the Procedure, the recorded BTM, the rate and discount used, the price, and the billable party
-  or payer details. Later changes to the RVG groups or Contracts never alter an invoice already
-  issued (Notes 2026-10-16 · Pricing model documents v6 #34).
+- Because a price nobody has typed is worked out, not stored, it **follows** the Contract until
+  the List is authorised: a new price range, or a rate or discount edited in place, reaches every
+  un-authorised, un-prepaid Procedure on that Contract whose price nobody typed (our reading for
+  rate and discount). Post-procedure billing example: $500 when booked, then a $550 range from a
+  date before the procedure is added, so the Procedure is invoiced $550. A prepaid Procedure keeps
+  the price on its issued prepayment invoice (OQ-104), a typed price keeps the edit, and the
+  snapshot freezes everything. A Disabled Contract does not move a Procedure already on it, which
+  bills as normal (our reading). A moved Booking keeps its Contracts, and its prices are worked out
+  again for the new date unless held (OQ-48; Donald's decisions 2026-11-05).
+- "Needs a price" is shown when no price can be worked out: an open price with no amount typed, or a
+  fixed price with no range in force on the procedure date (an RVG Contract still missing its RVG
+  code, times or modifiers step is incomplete, which also stops completion). It stops the anaesthetist completing the Procedure (which they can forward,
+  incomplete, to the office) and stops the List being authorised, since the snapshot cannot be
+  taken without a price (our reading of "submission is rejected when no price can be worked
+  out"). The anaesthetist needs a way to forward an incomplete Procedure to the office (Notes
+  2026-10-16 · Pricing model documents v6 #33, #37).
+- On a Booking that mixes RVG-priced and fixed or open-price Procedures, base units still go only
+  on the primary; where the primary is on a fixed or open price, whether another Procedure takes
+  the base units is open (OQ-132). Until it is answered, base units go only on the primary.
+- The **pricing snapshot** at AUTHORISED copies what it needs, since Contracts are edited in place
+  and have no versions: the Contract's settings as they then were (its rate and discount, and only
+  the price range in force), the values on the Procedure, the recorded BTM, the unit rate used, the
+  price, and the billable party or payer details. Later changes to the RVG groups or Contracts never
+  alter an invoice already issued (Notes 2026-10-16 · Pricing model documents v6 #34; Donald's
+  decisions 2026-11-05).
 - The RVG multi-procedure rule below applies to every Booking with more than one Procedure, with no
   per-Contract override (OQ-90). It adjusts the units of Procedures priced from units, before the
   price is worked out (Notes 2026-10-16 · Pricing model documents v6 #38; Notes 2026-10-19 · AA
@@ -757,7 +905,7 @@ otherwise (B + T + M) x rate x (1 - discount)
 Worked example: three Procedures, modifiers AS3 (2) + OB3 (2) + ASE (2) + A1 (1) = 7 units.
 7 > 4, so 7 ÷ 3 = 2 each with remainder 1 → primary 3, second 2, third 2. Base units on the
 primary only. Each Procedure's time units from its own times. Each Procedure is then priced by
-its own Contract, so a cosmetic add-on on a Contract that bills the patient and a primary on a hospital
+its own Contract, so an additional cosmetic procedure on a Contract that bills the payer and a primary on a hospital
 Contract each carry their correct share.
 
 Contracts do not define how further procedures are priced, so no Contract replaces this rule, even
@@ -765,14 +913,19 @@ where a holder's schedule prices a second code at 50% or an add-on as its own fe
 CES schedules do) (OQ-90; Typed decision 2026-10-05 · Donald (product owner); Notes 2026-10-19 · AA
 meeting with Greg #10).
 
-**Prepayment.** Required when a Procedure is on a Contract flagged as prepaid, normally the
-anaesthetist's own price list, or a surgeon's (identified by practitioner ID), which the office
-picks at setup; in practice the payer on the Booking prepays, but the system does not forbid a
-Contract that bills its holder from being prepaid (OQ-73) (the RFP's typical case is an additional
-elective cosmetic procedure). Nothing on the anaesthetist's profile triggers it: a person sets up
-the Contract, and a Booking made with it starts the prepayment. The amount is the **price on that
-Contract's line**, which must be above zero: the full amount, never a deposit or a part (OQ-04, OQ-76),
-and nothing is estimated from units (OQ-38). The anaesthetist sees it on the Booking. By default it
+**Prepayment.** Required when a Procedure is on a Contract flagged as prepaid, which the office
+picks at setup under Patient › Prepaid: normally an item on the anaesthetist's own price list, or a
+surgeon's (a prepaid fixed-price Contract linked to that practitioner), or the Prepaid · Fixed price
+fallback, where the office types the amount (Ben: "Vanessa might say, 'Hey Ben, how much do you want
+them to prepay?' And I would say, 'Oh, just make it two grand'"). A prepaid Contract always bills the
+payer on the Booking, is never priced from RVG units, and stays prepaid for its whole life (Donald's
+decisions 2026-11-05), so OQ-73's Contract that bills its holder and is prepaid can no longer be
+picked and OQ-73 needs re-answering (the RFP's typical case is an additional elective cosmetic
+procedure). Nothing on the anaesthetist's profile triggers it: a person sets up the Contract, and a
+Booking made with it starts the prepayment. The amount is the **Procedure's price when the
+prepayment invoice is raised**: the price range in force on the procedure date, or the typed
+amount (our reading that it is taken then, not at booking). It must be above zero: the full amount,
+never a deposit or a part (OQ-04, OQ-76), and nothing is estimated from units (OQ-38). The anaesthetist sees it on the Booking. By default it
 is the final price; the BTM recorded on the day is for reference. Greg: "technically it's an
 estimate, but it's the anaesthetist's price." The office creates and maintains the anaesthetists'
 price lists, from the list each supplies (OQ-91). The prepayment invoice is generated when an admin
@@ -786,22 +939,26 @@ anaesthetist who did the procedure (OQ-80). Cancelling a prepaid Booking automat
 unpaid prepayment invoice or refunds a paid one in full, and a prepaid Procedure whose Contract is
 changed to one not flagged as prepaid after the prepayment invoice is sent or paid is handled the
 same way, then invoiced under its new Contract after the procedure (OQ-119). A prepaid Procedure keeps the price on its
-issued prepayment invoice when the Contract's price changes before the procedure: a new Contract
-version does not relink it (Notes 2026-10-19 · AA meeting with Greg #4). Ben confirmed it on 27
+issued prepayment invoice when the Contract's price changes before the procedure: a later price
+range does not move it (Notes 2026-10-19 · AA meeting with Greg #4). Ben confirmed it on 27
 October: "You would honour the money that's been prepaid, because that's the quote that the
-patient's been given" (OQ-104). A prepaid Contract is never editable and cannot carry the price
+patient's been given" (OQ-104). A prepaid Contract cannot carry the price
 override setting (OQ-96, answered 28 October): the price stands, and any difference is a second
 invoice or credit raised by hand. Ben: "a rare event can have some manual input." The office can
-still change any price. The v6 design's automatic difference invoice or refund is not adopted.
+change the price until the prepayment invoice is raised; from then on the invoiced amount is the
+Procedure's price (our reading of Donald's decisions 2026-11-05). Cancelling the Booking, or
+moving the Procedure off its prepaid Contract, clears the prepaid amount and invoice once the
+prepayment is credited or refunded; only the office moves a Procedure onto or off a prepaid
+Contract (our reading). The v6 design's automatic difference invoice or refund is not adopted.
 Whether a credit can be for part of the prepayment is OQ-97 (Notes
 2026-10-14 · AA meeting with Greg #5, #40; Notes 2026-10-16 · AA meeting with Greg #4, #20; Notes
 2026-10-16 · Pricing model documents v6 #4, #6, #28; Notes 2026-10-19 · AA meeting with Greg #4;
-Notes 2026-10-27 · AA meeting with Ben and Vanessa #1; Notes 2026-10-28 · AA meeting with Greg #1, #43, #44, #46, #47, #63, #65; Notes 2026-11-04 · Donald working decisions #2).
+Notes 2026-10-27 · AA meeting with Ben and Vanessa #1; Notes 2026-10-28 · AA meeting with Greg #1, #43, #44, #46, #47, #63, #65; Notes 2026-11-04 · Donald working decisions #2; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-05).
 
-**No automatic invoice or credit** follows a prepaid procedure or any fixed-price Contract: the
+**No automatic invoice or credit** follows a prepaid procedure or any fixed-price or open-price Contract: the
 system calculates nothing further, in either direction and with no threshold (OQ-61, OQ-03). Where
 the work turned out very different (only half done, or far longer), the anaesthetist, or the
-office, raises an additional invoice or credit note by hand; the office can also change the price itself ([FT-05.4](stories/FT-05.4.md)), though a prepaid Contract is never editable by the anaesthetist (OQ-96) (whether a
+office, raises an additional invoice or credit note by hand; the office can also change the price itself ([FT-05.4](stories/FT-05.4.md)), on a prepaid Procedure only until its prepayment invoice is raised (our reading), though a prepaid Contract never allows the anaesthetist's override (OQ-96) (whether a
 credit can be for part of the prepayment is OQ-97). A prepaid Booking moved to another anaesthetist keeps the agreed amount:
 the anaesthetist who does it is paid by transfer from the AA Holding account, wearing or benefiting
 from any difference, claims the prepaid amount, and the system has no logic that detects the move or
@@ -819,27 +976,35 @@ with Greg #5; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-27 · A
 | Booking | An appointment within a List for one patient. Formerly Card. |
 | Card | The physical hospital or surgeon booking card only. |
 | List | A pairing of anaesthetist, surgeon, hospital, day and session, sitting in a Slot and holding Bookings. One surgeon, one hospital. DRAFT (a Draft List) until it has an anaesthetist, then ACTIVE, SUBMITTED and AUTHORISED. |
+| Out-of-hours List | A List after the PM session, with its own start time, for emergency or late cases in any specialty, sometimes created the same day, in the evening. Asked for on 5 November; how it sits beside the AM and PM Slots is not yet designed. |
 | Active List | A List with all five of its pairing: anaesthetist, surgeon, hospital, day and session. The ACTIVE state, in which the anaesthetist completes its Bookings and submits it. |
 | Primary Procedure | The one Procedure in a Booking that carries base units and anchors modifiers. |
-| Contract | A structure in the system that sets how a procedure is paid for and who pays; not necessarily a legal contract. AA is the party in the centre, and everyone else with an arrangement is a contract holder. A Contract is a series of dated versions holding contract lines, or none. |
-| Contract holder | The party a Contract belongs to: an insurer, a hospital, a surgeon, or an anaesthetist; AA holds No contract (RVG). Insurers are contract holders like any other; there is no insurer master list. A setting says how its invoices are delivered, by email or another output (OQ-114). Either AA invoices it, and its own billable party record is billed, or it only sets the price, and the payer on the Booking is billed. It may be linked to an anaesthetist, or to one or more surgeons, whose Bookings alone are offered its Contracts. |
-| Typical arrangements | The five Contract set-ups that cover most work: No contract (RVG), a hospital's RVG Contract, a hospital's fixed-price Contract, an anaesthetist's prepay price list and a surgeon's fixed-fee arrangement. Replaces "first party" and "third party". |
-| No contract (RVG) | The one default for the whole system: standard RVG pricing at the anaesthetist's own unit value, offered first. Stored as a Contract like any other (exactly one, held by AA, never billed, carrying no practice-wide prices, never expiring); editable. Bills the payer on the Booking (OQ-78). Replaces "Default Contract" and "Default RVG Contract". |
-| Contract line | A Contract's terms for a group of procedures: a line key, an optional reference code and description, an optional default RVG code, and any of a price (ex GST), a rate, a discount, and base or modifier units. A blank is not set; 0 is a value. Lines stand alone. |
-| Contract line key | The system's own code for a contract line: unique, never reused, and kept when a new version copies the line, so Procedures can be relinked to the new version. |
-| Reference code | The contract holder's own code for a contract line (for example a hospital's code), optional and unique within the Contract; used to search and to match a holder's file. |
-| Contract version | One of a Contract's dated versions: a start date, an optional end date and a forward link to the version that revised it. Every change creates a new version from a date the office chooses, never backdated; the version in force on the procedure date prices it. |
-| Editable (Contract setting) | Whether the anaesthetist may change the price, rate or discount on Procedures under a Contract; never a fixed price, whatever the setting (OQ-117). A prepaid Contract is never editable (OQ-96). The office can change any price on any Contract. |
-| Prepaid Contract | A Contract flagged as prepaid, normally an anaesthetist's own price list, or a surgeon's (identified by practitioner ID): picking it starts the prepayment, and its line's price, above zero, is the prepaid amount. Never editable by the anaesthetist; the office can still change the price (OQ-96). |
-| Fixed-rate Contract | A Contract whose price is BTM × the Contract's rate instead of the anaesthetist's own unit value. New. |
-| Fixed-discount Contract | A Contract whose price is BTM × the anaesthetist's own unit value less the Contract's discount, shown as its own invoice line. New. |
+| Contract | A structure in the system that sets how a procedure is paid for and who pays; not necessarily a legal contract. One priced item with its own settings, held by a party: there is no parent schedule, no contract lines and no versions, so a holder's schedule becomes one Contract per item. Ben and Vanessa call them "procedures"; the system keeps "Contract". Every change is audited; a setting that must change from a date means a new Contract. |
+| Party | The shared record for anyone who holds Contracts: a hospital, an insurer or funder, a surgeon or surgeon group, an anaesthetist, or AA (which holds No contract · RVG and the Patient fallbacks). Holds the billing name and details and how its invoices are delivered (email or post for now; OQ-114), and is billed when a Contract it holds bills its holder. Insurers are parties like any other; there is no separate insurer master list. Replaces "contract holder". |
+| Bills holder or payer | A setting on each Contract: it bills its holder (the party pays AA itself) or bills the payer named on the Booking (the holder only sets the price). Decides the billable party and the invoice layout. |
+| Invoice destination | Where a Contract's invoice goes, worked out from its settings, never stored: **Patient** (it bills the payer on the Booking), **Hospital** (it bills the List's hospital and carries a funding tag) or **Special** (everything else: an untagged hospital-billed Contract, a surgeon group, an insurer or funder billed directly). Step 1 of the step rail ("Where does the invoice go?"). Replaces "typical arrangements", "first party" and "third party". |
+| Payment type | Step 2 of the step rail under Patient: **Standard** (first, the normal pathway) or **Prepaid**. Ben's wording, replacing "Prepaid? / Not prepaid". |
+| Step rail | The booking setup picker: where does the invoice go, then the payment type or the hospital's funding tag, then the Contract (searched by typing) or the "Other price" toggle. A step with one possible answer fills itself in; the Booking's insurer or funder marks one path "Suggested", never narrowing. A Procedure with no Contract shows "Needs an invoice destination". |
+| Specialty | One of AA's broad surgical specialties (Ophthalmology, General surgery, Plastic surgery, ENT, Gynaecology, Orthopaedics and so on; no subspecialties). A surgeon holds one or more, usually one; a Contract holds none (every specialty) or several, and is offered only where they include the List surgeon's. |
+| Funding tag | An optional label on a Contract from an AA-maintained list (SXAP, HNZ, ACC, ...). On a Contract that bills a hospital it places the Contract under Hospital, under that tag, at step 2. |
+| Status (Contract) | Active or Disabled. A Disabled Contract is hidden from the step rail; Procedures already on it keep it. Replaces end dates and retirement. |
+| Pricing kind | How a Contract prices a Procedure: RVG at the anaesthetist's rate, RVG at the Contract's rate, RVG less a discount, fixed price, or open price. Set when the Contract is created. All prices ex GST. |
+| Price range | One dated price of a fixed-price Contract: a start date (which may be in the past) and a price. Its end is implied, the day before the next range's start, so ranges never overlap or leave a gap. The range in force on the procedure date gives the price. Replaces "Contract version". |
+| Open price | The pricing kind with no price of its own: the amount is typed on the Procedure. Used only by the open-price fallbacks. |
+| Open-price fallback | The one system-created open-price Contract for each invoice destination: No contract · Fixed price (Patient, Standard), Prepaid · Fixed price (Patient, Prepaid), one per hospital and funding tag (for example Forte · SXAP · Fixed price) and one per Special holder (for example NIB · Fixed price). Picked by the "Other price" toggle. Named "· Fixed price" because a fixed amount is typed. |
+| No contract · RVG | The one built-in default for the whole system: standard RVG pricing at the anaesthetist's own unit value, with the price override allowed, offered first under Patient › Standard. Stored as a Contract like any other (exactly one, held by AA, never billed, carrying no practice-wide prices, never expiring or disabled), found by its system role, never by its name. Bills the payer on the Booking (OQ-78). Replaces "No contract (RVG)", "Default Contract" and "Default RVG Contract". |
+| Reference code | A holder's own code for the item a Contract prices (for example SXAP `AP0126`, ACC `OPT101`), optional; a setting on the Contract, printed on the holder's invoices and searchable when picking. Not a unique key; the AA code is. |
+| Price override (Contract setting) | On a Contract priced from RVG units, whether the anaesthetist may type a price of their own, the RVG detail staying recorded and visible beside it. Never on a fixed price (OQ-117) or a prepaid Contract (OQ-96). The office can change any price on any Contract. Replaces "editable". |
+| Prepaid Contract | A Contract flagged as prepaid, for its whole life: normally an item on an anaesthetist's own price list, or a surgeon's, linked to that practitioner, or the Prepaid · Fixed price fallback. Offered only under Patient › Prepaid; bills the payer; priced at a fixed or open price, never from RVG units. Picking it starts the prepayment, whose amount, above zero, is the Procedure's price when the prepayment invoice is raised. Never carries the price override (OQ-96). |
+| RVG at the Contract's rate | The pricing kind whose price is BTM × the Contract's rate instead of the anaesthetist's own unit value. Formerly "fixed-rate Contract". |
+| RVG less a discount | The pricing kind whose price is BTM × the anaesthetist's own unit value less the Contract's discount, shown as its own invoice line. Formerly "fixed-discount Contract". |
 | Payer | The party named on the Booking to be billed whenever the Contract does not bill its holder: prefilled from the patient, editable by the office or the anaesthetist to a parent, guardian or other party, such as a benefactor or a family trust. Needs an email or a postal address (NZ Post standard). |
-| Billable party | Whoever receives the invoice for a Procedure, decided by its Contract: the holder's billable party record, or the payer on the Booking. Billable parties are reference records (hospitals, surgeons, insurers and patients; a guardian or other payer is entered as the Booking's payer). |
+| Billable party | Whoever receives the invoice for a Procedure, decided by its Contract: the Contract's holder (a party) when it bills its holder, or the payer on the Booking. A guardian or other payer is entered as the Booking's payer, not held as a party. |
 | RVG group | An RVG code as published in the NZSA guide (or one AA adds), with its anatomy heading, holding the base units and modifier units (0 by default) a Procedure takes when its RVG code is chosen. The one master list; there is no procedure list. |
-| Source wording | The procedure text exactly as the rooms, hospital or other originating system sent it (or typed "as given"), kept unedited on the Procedure, the rooms' and the hospital's apart, and shown above its RVG code and Contract. The procedure on a Booking is this text. |
-| Invoice description | The wording the invoice prints for a Procedure, set by a series of defaults: the surgeon's rooms' description to start, replaced by the hospital's description whenever one arrives, and by the chosen Contract line's invoice description where that is filled in. The RVG code plays no part. AA admins can edit it at any time, as free text, without changing the text received. |
+| Source wording | The procedure text exactly as the rooms, hospital or other originating system sent it (or typed "as given"), never edited by hand: the hospital's replaces the rooms' when it arrives, the replaced text kept in the Booking's change history. Shown above its RVG code and Contract. The procedure on a Booking is this text. |
+| Invoice description | The wording the invoice prints for a Procedure, set by a series of defaults: the surgeon's rooms' description to start, replaced by the hospital's description whenever one arrives, and by the chosen Contract's invoice description where that is filled in. The RVG code plays no part. AA admins can edit it at any time, as free text, without changing the procedure text; an admin's edit always stands (OQ-130). |
 | Approval number | The reference an insurer gives when it accepts a claim: a field on an insured Booking, with the insurer, shown on the matching screen and editable by the office and by the anaesthetist on the day. Where the Booking holds one, the anaesthetist sees the number itself. Missing on an insured Booking, it is a warning (OQ-93). A code such as SXAP is not one. |
-| Procedure (on a Booking) | One procedure performed on one Booking: the text received, with its Contract (and line), optional RVG code, recorded units, price, rate and discount. The design calls it a *booking procedure*; the catalogue keeps "Procedure". Naming still to settle. |
+| Procedure (on a Booking) | One procedure performed on one Booking: the text received, with its Contract, its RVG code (required on a Contract priced from RVG units, for reference only on a fixed or open price), recorded units and price. The design calls it a *booking procedure*; the catalogue keeps "Procedure". Naming still to settle. |
 | Time entry | The design's name for the anaesthetist filling in the Booking (business wording: "filling in the card"). |
 | Included modifier | A modifier the RVG says a code's base units already include (P1 on every Neurosurgery code, 'a' and 'b' variants alike, and every Spine code): shown selected at 0 units, not locked. |
 | Age modifier | A1 or A2, from the patient's age; whether the system applies and locks it is open (OQ-95). |
@@ -848,7 +1013,7 @@ with Greg #5; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-27 · A
 | RVG / RVU | NZSA Relative Value Guide / Relative Value Units. Units, not dollars. |
 | Internal ledger | The Billing/Invoice Engine's own receivable and payable records; system of record. |
 | ACCREC / ACCPAY | Xero receivable / payable invoice types mirroring ledger pairs. |
-| Prepayment | The price on a prepaid Contract's line (normally the anaesthetist's own price list), invoiced in full to the payer before the procedure, when an admin approves the invoice (an optional step AA can switch off) for a Booking set up on that Contract; never a deposit. Its payable is to the AA Holding account until the procedure is done. Cancelling the Booking credits it if unpaid or refunds it if paid, automatically; so does changing the Procedure's Contract to one not flagged as prepaid after the invoice is sent or paid (OQ-119). By default the final price: nothing more is invoiced or credited automatically. |
+| Prepayment | The Procedure's price on a prepaid Contract (normally an item on the anaesthetist's own price list, or an amount typed on Prepaid · Fixed price), invoiced in full to the payer before the procedure, when an admin approves the invoice (an optional step AA can switch off) for a Booking set up on that Contract; never a deposit. Its payable is to the AA Holding account until the procedure is done. Cancelling the Booking credits it if unpaid or refunds it if paid, automatically; so does changing the Procedure's Contract to one not flagged as prepaid after the invoice is sent or paid (OQ-119). By default the final price: nothing more is invoiced or credited automatically. |
 | AA Holding account | An accounts payable creditor in the payables sub-ledger alongside each anaesthetist (a "fake anaesthetist"), not a bank account and not a Xero ledger account: the payable side of a prepayment invoice's pair. Its balance is all the prepayments received for procedures not yet done. It is never paid itself: when the List is authorised, a journal transfer (an accounting move, not a payment) moves the money from it to the anaesthetist who did the procedure. Money leaves it only through the system (a transfer or a refund the system raises); the payments themselves are made in Xero, which the system tracks (OQ-111). Formerly "prepay holding account". |
 | AA fee | AA's charge to an anaesthetist, invoiced separately in a monthly run: fixed charges plus a charge per BCTI. |
 | Matching screen | Admin screen where incoming bookings, from the hospital downloads (in whatever form each hospital provides them) and the surgeons' rooms' PDF lists, are reviewed, merged and matched to Lists and Bookings; nothing is applied silently. |

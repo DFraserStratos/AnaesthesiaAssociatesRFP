@@ -84,5 +84,13 @@
     "missing-source": {
       "help": "A requirement with no known origin: add its source (a document page, a note in notes/, or Q&A) to the item"
     }
+  },
+  "voice": {
+    "descriptionWarnings": [
+      {
+        "pattern": "\\bour reading\\b",
+        "message": "an \"our reading\" marker"
+      }
+    ]
   }
 }

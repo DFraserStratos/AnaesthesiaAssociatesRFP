@@ -4,7 +4,7 @@ import Markdown, { type Components, type Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { idMentions, isArtifactHref, isIdHref, isQuestionId } from '../../shared/links.ts'
 import { isRetired, statusLabel } from '../../shared/statuses.ts'
-import { parseArtifactRef, type ArtifactRec, type Item, type Question } from '../../shared/types.ts'
+import { isPastArtifact, parseArtifactRef, type ArtifactRec, type Item, type Question } from '../../shared/types.ts'
 import { spotName } from '../artifactIndex.ts'
 import { guarded, useOpenRecord } from '../nav.ts'
 import { currentIndex, useCatalogue, useIndex, type Index } from '../store.ts'
@@ -195,7 +195,7 @@ function ArtifactLink({ refText, artifacts, bare, text }: { refText: string; art
     guarded(() => open.artifact(id, region))
   }
   const href = `#/artifacts/${encodeURIComponent(id)}${region ? `?region=${encodeURIComponent(region)}` : ''}`
-  const cls = ['record-link', bare ? 'bare ty-artifact' : '', rec.data.status === 'Superseded' ? 'retired' : ''].filter(Boolean).join(' ')
+  const cls = ['record-link', bare ? 'bare ty-artifact' : '', isPastArtifact(rec.data.status) ? 'retired' : ''].filter(Boolean).join(' ')
   return (
     <a className={cls} href={href} onClick={go} title={`${rec.data.title}${spot ? ` · ${spot}` : ''}`}>
       {bare ? (
