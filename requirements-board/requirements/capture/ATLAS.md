@@ -338,9 +338,26 @@ badge carries `data-shot=nav-badge-<section>`.
   heading rows `tr[data-contract-holder]`): `AA-RVG` No contract · RVG (`CT-NO-CONTRACT`, first,
   no Disable); `STG-001` St George's RVG, `STG-002` ACC elective services via St George's ($25);
   `SX-001` Southern Cross RVG, `SX-002` Southern Cross Affiliated Provider ($26.50); `FORTE-001`;
-  `CES-001`; `CPH-001`, `CPH-002` Health NZ agreed rate ($23); `NIB-001`; `DOYLE-001` Bariatric fixed
-  prices (fixed, bills the payer); `COS-001` ACC orthopaedic services ($24), `COS-002` COS ACC fixed
-  fees (fixed, no prices); `ARIA-001` (rate and time); `UNI-001` Unisports Ortho ($93.47). All Active.
+  `CES-001`; `CPH-001`, `CPH-002` Health NZ agreed rate ($23); `NIB-001`; `DOYLE-001` Gastric bypass
+  (`CT-DOYLE-BAR`, fixed: $2,800 from 1 Jan 2025, $2,950 from 28 Jul 2026, bills the payer);
+  `COS-001` ACC orthopaedic services ($24), `COS-002` COS ACC fixed fees (fixed, one range from
+  1 Aug 2026, so S4's failure still "Needs a price"); `ARIA-001` (rate and time); `UNI-001` Unisports
+  Ortho ($93.47). All Active.
+- Priced items (catch-up Phase 19a, `seed/pricedItems.ts`; every fixed price a Contract with price
+  ranges): `DOYLE-002` Sleeve gastrectomy ($2,400); CES `CES-002` Cataract IOL (LA by Anaesthetist,
+  holder code 8268, SXAP), `CES-003` Blepharoplasty (AP0126, SXAP), `CES-004` Ant Vitrectmy addn to
+  Catrct, `CES-005` to `CES-007` Vitrectomy · 0 to 60 / 61 to 90 / 91 to 120 mins (AP0163, SXAP),
+  `CES-008` Cataract (HNZCATall, HNZ), `CES-009` Cataract Extraction Simple (OPT101, ACC); Merivale
+  Plastic Surgery `MER-001` Face lift ($3,100), `MER-002` Facelift plus 1 add on ($3,400), `MER-003`
+  Facelift plus 2 add ons ($3,700), all from 1 Jun 2026, default RVG code H3, linked Ms G. Lim and Mr
+  M. Wolfenden, billing the payer (ids `CT-MER-FACELIFT`, `-1`, `-2`); Dr Souter's prepaid list
+  `SOUTER-001` Rhinoplasty ($1,200, then $1,300 from 1 Sep 2026, `CT-SOUTER-RHINO`), `SOUTER-002`
+  Blepharoplasty, upper lids, `SOUTER-003` Breast augmentation (holder filter `?holder=PY-SOUTER`).
+  Searches: "CAT" (the cataract items), "H3" (Merivale's three and Rhinoplasty), "AP0126".
+- The one Booking on a priced item: BK0163, Sophie Matthews, Face lift on Dr Souter's Mon 10 Aug PM
+  List (St George's, Ms Lim), `/admin/day/2026-08-10/bookings/BK0163`, unedited at $3,100; a range
+  added from a date before 10 Aug re-prices it. The bariatric hernia (P0030 on BK0028) is on No
+  contract · RVG at $61, billed to the patient.
 - The row's Edit button's accessible name is "Edit <name>": click `button:text-is("Edit")` inside the
   row, not `role=button[name="Edit"]`. The search input is `[data-shot=contract-search] input`.
 
@@ -371,8 +388,11 @@ badge carries `data-shot=nav-badge-<section>`.
   `TAG-SXAP` SXAP (Southern Cross Health Society), `TAG-HNZ` HNZ (Health NZ), `TAG-ACC` ACC (ACC).
   Row actions are named "Move SXAP up", "Edit SXAP", "Remove SXAP"; removing SXAP is refused (2
   Contracts).
-- Tagged Contracts: `SX-002` SXAP, `CPH-002` HNZ, `STG-002`, `COS-001` and `COS-002` ACC. Doyle's
-  `DOYLE-001` holds General surgery; every other Contract holds none (every specialty).
+- Tagged Contracts: `SX-002` SXAP, `CPH-002` HNZ, `STG-002`, `COS-001` and `COS-002` ACC, and since
+  Phase 19a the CES items (`CES-002` to `CES-007` SXAP, `CES-008` HNZ, `CES-009` ACC), so CES's
+  three tag fallbacks exist from the start (tag Forte to show a fallback being made). Specialties:
+  Doyle's two General surgery, the CES items Ophthalmology, Merivale's and Dr Souter's Plastic
+  surgery; every other Contract holds none (every specialty). Removing SXAP is refused (9 Contracts).
 - System Contracts, rows `tr[data-system=openPriceFallback]` with a "System" pill (No contract · RVG is
   `tr[data-system=noContractRvg]`), ids `CT-FIX-<destination key>`: `AA-FIX` No contract · Fixed price,
   `AA-PRE` Prepaid · Fixed price, `STG-ACC-FIX`, `SX-SXAP-FIX`, `CPH-HNZ-FIX` (hospital and tag), and
@@ -862,15 +882,23 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `contract-status-filter` (Active, Disabled, All buttons), `contract-holder-filter` (select),
   `contract-detail` (the Contract side panel), `contract-settings` (Pricing section: prepaid, pricing
   kind, rate or discount, override), `contract-links` (Holder and who it bills: holder, Bills, linked
-  surgeons and anaesthetist), `contract-disable` (Disable, error treatment), `contract-price-rows` (the
-  fixed kind's prices), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
+  surgeons and anaesthetist), `contract-disable` (Disable, error treatment), `contract-codes` (Invoice and
+  codes: holder reference code, invoice description, default RVG code `contract-default-rvg` with
+  Choose or Change and Clear), `contract-price-ranges` (a fixed price's ranges, rows `price-range-row`
+  with `data-range-start` and `data-in-force="today"`, the add row `price-range-add` with inputs
+  labelled "New range start" and "New range price (ex GST)" and the "Add price range" button; refusals
+  in `[data-shot=contract-detail] [role=alert]`; the only range's Delete is disabled, named "Delete (a
+  Contract keeps at least one price range)"), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
   failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first,
   and never a Fixed price fallback.
 - RVG groups (catch-up Phase 19): `masters-rvg-groups`, `rvg-group-sheet`, `rvg-group-retire`,
   `rvg-group-search`, `rvg-type-ahead`, `rvg-anatomy`, `rvg-base-units`, `rvg-range-units`,
   `rvg-outside-guide`, `rvg-code-clear`, `manual-rvg-code`; the capture card keeps
   `capture-procedure-code` (an explicit `shot` on `CaptureSection`, since its label is now "RVG code").
-  There is no `masters-rvg` hook.
+  There is no `masters-rvg` hook. The read-only RVG time rule panel above the table is
+  `masters-rvg-time-rule` (catch-up Phase 19a). The T row's caption reads "From start and finish
+  stamps · RVG time tiers"; money surfaces show "Needs a price" (`booking-needs-price` on the Booking
+  total) where a fixed price has no range in force.
 - Specialties, funding tags and fallbacks (catch-up Phase 18a): `masters-specialties`,
   `masters-funding-tags`, `specialty-sheet`, `funding-tag-sheet`, `surgeon-specialties` (the profile's
   Specialties card), `surgeon-specialties-field` (the surgeon sheet's field), `contract-specialties`,

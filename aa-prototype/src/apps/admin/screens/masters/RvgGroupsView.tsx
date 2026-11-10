@@ -26,7 +26,8 @@ import { neutral, radius } from '../../../../theme/tokens'
 import { selectControlStyle } from '../../flows/fieldChrome'
 import { Pill } from '../../components/MasterPills'
 import { Header, Table, TextAction } from './chrome'
-import { rowCellStyle } from './tableStyles'
+import { cellStyle, headCellStyle, rowCellStyle } from './tableStyles'
+import { describeTimeRule } from '../../../../domain/billing/timeUnits'
 
 const COLUMNS = ['Code', 'Description', 'Base units', '', '']
 
@@ -82,6 +83,8 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
         sub="The NZSA RVG 2021 groups AA prices from, plus AA's own. Demo-sized; the full set loads at go-live."
         action={<Button variant="secondary" onClick={() => { setError(null); setSheet({}) }}>Add group</Button>}
       />
+
+      <TimeRulePanel />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div data-shot="rvg-group-search" style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -262,5 +265,43 @@ function RetireRvgGroup({ group, actor, onClose }: { group: RvgGroup; actor: Act
         <Button variant="secondary" block onClick={onClose}>Cancel</Button>
       </div>
     </Overlay>
+  )
+}
+
+/**
+ * The RVG time rule, read only (catch-up Phase 19a; US-05.2.2, D25): the
+ * tiers held as data in `masters.rvgTimeRule`, in words and as a small table.
+ * Phase 42 makes it editable.
+ */
+function TimeRulePanel() {
+  const rule = useAppStore((s) => s.masters.rvgTimeRule)
+  return (
+    <section
+      data-shot="masters-rvg-time-rule"
+      aria-labelledby="rvg-time-rule-title"
+      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}
+    >
+      <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <h3 id="rvg-time-rule-title" style={{ margin: 0, fontSize: 14, fontWeight: 700, color: neutral.ink }}>RVG time rule</h3>
+        <div style={{ fontSize: 13, color: neutral.slate, maxWidth: 520 }}>{describeTimeRule(rule)}</div>
+        <div style={{ fontSize: 12, color: neutral.mist }}>A part interval always rounds up. The anaesthetist enters start and finish; the time units follow these tiers.</div>
+      </div>
+      <table style={{ borderCollapse: 'collapse', flex: '0 1 300px' }}>
+        <thead>
+          <tr>
+            <th style={headCellStyle}>From minute</th>
+            <th style={{ ...headCellStyle, textAlign: 'right' }}>Minutes per unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rule.tiers.map((t) => (
+            <tr key={t.fromMinute}>
+              <td style={cellStyle} className="mono">{t.fromMinute}</td>
+              <td style={{ ...cellStyle, textAlign: 'right' }} className="mono">{t.intervalMinutes}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   )
 }

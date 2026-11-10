@@ -43,12 +43,12 @@ function billingContextFor(state: SeedState, booking: Booking): BookingBillingCo
     anaesthetist,
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
-    contractPrices: Object.values(state.masters.contractPrices),
     parties: state.masters.parties,
     billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
+    listDateISO: list.dateISO,
+    timeRule: state.masters.rvgTimeRule,
   }
-  if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
   return ctx
 }
 
@@ -439,7 +439,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     const procedures = proceduresForBooking(seed, bookingId)
     const totals: number[] = []
     const unitSums: number[] = []
-    procedures.forEach((procedure, index) => {
+    procedures.forEach((procedure) => {
       const contract =
         procedure.governingContractId !== undefined
           ? seed.masters.contracts[procedure.governingContractId]
@@ -451,13 +451,12 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
       )
       const ctx: Parameters<typeof feeFor>[1] = {
         anaesthetist,
-        contractPrices: Object.values(seed.masters.contractPrices),
-        procedureOrdinal: index + 1,
+        dateISO: list.dateISO,
+        timeRule: seed.masters.rvgTimeRule,
         nonRvgLines,
       }
       if (contract !== undefined) ctx.contract = contract
       if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
-      if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
       const fee = feeFor(procedure, ctx)
       totals.push(fee.total)
       unitSums.push(fee.billableUnits)
@@ -486,11 +485,12 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     expect(all.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(954, 2)
   })
 
-  it('bariatric fixed price: $2,800 first procedure, $950 by the second-procedure ordinal rule', () => {
+  it("bariatric fixed price: $2,800 from Gastric bypass's range in force; the hernia at RVG, time units only (catch-up Phase 19a, RV-07)", () => {
     const marker = SEED_MARKERS['bariatricType3Booking']
     expect(marker).toBeDefined()
     if (marker === undefined) return
-    expect(feeForBooking(marker.entityId).totals).toEqual([2800, 950])
+    // 2 time units at Dr Fitzgerald's $30.50: no Contract prices a second procedure.
+    expect(feeForBooking(marker.entityId).totals).toEqual([2800, 61])
   })
 
   it('rate x time: 3 hours at $480 = $1,440', () => {
@@ -755,6 +755,7 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     anaesthetistIds: new Set(Object.keys(seed.masters.anaesthetists)),
     specialtyIds: new Set(Object.keys(seed.masters.specialties)),
     fundingTagIds: new Set(Object.keys(seed.masters.fundingTags)),
+    rvgGroups: seed.masters.rvgGroups,
   }
 
   it('pins the AA code table, every code unique', () => {
@@ -776,6 +777,22 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-ARIA-HOURLY': 'ARIA-001',
       'CT-UNISPORTS': 'UNI-001',
       'CT-COS-FIXED': 'COS-002',
+      // Catch-up Phase 19a: the priced items, one fixed-price Contract each.
+      'CT-DOYLE-SLEEVE': 'DOYLE-002',
+      'CT-CES-SXAP-CATIOL': 'CES-002',
+      'CT-CES-SXAP-BLEPH': 'CES-003',
+      'CT-CES-SXAP-ANTVIT': 'CES-004',
+      'CT-CES-SXAP-VIT60': 'CES-005',
+      'CT-CES-SXAP-VIT90': 'CES-006',
+      'CT-CES-SXAP-VIT120': 'CES-007',
+      'CT-CES-HNZ-CAT': 'CES-008',
+      'CT-CES-ACC-CAT': 'CES-009',
+      'CT-MER-FACELIFT': 'MER-001',
+      'CT-MER-FACELIFT-1': 'MER-002',
+      'CT-MER-FACELIFT-2': 'MER-003',
+      'CT-SOUTER-RHINO': 'SOUTER-001',
+      'CT-SOUTER-BLEPH': 'SOUTER-002',
+      'CT-SOUTER-BREAST': 'SOUTER-003',
     })
     const codes = Object.values(contracts).map((c) => c.aaCode)
     expect(new Set(codes).size).toBe(codes.length)
@@ -788,8 +805,10 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(noContractRvg(contracts)).toMatchObject({ id: 'CT-NO-CONTRACT', holderId: 'PY-AA', billsTo: 'payer', anaesthetistMayOverridePrice: true })
     // The override is seeded on No contract · RVG only (A18); nothing is prepaid; every Contract is Active.
     expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id)).toEqual(['CT-NO-CONTRACT'])
-    // Nothing the office seeded is prepaid; the only prepaid Contract is the system's Prepaid · Fixed price (Phase 18a).
-    expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.name)).toEqual(['Prepaid · Fixed price'])
+    // Prepaid: Dr Souter's price list (catch-up Phase 19a) and the system's Prepaid · Fixed price (Phase 18a).
+    expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
+      ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
+    )
     expect(Object.values(contracts).some((c) => c.status !== 'active')).toBe(false)
   })
 
@@ -799,9 +818,15 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       return p?.kind === 'rvgContractRate' ? p.unitRate : undefined
     }
     expect([rate('CT-SXAP'), rate('CT-HNZ'), rate('CT-STG-ACC'), rate('CT-COS-ACC'), rate('CT-UNISPORTS')]).toEqual([26.5, 23, 25, 24, 93.47])
-    expect(contracts['CT-DOYLE-BAR']).toMatchObject({ pricing: { kind: 'fixed' }, billsTo: 'payer', linkedSurgeonIds: ['S-DOYLE'] })
-    expect(contracts['CT-COS-FIXED']?.pricing.kind).toBe('fixed')
-    expect(Object.values(seed.masters.contractPrices).filter((p) => p.contractId === 'CT-COS-FIXED')).toEqual([])
+    expect(contracts['CT-DOYLE-BAR']).toMatchObject({
+      name: 'Gastric bypass',
+      pricing: { kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-07-28', price: 2950 }] },
+      billsTo: 'payer',
+      linkedSurgeonIds: ['S-DOYLE'],
+    })
+    expect(contracts['CT-DOYLE-SLEEVE']).toMatchObject({ pricing: { kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2400 }] } })
+    // COS ACC fixed fees starts after the billing-failure demo's Thu 16 Jul List.
+    expect(contracts['CT-COS-FIXED']?.pricing).toEqual({ kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 1250 }] })
     expect(Object.values(contracts).filter((c) => c.permitsRateTime).map((c) => c.id)).toEqual(['CT-ARIA-HOURLY'])
   })
 })
@@ -867,8 +892,9 @@ describe('the RVG groups (catch-up Phase 19; US-05.1.1, US-05.1.3, RV-41)', () =
       expect(g, p.id).toBeDefined()
       expect(baseUnitsFor({ procedure: p, group: g! }).outsideGuide, p.id).toBe(false)
     }
-    for (const price of Object.values(seed.masters.contractPrices)) {
-      if (price.rvgGroupId !== undefined) expect(seed.masters.rvgGroups[price.rvgGroupId], price.id).toBeDefined()
+    // Every Contract's default RVG code is a live row (catch-up Phase 19a).
+    for (const c of Object.values(seed.masters.contracts)) {
+      if (c.defaultRvgGroupId !== null) expect(seed.masters.rvgGroups[c.defaultRvgGroupId]?.retired, c.id).toBe(false)
     }
   })
 

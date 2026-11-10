@@ -33,7 +33,7 @@ interface BtmCaptureBlockProps {
   procedure: Procedure
   list: AssignedList
   actor: Actor
-  /** 1-based position on the Booking — feeds fixed-price second-procedure pricing. */
+  /** 1-based position on the Booking: labels it "PROCEDURE n" (no Contract prices by position, catch-up Phase 19a). */
   ordinal: number
   /** True count of procedures (header shows PROCEDURE n only when > 1). */
   procedureCount: number
@@ -90,8 +90,8 @@ export function BtmCaptureBlock({
   const [sheetHint, setSheetHint] = useState(false)
 
   const { fee, rvgGroup, contract, nonRvgLines } = useMemo(
-    () => procedureFee({ procedure, list, ordinal, masters, billingLines }),
-    [procedure, list, ordinal, masters, billingLines],
+    () => procedureFee({ procedure, list, masters, billingLines }),
+    [procedure, list, masters, billingLines],
   )
 
   const shown = showValidation ? failures : []

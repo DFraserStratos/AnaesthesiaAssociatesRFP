@@ -2,8 +2,8 @@
  * Human labels for the patch keys that appear in an audit entry's
  * `before` / `after` objects (A7 presentation).
  *
- * Covers the editable fields of `Booking`, `Procedure`, `List`, `Contract`,
- * `ContractPrice`, `Patient`, `Anaesthetist` and `BillingLine`, plus the
+ * Covers the editable fields of `Booking`, `Procedure`, `List`, `Contract`
+ * (and a fixed price's ranges), `Patient`, `Anaesthetist` and `BillingLine`, plus the
  * audit-only keys the store synthesises for events that are not field edits
  * (`{ cancelled, reason }`, `{ invoiceCount, exceptionCount }`, and so on).
  *
@@ -143,8 +143,12 @@ export const FIELD_LABELS: Record<string, string> = {
   pricing: 'Pricing',
   systemRole: 'System Contract',
   permitsRateTime: 'Allows rate and time lines',
-  procedureOrdinal: 'Procedure position',
   price: 'Price',
+  // Catch-up Phase 19a (US-04.2.15, US-04.2.18).
+  invoiceDescription: 'Invoice description',
+  defaultRvgCode: 'Default RVG code',
+  priceRange: 'Price range',
+  contract: 'Contract',
 
   // --- Party (catch-up Phase 18) -------------------------------------------
   codePrefix: 'Code prefix',

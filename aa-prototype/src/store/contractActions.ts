@@ -20,11 +20,30 @@
  * open-price fallback in the same commit, audited `contract.fallbackCreate`
  * once per fallback made. The office never creates, disables or reshapes a
  * fallback (the guard's system rule).
+ *
+ * Catch-up Phase 19a: a fixed price holds dated price ranges, changed only
+ * through `addPriceRange`, `editPriceRange` and `deletePriceRange` (office
+ * only, audited `contract.priceRange.add|update|delete` with the range before
+ * and after in words), each checked by the same guard (`validatePriceRanges`
+ * inside `contractRefusal`) plus "never the last". A Contract also carries
+ * its invoice description and default RVG code, set through the edit.
  */
 
-import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
-import type { Contract, ContractPrice } from '../domain/types'
+import type { Contract, PriceRange } from '../domain/types'
 import { contractRefusal, nextAaCode, normaliseAaCode, type ContractRefusalContext } from '../domain/billing/contracts'
+import {
+  addRange,
+  deleteRange,
+  deleteRangeRefusal,
+  describeRange,
+  editRange,
+  editRangeRefusal,
+  normaliseRanges,
+  priceRangeRefusal,
+  sameRanges,
+} from '../domain/billing/priceRanges'
+import { rvgGroupLabel } from '../domain/billing/rvgGroups'
+import { roundToCents } from '../domain/billing/money'
 import { ensureFallbacks } from '../domain/billing/fallbacks'
 import { contractSpecialtyLabel } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -39,6 +58,7 @@ function refusalContext(state: AppState, prev?: Contract): ContractRefusalContex
     anaesthetistIds: new Set(Object.keys(state.masters.anaesthetists)),
     specialtyIds: new Set(Object.keys(state.masters.specialties)),
     fundingTagIds: new Set(Object.keys(state.masters.fundingTags)),
+    rvgGroups: state.masters.rvgGroups,
   }
 }
 
@@ -78,6 +98,10 @@ function named(values: Record<string, unknown>, state: Pick<AppState, 'masters'>
     if (k === 'specialtyIds') out.specialties = Array.isArray(v) ? contractSpecialtyLabel(state.masters, v as string[]) : v
     else if (k === 'holderId') out.holder = typeof v === 'string' ? (state.masters.parties[v]?.name ?? v) : v
     else if (k === 'fundingTagId') out.fundingTag = typeof v === 'string' && v !== '' ? (state.masters.fundingTags[v]?.code ?? v) : 'None'
+    else if (k === 'defaultRvgGroupId') {
+      const group = typeof v === 'string' && v !== '' ? state.masters.rvgGroups[v] : undefined
+      out.defaultRvgCode = group !== undefined ? rvgGroupLabel(group) : typeof v === 'string' && v !== '' ? v : 'None'
+    } else if (k === 'invoiceDescription') out.invoiceDescription = typeof v === 'string' && v !== '' ? v : 'None'
     else out[k] = v
   }
   return out
@@ -111,6 +135,10 @@ export interface ContractInput {
   linkedSurgeonIds: string[]
   linkedAnaesthetistId?: string
   holderReference?: string
+  /** The wording the patient reads (Phase 19a; 20a makes it the top default). */
+  invoiceDescription?: string | null
+  /** The RVG group that fills a Procedure's empty RVG code (Phase 19a). */
+  defaultRvgGroupId?: string | null
   /** INTERIM until Phase 24: the Method 3 (rate x time) gate. */
   permitsRateTime?: boolean
   /** The specialties it is offered for; none (the default) means every specialty. */
@@ -136,9 +164,11 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
     ...(input.linkedAnaesthetistId !== undefined && input.linkedAnaesthetistId !== '' ? { linkedAnaesthetistId: input.linkedAnaesthetistId } : {}),
     prepaid: input.prepaid,
     anaesthetistMayOverridePrice: input.anaesthetistMayOverridePrice,
-    pricing: input.pricing,
+    pricing: input.pricing.kind === 'fixed' ? { kind: 'fixed', ranges: normaliseRanges(input.pricing.ranges) } : input.pricing,
     status: 'active',
     ...(reference !== '' ? { holderReference: reference } : {}),
+    invoiceDescription: blankToNull(input.invoiceDescription),
+    defaultRvgGroupId: blankToNull(input.defaultRvgGroupId),
     permitsRateTime: input.permitsRateTime ?? false,
     specialtyIds: [...new Set(input.specialtyIds ?? [])],
     ...(input.fundingTagId !== undefined && input.fundingTagId !== '' ? { fundingTagId: input.fundingTagId } : {}),
@@ -179,6 +209,10 @@ function save(api: AppStoreApi, actor: Actor, contractId: string, apply: (prev: 
   const prev = state.masters.contracts[contractId]
   if (prev === undefined) return refuse('notFound', 'Contract not found.')
   const next = apply(prev)
+  // A fixed price's ranges change only through the range actions, each with its own audit entry.
+  if (prev.pricing.kind === 'fixed' && next.pricing.kind === 'fixed' && !sameRanges(prev.pricing.ranges, next.pricing.ranges)) {
+    return refuse('useRangeActions', 'Change a price range with Add price range, Edit or Delete.')
+  }
   const refused = contractRefusal(next, refusalContext(state, prev))
   if (refused !== null) return refuse(refused.code, refused.message)
   const { before, after } = diff(prev, next)
@@ -207,7 +241,15 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
       // optional fields an empty value clears; so a raw patch is refused as
       // data, never thrown on.
       const defined = Object.fromEntries(
-        Object.entries(patch).filter(([k, v]) => v !== undefined || k === 'linkedAnaesthetistId' || k === 'holderReference' || k === 'fundingTagId'),
+        Object.entries(patch).filter(
+          ([k, v]) =>
+            v !== undefined ||
+            k === 'linkedAnaesthetistId' ||
+            k === 'holderReference' ||
+            k === 'fundingTagId' ||
+            k === 'invoiceDescription' ||
+            k === 'defaultRvgGroupId',
+        ),
       ) as ContractEditPatch
       const next: Contract = { ...prev, ...defined, id: prev.id, status: prev.status }
       if (next.holderReference === undefined) delete next.holderReference
@@ -220,6 +262,9 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
       }
       if ('fundingTagId' in patch && (patch.fundingTagId === undefined || patch.fundingTagId === '')) delete next.fundingTagId
       if ('specialtyIds' in patch && patch.specialtyIds !== undefined) next.specialtyIds = [...new Set(patch.specialtyIds)]
+      if ('invoiceDescription' in patch) next.invoiceDescription = blankToNull(patch.invoiceDescription)
+      if ('defaultRvgGroupId' in patch) next.defaultRvgGroupId = blankToNull(patch.defaultRvgGroupId)
+      if (next.pricing.kind === 'fixed') next.pricing = { kind: 'fixed', ranges: normaliseRanges(next.pricing.ranges) }
       return next
     },
     { action: 'contract.update' },
@@ -236,82 +281,107 @@ export function enableContract(api: AppStoreApi, actor: Actor, contractId: strin
   return save(api, actor, contractId, (prev) => ({ ...prev, status: 'active' }), { action: 'contract.enable' })
 }
 
-// ---------------------------------------------------------------------------
-// Contract prices (the fixed kind's interim rows, until Phase 19a's price ranges)
-// ---------------------------------------------------------------------------
-
-export interface ContractPriceInput {
-  contractId: string
-  /** The RVG group row this price is for (catch-up Phase 19). */
-  rvgGroupId?: string
-  surgeonId?: string
-  /** 1-based position on the Booking (the 2nd-procedure ordinal rule). */
-  procedureOrdinal?: number
-  price: number
+/** A trimmed text, or null when blank or absent (the two optional fields). */
+function blankToNull(v: string | null | undefined): string | null {
+  const t = v?.trim() ?? ''
+  return t === '' ? null : t
 }
 
-/** Add a fixed-price row to a contract's price list. Audited `contractPrice.create`. */
-export function addContractPrice(api: AppStoreApi, actor: Actor, input: ContractPriceInput): Outcome<{ id: string }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a contract price.')
+// ---------------------------------------------------------------------------
+// Price ranges (catch-up Phase 19a; US-04.2.15, DM-09; AR-58 5.6)
+// ---------------------------------------------------------------------------
+
+type RangeAction = 'contract.priceRange.add' | 'contract.priceRange.update' | 'contract.priceRange.delete'
+
+/**
+ * One audited change to a fixed price's ranges: refused for any actor but the
+ * office, on a Contract that is not a fixed price, and by the Contract's own
+ * guard (`contractRefusal`, which runs `validatePriceRanges`). The ranges in
+ * the audit are in words ("From 1 Oct 2026, $3,200.00").
+ */
+function saveRanges(
+  api: AppStoreApi,
+  actor: Actor,
+  contractId: string,
+  apply: (ranges: readonly PriceRange[]) => { ranges: PriceRange[] } | { refused: { code: string; message: string } },
+  audit: { action: RangeAction; before?: PriceRange; after?: PriceRange },
+): Outcome {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change a Contract.')
   const state = api.getState()
-  const contract = state.masters.contracts[input.contractId]
-  if (contract === undefined) return refuse('notFound', 'Contract not found.')
-  if (contract.pricing.kind !== 'fixed') return refuse('notFixedPrice', 'Only a fixed-price Contract has prices.')
-  if (!(input.price > 0)) return refuse('invalidPrice', 'The price must be greater than zero.')
-  if (input.rvgGroupId !== undefined && input.rvgGroupId !== '') {
-    const pick = rvgGroupPickRefusal(state.masters.rvgGroups, input.rvgGroupId, undefined)
-    if (pick !== null) return refuse(pick.code, pick.message)
+  const prev = state.masters.contracts[contractId]
+  if (prev === undefined) return refuse('notFound', 'Contract not found.')
+  if (prev.pricing.kind !== 'fixed') {
+    const r = priceRangeRefusal('notFixedPrice')
+    return refuse(r.code, r.message)
   }
-
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'contractPrice')
-    id = alloc.id
-    const row: ContractPrice = {
-      id: alloc.id,
-      contractId: input.contractId,
-      price: input.price,
-      ...(input.rvgGroupId !== undefined && input.rvgGroupId !== '' ? { rvgGroupId: input.rvgGroupId } : {}),
-      ...(input.surgeonId !== undefined && input.surgeonId !== '' ? { surgeonId: input.surgeonId } : {}),
-      ...(input.procedureOrdinal !== undefined ? { procedureOrdinal: input.procedureOrdinal } : {}),
-    }
-    metas.push({
-      entityType: 'contractPrice',
-      entityId: alloc.id,
-      action: 'contractPrice.create',
-      after: { contractId: input.contractId, price: input.price, rvgGroupId: row.rvgGroupId, procedureOrdinal: row.procedureOrdinal },
-      stampBookingId: null,
-    })
-    return { masters: { ...s.masters, contractPrices: { ...s.masters.contractPrices, [alloc.id]: row } }, counters: alloc.counters }
-  })
-  return ok({ id })
-}
-
-/** Editable price-row fields (id and contract are immutable). */
-export type ContractPricePatch = Partial<Omit<ContractPrice, 'id' | 'contractId'>>
-
-/** Edit a contract price row. Audited `contractPrice.update`. */
-export function editContractPrice(api: AppStoreApi, actor: Actor, priceId: string, patch: ContractPricePatch): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a contract price.')
-  const state = api.getState()
-  const existing = state.masters.contractPrices[priceId]
-  if (existing === undefined) return refuse('notFound', 'Contract price not found.')
-  if (patch.price !== undefined && !(patch.price > 0)) return refuse('invalidPrice', 'The price must be greater than zero.')
-
-  const next: ContractPrice = { ...existing, ...patch }
+  const result = apply(prev.pricing.ranges)
+  if ('refused' in result) return refuse(result.refused.code, result.refused.message)
+  // One rounding for every save path (`normaliseRanges`, as create and edit use).
+  const ranges = normaliseRanges(result.ranges)
+  // A save that changes nothing writes nothing, so the trail carries no empty entry.
+  if (sameRanges(ranges, prev.pricing.ranges)) return ok(undefined)
+  const next: Contract = { ...prev, pricing: { kind: 'fixed', ranges } }
+  const refused = contractRefusal(next, refusalContext(state, prev))
+  if (refused !== null) return refuse(refused.code, refused.message)
+  const contractName = prev.name
   mutate(
     api,
     actor,
     {
-      entityType: 'contractPrice',
-      entityId: priceId,
-      action: 'contractPrice.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof ContractPrice]])),
-      after: patch,
+      entityType: 'contract',
+      entityId: contractId,
+      action: audit.action,
+      ...(audit.before !== undefined ? { before: { contract: contractName, priceRange: describeRange(audit.before) } } : {}),
+      ...(audit.after !== undefined ? { after: { contract: contractName, priceRange: describeRange(audit.after) } } : {}),
       stampBookingId: null,
     },
-    (s) => ({ masters: { ...s.masters, contractPrices: { ...s.masters.contractPrices, [priceId]: next } } }),
+    (s) => ({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contractId]: next } } }),
   )
   return ok(undefined)
+}
+
+/**
+ * Add a price range from a start date, which may be in the past: the price
+ * changes from that date, and every Procedure on the Contract that nothing
+ * holds re-prices (prices are derived; an issued invoice never changes).
+ */
+export function addPriceRange(api: AppStoreApi, actor: Actor, contractId: string, range: PriceRange): Outcome {
+  const clean: PriceRange = { startISO: range.startISO, price: roundToCents(range.price) }
+  return saveRanges(api, actor, contractId, (ranges) => ({ ranges: addRange(ranges, clean) }), {
+    action: 'contract.priceRange.add',
+    after: clean,
+  })
+}
+
+/** Correct a range (its start or price); `startISO` names the range as stored. */
+export function editPriceRange(api: AppStoreApi, actor: Actor, contractId: string, startISO: string, next: PriceRange): Outcome {
+  const clean: PriceRange = { startISO: next.startISO, price: roundToCents(next.price) }
+  const prev = api.getState().masters.contracts[contractId]
+  const before = prev?.pricing.kind === 'fixed' ? prev.pricing.ranges.find((r) => r.startISO === startISO) : undefined
+  return saveRanges(
+    api,
+    actor,
+    contractId,
+    (ranges) => {
+      const bad = editRangeRefusal(ranges, startISO)
+      return bad !== null ? { refused: bad } : { ranges: editRange(ranges, startISO, clean) }
+    },
+    { action: 'contract.priceRange.update', ...(before !== undefined ? { before } : {}), after: clean },
+  )
+}
+
+/** Delete a range entered in error; never the last one. */
+export function deletePriceRange(api: AppStoreApi, actor: Actor, contractId: string, startISO: string): Outcome {
+  const prev = api.getState().masters.contracts[contractId]
+  const before = prev?.pricing.kind === 'fixed' ? prev.pricing.ranges.find((r) => r.startISO === startISO) : undefined
+  return saveRanges(
+    api,
+    actor,
+    contractId,
+    (ranges) => {
+      const bad = deleteRangeRefusal(ranges, startISO)
+      return bad !== null ? { refused: bad } : { ranges: deleteRange(ranges, startISO) }
+    },
+    { action: 'contract.priceRange.delete', ...(before !== undefined ? { before } : {}) },
+  )
 }

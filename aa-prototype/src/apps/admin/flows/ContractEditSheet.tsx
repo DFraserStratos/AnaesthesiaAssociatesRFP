@@ -15,23 +15,31 @@
  * (No contract · RVG, or a Fixed price fallback the system makes) shows its
  * settings read-only with one reason; only the fields in
  * `SYSTEM_CONTRACT_EDITABLE_FIELDS` stay live, and it offers no Disable.
+ *
+ * Catch-up Phase 19a (US-04.2.18, US-04.2.15): "Invoice and codes" holds the
+ * holder reference code, the invoice description and the default RVG code
+ * (19's type-ahead; stores the group's hidden id, shows its code). A fixed
+ * price shows its price ranges (`ContractPriceRanges`), changed straight
+ * away through the store's audited range actions; a new fixed-price Contract
+ * takes its first range with it.
  */
 
 import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
-import type { Contract, ContractPricing, PricingKind, RvgGroup } from '../../../domain/types'
+import type { Contract, ContractPricing, PricingKind } from '../../../domain/types'
 import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, SYSTEM_CONTRACT_EDITABLE_FIELDS, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
 import { destinationHint, destinationOf, isOpenPriceFallback } from '../../../domain/billing/fallbacks'
 import { fundingTagsInOrder } from '../../../domain/billing/fundingTags'
 import { contractSpecialtyLabel, specialtiesInOrder } from '../../../domain/specialties'
-import { baseUnitsShort, searchRvgGroups } from '../../../domain/billing/rvgGroups'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
+import { CodePickerSheet } from '../../../shared/capture/CodePickerSheet'
+import { rvgGroupLabel } from '../../../domain/billing/rvgGroups'
+import { ContractPriceRanges } from './ContractPriceRanges'
+import { parsePriceText } from '../../../domain/billing/priceRanges'
 import {
-  addContractPrice,
   createContract,
   disableContract,
   editContract,
-  editContractPrice,
   enableContract,
   useAppStore,
   type Actor,
@@ -46,6 +54,7 @@ import {
 import { compareBySurname } from '../../../domain/surgeons'
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
+import { TextAction } from '../screens/masters/chrome'
 import { Pill } from '../components/MasterPills'
 import { selectControlStyle as selectStyle } from './fieldChrome'
 
@@ -84,7 +93,16 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   const [override, setOverride] = useState<YesNo>(contract?.anaesthetistMayOverridePrice === true ? 'yes' : 'no')
   const [specialtyIds, setSpecialtyIds] = useState<string[]>(contract?.specialtyIds ?? [])
   const [fundingTagId, setFundingTagId] = useState(contract?.fundingTagId ?? '')
+  const [invoiceDescription, setInvoiceDescription] = useState(contract?.invoiceDescription ?? '')
+  const [defaultRvgGroupId, setDefaultRvgGroupId] = useState<string | null>(contract?.defaultRvgGroupId ?? null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  // A new fixed-price Contract's first range (catch-up Phase 19a).
+  const [firstStart, setFirstStart] = useState('')
+  const [firstPrice, setFirstPrice] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // The live Contract, so the ranges table shows each range change at once.
+  const live = useAppStore((s) => (contract !== undefined ? s.masters.contracts[contract.id] : undefined)) ?? contract
+  const defaultGroup = defaultRvgGroupId !== null ? masters.rvgGroups[defaultRvgGroupId] : undefined
 
   const holder = masters.parties[holderId]
   // The rules come from the model module; the panel only shows them.
@@ -113,10 +131,6 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
     () => Object.values(masters.anaesthetists).sort((a, b) => a.name.localeCompare(b.name)),
     [masters.anaesthetists],
   )
-  const priceRows = useMemo(
-    () => (contract !== undefined ? Object.values(masters.contractPrices).filter((p) => p.contractId === contract.id) : []),
-    [contract, masters.contractPrices],
-  )
 
   function pricing(): ContractPricing {
     switch (kind) {
@@ -125,7 +139,12 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       case 'rvgDiscount':
         return { kind, discountPct: Number(discount) }
       case 'fixed':
-        return { kind: 'fixed' }
+        // Ranges change only through the range actions once saved; a new one takes its first range.
+        if (live?.pricing.kind === 'fixed') return { kind: 'fixed', ranges: live.pricing.ranges }
+        return {
+          kind: 'fixed',
+          ranges: firstStart === '' && firstPrice.trim() === '' ? [] : [{ startISO: firstStart, price: parsePriceText(firstPrice) }],
+        }
       case 'open':
         return { kind: 'open' }
       default:
@@ -141,6 +160,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       anaesthetistMayOverridePrice: rvg && override === 'yes',
       holderReference,
       specialtyIds,
+      invoiceDescription,
+      defaultRvgGroupId,
     }
     const outcome = editing
       ? editContract(
@@ -148,7 +169,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           actor,
           contract.id,
           system
-            ? systemPatch({ name, aaCode })
+            ? systemPatch({ name, aaCode, invoiceDescription })
             : {
                 ...settings,
                 aaCode,
@@ -222,8 +243,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       {system && (
         <div data-shot="contract-system-notice" style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
           {isOpenPriceFallback(contract)
-            ? 'Made by the system: one Fixed price Contract for each place an invoice can go, where a person types the amount on the Procedure. It is always available and never disabled. Only its name and AA code can change.'
-            : "No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name and AA code can change."}
+            ? 'Made by the system: one Fixed price Contract for each place an invoice can go, where a person types the amount on the Procedure. It is always available and never disabled. Only its name, AA code and invoice description can change.'
+            : "No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name, AA code and invoice description can change."}
         </div>
       )}
       {editing && contract.status === 'disabled' && (
@@ -239,13 +260,44 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           ) : (
             <ReadOnlyField label="AA code" mono>Assigned on save</ReadOnlyField>
           )}
+          <TextField label="Name" value={name} onChange={setName} />
+        </PanelGrid>
+      </PanelSection>
+
+      <PanelSection title="Invoice and codes" shot="contract-codes">
+        <PanelGrid>
           {system && !SYSTEM_EDITABLE.has('holderReference') ? (
             <ReadOnlyField label="Holder reference code" mono hint="Not set on a system Contract.">{holderReference !== '' ? holderReference : 'None'}</ReadOnlyField>
           ) : (
-            <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code, if it has one." />
+            <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code for the item. Need not be unique." />
+          )}
+          {system ? (
+            <ReadOnlyField label="Default RVG code" hint="Not set on a system Contract.">None</ReadOnlyField>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+              <FieldLabel>Default RVG code</FieldLabel>
+              <div
+                data-shot="contract-default-rvg"
+                style={{ minHeight: 48, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg }}
+              >
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: defaultGroup !== undefined ? neutral.ink : neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={defaultGroup !== undefined ? rvgGroupLabel(defaultGroup) : undefined}>
+                  {defaultGroup !== undefined ? (
+                    <>
+                      <span className="mono" style={{ fontWeight: 600 }}>{defaultGroup.code}</span>
+                      <span style={{ color: neutral.slate }}> · {defaultGroup.description}</span>
+                    </>
+                  ) : (
+                    'None'
+                  )}
+                </span>
+                <TextAction onClick={() => setPickerOpen(true)} label="Choose the default RVG code">{defaultGroup !== undefined ? 'Change' : 'Choose'}</TextAction>
+                {defaultGroup !== undefined && <TextAction onClick={() => setDefaultRvgGroupId(null)} label="Clear the default RVG code">Clear</TextAction>}
+              </div>
+              <Helper>Fills a Procedure's RVG code when it has none.</Helper>
+            </div>
           )}
         </PanelGrid>
-        <TextField label="Name" value={name} onChange={setName} />
+        <TextField label="Invoice description" value={invoiceDescription} onChange={setInvoiceDescription} hint="The words the patient reads on the invoice, where filled in." />
       </PanelSection>
 
       <PanelSection title="Holder and who it bills" shot="contract-links">
@@ -373,12 +425,27 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           />
         )}
         {editing && contract.permitsRateTime && <Helper>Allows hourly rate and time billing lines on its Procedures.</Helper>}
-        {editing && kind === 'fixed' && (
-          <PriceRows contractId={contract.id} rows={priceRows} actor={actor} rvgGroups={masters.rvgGroups} onError={setError} />
+        {kind === 'fixed' && !editing && (
+          <PanelGrid>
+            <TextField label="First price from" type="date" value={firstStart} onChange={setFirstStart} mono hint="May be in the past." />
+            <TextField label="Price (ex GST)" value={firstPrice} onChange={setFirstPrice} mono placeholder="0.00" />
+          </PanelGrid>
         )}
+        {editing && live !== undefined && live.pricing.kind === 'fixed' && <ContractPriceRanges contract={live} actor={actor} onError={setError} />}
+
       </PanelSection>
 
       <FormError message={error} />
+      <CodePickerSheet
+        open={pickerOpen}
+        {...(defaultRvgGroupId !== null ? { currentId: defaultRvgGroupId } : {})}
+        rvgGroups={masters.rvgGroups}
+        onPick={(id) => {
+          setDefaultRvgGroupId(id)
+          setPickerOpen(false)
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </MasterPanel>
   )
 }
@@ -454,90 +521,6 @@ function SurgeonPicker({
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-/** The fixed kind's interim price rows (until Phase 19a's price ranges). */
-function PriceRows({
-  contractId,
-  rows,
-  actor,
-  rvgGroups,
-  onError,
-}: {
-  contractId: string
-  rows: { id: string; rvgGroupId?: string; procedureOrdinal?: number; price: number }[]
-  actor: Actor
-  rvgGroups: Record<string, RvgGroup>
-  onError: (message: string) => void
-}) {
-  const [groupId, setGroupId] = useState('')
-  const [ordinal, setOrdinal] = useState('')
-  const [price, setPrice] = useState('')
-
-  function add() {
-    const p = Number(price)
-    if (!Number.isFinite(p) || p <= 0) {
-      onError('Enter a price greater than zero for the new row.')
-      return
-    }
-    const outcome = addContractPrice(useAppStore, actor, {
-      contractId,
-      ...(groupId !== '' ? { rvgGroupId: groupId } : {}),
-      ...(ordinal !== '' ? { procedureOrdinal: Number(ordinal) } : {}),
-      price: p,
-    })
-    if (!outcome.ok) { onError(outcome.message); return }
-    setGroupId('')
-    setOrdinal('')
-    setPrice('')
-  }
-
-  /** A price row's RVG code, told apart from its namesakes by its description (catch-up Phase 19). */
-  const rowLabel = (id: string | undefined) => {
-    const g = id !== undefined ? rvgGroups[id] : undefined
-    return g !== undefined ? `${g.code} · ${g.description}` : id !== undefined ? 'RVG code no longer listed' : 'Any RVG code'
-  }
-  const options = searchRvgGroups('', rvgGroups)
-
-  return (
-    <div data-shot="contract-price-rows" style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <FieldLabel>Fixed prices</FieldLabel>
-      {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No prices yet: a primary procedure on this Contract cannot be billed until it has one.</div>}
-      {rows.map((r) => (
-        <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
-          <span style={{ flex: 1 }}>{rowLabel(r.rvgGroupId)}{r.procedureOrdinal !== undefined ? ` · procedure ${r.procedureOrdinal}` : ''}</span>
-          <span className="mono">$</span>
-          <input
-            aria-label={`Price for ${rowLabel(r.rvgGroupId)}${r.procedureOrdinal !== undefined ? `, procedure ${r.procedureOrdinal}` : ''}`}
-            defaultValue={String(r.price)}
-            onBlur={(e) => {
-              const p = Number(e.target.value)
-              if (!Number.isFinite(p) || p <= 0) {
-                onError('Enter a price greater than zero.')
-                e.target.value = String(r.price)
-                return
-              }
-              if (p !== r.price) {
-                const outcome = editContractPrice(useAppStore, actor, r.id, { price: p })
-                if (!outcome.ok) onError(outcome.message)
-              }
-            }}
-            style={{ ...selectStyle, width: 100, minHeight: 34, padding: '0 8px' }}
-            className="mono"
-          />
-        </div>
-      ))}
-      <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <select aria-label="RVG code" value={groupId} onChange={(e) => setGroupId(e.target.value)} style={{ ...selectStyle, minHeight: 34, flex: 1 }}>
-          <option value="">Any RVG code</option>
-          {options.map((g) => (<option key={g.id} value={g.id}>{g.code} · {g.description} · {baseUnitsShort(g)}</option>))}
-        </select>
-        <input aria-label="Procedure position" value={ordinal} onChange={(e) => setOrdinal(e.target.value)} placeholder="Position" style={{ ...selectStyle, width: 80, minHeight: 34, padding: '0 8px' }} className="mono" />
-        <input aria-label="Price" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" style={{ ...selectStyle, width: 90, minHeight: 34, padding: '0 8px' }} className="mono" />
-        <Button variant="secondary" onClick={add}>Add price</Button>
-      </div>
     </div>
   )
 }

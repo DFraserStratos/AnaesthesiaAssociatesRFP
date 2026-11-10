@@ -67,6 +67,8 @@ export function mkContract(overrides: Partial<Contract> = {}): Contract {
     prepaid: false,
     anaesthetistMayOverridePrice: false,
     pricing: { kind: 'rvgAnaesthetistRate' },
+    invoiceDescription: null,
+    defaultRvgGroupId: null,
     status: 'active',
     permitsRateTime: false,
     specialtyIds: [],

@@ -8,15 +8,18 @@
  *   the anaesthetist's rate, the override on (A18), the one system Contract.
  * - The old protected default Type 1s are their holders' plain RVG Contracts.
  * - The old agreed rates are RVG at the Contract's rate.
- * - Doyle's bariatric price list is a fixed price over the interim rows
- *   (`CONTRACT_PRICES`, until Phase 19a's price ranges). It bills the payer,
- *   though the billing route still bills Doyle until Phase 21 (logged).
- * - COS ACC fixed fees has no rows: only the billing-failure demo points a
- *   Procedure at it ("No price in force").
+ * - Every fixed price is a Contract of its own with dated price ranges
+ *   (catch-up Phase 19a, `pricedItems.ts`): Doyle's "Gastric bypass" keeps
+ *   this id and DOYLE-001 ($2,800, then $2,950 from 28 Jul 2026); his sleeve
+ *   gastrectomy, the CES schedule items, Merivale's combinations and Dr
+ *   Souter's prepaid price list follow it. They bill the payer where their
+ *   holder is a surgeon, group or anaesthetist (the billing route still
+ *   bills Doyle until Phase 21, logged).
+ * - COS ACC fixed fees has one range from 1 Aug 2026, after the billing-failure
+ *   demo's Thu 16 Jul List, so that Booking still "Needs a price".
  *
  * AA codes come from `nextAaCode` in seed order, `<codePrefix>-<nnn>`; No
- * contract · RVG is `AA-RVG` (AR-58 8.2). Holder reference codes stay empty
- * until Phase 19a; nothing is prepaid. Demo values within RFP-stated ranges.
+ * contract · RVG is `AA-RVG` (AR-58 8.2). Demo values within RFP-stated ranges.
  *
  * Specialties and funding tags (catch-up Phase 18a; US-04.2.16, US-04.2.17):
  * SXAP on the Southern Cross Affiliated Provider, HNZ on Health NZ's agreed
@@ -29,7 +32,7 @@
  * ids derived from the destination key.
  */
 
-import type { Contract, ContractPrice, ContractPricing } from '../types'
+import type { Contract, ContractPricing } from '../types'
 import { nextAaCode } from '../billing/contracts'
 import { ensureFallbacks, seedFallbackId } from '../billing/fallbacks'
 import { SURG } from './cast'
@@ -37,6 +40,7 @@ import { FUNDING_TAGS, TAG } from './fundingTags'
 import { PARTIES, PARTY } from './parties'
 import { SPC } from './specialties'
 import { RVG_GROUP } from './rvgGroups'
+import { PRICED_ITEMS, fixed } from './pricedItems'
 
 export const CONTRACT = {
   noContractRvg: 'CT-NO-CONTRACT',
@@ -65,6 +69,11 @@ interface SeedContract {
   holderId: string
   billsTo: Contract['billsTo']
   pricing: ContractPricing
+  holderReference?: string
+  invoiceDescription?: string
+  defaultRvgGroupId?: string
+  linkedAnaesthetistId?: string
+  prepaid?: boolean
   linkedSurgeonIds?: string[]
   anaesthetistMayOverridePrice?: boolean
   permitsRateTime?: boolean
@@ -90,8 +99,9 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.sxap, name: 'Southern Cross Affiliated Provider', holderId: PARTY.sx, billsTo: 'holder', pricing: rate(26.5), fundingTagId: TAG.sxap },
   { id: CONTRACT.healthNz, name: 'Health NZ agreed rate', holderId: PARTY.cph, billsTo: 'holder', pricing: rate(23), fundingTagId: TAG.hnz },
   { id: CONTRACT.stgAcc, name: "ACC elective services via St George's", holderId: PARTY.stg, billsTo: 'holder', pricing: rate(25), fundingTagId: TAG.acc },
-  // Fixed price over the interim rows; bills the payer (the route still bills Doyle until Phase 21).
-  { id: CONTRACT.doyleBariatric, name: 'Bariatric fixed prices, Mr P. Doyle', holderId: PARTY.doyle, billsTo: 'payer', pricing: { kind: 'fixed' }, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
+  // Doyle's gastric bypass: his old $2,800 row and the upcoming $2,950 as ranges; bills the
+  // payer (the route still bills Doyle until Phase 21). His sleeve gastrectomy is in pricedItems.ts.
+  { id: CONTRACT.doyleBariatric, name: 'Gastric bypass', invoiceDescription: 'Gastric bypass, laparoscopic', holderId: PARTY.doyle, billsTo: 'payer', pricing: fixed(['2025-01-01', 2800], ['2026-07-28', 2950]), defaultRvgGroupId: RVG_GROUP.aaGastricBypass, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
   { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // The Method 3 gate (`permitsRateTime`, INTERIM until Phase 24), linked to
   // the surgeons on its seeded Bookings (Ms G. Lim, Mr C. Okafor; logged).
@@ -99,9 +109,11 @@ const SEED: readonly SeedContract[] = [
   // AR-58 8.3: undated rvgContractRate 93.47; linked to an orthopaedic surgeon
   // (Mr T. Hale; logged). No Procedure is on it: S5 Beat 4 edits its rate in place.
   { id: CONTRACT.unisports, name: 'Unisports Ortho', holderId: PARTY.unisports, billsTo: 'holder', pricing: rate(93.47), linkedSurgeonIds: [SURG.hale] },
-  // No rows: the billing-failure demo points Losa Tuilagi's Procedure at it
-  // ("No price in force"). Phase 19a gives it a range starting after 16 Jul 2026.
-  { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: { kind: 'fixed' }, linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
+  // Its one range starts 1 Aug 2026 (demo figure), after the billing-failure demo's Thu 16 Jul
+  // List, so Losa Tuilagi's Procedure, pointed at it, still "Needs a price" (Phase 20's "not offered").
+  { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: fixed(['2026-08-01', 1250]), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
+  // Catch-up Phase 19a: the priced items (one fixed-price Contract per item).
+  ...PRICED_ITEMS,
 ]
 
 function buildContracts(): Contract[] {
@@ -115,11 +127,15 @@ function buildContracts(): Contract[] {
     return {
       id: c.id,
       aaCode,
+      ...(c.holderReference !== undefined ? { holderReference: c.holderReference } : {}),
+      invoiceDescription: c.invoiceDescription ?? null,
+      defaultRvgGroupId: c.defaultRvgGroupId ?? null,
       name: c.name,
       holderId: c.holderId,
       billsTo: c.billsTo,
       linkedSurgeonIds: c.linkedSurgeonIds ?? [],
-      prepaid: false,
+      ...(c.linkedAnaesthetistId !== undefined ? { linkedAnaesthetistId: c.linkedAnaesthetistId } : {}),
+      prepaid: c.prepaid ?? false,
       anaesthetistMayOverridePrice: c.anaesthetistMayOverridePrice ?? false,
       pricing: c.pricing,
       status: 'active',
@@ -143,15 +159,3 @@ function withFallbacks(contracts: readonly Contract[]): Contract[] {
 }
 
 export const CONTRACTS: readonly Contract[] = withFallbacks(buildContracts())
-
-/**
- * The fixed-price rows for Doyle's bariatric Contract (INTERIM until Phase
- * 19a), including the second-procedure ordinal rule (most specific match wins).
- * Keyed by RVG group row since catch-up Phase 19 (same prices and ordinal).
- */
-export const CONTRACT_PRICES: readonly ContractPrice[] = [
-  { id: 'CP-BAR-1', contractId: CONTRACT.doyleBariatric, rvgGroupId: RVG_GROUP.aaGastricBypass, price: 2800 },
-  { id: 'CP-BAR-2', contractId: CONTRACT.doyleBariatric, rvgGroupId: RVG_GROUP.aaSleeveGastrectomy, price: 2400 },
-  // Concurrent hernia repair as the SECOND procedure of a bariatric case.
-  { id: 'CP-BAR-3', contractId: CONTRACT.doyleBariatric, rvgGroupId: RVG_GROUP.aaUmbilicalHernia, procedureOrdinal: 2, price: 950 },
-] as const

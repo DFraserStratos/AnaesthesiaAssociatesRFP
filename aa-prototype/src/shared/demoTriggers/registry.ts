@@ -397,7 +397,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      "Points Losa Tuilagi's Procedure at the COS ACC fixed fees Contract, which has no price for it, and authorises Dr Ropata's Thu 16 Jul List. Her Booking fails with No price in force; its clean sibling still invoices.",
+      "Points Losa Tuilagi's Procedure at the COS ACC fixed fees Contract, whose price starts on 1 Aug 2026, and authorises Dr Ropata's Thu 16 Jul List. Her Booking fails with Needs a price; its clean sibling still invoices.",
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
@@ -406,7 +406,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       state.schedule.lists[SEED_LIST_IDS.billingFailure]?.billedAtISO !== undefined ? 'Already triggered' : null,
     // Re-based in catch-up Phase 18 (RV-32: no dates, and no Contract is
     // edited): as the office, point Losa Tuilagi's Procedure at COS ACC fixed
-    // fees (no price for her procedure) through the ordinary office action,
+    // fees (no price range in force on her List's date) through the ordinary office action,
     // then authorise; the billing run fails her Booking and bills its sibling.
     run: (api) => {
       const listId = SEED_LIST_IDS.billingFailure
@@ -428,7 +428,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: outcome.ok,
         message: outcome.ok
-          ? 'Done. In the billing monitor Losa Tuilagi shows No price in force while her clean sibling billed. Use Resolve & retry to choose her Contract.'
+          ? 'Done. In the billing monitor Losa Tuilagi shows Needs a price while her clean sibling billed. Use Resolve & retry to choose her Contract.'
           : `Refused: ${outcome.message}`,
       }
     },

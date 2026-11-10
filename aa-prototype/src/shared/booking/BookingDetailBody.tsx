@@ -197,19 +197,19 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       anaesthetist,
       rvgGroups: masters.rvgGroups,
       contracts: masters.contracts,
-      contractPrices: Object.values(masters.contractPrices),
       parties: masters.parties,
       billableParties: masters.billableParties,
       billingLines: Object.values(billingLinesRecord),
+      listDateISO: list.dateISO,
+      timeRule: masters.rvgTimeRule,
     }
-    ctx.surgeonId = list.surgeonId
     const hospital = listHospitalFor(list, masters.hospitals)
     if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
     return validateBookingForBilling(booking, procedures, ctx)
   }, [booking, list, cancelled, masters, billingLinesRecord, procedures])
 
   const bookingTotals = useMemo(() => {
-    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return { units: 0, total: 0 }
+    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return { units: 0, total: 0, needsPrice: false }
     return bookingFee(procedures, list, masters, billingLinesRecord)
   }, [list, procedures, masters, billingLinesRecord])
 
@@ -231,8 +231,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     // A Booking on a Draft List has no anaesthetist to price it yet (catch-up Phase 31).
     if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return empty
 
-    const views = procedures.map((procedure, index) =>
-      procedureFee({ procedure, list, ordinal: index + 1, masters, billingLines: billingLinesRecord }),
+    const views = procedures.map((procedure) =>
+      procedureFee({ procedure, list, masters, billingLines: billingLinesRecord }),
     )
 
     const rateLabels = views.map(({ fee }) =>
@@ -247,7 +247,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           label: procedure.description === '' ? `Procedure ${index + 1}` : procedure.description,
           amount: views[index]!.fee.total,
         }
-        if (procedure.isAdditional) line.note = 'Time units only'
+        // A fixed price is the whole price on any Procedure (catch-up Phase 19a).
+        if (procedure.isAdditional && views[index]!.fee.unitRate !== null) line.note = 'Time units only'
+        if (views[index]!.fee.needsPrice) line.needsPrice = true
         return line
       })
     } else {
@@ -617,7 +619,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const capture = (
     <>
       {/* Outcome / BTM capture — one block per procedure, in Booking order
-          (the ordinal feeds fixed-price second-procedure pricing). */}
+          (the number only labels it; no Contract prices a second procedure, catch-up Phase 19a). */}
       {/* A Booking on a Draft List has no anaesthetist yet, so no fee or capture: its
           procedures are listed and priced once the office assigns the List (catch-up Phase 31). */}
       {!cancelled && list.state === 'DRAFT' && procedures.length > 0 && (
@@ -745,6 +747,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
                 <BookingTotal
                   units={bookingTotals.units}
                   fee={bookingTotals.total}
+                  needsPrice={bookingTotals.needsPrice}
                   lines={bookingBreakdown.lines}
                   rateLabel={bookingBreakdown.rateLabel}
                   overrideNote={bookingBreakdown.overrideNote}

@@ -8,6 +8,7 @@ import { bookingFee, procedureFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, locationName, routeLabel, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
@@ -68,11 +69,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const procs = Object.values(proceduresRecord)
         .filter((p) => p.bookingId === booking.id)
         .sort((a, b) => a.id.localeCompare(b.id))
-      const views = procs.map((p, i) => procedureFee({ procedure: p, list, ordinal: i + 1, masters, billingLines: billingLinesRecord }))
+      const views = procs.map((p) => procedureFee({ procedure: p, list, masters, billingLines: billingLinesRecord }))
       const totals = bookingFee(procs, list, masters, billingLinesRecord)
       const flags = reviewFlagsForBooking({
         booking,
         procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, rvgGroup: views[i]!.rvgGroup })),
+        timeRule: masters.rvgTimeRule,
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
@@ -115,7 +117,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const incompleteNames = incompleteBookingsOn(useAppStore.getState(), listId).map(
     (b) => masters.patients[b.patientId]?.name ?? 'Unknown patient',
   )
-  const listTotals = rows.reduce((acc, r) => ({ units: acc.units + r.totals.units, fee: acc.fee + r.totals.total }), { units: 0, fee: 0 })
+  const listTotals = rows.reduce(
+    (acc, r) => ({ units: acc.units + r.totals.units, fee: acc.fee + r.totals.total, needsPrice: acc.needsPrice || r.totals.needsPrice }),
+    { units: 0, fee: 0, needsPrice: false },
+  )
+  // A Booking with no price makes the List's fee unknown, never a smaller figure (catch-up Phase 19a).
+  const listFeeText = listTotals.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(listTotals.fee)
   const allFlags: ReviewFlag[] = rows.flatMap((r) => r.flags)
   const unitRate = anaesthetist?.unitValue ?? 0
 
@@ -240,7 +247,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         <Tile label="Bookings" value={String(rows.length)} />
         <Tile label="Total units" value={String(listTotals.units)} />
-        <Tile label="Total fee" value={formatCurrency(listTotals.fee)} />
+        <Tile label="Total fee" value={listFeeText} />
         <Tile label="Flags" value={String(allFlags.length)} tone={allFlags.length > 0 ? 'warn' : undefined} sub="to check before authorising" />
       </div>
 
@@ -291,7 +298,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                   <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
                   <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
-                  <td className="mono" style={{ ...numCell, fontWeight: 600 }}>{formatCurrency(totals.total)}</td>
+                  <td className={totals.needsPrice ? undefined : 'mono'} style={{ ...numCell, fontWeight: 600 }}>{totals.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(totals.total)}</td>
                   <td style={cellStyle}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                       {flags.map((f, i) => (
@@ -311,7 +318,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
               <td style={cellStyle} colSpan={4} />
               <td style={cellStyle} />
               <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listTotals.units}</td>
-              <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{formatCurrency(listTotals.fee)}</td>
+              <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listFeeText}</td>
               <td style={{ ...cellStyle, color: neutral.mist, fontSize: 12 }}>@ ${unitRate.toFixed(2)}/unit (list rate)</td>
             </tr>
           </tbody>
@@ -332,7 +339,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       {/* Action bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: elevation.e1, padding: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>{rows.length} booking{rows.length === 1 ? '' : 's'} · {listTotals.units} units · {formatCurrency(listTotals.fee)}</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>{rows.length} booking{rows.length === 1 ? '' : 's'} · {listTotals.units} units · {listFeeText}</div>
           {!authorised && incompleteNames.length > 0 && (
             <div data-testid="review-authorise-blocked" style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
               Not complete: {incompleteNames.join(', ')}. Complete {incompleteNames.length === 1 ? 'it' : 'them'} before authorising.

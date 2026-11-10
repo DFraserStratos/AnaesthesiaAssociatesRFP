@@ -153,6 +153,7 @@ describe('the save guard on system Contracts (AR-58 validations 6 and 14)', () =
     surgeonIds: new Set(),
     anaesthetistIds: new Set(),
     specialtyIds: new Set(['gen']),
+    rvgGroups: {},
     fundingTagIds: new Set(Object.keys(TAGS)),
   }
 

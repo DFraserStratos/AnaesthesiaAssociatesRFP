@@ -686,8 +686,14 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // Scenario bookings on past lists
   // -------------------------------------------------------------------------
 
-  // Bariatric fixed price with the second-procedure ordinal rule (Fitzgerald,
-  // Tue 14 Jul, Southern Cross / Mr Doyle).
+  // Bariatric fixed price (Fitzgerald, Tue 14 Jul, Southern Cross / Mr Doyle):
+  // the gastric bypass on Doyle's "Gastric bypass" Contract at its range in
+  // force ($2,800). Catch-up Phase 19a (RV-07, OQ-90): no Contract prices a
+  // second procedure, so the old ordinal row went and the concurrent hernia
+  // repair is on No contract · RVG, priced at RVG under today's
+  // additional-procedure rule (time units only) until Phase 23. No contract ·
+  // RVG is AA's and bills the payer, so until Phase 21 it rides the patient
+  // route (the hospital route cannot bill AA).
   const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
   const bariatricBooking = addBooking({
     listId: fitzTue14,
@@ -713,9 +719,9 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE14, '10:15'),
     handoverISO: iso(TUE14, '10:45'),
     asaClass: 'AS3',
-    billingRoute: 'hospital',
-    governingContractId: CONTRACT.doyleBariatric,
-    billingReference: 'BAR-2026-014',
+    billingRoute: 'billableParty',
+    patientPaymentCategory: 'selfFundedPostProcedure',
+    governingContractId: CONTRACT.noContractRvg,
     isAdditional: true,
   })
 

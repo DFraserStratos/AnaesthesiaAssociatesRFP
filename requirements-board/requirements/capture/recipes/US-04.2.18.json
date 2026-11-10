@@ -1,0 +1,61 @@
+{
+  "id": "US-04.2.18",
+  "status": "partial",
+  "absentReason": "Found by typing on the step rail in Phase 20; the invoice description reaches the invoice in 20a; the holder reference code is printed in 22.",
+  "shots": [
+    {
+      "name": "contract-codes",
+      "app": "admin",
+      "caption": "The holder's code, the invoice wording and a default RVG code on each Contract",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Cataract IOL"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-CES-SXAP-CATIOL\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-codes]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-codes]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search-cat",
+      "app": "admin",
+      "caption": "Typing CAT finds the cataract items by name and by the holder's code HNZCATall",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "CAT"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-search]",
+            "[data-shot=contract-catalogue] tr[data-contract]"
+          ]
+        }
+      ]
+    }
+  ]
+}

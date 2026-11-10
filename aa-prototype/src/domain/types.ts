@@ -393,24 +393,10 @@ export type { FundingTag, FundingTagId } from './billing/fundingTags'
 /** The flat Contract (catch-up Phase 18; the model module is domain/billing/contracts.ts). */
 export type { BillsTo, Contract, ContractPricing, ContractStatus, PricingKind, SystemRole } from './billing/contracts'
 
-/**
- * A fixed-price row: INTERIM, the `fixed` pricing kind's prices until Phase
- * 19a replaces them with price ranges. Matching keys are explicit (2nd review #4): the
- * RFP's "keyed by some combination of contract holder, surgeon, and/or
- * procedure type". In the prototype's curated set the RVG group stands in
- * for "procedure type" — a labelled DEMO SIMPLIFICATION (5th review #3): a real
- * build may need non-RVG procedure identifiers. Most-specific match wins.
- */
-export interface ContractPrice {
-  id: string
-  contractId: ContractId
-  /** The RVG group row this price is for (catch-up Phase 19 re-keyed it from the printed code). */
-  rvgGroupId?: RvgGroupId
-  surgeonId?: SurgeonId
-  /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
-  procedureOrdinal?: number
-  price: number
-}
+/** A fixed-price Contract's dated price ranges (catch-up Phase 19a; the module is domain/billing/priceRanges.ts). */
+export type { PriceRange, RangeSummary } from './billing/priceRanges'
+/** The RVG time rule held as data (catch-up Phase 19a; domain/billing/timeUnits.ts). */
+export type { RvgTimeRule, RvgTimeTier } from './billing/timeUnits'
 
 // ---------------------------------------------------------------------------
 // The canvas: Lists & Bookings

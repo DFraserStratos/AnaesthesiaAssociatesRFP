@@ -1,35 +1,6 @@
 {
   "id": "US-04.2.5",
-  "status": "partial",
-  "absentReason": "Only a fixed-price Contract can price additional procedures, through a fee schedule row keyed to the procedure ordinal (for example a second procedure price). The RVG default, percentage of second code, add-on fee and not billable options cannot be chosen per contract.",
-  "shots": [
-    {
-      "name": "ordinal-rows",
-      "app": "admin",
-      "caption": "Second procedure priced by a procedure-position row on a fixed-price Contract",
-      "start": "/admin/masters?view=contracts",
-      "states": [
-        {
-          "steps": [
-            {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Bariatric fixed prices"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Bariatric fixed prices\") >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            }
-          ],
-          "highlight": [
-            "[data-shot=contract-price-rows]"
-          ]
-        }
-      ]
-    }
-  ]
+  "status": "absent",
+  "absentReason": "Retired: removed in Phase 19a",
+  "shots": []
 }

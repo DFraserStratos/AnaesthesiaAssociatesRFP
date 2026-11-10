@@ -94,14 +94,13 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     anaesthetist,
     rvgGroups: seed.masters.rvgGroups,
     contracts: seed.masters.contracts,
-    contractPrices: Object.values(seed.masters.contractPrices),
     parties: seed.masters.parties,
     billableParties: seed.masters.billableParties,
     billingLines: Object.values(seed.schedule.billingLines),
     listDateISO: list.dateISO,
+    timeRule: seed.masters.rvgTimeRule,
     patientId: booking.patientId,
   }
-  ctx.surgeonId = list.surgeonId
   // AA rooms is a location, never a Contract holder (catch-up Phase 31).
   const listHospitalId = billingHospitalId(list.hospitalId, seed.masters.hospitals)
   if (listHospitalId !== undefined) ctx.listHospitalId = listHospitalId

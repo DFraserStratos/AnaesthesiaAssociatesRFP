@@ -13,7 +13,7 @@ test('phase 18a specialties tab', async ({ page }) => {
   await page.waitForLoadState('networkidle')
   const table = page.locator('[data-shot="masters-specialties"]')
   await expect(table.locator('tr[data-specialty]')).toHaveCount(12)
-  await expect(table.locator('tr', { hasText: 'Ophthalmology' }).getByText('20 surgeons, 0 Contracts')).toBeVisible()
+  await expect(table.locator('tr', { hasText: 'Ophthalmology' }).getByText('20 surgeons, 8 Contracts')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p18a-01-specialties.png', fullPage: true })
 
   await page.getByRole('button', { name: 'Add specialty' }).click()
@@ -29,7 +29,7 @@ test('phase 18a specialties tab', async ({ page }) => {
   await expect(table.getByText('Paediatric and neonatal surgery')).toBeVisible()
 
   await page.getByRole('button', { name: 'Remove Ophthalmology' }).click()
-  await expect(page.getByRole('alert')).toContainText('Ophthalmology is held by 20 surgeons, so it cannot be removed.')
+  await expect(page.getByRole('alert')).toContainText('Ophthalmology is held by 20 surgeons and 8 Contracts, so it cannot be removed.')
   await page.screenshot({ path: 'visual/shots/p18a-03-specialty-held.png', fullPage: true })
   await page.getByRole('button', { name: 'Remove Paediatric and neonatal surgery' }).click()
   await expect(table.locator('tr[data-specialty]')).toHaveCount(12)
@@ -67,7 +67,7 @@ test('phase 18a funding tags and the Fixed price fallbacks', async ({ page }) =>
   await page.getByRole('button', { name: 'Move HNZ down' }).click()
   await expect(tags.locator('tr[data-tag] td:first-child')).toHaveText(['SXAP', 'HNZ', 'ACC'])
   await page.getByRole('button', { name: 'Remove SXAP' }).click()
-  await expect(page.getByRole('alert')).toContainText('SXAP is carried by 2 Contracts')
+  await expect(page.getByRole('alert')).toContainText('SXAP is carried by 9 Contracts')
   await page.screenshot({ path: 'visual/shots/p18a-06-funding-tags.png', fullPage: true })
 
   // The system rows in the catalogue.
@@ -79,19 +79,20 @@ test('phase 18a funding tags and the Fixed price fallbacks', async ({ page }) =>
   await page.screenshot({ path: 'visual/shots/p18a-07-fallbacks.png', fullPage: true })
   await page.getByLabel('Search by name, code or AA code').fill('')
 
-  // Tag Christchurch Eye Surgery's Contract SXAP: its Fixed price Contract appears at once.
-  await catalogue.locator('tr', { hasText: 'CES-001' }).getByRole('button', { name: /^Edit / }).click()
+  // Tag Forte Health's Contract SXAP: its Fixed price Contract appears at once (Christchurch
+  // Eye Surgery holds seeded SXAP items since catch-up Phase 19a, so its fallback already exists).
+  await catalogue.locator('tr', { hasText: 'FORTE-001' }).getByRole('button', { name: /^Edit / }).click()
   const panel = page.locator('[data-shot="contract-detail"]')
   await panel.locator('[data-shot="contract-funding-tag"]').getByLabel('Funding tag').selectOption({ label: 'SXAP' })
-  await expect(panel.locator('[data-shot="contract-placement"]')).toHaveText('Offered under Christchurch Eye Surgery › SXAP')
+  await expect(panel.locator('[data-shot="contract-placement"]')).toHaveText('Offered under Forte Health › SXAP')
   await page.screenshot({ path: 'visual/shots/p18a-08-contract-tag.png', fullPage: true })
   await panel.getByRole('button', { name: 'Save contract' }).click()
-  await expect(catalogue.getByText('Christchurch Eye Surgery · SXAP · Fixed price')).toBeVisible()
+  await expect(catalogue.getByText('Forte Health · SXAP · Fixed price')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p18a-09-new-fallback.png', fullPage: true })
 
   // A system Contract: only name and AA code, no Disable.
   await catalogue.locator('tr', { hasText: 'STG-ACC-FIX' }).getByRole('button', { name: /^Edit / }).click()
-  await expect(panel.locator('[data-shot="contract-system-notice"]')).toContainText('Only its name and AA code can change.')
+  await expect(panel.locator('[data-shot="contract-system-notice"]')).toContainText('Only its name, AA code and invoice description can change.')
   await expect(panel.getByRole('button', { name: 'Disable' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p18a-10-system-contract.png', fullPage: true })
 })

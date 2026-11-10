@@ -9,17 +9,16 @@ import type {
   BillingLine,
   ChargeBasis,
   Contract,
-  ContractPrice,
   CounterpartyRef,
   PriceOverride,
   Procedure,
   UnitProvenance,
 } from '../types'
-import { matchContractPrice } from './contracts'
 import { roundToCents } from './money'
+import { rangeInForce } from './priceRanges'
 import { modifierUnits, type RefusedModifier } from './modifierUnits'
 import { baseUnitsFor, type BaseUnitsSource, type GuideValue, type RvgGroup } from './rvgGroups'
-import { timeUnitsFromMinutes } from './timeUnits'
+import { timeUnitsFromMinutes, type RvgTimeRule } from './timeUnits'
 
 // ---------------------------------------------------------------------------
 // B/T/M resolution
@@ -62,9 +61,11 @@ function capturedMinutes(procedure: Procedure): number {
  * typed override, else the chosen value on a ranged RVG group, else the
  * group's starting figure, else 0 with no RVG code. Any value is accepted (D3).
  * The group's modifier units (0 by default) join M; Phase 19b decides how
- * itemised modifiers combine with them.
+ * itemised modifiers combine with them. Time units follow the RVG time rule
+ * held as data (`masters.rvgTimeRule`, catch-up Phase 19a), from the start
+ * and finish stamps only.
  */
-export function resolveBtm(procedure: Procedure, group?: RvgGroup): BtmBreakdown {
+export function resolveBtm(procedure: Procedure, group: RvgGroup | undefined, timeRule: RvgTimeRule): BtmBreakdown {
   // Base
   const resolvedBase = baseUnitsFor({ procedure, ...(group !== undefined ? { group } : {}) })
   const base: ResolvedUnits = {
@@ -77,7 +78,7 @@ export function resolveBtm(procedure: Procedure, group?: RvgGroup): BtmBreakdown
   if (procedure.timeUnitsCaptured?.source === 'overridden') {
     time = { units: procedure.timeUnitsCaptured.units, source: 'overridden' }
   } else {
-    time = { units: timeUnitsFromMinutes(capturedMinutes(procedure)), source: 'seeded' }
+    time = { units: timeUnitsFromMinutes(capturedMinutes(procedure), timeRule), source: 'seeded' }
   }
 
   // Modifiers — the captured ASA class seeds its AS code even when the chip
@@ -123,14 +124,15 @@ export interface FeeContext {
   anaesthetist: Anaesthetist
   /** The governing Contract (the stored one, or the one the billing resolver chose). */
   contract?: Contract
-  /** Fixed-price rows (any contract's — filtered by `matchContractPrice`). */
-  contractPrices?: readonly ContractPrice[]
   /** The RVG group row for `procedure.rvgGroupId` (catch-up Phase 19). */
   rvgGroup?: RvgGroup
-  /** For fixed-price row matching. */
-  surgeonId?: string
-  /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
-  procedureOrdinal?: number
+  /**
+   * The procedure date (the List's date, catch-up Phase 19a): it picks the
+   * fixed price's range in force (`rangeInForce`).
+   */
+  dateISO: string
+  /** The RVG time rule held as data (`masters.rvgTimeRule`, catch-up Phase 19a). */
+  timeRule: RvgTimeRule
   /**
    * The procedure's captured NON-RVG billing lines (fixed / rate x time).
    * RVG-basis lines are never inputs — the calculator produces the RVG amount
@@ -171,6 +173,14 @@ export interface FeeResult {
   subtotal: number
   override: AppliedOverride | null
   total: number
+  /**
+   * True when the Procedure has no price: a fixed-price Contract with no range
+   * in force on the procedure date (catch-up Phase 19a). There is then no
+   * price line and no amount to show: every money surface reads "Needs a
+   * price" instead of the figure, and the validator and billing resolver
+   * refuse it. An office fixed-fee override is a typed price and clears it.
+   */
+  needsPrice: boolean
 }
 
 /**
@@ -179,15 +189,16 @@ export interface FeeResult {
  * Contract pricing by pricing kind (catch-up Phase 18; AR-58 2.3): RVG at the
  * anaesthetist's rate charges units x their own unit value; RVG at the
  * Contract's rate charges units x its rate; RVG less a discount charges units
- * x the anaesthetist's unit value less the discount; a fixed price looks up the
- * interim ContractPrice rows (most-specific match, including 2nd-procedure
- * ordinals) and FALLS BACK to the BTM path when no row matches (Decisions log
- * 2026-07-22; time-only still applies if `isAdditional`). Open price, and no
- * Contract, price as RVG at the anaesthetist's rate (the amount is typed as
- * an override). The resolver and validator own "No price in force".
+ * x the anaesthetist's unit value less the discount. A fixed price (catch-up
+ * Phase 19a) is the price of the range in force on the procedure date, the
+ * whole price on any Procedure, primary or additional (BTM still computed for
+ * reference); with no range in force the result `needsPrice`, with no amount
+ * and never a fallback to RVG. Open price, and no Contract, price as RVG at
+ * the anaesthetist's rate (the amount is typed as an override). The resolver
+ * and validator own the refusal.
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
-  const btm = resolveBtm(procedure, ctx.rvgGroup)
+  const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule)
   const billableUnits = splitBillingUnits(procedure, btm)
   const lines: FeeLine[] = []
 
@@ -204,32 +215,21 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
     unitRate = roundToCents(ctx.anaesthetist.unitValue * (1 - pricing.discountPct / 100))
   }
 
-  let fixedPrice: ContractPrice | undefined
-  if (contract !== undefined && pricing?.kind === 'fixed') {
-    fixedPrice = matchContractPrice(ctx.contractPrices ?? [], {
-      contractId: contract.id,
-      rvgGroupId: procedure.rvgGroupId,
-      surgeonId: ctx.surgeonId,
-      procedureOrdinal: ctx.procedureOrdinal,
-    })
-    // Split-billing hard rule vs fixed pricing (8th review): an ADDITIONAL
-    // procedure takes a fixed price only when the contract explicitly priced
-    // its ordinal (e.g. the bariatric second-procedure row). A row with no
-    // ordinal key priced the code AS A PRIMARY, and charging it in full for an
-    // add-on would re-claim the base component — fall to the BTM path instead,
-    // where the time-only rule applies (Decisions log 2026-07-22 fallback).
-    if (fixedPrice !== undefined && procedure.isAdditional && fixedPrice.procedureOrdinal === undefined) {
-      fixedPrice = undefined
-    }
-  }
+  const isFixed = contract !== undefined && pricing?.kind === 'fixed'
+  const range = isFixed ? rangeInForce(contract, ctx.dateISO) : null
+  // An open price has no price of its own either: the RVG figure below is
+  // working only, never shown as its price (catch-up Phase 19a).
+  let needsPrice = (isFixed && range === null) || pricing?.kind === 'open'
 
-  if (fixedPrice !== undefined) {
+  if (isFixed) {
     unitRate = null
-    lines.push({
-      chargeBasis: 'fixed',
-      description: 'Contract price',
-      amount: roundToCents(fixedPrice.price),
-    })
+    if (range !== null) {
+      lines.push({
+        chargeBasis: 'fixed',
+        description: 'Contract price',
+        amount: roundToCents(range.price),
+      })
+    }
   } else if (procedure.rvgGroupId !== undefined) {
     lines.push({
       chargeBasis: 'rvg',
@@ -273,11 +273,13 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
       total = roundToCents(subtotal * (1 + override.percent / 100))
     }
     applied = { override, before: subtotal, after: total }
+    // A typed fixed fee is a price a person set; an adjustment of nothing is not.
+    if (override.kind === 'fixedFee') needsPrice = false
   }
 
   const bases = new Set(lines.map((l) => l.chargeBasis))
   const chargeBasis: ChargeBasis | 'mixed' =
-    bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? 'rvg')
+    bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (isFixed ? 'fixed' : 'rvg'))
 
-  return { btm, billableUnits, chargeBasis, unitRate, lines, subtotal, override: applied, total }
+  return { btm, billableUnits, chargeBasis, unitRate, lines, subtotal, override: applied, total, needsPrice }
 }

@@ -240,12 +240,11 @@ export {
   editContract,
   disableContract,
   enableContract,
-  addContractPrice,
-  editContractPrice,
+  addPriceRange,
+  editPriceRange,
+  deletePriceRange,
   type ContractInput,
   type ContractEditPatch,
-  type ContractPriceInput,
-  type ContractPricePatch,
 } from './contractActions'
 export {
   runBillingForList,

@@ -7,8 +7,8 @@
  *   - the governing contract is the procedure's STORED-EXPLICIT
  *     `governingContractId`, whatever its status (a Disabled Contract still
  *     prices a Procedure already on it),
- *   - the procedure ordinal is its 1-based position in Booking order (fixed-price
- *     second-procedure pricing depends on it),
+ *   - the List's date picks a fixed price's range in force, and the RVG time
+ *     rule is the masters' (catch-up Phase 19a),
  *   - nonRvgLines are this procedure's stored non-rvg lines (rvg-basis stored
  *     lines are never fee inputs).
  */
@@ -22,8 +22,6 @@ export interface ProcedureFeeArgs {
   procedure: Procedure
   /** The List's anaesthetist prices the fee, so only an assigned List (a Draft List has none yet). */
   list: AssignedList
-  /** 1-based position of the procedure on its Booking. */
-  ordinal: number
   masters: AppState['masters']
   billingLines: Record<string, BillingLine>
 }
@@ -36,7 +34,7 @@ export interface ProcedureFeeView {
   nonRvgLines: BillingLine[]
 }
 
-export function procedureFee({ procedure, list, ordinal, masters, billingLines }: ProcedureFeeArgs): ProcedureFeeView {
+export function procedureFee({ procedure, list, masters, billingLines }: ProcedureFeeArgs): ProcedureFeeView {
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) {
     throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
@@ -52,13 +50,12 @@ export function procedureFee({ procedure, list, ordinal, masters, billingLines }
 
   const ctx: FeeContext = {
     anaesthetist,
-    contractPrices: Object.values(masters.contractPrices),
-    procedureOrdinal: ordinal,
+    dateISO: list.dateISO,
+    timeRule: masters.rvgTimeRule,
     nonRvgLines,
   }
   if (contract !== undefined) ctx.contract = contract
   if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
-  ctx.surgeonId = list.surgeonId
 
   const view: ProcedureFeeView = { fee: feeFor(procedure, ctx), nonRvgLines }
   if (rvgGroup !== undefined) view.rvgGroup = rvgGroup
@@ -69,6 +66,8 @@ export function procedureFee({ procedure, list, ordinal, masters, billingLines }
 export interface BookingFeeTotals {
   units: number
   total: number
+  /** Some Procedure has no price on the List's date ("Needs a price", catch-up Phase 19a). */
+  needsPrice: boolean
 }
 
 /** Booking-level totals (the CompleteBar / completion overlay figures): summed
@@ -81,10 +80,12 @@ export function bookingFee(
 ): BookingFeeTotals {
   let units = 0
   let total = 0
-  procedures.forEach((procedure, index) => {
-    const { fee } = procedureFee({ procedure, list, ordinal: index + 1, masters, billingLines })
+  let needsPrice = false
+  procedures.forEach((procedure) => {
+    const { fee } = procedureFee({ procedure, list, masters, billingLines })
     units += fee.billableUnits
     total += fee.total
+    needsPrice ||= fee.needsPrice
   })
-  return { units, total: Math.round(total * 100) / 100 }
+  return { units, total: Math.round(total * 100) / 100, needsPrice }
 }

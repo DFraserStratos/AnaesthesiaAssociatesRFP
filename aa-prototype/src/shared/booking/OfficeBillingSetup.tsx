@@ -89,7 +89,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
 
       <EditBillingSetupSheet open={sheet === 'setup'} procedure={procedure} actor={actor} onClose={() => setSheet('none')} />
       <PriceOverrideSheet open={sheet === 'override'} procedure={procedure} actor={actor} onClose={() => setSheet('none')} />
-      <FunderAllocationSheet open={sheet === 'funder'} procedure={procedure} list={list} ordinal={ordinal} actor={actor} onClose={() => setSheet('none')} />
+      <FunderAllocationSheet open={sheet === 'funder'} procedure={procedure} list={list} actor={actor} onClose={() => setSheet('none')} />
     </div>
   )
 }

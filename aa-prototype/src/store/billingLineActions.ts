@@ -23,7 +23,7 @@ import {
 } from './mutate'
 import type { AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
-import { billingContextForBooking, proceduresForBooking } from './selectors'
+import { billingContextForBooking } from './selectors'
 
 export interface AddBillingLineInput {
   chargeBasis: 'fixed' | 'rateTime'
@@ -171,8 +171,7 @@ export function setBillingLineAllocation(
   const editedLines = ctx.billingLines.map((l) => (l.id === billingLineId ? nextLine : l))
   const procedureLines = editedLines.filter((l) => l.procedureId === procedure.id)
   if (procedureLines.some((l) => l.funderOverride !== undefined)) {
-    const ordinal = proceduresForBooking(state, procedure.bookingId).findIndex((p) => p.id === procedure.id) + 1
-    const fee = feeFor(procedure, feeContextFor(procedure, ordinal, { ...ctx, billingLines: editedLines }))
+    const fee = feeFor(procedure, feeContextFor(procedure, { ...ctx, billingLines: editedLines }))
     const allocated = procedureLines.reduce((sum, l) => sum + l.amount, 0)
     if (toCents(allocated) !== toCents(fee.total)) {
       return refuse(
@@ -256,8 +255,7 @@ export function setProcedureFunderAllocation(
 
   const procedureLines = editedLines.filter((l) => l.procedureId === procedureId)
   if (procedureLines.some((l) => l.funderOverride !== undefined)) {
-    const ordinal = proceduresForBooking(state, procedure.bookingId).findIndex((p) => p.id === procedureId) + 1
-    const fee = feeFor(procedure, feeContextFor(procedure, ordinal, { ...ctx, billingLines: editedLines }))
+    const fee = feeFor(procedure, feeContextFor(procedure, { ...ctx, billingLines: editedLines }))
     const allocated = procedureLines.reduce((sum, l) => sum + l.amount, 0)
     if (toCents(allocated) !== toCents(fee.total)) {
       return refuse(

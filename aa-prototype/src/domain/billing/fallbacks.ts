@@ -155,6 +155,8 @@ export function openPriceFallback(
     prepaid: d.kind === 'patient' && d.prepaid,
     anaesthetistMayOverridePrice: false,
     pricing: { kind: 'open' },
+    invoiceDescription: null,
+    defaultRvgGroupId: null,
     status: 'active',
     systemRole: 'openPriceFallback',
     permitsRateTime: false,

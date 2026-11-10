@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import { validateBookingForBilling, type BookingBillingContext } from './validateBookingForBilling'
 import {
   BASE_RANGE_5_9,
@@ -21,7 +22,6 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
     anaesthetist: mkAnaesthetist({ unitValue: 30 }),
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10, [BASE_RANGE_5_9.id]: BASE_RANGE_5_9 },
     contracts: {},
-    contractPrices: [],
     // An insurer with an insurer Party ('ins-direct'); 'ins-noparty' has none (catch-up Phase 18, RV-39).
     parties: {
       'party-hosp-1': mkParty(),
@@ -29,6 +29,8 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
     },
     billableParties: { 'bp-1': mkBillableParty() },
     billingLines: [],
+    listDateISO: '2026-07-21',
+    timeRule: DEFAULT_RVG_TIME_RULE,
     ...overrides,
   }
 }
@@ -313,6 +315,42 @@ describe("today's route needs (catch-up Phase 18 review pass)", () => {
     expect(validateBookingForBilling(booking, [p], ctxWith({ 'con-plain': plainRvg }))).toEqual([])
     expect(validateBookingForBilling(booking, [p], ctxWith({})).find((f) => f.field === 'governingContractId')?.message).toBe(
       noRouteContractMessage('Test hospital'),
+    )
+  })
+})
+
+describe('"Needs a price" on a fixed price with no range in force (catch-up Phase 19a)', () => {
+  const fixed = mkContract({ id: 'con-fx', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-09-01', price: 3100 }] } })
+  const ctxOn = (dateISO: string) => mkCtx({ contracts: { 'con-fx': fixed }, listDateISO: dateISO, listHospitalId: 'hosp-1' })
+
+  it("refuses with the one sentence, dated by the List's date; never priced at RVG instead", () => {
+    const p = validProcedure({ governingContractId: 'con-fx' })
+    expect(validateBookingForBilling(booking, [p], ctxOn('2026-07-21')).find((f) => f.field === 'governingContractId')?.message).toBe(
+      'Needs a price: no price range in force on 21 Jul 2026.',
+    )
+    expect(validateBookingForBilling(booking, [p], ctxOn('2026-09-01')).filter((f) => f.field === 'governingContractId')).toEqual([])
+  })
+
+  it('an additional Procedure needs a price too, and an office fixed fee is a typed price', () => {
+    const add = validProcedure({ governingContractId: 'con-fx', isAdditional: true })
+    expect(fieldsOf(validateBookingForBilling(booking, [add], ctxOn('2026-07-21')))).toContain('governingContractId')
+    const typed = validProcedure({ governingContractId: 'con-fx', priceOverride: { kind: 'fixedFee', amount: 3000, reason: 'Office price' } })
+    expect(fieldsOf(validateBookingForBilling(booking, [typed], ctxOn('2026-07-21')))).not.toContain('governingContractId')
+  })
+
+  it('a fixed price with a reference RVG code asks for no times (no units on a fixed price)', () => {
+    const inForce = mkCtx({ contracts: { 'con-fx': fixed }, listDateISO: '2026-09-15', listHospitalId: 'hosp-1' })
+    const p = validProcedure({ governingContractId: 'con-fx', anaestheticStartISO: undefined, handoverISO: undefined })
+    expect(fieldsOf(validateBookingForBilling(booking, [p], inForce))).not.toContain('anaestheticStartISO')
+    // An RVG-priced Procedure still needs them.
+    expect(fieldsOf(validateBookingForBilling(booking, [validProcedure({ anaestheticStartISO: undefined })], mkCtx()))).toContain('anaestheticStartISO')
+  })
+
+  it("an office fixed fee never unlocks an open price (18a's rule stands until Phase 20)", () => {
+    const open = mkContract({ id: 'con-open', name: 'No contract · Fixed price', pricing: { kind: 'open' } })
+    const p = validProcedure({ governingContractId: 'con-open', priceOverride: { kind: 'fixedFee', amount: 500, reason: 'Typed' } })
+    expect(validateBookingForBilling(booking, [p], mkCtx({ contracts: { 'con-open': open } })).find((f) => f.field === 'governingContractId')?.message).toBe(
+      'Needs a price: No contract · Fixed price has no price of its own.',
     )
   })
 })

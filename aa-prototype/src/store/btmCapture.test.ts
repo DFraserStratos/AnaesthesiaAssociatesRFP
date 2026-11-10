@@ -48,7 +48,7 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
   if (anaesthetist === undefined) throw new Error('missing context')
   const totals: number[] = []
   const units: number[] = []
-  proceduresForBooking(state, bookingId).forEach((procedure, index) => {
+  proceduresForBooking(state, bookingId).forEach((procedure) => {
     const contract =
       procedure.governingContractId !== undefined
         ? state.masters.contracts[procedure.governingContractId]
@@ -60,13 +60,12 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
     )
     const ctx: Parameters<typeof feeFor>[1] = {
       anaesthetist,
-      contractPrices: Object.values(state.masters.contractPrices),
-      procedureOrdinal: index + 1,
+      dateISO: list.dateISO,
+      timeRule: state.masters.rvgTimeRule,
       nonRvgLines,
     }
     if (contract !== undefined) ctx.contract = contract
     if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
-    if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
     const fee = feeFor(procedure, ctx)
     totals.push(fee.total)
     units.push(fee.billableUnits)
@@ -145,8 +144,8 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
     const rvgGroup = masters.rvgGroups[RVG_GROUP.a3!]
     if (rvgGroup === undefined) throw new Error('missing RVG group')
 
-    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup })
-    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup })
+    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule })
+    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule })
     expect(souterFee.billableUnits).toBe(8)
     expect(souterFee.total).toBe(212)
     expect(strandFee.billableUnits).toBe(8)
@@ -216,14 +215,14 @@ describe('B/T/M provenance semantics (the reset link contract)', () => {
       }).ok,
     ).toBe(true)
     let procedure = api.getState().schedule.procedures[procedureId]!
-    let btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''])
+    let btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''], api.getState().masters.rvgTimeRule)
     expect(btm.time).toEqual({ units: 5, source: 'overridden' })
 
     // "Use seeded value": clearing the capture re-derives from the stamps
     // (no handover seeded → 0 time units, seeded provenance).
     expect(editProcedure(api, SOUTER, procedureId, { timeUnitsCaptured: undefined }).ok).toBe(true)
     procedure = api.getState().schedule.procedures[procedureId]!
-    btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''])
+    btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''], api.getState().masters.rvgTimeRule)
     expect(btm.time).toEqual({ units: 0, source: 'seeded' })
   })
 })

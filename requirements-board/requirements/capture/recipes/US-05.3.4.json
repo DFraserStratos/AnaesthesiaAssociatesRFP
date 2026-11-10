@@ -1,21 +1,6 @@
 {
   "id": "US-05.3.4",
-  "status": "captured",
-  "absentReason": "",
-  "shots": [
-    {
-      "name": "second-procedure",
-      "app": "admin",
-      "caption": "Second procedure priced by the contract's own ordinal rule",
-      "start": "/admin/day/2026-07-14/bookings/BK0028",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-testid=booking-calculation]"
-          ]
-        }
-      ]
-    }
-  ]
+  "status": "absent",
+  "absentReason": "Retired: removed in Phase 19a",
+  "shots": []
 }

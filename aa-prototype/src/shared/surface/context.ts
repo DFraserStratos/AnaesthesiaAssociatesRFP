@@ -31,6 +31,8 @@ export interface BookingTotalLine {
   amount: number
   /** A short qualifier, e.g. "time units only". */
   note?: string
+  /** No price on the List's date: shown as "Needs a price", never as an amount (catch-up Phase 19a). */
+  needsPrice?: boolean
 }
 
 /**
@@ -46,6 +48,8 @@ export interface BookingTotalProps {
   units: number
   /** Summed fee across the Booking's procedures (`bookingFee`). */
   fee: number
+  /** Some Procedure has no price on the List's date: the total reads "Needs a price" (catch-up Phase 19a). */
+  needsPrice?: boolean
   /** Breakdown rows; empty when there is nothing to break down. */
   lines: readonly BookingTotalLine[]
   /** The applied rate, e.g. "FEE @ $26.50/UNIT", or null when procedures disagree. */

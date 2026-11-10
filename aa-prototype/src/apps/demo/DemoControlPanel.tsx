@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { RotateCcw, CalendarDays, Info, Route, ListChecks, ArrowRight } from 'lucide-react'
+import { RotateCcw, CalendarDays, Route, ListChecks, ArrowRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
@@ -208,29 +208,6 @@ export function DemoControlPanel() {
       />
       <DemoActionsIndex />
 
-      {/* Billing rounding assumption (Decisions log 2026-07-22; Phase 04 repeats it on the T stepper) */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 10,
-          padding: '10px 14px',
-          background: neutral.sunken,
-          border: `1px solid ${neutral.line}`,
-          borderRadius: radius.ctl,
-          fontSize: 12.5,
-          lineHeight: 1.5,
-          color: neutral.slate,
-        }}
-      >
-        <Info size={15} strokeWidth={2} style={{ flex: 'none', marginTop: 2 }} aria-hidden />
-        <span>
-          <strong style={{ fontWeight: 600 }}>Billing assumption:</strong> partial time intervals
-          round up per started interval (1 unit per started 15 min for the first 2 hours, then per
-          started 10 min). The RFP defines the tiers but not the rounding; to confirm with AA in
-          discovery.
-        </span>
-      </div>
     </DemoSurface>
   )
 }
@@ -310,7 +287,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley: see the triangle, open the Booking and read the warning, Mark complete and submit (no block, no confirm step), then clear it from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure (her Booking is on a fixed-price COS Contract with no price for her procedure), then Resolve & retry Losa Tuilagi and choose ACC orthopaedic services; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button, which pays exactly the amount received; pay the balance and run again.',
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley: see the triangle, open the Booking and read the warning, Mark complete and submit (no block, no confirm step), then clear it from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure (her Booking is on a fixed-price COS Contract whose price starts after her List\'s date), then Resolve & retry Losa Tuilagi and choose ACC orthopaedic services; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button, which pays exactly the amount received; pay the balance and run again.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },

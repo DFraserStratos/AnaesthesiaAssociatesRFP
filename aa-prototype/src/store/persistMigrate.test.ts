@@ -352,7 +352,7 @@ describe('RVG groups (catch-up Phase 19)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v33 store with the flat RVG code table and reseeds the RVG groups', () => {
-    expect(PERSIST_VERSION).toBe(34)
+    expect(PERSIST_VERSION).toBe(35)
     const fresh = freshAppState()
     const { rvgGroups: _g, ...oldMasters } = fresh.masters
     const stale = { ...fresh, masters: { ...oldMasters, rvgCodes: { '20941': { code: '20941' } } } }
@@ -361,5 +361,32 @@ describe('RVG groups (catch-up Phase 19)', () => {
     expect(Object.values(s.masters.rvgGroups).filter((g) => g.code === 'T2')).toHaveLength(3)
     expect((s.masters as unknown as Record<string, unknown>)['rvgCodes']).toBeUndefined()
     expect(s.appSettings.warningRules.baseUnitsOutsideGuide).toEqual({ active: true, params: {} })
+  })
+})
+
+describe('price ranges (catch-up Phase 19a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v34 store with the fixed-price rows and reseeds the ranges, the two fields and the time rule', () => {
+    expect(PERSIST_VERSION).toBe(35)
+    const fresh = freshAppState()
+    const { rvgTimeRule: _r, ...oldMasters } = fresh.masters
+    const contracts = Object.fromEntries(
+      Object.entries(fresh.masters.contracts).map(([id, c]) => {
+        const { invoiceDescription: _i, defaultRvgGroupId: _d, ...old } = c
+        return [id, c.pricing.kind === 'fixed' ? { ...old, pricing: { kind: 'fixed' } } : old]
+      }),
+    )
+    const stale = { ...fresh, masters: { ...oldMasters, contracts, contractPrices: { 'CP-BAR-1': { id: 'CP-BAR-1', price: 2800 } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 34 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect((s.masters as unknown as Record<string, unknown>)['contractPrices']).toBeUndefined()
+    expect(s.masters.rvgTimeRule.tiers).toHaveLength(2)
+    expect(s.masters.contracts['CT-DOYLE-BAR']?.pricing).toMatchObject({ kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-07-28', price: 2950 }] })
+    expect(s.masters.contracts['CT-MER-FACELIFT']?.defaultRvgGroupId).not.toBeNull()
   })
 })

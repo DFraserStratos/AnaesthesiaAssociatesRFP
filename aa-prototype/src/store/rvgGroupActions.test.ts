@@ -11,7 +11,7 @@ import { authoriseList, completeBooking, editProcedure, submitList } from './lif
 import { clockISO, type Actor } from './mutate'
 import { createRvgGroup, editRvgGroup, pickRvgGroup, restoreRvgGroup, retireRvgGroup } from './rvgGroupActions'
 import { createBooking } from './bookingActions'
-import { addContractPrice } from './contractActions'
+import { editContract } from './contractActions'
 import { CONTRACT } from '../domain/seed'
 import { proceduresForBooking } from './selectors'
 import { openWarnings, warningsForBooking } from './warnings'
@@ -34,8 +34,7 @@ function feeOf(api: BoundAppStore, procedureId: string) {
   const s = api.getState()
   const p = s.schedule.procedures[procedureId]!
   const list = assigned(s.schedule.lists[s.schedule.bookings[p.bookingId]!.listId])
-  const ordinal = proceduresForBooking(s, p.bookingId).findIndex((x) => x.id === p.id) + 1
-  return procedureFee({ procedure: p, list, ordinal, masters: s.masters, billingLines: s.schedule.billingLines }).fee
+  return procedureFee({ procedure: p, list, masters: s.masters, billingLines: s.schedule.billingLines }).fee
 }
 
 describe('the office maintains the RVG groups', () => {
@@ -241,12 +240,13 @@ describe('review fixes (convention 18, catch-up Phase 19)', () => {
     expect(pickRvgGroup(api, SOUTER, p.id, RVG_GROUP.h4!).ok).toBe(true)
   })
 
-  it('a duplicate of a retired row says to restore it; a retired row cannot take a new price row', () => {
+  it('a duplicate of a retired row says to restore it; a retired row cannot become a default RVG code', () => {
     const api = createAppStore()
     const made = createRvgGroup(api, OFFICE, BROW_LIFT)
     if (!made.ok) throw new Error('not made')
     retireRvgGroup(api, OFFICE, made.value.id)
     expect(createRvgGroup(api, OFFICE, BROW_LIFT)).toMatchObject({ ok: false, code: 'duplicateRetired', message: 'A retired RVG group has the same code, description and base units. Restore it instead.' })
-    expect(addContractPrice(api, OFFICE, { contractId: CONTRACT.cosFixed, rvgGroupId: made.value.id, price: 900 })).toMatchObject({ ok: false, code: 'rvgGroupRetired' })
+    // A retired row cannot become a Contract's default RVG code (catch-up Phase 19a).
+    expect(editContract(api, OFFICE, CONTRACT.cosFixed, { defaultRvgGroupId: made.value.id })).toMatchObject({ ok: false, code: 'rvgGroupRetired' })
   })
 })

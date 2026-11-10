@@ -44,7 +44,7 @@ describe('Specialties view (US-13.4.4)', () => {
     renderAdmin('/admin/masters?view=specialties')
     const table = shot('masters-specialties')
     expect(table.querySelectorAll('tr[data-specialty]').length).toBe(12)
-    expect(within(table.querySelector(`tr[data-specialty="${SPC.ophthalmology}"]`) as HTMLElement).getByText('20 surgeons, 0 Contracts')).toBeInTheDocument()
+    expect(within(table.querySelector(`tr[data-specialty="${SPC.ophthalmology}"]`) as HTMLElement).getByText('20 surgeons, 8 Contracts')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Add specialty' }))
     fireEvent.change(within(shot('specialty-sheet')).getByLabelText('Name'), { target: { value: 'Paediatric surgery' } })
     fireEvent.click(within(shot('specialty-sheet')).getByRole('button', { name: 'Add specialty' }))
@@ -60,7 +60,7 @@ describe('Specialties view (US-13.4.4)', () => {
   it('refuses a held specialty plainly, and a duplicate name in the sheet', () => {
     renderAdmin('/admin/masters?view=specialties')
     fireEvent.click(screen.getByRole('button', { name: 'Remove Ophthalmology' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Ophthalmology is held by 20 surgeons, so it cannot be removed.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Ophthalmology is held by 20 surgeons and 8 Contracts, so it cannot be removed.')
     fireEvent.click(screen.getByRole('button', { name: 'Add specialty' }))
     fireEvent.change(within(shot('specialty-sheet')).getByLabelText('Name'), { target: { value: 'ent' } })
     fireEvent.click(within(shot('specialty-sheet')).getByRole('button', { name: 'Add specialty' }))
@@ -95,7 +95,7 @@ describe('Funding tags view (US-13.4.5)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove NZDF' }))
     expect(codes()).toEqual(['SXAP', 'HNZ', 'ACC'])
     fireEvent.click(screen.getByRole('button', { name: 'Remove SXAP' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('SXAP is carried by 2 Contracts, its system Fixed price Contracts included, so it cannot be removed.')
+    expect(screen.getByRole('alert')).toHaveTextContent('SXAP is carried by 9 Contracts, its system Fixed price Contracts included, so it cannot be removed.')
   })
 })
 
@@ -157,13 +157,13 @@ describe('the Contract editor and catalogue (US-04.2.16, US-04.2.17)', () => {
     expect(screen.getByText('Christchurch Eye Surgery · SXAP · Fixed price')).toBeInTheDocument()
   })
 
-  it('a system row carries the System pill; its editor keeps only name and AA code live and offers no Disable', () => {
+  it('a system row carries the System pill; its editor keeps only name, AA code and invoice description live and offers no Disable', () => {
     renderAdmin('/admin/masters?view=contracts')
     const row = document.querySelector('tr[data-contract="CT-FIX-HOSPITAL-PY-STG-TAG-ACC"]') as HTMLElement
     expect(row.getAttribute('data-system')).toBe('openPriceFallback')
     expect(within(row).getByText('System')).toBeInTheDocument()
     openContract('STG-ACC-FIX')
-    expect(shot('contract-system-notice')).toHaveTextContent('Only its name and AA code can change.')
+    expect(shot('contract-system-notice')).toHaveTextContent('Only its name, AA code and invoice description can change.')
     expect(document.querySelector('[data-shot="contract-specialties"]')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Disable' })).toBeNull()
     expect(within(shot('contract-funding-tag')).queryByRole('combobox')).toBeNull()
@@ -181,6 +181,6 @@ describe('the Contract editor and catalogue (US-04.2.16, US-04.2.17)', () => {
     fireEvent.change(within(shot('contract-tag-filter')).getByLabelText('Funding tag'), { target: { value: TAG.acc } })
     expect(shot('contract-result-count')).toHaveTextContent('tagged ACC')
     const codes = [...document.querySelectorAll('tr[data-contract] td:first-child')].map((td) => td.textContent).sort()
-    expect(codes).toEqual(['COS-001', 'COS-002', 'STG-002', 'STG-ACC-FIX'])
+    expect(codes).toEqual(['CES-009', 'CES-ACC-FIX', 'COS-001', 'COS-002', 'STG-002', 'STG-ACC-FIX'])
   })
 })

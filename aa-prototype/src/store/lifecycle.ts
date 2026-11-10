@@ -37,6 +37,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { billingContextForBooking, bookingsForList, proceduresForBooking } from './selectors'
 import { emitAppEvent } from './events'
 import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
+import { fillFromContract } from '../domain/billing/startingValues'
 
 // ---------------------------------------------------------------------------
 // Shared checks
@@ -498,6 +499,16 @@ export function editProcedure(
   }
   if (patch.baseUnitsCaptured?.source === 'overridden' && !isRecordableBaseUnits(patch.baseUnitsCaptured.units)) {
     return refuse('baseUnitsInvalid', BASE_UNITS_WHOLE_MESSAGE)
+  }
+  // Starting values (catch-up Phase 19a; DM-43, A15): choosing a Contract
+  // fills an empty RVG code from its default; a code already set (or set by
+  // this patch) is kept with its times and modifiers. The fill joins the patch
+  // before the row-change rule below, so a typed base value from before is
+  // cleared and base units come from the RVG group alone; no source is stored.
+  // Phase 20's rail calls the same.
+  if (patch.governingContractId !== undefined && patch.governingContractId !== procedure.governingContractId && !('rvgGroupId' in patch)) {
+    const fill = fillFromContract(procedure, state.masters.contracts[patch.governingContractId], state.masters.rvgGroups)
+    if (fill !== null) patch = { ...patch, ...fill }
   }
   if ('rvgGroupId' in patch) {
     const pick = rvgGroupPickRefusal(state.masters.rvgGroups, patch.rvgGroupId, procedure.rvgGroupId)

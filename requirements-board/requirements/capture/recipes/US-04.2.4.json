@@ -1,6 +1,6 @@
 {
   "id": "US-04.2.4",
   "status": "absent",
-  "absentReason": "Retired: the flat Contract model has no lines, versions or defaults",
+  "absentReason": "Retired: removed in Phase 19a",
   "shots": []
 }

@@ -14,7 +14,7 @@ test('admin phase 09: billing monitor failure, resolve and retry', async ({ page
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { name: 'Billing monitor' })).toBeVisible()
   const message = await runDemoAction(page, 'billing-failure')
-  expect(message).toMatch(/No price in force/)
+  expect(message).toMatch(/Needs a price/)
   await page.screenshot({ path: 'visual/shots/p9-01-trigger.png', fullPage: true })
   // Pressed once, it reads Already triggered.
   await expect(page.locator('[data-shot="demo-action-billing-failure"]').getByText('Already triggered')).toBeVisible()
@@ -28,7 +28,7 @@ test('admin phase 09: billing monitor failure, resolve and retry', async ({ page
   // Resolve & retry asks the office to choose the Contract, then re-bills (no Contract is edited).
   await page.getByRole('button', { name: /Resolve/ }).first().click()
   const choose = page.locator('[data-shot="choose-contract-sheet"]')
-  await expect(choose).toContainText('No price in force')
+  await expect(choose).toContainText('Needs a price')
   await choose.locator('select').selectOption({ label: 'COS-001 · ACC orthopaedic services, Canterbury Orthopaedic Surgeons' })
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p9-02b-choose-contract.png', fullPage: true })

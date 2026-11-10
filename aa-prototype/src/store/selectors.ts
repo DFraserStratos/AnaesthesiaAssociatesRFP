@@ -378,7 +378,7 @@ export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: strin
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** Procedures in Booking order (creation order — the billing ordinal). */
+/** Procedures in Booking order (creation order; the first is the primary). */
 export function proceduresForBooking(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure[] {
   return Object.values(state.schedule.procedures)
     .filter((p) => p.bookingId === bookingId)
@@ -1150,12 +1150,12 @@ export function billingContextForBooking(state: AppState, booking: Booking): Boo
     anaesthetist,
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
-    contractPrices: Object.values(state.masters.contractPrices),
     parties: state.masters.parties,
     billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
+    listDateISO: list.dateISO,
+    timeRule: state.masters.rvgTimeRule,
   }
-  ctx.surgeonId = list.surgeonId
   const hospital = listHospitalFor(list, state.masters.hospitals)
   if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
   return ctx

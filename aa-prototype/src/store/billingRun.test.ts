@@ -2,7 +2,7 @@
  * Billing-run orchestration tests (Phase 08): wiring + idempotence, guards,
  * grouping, every seeded charge-basis exemplar (each pricing kind, rate x time,
  * two-funder, split pair, insured reimbursement, the COS surgeon-group holder),
- * a Disabled Contract still billing and the "No price in force" exception,
+ * a Disabled Contract still billing and the "Needs a price" exception,
  * override + snapshot immunity, unique invoice numbers, the design-day live
  * path, system-sourced audit, the billedAt view effect and identity
  * separation (no NHI in billing data).
@@ -12,7 +12,8 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { handoffListCases, markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
 import { authoriseList, completeBooking, editProcedure, reassignBooking, submitList } from './lifecycle'
-import { disableContract, editContract, editContractPrice } from './contractActions'
+import { addPriceRange, disableContract, editContract } from './contractActions'
+import { needsPriceMessage } from '../domain/billing/priceRanges'
 import { editAnaesthetist } from './mastersActions'
 import { setBillingLineAllocation } from './billingLineActions'
 import { advanceClockMinutes } from './clockActions'
@@ -197,21 +198,24 @@ describe('charge bases and holders', () => {
     }
   })
 
-  it("the surgeon-held bariatric fixed price bills its holder's interim counterparty, its fixed prices on one invoice", () => {
+  it("the surgeon-held bariatric fixed price bills its holder's interim counterparty; the hernia is on No contract · RVG (catch-up Phase 19a, RV-07)", () => {
     const api = store()
     const bookingId = marker('bariatricType3Booking')
     stageAndBill(api, listOf(api, bookingId))
     const invoices = invoicesForBooking(api, bookingId)
-    expect(invoices).toHaveLength(1)
-    const invoice = invoices[0]!
-    expect(invoice.counterparty).toEqual({ kind: 'surgeon', id: SURG.doyle })
-    expect(invoice.layout).toBe('contractHolder')
-    // The ordinal-2 hernia is isAdditional AND matches the CP-BAR-3 fixed price:
-    // the fixed-price branch precedes the time-only rule, so the FULL $950 bills.
-    expect(linesOf(api, invoice.id).map((l) => l.amount)).toEqual([2800, 950])
-    expect(invoice.subtotal).toBe(3750)
-    expect(invoice.gst).toBe(562.5)
-    expect(invoice.total).toBe(4312.5)
+    expect(invoices).toHaveLength(2)
+    const doyle = invoices.find((i) => i.counterparty.kind === 'surgeon')!
+    expect(doyle.counterparty).toEqual({ kind: 'surgeon', id: SURG.doyle })
+    expect(doyle.layout).toBe('contractHolder')
+    // The gastric bypass at the range in force on Tue 14 Jul; GST at the foot.
+    expect(linesOf(api, doyle.id).map((l) => l.amount)).toEqual([2800])
+    expect(doyle.subtotal).toBe(2800)
+    expect(doyle.gst).toBe(420)
+    expect(doyle.total).toBe(3220)
+    // No Contract prices a second procedure: the hernia bills at RVG, time units only, to the patient.
+    const patient = invoices.find((i) => i.counterparty.kind === 'patient')!
+    expect(patient.subtotal).toBe(61)
+    expect(linesOf(api, patient.id)[0]!.description).toContain('time units only')
   })
 
   it('the rate x time booking bills hours x the agreed rate under the billableParty-held contract', () => {
@@ -339,14 +343,14 @@ describe('contract lifecycle at billing time', () => {
     }
   })
 
-  it('a fixed-price Contract with no price for the procedure is a per-booking exception; the list still completes its run', () => {
+  it('a fixed-price Contract with no range in force on the List\'s date is a per-booking exception; the list still completes its run', () => {
     const api = store()
     const bookingId = marker('cosAccContractBooking')
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     expect(editProcedure(api, OFFICE, proc.id, { governingContractId: CONTRACT.cosFixed }).ok).toBe(true)
     const result = stageAndBill(api, listOf(api, bookingId))
     expect(result.exceptions).toHaveLength(1)
-    expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective', message: 'No price in force for this procedure under COS ACC fixed fees.' })
+    expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective', message: needsPriceMessage(api.getState().masters.contracts[CONTRACT.cosFixed]!, api.getState().schedule.lists[listOf(api, bookingId)]!.dateISO, { named: true }) })
     expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
     const state = api.getState()
     const failed = Object.values(state.billing.cases).filter((c) => c.status === 'failed')
@@ -375,7 +379,7 @@ describe('contract lifecycle at billing time', () => {
     expect(overrideLine!.amount).toBe(-50)
   })
 
-  it('snapshot immunity: editing a Contract in place, its prices, or disabling it after billing leaves the invoice unchanged', () => {
+  it('snapshot immunity: editing a Contract in place, adding a backdated range, or disabling it after billing leaves the invoice unchanged', () => {
     const api = store()
     const bookingId = marker('bariatricType3Booking')
     stageAndBill(api, listOf(api, bookingId))
@@ -383,7 +387,7 @@ describe('contract lifecycle at billing time', () => {
     const before = JSON.parse(JSON.stringify(api.getState().billing)) as unknown
     // Health NZ's rate edited in place after its invoices were issued.
     expect(editContract(api, OFFICE, CONTRACT.healthNz, { pricing: { kind: 'rvgContractRate', unitRate: 30 } }).ok).toBe(true)
-    expect(editContractPrice(api, OFFICE, 'CP-BAR-1', { price: 9999 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE, CONTRACT.doyleBariatric, { startISO: '2026-07-01', price: 9999 }).ok).toBe(true)
     expect(disableContract(api, OFFICE, CONTRACT.doyleBariatric).ok).toBe(true)
     expect(api.getState().billing).toEqual(before)
   })

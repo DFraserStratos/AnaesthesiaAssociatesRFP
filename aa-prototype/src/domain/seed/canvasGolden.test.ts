@@ -36,6 +36,10 @@
  * acceptance beat's Booking BK0162 on Dr Beaumont's Fri 31 Jul AM List
  * (`seed/bookingMoves.ts`), appended after every other seeded Booking.
  *
+ * Catch-up Phase 19a added one row to `bookings` by hand, nothing else: the
+ * unedited Face lift BK0163 on Dr Souter's Mon 10 Aug PM List
+ * (`seed/pricedItemBookings.ts`), appended after BK0162.
+ *
  * Catch-up Phase 32b changed one window row by hand, nothing else: Dr
  * Rutherford's Wed 22 Jul AM. Unavailability is never a conflict (D59), so his
  * office-recorded sickness returned the List as a Draft List (it takes no

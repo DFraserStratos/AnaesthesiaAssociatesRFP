@@ -1,6 +1,29 @@
 {
   "id": "US-04.2.11",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 23 builds this.",
-  "shots": []
+  "status": "partial",
+  "absentReason": "Fee extras billed as events or additional invoices are Phases 38b and 39b's.",
+  "shots": [
+    {
+      "name": "combination-contracts",
+      "app": "admin",
+      "caption": "A combination is a Contract of its own, found by its RVG code",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "H3"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-catalogue] tr[data-contract^=\"CT-MER\"]"
+          ]
+        }
+      ]
+    }
+  ]
 }

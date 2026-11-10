@@ -56,25 +56,28 @@
         },
         {
           "state": "type-3",
-          "caption": "Fixed price: the Contract's price for the procedure",
+          "caption": "Fixed price: the price of the range in force on the procedure date",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",
-              "value": "Bariatric fixed prices"
+              "value": "Gastric bypass"
             },
             {
               "wait": 300
             },
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Bariatric fixed prices\") >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-DOYLE-BAR\"] >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-price-ranges]"
             }
           ],
           "highlight": [
             "[data-shot=contract-settings] label:has-text(\"Pricing kind\")",
-            "[data-shot=contract-price-rows]"
+            "[data-shot=contract-price-ranges]"
           ]
         },
         {

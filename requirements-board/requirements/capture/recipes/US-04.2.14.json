@@ -1,0 +1,78 @@
+{
+  "id": "US-04.2.14",
+  "status": "partial",
+  "absentReason": "Offered only on her Lists under Patient › Prepaid in Phase 20; the prepaid amount in 27.",
+  "shots": [
+    {
+      "name": "price-list",
+      "app": "admin",
+      "caption": "An anaesthetist's price list: one prepaid Contract per item, kept by the office",
+      "start": "/admin/masters?view=contracts&holder=PY-SOUTER",
+      "states": [
+        {
+          "state": "list",
+          "caption": "Dr Souter's price list by the holder filter, each Contract prepaid",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-catalogue] tr[data-contract]"
+          ]
+        },
+        {
+          "state": "price-change",
+          "caption": "Rhinoplasty: a price change is a new price range",
+          "steps": [
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SOUTER-RHINO\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-price-ranges]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-ranges]"
+          ]
+        },
+        {
+          "state": "price-refused",
+          "caption": "A prepaid Contract's price must be above zero",
+          "steps": [
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SOUTER-RHINO\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range start\"]",
+              "value": "2026-12-01"
+            },
+            {
+              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range price (ex GST)\"]",
+              "value": "0"
+            },
+            {
+              "click": "[data-shot=contract-price-ranges] >> role=button[name=\"Add price range\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-detail] [role=alert]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-ranges]",
+            "[data-shot=contract-detail] [role=alert]"
+          ]
+        }
+      ]
+    }
+  ]
+}

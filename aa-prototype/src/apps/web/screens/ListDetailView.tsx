@@ -15,6 +15,7 @@ import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
+import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 
 interface ListDetailViewProps {
   listId: string
@@ -33,6 +34,8 @@ interface BookingRow {
   extraProcedures: number
   units: number
   fee: number
+  /** No price on the List's date (catch-up Phase 19a): the fee reads "Needs a price". */
+  needsPrice: boolean
   /** What the Booking was invoiced at (GST inclusive), for an authorised List. */
   invoiced: number
 }
@@ -89,7 +92,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
       .map((booking) => {
         const procs = procsByBooking.get(booking.id) ?? []
-        const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0 }
+        const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0, needsPrice: false }
         // What it was invoiced at: the same invoices the Invoices panel lists.
         const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {
@@ -101,6 +104,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           extraProcedures: Math.max(0, procs.length - 1),
           units: totals.units,
           fee: totals.total,
+          needsPrice: totals.needsPrice,
           invoiced,
         }
       })
@@ -112,6 +116,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       done: active.filter((r) => r.booking.completed).length,
       units: active.reduce((n, r) => n + r.units, 0),
       fee: active.reduce((n, r) => n + r.fee, 0),
+      needsPrice: active.some((r) => r.needsPrice),
       invoiced: active.reduce((n, r) => n + r.invoiced, 0),
     }
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking])
@@ -257,7 +262,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                     ) : (
                       <>
                         <Td mono align="right">{cancelled ? '·' : r.units}</Td>
-                        <Td mono align="right">{cancelled ? '·' : formatCurrency(r.fee)}</Td>
+                        <Td mono align="right">{cancelled ? '·' : r.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(r.fee)}</Td>
                       </>
                     )}
                     <Td align="right">
@@ -288,7 +293,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                   ) : (
                     <>
                       <Td mono align="right"><strong>{model.units}</strong></Td>
-                      <Td mono align="right"><strong>{formatCurrency(model.fee)}</strong></Td>
+                      <Td mono align="right"><strong>{model.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(model.fee)}</strong></Td>
                     </>
                   )}
                   <Td />

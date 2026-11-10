@@ -94,14 +94,41 @@ describe("surgeons' specialties (US-13.6.6)", () => {
 })
 
 describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
-  it('tags SXAP, HNZ and the ACC Contracts; specialties only on Doyle\'s bariatric', () => {
+  it("tags SXAP, HNZ and the ACC Contracts; specialties on the priced items (catch-up Phase 19a, AR-58 8.2)", () => {
     const tagged = Object.values(masters.contracts)
       .filter((c) => !isOpenPriceFallback(c) && c.fundingTagId !== undefined)
       .map((c) => `${c.aaCode}:${masters.fundingTags[c.fundingTagId!]?.code}`)
       .sort()
-    expect(tagged).toEqual(['COS-001:ACC', 'COS-002:ACC', 'CPH-002:HNZ', 'STG-002:ACC', 'SX-002:SXAP'])
-    const withSpecialties = Object.values(masters.contracts).filter((c) => c.specialtyIds.length > 0)
-    expect(withSpecialties.map((c) => [c.aaCode, c.specialtyIds])).toEqual([['DOYLE-001', ['SPC-GENSURG']]])
+    expect(tagged).toEqual([
+      'CES-002:SXAP',
+      'CES-003:SXAP',
+      'CES-004:SXAP',
+      'CES-005:SXAP',
+      'CES-006:SXAP',
+      'CES-007:SXAP',
+      'CES-008:HNZ',
+      'CES-009:ACC',
+      'COS-001:ACC',
+      'COS-002:ACC',
+      'CPH-002:HNZ',
+      'STG-002:ACC',
+      'SX-002:SXAP',
+    ])
+    const withSpecialties = Object.values(masters.contracts)
+      .filter((c) => c.specialtyIds.length > 0)
+      .map((c) => `${c.aaCode}:${c.specialtyIds.join('+')}`)
+      .sort()
+    expect(withSpecialties).toEqual([
+      ...['CES-002', 'CES-003', 'CES-004', 'CES-005', 'CES-006', 'CES-007', 'CES-008', 'CES-009'].map((c) => `${c}:SPC-OPHTH`),
+      'DOYLE-001:SPC-GENSURG',
+      'DOYLE-002:SPC-GENSURG',
+      'MER-001:SPC-PLASTIC',
+      'MER-002:SPC-PLASTIC',
+      'MER-003:SPC-PLASTIC',
+      'SOUTER-001:SPC-PLASTIC',
+      'SOUTER-002:SPC-PLASTIC',
+      'SOUTER-003:SPC-PLASTIC',
+    ])
   })
 
   it("every seeded Procedure's Contract fits its List's surgeon, so no seeded Booking's Contract is hidden", () => {

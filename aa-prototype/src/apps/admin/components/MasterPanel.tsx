@@ -80,7 +80,7 @@ export function MasterPanel({ open, onClose, title, meta, shot, children, footer
 
 /** Two fields side by side in the panel; one column when a field needs the width. */
 export function PanelGrid({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>{children}</div>
+  return <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 16 }}>{children}</div>
 }
 
 /** A titled group of fields in the panel. */

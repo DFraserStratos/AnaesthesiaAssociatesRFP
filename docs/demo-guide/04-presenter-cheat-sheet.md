@@ -86,11 +86,11 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 - The anaesthetist picks the RVG code by typing; it is optional, and the system does not infer it.
 - A ranged group starts at its starting figure; any value is accepted, and one outside the guide raises
   a warning for the office after the procedure, never a block.
-- Base units sit on the RVG group alone; a Contract states none and may only name a default RVG code
-  (next phase).
+- Base units sit on the RVG group alone; a Contract states none and may only name a default RVG code.
+  Choosing a Contract fills an empty RVG code from its default; a Procedure that has one keeps it.
 - Positioning cannot be charged again if the base code already includes it.
-- The RFP does not define partial-interval rounding; the prototype rounds up per started interval as
-  a discovery assumption.
+- A part interval always rounds up (confirmed with AA); the tiers are held as data (Admin → Master
+  data → RVG groups shows the RVG time rule, read only). The anaesthetist enters start and finish only.
 
 ### Three billing routes
 
@@ -126,7 +126,16 @@ Do not treat these as the same workflow.
   discount, or a fixed price), an optional override on RVG kinds, prepaid or not, and is Active or
   Disabled.
 - It is edited in place with an audit, never deleted; a change that must start on a date is a new
-  Contract, and the old one is disabled.
+  Contract, and the old one is disabled, except a fixed price, which changes through price ranges.
+- Each priced item is a Contract of its own, with a holder reference code, an invoice description and
+  a default RVG code. A fixed price has price ranges: the range in force on the procedure date gives
+  the price, and a new range, even backdated, re-prices everything not yet authorised, prepaid or
+  priced by hand; invoices already raised never change. A combination such as Merivale's Facelift
+  plus 1 add on is its own Contract; fee extras (a GA add-on fee, per 15 minutes over 120, per area)
+  are events, not Contracts. An anaesthetist's price list is one prepaid Contract per item, kept by
+  the office, every price above zero (Dr Souter's). Prices are ex GST, GST at the invoice foot.
+- No Contract prices a second procedure: Doyle's bariatric hernia now bills at RVG under No contract ·
+  RVG, time units only.
 - **No contract · RVG**, held by AA, is always there.
 - Every Contract has AA's own code (for example `COS-001`).
 - A Contract carries none or more **specialties** from AA's list (none means every specialty) and at
@@ -139,9 +148,10 @@ Do not treat these as the same workflow.
 - The system keeps one **Fixed price** Contract for every place an invoice can go (No contract ·
   Fixed price, Prepaid · Fixed price, one per hospital and tag, one per Special holder), marked
   System. Tagging a hospital's first Contract with a new tag makes its Fixed price Contract at once.
-  They are never disabled; only their name and AA code change. Nothing is priced on them yet.
-- Tip: find a Contract by typing its name or AA code in the Contracts search; filter by holder or
-  funding tag.
+  They are never disabled; only their name, AA code and invoice description change. Nothing is priced on them yet.
+- Tip: find a Contract by typing its name, AA code, holder reference code, a word of its invoice
+  description or its default RVG code ("CAT" finds the cataract items, "H3" Merivale's
+  combinations); filter by holder or funding tag.
 
 ## The money model
 
@@ -423,11 +433,10 @@ Say:
 - The prototype is single-user and uses audited last-write-wins behaviour; production concurrency is
   a discovery topic.
 
-### 10. Modifier values and time rounding
+### 10. Modifier values
 
 - The RFP names example modifier ranges, not a certified full NZSA table.
 - The prototype values are demo-plausible and must not be described as authoritative.
-- Partial time-interval rounding is a prototype assumption.
 - Codes in the same band (pre-assessment, age, ASA, BMI) are one-per-procedure, so tapping a sibling
   replaces it: those per-group ranges only add up if one code applies. The RFP implies the rule rather
   than stating it, and a pre-assessment follow-up (PA5) stacks on top, which is a question for AA.

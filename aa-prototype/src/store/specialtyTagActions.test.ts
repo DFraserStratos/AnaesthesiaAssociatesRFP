@@ -51,9 +51,9 @@ describe('specialties (US-13.4.4)', () => {
   it('refuses to remove a held specialty, naming who holds it', () => {
     const api = createAppStore()
     const outcome = removeSpecialty(api, OFFICE, SPC.ophthalmology)
-    expect(outcome.ok ? '' : outcome.message).toBe('Ophthalmology is held by 20 surgeons, so it cannot be removed. Rename it instead, or change them first.')
+    expect(outcome.ok ? '' : outcome.message).toBe('Ophthalmology is held by 20 surgeons and 8 Contracts, so it cannot be removed. Rename it instead, or change them first.')
     const gen = removeSpecialty(api, OFFICE, SPC.generalSurgery)
-    expect(gen.ok ? '' : gen.message).toMatch(/^General surgery is held by 29 surgeons and 1 Contract/)
+    expect(gen.ok ? '' : gen.message).toMatch(/^General surgery is held by 29 surgeons and 2 Contracts/)
     expect(api.getState().masters.specialties[SPC.ophthalmology]).toBeDefined()
   })
 
@@ -134,7 +134,7 @@ describe('funding tags (US-13.4.5)', () => {
     ].map((o) => (o.ok ? 'ok' : o.code))
     expect(codes).toEqual(['codeTaken', 'funderKind', 'fundingTagHeld', 'officeOnly'])
     const held = removeFundingTag(api, OFFICE, TAG.sxap)
-    expect(held.ok ? '' : held.message).toBe('SXAP is carried by 2 Contracts, its system Fixed price Contracts included, so it cannot be removed. Edit its code instead.')
+    expect(held.ok ? '' : held.message).toBe('SXAP is carried by 9 Contracts, its system Fixed price Contracts included, so it cannot be removed. Edit its code instead.')
   })
 })
 
@@ -151,30 +151,34 @@ describe('Contracts with specialties, a tag and the fallbacks (US-04.2.16, US-04
     fundingTagId: TAG.sxap,
   }
 
+  // Christchurch Eye Surgery holds seeded SXAP, HNZ and ACC items since catch-up
+  // Phase 19a, so its fallbacks exist from the start: Forte has none.
+  const FORTE_SXAP = { ...CES_SXAP, holderId: PARTY.forte }
+
   it("tagging a hospital's first SXAP Contract creates its fallback in the same commit, audited", () => {
     const api = createAppStore()
     const before = api.getState().audit.length
-    const outcome = createContract(api, OFFICE, CES_SXAP)
+    const outcome = createContract(api, OFFICE, FORTE_SXAP)
     expect(outcome.ok).toBe(true)
     const s = api.getState()
     const added = s.audit.slice(before)
     expect(added.map((a) => a.action)).toEqual(['contract.create', 'contract.fallbackCreate'])
     expect(new Set(added.map((a) => a.atISO)).size).toBe(1)
     const fallback = s.masters.contracts[added[1]!.entityId]!
-    expect(fallback).toMatchObject({ name: 'Christchurch Eye Surgery · SXAP · Fixed price', aaCode: 'CES-SXAP-FIX', pricing: { kind: 'open' }, fundingTagId: TAG.sxap })
-    expect(added[0]!.after).toMatchObject({ holder: 'Christchurch Eye Surgery', specialties: 'Ophthalmology', fundingTag: 'SXAP' })
-    expect(added[1]!.after).toMatchObject({ holder: 'Christchurch Eye Surgery', specialties: 'Every specialty', fundingTag: 'SXAP' })
+    expect(fallback).toMatchObject({ name: 'Forte Health · SXAP · Fixed price', aaCode: 'FORTE-SXAP-FIX', pricing: { kind: 'open' }, fundingTagId: TAG.sxap })
+    expect(added[0]!.after).toMatchObject({ holder: 'Forte Health', specialties: 'Ophthalmology', fundingTag: 'SXAP' })
+    expect(added[1]!.after).toMatchObject({ holder: 'Forte Health', specialties: 'Every specialty', fundingTag: 'SXAP' })
     for (const a of added) expectNamed(a)
   })
 
   it('an edit to another tag adds the new fallback, keeps the old, and a second save makes no duplicate', () => {
     const api = createAppStore()
-    const created = createContract(api, OFFICE, CES_SXAP)
+    const created = createContract(api, OFFICE, FORTE_SXAP)
     const id = created.ok ? created.value.contract.id : ''
     expect(editContract(api, OFFICE, id, { fundingTagId: TAG.hnz }).ok).toBe(true)
     const names = () => Object.values(api.getState().masters.contracts).filter(isOpenPriceFallback).map((c) => c.name)
-    expect(names()).toContain('Christchurch Eye Surgery · SXAP · Fixed price')
-    expect(names()).toContain('Christchurch Eye Surgery · HNZ · Fixed price')
+    expect(names()).toContain('Forte Health · SXAP · Fixed price')
+    expect(names()).toContain('Forte Health · HNZ · Fixed price')
     expect(api.getState().audit.at(-2)).toMatchObject({ action: 'contract.update', before: { fundingTag: 'SXAP' }, after: { fundingTag: 'HNZ' } })
     const count = names().length
     expect(editContract(api, OFFICE, id, { name: 'CES HNZ cataract' }).ok).toBe(true)

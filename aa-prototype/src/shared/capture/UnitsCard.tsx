@@ -2,6 +2,7 @@ import { accent, neutral, semantic } from '../../theme/tokens'
 import type { CapturedUnits, Procedure, RvgGroup } from '../../domain/types'
 import {
   ASA_SEED_UNITS,
+  describeTimeRule,
   getModifierCode,
   type BtmBreakdown,
   type RefusedModifier,
@@ -34,6 +35,8 @@ interface UnitsCardProps {
  * value + caption with no buttons (the split-billing rule is structural).
  */
 export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, onError }: UnitsCardProps) {
+  // The RVG time tiers held as data (catch-up Phase 19a; US-05.2.2): the T caption's title words the rule.
+  const timeRule = useAppStore((s) => s.masters.rvgTimeRule)
   function write(patch: ProcedurePatch) {
     const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
     if (!outcome.ok) onError(outcome.message)
@@ -67,7 +70,8 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
         title="T · Time"
         value={btm.time.units}
         overridden={btm.time.source === 'overridden'}
-        seededCaption="From start / finish stamps · part intervals round up (assumption)"
+        seededCaption="From start and finish stamps · RVG time tiers"
+        captionTitle={describeTimeRule(timeRule)}
         steppable={canCapture}
         onStep={(delta) => step('timeUnitsCaptured', btm.time.units, delta)}
         onReset={canCapture ? () => reset('timeUnitsCaptured') : undefined}
@@ -141,6 +145,7 @@ function StepperRow({
   overriddenLabel = 'Adjusted manually',
   captionTone = 'quiet',
   seededCaption,
+  captionTitle,
   steppable,
   onStep,
   onReset,
@@ -152,6 +157,8 @@ function StepperRow({
   /** 'warn' tints the caption (a base value outside the RVG guide; never an error). */
   captionTone?: 'quiet' | 'warn'
   seededCaption: string
+  /** A fuller wording for the caption, shown as its tooltip. */
+  captionTitle?: string
   steppable: boolean
   onStep: (delta: number) => void
   onReset: (() => void) | undefined
@@ -186,7 +193,7 @@ function StepperRow({
             )}
           </span>
         ) : (
-          <span style={{ fontSize: 12, color: captionTone === 'warn' ? semantic.warning.onTint : neutral.mist }}>{seededCaption}</span>
+          <span title={captionTitle} style={{ fontSize: 12, color: captionTone === 'warn' ? semantic.warning.onTint : neutral.mist }}>{seededCaption}</span>
         )}
       </span>
       {steppable && <StepperButton glyph="−" onClick={() => onStep(-1)} disabled={value <= 0} />}

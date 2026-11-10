@@ -1,7 +1,7 @@
 /**
  * Pure invoice-building tests (Phase 08; flat Contracts since catch-up Phase
  * 18): the Contract-resolution truth table (the stored Contract governs,
- * Disabled included; "No price in force"; the route's plain RVG Contract when
+ * Disabled included; "Needs a price"; the route's plain RVG Contract when
  * nothing is stored), counterparty-by-holder Party,
  * layout mapping, line building (override adjustment, stored funder
  * allocation, time-only additional procedures), same-counterparty grouping
@@ -9,6 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import {
   GST_RATE,
   buildInvoicesForBooking,
@@ -50,11 +51,11 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     anaesthetist: mkAnaesthetist(),
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
-    contractPrices: [],
     parties: PARTIES,
     billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,
+    timeRule: DEFAULT_RVG_TIME_RULE,
     listHospitalId: 'hosp-1',
     patientId: 'pat-1',
     ...overrides,
@@ -87,19 +88,28 @@ describe('resolveContractForProcedure', () => {
     expect(result).toEqual({ kind: 'resolved', contract: disabled })
   })
 
-  it('a primary procedure on a fixed-price Contract with no price for it is "No price in force"', () => {
-    const fixed = mkContract({ id: 'con-fix', name: 'COS ACC fixed fees', holderId: 'party-org', linkedSurgeonIds: ['surg-9'], pricing: { kind: 'fixed' } })
+  it('a Procedure on a fixed-price Contract with no range in force on the List\'s date "Needs a price" (catch-up Phase 19a)', () => {
+    const fixed = mkContract({
+      id: 'con-fix',
+      name: 'COS ACC fixed fees',
+      holderId: 'party-org',
+      linkedSurgeonIds: ['surg-9'],
+      pricing: { kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 1250 }] },
+    })
     const ctx = withContracts(HOSPITAL_DEFAULT, fixed)
     const primary = mkProcedure({ rvgGroupId: 'RG-T-GA10', governingContractId: 'con-fix' })
-    expect(resolveContractForProcedure(primary, ctx)).toEqual({
+    const needs = {
       kind: 'exception',
       code: 'contractIneffective',
-      message: 'No price in force for this procedure under COS ACC fixed fees.',
-    })
-    // A row for it resolves; an additional procedure keeps the time-only fallback.
-    const priced = { ...ctx, contractPrices: [{ id: 'p', contractId: 'con-fix', rvgGroupId: 'RG-T-GA10', price: 500 }] }
-    expect(resolveContractForProcedure(primary, priced).kind).toBe('resolved')
-    expect(resolveContractForProcedure({ ...primary, isAdditional: true }, ctx, 2).kind).toBe('resolved')
+      message: 'Needs a price: no price range in force on 21 Jul 2026 under COS ACC fixed fees.',
+    }
+    expect(resolveContractForProcedure(primary, ctx)).toEqual(needs)
+    // An additional Procedure is no exception: a fixed price is the whole price on any Procedure.
+    expect(resolveContractForProcedure({ ...primary, isAdditional: true }, ctx)).toEqual(needs)
+    // On or after the first start it resolves; an office fixed fee is a typed price.
+    expect(resolveContractForProcedure(primary, { ...ctx, listDateISO: '2026-08-01' }).kind).toBe('resolved')
+    const typed = { ...primary, priceOverride: { kind: 'fixedFee' as const, amount: 900, reason: 'Office price' } }
+    expect(resolveContractForProcedure(typed, ctx).kind).toBe('resolved')
   })
 
   it("nothing stored on the hospital route bills under the LIST hospital's plain RVG Contract, never a rate Contract", () => {
@@ -310,29 +320,28 @@ describe('buildInvoicesForBooking', () => {
     expect(line.amount).toBe(537.18)
   })
 
-  it('an additional procedure takes a fixed price only from an ordinal-keyed row (8th review)', () => {
-    const type3 = mkContract({ id: 'con-t3', pricing: { kind: 'fixed' } })
-    const ctx = withContracts(HOSPITAL_DEFAULT, type3)
-    const addOn = { ...additional, governingContractId: 'con-t3' }
-    // A row with NO ordinal priced the code as a primary: the add-on must not
-    // bill it in full — it falls to the BTM path, time-only.
-    const standaloneOnly = buildInvoicesForBooking(mkBooking(), [addOn], {
-      ...ctx,
-      contractPrices: [{ id: 'cp-1', contractId: 'con-t3', rvgGroupId: BASE_SINGLE_10.id, price: 2400 }],
-    })
-    if (standaloneOnly.kind !== 'invoices') throw new Error('expected invoices')
-    expect(standaloneOnly.invoices[0]!.lines[0]!.description).toContain('time units only')
-    expect(standaloneOnly.invoices[0]!.subtotal).toBe(330)
-    // An ordinal-keyed row IS the contract's own second-procedure price.
-    const ordinalKeyed = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-t3' }, addOn], {
-      ...ctx,
-      contractPrices: [
-        { id: 'cp-1', contractId: 'con-t3', rvgGroupId: BASE_SINGLE_10.id, price: 2400 },
-        { id: 'cp-2', contractId: 'con-t3', rvgGroupId: BASE_SINGLE_10.id, procedureOrdinal: 2, price: 950 },
-      ],
-    })
-    if (ordinalKeyed.kind !== 'invoices') throw new Error('expected invoices')
-    expect(ordinalKeyed.invoices[0]!.lines.map((l) => l.amount)).toEqual([2400, 950])
+  it('a fixed price is the whole price on an additional Procedure too; no Contract prices a second procedure (RV-07)', () => {
+    const fixed = mkContract({ id: 'con-fx', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 2400 }] } })
+    const ctx = withContracts(HOSPITAL_DEFAULT, fixed)
+    const both = buildInvoicesForBooking(
+      mkBooking(),
+      [{ ...primary, governingContractId: 'con-fx' }, { ...additional, governingContractId: 'con-fx' }],
+      ctx,
+    )
+    if (both.kind !== 'invoices') throw new Error('expected invoices')
+    expect(both.invoices[0]!.lines.map((l) => l.amount)).toEqual([2400, 2400])
+  })
+
+  it('a backdated range re-prices an un-billed Procedure (catch-up Phase 19a; an issued invoice is pinned in billingRun.test.ts)', () => {
+    const before = mkContract({ id: 'con-fx', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 3100 }] } })
+    const issued = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-fx' }], withContracts(HOSPITAL_DEFAULT, before))
+    if (issued.kind !== 'invoices') throw new Error('expected invoices')
+    // GST at the foot: $3,100 ex GST + 15%.
+    expect(issued.invoices[0]!).toMatchObject({ subtotal: 3100, gst: 465, total: 3565 })
+    const after = { ...before, pricing: { kind: 'fixed' as const, ranges: [{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-07-01', price: 3200 }] } }
+    const rebuilt = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-fx' }], withContracts(HOSPITAL_DEFAULT, after))
+    if (rebuilt.kind !== 'invoices') throw new Error('expected invoices')
+    expect(rebuilt.invoices[0]!.subtotal).toBe(3200)
   })
 
   it('a stale funder allocation is an exception at billing time (8th review)', () => {

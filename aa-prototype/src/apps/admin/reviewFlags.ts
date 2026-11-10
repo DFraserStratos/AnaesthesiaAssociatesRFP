@@ -19,7 +19,7 @@
  * them here.
  */
 
-import type { Booking, Procedure, RvgGroup } from '../../domain/types'
+import type { Booking, Procedure, RvgGroup, RvgTimeRule } from '../../domain/types'
 import { resolveBtm, type BtmBreakdown, type FeeResult } from '../../domain/billing/fee'
 import { billingReferenceMissing } from '../../domain/billing'
 
@@ -43,19 +43,21 @@ export interface ReviewProcedureInput {
 export interface ReviewBookingInput {
   booking: Booking
   procedures: readonly ReviewProcedureInput[]
+  /** The RVG time rule held as data (`masters.rvgTimeRule`), for the natural T. */
+  timeRule: RvgTimeRule
 }
 
 /** The natural (non-overridden) B/T/M computation, to diff a manual override against. */
-function naturalBtm(procedure: Procedure, rvgGroup?: RvgGroup): BtmBreakdown {
+function naturalBtm(procedure: Procedure, rvgGroup: RvgGroup | undefined, timeRule: RvgTimeRule): BtmBreakdown {
   const stripped: Procedure = { ...procedure }
   delete stripped.baseUnitsCaptured
   delete stripped.timeUnitsCaptured
   delete stripped.modifierUnitsCaptured
-  return resolveBtm(stripped, rvgGroup)
+  return resolveBtm(stripped, rvgGroup, timeRule)
 }
 
 /** Flags for a single Booking. A cancelled Booking yields none (excluded from review). */
-export function reviewFlagsForBooking({ booking, procedures }: ReviewBookingInput): ReviewFlag[] {
+export function reviewFlagsForBooking({ booking, procedures, timeRule }: ReviewBookingInput): ReviewFlag[] {
   if (booking.cancellation !== undefined) return []
   const flags: ReviewFlag[] = []
 
@@ -74,7 +76,7 @@ export function reviewFlagsForBooking({ booking, procedures }: ReviewBookingInpu
       flags.push({ tone: 'neutral', text: 'No billing reference', bookingId: booking.id, procedureId: procedure.id })
     }
     // (d) manual B/T/M override provenance, with the delta vs the natural value.
-    const nat = naturalBtm(procedure, rvgGroup)
+    const nat = naturalBtm(procedure, rvgGroup, timeRule)
     const components: { label: string; units: number; source: string; natural: number }[] = [
       { label: 'B', units: fee.btm.base.units, source: fee.btm.base.source, natural: nat.base.units },
       { label: 'T', units: fee.btm.time.units, source: fee.btm.time.source, natural: nat.time.units },

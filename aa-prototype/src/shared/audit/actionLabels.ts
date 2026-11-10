@@ -151,8 +151,10 @@ export const ACTION_LABELS: Record<string, string> = {
   'contract.disable': 'Contract disabled',
   'contract.enable': 'Contract made active',
   'contract.fallbackCreate': 'Fixed price Contract made by the system',
-  'contractPrice.create': 'Fixed price added',
-  'contractPrice.update': 'Fixed price updated',
+  // Catch-up Phase 19a (US-04.2.15): a fixed price's ranges.
+  'contract.priceRange.add': 'Price range added',
+  'contract.priceRange.update': 'Price range corrected',
+  'contract.priceRange.delete': 'Price range deleted',
 
   // --- Billing run & invoices ---------------------------------------------
   'invoice.create': 'Invoice raised',

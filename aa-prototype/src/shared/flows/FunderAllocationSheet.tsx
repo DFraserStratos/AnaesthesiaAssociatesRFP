@@ -5,6 +5,7 @@ import { insurerPartyOptions } from '../../domain/billing/parties'
 import { billingHospitalId } from '../../domain/listPairing'
 import { setProcedureFunderAllocation, useAppStore, type Actor, type FunderAllocationEntry } from '../../store'
 import { procedureFee } from '../capture'
+import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
 import { formatCurrency } from '../format'
 import { Button, FieldLabel } from '../ui'
 import { useSurface } from '../surface'
@@ -14,7 +15,6 @@ interface FunderAllocationSheetProps {
   procedure: Procedure
   list: AssignedList
   /** 1-based position of the procedure on its Booking. */
-  ordinal: number
   actor: Actor
   onClose: () => void
 }
@@ -43,7 +43,7 @@ interface LineDraft {
  * (the store's `allocationNotConserved` refusal is the backstop). The realistic
  * edit reassigns which funder pays each portion; amounts must keep the total.
  */
-export function FunderAllocationSheet({ open, procedure, list, ordinal, actor, onClose }: FunderAllocationSheetProps) {
+export function FunderAllocationSheet({ open, procedure, list, actor, onClose }: FunderAllocationSheetProps) {
   const { Overlay } = useSurface()
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const masters = useAppStore((s) => s.masters)
@@ -56,13 +56,14 @@ export function FunderAllocationSheet({ open, procedure, list, ordinal, actor, o
     [billingLinesRecord, procedure.id],
   )
 
-  const feeTotal = useMemo(() => {
+  const { feeTotal, needsPrice } = useMemo(() => {
     try {
-      return procedureFee({ procedure, list, ordinal, masters, billingLines: billingLinesRecord }).fee.total
+      const { fee } = procedureFee({ procedure, list, masters, billingLines: billingLinesRecord })
+      return { feeTotal: fee.total, needsPrice: fee.needsPrice }
     } catch {
-      return 0
+      return { feeTotal: 0, needsPrice: false }
     }
-  }, [procedure, list, ordinal, masters, billingLinesRecord])
+  }, [procedure, list, masters, billingLinesRecord])
 
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
 
@@ -181,7 +182,7 @@ export function FunderAllocationSheet({ open, procedure, list, ordinal, actor, o
             }}
           >
             <span>Allocated {formatCurrency(allocated)}</span>
-            <span>of {formatCurrency(feeTotal)} fee</span>
+            <span>{needsPrice ? `of a fee that ${NEEDS_PRICE_LABEL.toLowerCase()}` : `of ${formatCurrency(feeTotal)} fee`}</span>
           </div>
         )}
 

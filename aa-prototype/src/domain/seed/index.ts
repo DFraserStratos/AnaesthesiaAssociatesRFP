@@ -18,7 +18,7 @@ import type {
   Booking,
   Contract,
   ContractHolderOrganisation,
-  ContractPrice,
+  RvgTimeRule,
   DayNote,
   DemoSettings,
   Hospital,
@@ -45,6 +45,7 @@ import type {
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { MODIFIER_CODES } from '../billing/modifierCodes'
+import { DEFAULT_RVG_TIME_RULE } from '../billing/timeUnits'
 import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type RecurringClash } from './canvas'
 import { projectedListId, slotIdFor } from '../slots'
 import { isClosedKey, SEED_STATUS } from '../slotStatus'
@@ -66,7 +67,7 @@ import {
 } from './cast'
 import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
-import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
+import { CONTRACT, CONTRACTS } from './contracts'
 import { PARTIES } from './parties'
 import { SPECIALTIES } from './specialties'
 import { FUNDING_TAGS } from './fundingTags'
@@ -84,6 +85,7 @@ import { buildHistory, LOOKBACK_DATE_ISO, LOOKBACK_LIST_ID } from './history'
 import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftListBookings, seedRecurringClashDraftLists } from './draftLists'
 import { buildSeedAudit } from './audit'
 import { ACCEPTANCE_BEAT_LIST_ID, seedBookingMoveBookings } from './bookingMoves'
+import { MERIVALE_BOOKING_LIST_ID, seedPricedItemBookings } from './pricedItemBookings'
 import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
 
 export {
@@ -148,7 +150,12 @@ export interface SeedMasters {
   /** INTERIM identity behind the COS surgeon-group Party (Phase 21 retires it). */
   organisations: Record<string, ContractHolderOrganisation>
   contracts: Record<string, Contract>
-  contractPrices: Record<string, ContractPrice>
+  /**
+   * The RVG time rule held as data (catch-up Phase 19a; US-05.2.2, D25):
+   * seeded from `DEFAULT_RVG_TIME_RULE`; every fee reads it from here. Read
+   * only until Phase 42's editor.
+   */
+  rvgTimeRule: RvgTimeRule
   /** The RVG groups (catch-up Phase 19; US-05.1.1): the NZSA RVG 2021 as published plus AA's own, keyed by hidden id. */
   rvgGroups: Record<string, RvgGroup>
   modifierCodes: Record<string, ModifierCode>
@@ -489,6 +496,10 @@ function buildSeedInternal(): SeedBuild {
   const moveBookings = seedBookingMoveBookings(draftBookings.next)
   for (const b of moveBookings.bookings) bookingsRec[b.id] = b
   for (const p of moveBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 19a: the one unedited Booking on Merivale's Face lift, after every other id.
+  const pricedItemBookings = seedPricedItemBookings(moveBookings.next)
+  for (const b of pricedItemBookings.bookings) bookingsRec[b.id] = b
+  for (const p of pricedItemBookings.procedures) proceduresRec[p.id] = p
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
   const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
@@ -543,7 +554,7 @@ function buildSeedInternal(): SeedBuild {
       insurers: byId(INSURERS, (i) => i.id),
       organisations: organisationsRec,
       contracts: byId(CONTRACTS, (c) => c.id),
-      contractPrices: byId(CONTRACT_PRICES, (p) => p.id),
+      rvgTimeRule: { ...DEFAULT_RVG_TIME_RULE, tiers: DEFAULT_RVG_TIME_RULE.tiers.map((t) => ({ ...t })) },
       rvgGroups: byId(RVG_GROUPS, (g) => g.id),
       modifierCodes: byId(MODIFIER_CODES, (m) => m.code),
       slotStatuses,
@@ -575,8 +586,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: moveBookings.next.booking,
-      procedure: moveBookings.next.procedure,
+      booking: pricedItemBookings.next.booking,
+      procedure: pricedItemBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
@@ -755,6 +766,13 @@ export const BOOKING_MOVE_DEMO = {
  */
 const SEED_BUILD: SeedBuild = buildSeedInternal()
 
+/** The one Booking on Merivale's Face lift (catch-up Phase 19a; `seed/pricedItemBookings.ts`). */
+export const MERIVALE_FACE_LIFT_BOOKING_ID: string = (() => {
+  const found = Object.values(SEED_BUILD.state.schedule.bookings).find((b) => b.listId === MERIVALE_BOOKING_LIST_ID)
+  if (found === undefined) throw new Error('seed: the Merivale Face lift Booking is missing')
+  return found.id
+})()
+
 /** The pristine seed state. Deterministic: two calls are deep-equal. */
 export function buildSeed(): SeedState {
   return SEED_BUILD.state
@@ -902,7 +920,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Fixed price booking (bariatric)',
       entityType: 'booking',
       entityId: scenario.bariatric,
-      detail: 'Mr Doyle price list; second procedure priced by the ordinal rule.',
+      detail: "Mr Doyle's Gastric bypass at its range in force; the concurrent hernia on No contract · RVG, time units only.",
     },
     cosAccContractBooking: {
       label: 'Externally held ACC contract booking (COS)',
@@ -1028,4 +1046,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
 }
 
 /** Every seeded checklist state, one click away in the `/demo/data` finder. */
-export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = buildMarkers(SEED_BUILD.scenario)
+export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
+  ...buildMarkers(SEED_BUILD.scenario),
+  // Catch-up Phase 19a: the unedited Booking a backdated price range re-prices.
+  merivaleFaceLiftBooking: {
+    label: "Merivale's Face lift (fixed price from its range in force)",
+    entityType: 'booking',
+    entityId: MERIVALE_FACE_LIFT_BOOKING_ID,
+    detail: 'Souter Mon 10 Aug PM, Ms Lim; unedited, $3,100 from 1 Jun 2026. Add a price range before 10 Aug in the Contract editor and it re-prices.',
+  },
+}

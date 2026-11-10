@@ -14,7 +14,6 @@ import type {
   BillingLine,
   Booking,
   Contract,
-  ContractPrice,
   Party,
   Procedure,
   RvgGroup,
@@ -24,7 +23,9 @@ import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
 import { toCents } from './money'
 import { INSURER_PARTY_MISSING_MESSAGE, hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty } from './parties'
-import { interimRouteContract, noPriceInForce, noPriceInForceMessage, noRouteContractMessage } from './contracts'
+import { interimRouteContract, isRvgKind, noRouteContractMessage, procedureNeedsPrice } from './contracts'
+import { needsPriceMessage } from './priceRanges'
+import type { RvgTimeRule } from './timeUnits'
 
 export interface BillingValidationFailure {
   /** Absent for Booking-level failures. */
@@ -63,7 +64,6 @@ export interface BookingBillingContext {
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
   /** Contract master, keyed by id (for `governingContractId`). */
   contracts: Readonly<Record<string, Contract>>
-  contractPrices: readonly ContractPrice[]
   /** The Party master (catch-up Phase 18): holders, and the insurer Parties the Insurer route needs. */
   parties: Readonly<Record<string, Party>>
   billableParties: Readonly<Record<string, BillableParty>>
@@ -74,19 +74,20 @@ export interface BookingBillingContext {
    * when no Contract is stored (INTERIM until Phase 20).
    */
   listHospitalId?: string
-  /** The List's surgeon (fixed-price row matching). */
-  surgeonId?: string
+  /** The List's date: the procedure date that picks a fixed price's range in force (catch-up Phase 19a). */
+  listDateISO: string
+  /** The RVG time rule held as data (`masters.rvgTimeRule`, catch-up Phase 19a). */
+  timeRule: RvgTimeRule
 }
 
 /**
- * Assemble the `feeFor` context for one procedure from a booking billing context
- * and its 1-based ordinal. Single-sourced so the completion validator's
+ * Assemble the `feeFor` context for one procedure from a booking billing
+ * context. Single-sourced so the completion validator's
  * conservation check and the office's per-line allocation guard (Phase 06's
  * `setBillingLineAllocation`) compute the procedure fee identically.
  */
 export function feeContextFor(
   procedure: Procedure,
-  procedureOrdinal: number,
   ctx: BookingBillingContext,
 ): Parameters<typeof feeFor>[1] {
   const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
@@ -96,13 +97,12 @@ export function feeContextFor(
     procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
   const feeCtx: Parameters<typeof feeFor>[1] = {
     anaesthetist: ctx.anaesthetist,
-    contractPrices: ctx.contractPrices,
-    procedureOrdinal,
+    dateISO: ctx.listDateISO,
+    timeRule: ctx.timeRule,
     nonRvgLines,
   }
   if (contract !== undefined) feeCtx.contract = contract
   if (rvgGroup !== undefined) feeCtx.rvgGroup = rvgGroup
-  if (ctx.surgeonId !== undefined) feeCtx.surgeonId = ctx.surgeonId
   return feeCtx
 }
 
@@ -124,7 +124,7 @@ export function validateBookingForBilling(
     failures.push({ procedureId, field, message })
   }
 
-  procedures.forEach((procedure, index) => {
+  procedures.forEach((procedure) => {
     const id = procedure.id
     const storedLines = ctx.billingLines.filter((l) => l.procedureId === id)
     const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
@@ -142,12 +142,17 @@ export function validateBookingForBilling(
       }
 
       // Times are captured data whenever the RVG path is billed (RFP principle 10).
+      // On a fixed or open price the RVG code is for reference only and no
+      // units are asked (catch-up Phase 19a; 21a collapses the form), so
+      // missing times are not demanded there; recorded ones must still be in order.
+      const chosen = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
+      const priceWithoutUnits = chosen !== undefined && !isRvgKind(chosen.pricing.kind)
       const start = procedure.anaestheticStartISO
       const handover = procedure.handoverISO
-      if (start === undefined) {
+      if (start === undefined && !priceWithoutUnits) {
         fail(id, 'anaestheticStartISO', 'Record the anaesthetic start time.')
       }
-      if (handover === undefined) {
+      if (handover === undefined && !priceWithoutUnits) {
         fail(id, 'handoverISO', 'Record the handover time.')
       }
       if (start !== undefined && handover !== undefined && Date.parse(handover) <= Date.parse(start)) {
@@ -234,17 +239,11 @@ export function validateBookingForBilling(
       }
     }
 
-    // A primary procedure on a fixed-price Contract with no price for it: the
-    // billing resolver's sentence (catch-up Phase 18; Phase 19a's "no range in force").
-    if (
-      contract !== undefined &&
-      noPriceInForce(contract, procedure, {
-        procedureOrdinal: index + 1,
-        prices: ctx.contractPrices,
-        ...(ctx.surgeonId !== undefined ? { surgeonId: ctx.surgeonId } : {}),
-      })
-    ) {
-      fail(id, 'governingContractId', noPriceInForceMessage(contract.name))
+    // Any Procedure on a fixed-price Contract with no range in force on the
+    // List's date, or on an open price: "Needs a price" (catch-up Phase 19a;
+    // Phase 24 turns it into a price state on the ladder).
+    if (contract !== undefined && procedureNeedsPrice(contract, ctx.listDateISO, procedure)) {
+      fail(id, 'governingContractId', needsPriceMessage(contract, ctx.listDateISO))
     }
 
     // Price override always carries a reason (7th review A6/B5), and may not
@@ -254,7 +253,7 @@ export function validateBookingForBilling(
       if (procedure.priceOverride.reason.trim() === '') {
         fail(id, 'priceOverride', 'Give a reason for the price override.')
       }
-      const fee = feeFor(procedure, feeContextFor(procedure, index + 1, ctx))
+      const fee = feeFor(procedure, feeContextFor(procedure, ctx))
       if (fee.total < 0) {
         fail(id, 'priceOverride', `The price override makes the fee negative ($${fee.total.toFixed(2)}). Adjust the override.`)
       }
@@ -264,7 +263,7 @@ export function validateBookingForBilling(
     // the stored lines are the explicit allocation of the WHOLE fee — their
     // amounts must sum, to the cent, to the computed fee.
     if (storedLines.some((l) => l.funderOverride !== undefined)) {
-      const fee = feeFor(procedure, feeContextFor(procedure, index + 1, ctx))
+      const fee = feeFor(procedure, feeContextFor(procedure, ctx))
       const allocated = storedLines.reduce((sum, l) => sum + l.amount, 0)
       if (toCents(allocated) !== toCents(fee.total)) {
         fail(

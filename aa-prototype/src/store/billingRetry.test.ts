@@ -3,7 +3,7 @@
  *
  * The seeded multi-booking failure list bills its clean hospital-route booking while
  * Losa Tuilagi's Booking fails: it was pointed at COS ACC fixed fees, which has no
- * price for her procedure ("No price in force"; catch-up Phase 18, RV-32, no
+ * price range in force on her List's date ("Needs a price"; catch-up Phases 18 and 19a, RV-32, no
  * dates and no Contract edited). The office chooses her Contract
  * (`chooseContractForFailedBooking`, the one edit allowed on an authorised List)
  * and `retryBillingCase` recovers the booking without duplicating the list's
@@ -15,7 +15,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, editProcedure, submitList } from './lifecycle'
 import { chooseContractForFailedBooking, runBillingForList, retryBillingCase } from './billingRun'
 import { handoffCase } from './xeroHandoff'
-import { addContractPrice, disableContract } from './contractActions'
+import { addPriceRange, disableContract } from './contractActions'
 import { failedCases, invoicesForList, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
 import type { Invoice } from '../domain/types'
@@ -65,7 +65,7 @@ describe('failure isolation', () => {
     const failed = failedCases(api.getState())
     expect(failed).toHaveLength(1)
     expect(failed[0]!.bookingId).toBe(failureBooking)
-    expect(failed[0]!.failure).toMatchObject({ code: 'contractIneffective', message: 'No price in force for this procedure under COS ACC fixed fees.' })
+    expect(failed[0]!.failure).toMatchObject({ code: 'contractIneffective', message: 'Needs a price: no price range in force on 16 Jul 2026 under COS ACC fixed fees.' })
     // The list still completed its run (the settled billedAt reading).
     expect(api.getState().schedule.lists[listId]!.billedAtISO).toBeDefined()
   })
@@ -172,12 +172,13 @@ describe('chooseContractForFailedBooking (the one edit on an authorised List)', 
 })
 
 describe('Resolve & retry after the review pass', () => {
-  it('keeps the current Contract once its missing price is added, then retries', () => {
+  it('keeps the current Contract once a backdated price range covers the List, then retries (catch-up Phase 19a)', () => {
     const api = store()
     triggerFailure(api)
     const failedCaseId = failedCases(api.getState())[0]!.id
     const proc = api.getState().schedule.procedures[losaProcedureId(api)]!
-    expect(addContractPrice(api, OFFICE, { contractId: CONTRACT.cosFixed, rvgGroupId: proc.rvgGroupId!, price: 1100 }).ok).toBe(true)
+    // COS ACC fixed fees starts 1 Aug 2026; a range from 1 Jul covers Losa's Thu 16 Jul List.
+    expect(addPriceRange(api, OFFICE, CONTRACT.cosFixed, { startISO: '2026-07-01', price: 1100 }).ok).toBe(true)
     expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, proc.id, CONTRACT.cosFixed).ok).toBe(true)
     expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
     expect(invoicesForBooking(api, marker('billingFailureBooking'))[0]!.total).toBe(1265)

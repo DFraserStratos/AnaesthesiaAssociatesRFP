@@ -23,11 +23,13 @@
  * - A18: the override setting is seeded on No contract · RVG only.
  */
 
-import type { AnaesthetistId, ContractId, ContractPrice, HospitalId, Procedure, SurgeonId } from '../types'
+import type { AnaesthetistId, ContractId, HospitalId, Procedure, SurgeonId } from '../types'
 import type { Party, PartyId, PartyKind } from './parties'
 import { billingDetailsRefusal } from './parties'
 import type { SpecialtyId } from '../specialties'
 import type { FundingTagId } from './fundingTags'
+import { rangeInForce, validatePriceRanges, type PriceRange, type PriceRangeRefusalCode } from './priceRanges'
+import { rvgGroupPickRefusal, type RvgGroup, type RvgGroupId } from './rvgGroups'
 
 // ---------------------------------------------------------------------------
 // The model
@@ -39,15 +41,16 @@ export type PricingKind = 'rvgAnaesthetistRate' | 'rvgContractRate' | 'rvgDiscou
 /**
  * AR-58 2.3 `pricing`. The rate and the discount are undated settings: a
  * change is an audited edit in place, and a change that must start on a date
- * is a new Contract. `fixed` prices through the interim `ContractPrice` rows
- * until Phase 19a gives it price ranges. `open` has no price of its own; only
+ * is a new Contract. `fixed` holds its dated price ranges (Phase 19a,
+ * `priceRanges.ts`): the range in force on the procedure date gives the
+ * price. `open` has no price of its own; only
  * the system fallbacks (Phase 18a) use it, and the office never chooses it (A3).
  */
 export type ContractPricing =
   | { kind: 'rvgAnaesthetistRate' }
   | { kind: 'rvgContractRate'; unitRate: number }
   | { kind: 'rvgDiscount'; discountPct: number }
-  | { kind: 'fixed' }
+  | { kind: 'fixed'; ranges: PriceRange[] }
   | { kind: 'open' }
 
 export type ContractStatus = 'active' | 'disabled'
@@ -56,18 +59,35 @@ export type SystemRole = 'noContractRvg' | 'openPriceFallback'
 
 /**
  * The fields the office may change on a system Contract (AR-58 validation
- * 14): its name and AA code. Phase 19a adds the invoice description. The one
- * list; the save guard and the editor both read it.
+ * 14): its name, AA code and invoice description (Phase 19a). The one list;
+ * the save guard and the editor both read it.
  */
-export const SYSTEM_CONTRACT_EDITABLE_FIELDS = ['name', 'aaCode'] as const satisfies readonly (keyof Contract)[]
+export const SYSTEM_CONTRACT_EDITABLE_FIELDS = ['name', 'aaCode', 'invoiceDescription'] as const satisfies readonly (keyof Contract)[]
 export type BillsTo = 'holder' | 'payer'
 
 export interface Contract {
   id: ContractId
   /** AR-58 `aaCode`: AA's own unique code (OQ-66, US-04.1.4), from `nextAaCode`; the office may edit it, still unique. */
   aaCode: string
-  /** AR-58 `holderReference`: the holder's own code for the item; searchable, not unique (A23). */
+  /**
+   * AR-58 `holderReference` (US-04.2.18): the holder's own code for the item
+   * (SXAP AP0126, CES HNZCATall, ACC OPT101); searchable, not unique (A23).
+   * Phase 22 prints it on the holder's invoices.
+   */
   holderReference?: string
+  /**
+   * AR-58 `invoiceDescription` (US-04.2.18, OQ-103, D37): the wording the
+   * patient reads, where filled in. Phase 20a makes it the top default of the
+   * Procedure's invoice description.
+   */
+  invoiceDescription: string | null
+  /**
+   * AR-58 `defaultRvgCode` (US-04.2.18, DM-43; D3, D12): the RVG group (19's
+   * hidden key, shown as its code) that fills a Procedure's empty RVG code when
+   * the Contract is chosen (`fillFromContract`); a search by RVG code finds
+   * the Contract. A Contract states no units of its own.
+   */
+  defaultRvgGroupId: RvgGroupId | null
   /** AR-58 `name`: what lists and the picker show. */
   name: string
   /** AR-58 `holderId`: the Party that holds it; fixed after creation. */
@@ -217,7 +237,7 @@ export const CONTRACT_REFUSAL_MESSAGES: Record<ContractRefusalCode, string> = {
 }
 
 export interface ContractRefusal {
-  code: ContractRefusalCode
+  code: ContractRefusalCode | PriceRangeRefusalCode | 'rvgGroupNotFound' | 'rvgGroupRetired'
   message: string
 }
 
@@ -234,6 +254,8 @@ export interface ContractRefusalContext {
   /** AA's specialties and funding tags (validation 9, Phase 18a). */
   specialtyIds: ReadonlySet<SpecialtyId>
   fundingTagIds: ReadonlySet<FundingTagId>
+  /** The RVG groups, for the default RVG code (Phase 19a). */
+  rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
 }
 
 /**
@@ -284,6 +306,15 @@ export function contractRefusal(next: Contract, ctx: ContractRefusalContext): Co
   if (next.pricing.kind === 'rvgDiscount' && !(next.pricing.discountPct > 0 && next.pricing.discountPct < 100)) {
     return refusal('discountRange')
   }
+  // 2 (Phase 19a): a fixed price has at least one range, starts unique, each
+  // price 0 or more, above 0 on a prepaid Contract.
+  if (next.pricing.kind === 'fixed') {
+    const bad = validatePriceRanges(next.pricing.ranges, { prepaid: next.prepaid })
+    if (bad !== null) return bad
+  }
+  // The default RVG code is a row on the RVG groups (a retired one only if already set).
+  const badCode = rvgGroupPickRefusal(ctx.rvgGroups, next.defaultRvgGroupId, prev?.defaultRvgGroupId ?? undefined)
+  if (badCode !== null) return badCode
 
   // 4: prepaid bills the payer (D23, OQ-73 at Confirm) and is never priced from RVG units.
   if (next.prepaid && isRvgKind(next.pricing.kind)) return refusal('prepaidNotRvg')
@@ -347,14 +378,24 @@ export interface ContractFilters {
 const squash = (s: string): string => s.replace(/\s+/g, '').toLowerCase()
 
 /**
- * True when the query is in the Contract's name, holder reference code or AA
- * code, ignoring case and spaces. 19a adds the invoice description and the
- * default RVG code.
+ * True when the query is in the Contract's name, holder reference code, AA
+ * code or invoice description, or names its default RVG code, ignoring case
+ * and spaces (US-04.1.4, US-04.2.18: "CAT" finds the cataract items by name
+ * and by HNZCATall; "H3" finds Merivale's combinations).
  */
-export function contractMatchesQuery(contract: Contract, query: string): boolean {
+export function contractMatchesQuery(
+  contract: Contract,
+  query: string,
+  rvgGroups?: Readonly<Record<RvgGroupId, RvgGroup>>,
+): boolean {
   const q = squash(query)
   if (q === '') return true
-  return [contract.name, contract.holderReference ?? '', contract.aaCode].some((field) => squash(field).includes(q))
+  const rvgCode = contract.defaultRvgGroupId !== null ? (rvgGroups?.[contract.defaultRvgGroupId]?.code ?? '') : ''
+  return (
+    [contract.name, contract.holderReference ?? '', contract.aaCode, contract.invoiceDescription ?? ''].some((field) =>
+      squash(field).includes(q),
+    ) || (rvgCode !== '' && squash(rvgCode) === q)
+  )
 }
 
 /**
@@ -364,7 +405,18 @@ export function contractMatchesQuery(contract: Contract, query: string): boolean
  */
 export function contractSearch(
   query: string,
-  { contracts, parties, filters = {} }: { contracts: Readonly<Record<string, Contract>>; parties: Readonly<Record<string, Party>>; filters?: ContractFilters },
+  {
+    contracts,
+    parties,
+    rvgGroups,
+    filters = {},
+  }: {
+    contracts: Readonly<Record<string, Contract>>
+    parties: Readonly<Record<string, Party>>
+    /** For finding a Contract by its default RVG code (Phase 19a). */
+    rvgGroups?: Readonly<Record<RvgGroupId, RvgGroup>>
+    filters?: ContractFilters
+  },
 ): Contract[] {
   const status = filters.status ?? 'active'
   const holderRank = (c: Contract): string => {
@@ -375,7 +427,7 @@ export function contractSearch(
     .filter((c) => status === 'all' || c.status === status)
     .filter((c) => filters.holderId === undefined || c.holderId === filters.holderId)
     .filter((c) => filters.fundingTagId === undefined || c.fundingTagId === filters.fundingTagId)
-    .filter((c) => contractMatchesQuery(c, query))
+    .filter((c) => contractMatchesQuery(c, query, rvgGroups))
     .sort(
       (a, b) =>
         Number(b.systemRole === 'noContractRvg') - Number(a.systemRole === 'noContractRvg') ||
@@ -444,83 +496,26 @@ export function noRouteContractMessage(partyName: string): string {
   return `No Contract is chosen and ${partyName} has no plain RVG Contract to bill under. Choose a Contract in the office billing setup.`
 }
 
-/** The interim of Phase 19a's "no range in force": one sentence, the resolver's and the validator's. */
-export function noPriceInForceMessage(contractName: string): string {
-  return `No price in force for this procedure under ${contractName}.`
-}
-
 /**
- * True when a primary (not additional) Procedure is on a fixed-price Contract
- * with no interim price row for it, or any Procedure is on an open-price one. An additional procedure keeps the
- * 2026-07-22 fallback to time units; the fee calculator is unchanged.
+ * True when a Procedure on this Contract has no price on its procedure date
+ * (the List's): a fixed price with no range in force (Phase 19a; before its
+ * first start), or any open-price Contract (no price of its own until Phase
+ * 20 types an amount on the Procedure). The validator and the billing
+ * resolver both ask it, with `needsPriceMessage`; never a fallback to RVG.
  */
-export function noPriceInForce(
-  contract: Contract,
-  procedure: Procedure,
-  q: { procedureOrdinal: number; prices: readonly ContractPrice[]; surgeonId?: string },
-): boolean {
-  // An open-price Contract has no price of its own (catch-up Phase 18a): until
-  // Phase 20 types an amount on the Procedure, nothing bills one silently.
+export function noPriceInForce(contract: Contract, dateISO: string): boolean {
   if (contract.pricing.kind === 'open') return true
-  if (contract.pricing.kind !== 'fixed' || procedure.isAdditional) return false
-  return (
-    matchContractPrice(q.prices, {
-      contractId: contract.id,
-      ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
-      ...(q.surgeonId !== undefined ? { surgeonId: q.surgeonId } : {}),
-      procedureOrdinal: q.procedureOrdinal,
-    }) === undefined
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Fixed-price rows (INTERIM until Phase 19a's price ranges)
-// ---------------------------------------------------------------------------
-
-export interface ContractPriceQuery {
-  contractId: string
-  rvgGroupId?: string
-  surgeonId?: string
-  /** 1-based position of the procedure on its Booking. */
-  procedureOrdinal?: number
+  return contract.pricing.kind === 'fixed' && rangeInForce(contract, dateISO) === null
 }
 
 /**
- * Most-specific-match-wins: a price row matches when every key IT specifies
- * equals the query's value (an unspecified key on the row matches anything);
- * among matches, the row specifying the most keys wins; ties resolve to the
- * first in input order. Returns undefined when nothing matches: the fee then
- * falls back to the BTM path (Decisions log 2026-07-22).
+ * True when this Procedure cannot be priced on its procedure date: the one
+ * predicate the validator and the billing resolver share. A fixed price with
+ * no range in force needs a price unless the office typed a fixed fee (a
+ * price a person set; `feeFor` agrees); an open price always does until
+ * Phase 20 types its amount.
  */
-export function matchContractPrice(
-  prices: readonly ContractPrice[],
-  query: ContractPriceQuery,
-): ContractPrice | undefined {
-  let best: ContractPrice | undefined
-  let bestSpecificity = -1
-
-  for (const price of prices) {
-    if (price.contractId !== query.contractId) continue
-
-    let specificity = 0
-    if (price.rvgGroupId !== undefined) {
-      if (price.rvgGroupId !== query.rvgGroupId) continue
-      specificity++
-    }
-    if (price.surgeonId !== undefined) {
-      if (price.surgeonId !== query.surgeonId) continue
-      specificity++
-    }
-    if (price.procedureOrdinal !== undefined) {
-      if (price.procedureOrdinal !== query.procedureOrdinal) continue
-      specificity++
-    }
-
-    if (specificity > bestSpecificity) {
-      best = price
-      bestSpecificity = specificity
-    }
-  }
-
-  return best
+export function procedureNeedsPrice(contract: Contract, dateISO: string, procedure: Pick<Procedure, 'priceOverride'>): boolean {
+  if (contract.pricing.kind === 'open') return true
+  return noPriceInForce(contract, dateISO) && procedure.priceOverride?.kind !== 'fixedFee'
 }

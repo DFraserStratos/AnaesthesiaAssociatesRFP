@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_RVG_TIME_RULE } from '../../domain/billing/timeUnits'
 import { reviewFlagsForBooking, reviewFlagsForList } from './reviewFlags'
 import type { Booking, Procedure } from '../../domain/types'
 import { type BtmBreakdown, type FeeResult } from '../../domain/billing/fee'
@@ -27,7 +28,7 @@ const ZERO_BTM: BtmBreakdown = {
 }
 
 function stubFee(btm: BtmBreakdown = ZERO_BTM): FeeResult {
-  return { btm, billableUnits: btm.totalUnits, chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, override: null, total: 0 }
+  return { btm, billableUnits: btm.totalUnits, chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, override: null, total: 0, needsPrice: false }
 }
 
 function proc(over: Partial<Procedure> = {}): Procedure {
@@ -40,45 +41,45 @@ function booking(over: Partial<Booking> = {}): Booking {
 
 describe('reviewFlags (pure)', () => {
   it('(a) flags a booking not marked completed', () => {
-    const flags = reviewFlagsForBooking({ booking: booking({ completed: false }), procedures: [] })
+    const flags = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking({ completed: false }), procedures: [] })
     expect(flags.some((f) => f.text === 'Not marked completed' && f.tone === 'neutral')).toBe(true)
   })
 
   it('(b) flags a missing billing reference on the hospital route only', () => {
-    const hospitalNoRef = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'hospital' }), fee: stubFee() }] })
+    const hospitalNoRef = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'hospital' }), fee: stubFee() }] })
     expect(hospitalNoRef.some((f) => f.text === 'No billing reference')).toBe(true)
 
-    const hospitalWithRef = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'hospital', billingReference: 'REF-1' }), fee: stubFee() }] })
+    const hospitalWithRef = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'hospital', billingReference: 'REF-1' }), fee: stubFee() }] })
     expect(hospitalWithRef.some((f) => f.text === 'No billing reference')).toBe(false)
 
-    const insurerRoute = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'insurer' }), fee: stubFee() }] })
+    const insurerRoute = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'insurer' }), fee: stubFee() }] })
     expect(insurerRoute.some((f) => f.text === 'No billing reference')).toBe(false)
   })
 
   it('(c) raises no ACC flag on any route (catch-up Phase 18, RV-37), whatever the text says', () => {
-    const bp = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', billingRoute: 'billableParty' }), fee: stubFee() }] })
+    const bp = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', billingRoute: 'billableParty' }), fee: stubFee() }] })
     expect(bp.some((f) => f.text.startsWith('ACC'))).toBe(false)
 
-    const hospitalAcc = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
+    const hospitalAcc = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
     expect(hospitalAcc.some((f) => f.text.startsWith('ACC'))).toBe(false)
   })
 
   it('(d) flags a manual override with its signed delta vs the natural computation', () => {
     // proc() carries no times/codes, so the natural B/T/M is all zero.
     const overriddenTime: BtmBreakdown = { ...ZERO_BTM, time: { units: 5, source: 'overridden' }, totalUnits: 5 }
-    const flags = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc(), fee: stubFee(overriddenTime) }] })
+    const flags = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc(), fee: stubFee(overriddenTime) }] })
     expect(flags).toEqual([{ tone: 'neutral', text: 'T adjusted +5 manually', bookingId: 'BK1', procedureId: 'P1' }])
   })
 
   it('(d) an override landing on the natural value reads "set manually"', () => {
     const overriddenBase: BtmBreakdown = { ...ZERO_BTM, base: { units: 0, source: 'overridden' } }
-    const flags = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc(), fee: stubFee(overriddenBase) }] })
+    const flags = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc(), fee: stubFee(overriddenBase) }] })
     expect(flags.some((f) => f.text === 'B set manually')).toBe(true)
   })
 
   it('(e) raises no prepayment flag: an unpaid prepayment is a warning, shown by the triangle (Phase 15a)', () => {
     const proc0 = proc({ billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPrepayment', prepaymentDetail: { type: 'full' } })
-    const flags = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc0, fee: stubFee(ZERO_BTM) }] })
+    const flags = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: booking(), procedures: [{ procedure: proc0, fee: stubFee(ZERO_BTM) }] })
     expect(flags.some((f) => /pre-?payment/i.test(f.text))).toBe(false)
   })
 
@@ -87,13 +88,13 @@ describe('reviewFlags (pure)', () => {
       completed: false,
       cancellation: { reason: 'Postponed', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00' },
     })
-    expect(reviewFlagsForBooking({ booking: cancelled, procedures: [] })).toEqual([])
+    expect(reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, booking: cancelled, procedures: [] })).toEqual([])
   })
 
   it('reviewFlagsForList totals flags across bookings and excludes cancelled ones', () => {
     const bookings = [
-      { booking: booking({ id: 'BK1', completed: false }), procedures: [] },
-      { booking: booking({ id: 'BK2', completed: false, cancellation: { reason: 'x', by: 'y', role: 'office' as const, source: 'office' as const, atISO: '2026-07-21T09:00:00' } }), procedures: [] },
+      { timeRule: DEFAULT_RVG_TIME_RULE, booking: booking({ id: 'BK1', completed: false }), procedures: [] },
+      { timeRule: DEFAULT_RVG_TIME_RULE, booking: booking({ id: 'BK2', completed: false, cancellation: { reason: 'x', by: 'y', role: 'office' as const, source: 'office' as const, atISO: '2026-07-21T09:00:00' } }), procedures: [] },
     ]
     expect(reviewFlagsForList(bookings).length).toBe(1)
   })
@@ -110,8 +111,9 @@ describe('reviewFlags over seeded data (real calculator)', () => {
 
     const bookings = bookingsForList(s, listId).map((c) => ({
       booking: c,
-      procedures: proceduresForBooking(s, c.id).map((p, i) => {
-        const view = procedureFee({ procedure: p, list, ordinal: i + 1, masters: s.masters, billingLines: s.schedule.billingLines })
+      timeRule: s.masters.rvgTimeRule,
+      procedures: proceduresForBooking(s, c.id).map((p) => {
+        const view = procedureFee({ procedure: p, list, masters: s.masters, billingLines: s.schedule.billingLines })
         return { procedure: p, fee: view.fee, rvgGroup: view.rvgGroup }
       }),
     }))

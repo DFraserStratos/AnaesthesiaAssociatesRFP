@@ -183,8 +183,9 @@ working List rather than an empty one.
   **H1** (every H1 row, each with its description and base units) or **T2** (three rows share the code,
   told apart by description and units).
 
-**Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
-interval); the RFP defines the tiers but not the rounding.
+**Discovery point:** settled: a part time interval always rounds up under the RVG tiers (confirmed with
+AA, OQ-75); the tiers are held as data, shown read only under **Admin → Master data → RVG groups**, and
+the T row reads **From start and finish stamps · RVG time tiers**.
 
 ---
 
@@ -664,11 +665,11 @@ actions** on the screen named in its beat.
   - On the same screen, **Losa Tuilagi → Resolve & retry**, choose **COS-001 · ACC orthopaedic
     services, Canterbury Orthopaedic Surgeons**, then **Choose and retry**.
 - **Say:** "A Booking can fail after the List is authorised, here because the Booking was pointed at a
-  fixed-price COS Contract with no price for the procedure. The prototype isolates that Booking, still
+  fixed-price COS Contract whose price only starts on 1 August, after this List. The prototype isolates that Booking, still
   invoices its clean sibling, then lets the office choose the right Contract and retry. No Contract is
   edited."
-- **Expected:** the failed Booking shows "No price in force for this procedure under COS ACC fixed
-  fees" while its sibling is billed; choosing the Contract and retrying bills COS.
+- **Expected:** the failed Booking shows "Needs a price: no price range in force on 16 Jul 2026 under
+  COS ACC fixed fees" while its sibling is billed; choosing the Contract and retrying bills COS.
 
 ### Beat 4: integration dead-letter and manual fix
 
@@ -755,11 +756,24 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
     **UNI-001 · Unisports Ortho**.
   - Change its rate from **$93.47** to **$95.00**, then **Save contract**.
   - Open **Admin → Audit**, set **Entity type** to **contract**, and pause on the entry.
-- **Say:** "A Contract is edited in place, and every change is recorded with before and after. A change
-  that must start on a date is a new Contract, and the old one is disabled, never deleted."
-- **Expected:** the audit entry shows the pricing before and after; no invoice changes.
+  - Back in **Contracts**, search **Face lift** and open **MER-001 · Face lift** (Merivale Plastic
+    Surgery, $3,100.00 from 1 Jun 2026, **In force today**). Under **Price ranges**, enter a start of
+    **1 Jul 2026** (already past) and **3200**, then **Add price range**. Open the seeded Booking it prices (**Admin
+    Day view → Mon 10 Aug → Dr Souter's PM List → Sophie Matthews**).
+- **Say:** "A Contract is edited in place, and every change is recorded with before and after. A fixed
+  price changes from a date by adding a price range, and the start can be in the past: the Booking
+  re-prices, while invoices already raised stay as they are. Any other change that must start on a
+  date is a new Contract, and the old one is disabled, never deleted."
+- **Expected:** the audit entry shows the pricing before and after; no invoice changes. The Face lift's
+  first range now reads **1 Jun 2026 to 30 Jun 2026**, the new one **From 1 Jul 2026** (In force today), and Sophie
+  Matthews' Booking total reads **$3200.00**; the audit shows **Price range added**.
 
-**Worth pointing at (optional):** **Admin → Master data → RVG groups**: the NZSA RVG 2021 groups as
+**Worth pointing at (optional):** **Admin → Master data → Contracts**: Merivale's three combination
+Contracts (search **H3**: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own
+Contract; fee extras are events, not Contracts), and Dr Souter's own prepaid price list (holder **Dr
+Melanie Souter**: one Contract per item, every price above zero; a zero price is refused). Search
+**CAT** to find the cataract items by name and the holder's code HNZCATall.
+**Admin → Master data → RVG groups**: the NZSA RVG 2021 groups as
 published under their anatomy headings, with AA's own beside them and unmarked; both T2s and both P6s
 are separate rows; H4 reads **10 · range 10 to 12**. Add a group, then edit, retire and restore it:
 each change is in **Admin → Audit** (entity type **rvgGroup**).

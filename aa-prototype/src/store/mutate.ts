@@ -87,7 +87,6 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   fundingTag: { prefix: 'TGN', pad: 3 },
   // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an
   // allocation can never collide with a seeded master row (Phase 07).
-  contractPrice: { prefix: 'CPN', pad: 3 },
   // Catch-up Phase 17: distinct from the seed's S-, RM-, SG- and PP- ids.
   surgeon: { prefix: 'SN', pad: 3 },
   surgeonRoom: { prefix: 'RMN', pad: 3 },

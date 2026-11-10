@@ -2,6 +2,7 @@ import { neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { BookingTotalProps } from '../surface'
 import { useTickingValue } from './useTickingValue'
+import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
 
 /**
  * The desktop Booking-total panel: everything about what the Booking comes to.
@@ -20,7 +21,7 @@ import { useTickingValue } from './useTickingValue'
  * Figures come from the Phase 01 calculator via
  * `bookingFee` / `procedureFee` — this only formats.
  */
-export function BookingTotalPanel({ units, fee, lines, rateLabel, overrideNote, action }: BookingTotalProps) {
+export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateLabel, overrideNote, action }: BookingTotalProps) {
   const u = useTickingValue(units)
   const f = useTickingValue(fee)
 
@@ -58,7 +59,11 @@ export function BookingTotalPanel({ units, fee, lines, rateLabel, overrideNote, 
                   <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{line.note}</span>
                 )}
               </span>
-              <span className="mono" style={{ flex: 'none' }}>${line.amount.toFixed(2)}</span>
+              {line.needsPrice === true ? (
+                <span style={{ flex: 'none' }}>{NEEDS_PRICE_LABEL}</span>
+              ) : (
+                <span className="mono" style={{ flex: 'none' }}>${line.amount.toFixed(2)}</span>
+              )}
             </div>
           ))}
         </div>
@@ -110,9 +115,15 @@ export function BookingTotalPanel({ units, fee, lines, rateLabel, overrideNote, 
               background: f.flashing ? 'rgba(31,164,99,0.45)' : 'rgba(31,164,99,0)',
             }}
           >
-            <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>
-              ${f.display.toFixed(2)}
-            </span>
+            {needsPrice ? (
+              <span data-testid="booking-needs-price" style={{ fontSize: 20, fontWeight: 700, color: neutral.surface }}>
+                {NEEDS_PRICE_LABEL}
+              </span>
+            ) : (
+              <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>
+                ${f.display.toFixed(2)}
+              </span>
+            )}
           </span>
         </span>
       </div>

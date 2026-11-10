@@ -1,12 +1,12 @@
 {
   "id": "US-05.2.5",
   "status": "partial",
-  "absentReason": "A Booking on a fixed price is priced from the matched fixed price row (by RVG code, surgeon and procedure ordinal) and BTM is still recorded. Schedule lines have no time band or add-on fee to match on.",
+  "absentReason": "The fixed price is the range in force on the procedure date and BTM is still recorded for reference; 'Needs a price' as a price state and a typed price are Phase 24's, and the form collapse on a fixed price is 21a's.",
   "shots": [
     {
       "name": "fixed-price",
       "app": "admin",
-      "caption": "Booking priced from the surgeon's fixed price list, units still recorded",
+      "caption": "Gastric bypass priced at its fixed price, units still recorded",
       "start": "/admin/day/2026-07-14/bookings/BK0028",
       "states": [
         {

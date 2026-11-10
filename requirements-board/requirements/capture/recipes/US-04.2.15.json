@@ -1,0 +1,169 @@
+{
+  "id": "US-04.2.15",
+  "status": "partial",
+  "absentReason": "Not offering a Contract with no range in force is Phase 20's; 'Needs a price' is Phase 24's.",
+  "shots": [
+    {
+      "name": "price-ranges",
+      "app": "admin",
+      "caption": "The range in force on the procedure date gives the price",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "state": "in-force",
+          "caption": "Merivale's Face lift: one price range, in force today",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Face lift"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-price-ranges]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-ranges]"
+          ]
+        },
+        {
+          "state": "backdated",
+          "caption": "A range added from a past date: the earlier range now ends the day before",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Face lift"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range start\"]",
+              "value": "2026-07-01"
+            },
+            {
+              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range price (ex GST)\"]",
+              "value": "3200"
+            },
+            {
+              "click": "[data-shot=contract-price-ranges] >> role=button[name=\"Add price range\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-price-ranges]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-ranges]"
+          ]
+        },
+        {
+          "state": "refused",
+          "caption": "Two ranges cannot share a start, and the only range cannot be deleted",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Face lift"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range start\"]",
+              "value": "2026-06-01"
+            },
+            {
+              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range price (ex GST)\"]",
+              "value": "3300"
+            },
+            {
+              "click": "[data-shot=contract-price-ranges] >> role=button[name=\"Add price range\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-detail] [role=alert]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-ranges]",
+            "[data-shot=contract-detail] [role=alert]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "repriced",
+      "app": "admin",
+      "caption": "The unedited Booking on the Face lift re-priced by the backdated range",
+      "setup": [
+        {
+          "goto": "/admin/masters?view=contracts"
+        },
+        {
+          "fill": "[data-shot=contract-search] input",
+          "value": "Face lift"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range start\"]",
+          "value": "2026-07-01"
+        },
+        {
+          "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range price (ex GST)\"]",
+          "value": "3200"
+        },
+        {
+          "click": "[data-shot=contract-price-ranges] >> role=button[name=\"Add price range\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "start": "/admin/day/2026-08-10/bookings/BK0163",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-testid=booking-calculation]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=booking-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

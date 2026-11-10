@@ -23,13 +23,13 @@ import type {
   Booking,
   Contract,
   CounterpartyRef,
-  IsoDate,
   Procedure,
   ProcedureId,
 } from '../types'
 import { feeFor, type FeeLine } from './fee'
 import { roundToCents, toCents } from './money'
-import { interimRouteContract, noPriceInForce, noPriceInForceMessage, noRouteContractMessage } from './contracts'
+import { interimRouteContract, noRouteContractMessage, procedureNeedsPrice } from './contracts'
+import { needsPriceMessage } from './priceRanges'
 import { hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty, type Party } from './parties'
 import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
 
@@ -42,8 +42,6 @@ import { feeContextFor, type BookingBillingContext } from './validateBookingForB
 export const GST_RATE = 0.15
 
 export interface InvoiceBuildContext extends BookingBillingContext {
-  /** The List (service) date. */
-  listDateISO: IsoDate
   /** The Booking's patient — the Billable Party route's default payer (7th review A1). */
   patientId: string
   /**
@@ -86,16 +84,8 @@ function routeContractFor(holder: Party | undefined, ctx: InvoiceBuildContext): 
   return { kind: 'resolved', contract }
 }
 
-/**
- * Which Contract governs this Procedure for billing (see the module header).
- * `procedureOrdinal` is its 1-based position on the Booking (fixed-price rows
- * key on it).
- */
-export function resolveContractForProcedure(
-  procedure: Procedure,
-  ctx: InvoiceBuildContext,
-  procedureOrdinal = 1,
-): ContractResolution {
+/** Which Contract governs this Procedure for billing (see the module header). */
+export function resolveContractForProcedure(procedure: Procedure, ctx: InvoiceBuildContext): ContractResolution {
   const stored =
     procedure.governingContractId !== undefined
       ? ctx.contracts[procedure.governingContractId]
@@ -113,16 +103,11 @@ export function resolveContractForProcedure(
   }
 
   if (stored !== undefined) {
-    // The interim of Phase 19a's "no range in force": a primary Procedure on a
-    // fixed-price Contract with no price for it cannot be invoiced.
-    if (
-      noPriceInForce(stored, procedure, {
-        procedureOrdinal,
-        prices: ctx.contractPrices,
-        ...(ctx.surgeonId !== undefined ? { surgeonId: ctx.surgeonId } : {}),
-      })
-    ) {
-      return { kind: 'exception', code: 'contractIneffective', message: noPriceInForceMessage(stored.name) }
+    // "Needs a price" (catch-up Phase 19a): a Procedure on a fixed-price
+    // Contract with no range in force on the List's date (or on an open
+    // price) cannot be invoiced, unless the office typed a fixed fee.
+    if (procedureNeedsPrice(stored, ctx.listDateISO, procedure)) {
+      return { kind: 'exception', code: 'contractIneffective', message: needsPriceMessage(stored, ctx.listDateISO, { named: true }) }
     }
     return { kind: 'resolved', contract: stored }
   }
@@ -248,8 +233,8 @@ export function buildInvoicesForBooking(
 
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
 
-  for (const [index, procedure] of procedures.entries()) {
-    const resolution = resolveContractForProcedure(procedure, ctx, index + 1)
+  for (const procedure of procedures) {
+    const resolution = resolveContractForProcedure(procedure, ctx)
     if (resolution.kind === 'exception') {
       return {
         kind: 'exception',
@@ -271,7 +256,7 @@ export function buildInvoicesForBooking(
 
     // Price with the RESOLVED contract — `feeContextFor` injects the STORED
     // one; with nothing stored, the resolved one is the route's plain RVG Contract.
-    const feeCtx = feeContextFor(procedure, index + 1, ctx)
+    const feeCtx = feeContextFor(procedure, ctx)
     if (contract !== undefined) feeCtx.contract = contract
     else delete feeCtx.contract
     const fee = feeFor(procedure, feeCtx)
@@ -446,7 +431,7 @@ export function buildPrePaymentInvoiceForBooking(
   if (booking.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
 
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
-  for (const [index, procedure] of procedures.entries()) {
+  for (const procedure of procedures) {
     if (
       procedure.billingRoute !== 'billableParty' ||
       procedure.patientPaymentCategory !== 'selfFundedPrepayment'
@@ -467,7 +452,7 @@ export function buildPrePaymentInvoiceForBooking(
     } else {
       // Full pre-payment: the estimated full fee via the same calculator the
       // balance run uses.
-      const feeCtx = feeContextFor(procedure, index + 1, ctx)
+      const feeCtx = feeContextFor(procedure, ctx)
       delete feeCtx.contract
       const fee = feeFor(procedure, feeCtx)
       const amount = roundToCents(fee.total)

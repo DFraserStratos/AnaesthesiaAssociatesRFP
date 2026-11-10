@@ -17,8 +17,9 @@ import { isOfficeContract } from '../../../../domain/billing/fallbacks'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
+import { formatRangeDate, formatRangePrice, rangeSummary, rangeSummaryText } from '../../../../domain/billing/priceRanges'
 import type { Contract } from '../../../../domain/types'
-import { useAppStore, type Actor } from '../../../../store'
+import { useAppStore, useToday, type Actor } from '../../../../store'
 import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
 import { specialtyNames } from '../../../../domain/specialties'
 import { Button, FieldLabel, Segmented } from '../../../../shared'
@@ -37,6 +38,8 @@ const COLUMNS = ['AA code', 'Name', 'Bills', 'Pricing', 'Tags', 'Status', '']
 export function ContractsView({ actor }: { actor: Actor }) {
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
+  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const today = useToday()
   const fundingTags = useAppStore((s) => s.masters.fundingTags)
   const specialties = useAppStore((s) => s.masters.specialties)
   const [params, setParams] = useSearchParams()
@@ -66,9 +69,10 @@ export function ContractsView({ actor }: { actor: Actor }) {
       contractSearch(query, {
         contracts,
         parties,
+        rvgGroups,
         filters: { status, ...(holderId !== '' ? { holderId } : {}), ...(tagId !== '' ? { fundingTagId: tagId } : {}) },
       }),
-    [query, contracts, parties, status, holderId, tagId],
+    [query, contracts, parties, rvgGroups, status, holderId, tagId],
   )
   const groups = useMemo(() => {
     const map = new Map<string, Contract[]>()
@@ -86,7 +90,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Contracts"
-        sub="Every arrangement is a Contract held by a Party, with its own AA code, who it bills and how it is priced. Contracts are edited in place and disabled, never deleted; a change that must start on a date is a new Contract."
+        sub="Every arrangement is a Contract held by a Party, with its own AA code, who it bills and how it is priced. Contracts are edited in place and disabled, never deleted. A fixed price changes from a date by adding a price range; any other change that must start on a date is a new Contract."
         action={<Button variant="secondary" onClick={() => setPanel({})}>New contract</Button>}
       />
 
@@ -181,7 +185,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
                     )}
                   </td>
                   <td style={rowCellStyle}>{BILLS_LABEL[c.billsTo]}</td>
-                  <td style={rowCellStyle}><PricingText contract={c} /></td>
+                  <td style={rowCellStyle}><PricingText contract={c} todayISO={today} /></td>
                   <td style={rowCellStyle}>
                     <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
                       {c.systemRole !== undefined && <Pill shot="contract-system-pill">System</Pill>}
@@ -216,8 +220,21 @@ export function ContractsView({ actor }: { actor: Actor }) {
 }
 
 /** The pricing phrase, with money in mono tabular figures. */
-function PricingText({ contract }: { contract: Contract }) {
+function PricingText({ contract, todayISO }: { contract: Contract; todayISO: string }) {
   const p = contract.pricing
+  if (p.kind === 'fixed') {
+    // The range in force today (catch-up Phase 19a), or when the first starts. The words are
+    // `rangeSummaryText`'s; the in-force case is set here only to put the money in mono.
+    const summary = rangeSummary(contract, todayISO)
+    if (summary.kind === 'inForce') {
+      return (
+        <span>
+          <span className="mono">{formatRangePrice(summary.range.price)}</span> from {formatRangeDate(summary.range.startISO)}
+        </span>
+      )
+    }
+    return <span style={{ color: neutral.slate }}>{rangeSummaryText(summary)}</span>
+  }
   if (p.kind === 'rvgContractRate') {
     return (
       <span>

@@ -7,16 +7,21 @@ import {
   interimRouteContract,
   isRvgKind,
   linkFits,
-  matchContractPrice,
   nextAaCode,
   noContractRvg,
   noPriceInForce,
-  noPriceInForceMessage,
   type Contract,
   type ContractRefusalContext,
 } from './contracts'
-import { mkContract, mkParty, mkProcedure } from './fixtures'
-import type { ContractPrice, Party } from '../types'
+import { mkContract, mkParty } from './fixtures'
+import type { ContractPricing, Party, RvgGroup } from '../types'
+import { needsPriceMessage } from './priceRanges'
+
+/** A fixed price with one range from 1 Jan 2026. */
+const FIXED: ContractPricing = { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 500 }] }
+const H3: RvgGroup = { id: 'rg-h3', code: 'H3', description: 'Moderate procedures', anatomy: 'Head', baseUnits: 6, modifierUnits: 0, retired: false }
+const OLD: RvgGroup = { id: 'rg-old', code: 'X9', description: 'Retired row', anatomy: 'Head', baseUnits: 4, modifierUnits: 0, retired: true }
+const GROUPS = { [H3.id]: H3, [OLD.id]: OLD }
 
 const HOSPITAL = mkParty()
 const AA: Party = { id: 'py-aa', kind: 'aa', name: 'Anaesthesia Associates', codePrefix: 'AA' }
@@ -35,6 +40,7 @@ function ctx(overrides: Partial<ContractRefusalContext> = {}, contracts: Contrac
     anaesthetistIds: new Set(['34821']),
     specialtyIds: new Set(['spc-ortho', 'spc-gen']),
     fundingTagIds: new Set(['tag-acc', 'tag-sxap']),
+    rvgGroups: GROUPS,
     ...overrides,
   }
 }
@@ -62,13 +68,13 @@ describe('contractRefusal: the save guards (AR-58 5.10)', () => {
   it('4: a prepaid Contract is never priced from RVG units and always bills the payer (D23)', () => {
     const prepaid = mkContract({ holderId: ANAES.id, billsTo: 'payer', linkedAnaesthetistId: '34821', prepaid: true })
     expect(code(prepaid)).toBe('prepaidNotRvg')
-    expect(code({ ...prepaid, pricing: { kind: 'fixed' } })).toBeNull()
-    expect(code(mkContract({ holderId: GROUP.id, linkedSurgeonIds: ['surg-1'], prepaid: true, pricing: { kind: 'fixed' } }))).toBe('prepaidBillsPayer')
+    expect(code({ ...prepaid, pricing: FIXED })).toBeNull()
+    expect(code(mkContract({ holderId: GROUP.id, linkedSurgeonIds: ['surg-1'], prepaid: true, pricing: FIXED }))).toBe('prepaidBillsPayer')
   })
 
   it('5: the override only on an RVG kind, so never on a fixed price', () => {
     expect(code(mkContract({ anaesthetistMayOverridePrice: true }))).toBeNull()
-    expect(code(mkContract({ anaesthetistMayOverridePrice: true, pricing: { kind: 'fixed' } }))).toBe('overrideOnlyRvg')
+    expect(code(mkContract({ anaesthetistMayOverridePrice: true, pricing: FIXED }))).toBe('overrideOnlyRvg')
   })
 
   it('6: the office never chooses open price, nor makes a system Contract', () => {
@@ -199,63 +205,86 @@ describe('interimRouteContract (INTERIM until Phase 20)', () => {
   })
 })
 
-describe('noPriceInForce (the interim of 19a\'s "no range in force")', () => {
-  const fixed = mkContract({ id: 'con-3', pricing: { kind: 'fixed' } })
-  const prices: ContractPrice[] = [{ id: 'p1', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', price: 800 }]
-  it('is true only for a primary procedure on a fixed Contract with no row for it', () => {
-    expect(noPriceInForce(fixed, mkProcedure({ rvgGroupId: 'RG-T-GA10' }), { procedureOrdinal: 1, prices })).toBe(false)
-    expect(noPriceInForce(fixed, mkProcedure({ rvgGroupId: 'RG-T-SP07' }), { procedureOrdinal: 1, prices })).toBe(true)
-    expect(noPriceInForce(fixed, mkProcedure({ rvgGroupId: 'RG-T-SP07', isAdditional: true }), { procedureOrdinal: 2, prices })).toBe(false)
+describe('noPriceInForce: "Needs a price" (catch-up Phase 19a)', () => {
+  const fixed = mkContract({ id: 'con-3', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-04-01', price: 800 }] } })
+  it('is true on a fixed price before its first range, and on any open price; never on an RVG kind', () => {
+    expect(noPriceInForce(fixed, '2026-03-31')).toBe(true)
+    expect(noPriceInForce(fixed, '2026-04-01')).toBe(false)
+    expect(noPriceInForce(fixed, '2026-11-05')).toBe(false)
     // Catch-up Phase 18a: an open-price Contract has no price of its own, so nothing bills one silently.
-    expect(noPriceInForce(mkContract({ pricing: { kind: 'open' } }), mkProcedure({ rvgGroupId: 'RG-T-GA10' }), { procedureOrdinal: 1, prices })).toBe(true)
-    expect(noPriceInForce(mkContract(), mkProcedure({ rvgGroupId: 'RG-T-SP07' }), { procedureOrdinal: 1, prices })).toBe(false)
-    expect(noPriceInForceMessage('COS ACC fixed fees')).toBe('No price in force for this procedure under COS ACC fixed fees.')
+    expect(noPriceInForce(mkContract({ pricing: { kind: 'open' } }), '2026-07-21')).toBe(true)
+    expect(noPriceInForce(mkContract(), '2020-01-01')).toBe(false)
+    expect(needsPriceMessage(fixed, '2026-07-16')).toBe('Needs a price: no price range in force on 16 Jul 2026.')
+    expect(needsPriceMessage({ ...fixed, name: 'COS ACC fixed fees' }, '2026-07-16', { named: true })).toBe('Needs a price: no price range in force on 16 Jul 2026 under COS ACC fixed fees.')
+    expect(needsPriceMessage(mkContract({ name: 'No contract · Fixed price', pricing: { kind: 'open' } }), '2026-07-16')).toBe('Needs a price: No contract · Fixed price has no price of its own.')
   })
 })
 
-describe('matchContractPrice — most-specific match wins', () => {
-  const prices: ContractPrice[] = [
-    { id: 'p-generic', contractId: 'con-3', price: 900 },
-    { id: 'p-code', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', price: 800 },
-    { id: 'p-code-surgeon', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', surgeonId: 'surg-1', price: 750 },
-    { id: 'p-code-ord2', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 2, price: 400 },
-  ]
+describe('the fixed price\'s ranges and the default RVG code in the save guard (catch-up Phase 19a)', () => {
+  const fixedWith = (ranges: { startISO: string; price: number }[], extra: Partial<Contract> = {}) =>
+    mkContract({ pricing: { kind: 'fixed', ranges }, ...extra })
+  const prepaidList = { holderId: ANAES.id, billsTo: 'payer' as const, linkedAnaesthetistId: '34821', prepaid: true }
 
-  it('ignores other contracts', () => {
-    expect(matchContractPrice(prices, { contractId: 'con-x', rvgGroupId: 'RG-T-GA10' })).toBeUndefined()
+  it('a fixed price needs at least one range, unique starts and prices of 0 or more', () => {
+    expect(code(fixedWith([]))).toBe('noRange')
+    expect(code(fixedWith([{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-06-01', price: 3200 }]))).toBe('duplicateStart')
+    expect(contractRefusal(fixedWith([{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-06-01', price: 3200 }]), ctx())?.message).toBe(
+      'Another price range already starts on 1 Jun 2026.',
+    )
+    expect(code(fixedWith([{ startISO: '2026-06-01', price: -1 }]))).toBe('negativePrice')
+    // 0 gives a no-charge invoice (AR-58 2.4) on a Contract that is not prepaid.
+    expect(code(fixedWith([{ startISO: '2026-06-01', price: 0 }]))).toBeNull()
   })
 
-  it('falls through to the generic row when nothing more specific matches', () => {
-    expect(matchContractPrice(prices, { contractId: 'con-3', rvgGroupId: 'RG-T-XX99' })?.id).toBe('p-generic')
+  it('every range above zero on a prepaid Contract (OQ-92, D30)', () => {
+    expect(code(fixedWith([{ startISO: '2026-01-01', price: 1200 }], prepaidList))).toBeNull()
+    expect(code(fixedWith([{ startISO: '2026-01-01', price: 1200 }, { startISO: '2026-09-01', price: 0 }], prepaidList))).toBe('prepaidPriceNotAboveZero')
+    expect(code(fixedWith([{ startISO: '2026-01-01', price: Number.NaN }], prepaidList))).toBe('prepaidPriceNotAboveZero')
+    expect(contractRefusal(fixedWith([{ startISO: '2026-01-01', price: 0 }], prepaidList), ctx())?.message).toBe("A prepaid Contract's price must be above zero.")
   })
 
-  it('prefers the row matching more keys', () => {
-    expect(
-      matchContractPrice(prices, { contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 1 })?.id,
-    ).toBe('p-code')
-    expect(
-      matchContractPrice(prices, {
-        contractId: 'con-3',
-        rvgGroupId: 'RG-T-GA10',
-        surgeonId: 'surg-1',
-        procedureOrdinal: 1,
-      })?.id,
-    ).toBe('p-code-surgeon')
+  it('the default RVG code must be a row on the RVG groups; a retired one only if already set', () => {
+    expect(code(mkContract({ defaultRvgGroupId: H3.id }))).toBeNull()
+    expect(code(mkContract({ defaultRvgGroupId: 'rg-missing' }))).toBe('rvgGroupNotFound')
+    expect(code(mkContract({ defaultRvgGroupId: OLD.id }))).toBe('rvgGroupRetired')
+    const kept = mkContract({ defaultRvgGroupId: OLD.id })
+    expect(code(kept, ctx({ prev: kept }, [NO_CONTRACT, kept]))).toBeNull()
   })
 
-  it('matches 2nd-procedure ordinal rows', () => {
-    expect(
-      matchContractPrice(prices, { contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 2 })?.id,
-    ).toBe('p-code-ord2')
+  it('a system Contract may change its invoice description, nothing else new', () => {
+    expect(code({ ...NO_CONTRACT, invoiceDescription: 'Anaesthesia services' }, ctx({ prev: NO_CONTRACT }))).toBeNull()
+    expect(code({ ...NO_CONTRACT, defaultRvgGroupId: H3.id }, ctx({ prev: NO_CONTRACT }))).toBe('systemFixed')
+  })
+})
+
+describe('contractMatchesQuery: invoice description and default RVG code (catch-up Phase 19a, US-04.2.18)', () => {
+  const cataract = mkContract({
+    name: 'Cataract, inclusive of Standard Intraocular Lens (Unilateral)',
+    holderReference: 'HNZCATall',
+    invoiceDescription: 'Cataract - inclusive of Standard Intraocular Lens (Unilateral)',
+    defaultRvgGroupId: H3.id,
+  })
+  const faceLift = mkContract({ id: 'c-face', name: 'Face lift', invoiceDescription: 'Face lift under general anaesthetic', defaultRvgGroupId: H3.id })
+
+  it('"CAT" finds the cataract item by name and by holder reference code', () => {
+    expect(contractMatchesQuery(cataract, 'CAT', GROUPS)).toBe(true)
+    expect(contractMatchesQuery(mkContract({ name: 'Other', holderReference: 'HNZCATall' }), 'cat', GROUPS)).toBe(true)
   })
 
-  it('returns undefined when no row matches (the fixed-price BTM fallback trigger)', () => {
-    const ordinalOnly: ContractPrice[] = [
-      { id: 'p-ord1', contractId: 'con-3', procedureOrdinal: 1, price: 500 },
-    ]
-    expect(
-      matchContractPrice(ordinalOnly, { contractId: 'con-3', procedureOrdinal: 2 }),
-    ).toBeUndefined()
+  it('a word of the invoice description finds the Contract', () => {
+    expect(contractMatchesQuery(faceLift, 'general anaesthetic', GROUPS)).toBe(true)
+  })
+
+  it('the default RVG code finds the Contract by its whole code, not a part of one', () => {
+    const lift = mkContract({ name: 'Lift', aaCode: 'MER-001', defaultRvgGroupId: H3.id })
+    expect(contractMatchesQuery(lift, 'h3', GROUPS)).toBe(true)
+    expect(contractMatchesQuery(lift, 'H', GROUPS)).toBe(false)
+    expect(contractMatchesQuery(lift, 'H3', undefined)).toBe(false)
+  })
+
+  it('contractSearch passes the RVG groups through', () => {
+    const contracts = Object.fromEntries([NO_CONTRACT, faceLift].map((c) => [c.id, c]))
+    expect(contractSearch('H3', { contracts, parties: PARTIES, rvgGroups: GROUPS }).map((c) => c.id)).toEqual(['c-face'])
   })
 })
 

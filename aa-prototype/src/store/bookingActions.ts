@@ -26,7 +26,7 @@ import {
   type MutationMeta,
   type Outcome,
 } from './mutate'
-import type { AppStoreApi } from './appStore'
+import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
 import { newAttachment } from './attachmentActions'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
@@ -34,6 +34,8 @@ import { listInSlot, proceduresForBooking, slotFor } from './selectors'
 import { isOpenSlot } from '../domain/slotStatus'
 import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { placeListOnSlot } from './slotActions'
+import { fillFromContract } from '../domain/billing/startingValues'
+import { isRvgKind } from '../domain/billing/contracts'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -288,7 +290,7 @@ export function addPostOpAddendum(
       procedure.patientPaymentCategory =
         first.patientPaymentCategory === 'selfFundedPrepayment' ? 'selfFundedPostProcedure' : first.patientPaymentCategory
     }
-    if (first?.governingContractId !== undefined) procedure.governingContractId = first.governingContractId
+    if (first?.governingContractId !== undefined) inheritContract(procedure, first.governingContractId, s.masters)
 
     metas.push(
       {
@@ -303,7 +305,7 @@ export function addPostOpAddendum(
           source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
         },
       },
-      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { bookingId } },
+      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { bookingId, ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}) } },
     )
     return {
       schedule: {
@@ -317,6 +319,23 @@ export function addPostOpAddendum(
   })
 
   return ok({ bookingId, listId })
+}
+
+/**
+ * A new Procedure inherits the Booking's Contract when it is priced from RVG
+ * units, and that choice fills an empty RVG code from its default (catch-up
+ * Phase 19a, DM-43), the same rule `editProcedure` applies. A fixed or open
+ * price is never copied: a fixed price is the whole price of the item it was
+ * chosen for (a combination is its own Contract, OQ-53), so copying it would
+ * bill that item twice. The office (Phase 20's rail) chooses the new
+ * Procedure's own Contract.
+ */
+function inheritContract(procedure: Procedure, contractId: string, masters: AppState['masters']): void {
+  const contract = masters.contracts[contractId]
+  if (contract !== undefined && !isRvgKind(contract.pricing.kind)) return
+  procedure.governingContractId = contractId
+  const fill = fillFromContract(procedure, masters.contracts[contractId], masters.rvgGroups)
+  if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
 }
 
 // ---------------------------------------------------------------------------
@@ -367,13 +386,13 @@ export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string):
     if (first?.insurerId !== undefined) procedure.insurerId = first.insurerId
     if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
     if (first?.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = first.patientPaymentCategory
-    if (first?.governingContractId !== undefined) procedure.governingContractId = first.governingContractId
+    if (first?.governingContractId !== undefined) inheritContract(procedure, first.governingContractId, s.masters)
 
     metas.push({
       entityType: 'procedure',
       entityId: procedureId,
       action: 'procedure.create',
-      after: { bookingId, isAdditional: true },
+      after: { bookingId, isAdditional: true, ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}) },
     })
     return {
       schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: procedure } },
@@ -399,8 +418,7 @@ export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string):
  * Two things make it safe:
  *  - **The Booking's first procedure is not removable** (user ruling, 2026-07-27).
  *    It is the anchor: it carries the base and modifier units the additional
- *    ones deliberately do not, and its position feeds Type 3 second-procedure
- *    pricing. Deleting it would leave a Booking billing time units only, and
+ *    ones deliberately do not. Deleting it would leave a Booking billing time units only, and
  *    silently promoting the next one would rewrite the billing basis of a
  *    procedure nobody touched. A Booking booked wholly in error is a booking
  *    CANCELLATION, which is the refusal's pointer.

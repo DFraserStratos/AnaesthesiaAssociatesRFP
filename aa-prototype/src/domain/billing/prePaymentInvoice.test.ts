@@ -9,6 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import {
   buildInvoicesForBooking,
   buildPrePaymentInvoiceForBooking,
@@ -38,11 +39,11 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     anaesthetist: mkAnaesthetist(), // unitValue 30
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
-    contractPrices: [],
     parties: { [PARTY.id]: PARTY },
     billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,
+    timeRule: DEFAULT_RVG_TIME_RULE,
     listHospitalId: 'hosp-1',
     patientId: 'pat-1',
     ...overrides,
