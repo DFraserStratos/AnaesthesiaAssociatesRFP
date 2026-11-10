@@ -31,6 +31,13 @@ interface FeeRow {
   lines: { basis: string; amount: number }[]
 }
 
+/** Phase 19's row: the Phase 18 row plus the resolved B, T and M. */
+interface UnitsRow extends FeeRow {
+  b: number
+  t: number
+  m: number
+}
+
 interface InvoiceRow {
   bookingId: string
   result:
@@ -39,6 +46,7 @@ interface InvoiceRow {
 }
 
 const fees: FeeRow[] = []
+const unitRows: UnitsRow[] = []
 const invoices: InvoiceRow[] = []
 
 for (const list of assignedLists) {
@@ -52,12 +60,14 @@ for (const list of assignedLists) {
         masters: state.masters,
         billingLines: state.schedule.billingLines,
       })
-      fees.push({
+      const row: FeeRow = {
         procedureId: procedure.id,
         total: fee.total,
         billableUnits: fee.billableUnits,
         lines: fee.lines.map((l) => ({ basis: l.chargeBasis, amount: l.amount })),
-      })
+      }
+      fees.push(row)
+      unitRows.push({ ...row, b: fee.btm.base.units, t: fee.btm.time.units, m: fee.btm.modifiers.units })
     })
 
     const bookingCtx = billingContextForBooking(state, booking)
@@ -89,6 +99,7 @@ for (const list of assignedLists) {
 }
 
 fees.sort((a, b) => a.procedureId.localeCompare(b.procedureId))
+unitRows.sort((a, b) => a.procedureId.localeCompare(b.procedureId))
 invoices.sort((a, b) => a.bookingId.localeCompare(b.bookingId))
 
 const feeOf = (procedureId: string) => fees.find((f) => f.procedureId === procedureId)
@@ -126,5 +137,20 @@ describe('Phase 18 fee and counterparty parity', () => {
     expect(feeOf('P0031')?.lines).toContainEqual({ basis: 'rateTime', amount: 1440 })
     // nib on the Insurer route.
     expect(invoicesOf('BK0007')).toMatchObject({ kind: 'invoices', invoices: [{ counterparty: 'insurer:I-NIB' }] })
+  })
+})
+
+/**
+ * Phase 19 parity fixture: written from the untouched code BEFORE the RVG group
+ * reshape (catch-up Phase 19), with every seeded Procedure's B, T and M beside
+ * its fee. The reshape remaps every seeded Procedure to a row with today's base
+ * units, so this file never changes either.
+ */
+describe('Phase 19 base, time and modifier unit parity', () => {
+  it('matches the pre-reshape baseline for every seeded procedure and Booking', async () => {
+    expect(unitRows.length).toBeGreaterThan(100)
+    await expect(JSON.stringify({ fees: unitRows, invoices }, null, 2)).toMatchFileSnapshot(
+      './__parity__/phase-19-baseline.json',
+    )
   })
 })

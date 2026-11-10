@@ -17,9 +17,11 @@ import type {
   ContractPrice,
   Party,
   Procedure,
-  RvgCode,
+  RvgGroup,
+  RvgGroupId,
 } from '../types'
 import { feeFor } from './fee'
+import { groupOf } from './rvgGroups'
 import { toCents } from './money'
 import { INSURER_PARTY_MISSING_MESSAGE, hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty } from './parties'
 import { interimRouteContract, noPriceInForce, noPriceInForceMessage, noRouteContractMessage } from './contracts'
@@ -57,8 +59,8 @@ export function billingReferenceMissing(procedure: Procedure): boolean {
 
 export interface BookingBillingContext {
   anaesthetist: Anaesthetist
-  /** RVG master, keyed by code. */
-  rvgCodes: Readonly<Record<string, RvgCode>>
+  /** The RVG groups, keyed by their hidden id (catch-up Phase 19). */
+  rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
   /** Contract master, keyed by id (for `governingContractId`). */
   contracts: Readonly<Record<string, Contract>>
   contractPrices: readonly ContractPrice[]
@@ -89,7 +91,7 @@ export function feeContextFor(
 ): Parameters<typeof feeFor>[1] {
   const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
   const nonRvgLines = storedLines.filter((l) => l.chargeBasis !== 'rvg')
-  const baseCode = procedure.rvgBaseCode !== undefined ? ctx.rvgCodes[procedure.rvgBaseCode] : undefined
+  const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
   const contract =
     procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
   const feeCtx: Parameters<typeof feeFor>[1] = {
@@ -99,7 +101,7 @@ export function feeContextFor(
     nonRvgLines,
   }
   if (contract !== undefined) feeCtx.contract = contract
-  if (baseCode !== undefined) feeCtx.baseCode = baseCode
+  if (rvgGroup !== undefined) feeCtx.rvgGroup = rvgGroup
   if (ctx.surgeonId !== undefined) feeCtx.surgeonId = ctx.surgeonId
   return feeCtx
 }
@@ -125,23 +127,18 @@ export function validateBookingForBilling(
   procedures.forEach((procedure, index) => {
     const id = procedure.id
     const storedLines = ctx.billingLines.filter((l) => l.procedureId === id)
-    const nonRvgLines = storedLines.filter((l) => l.chargeBasis !== 'rvg')
-    const baseCode =
-      procedure.rvgBaseCode !== undefined ? ctx.rvgCodes[procedure.rvgBaseCode] : undefined
+    const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
 
     // Route must be explicitly set.
     if (procedure.billingRoute === undefined) {
       fail(id, 'billingRoute', 'Set a billing route for this procedure.')
     }
 
-    // Something to charge: an RVG base code or at least one non-RVG line.
-    if (procedure.rvgBaseCode === undefined && nonRvgLines.length === 0) {
-      fail(id, 'rvgBaseCode', 'Add an RVG base code or at least one billing line.')
-    }
-
-    if (procedure.rvgBaseCode !== undefined) {
-      if (baseCode === undefined) {
-        fail(id, 'rvgBaseCode', `RVG code ${procedure.rvgBaseCode} is not in the RVG master.`)
+    // The RVG code is optional (catch-up Phase 19; completion rules are Phase
+    // 21's). One that is set must still point at a row.
+    if (procedure.rvgGroupId !== undefined) {
+      if (rvgGroup === undefined) {
+        fail(id, 'rvgGroupId', 'The RVG code on this Procedure is no longer in the RVG groups. Choose it again.')
       }
 
       // Times are captured data whenever the RVG path is billed (RFP principle 10).
@@ -157,18 +154,8 @@ export function validateBookingForBilling(
         fail(id, 'handoverISO', 'Handover must be after the anaesthetic start.')
       }
 
-      // A range base code needs an in-range selected value.
-      if (baseCode !== undefined && baseCode.baseUnits.kind === 'range') {
-        const { min, max } = baseCode.baseUnits
-        const selected = procedure.baseUnitsSelected
-        if (selected === undefined || selected < min || selected > max) {
-          fail(
-            id,
-            'baseUnitsSelected',
-            `Base code ${baseCode.code} needs a selected unit value between ${min} and ${max}.`,
-          )
-        }
-      }
+      // Any base-unit value is accepted (D3, RV-10): an out-of-range one raises
+      // the after-procedure `baseUnitsOutsideGuide` warning, never a refusal.
     }
 
     // Insurer route: the insurer is named and has an insurer Party (RV-39: no

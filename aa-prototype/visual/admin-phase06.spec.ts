@@ -203,7 +203,8 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.getByLabel('Name')).toHaveValue('Demo Patient')
   await expect(page.getByLabel('Date of birth')).toHaveValue('1990-01-01')
   await expect(page.getByLabel('Phone')).toHaveValue('021 555 0190')
-  await expect(page.getByLabel('Procedure code')).toHaveValue('20950')
+  await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('A3')
+  await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('Appendicectomy, laparoscopic')
   await expect(page.getByLabel('Operation')).toHaveValue('Appendicectomy, laparoscopic')
   await expect(page.getByLabel('Scheduled time')).toHaveValue('15:00')
   await expect(page.getByLabel('Insurer (optional)')).toHaveValue('I-NIB')
@@ -227,5 +228,5 @@ test('generic manual-booking lookup still requires an NHI', async ({ page }) => 
 
   await expect(page.getByRole('button', { name: 'Look up' })).toBeDisabled()
   await expect(page.getByLabel('Name')).toHaveValue('')
-  await expect(page.getByLabel('Procedure code')).toHaveValue('')
+  await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('No RVG code')
 })

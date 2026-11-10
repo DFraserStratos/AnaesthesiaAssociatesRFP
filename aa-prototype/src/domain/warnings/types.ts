@@ -11,13 +11,13 @@
  * Pure (enforced by `domainPurity.test.ts`).
  */
 
-import type { AaFeeSettings, ActorRole, Booking, BookingId, IsoDate, IsoDateTime, List, Procedure, ProcedureId, ScheduleSettings } from '../types'
+import type { AaFeeSettings, ActorRole, Booking, BookingId, IsoDate, IsoDateTime, List, Procedure, ProcedureId, RvgGroup, RvgGroupId, ScheduleSettings } from '../types'
 
 export type WarningKind = 'beforeProcedure' | 'afterProcedure'
 export type WarningStrength = 'mild' | 'strong'
 
 /** Every registered rule. Phases 19, 21, 27 and 40 widen the union. */
-export type WarningRuleId = 'prepaymentUnpaid'
+export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide'
 
 /** The derived prepayment state a rule may read (the store's `prepaymentStatusFor`). */
 export type WarningPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
@@ -34,6 +34,8 @@ export interface WarningFacts {
   prepaymentStatus: WarningPrepaymentStatus
   /** From the demo clock, never `Date.now()`. */
   todayISO: IsoDate
+  /** The RVG groups (catch-up Phase 19), for `baseUnitsOutsideGuide`. Absent: that rule finds nothing. */
+  rvgGroups?: Readonly<Record<RvgGroupId, RvgGroup>>
 }
 
 export type WarningParams = Readonly<Record<string, number>>

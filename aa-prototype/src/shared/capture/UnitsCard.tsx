@@ -1,5 +1,5 @@
-import { accent, neutral } from '../../theme/tokens'
-import type { CapturedUnits, Procedure, RvgCode } from '../../domain/types'
+import { accent, neutral, semantic } from '../../theme/tokens'
+import type { CapturedUnits, Procedure, RvgGroup } from '../../domain/types'
 import {
   ASA_SEED_UNITS,
   getModifierCode,
@@ -16,7 +16,7 @@ type UnitsField = 'baseUnitsCaptured' | 'timeUnitsCaptured' | 'modifierUnitsCapt
 interface UnitsCardProps {
   procedure: Procedure
   btm: BtmBreakdown
-  baseCode?: RvgCode | undefined
+  rvgGroup?: RvgGroup | undefined
   actor: Actor
   canCapture: boolean
   isAdditional: boolean
@@ -33,7 +33,7 @@ interface UnitsCardProps {
  * link is the only way back. On an additional procedure B and M render
  * value + caption with no buttons (the split-billing rule is structural).
  */
-export function UnitsCard({ procedure, btm, baseCode, actor, canCapture, isAdditional, onError }: UnitsCardProps) {
+export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, onError }: UnitsCardProps) {
   function write(patch: ProcedurePatch) {
     const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
     if (!outcome.ok) onError(outcome.message)
@@ -56,7 +56,9 @@ export function UnitsCard({ procedure, btm, baseCode, actor, canCapture, isAddit
         title="B · Base"
         value={btm.base.units}
         overridden={btm.base.source === 'overridden'}
-        seededCaption={isAdditional ? 'Not charged on an additional procedure' : 'From procedure code'}
+        overriddenLabel={`Set manually${btm.baseOutsideGuide ? ', outside the guide range' : ''}`}
+        captionTone={btm.baseOutsideGuide && !isAdditional ? 'warn' : 'quiet'}
+        seededCaption={isAdditional ? 'Not charged on an additional procedure' : baseCaption(btm)}
         steppable={canCapture && !isAdditional}
         onStep={(delta) => step('baseUnitsCaptured', btm.base.units, delta)}
         onReset={canCapture && !isAdditional ? () => reset('baseUnitsCaptured') : undefined}
@@ -81,7 +83,7 @@ export function UnitsCard({ procedure, btm, baseCode, actor, canCapture, isAddit
       />
       <ModifierChips
         procedure={procedure}
-        baseCode={baseCode}
+        rvgGroup={rvgGroup}
         actor={actor}
         disabled={!canCapture || isAdditional}
         onError={onError}
@@ -92,7 +94,7 @@ export function UnitsCard({ procedure, btm, baseCode, actor, canCapture, isAddit
 
 /**
  * "AS1 +0 · A1 very old +1" — the M row's seeded composition. Codes the
- * calculator REFUSED (absorbed by the base code, or a sibling in a band it has
+ * calculator REFUSED (included by the RVG group, or a sibling in a band it has
  * already counted) are left out, so the caption can never credit units the M
  * total excludes.
  */
@@ -113,10 +115,31 @@ function modifierBreakdown(procedure: Procedure, refused: readonly RefusedModifi
   return parts.length > 0 ? parts.join(' · ') : 'None applied'
 }
 
+/**
+ * The B row's caption from where its units came from (catch-up Phase 19;
+ * `BtmBreakdown.baseSource`): the RVG group, a chosen value on a ranged group,
+ * or none. "Set manually" is the overridden label.
+ */
+function baseCaption(btm: BtmBreakdown): string {
+  const outside = btm.baseOutsideGuide ? ', outside the guide range' : ''
+  switch (btm.baseSource) {
+    case 'rvgGroup':
+      return 'From the RVG group'
+    case 'chosen':
+      return `Chosen${outside}`
+    case 'overridden':
+      return `Set manually${outside}`
+    case 'none':
+      return 'No RVG code'
+  }
+}
+
 function StepperRow({
   title,
   value,
   overridden,
+  overriddenLabel = 'Adjusted manually',
+  captionTone = 'quiet',
   seededCaption,
   steppable,
   onStep,
@@ -125,6 +148,9 @@ function StepperRow({
   title: string
   value: number
   overridden: boolean
+  overriddenLabel?: string
+  /** 'warn' tints the caption (a base value outside the RVG guide; never an error). */
+  captionTone?: 'quiet' | 'warn'
   seededCaption: string
   steppable: boolean
   onStep: (delta: number) => void
@@ -135,8 +161,8 @@ function StepperRow({
       <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span style={{ fontSize: 15, fontWeight: 600 }}>{title}</span>
         {overridden ? (
-          <span style={{ fontSize: 12, color: neutral.slate }}>
-            Adjusted manually
+          <span style={{ fontSize: 12, color: captionTone === 'warn' ? semantic.warning.onTint : neutral.slate }}>
+            {overriddenLabel}
             {onReset !== undefined && (
               <>
                 {' · '}
@@ -160,7 +186,7 @@ function StepperRow({
             )}
           </span>
         ) : (
-          <span style={{ fontSize: 12, color: neutral.mist }}>{seededCaption}</span>
+          <span style={{ fontSize: 12, color: captionTone === 'warn' ? semantic.warning.onTint : neutral.mist }}>{seededCaption}</span>
         )}
       </span>
       {steppable && <StepperButton glyph="−" onClick={() => onStep(-1)} disabled={value <= 0} />}

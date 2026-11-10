@@ -15,7 +15,7 @@ const anaesthetist = mkAnaesthetist({ unitValue: 30 })
 
 /** Base 10 + AS3 + 2h30m: B=10, T=11, M=3 → 24 units. */
 const spotCheckProcedure = mkProcedure({
-  rvgBaseCode: 'GA10',
+  rvgGroupId: 'RG-T-GA10',
   asaClass: 'AS3',
   anaestheticStartISO: START_0800,
   handoverISO: HANDOVER_1030,
@@ -43,13 +43,36 @@ describe('resolveBtm', () => {
   })
 
   it('a range base code uses the selected value', () => {
-    const p = mkProcedure({ rvgBaseCode: 'NR59', baseUnitsSelected: 7 })
+    const p = mkProcedure({ rvgGroupId: 'RG-T-NR59', baseUnitsSelected: 7 })
     expect(resolveBtm(p, BASE_RANGE_5_9).base.units).toBe(7)
   })
 
-  it('a range base code with no selection counts 0 (validation flags it)', () => {
-    const p = mkProcedure({ rvgBaseCode: 'NR59' })
-    expect(resolveBtm(p, BASE_RANGE_5_9).base.units).toBe(0)
+  it('a ranged group with no chosen value starts at its starting figure (D35; catch-up Phase 19)', () => {
+    const p = mkProcedure({ rvgGroupId: 'RG-T-NR59' })
+    const btm = resolveBtm(p, BASE_RANGE_5_9)
+    expect(btm.base.units).toBe(5)
+    expect(btm.baseSource).toBe('rvgGroup')
+    expect(btm.baseOutsideGuide).toBe(false)
+  })
+
+  it('accepts any chosen value and marks one outside the guide (D3)', () => {
+    const btm = resolveBtm(mkProcedure({ rvgGroupId: 'RG-T-NR59', baseUnitsSelected: 12 }), BASE_RANGE_5_9)
+    expect(btm.base.units).toBe(12)
+    expect(btm.baseSource).toBe('chosen')
+    expect(btm.baseOutsideGuide).toBe(true)
+    expect(btm.baseGuide).toEqual({ figure: 5, range: { min: 5, max: 9 } })
+  })
+
+  it("adds the RVG group's modifier units (0 by default) to M", () => {
+    const p = mkProcedure({ rvgGroupId: BASE_SINGLE_10.id, asaClass: undefined, selectedModifierCodes: [] })
+    expect(resolveBtm(p, BASE_SINGLE_10).modifiers.units).toBe(0)
+    expect(resolveBtm(p, { ...BASE_SINGLE_10, modifierUnits: 2 }).modifiers.units).toBe(2)
+  })
+
+  it('with no RVG code: base 0, source none', () => {
+    const btm = resolveBtm(mkProcedure({ rvgGroupId: undefined }))
+    expect(btm.base.units).toBe(0)
+    expect(btm.baseSource).toBe('none')
   })
 
   it('does not double-count an ASA class repeated in the chip selection', () => {
@@ -78,7 +101,7 @@ describe('splitBillingUnits', () => {
 
 describe('feeFor — contract types', () => {
   it('PAPER SPOT-CHECK: 2h30m at $30/unit, base 10 + AS3 = (10 + 11 + 3) x 30 = $720', () => {
-    const fee = feeFor(spotCheckProcedure, { anaesthetist, baseCode: BASE_SINGLE_10 })
+    const fee = feeFor(spotCheckProcedure, { anaesthetist, rvgGroup: BASE_SINGLE_10 })
     expect(fee.billableUnits).toBe(24)
     expect(fee.unitRate).toBe(30)
     expect(fee.subtotal).toBe(720)
@@ -88,28 +111,28 @@ describe('feeFor — contract types', () => {
 
   it("RVG at the anaesthetist's rate: units x the anaesthetist unit value", () => {
     const contract = mkContract({ pricing: { kind: 'rvgAnaesthetistRate' } })
-    const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, baseCode: BASE_SINGLE_10 })
+    const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, rvgGroup: BASE_SINGLE_10 })
     expect(fee.total).toBe(24 * 30)
   })
 
   it("RVG at the Contract's rate: units x the Contract's rate", () => {
     const contract = mkContract({ pricing: { kind: 'rvgContractRate', unitRate: 25 } })
-    const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, baseCode: BASE_SINGLE_10 })
+    const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, rvgGroup: BASE_SINGLE_10 })
     expect(fee.unitRate).toBe(25)
     expect(fee.total).toBe(24 * 25)
   })
 
   it('RVG less a discount: units x the discounted unit value', () => {
     const contract = mkContract({ pricing: { kind: 'rvgDiscount', discountPct: 10 } })
-    const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, baseCode: BASE_SINGLE_10 })
+    const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, rvgGroup: BASE_SINGLE_10 })
     expect(fee.unitRate).toBe(27)
     expect(fee.total).toBe(24 * 27)
   })
 
   const type3 = mkContract({ id: 'con-3', pricing: { kind: 'fixed' } })
   const prices: ContractPrice[] = [
-    { id: 'p-1', contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 1, price: 650 },
-    { id: 'p-2', contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 2, price: 275 },
+    { id: 'p-1', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 1, price: 650 },
+    { id: 'p-2', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 2, price: 275 },
   ]
 
   it('Fixed price: fixed price from the matching ContractPrice row', () => {
@@ -117,7 +140,7 @@ describe('feeFor — contract types', () => {
       anaesthetist,
       contract: type3,
       contractPrices: prices,
-      baseCode: BASE_SINGLE_10,
+      rvgGroup: BASE_SINGLE_10,
       procedureOrdinal: 1,
     })
     expect(fee.chargeBasis).toBe('fixed')
@@ -130,7 +153,7 @@ describe('feeFor — contract types', () => {
       anaesthetist,
       contract: type3,
       contractPrices: prices,
-      baseCode: BASE_SINGLE_10,
+      rvgGroup: BASE_SINGLE_10,
       procedureOrdinal: 2,
     })
     expect(fee.total).toBe(275)
@@ -140,8 +163,8 @@ describe('feeFor — contract types', () => {
     const fee = feeFor(spotCheckProcedure, {
       anaesthetist,
       contract: type3,
-      contractPrices: [{ id: 'p-x', contractId: 'con-3', rvgBaseCode: 'XX99', price: 500 }],
-      baseCode: BASE_SINGLE_10,
+      contractPrices: [{ id: 'p-x', contractId: 'con-3', rvgGroupId: 'RG-T-XX99', price: 500 }],
+      rvgGroup: BASE_SINGLE_10,
       procedureOrdinal: 1,
     })
     expect(fee.chargeBasis).toBe('rvg')
@@ -154,7 +177,7 @@ describe('feeFor — contract types', () => {
       anaesthetist,
       contract: type3,
       contractPrices: [],
-      baseCode: BASE_SINGLE_10,
+      rvgGroup: BASE_SINGLE_10,
       procedureOrdinal: 2,
     })
     expect(fee.billableUnits).toBe(11)
@@ -173,7 +196,7 @@ describe('feeFor — non-RVG billing lines', () => {
       amount: 0,
       description: 'Individually arranged hourly rate',
     }
-    const p = mkProcedure({ rvgBaseCode: undefined })
+    const p = mkProcedure({ rvgGroupId: undefined })
     const fee = feeFor(p, { anaesthetist, nonRvgLines: [line] })
     expect(fee.chargeBasis).toBe('rateTime')
     expect(fee.lines).toHaveLength(1)
@@ -190,7 +213,7 @@ describe('feeFor — non-RVG billing lines', () => {
     }
     const fee = feeFor(spotCheckProcedure, {
       anaesthetist,
-      baseCode: BASE_SINGLE_10,
+      rvgGroup: BASE_SINGLE_10,
       nonRvgLines: [line],
     })
     expect(fee.chargeBasis).toBe('mixed')
@@ -205,7 +228,7 @@ describe('feeFor — typed price overrides', () => {
       ...spotCheckProcedure,
       priceOverride: { kind: 'fixedFee', amount: 650, reason: 'Agreed with patient' },
     })
-    const fee = feeFor(p, { anaesthetist, baseCode: BASE_SINGLE_10 })
+    const fee = feeFor(p, { anaesthetist, rvgGroup: BASE_SINGLE_10 })
     expect(fee.subtotal).toBe(720)
     expect(fee.override).toMatchObject({ before: 720, after: 650 })
     expect(fee.total).toBe(650)
@@ -216,7 +239,7 @@ describe('feeFor — typed price overrides', () => {
       ...spotCheckProcedure,
       priceOverride: { kind: 'dollarAdjustment', amount: -120, reason: 'Goodwill discount' },
     })
-    expect(feeFor(p, { anaesthetist, baseCode: BASE_SINGLE_10 }).total).toBe(600)
+    expect(feeFor(p, { anaesthetist, rvgGroup: BASE_SINGLE_10 }).total).toBe(600)
   })
 
   it('percentAdjustment scales the subtotal', () => {
@@ -224,7 +247,7 @@ describe('feeFor — typed price overrides', () => {
       ...spotCheckProcedure,
       priceOverride: { kind: 'percentAdjustment', percent: -25, reason: 'Hardship' },
     })
-    expect(feeFor(p, { anaesthetist, baseCode: BASE_SINGLE_10 }).total).toBe(540)
+    expect(feeFor(p, { anaesthetist, rvgGroup: BASE_SINGLE_10 }).total).toBe(540)
   })
 
   it('amounts round to cents', () => {
@@ -232,7 +255,7 @@ describe('feeFor — typed price overrides', () => {
       ...spotCheckProcedure,
       priceOverride: { kind: 'percentAdjustment', percent: -33.333, reason: 'Test' },
     })
-    const fee = feeFor(p, { anaesthetist, baseCode: BASE_SINGLE_10 })
+    const fee = feeFor(p, { anaesthetist, rvgGroup: BASE_SINGLE_10 })
     expect(fee.total).toBe(480)
   })
 })

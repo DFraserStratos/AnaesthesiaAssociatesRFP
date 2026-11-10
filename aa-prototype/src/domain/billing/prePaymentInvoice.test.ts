@@ -36,7 +36,7 @@ const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: "Test hospital RVG" }
 function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContext {
   return {
     anaesthetist: mkAnaesthetist(), // unitValue 30
-    rvgCodes: { [BASE_SINGLE_10.code]: BASE_SINGLE_10 },
+    rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
     contractPrices: [],
     parties: { [PARTY.id]: PARTY },
@@ -61,7 +61,7 @@ const pp = (amount: number, counterparty: { kind: 'patient' | 'billableParty'; i
 function prepaymentProc(overrides: Partial<ReturnType<typeof mkProcedure>> = {}) {
   return mkProcedure({
     id: 'proc-pp',
-    rvgBaseCode: BASE_SINGLE_10.code,
+    rvgGroupId: BASE_SINGLE_10.id,
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
     billingRoute: 'billableParty',
@@ -75,7 +75,7 @@ describe('buildPrePaymentInvoiceForBooking', () => {
   it('covers only BillableParty selfFundedPrepayment procedures (hospital procedures excluded)', () => {
     const hospitalProc = mkProcedure({
       id: 'proc-h',
-      rvgBaseCode: BASE_SINGLE_10.code,
+      rvgGroupId: BASE_SINGLE_10.id,
       anaestheticStartISO: START_0800,
       handoverISO: HANDOVER_1030,
       governingContractId: 'con-def',
@@ -158,7 +158,7 @@ describe('deposit + balance reconciliation', () => {
   it('mixed booking: the contract-holder procedure bills in full while the full pre-payment nets away', () => {
     const hospitalProc = mkProcedure({
       id: 'proc-h',
-      rvgBaseCode: BASE_SINGLE_10.code,
+      rvgGroupId: BASE_SINGLE_10.id,
       anaestheticStartISO: START_0800,
       handoverISO: HANDOVER_1030,
       governingContractId: 'con-def',

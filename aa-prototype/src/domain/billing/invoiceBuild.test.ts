@@ -48,7 +48,7 @@ const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: 'Test hospital RVG' }
 function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContext {
   return {
     anaesthetist: mkAnaesthetist(),
-    rvgCodes: { [BASE_SINGLE_10.code]: BASE_SINGLE_10 },
+    rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
     contractPrices: [],
     parties: PARTIES,
@@ -90,14 +90,14 @@ describe('resolveContractForProcedure', () => {
   it('a primary procedure on a fixed-price Contract with no price for it is "No price in force"', () => {
     const fixed = mkContract({ id: 'con-fix', name: 'COS ACC fixed fees', holderId: 'party-org', linkedSurgeonIds: ['surg-9'], pricing: { kind: 'fixed' } })
     const ctx = withContracts(HOSPITAL_DEFAULT, fixed)
-    const primary = mkProcedure({ rvgBaseCode: 'GA10', governingContractId: 'con-fix' })
+    const primary = mkProcedure({ rvgGroupId: 'RG-T-GA10', governingContractId: 'con-fix' })
     expect(resolveContractForProcedure(primary, ctx)).toEqual({
       kind: 'exception',
       code: 'contractIneffective',
       message: 'No price in force for this procedure under COS ACC fixed fees.',
     })
     // A row for it resolves; an additional procedure keeps the time-only fallback.
-    const priced = { ...ctx, contractPrices: [{ id: 'p', contractId: 'con-fix', rvgBaseCode: 'GA10', price: 500 }] }
+    const priced = { ...ctx, contractPrices: [{ id: 'p', contractId: 'con-fix', rvgGroupId: 'RG-T-GA10', price: 500 }] }
     expect(resolveContractForProcedure(primary, priced).kind).toBe('resolved')
     expect(resolveContractForProcedure({ ...primary, isAdditional: true }, ctx, 2).kind).toBe('resolved')
   })
@@ -193,7 +193,7 @@ describe('buildInvoicesForBooking', () => {
   /** B10 + T11 (2h30m) + M0 = 21 units at $30 = $630. */
   const primary = mkProcedure({
     id: 'proc-1',
-    rvgBaseCode: BASE_SINGLE_10.code,
+    rvgGroupId: BASE_SINGLE_10.id,
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
     governingContractId: 'con-def',
@@ -201,7 +201,7 @@ describe('buildInvoicesForBooking', () => {
   /** isAdditional: time only — T11 at $30 = $330. */
   const additional = mkProcedure({
     id: 'proc-2',
-    rvgBaseCode: BASE_SINGLE_10.code,
+    rvgGroupId: BASE_SINGLE_10.id,
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
     governingContractId: 'con-def',
@@ -318,7 +318,7 @@ describe('buildInvoicesForBooking', () => {
     // bill it in full — it falls to the BTM path, time-only.
     const standaloneOnly = buildInvoicesForBooking(mkBooking(), [addOn], {
       ...ctx,
-      contractPrices: [{ id: 'cp-1', contractId: 'con-t3', rvgBaseCode: BASE_SINGLE_10.code, price: 2400 }],
+      contractPrices: [{ id: 'cp-1', contractId: 'con-t3', rvgGroupId: BASE_SINGLE_10.id, price: 2400 }],
     })
     if (standaloneOnly.kind !== 'invoices') throw new Error('expected invoices')
     expect(standaloneOnly.invoices[0]!.lines[0]!.description).toContain('time units only')
@@ -327,8 +327,8 @@ describe('buildInvoicesForBooking', () => {
     const ordinalKeyed = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-t3' }, addOn], {
       ...ctx,
       contractPrices: [
-        { id: 'cp-1', contractId: 'con-t3', rvgBaseCode: BASE_SINGLE_10.code, price: 2400 },
-        { id: 'cp-2', contractId: 'con-t3', rvgBaseCode: BASE_SINGLE_10.code, procedureOrdinal: 2, price: 950 },
+        { id: 'cp-1', contractId: 'con-t3', rvgGroupId: BASE_SINGLE_10.id, price: 2400 },
+        { id: 'cp-2', contractId: 'con-t3', rvgGroupId: BASE_SINGLE_10.id, procedureOrdinal: 2, price: 950 },
       ],
     })
     if (ordinalKeyed.kind !== 'invoices') throw new Error('expected invoices')

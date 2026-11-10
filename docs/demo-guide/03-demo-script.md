@@ -159,7 +159,9 @@ working List rather than an empty one.
 
 - **Click:**
   - Go to **Anaesthetist Mobile App → Tue 28 Jul St George's List → Sarah Mitchell**.
-  - Choose procedure **20950 — Appendicectomy, laparoscopic → Start now**.
+  - Her Booking arrives with no RVG code (the hospital sends the operation text only). On the **RVG code**
+    card select **Choose**, type **appendicectomy** in the type-ahead and pick **A3 · Appendicectomy,
+    laparoscopic · B 5**, then **Start now**.
   - Without leaving Sarah, select **live clock → +1 hour**, close the popup, then select
     **Finish now**.
   - Select **Mark complete**.
@@ -169,14 +171,17 @@ working List rather than an empty one.
   tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
   active Booking is complete, so one captured Booking out of four submits nothing yet. That gate is the
   reason the List is the unit of approval, not the Booking."
-- **Expected:** Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
+- **Expected:** the RVG code card reads **A3 · Appendicectomy, laparoscopic · Base 5 units · from the RVG
+  group**, and B reads 5. Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
   **Bookings still to finish** sheet, which names each remaining Booking by time and patient with what it
   needs. The List stays `ACTIVE`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
   the seeded Review queue.
 - **Worth pointing at:** only **Mark complete** is pinned to the bottom of the phone; the anaesthetist
   captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll down
   once and the masthead folds to a nav row to make room. If Mark complete finds missing data, the Booking
-  moves directly to the first incomplete control and focuses it.
+  moves directly to the first incomplete control and focuses it. Optionally, in the type-ahead type
+  **H1** (every H1 row, each with its description and base units) or **T2** (three rows share the code,
+  told apart by description and units).
 
 **Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
 interval); the RFP defines the tiers but not the rounding.
@@ -754,7 +759,16 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   that must start on a date is a new Contract, and the old one is disabled, never deleted."
 - **Expected:** the audit entry shows the pricing before and after; no invoice changes.
 
-**Discovery points:** the demo-plausible modifier values (not an
+**Worth pointing at (optional):** **Admin → Master data → RVG groups**: the NZSA RVG 2021 groups as
+published under their anatomy headings, with AA's own beside them and unmarked; both T2s and both P6s
+are separate rows; H4 reads **10 · range 10 to 12**. Add a group, then edit, retire and restore it:
+each change is in **Admin → Audit** (entity type **rvgGroup**).
+
+**Discovery points:** the RVG groups are seeded as published with AA's own rows beside them (demo-sized;
+the full set loads at go-live), and the same code can sit on several rows, told apart by description and
+base units; the RVG code on a Procedure is optional, picked by type-ahead; a ranged group holds its
+published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the demo-plausible
+modifier values (not an
 authoritative NZSA schedule); and the concurrency model (single-user by design, audited
 last-write-wins, with the multi-source reality shown via the audit trail and live integration updates).
 

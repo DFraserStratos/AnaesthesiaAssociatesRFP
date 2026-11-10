@@ -38,7 +38,7 @@ Write one file per catalogue item, at `requirements-board/requirements/capture/r
       "setup": [],
       "states": [
         { "state": "closed", "steps": [], "highlight": ["[data-testid=procedure-header]"] },
-        { "state": "open", "caption": "Procedure picker, searching by code or name",
+        { "state": "open", "caption": "RVG code type-ahead, searching by code or description",
           "steps": [{ "click": "text=\"Change\" >> nth=0" }, { "wait": 500 }],
           "highlight": ["[role=dialog]"] }
       ]
@@ -287,7 +287,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
@@ -356,6 +356,17 @@ badge carries `data-shot=nav-badge-<section>`.
 - The directory's free text is mapped: a Fertility surgeon (`S-BANCROFT`, `S-CARMODY`, `S-HUXLEY`,
   `S-JESSOP`) reads Gynaecology, an Upper GI one (`S-MORLAND`, `S-WAINWRIGHT`) General surgery; Ms G.
   Lim reads Plastic surgery (the day grid line is "Ms G. Lim · Plastic surgery").
+- **RVG groups** (catch-up Phase 19; `?view=rvgGroups`, table `[data-shot=masters-rvg-groups]`): the NZSA
+  RVG 2021 rows as published plus AA's own beside them, unmarked, under anatomy heading rows
+  `tr[data-rvg-anatomy=<heading>]` (Supervision, Head, Neurosurgery, Neck, Upper limb, Thorax, Spine,
+  Abdomen, Perineum, Pelvic, Vascular, Lower limb, Anaesthesia in remote locations, Pain consultations
+  and procedures). Rows `tr[data-rvg-group-code=<code>]` (the printed code is not unique: three T2 rows,
+  the guide's 4 and 5 and AA's Breast reduction 6; two P6 rows, 10 and 4; three H2 rows). H4 reads
+  "10 · range 10 to 12". The hidden id (seeded `RG001`…, runtime `RGN001`…) is never shown. Row
+  actions are named "History|Edit|Retire|Restore <code> <description>"; a retired row is
+  `tr[data-retired=true]` with a neutral "Retired" pill (Show: Active by default, All). AA rows carry
+  the nearest printed code with AA's own figure, for example A3 "Appendicectomy, laparoscopic" 5 (the
+  guide's A3 is 6), LL4 "Hip, total replacement, primary" 7 (includes P1 until Phase 19b).
 - Funding tags in step-rail order, rows `[data-shot=masters-funding-tags] tr[data-tag=<id>]`:
   `TAG-SXAP` SXAP (Southern Cross Health Society), `TAG-HNZ` HNZ (Health NZ), `TAG-ACC` ACC (ACC).
   Row actions are named "Move SXAP up", "Edit SXAP", "Remove SXAP"; removing SXAP is refused (2
@@ -423,7 +434,8 @@ badge carries `data-shot=nav-badge-<section>`.
 - Susan Marsh: complete, nib insurer route.
 - David Chen: complete, self-funded. His time units were overridden manually, so the booking is
   read-only and shows "adjusted manually".
-- **Margaret Ellison** (`BK0009`): **pending**. Left total hip replacement 47516, A1 modifier,
+- **Margaret Ellison** (`BK0009`): **pending**. Left total hip replacement, RVG code LL4 "Hip, total
+  replacement, primary" (AA's row, B 7, includes positioning until Phase 19b), A1 modifier,
   start 16:05.
   - "Finish now" stamps the end time.
   - The list can't be submitted until she is complete.
@@ -599,8 +611,20 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   there is no chooser. The manual form has "Look up", which is disabled without an NHI,
   "Save booking" and "Done". Photo capture is Future Work: only the `photo-capture-future` demo
   action opens it (see Demo actions by screen).
-- **Procedure picker:** `text="Change" >> nth=0` on a booking. The search placeholder is "Search code
-  or name".
+- **RVG code type-ahead** (catch-up Phase 19; replaces the grouped procedure picker): the
+  `[data-shot=capture-procedure-code]` card (label "RVG code") → `>> text="Change"` (or "Choose" when
+  empty; "Clear" `[data-shot=rvg-code-clear]` empties it). The sheet `[data-shot=rvg-type-ahead]` is
+  `[role=dialog]` (mobile `[data-aa-mobile-product] [role=dialog]`), search placeholder "Search RVG code
+  or description" (focused on open). Rows are `button[data-rvg-code=<code>]` with
+  `[data-shot=rvg-anatomy]` and `[data-shot=rvg-base-units]` inside. Type "H1", "T2" (three rows) or
+  "H4". A ranged row shows `[data-shot=rvg-range-units]` ("Guide 10 to 12 · starts at 10"); its value
+  button "Base units 10. Type a value" opens an input (`[data-shot=rvg-range-units] input`, Enter to
+  save); outside the guide `[data-shot=rvg-outside-guide]` appears. The manual add form's chooser is
+  `[data-shot=manual-rvg-code]` ("Choose an RVG code").
+- **RVG group sheet** (Master data, catch-up Phase 19): "Add group" or a row's "Edit <code>
+  <description>" opens `[data-shot=rvg-group-sheet]` (RVG code, Anatomy heading, Description, Base
+  units, Modifier units, a range checkbox with Range from and Range to); Retire opens
+  `[data-shot=rvg-group-retire]`.
 - **Add billing line:** `role=button[name="Add billing line"]`.
 - **Add attachment** (catch-up Phase 15): `role=button[name="Add attachment"]` inside
   `[data-shot=booking-attachments]` or `[data-shot=list-attachments]` opens
@@ -839,6 +863,11 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   fixed kind's prices), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
   failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first,
   and never a Fixed price fallback.
+- RVG groups (catch-up Phase 19): `masters-rvg-groups`, `rvg-group-sheet`, `rvg-group-retire`,
+  `rvg-group-search`, `rvg-type-ahead`, `rvg-anatomy`, `rvg-base-units`, `rvg-range-units`,
+  `rvg-outside-guide`, `rvg-code-clear`, `manual-rvg-code`; the capture card keeps
+  `capture-procedure-code` (an explicit `shot` on `CaptureSection`, since its label is now "RVG code").
+  There is no `masters-rvg` hook.
 - Specialties, funding tags and fallbacks (catch-up Phase 18a): `masters-specialties`,
   `masters-funding-tags`, `specialty-sheet`, `funding-tag-sheet`, `surgeon-specialties` (the profile's
   Specialties card), `surgeon-specialties-field` (the surgeon sheet's field), `contract-specialties`,

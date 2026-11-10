@@ -17,7 +17,7 @@ import { runBillingForList } from './billingRun'
 import { prepaymentStatusFor, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
 import type { Invoice } from '../domain/types'
-import { ANAE } from '../domain/seed'
+import { ANAE, RVG_GROUP } from '../domain/seed'
 import { projectedListId, slotIdFor } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -100,7 +100,7 @@ describe('addPostOpAddendum', () => {
     expect(
       editProcedure(api, OFFICE, proc.id, {
         description: 'Acute pain service review, post-op',
-        rvgBaseCode: '36561',
+        rvgGroupId: RVG_GROUP.aaCystoscopy!,
         anaestheticStartISO: '2026-07-21T14:00:00',
         handoverISO: '2026-07-21T14:40:00',
         asaClass: 'AS1',

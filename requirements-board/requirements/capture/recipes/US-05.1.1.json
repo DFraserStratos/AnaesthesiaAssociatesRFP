@@ -4,21 +4,92 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "rvg-codes",
+      "name": "rvg-groups",
       "app": "admin",
-      "caption": "RVG codes with description, site, base units or range, and absorbed modifiers",
-      "start": "/admin/masters",
+      "caption": "Each RVG group has a code, description and base units above 0; the same code can sit on several rows",
+      "start": "/admin/masters?view=rvgGroups",
       "states": [
         {
+          "state": "table",
           "steps": [
-            {
-              "click": "role=button[name=\"RVG codes\"]"
-            },
             {
               "wait": 300
             }
           ],
-          "highlight": []
+          "highlight": [
+            "[data-shot=masters-rvg-groups] tr[data-rvg-group-code=H2]"
+          ]
+        },
+        {
+          "state": "add-group",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add group\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=rvg-group-sheet]"
+          ],
+          "caption": "AA can add its own groups and set their base units"
+        }
+      ]
+    },
+    {
+      "name": "type-ahead",
+      "app": "web",
+      "caption": "Typing H1 lists every H1 row",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H1"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-shot=rvg-base-units]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "type-ahead",
+      "app": "mobile",
+      "caption": "Typing H1 lists every H1 row",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H1"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog] [data-shot=rvg-base-units]"
+          ]
         }
       ]
     }

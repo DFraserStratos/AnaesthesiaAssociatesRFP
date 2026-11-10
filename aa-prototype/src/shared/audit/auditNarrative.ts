@@ -175,11 +175,30 @@ const OWN_MOVE_ROUTE_LABELS = { office: 'The office', colleague: 'A colleague' }
 const OWN_MOVE_CAUSE_LABELS = { move: 'Moved by its anaesthetist', unavailable: 'Marked not available' } as const
 
 /**
+ * Names for ids an audit value may carry, from the reader's masters (catch-up
+ * Phase 19): an RVG group's hidden id is never shown, so it reads as its code
+ * and description.
+ */
+export interface AuditNames {
+  rvgGroup?: (id: string) => string | undefined
+}
+
+/** The names a reader passes from its masters: an RVG group as "H4 · Complex procedures…". */
+export function auditNamesFor(masters: { rvgGroups: Readonly<Record<string, { code: string; description: string }>> }): AuditNames {
+  return {
+    rvgGroup: (id) => {
+      const g = masters.rvgGroups[id]
+      return g !== undefined ? `${g.code} · ${g.description}` : undefined
+    },
+  }
+}
+
+/**
  * One audited value as a reader-facing string. Never JSON: an unrecognised
  * object degrades to its labelled leading fields, so a shape added later reads
  * as English instead of a brace dump.
  */
-export function formatAuditValue(key: string, value: unknown): string {
+export function formatAuditValue(key: string, value: unknown, names?: AuditNames): string {
   // A List with no anaesthetist is a Draft List: its flag, not "not set" (catch-up Phase 31).
   if ((value === undefined || value === null) && key === 'anaesthetistId') return UNASSIGNED
   if (value === undefined || value === null) return NOT_SET
@@ -190,6 +209,11 @@ export function formatAuditValue(key: string, value: unknown): string {
   }
   if (typeof value === 'string') {
     if (value.trim() === '') return 'empty'
+    // An RVG group by its code and description, never its hidden id (catch-up Phase 19).
+    if (key === 'rvgGroupId') {
+      if (names?.rvgGroup === undefined) return 'an RVG code'
+      return names.rvgGroup(value) ?? 'an RVG code no longer listed'
+    }
     if (DATE_TIME.test(value)) return format(parseISO(value), 'd MMM HH:mm')
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
     // A session reads AM, PM or Out-of-hours (catch-up Phase 32c).
@@ -220,6 +244,8 @@ export function formatAuditValue(key: string, value: unknown): string {
     return value.length === 1 ? '1 item' : `${value.length} items`
   }
   if (isRecord(value)) {
+    // An RVG group's published range (catch-up Phase 19): "10 to 12".
+    if (key === 'baseUnitsRange' && typeof value.min === 'number' && typeof value.max === 'number') return `${value.min} to ${value.max}`
     // A Contract's pricing (catch-up Phase 18): "RVG at $95.00 per unit".
     if (key === 'pricing' && typeof value.kind === 'string' && Object.hasOwn(PRICING_KIND_LABEL, value.kind)) {
       return pricingLabel(value as unknown as ContractPricing)
@@ -229,7 +255,7 @@ export function formatAuditValue(key: string, value: unknown): string {
     const parts = Object.entries(value)
       .filter(([, v]) => v !== undefined)
       .slice(0, 3)
-      .map(([k, v]) => `${fieldLabel(k).toLowerCase()} ${formatAuditValue(k, v)}`)
+      .map(([k, v]) => `${fieldLabel(k).toLowerCase()} ${formatAuditValue(k, v, names)}`)
     return parts.length === 0 ? NOT_SET : parts.join(' · ')
   }
   return String(value)
@@ -250,7 +276,7 @@ function unionKeys(before: Record<string, unknown> | null, after: Record<string,
  * fields and moved one shows the one. A key present but `undefined` renders as
  * "not set" (or, for a cleared B/T/M capture, "back to the seeded value").
  */
-export function auditFieldChanges(entry: AuditEntry): AuditFieldChange[] {
+export function auditFieldChanges(entry: AuditEntry, names?: AuditNames): AuditFieldChange[] {
   const before = isRecord(entry.before) ? entry.before : null
   const after = isRecord(entry.after) ? entry.after : null
 
@@ -258,8 +284,8 @@ export function auditFieldChanges(entry: AuditEntry): AuditFieldChange[] {
   if (before === null && after === null) {
     if (entry.before === undefined && entry.after === undefined) return []
     const change: AuditFieldChange = { key: 'value', label: 'Value' }
-    if (entry.before !== undefined) change.before = formatAuditValue('value', entry.before)
-    if (entry.after !== undefined) change.after = formatAuditValue('value', entry.after)
+    if (entry.before !== undefined) change.before = formatAuditValue('value', entry.before, names)
+    if (entry.after !== undefined) change.after = formatAuditValue('value', entry.after, names)
     return [change]
   }
 
@@ -272,13 +298,13 @@ export function auditFieldChanges(entry: AuditEntry): AuditFieldChange[] {
 
     const change: AuditFieldChange = { key, label: fieldLabel(key) }
     if (before !== null) {
-      change.before = formatAuditValue(key, beforeValue)
+      change.before = formatAuditValue(key, beforeValue, names)
     }
     if (after !== null) {
       change.after =
         afterValue === undefined && beforeValue !== undefined && SEEDED_FALLBACK_KEYS.has(key)
           ? CLEARED_TO_SEED
-          : formatAuditValue(key, afterValue)
+          : formatAuditValue(key, afterValue, names)
     }
     changes.push(change)
   }
@@ -329,14 +355,14 @@ function sameGesture(a: AuditEntry, b: AuditEntry): boolean {
  * by accident. The steps inside a group read newest first too, matching the
  * feed around them.
  */
-export function coalesceAudit(entries: readonly AuditEntry[]): AuditGroup[] {
+export function coalesceAudit(entries: readonly AuditEntry[], names?: AuditNames): AuditGroup[] {
   const sorted = sortAuditNewestFirst(entries)
   const groups: AuditGroup[] = []
 
   let i = 0
   while (i < sorted.length) {
     const entry = sorted[i]!
-    const changes = auditFieldChanges(entry)
+    const changes = auditFieldChanges(entry, names)
 
     // Only a single-field edit can coalesce: a multi-field patch has no one
     // value to state a net movement for.
@@ -353,7 +379,7 @@ export function coalesceAudit(entries: readonly AuditEntry[]): AuditGroup[] {
     while (j < sorted.length) {
       const next = sorted[j]!
       if (!sameGesture(entry, next)) break
-      const nextChanges = auditFieldChanges(next)
+      const nextChanges = auditFieldChanges(next, names)
       if (nextChanges.length !== 1 || nextChanges[0]!.key !== key) break
       steps.push(next)
       lastChanges = nextChanges

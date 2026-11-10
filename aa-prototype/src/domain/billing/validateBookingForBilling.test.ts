@@ -19,7 +19,7 @@ import { noRouteContractMessage } from './contracts'
 function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingContext {
   return {
     anaesthetist: mkAnaesthetist({ unitValue: 30 }),
-    rvgCodes: { GA10: BASE_SINGLE_10, NR59: BASE_RANGE_5_9 },
+    rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10, [BASE_RANGE_5_9.id]: BASE_RANGE_5_9 },
     contracts: {},
     contractPrices: [],
     // An insurer with an insurer Party ('ins-direct'); 'ins-noparty' has none (catch-up Phase 18, RV-39).
@@ -36,7 +36,7 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
 /** A fully billable RVG procedure on the contract-holder route. */
 function validProcedure(overrides: Partial<Procedure> = {}): Procedure {
   return mkProcedure({
-    rvgBaseCode: 'GA10',
+    rvgGroupId: 'RG-T-GA10',
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
     asaClass: 'AS3',
@@ -86,10 +86,19 @@ describe('validateBookingForBilling — required data', () => {
     expect(fieldsOf(failures)).toContain('billingRoute')
   })
 
-  it('fails when there is no base code and no non-RVG billing line', () => {
-    const p = mkProcedure()
+  it('does not demand an RVG code: it is optional (catch-up Phase 19; completion rules are Phase 21)', () => {
+    const p = mkProcedure({ rvgGroupId: undefined })
     const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(fieldsOf(failures)).toContain('rvgBaseCode')
+    expect(fieldsOf(failures)).not.toContain('rvgGroupId')
+    expect(failures.some((f) => /RVG/.test(f.message))).toBe(false)
+  })
+
+  it('fails an RVG code that no longer points at a row', () => {
+    const p = validProcedure({ rvgGroupId: 'RG-T-GONE' })
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
+    expect(failures.find((f) => f.field === 'rvgGroupId')?.message).toBe(
+      'The RVG code on this Procedure is no longer in the RVG groups. Choose it again.',
+    )
   })
 
   it('passes with no base code when a non-RVG line exists', () => {
@@ -118,14 +127,17 @@ describe('validateBookingForBilling — required data', () => {
     expect(failures.some((f) => f.field === 'handoverISO' && /after/.test(f.message))).toBe(true)
   })
 
-  it('fails a range base code with a missing or out-of-range selection', () => {
-    const missing = validProcedure({ rvgBaseCode: 'NR59' })
-    expect(fieldsOf(validateBookingForBilling(booking, [missing], mkCtx()))).toContain('baseUnitsSelected')
+  it('accepts any base-unit value on a ranged group (D3, RV-10): nothing unchosen, nothing out of range refused', () => {
+    const unchosen = validProcedure({ rvgGroupId: BASE_RANGE_5_9.id })
+    expect(validateBookingForBilling(booking, [unchosen], mkCtx())).toEqual([])
 
-    const outOfRange = validProcedure({ rvgBaseCode: 'NR59', baseUnitsSelected: 12 })
-    expect(fieldsOf(validateBookingForBilling(booking, [outOfRange], mkCtx()))).toContain('baseUnitsSelected')
+    const outside = validProcedure({ rvgGroupId: BASE_RANGE_5_9.id, baseUnitsSelected: 12 })
+    expect(validateBookingForBilling(booking, [outside], mkCtx())).toEqual([])
 
-    const inRange = validProcedure({ rvgBaseCode: 'NR59', baseUnitsSelected: 7 })
+    const typed = validProcedure({ rvgGroupId: BASE_SINGLE_10.id, baseUnitsCaptured: { units: 40, source: 'overridden' } })
+    expect(validateBookingForBilling(booking, [typed], mkCtx())).toEqual([])
+
+    const inRange = validProcedure({ rvgGroupId: BASE_RANGE_5_9.id, baseUnitsSelected: 7 })
     expect(validateBookingForBilling(booking, [inRange], mkCtx())).toEqual([])
   })
 })

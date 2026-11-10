@@ -20,6 +20,8 @@ const ZERO_BTM: BtmBreakdown = {
   base: { units: 0, source: 'seeded' },
   time: { units: 0, source: 'seeded' },
   modifiers: { units: 0, source: 'seeded' },
+  baseSource: 'none',
+  baseOutsideGuide: false,
   refusedModifiers: [],
   totalUnits: 0,
 }
@@ -110,7 +112,7 @@ describe('reviewFlags over seeded data (real calculator)', () => {
       booking: c,
       procedures: proceduresForBooking(s, c.id).map((p, i) => {
         const view = procedureFee({ procedure: p, list, ordinal: i + 1, masters: s.masters, billingLines: s.schedule.billingLines })
-        return { procedure: p, fee: view.fee, baseCode: view.baseCode }
+        return { procedure: p, fee: view.fee, rvgGroup: view.rvgGroup }
       }),
     }))
     const flags = reviewFlagsForList(bookings)

@@ -8,7 +8,6 @@ import { SurgeonGroupsView, SurgeonRoomsView, SurgeonsView } from './SurgeonsVie
 import {
   ModifierCodesView,
   RecurringBookingsMaster,
-  RvgCodesView,
   XeroArchivingView,
 } from './ReferenceViews'
 import { MASTERS_NAV, parseMastersView, type MastersView } from './view'
@@ -18,6 +17,7 @@ import { PartiesView } from './PartiesView'
 import { ContractsView } from './ContractsView'
 import { SpecialtiesView } from './SpecialtiesView'
 import { FundingTagsView } from './FundingTagsView'
+import { RvgGroupsView } from './RvgGroupsView'
 
 interface MasterDataProps {
   actor: Actor
@@ -73,7 +73,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'surgeons' && <SurgeonsView actor={actor} />}
         {view === 'surgeonRooms' && <SurgeonRoomsView actor={actor} />}
         {view === 'surgeonGroups' && <SurgeonGroupsView actor={actor} />}
-        {view === 'rvgCodes' && <RvgCodesView />}
+        {view === 'rvgGroups' && <RvgGroupsView actor={actor} />}
         {view === 'modifierCodes' && <ModifierCodesView />}
         {view === 'scheduleSettings' && <ScheduleSettingsView actor={actor} />}
         {view === 'availability-statuses' && <AvailabilityStatusesView actor={actor} />}

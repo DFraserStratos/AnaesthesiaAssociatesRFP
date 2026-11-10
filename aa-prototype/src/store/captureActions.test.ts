@@ -291,7 +291,7 @@ describe('addProcedure', () => {
     const procedure = api.getState().schedule.procedures[outcome.value.procedureId]
     expect(procedure?.isAdditional).toBe(true)
     expect(procedure?.description).toBe('')
-    expect(procedure?.rvgBaseCode).toBeUndefined()
+    expect(procedure?.rvgGroupId).toBeUndefined()
     // The funding context mirrors the first procedure (the split Booking's
     // second-procedure pattern). "Add another procedure" is the only way to add
     // an additional Procedure; Copy makes a new Booking (catch-up Phase 15).

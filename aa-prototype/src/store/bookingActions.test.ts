@@ -10,7 +10,7 @@ import { createBooking } from './bookingActions'
 import { authoriseList, submitList } from './lifecycle'
 import { bookingsForList, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, PAT, SEED_MARKERS } from '../domain/seed'
+import { ANAE, PAT, RVG_GROUP, SEED_MARKERS } from '../domain/seed'
 
 const SOUTER: Actor = {
   who: 'Dr Melanie Souter',
@@ -48,7 +48,7 @@ describe('createBooking', () => {
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
       operation: 'Diagnostic laparoscopy',
-      rvgBaseCode: '20941',
+      rvgGroupId: RVG_GROUP.a3!,
       billingRoute: 'hospital',
       scheduledTime: '17:00',
     })
@@ -80,7 +80,7 @@ describe('createBooking', () => {
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
       patient: { nhi: 'cqy9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' },
       operation: 'Laparoscopic cholecystectomy',
-      rvgBaseCode: '20941',
+      rvgGroupId: RVG_GROUP.a3!,
       billingRoute: 'hospital',
     })
 
@@ -147,7 +147,7 @@ describe('createBooking', () => {
     const outcome = createBooking(api, SOUTER, amList, {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
       operation: 'Diagnostic laparoscopy',
-      rvgBaseCode: '20941',
+      rvgGroupId: RVG_GROUP.a3!,
       billingRoute: 'hospital',
       scheduledTime: '11:30',
     })

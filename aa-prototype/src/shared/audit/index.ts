@@ -5,11 +5,13 @@ export {
   CLEARED_TO_SEED,
   NOT_SET,
   auditFieldChanges,
+  auditNamesFor,
   coalesceAudit,
   formatAuditStamp,
   formatAuditValue,
   sortAuditNewestFirst,
   summariseAuditChanges,
   type AuditFieldChange,
+  type AuditNames,
   type AuditGroup,
 } from './auditNarrative'

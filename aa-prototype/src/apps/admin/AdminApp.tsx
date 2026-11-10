@@ -229,7 +229,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // The warning routine, read once for the day view (catch-up Phase 15a): the
   // per-List outline on the selected date and every open warning for the
   // To-do card (all dates).
-  const warningState = useMemo(() => ({ schedule, billing, appSettings, clock }), [schedule, billing, appSettings, clock])
+  const warningState = useMemo(() => ({ schedule, billing, appSettings, clock, masters }), [schedule, billing, appSettings, clock, masters])
   const warningFlags = useMemo(() => warningSummaryByList(warningState, selectedDate), [warningState, selectedDate])
   const todoRows = useMemo(() => openWarnings(warningState), [warningState])
 

@@ -25,7 +25,7 @@ import { projectedListId } from '../slots'
 import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
 import { CONTRACT } from './contracts'
 import { BP, PAT, genericPatientIds } from './patients'
-import { EYE_CODES, GENERAL_CODES, RVG_CODES } from './rvgCodes'
+import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, rvgGroupIdForLegacyCode } from './rvgGroups'
 import { compareSessions } from '../outOfHours'
 
 // ---------------------------------------------------------------------------
@@ -92,7 +92,8 @@ const THU16 = '2026-07-16'
 const FRI17 = '2026-07-17'
 
 const NAME_BY_ID = new Map(ANAESTHETISTS.map((a) => [a.registrationNumber, a.name]))
-const RVG_BY_CODE = new Map(RVG_CODES.map((r) => [r.code, r]))
+/** The legacy five-digit codes the scenarios and generator still name, through the one seed-only bridge (catch-up Phase 19). */
+const RVG_BY_CODE = new Map(Object.entries(LEGACY_CODE_TO_RVG_GROUP))
 
 function iso(dateISO: string, time: string): string {
   return `${dateISO}T${time}:00`
@@ -250,7 +251,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   interface ProcedureSpec {
     description: string
-    rvgBaseCode?: string
+    /** A legacy five-digit code, written to the Procedure as its RVG group (`LEGACY_CODE_TO_RVG_GROUP`). */
+    legacyCode?: string
     baseUnitsSelected?: number
     startISO?: string
     handoverISO?: string
@@ -276,7 +278,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       isAdditional: spec.isAdditional ?? false,
       selectedModifierCodes: spec.selectedModifierCodes ?? [],
     }
-    if (spec.rvgBaseCode !== undefined) procedure.rvgBaseCode = spec.rvgBaseCode
+    if (spec.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(spec.legacyCode)
     if (spec.baseUnitsSelected !== undefined) procedure.baseUnitsSelected = spec.baseUnitsSelected
     if (spec.startISO !== undefined) procedure.anaestheticStartISO = spec.startISO
     if (spec.handoverISO !== undefined) procedure.handoverISO = spec.handoverISO
@@ -340,7 +342,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     })
     addProcedure(booking, {
       description: s.desc,
-      rvgBaseCode: s.code,
+      legacyCode: s.code,
       startISO: iso(TUE21, s.start),
       handoverISO: iso(TUE21, s.end),
       asaClass: s.asa,
@@ -366,7 +368,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(taneBooking, {
     description: 'Laparoscopic cholecystectomy',
-    rvgBaseCode: '20941',
+    legacyCode: '20941',
     startISO: iso(TUE21, '13:02'),
     handoverISO: iso(TUE21, '14:18'),
     asaClass: 'AS1',
@@ -384,7 +386,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(marshBooking, {
     description: 'Right knee arthroscopy',
-    rvgBaseCode: '49558',
+    legacyCode: '49558',
     startISO: iso(TUE21, '14:20'),
     handoverISO: iso(TUE21, '15:05'),
     asaClass: 'AS1',
@@ -402,7 +404,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(chenBooking, {
     description: 'Inguinal hernia repair',
-    rvgBaseCode: '49115',
+    legacyCode: '49115',
     startISO: iso(TUE21, '15:12'),
     handoverISO: iso(TUE21, '15:58'),
     asaClass: 'AS1',
@@ -420,7 +422,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(ellisonBooking, {
     description: 'Left total hip replacement',
-    rvgBaseCode: '47516',
+    legacyCode: '47516',
     // No handover: the finish is stamped LIVE in the demo ("Tap Finish now →
     // fee ticks up", the mockup's demo script). The post-capture $344.50/13u
     // pins moved to btmCapture.test.ts (Decisions log 2026-07-23).
@@ -460,7 +462,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     })
     const procedure = addProcedure(booking, {
       description: s.desc,
-      rvgBaseCode: s.code,
+      legacyCode: s.code,
       startISO: iso(MON20, s.start),
       handoverISO: iso(MON20, s.end),
       asaClass: s.asa,
@@ -486,7 +488,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(cancelledBooking, {
     description: 'Cystoscopy',
-    rvgBaseCode: '36561',
+    legacyCode: '36561',
     billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0777',
@@ -520,7 +522,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     })
     addProcedure(booking, {
       description: s.desc,
-      rvgBaseCode: s.code,
+      legacyCode: s.code,
       startISO: iso(FRI17, s.start),
       handoverISO: iso(FRI17, s.end),
       asaClass: s.asa,
@@ -547,7 +549,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(splitBooking, {
     description: 'Inguinal hernia repair',
-    rvgBaseCode: '49115',
+    legacyCode: '49115',
     startISO: iso(MON20, '08:05'),
     handoverISO: iso(MON20, '09:15'),
     asaClass: 'AS2',
@@ -557,7 +559,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(splitBooking, {
     description: 'Umbilical hernia repair, same anaesthetic',
-    rvgBaseCode: '49120',
+    legacyCode: '49120',
     startISO: iso(MON20, '09:15'),
     handoverISO: iso(MON20, '09:45'),
     asaClass: 'AS2',
@@ -577,7 +579,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // Deliberately missing billing reference #2.
   const missingRefProc2 = addProcedure(missingRefBooking, {
     description: 'Laparoscopic cholecystectomy',
-    rvgBaseCode: '20941',
+    legacyCode: '20941',
     startISO: iso(MON20, '09:58'),
     handoverISO: iso(MON20, '11:00'),
     asaClass: 'AS1',
@@ -594,7 +596,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(monAmFiller, {
     description: 'Appendicectomy, laparoscopic',
-    rvgBaseCode: '20950',
+    legacyCode: '20950',
     startISO: iso(MON20, '11:12'),
     handoverISO: iso(MON20, '12:05'),
     asaClass: 'AS2',
@@ -622,7 +624,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   const twoFunderProc = addProcedure(twoFunderBooking, {
     description: 'Knee arthroscopy, funding split with nib',
-    rvgBaseCode: '49558',
+    legacyCode: '49558',
     startISO: iso(MON20, '14:00'),
     handoverISO: iso(MON20, '15:00'),
     asaClass: 'AS1',
@@ -651,7 +653,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(rangeBooking, {
     description: 'Complex skin flap repair',
-    rvgBaseCode: '45030',
+    legacyCode: '45030',
     baseUnitsSelected: 5,
     startISO: iso(MON20, '15:15'),
     handoverISO: iso(MON20, '16:20'),
@@ -670,7 +672,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(monPmFiller, {
     description: 'Breast reduction',
-    rvgBaseCode: '45200',
+    legacyCode: '45200',
     startISO: iso(MON20, '16:30'),
     handoverISO: iso(MON20, '17:25'),
     asaClass: 'AS1',
@@ -696,7 +698,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(bariatricBooking, {
     description: 'Gastric bypass, laparoscopic',
-    rvgBaseCode: '20880',
+    legacyCode: '20880',
     baseUnitsSelected: 10,
     startISO: iso(TUE14, '08:10'),
     handoverISO: iso(TUE14, '10:15'),
@@ -707,7 +709,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(bariatricBooking, {
     description: 'Umbilical hernia repair, concurrent',
-    rvgBaseCode: '49120',
+    legacyCode: '49120',
     startISO: iso(TUE14, '10:15'),
     handoverISO: iso(TUE14, '10:45'),
     asaClass: 'AS3',
@@ -754,7 +756,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(reimbursementBooking, {
     description: 'Shoulder arthroscopy, patient to claim from AIA Health (reimbursement)',
-    rvgBaseCode: '48939',
+    legacyCode: '48939',
     startISO: iso(THU16, '08:20'),
     handoverISO: iso(THU16, '09:30'),
     asaClass: 'AS2',
@@ -773,7 +775,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(cosAccBooking, {
     description: 'ACL reconstruction, ACC claim via Canterbury Orthopaedic Surgeons',
-    rvgBaseCode: '49561',
+    legacyCode: '49561',
     startISO: iso(THU09, '08:05'),
     handoverISO: iso(THU09, '09:25'),
     asaClass: 'AS2',
@@ -793,7 +795,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(mitchellFirst, {
     description: 'Appendicectomy, laparoscopic',
-    rvgBaseCode: '20950',
+    legacyCode: '20950',
     startISO: iso(TUE14, '08:10'),
     handoverISO: iso(TUE14, '09:05'),
     asaClass: 'AS1',
@@ -815,7 +817,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(guardianBooking, {
     description: 'Strabismus correction, guardian to be invoiced',
-    rvgBaseCode: '42794',
+    legacyCode: '42794',
     billingRoute: 'billableParty',
     billablePartyId: BP.guardian,
     patientPaymentCategory: 'selfFundedPostProcedure',
@@ -854,7 +856,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(provisionalBooking, {
     description: 'Inguinal hernia repair, booked from PDF referral (NHI pending)',
-    rvgBaseCode: '49115',
+    legacyCode: '49115',
   })
   const mitchellRepeat = addBooking({
     listId: souterMon27,
@@ -863,7 +865,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(mitchellRepeat, {
     description: 'Laparoscopic cholecystectomy',
-    rvgBaseCode: '20941',
+    legacyCode: '20941',
     billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2140',
@@ -902,7 +904,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(prepaidBooking, {
     description: 'Septoplasty, hospital funded',
-    rvgBaseCode: '41789',
+    legacyCode: '41789',
     startISO: iso(FRI24, '13:00'),
     handoverISO: iso(FRI24, '14:00'),
     asaClass: 'AS1',
@@ -912,7 +914,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(prepaidBooking, {
     description: 'Rhinoplasty, cosmetic component, self funded (pre-paid in full)',
-    rvgBaseCode: '41800',
+    legacyCode: '41800',
     startISO: iso(FRI24, '14:00'),
     handoverISO: iso(FRI24, '15:00'),
     asaClass: 'AS1',
@@ -938,7 +940,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(failureBooking, {
     description: 'ACL reconstruction, ACC via Canterbury Orthopaedic Surgeons',
-    rvgBaseCode: '49561',
+    legacyCode: '49561',
     startISO: iso(THU16, '08:05'),
     handoverISO: iso(THU16, '09:30'),
     asaClass: 'AS2',
@@ -955,7 +957,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(failureSiblingBooking, {
     description: 'Knee arthroscopy',
-    rvgBaseCode: '49558',
+    legacyCode: '49558',
     startISO: iso(THU16, '09:50'),
     handoverISO: iso(THU16, '10:35'),
     asaClass: 'AS1',
@@ -986,16 +988,16 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
 
   const s13TimeBooking = addBooking({ listId: souterTue04AugAm, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
-  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0901' })
+  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', legacyCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0901' })
 
   const s13MoveBooking = addBooking({ listId: souterMon03AugPm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
-  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0902' })
+  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', legacyCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0902' })
 
   const s14Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
-  addProcedure(s14Booking, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0903' })
+  addProcedure(s14Booking, { description: 'Total hip replacement', legacyCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0903' })
 
   const s15Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
-  addProcedure(s15Booking, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0904' })
+  addProcedure(s15Booking, { description: 'Cystoscopy', legacyCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0904' })
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
   // completed + valid, so index.ts marks the List SUBMITTED. The S14
@@ -1010,7 +1012,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(lockedTargetBooking, {
     description: 'TURP',
-    rvgBaseCode: '36840',
+    legacyCode: '36840',
     startISO: iso(FRI17, '10:05'),
     handoverISO: iso(FRI17, '11:00'),
     asaClass: 'AS2',
@@ -1036,7 +1038,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     const rvg = RVG_BY_CODE.get(code)
     addProcedure(booking, {
       description: rvg?.description ?? 'Eye procedure',
-      rvgBaseCode: code,
+      legacyCode: code,
       billingRoute: 'hospital',
       governingContractId: CONTRACT.cesRvg,
       billingReference: `CE-2026-05${41 + i}`,
@@ -1056,7 +1058,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     const rvg = RVG_BY_CODE.get(code)
     addProcedure(booking, {
       description: rvg?.description ?? 'Acute procedure',
-      rvgBaseCode: code,
+      legacyCode: code,
       billingRoute: 'hospital',
       governingContractId: CONTRACT.healthNz,
       billingReference: `HNZ-2026-34${11 + i}`,
@@ -1100,7 +1102,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     })
     addProcedure(booking, {
       description: RVG_BY_CODE.get(s.code)?.description ?? 'Orthopaedic procedure',
-      rvgBaseCode: s.code,
+      legacyCode: s.code,
       billingRoute: 'hospital',
       governingContractId: CONTRACT.stgRvg,
       billingReference: s.ref,
@@ -1157,11 +1159,12 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       const asa = asaDraw < 0.55 ? 'AS1' : asaDraw < 0.85 ? 'AS2' : 'AS3'
       const spec: ProcedureSpec = {
         description: rvg?.description ?? 'Procedure',
-        rvgBaseCode: code,
+        legacyCode: code,
         asaClass: asa,
       }
-      if (rvg !== undefined && rvg.baseUnits.kind === 'range') {
-        spec.baseUnitsSelected = rvg.baseUnits.min + Math.floor(rng() * (rvg.baseUnits.max - rvg.baseUnits.min + 1))
+      // The draw reads the legacy range, so the RNG sequence is unchanged.
+      if (rvg?.legacyRange !== undefined) {
+        spec.baseUnitsSelected = rvg.legacyRange.min + Math.floor(rng() * (rvg.legacyRange.max - rvg.legacyRange.min + 1))
       }
       if (captured) {
         spec.startISO = iso(list.dateISO, minutesToTime(start))

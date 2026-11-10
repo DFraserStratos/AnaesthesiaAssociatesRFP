@@ -202,6 +202,13 @@ test('Start now becomes the travelling Finish action without a validation-focus 
   await page.waitForTimeout(90)
   await page.screenshot({ path: 'visual/shots/mobile-time-action-slide.png', fullPage: true })
 
+  // An RVG code makes the times required (the code itself is optional since
+  // catch-up Phase 19), so Mark complete finds the missing handover.
+  const code = page.locator('[data-shot=capture-procedure-code]').first()
+  await code.getByText('Choose', { exact: true }).click()
+  await page.getByPlaceholder('Search RVG code or description').fill('H1')
+  await page.locator('button[data-rvg-code=H1]').first().click()
+  await expect(code).toContainText('Base 4 units')
   await page.getByRole('button', { name: 'Mark complete' }).click()
   const validationFocus = page.locator('[data-validation-focus="true"]')
   await expect(validationFocus).toBeFocused()

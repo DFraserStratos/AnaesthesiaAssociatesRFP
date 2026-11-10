@@ -177,7 +177,7 @@ describe('Resolve & retry after the review pass', () => {
     triggerFailure(api)
     const failedCaseId = failedCases(api.getState())[0]!.id
     const proc = api.getState().schedule.procedures[losaProcedureId(api)]!
-    expect(addContractPrice(api, OFFICE, { contractId: CONTRACT.cosFixed, rvgBaseCode: proc.rvgBaseCode!, price: 1100 }).ok).toBe(true)
+    expect(addContractPrice(api, OFFICE, { contractId: CONTRACT.cosFixed, rvgGroupId: proc.rvgGroupId!, price: 1100 }).ok).toBe(true)
     expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, proc.id, CONTRACT.cosFixed).ok).toBe(true)
     expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
     expect(invoicesForBooking(api, marker('billingFailureBooking'))[0]!.total).toBe(1265)

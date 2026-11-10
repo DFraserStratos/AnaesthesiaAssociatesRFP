@@ -49,6 +49,7 @@ import { roundToCents } from '../billing/money'
 import { GST_RATE } from '../billing/invoiceBuild'
 import { xeroIndividualContactName } from '../xeroContact'
 import { ANAE, HOSP, ORG, SURG } from './cast'
+import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { BP, genericPatientIds, PAT } from './patients'
 
 /** The masters buildHistory needs (structural — avoids a circular import of SeedMasters). */
@@ -75,7 +76,8 @@ export interface HistoryAccount {
    */
   listHospitalId?: string
   description: string
-  rvgBaseCode?: string
+  /** A legacy five-digit code, written to the Procedure as its RVG group (`LEGACY_CODE_TO_RVG_GROUP`). */
+  legacyCode?: string
   /** Service date (the past List date). */
   serviceISO: string
   /** When the ACCREC was raised (aging basis). */
@@ -129,7 +131,7 @@ function lookback(
   patientId: string,
   where: { counterparty: CounterpartyRef; surgeonId: string; hospitalId?: string; listHospitalId?: string },
   description: string,
-  rvgBaseCode: string | undefined,
+  legacyCode: string | undefined,
   total: number,
   accRelated: boolean,
   money: { raised: string; paid: string; disbursed: string },
@@ -139,7 +141,7 @@ function lookback(
     patientId,
     ...where,
     description,
-    ...(rvgBaseCode !== undefined ? { rvgBaseCode } : {}),
+    ...(legacyCode !== undefined ? { legacyCode } : {}),
     serviceISO: listDate,
     raisedISO: `${money.raised}T09:00:00`,
     total,
@@ -221,18 +223,18 @@ export const LOOKBACK_DATE_ISO = '2026-03-13'
  */
 const ACCOUNTS: readonly HistoryAccount[] = [
   // --- 8 outstanding (unpaid) across the aging buckets ---
-  { key: 'oa01', patientId: PAT.tane, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Knee arthroscopy', rvgBaseCode: '49558', serviceISO: '2026-06-26', raisedISO: '2026-06-26T09:00:00', total: 845.0, accRelated: false, paidState: 'unpaid' },
-  { key: 'oa02', patientId: PAT.marsh, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', rvgBaseCode: '20941', serviceISO: '2026-06-24', raisedISO: '2026-06-24T09:00:00', total: 1240.0, accRelated: false, paidState: 'missedWebhook', paidAtISO: '2026-07-20T10:00:00' },
-  { key: 'oa03', patientId: PAT.chen, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Hip hemiarthroplasty', rvgBaseCode: '47519', serviceISO: '2026-06-22', raisedISO: '2026-06-22T09:00:00', total: 520.5, accRelated: false, paidState: 'unpaid' },
-  { key: 'oa04', patientId: PAT.prentice, counterparty: HOSP_STG, surgeonId: SURG.doyle, hospitalId: HOSP.stg, description: 'ACC knee reconstruction', rvgBaseCode: '49558', serviceISO: '2026-06-04', raisedISO: '2026-06-04T09:00:00', total: 980.0, accRelated: true, paidState: 'unpaid' },
-  { key: 'oa05', patientId: PAT.holt, counterparty: HOSP_CPH, surgeonId: SURG.tan, hospitalId: HOSP.cph, description: 'Cystoscopy', rvgBaseCode: '50120', serviceISO: '2026-05-27', raisedISO: '2026-05-27T09:00:00', total: 1410.0, accRelated: false, paidState: 'unpaid' },
-  { key: 'oa06', patientId: PAT.foster, counterparty: ORG_COS, surgeonId: SURG.okafor, listHospitalId: HOSP.sx, description: 'ACC orthopaedic repair', rvgBaseCode: '47516', serviceISO: '2026-05-06', raisedISO: '2026-05-06T09:00:00', total: 1930.0, accRelated: true, paidState: 'unpaid' },
-  { key: 'oa07', patientId: PAT.mitchell, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Appendicectomy, laparoscopic', rvgBaseCode: '20950', serviceISO: '2026-04-14', raisedISO: '2026-04-14T09:00:00', total: 610.0, accRelated: false, paidState: 'unpaid' },
-  { key: 'oa08', patientId: PAT.walker, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Knee arthroscopy', rvgBaseCode: '49558', serviceISO: '2026-03-18', raisedISO: '2026-03-18T09:00:00', total: 250.0, accRelated: false, paidState: 'unpaid' },
+  { key: 'oa01', patientId: PAT.tane, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Knee arthroscopy', legacyCode: '49558', serviceISO: '2026-06-26', raisedISO: '2026-06-26T09:00:00', total: 845.0, accRelated: false, paidState: 'unpaid' },
+  { key: 'oa02', patientId: PAT.marsh, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', legacyCode: '20941', serviceISO: '2026-06-24', raisedISO: '2026-06-24T09:00:00', total: 1240.0, accRelated: false, paidState: 'missedWebhook', paidAtISO: '2026-07-20T10:00:00' },
+  { key: 'oa03', patientId: PAT.chen, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Hip hemiarthroplasty', legacyCode: '47519', serviceISO: '2026-06-22', raisedISO: '2026-06-22T09:00:00', total: 520.5, accRelated: false, paidState: 'unpaid' },
+  { key: 'oa04', patientId: PAT.prentice, counterparty: HOSP_STG, surgeonId: SURG.doyle, hospitalId: HOSP.stg, description: 'ACC knee reconstruction', legacyCode: '49558', serviceISO: '2026-06-04', raisedISO: '2026-06-04T09:00:00', total: 980.0, accRelated: true, paidState: 'unpaid' },
+  { key: 'oa05', patientId: PAT.holt, counterparty: HOSP_CPH, surgeonId: SURG.tan, hospitalId: HOSP.cph, description: 'Cystoscopy', legacyCode: '50120', serviceISO: '2026-05-27', raisedISO: '2026-05-27T09:00:00', total: 1410.0, accRelated: false, paidState: 'unpaid' },
+  { key: 'oa06', patientId: PAT.foster, counterparty: ORG_COS, surgeonId: SURG.okafor, listHospitalId: HOSP.sx, description: 'ACC orthopaedic repair', legacyCode: '47516', serviceISO: '2026-05-06', raisedISO: '2026-05-06T09:00:00', total: 1930.0, accRelated: true, paidState: 'unpaid' },
+  { key: 'oa07', patientId: PAT.mitchell, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Appendicectomy, laparoscopic', legacyCode: '20950', serviceISO: '2026-04-14', raisedISO: '2026-04-14T09:00:00', total: 610.0, accRelated: false, paidState: 'unpaid' },
+  { key: 'oa08', patientId: PAT.walker, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Knee arthroscopy', legacyCode: '49558', serviceISO: '2026-03-18', raisedISO: '2026-03-18T09:00:00', total: 250.0, accRelated: false, paidState: 'unpaid' },
   // --- paid accounts (feed the GST report; fully received + disbursed) ---
-  { key: 'pa01', patientId: PAT.bennett, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Shoulder arthroscopy', rvgBaseCode: '47516', serviceISO: '2026-06-30', raisedISO: '2026-07-01T09:00:00', total: 690.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-07-12T10:00:00', disbursedAtISO: '2026-07-15T09:00:00' },
-  { key: 'pa02', patientId: PAT.webb, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', rvgBaseCode: '20941', serviceISO: '2026-06-28', raisedISO: '2026-06-29T09:00:00', total: 1150.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-07-06T11:00:00', disbursedAtISO: '2026-07-09T09:00:00' },
-  { key: 'pa03', patientId: PAT.mills, counterparty: HOSP_CPH, surgeonId: SURG.tan, hospitalId: HOSP.cph, description: 'Cystoscopy', rvgBaseCode: '50120', serviceISO: '2026-06-15', raisedISO: '2026-06-16T09:00:00', total: 480.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-06-22T10:00:00', disbursedAtISO: '2026-06-25T09:00:00' },
+  { key: 'pa01', patientId: PAT.bennett, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Shoulder arthroscopy', legacyCode: '47516', serviceISO: '2026-06-30', raisedISO: '2026-07-01T09:00:00', total: 690.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-07-12T10:00:00', disbursedAtISO: '2026-07-15T09:00:00' },
+  { key: 'pa02', patientId: PAT.webb, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', legacyCode: '20941', serviceISO: '2026-06-28', raisedISO: '2026-06-29T09:00:00', total: 1150.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-07-06T11:00:00', disbursedAtISO: '2026-07-09T09:00:00' },
+  { key: 'pa03', patientId: PAT.mills, counterparty: HOSP_CPH, surgeonId: SURG.tan, hospitalId: HOSP.cph, description: 'Cystoscopy', legacyCode: '50120', serviceISO: '2026-06-15', raisedISO: '2026-06-16T09:00:00', total: 480.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-06-22T10:00:00', disbursedAtISO: '2026-06-25T09:00:00' },
   // Self-funded patient (Riley) paid account; her patient contact is seeded
   // ARCHIVED so her live Fri-24 pre-payment episode unarchives it on handoff.
   { key: 'pa04', patientId: PAT.riley, counterparty: { kind: 'patient', id: PAT.riley }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Cosmetic procedure, self funded', serviceISO: '2026-05-10', raisedISO: '2026-05-11T09:00:00', total: 900.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-05-18T10:00:00', disbursedAtISO: '2026-05-20T09:00:00', archivedContact: true },
@@ -448,7 +450,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       isAdditional: false,
       selectedModifierCodes: [],
     }
-    if (acc.rvgBaseCode !== undefined) procedure.rvgBaseCode = acc.rvgBaseCode
+    if (acc.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(acc.legacyCode)
     if (acc.counterparty.kind === 'billableParty') procedure.billablePartyId = acc.counterparty.id
     if (isPatientRoute(acc.counterparty)) procedure.patientPaymentCategory = 'selfFundedPostProcedure'
     // Historical contract-holder-route procedures carry a billing reference (they

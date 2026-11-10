@@ -1,30 +1,8 @@
 {
   "id": "US-05.1.4",
-  "status": "captured",
-  "absentReason": "",
+  "status": "partial",
+  "absentReason": "Phase 19b replaces absorbed positioning with the included P1, pre-applied and removable, on Neurosurgery and Spine codes.",
   "shots": [
-    {
-      "name": "rvg-absorbs",
-      "app": "admin",
-      "caption": "RVG codes list the modifiers each base code absorbs",
-      "start": "/admin/masters",
-      "states": [
-        {
-          "steps": [
-            {
-              "click": "role=button[name=\"RVG codes\"]"
-            },
-            {
-              "wait": 300
-            }
-          ],
-          "highlight": [
-            "table th:nth-child(5)",
-            "table td:nth-child(5)"
-          ]
-        }
-      ]
-    },
     {
       "name": "absorbed-positioning",
       "app": "web",

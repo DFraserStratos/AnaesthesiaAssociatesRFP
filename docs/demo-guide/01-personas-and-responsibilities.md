@@ -41,8 +41,8 @@ Bookings and capture the data AA needs for billing.
    and choose an assigned List; or search by patient name or NHI, or pick a date, to find past work.
 2. Review its time-ordered Bookings.
 3. Open a Booking and confirm patient, procedure, hospital and surgeon context.
-4. Record ASA, RVG code, start/handover time, modifiers, notes and any allowed additional billing
-   line.
+4. Record ASA, an optional RVG code (picked by typing), start/handover time, modifiers, notes and any
+   allowed additional billing line.
 5. Review the calculated units and fee at her personal dollar-per-unit value.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.

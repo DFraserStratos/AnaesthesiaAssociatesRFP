@@ -8,20 +8,23 @@
  * and deterministic, so unstage works after a reload too), dropping the staged
  * warnings' clearances so raising them again shows them open.
  *
- * With one rule registered, a Booking with two warnings is proven in tests;
- * each later phase adds its sample here (19 out-of-range base units; 21 a child
+ * Two rules are registered (catch-up Phase 19 added out-of-range base units),
+ * so the pinned `multiWarning` Booking shows two warnings; each later phase
+ * adds its sample here (21 a child
  * as the payer on the Booking, and insurer-will-pay with no insurer Contract;
  * 27 a prepaid procedure with no price on the anaesthetist's own Contract; 40
  * a paying patient with a balance).
  */
 
-import { buildSeed, SEED_WARNING_SAMPLE_BOOKINGS } from '../domain/seed'
+import { buildSeed, RVG_GROUP, SEED_WARNING_SAMPLE_BOOKINGS } from '../domain/seed'
+import { baseUnitsFor, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import type { Procedure } from '../domain/types'
 import { WARNING_RULES, type WarningRuleId } from '../domain/warnings'
 import type { AppState, AppStoreApi } from './appStore'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { editProcedure, editRefusal } from './lifecycle'
 import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
+import { pickRvgGroup } from './rvgGroupActions'
 import { bookingRequiresPrepayment, prePaymentInvoicesForBooking, proceduresForBooking } from './selectors'
 
 /** What the staging checks read: the schedule, and the audit trail that says who last changed it. */
@@ -29,6 +32,8 @@ type SampleState = Pick<AppState, 'schedule' | 'audit'>
 
 export interface WarningSample {
   ruleId: WarningRuleId
+  /** The Procedure fields the sample stages, and so restores and audits on unstage. */
+  fields: readonly (keyof Procedure)[]
   /**
    * True when this sample's condition is staged on the Booking: it differs from
    * the seed, holds the sample's values, and the demo actions made the last
@@ -38,6 +43,11 @@ export interface WarningSample {
   isStaged(state: SampleState, bookingId: string): boolean
   /** True when the pristine seed already raises this sample's rule on the Booking (not a target). */
   seedRaises(bookingId: string): boolean
+  /**
+   * Why this sample cannot stage cleanly on the Booking, or null. Checked for
+   * every sample before any stages, so a raise never half-stages.
+   */
+  stageRefusal?(state: SampleState & Pick<AppState, 'masters'>, bookingId: string): string | null
   /** Stage the condition. The caller has checked the Booking is a seeded, editable target. */
   stage(api: AppStoreApi, actor: Actor, bookingId: string): Outcome
   /** The fields to restore from the seed, as a schedule patch, or undefined when nothing is staged. */
@@ -96,6 +106,7 @@ function seedProcedure(procedureId: string): Procedure | undefined {
 
 const prepaymentSample: WarningSample = {
   ruleId: 'prepaymentUnpaid',
+  fields: PREPAYMENT_FIELDS,
   isStaged(state, bookingId) {
     const p = firstProcedure(state, bookingId)
     const seed = p !== undefined ? seedProcedure(p.id) : undefined
@@ -130,8 +141,103 @@ const prepaymentSample: WarningSample = {
   },
 }
 
+// ---------------------------------------------------------------------------
+// The base units outside the RVG guide sample (catch-up Phase 19)
+// ---------------------------------------------------------------------------
+
+/** The fields the base-units sample stages on its Procedure. */
+const BASE_UNITS_FIELDS = ['rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const satisfies readonly (keyof Procedure)[]
+
+/**
+ * The Procedure the base-units sample stages on: the Booking's first Procedure
+ * (in `proceduresForBooking` order) that carries an RVG code in the pristine
+ * seed, else its first Procedure. A stable rule on the seed, never a hard-coded id.
+ */
+function baseUnitsTarget(bookingId: string): Procedure | undefined {
+  const seedProcs = proceduresForBooking(buildSeed(), bookingId)
+  return seedProcs.find((p) => p.rvgGroupId !== undefined) ?? seedProcs[0]
+}
+
+/**
+ * What the sample records: base units of the larger of the row's range top
+ * and its figure, plus 2 (from the seed's row, so an office edit to the row
+ * never moves the sample), as the chosen value on a ranged row, else as a
+ * typed value. With no RVG code on the target, the H4 row with 14 chosen.
+ */
+function baseUnitsSampleValues(target: Procedure): Pick<Procedure, 'rvgGroupId' | 'baseUnitsSelected' | 'baseUnitsCaptured'> {
+  const seed = buildSeed()
+  const group = target.rvgGroupId !== undefined ? seed.masters.rvgGroups[target.rvgGroupId] : undefined
+  if (group === undefined) return { rvgGroupId: RVG_GROUP.h4!, baseUnitsSelected: 14 }
+  const units = Math.max(group.baseUnitsRange?.max ?? 0, group.baseUnits) + 2
+  return group.baseUnitsRange !== undefined
+    ? { rvgGroupId: group.id, baseUnitsSelected: units }
+    : { rvgGroupId: group.id, baseUnitsCaptured: { units, source: 'overridden' } }
+}
+
+const baseUnitsSample: WarningSample = {
+  ruleId: 'baseUnitsOutsideGuide',
+  fields: BASE_UNITS_FIELDS,
+  isStaged(state, bookingId) {
+    const target = baseUnitsTarget(bookingId)
+    const p = target !== undefined ? state.schedule.procedures[target.id] : undefined
+    if (p === undefined || target === undefined) return false
+    const values = baseUnitsSampleValues(target)
+    const holdsSample = BASE_UNITS_FIELDS.every((f) => sameValue(p[f], values[f]))
+    const differsFromSeed = BASE_UNITS_FIELDS.some((f) => !sameValue(p[f], target[f]))
+    return holdsSample && differsFromSeed && lastChangedByDemo(state, p.id)
+  },
+  stageRefusal(state, bookingId) {
+    const target = baseUnitsTarget(bookingId)
+    const p = target !== undefined ? state.schedule.procedures[target.id] : undefined
+    if (p === undefined || target === undefined) return null
+    // Never stage over someone's real edit to these fields: Clear would wipe it.
+    if (BASE_UNITS_FIELDS.some((f) => !sameValue(p[f], target[f]))) return "This Booking's base units were changed: use Reset"
+    const values = baseUnitsSampleValues(target)
+    const pick = values.rvgGroupId !== p.rvgGroupId ? rvgGroupPickRefusal(state.masters.rvgGroups, values.rvgGroupId, p.rvgGroupId) : null
+    return pick !== null ? 'The RVG code this sample uses is retired' : null
+  },
+  seedRaises(bookingId) {
+    const seed = buildSeed()
+    return proceduresForBooking(seed, bookingId).some((p) => {
+      const group = p.rvgGroupId !== undefined ? seed.masters.rvgGroups[p.rvgGroupId] : undefined
+      return group !== undefined && baseUnitsFor({ procedure: p, group }).outsideGuide
+    })
+  },
+  stage(api, actor, bookingId) {
+    const target = baseUnitsTarget(bookingId)
+    if (target === undefined) return refuse('noProcedure', 'Nothing to stage on this Booking')
+    const values = baseUnitsSampleValues(target)
+    const current = api.getState().schedule.procedures[target.id]
+    if (current === undefined) return refuse('noProcedure', 'Nothing to stage on this Booking')
+    if (current.rvgGroupId !== values.rvgGroupId) {
+      const picked = pickRvgGroup(api, actor, target.id, values.rvgGroupId ?? null)
+      if (!picked.ok) return picked
+    }
+    return editProcedure(api, actor, target.id, {
+      baseUnitsSelected: values.baseUnitsSelected,
+      baseUnitsCaptured: values.baseUnitsCaptured,
+    })
+  },
+  restore(state, bookingId) {
+    if (!this.isStaged(state, bookingId)) return undefined
+    const target = baseUnitsTarget(bookingId)
+    const p = target !== undefined ? state.schedule.procedures[target.id] : undefined
+    if (p === undefined || target === undefined) return undefined
+    const restored: Procedure = { ...p }
+    for (const f of BASE_UNITS_FIELDS) {
+      if (target[f] === undefined) delete restored[f]
+      else (restored as unknown as Record<string, unknown>)[f] = target[f]
+    }
+    return { procedures: { ...state.schedule.procedures, [p.id]: restored } }
+  },
+  restoredEntityIds(state, bookingId) {
+    const target = baseUnitsTarget(bookingId)
+    return target !== undefined && this.isStaged(state, bookingId) ? [target.id] : []
+  },
+}
+
 /** One sample per registered rule, in `WARNING_RULES` order. */
-export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample]
+export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample]
 
 /** The registered rule count, for the triggers' honest message. */
 export const WARNING_RULE_COUNT = WARNING_RULES.length
@@ -153,7 +259,7 @@ export function stagedSampleBookings(state: SampleState): string[] {
 }
 
 /** Why samples cannot be raised on one Booking, or null. */
-export function sampleRaiseRefusal(state: SampleState, bookingId: string): string | null {
+export function sampleRaiseRefusal(state: SampleState & Pick<AppState, 'masters'>, bookingId: string): string | null {
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined || buildSeed().schedule.bookings[bookingId] === undefined) {
     return 'Samples stage on seeded Bookings only'
@@ -166,11 +272,16 @@ export function sampleRaiseRefusal(state: SampleState, bookingId: string): strin
   if (list.state === 'AUTHORISED') return "This Booking's List is authorised"
   if (WARNING_SAMPLES.every((s) => s.seedRaises(bookingId))) return 'This Booking already carries these warnings'
   if (WARNING_SAMPLES.every((s) => s.seedRaises(bookingId) || s.isStaged(state, bookingId))) return 'Samples already raised'
+  for (const sample of WARNING_SAMPLES) {
+    if (sample.seedRaises(bookingId) || sample.isStaged(state, bookingId)) continue
+    const reason = sample.stageRefusal?.(state, bookingId) ?? null
+    if (reason !== null) return reason
+  }
   return null
 }
 
 /** Why the demo day's samples cannot be raised, or null. */
-export function daySampleRaiseRefusal(state: SampleState): string | null {
+export function daySampleRaiseRefusal(state: SampleState & Pick<AppState, 'masters'>): string | null {
   const reasons = SEED_WARNING_SAMPLE_BOOKINGS.targets.map((id) => sampleRaiseRefusal(state, id))
   if (reasons.some((r) => r === null)) return null
   if (reasons.every((r) => r === 'Samples already raised')) return 'Samples already raised'
@@ -235,7 +346,16 @@ export function clearSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
 
   const staged = WARNING_SAMPLES.filter((s) => s.isStaged(state, bookingId))
   const ruleIds = new Set(staged.map((s) => s.ruleId))
-  const procedureIds = staged.flatMap((s) => s.restoredEntityIds(state, bookingId))
+  // Each restored Procedure once, with every field the staged samples set on it
+  // (two samples can stage on the same Procedure).
+  const fieldsByProcedure = new Map<string, Set<keyof Procedure>>()
+  for (const sample of staged) {
+    for (const id of sample.restoredEntityIds(state, bookingId)) {
+      const set = fieldsByProcedure.get(id) ?? new Set<keyof Procedure>()
+      for (const f of sample.fields) set.add(f)
+      fieldsByProcedure.set(id, set)
+    }
+  }
   // The Booking's last-modified stamp goes back to the seed's when only the
   // demo actions have touched it since; otherwise someone's real edit stands.
   const seedBooking = buildSeed().schedule.bookings[bookingId]
@@ -255,12 +375,12 @@ export function clearSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
         after: { ruleId: [...ruleIds].join(', ') },
         stampBookingId: restoreStamp ? null : undefined,
       },
-      ...procedureIds.map((id) => ({
+      ...[...fieldsByProcedure.entries()].map(([id, fields]) => ({
         entityType: 'procedure',
         entityId: id,
         action: 'procedure.update',
-        before: Object.fromEntries(PREPAYMENT_FIELDS.map((f) => [f, state.schedule.procedures[id]?.[f]])),
-        after: Object.fromEntries(PREPAYMENT_FIELDS.map((f) => [f, seedProcedure(id)?.[f]])),
+        before: Object.fromEntries([...fields].map((f) => [f, state.schedule.procedures[id]?.[f]])),
+        after: Object.fromEntries([...fields].map((f) => [f, seedProcedure(id)?.[f]])),
         stampBookingId: restoreStamp ? null : undefined,
       })),
     ],

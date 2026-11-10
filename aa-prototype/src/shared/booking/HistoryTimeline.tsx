@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { AuditEntry } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { easing, motion } from '../../theme/motion'
-import { useToday } from '../../store'
+import { useAppStore, useToday } from '../../store'
 import { dayHeading, hhmm } from '../format'
-import { actionLabel, auditFieldChanges, coalesceAudit, type AuditFieldChange, type AuditGroup } from '../audit'
+import { actionLabel, auditFieldChanges, auditNamesFor, coalesceAudit, type AuditFieldChange, type AuditGroup, type AuditNames } from '../audit'
+
+/** Names for ids in audit values (an RVG group by its code and description, catch-up Phase 19). */
+const NamesContext = createContext<AuditNames>({})
 
 /** Content width below which the ledger stacks (see the note in the observer). */
 const STACK_BELOW = 300
@@ -55,6 +58,8 @@ export function HistoryTimeline({
   subject?: string
 }) {
   const todayISO = useToday()
+  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const names = useMemo(() => auditNamesFor({ rvgGroups }), [rvgGroups])
   const rootRef = useRef<HTMLDivElement>(null)
   const [stacked, setStacked] = useState(false)
 
@@ -84,9 +89,10 @@ export function HistoryTimeline({
     )
   }
 
-  const groups = coalesceAudit(entries)
+  const groups = coalesceAudit(entries, names)
 
   return (
+    <NamesContext.Provider value={names}>
     <div ref={rootRef} style={{ display: 'flex', flexDirection: 'column' }}>
       {groups.map((group, index) => {
         const day = group.entry.atISO.slice(0, 10)
@@ -109,6 +115,7 @@ export function HistoryTimeline({
         )
       })}
     </div>
+    </NamesContext.Provider>
   )
 }
 
@@ -312,9 +319,10 @@ function Steps({
 
 /** One write behind a group: its own ledger (a single-field edit, by construction). */
 function StepLedger({ step, stacked }: { step: AuditEntry; stacked: boolean }) {
+  const names = useContext(NamesContext)
   return (
     <div style={{ borderLeft: `2px solid ${neutral.line}`, paddingLeft: 8 }}>
-      <Ledger changes={auditFieldChanges(step)} stacked={stacked} />
+      <Ledger changes={auditFieldChanges(step, names)} stacked={stacked} />
     </div>
   )
 }

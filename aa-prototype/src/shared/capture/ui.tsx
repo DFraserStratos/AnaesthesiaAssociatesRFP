@@ -20,8 +20,15 @@ export function CaptureSection({
   footer,
   gap = 12,
   validationTarget,
+  shot,
 }: {
   label: string
+  /**
+   * The `data-shot` hook, without its `capture-` prefix, when it must not follow
+   * the label (catch-up Phase 19: the "RVG code" card keeps `capture-procedure-code`,
+   * which the catalogue recipes click). Defaults to the label, slugged.
+   */
+  shot?: string
   children: ReactNode
   footer?: ReactNode
   gap?: number
@@ -33,7 +40,7 @@ export function CaptureSection({
   return (
     <div
       tabIndex={validationTarget === undefined ? undefined : -1}
-      data-shot={`capture-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+      data-shot={`capture-${shot ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       data-validation-procedure-id={validationTarget?.procedureId}
       data-validation-fields={validationTarget?.fields.join(' ')}
       style={{

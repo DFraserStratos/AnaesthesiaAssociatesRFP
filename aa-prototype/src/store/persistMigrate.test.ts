@@ -331,7 +331,7 @@ describe('Specialties, funding tags and the fallbacks (catch-up Phase 18a)', () 
   afterEach(() => localStorage.clear())
 
   it('discards a v32 store whose surgeons hold free-text specialties, and reseeds the lists and fallbacks', () => {
-    expect(PERSIST_VERSION).toBe(33)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(33)
     const fresh = freshAppState()
     const { specialtyIds: _ids, ...oldSurgeon } = fresh.masters.surgeons['S-HALE']!
     const { specialties: _s, fundingTags: _t, ...oldMasters } = fresh.masters
@@ -341,5 +341,25 @@ describe('Specialties, funding tags and the fallbacks (catch-up Phase 18a)', () 
     expect(s.masters.surgeons['S-HALE']?.specialtyIds).toEqual(['SPC-ORTHO'])
     expect(s.masters.fundingTags['TAG-ACC']?.code).toBe('ACC')
     expect(Object.values(s.masters.contracts).some((c) => c.systemRole === 'openPriceFallback')).toBe(true)
+  })
+})
+
+describe('RVG groups (catch-up Phase 19)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v33 store with the flat RVG code table and reseeds the RVG groups', () => {
+    expect(PERSIST_VERSION).toBe(34)
+    const fresh = freshAppState()
+    const { rvgGroups: _g, ...oldMasters } = fresh.masters
+    const stale = { ...fresh, masters: { ...oldMasters, rvgCodes: { '20941': { code: '20941' } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 33 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.masters.rvgGroups).filter((g) => g.code === 'T2')).toHaveLength(3)
+    expect((s.masters as unknown as Record<string, unknown>)['rvgCodes']).toBeUndefined()
+    expect(s.appSettings.warningRules.baseUnitsOutsideGuide).toEqual({ active: true, params: {} })
   })
 })

@@ -32,7 +32,7 @@ import type {
   Patient,
   RecurringBooking,
   Procedure,
-  RvgCode,
+  RvgGroup,
   Notification,
   OfficePrivateSlice,
   Party,
@@ -74,7 +74,7 @@ import { RECURRING_BOOKINGS } from './recurringBookings'
 import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
-import { RVG_CODES } from './rvgCodes'
+import { RVG_GROUPS } from './rvgGroups'
 import { defaultAppSettings } from '../warnings/settings'
 import { SAMPLE_AA_FEE_SETTINGS } from './aaFee'
 import type { AppSettings, WarningClearance } from '../warnings/types'
@@ -110,6 +110,7 @@ export { CONTRACT } from './contracts'
 export { PARTY, PARTIES } from './parties'
 export { SPC, SPECIALTIES, SPECIALTY_FOR_DIRECTORY_TEXT } from './specialties'
 export { TAG, FUNDING_TAGS } from './fundingTags'
+export { RVG_GROUP, RVG_GROUPS, LEGACY_CODE_TO_RVG_GROUP, AA_OWN_ROW_KEYS } from './rvgGroups'
 export { BP, PAT } from './patients'
 export {
   ANAESTHETIST_DASHBOARD,
@@ -148,7 +149,8 @@ export interface SeedMasters {
   organisations: Record<string, ContractHolderOrganisation>
   contracts: Record<string, Contract>
   contractPrices: Record<string, ContractPrice>
-  rvgCodes: Record<string, RvgCode>
+  /** The RVG groups (catch-up Phase 19; US-05.1.1): the NZSA RVG 2021 as published plus AA's own, keyed by hidden id. */
+  rvgGroups: Record<string, RvgGroup>
   modifierCodes: Record<string, ModifierCode>
   /** The availability statuses (catch-up Phase 29; US-01.2.2): a user-maintained master keyed by fixed ID. */
   slotStatuses: Record<string, SlotStatus>
@@ -542,7 +544,7 @@ function buildSeedInternal(): SeedBuild {
       organisations: organisationsRec,
       contracts: byId(CONTRACTS, (c) => c.id),
       contractPrices: byId(CONTRACT_PRICES, (p) => p.id),
-      rvgCodes: byId(RVG_CODES, (r) => r.code),
+      rvgGroups: byId(RVG_GROUPS, (g) => g.id),
       modifierCodes: byId(MODIFIER_CODES, (m) => m.code),
       slotStatuses,
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),

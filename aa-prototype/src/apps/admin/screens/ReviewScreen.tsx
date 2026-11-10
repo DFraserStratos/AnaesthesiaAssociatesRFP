@@ -72,7 +72,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const totals = bookingFee(procs, list, masters, billingLinesRecord)
       const flags = reviewFlagsForBooking({
         booking,
-        procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, baseCode: views[i]!.baseCode })),
+        procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, rvgGroup: views[i]!.rvgGroup })),
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
@@ -287,7 +287,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                   </td>
                   <td style={cellStyle}>{routeText}</td>
                   <td style={cellStyle}>{primaryView?.contract?.name ?? 'None'}</td>
-                  <td className="mono" style={{ ...nowrapCell, color: accent.base }}>{primary?.rvgBaseCode ?? '·'}</td>
+                  <td className="mono" title={primaryView?.rvgGroup?.description} style={{ ...nowrapCell, color: accent.base }}>{primaryView?.rvgGroup?.code ?? '·'}</td>
                   <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
                   <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>

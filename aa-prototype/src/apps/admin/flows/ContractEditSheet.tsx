@@ -19,11 +19,12 @@
 
 import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
-import type { Contract, ContractPricing, PricingKind } from '../../../domain/types'
+import type { Contract, ContractPricing, PricingKind, RvgGroup } from '../../../domain/types'
 import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, SYSTEM_CONTRACT_EDITABLE_FIELDS, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
 import { destinationHint, destinationOf, isOpenPriceFallback } from '../../../domain/billing/fallbacks'
 import { fundingTagsInOrder } from '../../../domain/billing/fundingTags'
 import { contractSpecialtyLabel, specialtiesInOrder } from '../../../domain/specialties'
+import { baseUnitsShort, searchRvgGroups } from '../../../domain/billing/rvgGroups'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import {
   addContractPrice,
@@ -373,7 +374,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
         )}
         {editing && contract.permitsRateTime && <Helper>Allows hourly rate and time billing lines on its Procedures.</Helper>}
         {editing && kind === 'fixed' && (
-          <PriceRows contractId={contract.id} rows={priceRows} actor={actor} rvgCodes={masters.rvgCodes} onError={setError} />
+          <PriceRows contractId={contract.id} rows={priceRows} actor={actor} rvgGroups={masters.rvgGroups} onError={setError} />
         )}
       </PanelSection>
 
@@ -462,16 +463,16 @@ function PriceRows({
   contractId,
   rows,
   actor,
-  rvgCodes,
+  rvgGroups,
   onError,
 }: {
   contractId: string
-  rows: { id: string; rvgBaseCode?: string; procedureOrdinal?: number; price: number }[]
+  rows: { id: string; rvgGroupId?: string; procedureOrdinal?: number; price: number }[]
   actor: Actor
-  rvgCodes: Record<string, { code: string; description: string }>
+  rvgGroups: Record<string, RvgGroup>
   onError: (message: string) => void
 }) {
-  const [code, setCode] = useState('')
+  const [groupId, setGroupId] = useState('')
   const [ordinal, setOrdinal] = useState('')
   const [price, setPrice] = useState('')
 
@@ -483,15 +484,22 @@ function PriceRows({
     }
     const outcome = addContractPrice(useAppStore, actor, {
       contractId,
-      ...(code !== '' ? { rvgBaseCode: code } : {}),
+      ...(groupId !== '' ? { rvgGroupId: groupId } : {}),
       ...(ordinal !== '' ? { procedureOrdinal: Number(ordinal) } : {}),
       price: p,
     })
     if (!outcome.ok) { onError(outcome.message); return }
-    setCode('')
+    setGroupId('')
     setOrdinal('')
     setPrice('')
   }
+
+  /** A price row's RVG code, told apart from its namesakes by its description (catch-up Phase 19). */
+  const rowLabel = (id: string | undefined) => {
+    const g = id !== undefined ? rvgGroups[id] : undefined
+    return g !== undefined ? `${g.code} · ${g.description}` : id !== undefined ? 'RVG code no longer listed' : 'Any RVG code'
+  }
+  const options = searchRvgGroups('', rvgGroups)
 
   return (
     <div data-shot="contract-price-rows" style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -499,10 +507,10 @@ function PriceRows({
       {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No prices yet: a primary procedure on this Contract cannot be billed until it has one.</div>}
       {rows.map((r) => (
         <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
-          <span className="mono" style={{ flex: 1 }}>{r.rvgBaseCode ?? 'Any code'}{r.procedureOrdinal !== undefined ? ` · procedure ${r.procedureOrdinal}` : ''}</span>
+          <span style={{ flex: 1 }}>{rowLabel(r.rvgGroupId)}{r.procedureOrdinal !== undefined ? ` · procedure ${r.procedureOrdinal}` : ''}</span>
           <span className="mono">$</span>
           <input
-            aria-label={`Price for ${r.rvgBaseCode ?? 'any code'}${r.procedureOrdinal !== undefined ? `, procedure ${r.procedureOrdinal}` : ''}`}
+            aria-label={`Price for ${rowLabel(r.rvgGroupId)}${r.procedureOrdinal !== undefined ? `, procedure ${r.procedureOrdinal}` : ''}`}
             defaultValue={String(r.price)}
             onBlur={(e) => {
               const p = Number(e.target.value)
@@ -522,9 +530,9 @@ function PriceRows({
         </div>
       ))}
       <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <select aria-label="RVG code" value={code} onChange={(e) => setCode(e.target.value)} style={{ ...selectStyle, minHeight: 34, flex: 1 }}>
-          <option value="">Any code</option>
-          {Object.values(rvgCodes).map((c) => (<option key={c.code} value={c.code}>{c.code}</option>))}
+        <select aria-label="RVG code" value={groupId} onChange={(e) => setGroupId(e.target.value)} style={{ ...selectStyle, minHeight: 34, flex: 1 }}>
+          <option value="">Any RVG code</option>
+          {options.map((g) => (<option key={g.id} value={g.id}>{g.code} · {g.description} · {baseUnitsShort(g)}</option>))}
         </select>
         <input aria-label="Procedure position" value={ordinal} onChange={(e) => setOrdinal(e.target.value)} placeholder="Position" style={{ ...selectStyle, width: 80, minHeight: 34, padding: '0 8px' }} className="mono" />
         <input aria-label="Price" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" style={{ ...selectStyle, width: 90, minHeight: 34, padding: '0 8px' }} className="mono" />

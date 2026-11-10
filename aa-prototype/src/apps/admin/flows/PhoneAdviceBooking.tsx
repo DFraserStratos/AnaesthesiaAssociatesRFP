@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { neutral } from '../../../theme/tokens'
-import { ANAE, HOSP, SURG } from '../../../domain/seed'
+import { ANAE, HOSP, RVG_GROUP, SURG } from '../../../domain/seed'
 import { effectiveSlotTimes } from '../../../domain/slots'
 import { assignListToSlot, setSlotTimes, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
@@ -21,7 +21,7 @@ interface PhoneAdviceBookingProps {
 
 const PHONE_ADVICE_LOOKUP_PREFILL = {
   nhi: 'DEM1239',
-  rvgBaseCode: '20950',
+  rvgGroupId: RVG_GROUP.aaAppendicectomy!,
   operation: 'Appendicectomy, laparoscopic',
   scheduledTime: '15:00',
   billingRoute: 'hospital',

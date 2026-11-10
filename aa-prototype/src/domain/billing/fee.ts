@@ -13,12 +13,12 @@ import type {
   CounterpartyRef,
   PriceOverride,
   Procedure,
-  RvgCode,
   UnitProvenance,
 } from '../types'
 import { matchContractPrice } from './contracts'
 import { roundToCents } from './money'
 import { modifierUnits, type RefusedModifier } from './modifierUnits'
+import { baseUnitsFor, type BaseUnitsSource, type GuideValue, type RvgGroup } from './rvgGroups'
 import { timeUnitsFromMinutes } from './timeUnits'
 
 // ---------------------------------------------------------------------------
@@ -32,6 +32,12 @@ export interface ResolvedUnits {
 
 export interface BtmBreakdown {
   base: ResolvedUnits
+  /** Where the base units came from (catch-up Phase 19; `baseUnitsFor`). */
+  baseSource: BaseUnitsSource
+  /** The RVG group's guide value (absent with no RVG code). */
+  baseGuide?: GuideValue
+  /** A recorded base value that differs from the starting value and lies outside the guide (D3: never blocks). */
+  baseOutsideGuide: boolean
   time: ResolvedUnits
   modifiers: ResolvedUnits
   /** Modifiers zeroed with a reason (absorbed by the base, or unknown). */
@@ -51,21 +57,19 @@ function capturedMinutes(procedure: Procedure): number {
 /**
  * Resolve B/T/M from the procedure's CAPTURED inputs (RFP principle 10 — the
  * inputs are data): seeded values are recomputed from the inputs; a captured
- * value with `overridden` provenance wins over the computation. Base is capped
- * at one code (`rvgBaseCode` is scalar); a range base uses `baseUnitsSelected`
- * (the validator flags a missing/out-of-range selection — here it counts 0).
+ * value with `overridden` provenance wins over the computation. Base comes
+ * from the one starting-units answer (`baseUnitsFor`, catch-up Phase 19): the
+ * typed override, else the chosen value on a ranged RVG group, else the
+ * group's starting figure, else 0 with no RVG code. Any value is accepted (D3).
+ * The group's modifier units (0 by default) join M; Phase 19b decides how
+ * itemised modifiers combine with them.
  */
-export function resolveBtm(procedure: Procedure, baseCode?: RvgCode): BtmBreakdown {
+export function resolveBtm(procedure: Procedure, group?: RvgGroup): BtmBreakdown {
   // Base
-  let base: ResolvedUnits
-  if (procedure.baseUnitsCaptured?.source === 'overridden') {
-    base = { units: procedure.baseUnitsCaptured.units, source: 'overridden' }
-  } else if (baseCode === undefined) {
-    base = { units: 0, source: 'seeded' }
-  } else if (baseCode.baseUnits.kind === 'single') {
-    base = { units: baseCode.baseUnits.units, source: 'seeded' }
-  } else {
-    base = { units: procedure.baseUnitsSelected ?? 0, source: 'seeded' }
+  const resolvedBase = baseUnitsFor({ procedure, ...(group !== undefined ? { group } : {}) })
+  const base: ResolvedUnits = {
+    units: resolvedBase.units,
+    source: resolvedBase.source === 'overridden' ? 'overridden' : 'seeded',
   }
 
   // Time
@@ -82,16 +86,19 @@ export function resolveBtm(procedure: Procedure, baseCode?: RvgCode): BtmBreakdo
     procedure.asaClass !== undefined && !procedure.selectedModifierCodes.includes(procedure.asaClass)
       ? [...procedure.selectedModifierCodes, procedure.asaClass]
       : procedure.selectedModifierCodes
-  const computed = modifierUnits(selected, baseCode)
+  const computed = modifierUnits(selected, group)
   let modifiers: ResolvedUnits
   if (procedure.modifierUnitsCaptured?.source === 'overridden') {
     modifiers = { units: procedure.modifierUnitsCaptured.units, source: 'overridden' }
   } else {
-    modifiers = { units: computed.units, source: 'seeded' }
+    modifiers = { units: computed.units + (group?.modifierUnits ?? 0), source: 'seeded' }
   }
 
   return {
     base,
+    baseSource: resolvedBase.source,
+    ...(resolvedBase.guide !== undefined ? { baseGuide: resolvedBase.guide } : {}),
+    baseOutsideGuide: resolvedBase.outsideGuide,
     time,
     modifiers,
     refusedModifiers: computed.refused,
@@ -118,8 +125,8 @@ export interface FeeContext {
   contract?: Contract
   /** Fixed-price rows (any contract's — filtered by `matchContractPrice`). */
   contractPrices?: readonly ContractPrice[]
-  /** The resolved RVG master row for `procedure.rvgBaseCode`. */
-  baseCode?: RvgCode
+  /** The RVG group row for `procedure.rvgGroupId` (catch-up Phase 19). */
+  rvgGroup?: RvgGroup
   /** For fixed-price row matching. */
   surgeonId?: string
   /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
@@ -180,7 +187,7 @@ export interface FeeResult {
  * an override). The resolver and validator own "No price in force".
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
-  const btm = resolveBtm(procedure, ctx.baseCode)
+  const btm = resolveBtm(procedure, ctx.rvgGroup)
   const billableUnits = splitBillingUnits(procedure, btm)
   const lines: FeeLine[] = []
 
@@ -201,7 +208,7 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   if (contract !== undefined && pricing?.kind === 'fixed') {
     fixedPrice = matchContractPrice(ctx.contractPrices ?? [], {
       contractId: contract.id,
-      rvgBaseCode: procedure.rvgBaseCode,
+      rvgGroupId: procedure.rvgGroupId,
       surgeonId: ctx.surgeonId,
       procedureOrdinal: ctx.procedureOrdinal,
     })
@@ -223,7 +230,7 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
       description: 'Contract price',
       amount: roundToCents(fixedPrice.price),
     })
-  } else if (procedure.rvgBaseCode !== undefined) {
+  } else if (procedure.rvgGroupId !== undefined) {
     lines.push({
       chargeBasis: 'rvg',
       description: procedure.isAdditional

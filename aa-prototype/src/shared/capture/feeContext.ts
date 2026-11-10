@@ -13,8 +13,9 @@
  *     lines are never fee inputs).
  */
 
-import type { AssignedList, BillingLine, Contract, Procedure, RvgCode } from '../../domain/types'
+import type { AssignedList, BillingLine, Contract, Procedure, RvgGroup } from '../../domain/types'
 import { feeFor, type FeeContext, type FeeResult } from '../../domain/billing/fee'
+import { groupOf } from '../../domain/billing/rvgGroups'
 import type { AppState } from '../../store'
 
 export interface ProcedureFeeArgs {
@@ -29,7 +30,8 @@ export interface ProcedureFeeArgs {
 
 export interface ProcedureFeeView {
   fee: FeeResult
-  baseCode?: RvgCode
+  /** The Procedure's RVG group row (catch-up Phase 19), for display. */
+  rvgGroup?: RvgGroup
   contract?: Contract
   nonRvgLines: BillingLine[]
 }
@@ -43,8 +45,7 @@ export function procedureFee({ procedure, list, ordinal, masters, billingLines }
     procedure.governingContractId !== undefined
       ? masters.contracts[procedure.governingContractId]
       : undefined
-  const baseCode =
-    procedure.rvgBaseCode !== undefined ? masters.rvgCodes[procedure.rvgBaseCode] : undefined
+  const rvgGroup = groupOf(masters.rvgGroups, procedure.rvgGroupId)
   const nonRvgLines = Object.values(billingLines).filter(
     (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
   )
@@ -56,11 +57,11 @@ export function procedureFee({ procedure, list, ordinal, masters, billingLines }
     nonRvgLines,
   }
   if (contract !== undefined) ctx.contract = contract
-  if (baseCode !== undefined) ctx.baseCode = baseCode
+  if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
   ctx.surgeonId = list.surgeonId
 
   const view: ProcedureFeeView = { fee: feeFor(procedure, ctx), nonRvgLines }
-  if (baseCode !== undefined) view.baseCode = baseCode
+  if (rvgGroup !== undefined) view.rvgGroup = rvgGroup
   if (contract !== undefined) view.contract = contract
   return view
 }

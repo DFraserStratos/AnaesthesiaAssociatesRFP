@@ -1,8 +1,7 @@
 /**
  * Sample warnings (catch-up Phase 15a): pinned targets, stage and unstage
- * through audited actions as the demo actor, refusals, and a second rule's
- * sample landing on the multi-warning Booking (proven here until Phase 19
- * registers one).
+ * through audited actions as the demo actor, refusals, and (since catch-up
+ * Phase 19 registered the second rule) two warnings on the multi-warning Booking.
  */
 
 import { assigned } from '../test/lists'
@@ -26,7 +25,7 @@ import {
 } from './warningSamples'
 import { DEMO_TODAY } from '../domain/clock'
 import { buildSeed, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../domain/seed'
-import { WARNING_RULES, type WarningRule } from '../domain/warnings'
+import { WARNING_RULES } from '../domain/warnings'
 
 const [AM_TARGET, PM_TARGET] = SEED_WARNING_SAMPLE_BOOKINGS.targets
 const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
@@ -37,7 +36,7 @@ function setListState(api: BoundAppStore, listId: string, state: 'SUBMITTED' | '
   api.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...assigned(s.schedule.lists[listId]), state } } } })
 }
 
-const STAGED_FIELDS = ['billingRoute', 'patientPaymentCategory', 'prepaymentDetail'] as const
+const STAGED_FIELDS = ['billingRoute', 'patientPaymentCategory', 'prepaymentDetail', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const
 
 function seedFieldsOf(bookingId: string) {
   const seed = buildSeed()
@@ -78,14 +77,15 @@ describe('raise and clear on the demo day', () => {
     expect(allSampleClearRefusal(api.getState())).toBe('Nothing staged')
 
     const raised = raiseDaySamples(api)
-    expect(raised).toEqual({ ok: true, value: 2 })
+    // Two samples on each target: the prepayment (strong) and the base units outside the guide (mild).
+    expect(raised).toEqual({ ok: true, value: 4 })
     let state = api.getState()
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
-      expect(warningsForBooking(state, id).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid'])
+      expect(warningsForBooking(state, id).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
     }
-    expect(openWarnings(state).map((r) => r.bookingId).sort()).toEqual([AM_TARGET, PM_TARGET, RILEY].sort())
+    expect([...new Set(openWarnings(state).map((r) => r.bookingId))].sort()).toEqual([AM_TARGET, PM_TARGET, RILEY].sort())
     const stagedAudit = state.audit.filter((a) => a.action === 'procedure.update' && a.who === DEMO_TRIGGER_ACTOR.who)
-    expect(stagedAudit).toHaveLength(2)
+    expect(stagedAudit).toHaveLength(4)
     expect(stagedAudit.every((a) => a.source === 'demo' && a.role === 'system')).toBe(true)
     expect(daySampleRaiseRefusal(state)).toBe('Samples already raised')
     expect(stagedSampleBookings(state)).toEqual([AM_TARGET, PM_TARGET].sort())
@@ -95,7 +95,7 @@ describe('raise and clear on the demo day', () => {
     expect(clearWarning(api, OFFICE_ACTOR, AM_TARGET!, key).ok).toBe(true)
     expect(api.getState().schedule.warningClearances[key]).toBeDefined()
 
-    expect(clearAllSamples(api)).toEqual({ ok: true, value: 2 })
+    expect(clearAllSamples(api)).toEqual({ ok: true, value: 4 })
     state = api.getState()
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
       const p = proceduresForBooking(state, id)[0]!
@@ -122,7 +122,11 @@ describe('raise and clear on the demo day', () => {
 describe('refusals on one Booking', () => {
   it('Riley already carries the warning; an unseeded or missing Booking is refused', () => {
     const api = createAppStore()
-    expect(sampleRaiseRefusal(api.getState(), RILEY)).toBe('This Booking already carries these warnings')
+    // Riley's seed raises the prepayment warning, so only the base-units sample stages there.
+    expect(sampleRaiseRefusal(api.getState(), RILEY)).toBeNull()
+    expect(raiseSamplesOn(api, RILEY)).toEqual({ ok: true, value: 1 })
+    expect(warningsForBooking(api.getState(), RILEY).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
+    expect(sampleRaiseRefusal(api.getState(), RILEY)).toBe('Samples already raised')
     expect(sampleRaiseRefusal(api.getState(), 'BK9999')).toBe('Samples stage on seeded Bookings only')
   })
 
@@ -158,26 +162,31 @@ describe('refusals on one Booking', () => {
   })
 })
 
-describe('a second rule (pluggability)', () => {
-  it('a throwaway rule plus the prepayment sample give the multi-warning Booking two warnings, no UI change', () => {
-    const throwaway: WarningRule = {
-      id: 'prepaymentUnpaid' as never, // a second id arrives with Phase 19; the key differs by procedure
-      label: 'Throwaway rule',
-      defaultParams: {},
-      evaluate: (facts) =>
-        facts.booking.id === SEED_WARNING_SAMPLE_BOOKINGS.multiWarning
-          ? [{ kind: 'afterProcedure', strength: 'mild', text: 'A second warning.', procedureId: facts.procedures[0]?.id }]
-          : [],
-    }
+describe('two rules on the multi-warning Booking (catch-up Phase 19)', () => {
+  it('shows two warnings with their own text and keys, strong first', () => {
     const api = createAppStore()
     raiseDaySamples(api)
-    const warnings = warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning, [
-      ...WARNING_RULES,
-      throwaway,
-    ])
+    const warnings = warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning)
     expect(warnings).toHaveLength(2)
     expect(warnings.map((w) => w.strength)).toEqual(['strong', 'mild'])
     expect(new Set(warnings.map((w) => w.key)).size).toBe(2)
+    expect(warnings[1]!.text).toMatch(/^Base units \d+ are outside the RVG guide for /)
+    expect(WARNING_RULES.map((r) => r.id)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
+  })
+
+  it('stages a recorded value of the guide top plus 2, through the audited actions, and restores the seed', () => {
+    const api = createAppStore()
+    raiseSamplesOn(api, AM_TARGET!)
+    const seed = buildSeed()
+    const target = proceduresForBooking(seed, AM_TARGET!).find((p) => p.rvgGroupId !== undefined)!
+    const group = seed.masters.rvgGroups[target.rvgGroupId!]!
+    const staged = api.getState().schedule.procedures[target.id]!
+    const expected = Math.max(group.baseUnitsRange?.max ?? 0, group.baseUnits) + 2
+    if (group.baseUnitsRange !== undefined) expect(staged.baseUnitsSelected).toBe(expected)
+    else expect(staged.baseUnitsCaptured).toEqual({ units: expected, source: 'overridden' })
+    expect(staged.rvgGroupId).toBe(target.rvgGroupId)
+    clearSamplesOn(api, AM_TARGET!)
+    expect(api.getState().schedule.procedures[target.id]).toEqual(target)
   })
 })
 
@@ -222,5 +231,17 @@ describe('review fixes (convention 18)', () => {
     const p = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
     const revert = api.getState().audit.filter((a) => a.entityId === p.id).at(-1)
     expect(revert).toMatchObject({ action: 'procedure.update', who: DEMO_TRIGGER_ACTOR.who })
+  })
+})
+
+describe('the base-units sample never half-stages or overwrites a real edit (review fixes, catch-up Phase 19)', () => {
+  it('refuses before staging anything when the office has changed the target’s base units', () => {
+    const api = createAppStore()
+    const target = proceduresForBooking(buildSeed(), PM_TARGET!).find((p) => p.rvgGroupId !== undefined)!
+    expect(editProcedure(api, OFFICE_ACTOR, target.id, { baseUnitsCaptured: { units: 5, source: 'overridden' } }).ok).toBe(true)
+    const before = api.getState().schedule.procedures
+    expect(sampleRaiseRefusal(api.getState(), PM_TARGET!)).toBe("This Booking's base units were changed: use Reset")
+    expect(raiseSamplesOn(api, PM_TARGET!)).toMatchObject({ ok: false })
+    expect(api.getState().schedule.procedures).toBe(before)
   })
 })

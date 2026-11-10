@@ -36,10 +36,10 @@ const DAYS = ['2026-07-01', '2026-07-02', '2026-07-03', '2026-07-06'] as const
 const SESSIONS = ['AM', 'PM'] as const
 const PER_LIST = 5
 const LIST_PLAN = [
-  { hospitalId: HOSP.stg, surgeonId: SURG.hale, description: 'Knee arthroscopy', rvgBaseCode: '49558' },
-  { hospitalId: HOSP.sx, surgeonId: SURG.patel, description: 'Laparoscopic cholecystectomy', rvgBaseCode: '20941' },
-  { hospitalId: HOSP.forte, surgeonId: SURG.okafor, description: 'Inguinal hernia repair', rvgBaseCode: '20941' },
-  { hospitalId: HOSP.cph, surgeonId: SURG.tan, description: 'Cystoscopy', rvgBaseCode: '50120' },
+  { hospitalId: HOSP.stg, surgeonId: SURG.hale, description: 'Knee arthroscopy', legacyCode: '49558' },
+  { hospitalId: HOSP.sx, surgeonId: SURG.patel, description: 'Laparoscopic cholecystectomy', legacyCode: '20941' },
+  { hospitalId: HOSP.forte, surgeonId: SURG.okafor, description: 'Inguinal hernia repair', legacyCode: '20941' },
+  { hospitalId: HOSP.cph, surgeonId: SURG.tan, description: 'Cystoscopy', legacyCode: '50120' },
 ] as const
 const TOTALS = [420, 515.5, 690, 845, 310.25, 980, 560, 735.8] as const
 
@@ -62,7 +62,7 @@ function plannedAccounts(patientIds: readonly string[]): HistoryAccount[] {
           surgeonId: plan.surgeonId,
           hospitalId: plan.hospitalId,
           description: plan.description,
-          rvgBaseCode: plan.rvgBaseCode,
+          legacyCode: plan.legacyCode,
           serviceISO: day,
           raisedISO: `${addDays(day, 1)}T09:00:00`,
           total: TOTALS[i % TOTALS.length]!,

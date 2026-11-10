@@ -30,7 +30,7 @@ import { prepaymentStatusFor } from './selectors'
 import { compareSessions } from '../domain/outOfHours'
 
 /** The state slices the warning selectors read. */
-export type WarningState = Pick<AppState, 'schedule' | 'billing' | 'appSettings' | 'clock'>
+export type WarningState = Pick<AppState, 'schedule' | 'billing' | 'appSettings' | 'clock' | 'masters'>
 
 function proceduresByBooking(state: Pick<AppState, 'schedule'>): Map<string, Procedure[]> {
   const out = new Map<string, Procedure[]>()
@@ -52,6 +52,7 @@ function factsFor(state: WarningState, booking: Booking, procedures: readonly Pr
     procedures,
     prepaymentStatus: prepaymentStatusFor(state, booking.id),
     todayISO: state.clock.todayISO,
+    rvgGroups: state.masters.rvgGroups,
   }
 }
 

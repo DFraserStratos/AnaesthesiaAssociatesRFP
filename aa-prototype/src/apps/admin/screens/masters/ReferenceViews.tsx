@@ -124,27 +124,6 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
   )
 }
 
-export function RvgCodesView() {
-  const rvgCodes = useAppStore((s) => s.masters.rvgCodes)
-  const rows = Object.values(rvgCodes).sort((a, b) => a.code.localeCompare(b.code))
-  return (
-    <>
-      <Header title="RVG codes" sub="Base-unit reference (view only). Demo-plausible values." />
-      <Table heads={['Code', 'Description', 'Site', 'Base units', 'Absorbs']}>
-        {rows.map((c) => (
-          <tr key={c.code}>
-            <td className="mono" style={cellStyle}>{c.code}</td>
-            <td style={cellStyle}>{c.description}</td>
-            <td style={cellStyle}>{c.anatomicalSite}</td>
-            <td className="mono" style={cellStyle}>{c.baseUnits.kind === 'single' ? c.baseUnits.units : `${c.baseUnits.min} to ${c.baseUnits.max}`}</td>
-            <td className="mono" style={cellStyle}>{c.absorbsModifierCodes.join(', ') || '·'}</td>
-          </tr>
-        ))}
-      </Table>
-    </>
-  )
-}
-
 export function ModifierCodesView() {
   const modifierCodes = useAppStore((s) => s.masters.modifierCodes)
   const rows = Object.values(modifierCodes).sort((a, b) => a.code.localeCompare(b.code))

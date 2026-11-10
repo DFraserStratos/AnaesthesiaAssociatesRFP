@@ -16,6 +16,7 @@
  */
 
 import type { SpecialtyId } from './specialties'
+import type { RvgGroupId } from './billing/rvgGroups'
 
 // ---------------------------------------------------------------------------
 // Shared scalars & refs
@@ -396,14 +397,15 @@ export type { BillsTo, Contract, ContractPricing, ContractStatus, PricingKind, S
  * A fixed-price row: INTERIM, the `fixed` pricing kind's prices until Phase
  * 19a replaces them with price ranges. Matching keys are explicit (2nd review #4): the
  * RFP's "keyed by some combination of contract holder, surgeon, and/or
- * procedure type". In the prototype's curated set the RVG base code stands in
+ * procedure type". In the prototype's curated set the RVG group stands in
  * for "procedure type" — a labelled DEMO SIMPLIFICATION (5th review #3): a real
  * build may need non-RVG procedure identifiers. Most-specific match wins.
  */
 export interface ContractPrice {
   id: string
   contractId: ContractId
-  rvgBaseCode?: string
+  /** The RVG group row this price is for (catch-up Phase 19 re-keyed it from the printed code). */
+  rvgGroupId?: RvgGroupId
   surgeonId?: SurgeonId
   /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
   procedureOrdinal?: number
@@ -859,9 +861,12 @@ export interface Procedure {
   asaClass?: AsaClass
   /** Modifier codes as selected (chips in Phase 04). */
   selectedModifierCodes: string[]
-  /** One base code per procedure — base is capped at a single code. */
-  rvgBaseCode?: string
-  /** The anaesthetist's chosen value where the base code is a range. */
+  /**
+   * The RVG code, optional (catch-up Phase 19): a reference to one RVG group
+   * row by its hidden id. The Procedure's `description` stays the text received.
+   */
+  rvgGroupId?: RvgGroupId
+  /** The anaesthetist's chosen value on a ranged RVG group (any whole number, D3). */
   baseUnitsSelected?: number
   /** B/T/M with provenance — an office/anaesthetist override beats the seeded computation. */
   baseUnitsCaptured?: CapturedUnits
@@ -905,18 +910,18 @@ export interface BillingLine {
 // RVG & modifier masters
 // ---------------------------------------------------------------------------
 
-export type RvgBaseUnits =
-  | { kind: 'single'; units: number }
-  | { kind: 'range'; min: number; max: number }
-
-export interface RvgCode {
-  code: string
-  description: string
-  anatomicalSite: string
-  baseUnits: RvgBaseUnits
-  /** Modifier codes this base absorbs (e.g. `['P1']` when positioning is included). */
-  absorbsModifierCodes: string[]
-}
+/**
+ * The RVG groups (catch-up Phase 19; the model module is
+ * domain/billing/rvgGroups.ts): the one master list base units come from.
+ */
+export type {
+  BaseUnitsRange,
+  BaseUnitsSource,
+  GuideValue,
+  ResolvedBaseUnits,
+  RvgGroup,
+  RvgGroupId,
+} from './billing/rvgGroups'
 
 export type ModifierGroup = 'PA' | 'A' | 'AS' | 'ASE' | 'OB' | 'P' | 'AI' | 'POSTOP'
 

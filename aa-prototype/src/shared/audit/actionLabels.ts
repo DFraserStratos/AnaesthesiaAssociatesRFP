@@ -139,6 +139,11 @@ export const ACTION_LABELS: Record<string, string> = {
   'fundingTag.update': 'Funding tag updated',
   'fundingTag.move': 'Funding tag moved',
   'fundingTag.remove': 'Funding tag removed',
+  // Catch-up Phase 19 (US-05.1.1).
+  'rvgGroup.create': 'RVG group added',
+  'rvgGroup.update': 'RVG group updated',
+  'rvgGroup.retire': 'RVG group retired',
+  'rvgGroup.restore': 'RVG group restored',
 
   // --- Contracts -----------------------------------------------------------
   'contract.create': 'Contract created',

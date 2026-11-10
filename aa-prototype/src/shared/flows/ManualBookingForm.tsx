@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingRoute, BookingSource, PatientPaymentCategory } from '../../domain/types'
 import { insurerPartyOptions } from '../../domain/billing/parties'
 import { lookupNhi } from '../../domain/nzhis'
 import { createBooking, useAppStore, type Actor } from '../../store'
 import { DemoBadge } from '../DemoBadge'
+import { CodePickerSheet } from '../capture/CodePickerSheet'
+import { baseUnitsShort } from '../../domain/billing/rvgGroups'
 import { Button, Segmented, TextField, FieldLabel } from '../ui'
 
 /** Fields a photo extraction may pre-fill. */
@@ -16,7 +18,8 @@ export interface ExtractionFields {
   phone?: string
   ethnicityCode?: string
   operation?: string
-  rvgBaseCode?: string
+  /** The optional RVG code: an RVG group row by id (catch-up Phase 19). */
+  rvgGroupId?: string
   scheduledTime?: string
   billingRoute?: BillingRoute
   insurerId?: string
@@ -53,7 +56,7 @@ const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
 ]
 
 export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, attachment, source, onSaved }: ManualBookingFormProps) {
-  const rvgCodes = useAppStore((s) => s.masters.rvgCodes)
+  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const parties = useAppStore((s) => s.masters.parties)
   const insurerOptions = useMemo(() => insurerPartyOptions(parties), [parties])
   const billableParties = useAppStore((s) => s.masters.billableParties)
@@ -64,7 +67,8 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const [phone, setPhone] = useState(initial?.phone ?? '')
   const [ethnicityCode, setEthnicityCode] = useState(initial?.ethnicityCode ?? '')
   const [operation, setOperation] = useState(initial?.operation ?? '')
-  const [rvgBaseCode, setRvgBaseCode] = useState(initial?.rvgBaseCode ?? '')
+  const [rvgGroupId, setRvgGroupId] = useState(initial?.rvgGroupId ?? '')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [scheduledTime, setScheduledTime] = useState(initial?.scheduledTime ?? '')
   const [billingRoute, setBillingRoute] = useState<BillingRoute>(initial?.billingRoute ?? 'hospital')
   const [insurerId, setInsurerId] = useState(initial?.insurerId ?? '')
@@ -75,7 +79,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
   const [error, setError] = useState<string | null>(null)
 
-  const rvgList = useMemo(() => Object.values(rvgCodes).sort((a, b) => a.description.localeCompare(b.description)), [rvgCodes])
+  const rvgGroup = rvgGroupId !== '' ? rvgGroups[rvgGroupId] : undefined
 
   function runLookup() {
     const useEmptyPrefill = nhi.trim() === '' && emptyLookupPrefill !== undefined
@@ -89,7 +93,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       setEthnicityCode(result.ethnicityCode)
       if (useEmptyPrefill) {
         if (emptyLookupPrefill.operation !== undefined) setOperation(emptyLookupPrefill.operation)
-        if (emptyLookupPrefill.rvgBaseCode !== undefined) setRvgBaseCode(emptyLookupPrefill.rvgBaseCode)
+        if (emptyLookupPrefill.rvgGroupId !== undefined) setRvgGroupId(emptyLookupPrefill.rvgGroupId)
         if (emptyLookupPrefill.scheduledTime !== undefined) setScheduledTime(emptyLookupPrefill.scheduledTime)
         if (emptyLookupPrefill.billingRoute !== undefined) setBillingRoute(emptyLookupPrefill.billingRoute)
         if (emptyLookupPrefill.insurerId !== undefined) setInsurerId(emptyLookupPrefill.insurerId)
@@ -102,10 +106,12 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     }
   }
 
-  function pickCode(code: string) {
-    setRvgBaseCode(code)
-    const rvg = rvgCodes[code]
-    if (rvg !== undefined && operation.trim() === '') setOperation(rvg.description)
+  /** Pick (or clear) the optional RVG code; typed Operation text is never overwritten, only an empty one filled. */
+  function pickCode(id: string | null) {
+    setPickerOpen(false)
+    setRvgGroupId(id ?? '')
+    const group = id !== null ? rvgGroups[id] : undefined
+    if (group !== undefined && operation.trim() === '') setOperation(group.description)
   }
 
   function save() {
@@ -119,7 +125,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         ...(ethnicityCode.trim() !== '' ? { ethnicityCode: ethnicityCode.trim() } : {}),
       },
       operation,
-      ...(rvgBaseCode !== '' ? { rvgBaseCode } : {}),
+      ...(rvgGroupId !== '' ? { rvgGroupId } : {}),
       ...(scheduledTime.trim() !== '' ? { scheduledTime: scheduledTime.trim() } : {}),
       billingRoute,
       ...((billingRoute === 'insurer' || billingRoute === 'hospital') && insurerId !== '' ? { insurerId } : {}),
@@ -174,32 +180,65 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       <div style={{ height: 1, background: neutral.line }} />
       <div style={{ fontSize: 17, fontWeight: 700 }}>Operation</div>
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <FieldLabel>Procedure code</FieldLabel>
-        <select
-          value={rvgBaseCode}
-          onChange={(e) => pickCode(e.target.value)}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            minHeight: 48,
-            borderRadius: radius.ctl,
-            border: `1px solid ${neutral.line}`,
-            background: neutral.bg,
-            padding: '0 12px',
-            fontFamily: 'inherit',
-            fontSize: 15,
-            color: neutral.ink,
-          }}
-        >
-          <option value="">Select a code (optional)</option>
-          {rvgList.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.code} · {r.description}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} data-shot="manual-rvg-code">
+        <FieldLabel>RVG code (optional)</FieldLabel>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-label={rvgGroup !== undefined ? `RVG code ${rvgGroup.code}, ${rvgGroup.description}. Change` : rvgGroupId !== '' ? 'RVG code no longer listed. Change' : 'Choose an RVG code'}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              minHeight: 48,
+              boxSizing: 'border-box',
+              borderRadius: radius.ctl,
+              border: `1px solid ${neutral.line}`,
+              background: neutral.bg,
+              padding: '8px 12px',
+              fontFamily: 'inherit',
+              textAlign: 'left',
+              cursor: 'pointer',
+            }}
+          >
+            {rvgGroup !== undefined ? (
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <span className="mono" style={{ fontSize: 13.5, fontWeight: 600, color: accent.base }}>{rvgGroup.code}</span>
+                  <span className="mono" style={{ fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap' }}>{baseUnitsShort(rvgGroup)}</span>
+                </span>
+                <span style={{ fontSize: 14.5, color: neutral.ink, lineHeight: 1.35 }}>{rvgGroup.description}</span>
+              </span>
+            ) : (
+              <span style={{ fontSize: 15, color: neutral.mist }}>
+                {rvgGroupId !== '' ? 'This RVG code is no longer in the RVG groups' : 'No RVG code'}
+              </span>
+            )}
+            <span aria-hidden style={{ fontSize: 14, fontWeight: 600, color: accent.base, flex: 'none' }}>
+              {rvgGroupId !== '' ? 'Change' : 'Choose'}
+            </span>
+          </button>
+          {rvgGroupId !== '' && (
+            <button
+              type="button"
+              onClick={() => pickCode(null)}
+              style={{ border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: accent.base, cursor: 'pointer', padding: '8px 4px' }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+      <CodePickerSheet
+        open={pickerOpen}
+        {...(rvgGroupId !== '' ? { currentId: rvgGroupId } : {})}
+        rvgGroups={rvgGroups}
+        onPick={pickCode}
+        onClose={() => setPickerOpen(false)}
+      />
       <TextField label="Operation" value={operation} onChange={setOperation} placeholder="Operation description" />
       <TextField label="Scheduled time" value={scheduledTime} onChange={setScheduledTime} placeholder="e.g. 15:30" mono />
 

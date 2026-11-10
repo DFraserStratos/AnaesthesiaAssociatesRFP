@@ -1,7 +1,7 @@
 /**
  * The Lists tab's way back to past work on the phone (catch-up Phase 38a;
- * US-03.1.6, US-03.1.7, US-15.0.2): a search field in the Procedure code
- * sheet's anatomy, a calendar button that opens a bottom sheet of months, the
+ * US-03.1.6, US-03.1.7, US-15.0.2): a search field built like the RVG code
+ * picker's, a calendar button that opens a bottom sheet of months, the
  * day view under a dismissible teal day chip, and the search results. Own work
  * only (the store's selectors decide). No native date input, no centred modal,
  * nothing under 44px tall.

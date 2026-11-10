@@ -22,6 +22,7 @@
  * fallback (the guard's system rule).
  */
 
+import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import type { Contract, ContractPrice } from '../domain/types'
 import { contractRefusal, nextAaCode, normaliseAaCode, type ContractRefusalContext } from '../domain/billing/contracts'
 import { ensureFallbacks } from '../domain/billing/fallbacks'
@@ -241,7 +242,8 @@ export function enableContract(api: AppStoreApi, actor: Actor, contractId: strin
 
 export interface ContractPriceInput {
   contractId: string
-  rvgBaseCode?: string
+  /** The RVG group row this price is for (catch-up Phase 19). */
+  rvgGroupId?: string
   surgeonId?: string
   /** 1-based position on the Booking (the 2nd-procedure ordinal rule). */
   procedureOrdinal?: number
@@ -256,6 +258,10 @@ export function addContractPrice(api: AppStoreApi, actor: Actor, input: Contract
   if (contract === undefined) return refuse('notFound', 'Contract not found.')
   if (contract.pricing.kind !== 'fixed') return refuse('notFixedPrice', 'Only a fixed-price Contract has prices.')
   if (!(input.price > 0)) return refuse('invalidPrice', 'The price must be greater than zero.')
+  if (input.rvgGroupId !== undefined && input.rvgGroupId !== '') {
+    const pick = rvgGroupPickRefusal(state.masters.rvgGroups, input.rvgGroupId, undefined)
+    if (pick !== null) return refuse(pick.code, pick.message)
+  }
 
   const metas: MutationMeta[] = []
   let id = ''
@@ -266,7 +272,7 @@ export function addContractPrice(api: AppStoreApi, actor: Actor, input: Contract
       id: alloc.id,
       contractId: input.contractId,
       price: input.price,
-      ...(input.rvgBaseCode !== undefined && input.rvgBaseCode !== '' ? { rvgBaseCode: input.rvgBaseCode } : {}),
+      ...(input.rvgGroupId !== undefined && input.rvgGroupId !== '' ? { rvgGroupId: input.rvgGroupId } : {}),
       ...(input.surgeonId !== undefined && input.surgeonId !== '' ? { surgeonId: input.surgeonId } : {}),
       ...(input.procedureOrdinal !== undefined ? { procedureOrdinal: input.procedureOrdinal } : {}),
     }
@@ -274,7 +280,7 @@ export function addContractPrice(api: AppStoreApi, actor: Actor, input: Contract
       entityType: 'contractPrice',
       entityId: alloc.id,
       action: 'contractPrice.create',
-      after: { contractId: input.contractId, price: input.price, rvgBaseCode: row.rvgBaseCode, procedureOrdinal: row.procedureOrdinal },
+      after: { contractId: input.contractId, price: input.price, rvgGroupId: row.rvgGroupId, procedureOrdinal: row.procedureOrdinal },
       stampBookingId: null,
     })
     return { masters: { ...s.masters, contractPrices: { ...s.masters.contractPrices, [alloc.id]: row } }, counters: alloc.counters }

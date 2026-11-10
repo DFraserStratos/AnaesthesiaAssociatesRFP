@@ -83,8 +83,11 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 - Time: 1 unit per 15 minutes for the first two hours.
 - Time after two hours: 1 unit per 10 minutes.
 - Each anaesthetist has an independent dollar value per unit.
-- The anaesthetist selects the RVG code; the system does not automatically infer it.
-- Some RVG codes are ranges and require professional judgement.
+- The anaesthetist picks the RVG code by typing; it is optional, and the system does not infer it.
+- A ranged group starts at its starting figure; any value is accepted, and one outside the guide raises
+  a warning for the office after the procedure, never a block.
+- Base units sit on the RVG group alone; a Contract states none and may only name a default RVG code
+  (next phase).
 - Positioning cannot be charged again if the base code already includes it.
 - The RFP does not define partial-interval rounding; the prototype rounds up per started interval as
   a discovery assumption.

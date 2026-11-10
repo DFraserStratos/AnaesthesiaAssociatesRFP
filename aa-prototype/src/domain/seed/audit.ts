@@ -93,7 +93,7 @@ function procedureSetup(procedure: Procedure): Record<string, unknown> {
     prepaymentDetail: procedure.prepaymentDetail,
     billingReference: procedure.billingReference,
     isAdditional: procedure.isAdditional,
-    rvgBaseCode: procedure.rvgBaseCode,
+    rvgGroupId: procedure.rvgGroupId,
     baseUnitsSelected: procedure.baseUnitsSelected,
     selectedModifierCodes: procedure.selectedModifierCodes,
     priceOverride: procedure.priceOverride,

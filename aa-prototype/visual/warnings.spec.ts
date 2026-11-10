@@ -60,8 +60,9 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
   const raised = await runDemoAction(page, 'raise-sample-warnings', { close: true })
-  expect(raised).toContain('1 rule registered')
-  await expect(todo.locator('li')).toHaveCount(2)
+  // Two rules since catch-up Phase 19: each target carries the prepayment and the base-units sample.
+  expect(raised).toContain('2 rules registered')
+  await expect(todo.locator('li')).toHaveCount(4)
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(2)
   await page.screenshot({ path: 'visual/shots/w15a-03-samples.png', fullPage: true })
   await runDemoAction(page, 'clear-sample-warnings', { close: true })

@@ -201,14 +201,14 @@ describe('interimRouteContract (INTERIM until Phase 20)', () => {
 
 describe('noPriceInForce (the interim of 19a\'s "no range in force")', () => {
   const fixed = mkContract({ id: 'con-3', pricing: { kind: 'fixed' } })
-  const prices: ContractPrice[] = [{ id: 'p1', contractId: 'con-3', rvgBaseCode: 'GA10', price: 800 }]
+  const prices: ContractPrice[] = [{ id: 'p1', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', price: 800 }]
   it('is true only for a primary procedure on a fixed Contract with no row for it', () => {
-    expect(noPriceInForce(fixed, mkProcedure({ rvgBaseCode: 'GA10' }), { procedureOrdinal: 1, prices })).toBe(false)
-    expect(noPriceInForce(fixed, mkProcedure({ rvgBaseCode: 'SP07' }), { procedureOrdinal: 1, prices })).toBe(true)
-    expect(noPriceInForce(fixed, mkProcedure({ rvgBaseCode: 'SP07', isAdditional: true }), { procedureOrdinal: 2, prices })).toBe(false)
+    expect(noPriceInForce(fixed, mkProcedure({ rvgGroupId: 'RG-T-GA10' }), { procedureOrdinal: 1, prices })).toBe(false)
+    expect(noPriceInForce(fixed, mkProcedure({ rvgGroupId: 'RG-T-SP07' }), { procedureOrdinal: 1, prices })).toBe(true)
+    expect(noPriceInForce(fixed, mkProcedure({ rvgGroupId: 'RG-T-SP07', isAdditional: true }), { procedureOrdinal: 2, prices })).toBe(false)
     // Catch-up Phase 18a: an open-price Contract has no price of its own, so nothing bills one silently.
-    expect(noPriceInForce(mkContract({ pricing: { kind: 'open' } }), mkProcedure({ rvgBaseCode: 'GA10' }), { procedureOrdinal: 1, prices })).toBe(true)
-    expect(noPriceInForce(mkContract(), mkProcedure({ rvgBaseCode: 'SP07' }), { procedureOrdinal: 1, prices })).toBe(false)
+    expect(noPriceInForce(mkContract({ pricing: { kind: 'open' } }), mkProcedure({ rvgGroupId: 'RG-T-GA10' }), { procedureOrdinal: 1, prices })).toBe(true)
+    expect(noPriceInForce(mkContract(), mkProcedure({ rvgGroupId: 'RG-T-SP07' }), { procedureOrdinal: 1, prices })).toBe(false)
     expect(noPriceInForceMessage('COS ACC fixed fees')).toBe('No price in force for this procedure under COS ACC fixed fees.')
   })
 })
@@ -216,27 +216,27 @@ describe('noPriceInForce (the interim of 19a\'s "no range in force")', () => {
 describe('matchContractPrice — most-specific match wins', () => {
   const prices: ContractPrice[] = [
     { id: 'p-generic', contractId: 'con-3', price: 900 },
-    { id: 'p-code', contractId: 'con-3', rvgBaseCode: 'GA10', price: 800 },
-    { id: 'p-code-surgeon', contractId: 'con-3', rvgBaseCode: 'GA10', surgeonId: 'surg-1', price: 750 },
-    { id: 'p-code-ord2', contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 2, price: 400 },
+    { id: 'p-code', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', price: 800 },
+    { id: 'p-code-surgeon', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', surgeonId: 'surg-1', price: 750 },
+    { id: 'p-code-ord2', contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 2, price: 400 },
   ]
 
   it('ignores other contracts', () => {
-    expect(matchContractPrice(prices, { contractId: 'con-x', rvgBaseCode: 'GA10' })).toBeUndefined()
+    expect(matchContractPrice(prices, { contractId: 'con-x', rvgGroupId: 'RG-T-GA10' })).toBeUndefined()
   })
 
   it('falls through to the generic row when nothing more specific matches', () => {
-    expect(matchContractPrice(prices, { contractId: 'con-3', rvgBaseCode: 'XX99' })?.id).toBe('p-generic')
+    expect(matchContractPrice(prices, { contractId: 'con-3', rvgGroupId: 'RG-T-XX99' })?.id).toBe('p-generic')
   })
 
   it('prefers the row matching more keys', () => {
     expect(
-      matchContractPrice(prices, { contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 1 })?.id,
+      matchContractPrice(prices, { contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 1 })?.id,
     ).toBe('p-code')
     expect(
       matchContractPrice(prices, {
         contractId: 'con-3',
-        rvgBaseCode: 'GA10',
+        rvgGroupId: 'RG-T-GA10',
         surgeonId: 'surg-1',
         procedureOrdinal: 1,
       })?.id,
@@ -245,7 +245,7 @@ describe('matchContractPrice — most-specific match wins', () => {
 
   it('matches 2nd-procedure ordinal rows', () => {
     expect(
-      matchContractPrice(prices, { contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 2 })?.id,
+      matchContractPrice(prices, { contractId: 'con-3', rvgGroupId: 'RG-T-GA10', procedureOrdinal: 2 })?.id,
     ).toBe('p-code-ord2')
   })
 

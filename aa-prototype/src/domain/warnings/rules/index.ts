@@ -8,7 +8,9 @@
 
 import type { WarningRule } from '../types'
 import { prepaymentUnpaidRule } from './prepaymentUnpaid'
+import { baseUnitsOutsideGuideRule } from './baseUnitsOutsideGuide'
 
-export const WARNING_RULES: readonly WarningRule[] = [prepaymentUnpaidRule]
+export const WARNING_RULES: readonly WarningRule[] = [prepaymentUnpaidRule, baseUnitsOutsideGuideRule]
 
 export { prepaymentUnpaidRule, PREPAYMENT_REQUIRED_TEXT, PREPAYMENT_UNPAID_TEXT } from './prepaymentUnpaid'
+export { baseUnitsOutsideGuideRule } from './baseUnitsOutsideGuide'

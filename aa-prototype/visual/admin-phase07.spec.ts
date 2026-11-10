@@ -79,6 +79,14 @@ test('admin phase 07 master data', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Anaesthetists' })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-04-masters.png', fullPage: true })
 
+  // The RVG groups (catch-up Phase 19): rows under their anatomy headings; three rows share T2 (the guide's two and AA's own).
+  await page.locator('[data-masters-view=rvgGroups]').click()
+  await expect(page.getByRole('heading', { name: 'RVG groups' })).toBeVisible()
+  await expect(page.locator('[data-rvg-anatomy=Head]')).toBeVisible()
+  await expect(page.locator('[data-shot=masters-rvg-groups] tr[data-rvg-group-code=T2]')).toHaveCount(3)
+  await page.screenshot({ path: 'visual/shots/a7-04-masters-rvg-groups.png', fullPage: true })
+  await page.getByRole('button', { name: 'Anaesthetists' }).click()
+
   // Edit an anaesthetist's unit value.
   await page.getByRole('button', { name: 'Edit' }).first().click()
   await page.waitForTimeout(200)

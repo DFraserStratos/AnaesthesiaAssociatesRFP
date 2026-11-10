@@ -24,6 +24,7 @@ import { normaliseClash, recurringClashDraft } from '../draftLists'
 import type { RecurringClash } from './canvas'
 import { HOSP, SURG } from './cast'
 import { PAT } from './patients'
+import { rvgGroupIdForLegacyCode } from './rvgGroups'
 
 /** Who logged the seeded requests. */
 const OFFICE = 'Kirsty W.'
@@ -117,7 +118,7 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       id: `P${String(p).padStart(4, '0')}`,
       bookingId,
       description: spec.description,
-      rvgBaseCode: spec.code,
+      rvgGroupId: rvgGroupIdForLegacyCode(spec.code),
       isAdditional: false,
       selectedModifierCodes: [],
       billingRoute: 'billableParty',

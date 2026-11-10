@@ -8,6 +8,7 @@
 
 import { PAPER_CARD_A, PAPER_CARD_B } from '../../assets/samplePaperCards'
 import type { ExtractionFields } from './ManualBookingForm'
+import { RVG_GROUP } from '../../domain/seed/rvgGroups'
 
 export interface SampleExtraction {
   id: string
@@ -27,7 +28,7 @@ export const SAMPLE_EXTRACTIONS: readonly SampleExtraction[] = [
       dobISO: '1979-08-22',
       ethnicityCode: '21111',
       operation: 'Laparoscopic cholecystectomy',
-      rvgBaseCode: '20941',
+      rvgGroupId: RVG_GROUP.a3!,
       billingRoute: 'hospital',
     },
   },
@@ -41,7 +42,7 @@ export const SAMPLE_EXTRACTIONS: readonly SampleExtraction[] = [
       dobISO: '1992-01-27',
       ethnicityCode: '31111',
       operation: 'Right knee arthroscopy',
-      rvgBaseCode: '49558',
+      rvgGroupId: RVG_GROUP.ll1!,
       billingRoute: 'insurer',
       insurerId: 'I-NIB',
     },

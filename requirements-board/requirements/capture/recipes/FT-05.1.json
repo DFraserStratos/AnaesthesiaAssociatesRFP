@@ -4,21 +4,48 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "rvg-codes",
+      "name": "rvg-groups",
       "app": "admin",
-      "caption": "RVG code master",
-      "start": "/admin/masters",
+      "caption": "RVG groups as published, with their anatomy heading, plus AA's own",
+      "start": "/admin/masters?view=rvgGroups",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"RVG codes\"]"
-            },
-            {
               "wait": 300
             }
           ],
-          "highlight": []
+          "highlight": [
+            "[data-shot=masters-rvg-groups]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "type-ahead",
+      "app": "mobile",
+      "caption": "Find an RVG code by typing; each row shows its description and base units",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "T2"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
         }
       ]
     }

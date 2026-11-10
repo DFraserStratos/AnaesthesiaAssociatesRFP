@@ -317,11 +317,8 @@ function firstOpenInvoicePath(state: AppState): string | null {
 // Sample warnings (catch-up Phase 15a): bodies in `store/warningSamples.ts`
 // ---------------------------------------------------------------------------
 
-/** The rule count, said honestly: with one rule, two warnings on one Booking are proven in tests only. */
-const RULES_NOTE =
-  WARNING_RULE_COUNT === 1
-    ? '1 rule registered, so each Booking shows one warning; a Booking with two is proven in tests until a second rule is added.'
-    : `${WARNING_RULE_COUNT} rules registered.`
+/** The rule count, said honestly (catch-up Phase 19 registered the second rule). */
+const RULES_NOTE = WARNING_RULE_COUNT === 1 ? '1 rule registered.' : `${WARNING_RULE_COUNT} rules registered.`
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`

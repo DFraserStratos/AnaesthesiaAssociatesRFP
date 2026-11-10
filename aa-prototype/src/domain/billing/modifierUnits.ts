@@ -1,6 +1,7 @@
 /**
  * Modifier units (M) — sums the selected modifier codes' units, refusing any
- * the base code absorbs (e.g. a base that includes positioning absorbs P1) and
+ * the RVG group already includes (INTERIM `includesModifierCodes`, until Phase
+ * 19b's included P1: a row that includes positioning refuses P1) and
  * any that collides with an already-counted code in the same BAND (one code
  * per band; see `modifierBandOf`). Refusals are returned with a reason so the
  * UI can show WHY a chip is zeroed (messages render verbatim).
@@ -13,7 +14,7 @@
  * ASA class only when the selection does not already carry it).
  */
 
-import type { RvgCode } from '../types'
+import type { RvgGroup } from './rvgGroups'
 import { getModifierCode, modifierBandLabel, modifierBandOf } from './modifierCodes'
 
 export interface RefusedModifier {
@@ -28,7 +29,7 @@ export interface ModifierUnitsResult {
 
 export function modifierUnits(
   selectedCodes: readonly string[],
-  baseCode?: RvgCode,
+  group?: Pick<RvgGroup, 'code' | 'includesModifierCodes'>,
 ): ModifierUnitsResult {
   let units = 0
   const refused: RefusedModifier[] = []
@@ -55,10 +56,10 @@ export function modifierUnits(
       continue
     }
     if (band !== undefined) bandTaken.set(band, code)
-    if (baseCode !== undefined && baseCode.absorbsModifierCodes.includes(code)) {
+    if (group?.includesModifierCodes?.includes(code) === true) {
       refused.push({
         code,
-        reason: `Base code ${baseCode.code} already includes ${code}; its units are not added.`,
+        reason: `RVG code ${group.code} already includes ${code}; its units are not added.`,
       })
       continue
     }

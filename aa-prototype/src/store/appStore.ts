@@ -109,7 +109,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v33: catch-up Phase 18a, AA's specialties and funding tags (`masters.specialties`,
+/** v34: catch-up Phase 19, the RVG groups (`masters.rvgGroups`, the NZSA RVG
+ *  2021 rows plus AA's own, keyed by hidden id) replacing `masters.rvgCodes`,
+ *  `Procedure.rvgGroupId` replacing `rvgBaseCode`, the fixed-price rows keyed
+ *  by `rvgGroupId`, and the `baseUnitsOutsideGuide` warning rule's default.
+ *  Reseeds on load.
+ * v33: catch-up Phase 18a, AA's specialties and funding tags (`masters.specialties`,
  *  `masters.fundingTags`), `Surgeon.specialtyIds` replacing the free text, a
  *  Contract's `specialtyIds` and `fundingTagId`, the open-price fallbacks,
  *  and `Procedure.accRelated` gone. Reseeds on load.
@@ -215,7 +220,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 33
+export const PERSIST_VERSION = 34
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

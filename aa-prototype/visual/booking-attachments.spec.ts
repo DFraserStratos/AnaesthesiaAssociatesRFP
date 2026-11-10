@@ -40,7 +40,7 @@ async function expectSameHeight(page: Page, left: string, right: string): Promis
 
 test('paired capture cards match heights on the desktop', async ({ page }) => {
   await openEllison(page)
-  await expectSameHeight(page, 'ASA status', 'Procedure code')
+  await expectSameHeight(page, 'ASA status', 'RVG code')
   await expectSameHeight(page, 'Adjustment and charge', 'Billing lines')
 })
 

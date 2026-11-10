@@ -15,6 +15,7 @@ import type { AuditEntry } from '../../domain/types'
 import { ACTION_LABELS, actionLabel } from './actionLabels'
 import { fieldLabel } from './fieldLabels'
 import {
+  auditNamesFor,
   CLEARED_TO_SEED,
   NOT_SET,
   auditFieldChanges,
@@ -268,5 +269,22 @@ describe('Booking source values (catch-up Phase 15)', () => {
     expect(formatAuditValue('source', 'surgeonPdf')).toBe('Surgeon PDF')
     expect(formatAuditValue('source', 'webhook')).toBe('webhook')
     expect(formatAuditValue('source', 'constructor')).toBe('constructor')
+  })
+})
+
+describe('an RVG code in the audit (catch-up Phase 19)', () => {
+  const names = auditNamesFor({ rvgGroups: { RG005: { code: 'H4', description: 'Complex procedures' } } })
+
+  it('reads as its code and description, never the hidden id', () => {
+    expect(formatAuditValue('rvgGroupId', 'RG005', names)).toBe('H4 · Complex procedures')
+    expect(formatAuditValue('rvgGroupId', 'RGN999', names)).toBe('an RVG code no longer listed')
+    expect(formatAuditValue('rvgGroupId', 'RG005')).toBe('an RVG code')
+    expect(formatAuditValue('baseUnitsRange', { min: 10, max: 12 })).toBe('10 to 12')
+    expect(fieldLabel('rvgGroupId')).toBe('RVG code')
+  })
+
+  it('a pick narrates from row to row', () => {
+    const entry = { id: 'A1', atISO: '2026-07-21T08:00:00', who: 'x', role: 'office', source: 'office', entityType: 'procedure', entityId: 'P1', action: 'procedure.update', before: { rvgGroupId: undefined }, after: { rvgGroupId: 'RG005' } } as unknown as AuditEntry
+    expect(auditFieldChanges(entry, names)).toEqual([{ key: 'rvgGroupId', label: 'RVG code', before: 'not set', after: 'H4 · Complex procedures' }])
   })
 })

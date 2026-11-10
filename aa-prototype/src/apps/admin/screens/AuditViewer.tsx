@@ -5,6 +5,7 @@ import { useAppStore } from '../../../store'
 import {
   actionLabel,
   auditFieldChanges,
+  auditNamesFor,
   formatAuditStamp,
   sortAuditNewestFirst,
   summariseAuditChanges,
@@ -44,6 +45,8 @@ export function AuditViewer() {
   const parties = useAppStore((s) => s.masters.parties)
   const specialties = useAppStore((s) => s.masters.specialties)
   const fundingTags = useAppStore((s) => s.masters.fundingTags)
+  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const names = useMemo(() => auditNamesFor({ rvgGroups }), [rvgGroups])
   const [entityType, setEntityType] = useState('all')
 
   // A Contract reads by its AA code and name, a Party by its name (catch-up Phase 18).
@@ -56,6 +59,8 @@ export function AuditViewer() {
     // Catch-up Phase 18a: a specialty by its name, a funding tag by its code.
     if (type === 'specialty') return specialties[id]?.name ?? id
     if (type === 'fundingTag') return fundingTags[id]?.code ?? id
+    // Catch-up Phase 19: an RVG group by its code and description, never its hidden id.
+    if (type === 'rvgGroup') return names.rvgGroup?.(id) ?? 'An RVG group'
     return id
   }
   const [source, setSource] = useState('all')
@@ -129,7 +134,7 @@ export function AuditViewer() {
               </tr>
             )}
             {shown.map((entry) => {
-              const change = summariseAuditChanges(auditFieldChanges(entry))
+              const change = summariseAuditChanges(auditFieldChanges(entry, names))
               return (
                 <tr key={entry.id}>
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{formatAuditStamp(entry.atISO)}</td>

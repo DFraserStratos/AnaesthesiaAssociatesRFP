@@ -32,7 +32,7 @@ test('web phase 05 walkthrough', async ({ page }) => {
   await page.getByText('Margaret Ellison').first().click()
   await page.waitForTimeout(300)
   await expect(page.getByText('ASA status')).toBeVisible()
-  await expect(page.getByText('Procedure code', { exact: true })).toBeVisible()
+  await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/w-04-booking-detail.png', fullPage: true })
 
   // A BTM edit: pick an ASA class (writes through the same guard as mobile).

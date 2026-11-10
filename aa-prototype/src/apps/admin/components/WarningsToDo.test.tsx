@@ -40,7 +40,8 @@ describe('WarningsToDo', () => {
     render(<Harness />)
     expect(screen.getAllByRole('listitem')).toHaveLength(1)
     act(() => { raiseDaySamples(useAppStore) })
-    expect(screen.getAllByRole('listitem')).toHaveLength(3)
+    // Two samples on each of the two pinned targets (catch-up Phase 19 added the base-units rule).
+    expect(screen.getAllByRole('listitem')).toHaveLength(5)
   })
 
   it('Clear removes the row at once and writes the audit row (Cleared)', () => {

@@ -301,7 +301,8 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 
 1. Dr Souter opens her List and selects the patient Booking.
 2. She confirms patient, operation, hospital and surgeon context.
-3. For each Procedure she selects the RVG base code.
+3. For each Procedure she may pick an RVG code by typing; on a ranged group she may change the
+   starting figure, and an out-of-range value raises an office warning.
 4. She records the start and handover times.
 5. The system calculates tiered Time units:
    - 1 unit per 15 minutes for the first two hours;

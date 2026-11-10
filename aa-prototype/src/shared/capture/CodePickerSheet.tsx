@@ -1,28 +1,34 @@
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
-import type { RvgCode } from '../../domain/types'
+import type { RvgGroup, RvgGroupId } from '../../domain/types'
+import { baseUnitsShort, defaultPickerRows, searchRvgGroups } from '../../domain/billing/rvgGroups'
 import { useSurface } from '../surface'
+import { NameSearchBox } from '../ui/NameSearchBox'
+import { Pill } from '../ui/Pill'
 
 interface CodePickerSheetProps {
   open: boolean
-  currentCode?: string
-  rvgCodes: Record<string, RvgCode>
-  onPick: (code: string) => void
+  /** The Procedure's current RVG group, tinted teal (and first in the default list). */
+  currentId?: RvgGroupId
+  rvgGroups: Record<string, RvgGroup>
+  onPick: (id: RvgGroupId) => void
   onClose: () => void
 }
 
-function baseUnitsLabel(code: RvgCode): string {
-  return code.baseUnits.kind === 'single'
-    ? `B ${code.baseUnits.units}`
-    : `B ${code.baseUnits.min} to ${code.baseUnits.max}`
-}
+const SEARCH_LABEL = 'Search RVG code or description'
 
 /**
- * The RVG base-code picker (mockup screen 3's bottom sheet): search across
- * code and name, rows grouped by anatomical site, mono code + name + base
- * units, the selected row tinted teal.
+ * The RVG code type-ahead (catch-up Phase 19; US-05.1.1, US-05.1.3): one flat
+ * list on code and description, the search box leading and focused. Every
+ * matching row shows its code (mono, in a fixed column so rows sharing a code
+ * line up), its description, its anatomy heading as a small neutral label and
+ * its base units, so two rows with one code are told apart at a glance. Typing
+ * "H1" lists every H1 row. No tabs, no grouping, no body-section jump.
+ *
+ * A bottom sheet on mobile, the surface's dialog on web and Admin. Each row is
+ * a plain button (the current one marked `aria-current`).
  */
-export function CodePickerSheet({ open, currentCode, rvgCodes, onPick, onClose }: CodePickerSheetProps) {
+export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose }: CodePickerSheetProps) {
   const { Overlay } = useSurface()
   const [query, setQuery] = useState('')
 
@@ -30,98 +36,69 @@ export function CodePickerSheet({ open, currentCode, rvgCodes, onPick, onClose }
     if (open) setQuery('')
   }, [open])
 
-  const groups = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const matches = Object.values(rvgCodes).filter(
-      (c) => q === '' || c.code.includes(q) || c.description.toLowerCase().includes(q),
-    )
-    const bySite = new Map<string, RvgCode[]>()
-    for (const code of matches) {
-      const arr = bySite.get(code.anatomicalSite)
-      if (arr === undefined) bySite.set(code.anatomicalSite, [code])
-      else arr.push(code)
-    }
-    return [...bySite.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([site, codes]) => ({ site, codes: codes.sort((a, b) => a.code.localeCompare(b.code)) }))
-  }, [rvgCodes, query])
+  const rows = useMemo(
+    () => (query.trim() === '' ? defaultPickerRows(rvgGroups, currentId) : searchRvgGroups(query, rvgGroups)),
+    [rvgGroups, query, currentId],
+  )
 
   return (
     <Overlay open={open} onClose={onClose}>
-      <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>Procedure code</div>
-      <input
-        placeholder="Search code or name"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          height: 48,
-          borderRadius: radius.ctl,
-          border: `1px solid ${neutral.line}`,
-          background: neutral.bg,
-          padding: '0 14px',
-          fontFamily: 'inherit',
-          fontSize: 15,
-          color: neutral.ink,
-          marginBottom: 8,
-        }}
-      />
-      <div style={{ maxHeight: 420, overflow: 'auto' }}>
-        {groups.length === 0 && (
-          <div style={{ padding: '18px 4px', fontSize: 14, color: neutral.mist }}>No codes match that search.</div>
-        )}
-        {groups.map((group) => (
-          <div key={group.site}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                color: neutral.mist,
-                textTransform: 'uppercase',
-                padding: '12px 10px 4px',
-              }}
-            >
-              {group.site}
-            </div>
-            {group.codes.map((code) => {
-              const selected = code.code === currentCode
-              return (
-                <button
-                  key={code.code}
-                  type="button"
-                  onClick={() => onPick(code.code)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    width: '100%',
-                    textAlign: 'left',
-                    border: 'none',
-                    borderBottom: `1px solid ${neutral.sunken}`,
-                    fontFamily: 'inherit',
-                    cursor: 'pointer',
-                    padding: '14px 10px',
-                    borderRadius: 8,
-                    background: selected ? accent.tint : 'transparent',
-                  }}
+      <div data-shot="rvg-type-ahead">
+        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>RVG code</div>
+        <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus />
+        <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px 6px', minHeight: 18 }} aria-live="polite">
+          {query.trim() === ''
+            ? 'Type a code such as H1, or a word from the description.'
+            : `${rows.length} ${rows.length === 1 ? 'match' : 'matches'}`}
+        </div>
+        <div aria-label="RVG codes" style={{ maxHeight: 420, overflow: 'auto' }}>
+          {rows.length === 0 && (
+            <div style={{ padding: '18px 4px', fontSize: 14, color: neutral.mist }}>No RVG codes match that search.</div>
+          )}
+          {rows.map((group) => {
+            const selected = group.id === currentId
+            return (
+              <button
+                key={group.id}
+                type="button"
+                aria-current={selected ? 'true' : undefined}
+                aria-label={`${group.code}, ${group.description}, ${group.anatomy}, ${baseUnitsShort(group)}`}
+                data-rvg-code={group.code}
+                onClick={() => onPick(group.id)}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '52px 1fr auto',
+                  alignItems: 'start',
+                  columnGap: 12,
+                  width: '100%',
+                  textAlign: 'left',
+                  border: 'none',
+                  borderBottom: `1px solid ${neutral.sunken}`,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  padding: '12px 10px',
+                  borderRadius: radius.ctl,
+                  background: selected ? accent.tint : 'transparent',
+                }}
+              >
+                <span className="mono" style={{ fontSize: 13.5, fontWeight: 600, color: accent.base, paddingTop: 1 }}>
+                  {group.code}
+                </span>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, minWidth: 0 }}>
+                  <span style={{ fontSize: 14.5, fontWeight: 500, color: neutral.ink, lineHeight: 1.35 }}>{group.description}</span>
+                  <Pill size="small" shot="rvg-anatomy">{group.anatomy}</Pill>
+                </span>
+                <span
+                  className="mono"
+                  data-shot="rvg-base-units"
+                  style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap', paddingTop: 1 }}
                 >
-                  <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: accent.base }}>
-                      {code.code}
-                    </span>
-                    <span style={{ fontSize: 15, fontWeight: 500, color: neutral.ink }}>{code.description}</span>
-                  </span>
-                  <span className="mono" style={{ fontSize: 12, color: neutral.mist, flex: 'none' }}>
-                    {baseUnitsLabel(code)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        ))}
+                  {baseUnitsShort(group)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </Overlay>
   )

@@ -9,30 +9,31 @@ function useWarningSlices() {
   const billing = useAppStore((s) => s.billing)
   const appSettings = useAppStore((s) => s.appSettings)
   const clock = useAppStore((s) => s.clock)
-  return { schedule, billing, appSettings, clock }
+  const masters = useAppStore((s) => s.masters)
+  return { schedule, billing, appSettings, clock, masters }
 }
 
 /** A Booking's warnings, open and cleared, strong first (catch-up Phase 15a). */
 export function useBookingWarnings(bookingId: string): Warning[] {
-  const { schedule, billing, appSettings, clock } = useWarningSlices()
+  const { schedule, billing, appSettings, clock, masters } = useWarningSlices()
   return useMemo(
-    () => warningsForBooking({ schedule, billing, appSettings, clock }, bookingId),
-    [schedule, billing, appSettings, clock, bookingId],
+    () => warningsForBooking({ schedule, billing, appSettings, clock, masters }, bookingId),
+    [schedule, billing, appSettings, clock, masters, bookingId],
   )
 }
 
 /** Every warning on a List's Bookings, grouped by Booking id (one memoised pass for a row list). */
 export function useListWarnings(listId: string): ReadonlyMap<string, Warning[]> {
-  const { schedule, billing, appSettings, clock } = useWarningSlices()
+  const { schedule, billing, appSettings, clock, masters } = useWarningSlices()
   return useMemo(() => {
     const out = new Map<string, Warning[]>()
-    for (const w of warningsForList({ schedule, billing, appSettings, clock }, listId)) {
+    for (const w of warningsForList({ schedule, billing, appSettings, clock, masters }, listId)) {
       const arr = out.get(w.bookingId)
       if (arr === undefined) out.set(w.bookingId, [w])
       else arr.push(w)
     }
     return out
-  }, [schedule, billing, appSettings, clock, listId])
+  }, [schedule, billing, appSettings, clock, masters, listId])
 }
 
 /** The strongest OPEN warning's strength, or undefined when none is open. */

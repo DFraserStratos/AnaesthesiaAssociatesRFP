@@ -466,7 +466,7 @@ export function noPriceInForce(
   return (
     matchContractPrice(q.prices, {
       contractId: contract.id,
-      ...(procedure.rvgBaseCode !== undefined ? { rvgBaseCode: procedure.rvgBaseCode } : {}),
+      ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
       ...(q.surgeonId !== undefined ? { surgeonId: q.surgeonId } : {}),
       procedureOrdinal: q.procedureOrdinal,
     }) === undefined
@@ -479,7 +479,7 @@ export function noPriceInForce(
 
 export interface ContractPriceQuery {
   contractId: string
-  rvgBaseCode?: string
+  rvgGroupId?: string
   surgeonId?: string
   /** 1-based position of the procedure on its Booking. */
   procedureOrdinal?: number
@@ -503,8 +503,8 @@ export function matchContractPrice(
     if (price.contractId !== query.contractId) continue
 
     let specificity = 0
-    if (price.rvgBaseCode !== undefined) {
-      if (price.rvgBaseCode !== query.rvgBaseCode) continue
+    if (price.rvgGroupId !== undefined) {
+      if (price.rvgGroupId !== query.rvgGroupId) continue
       specificity++
     }
     if (price.surgeonId !== undefined) {

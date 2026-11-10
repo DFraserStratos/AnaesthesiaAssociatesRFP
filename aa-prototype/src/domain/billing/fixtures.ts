@@ -12,7 +12,7 @@ import type {
   Insurer,
   Party,
   Procedure,
-  RvgCode,
+  RvgGroup,
 } from '../types'
 
 export function mkAnaesthetist(overrides: Partial<Anaesthetist> = {}): Anaesthetist {
@@ -106,31 +106,39 @@ export function mkBillableParty(overrides: Partial<BillableParty> = {}): Billabl
   }
 }
 
-/** A plain 10-unit base code that absorbs nothing. */
-export const BASE_SINGLE_10: RvgCode = {
+/** A plain 10-unit RVG group. */
+export const BASE_SINGLE_10: RvgGroup = {
+  id: 'RG-T-GA10',
   code: 'GA10',
   description: 'Upper abdominal procedure',
-  anatomicalSite: 'Abdomen',
-  baseUnits: { kind: 'single', units: 10 },
-  absorbsModifierCodes: [],
+  anatomy: 'Abdomen',
+  baseUnits: 10,
+  modifierUnits: 0,
+  retired: false,
 }
 
-/** A base code that absorbs positioning (P1). */
-export const BASE_ABSORBS_P1: RvgCode = {
+/** An RVG group that includes positioning (P1): the interim `includesModifierCodes`. */
+export const BASE_ABSORBS_P1: RvgGroup = {
+  id: 'RG-T-SP07',
   code: 'SP07',
   description: 'Spinal procedure, prone positioning included',
-  anatomicalSite: 'Spine',
-  baseUnits: { kind: 'single', units: 7 },
-  absorbsModifierCodes: ['P1'],
+  anatomy: 'Spine',
+  baseUnits: 7,
+  modifierUnits: 0,
+  retired: false,
+  includesModifierCodes: ['P1'],
 }
 
-/** A range base code (5 to 9 units, anaesthetist selects). */
-export const BASE_RANGE_5_9: RvgCode = {
+/** A ranged RVG group (5 to 9 units, starting at 5). */
+export const BASE_RANGE_5_9: RvgGroup = {
+  id: 'RG-T-NR59',
   code: 'NR59',
   description: 'Complex regional procedure, graded',
-  anatomicalSite: 'Limb',
-  baseUnits: { kind: 'range', min: 5, max: 9 },
-  absorbsModifierCodes: [],
+  anatomy: 'Lower limb',
+  baseUnits: 5,
+  baseUnitsRange: { min: 5, max: 9 },
+  modifierUnits: 0,
+  retired: false,
 }
 
 /** 2h30m on the demo day: 08:00 start, 10:30 handover (T = 11 units). */

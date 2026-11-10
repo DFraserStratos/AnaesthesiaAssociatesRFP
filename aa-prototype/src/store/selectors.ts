@@ -1148,7 +1148,7 @@ export function billingContextForBooking(state: AppState, booking: Booking): Boo
   if (anaesthetist === undefined) return undefined
   const ctx: BookingBillingContext = {
     anaesthetist,
-    rvgCodes: state.masters.rvgCodes,
+    rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
     contractPrices: Object.values(state.masters.contractPrices),
     parties: state.masters.parties,
@@ -1171,7 +1171,7 @@ export interface EntityCounts {
   fixedPriceFallbacks: number
   specialties: number
   fundingTags: number
-  rvgCodes: number
+  rvgGroups: number
   modifierCodes: number
   recurringBookings: number
   slots: number
@@ -1196,7 +1196,7 @@ export function entityCounts(state: AppState): EntityCounts {
     fixedPriceFallbacks: Object.values(state.masters.contracts).filter(isOpenPriceFallback).length,
     specialties: Object.keys(state.masters.specialties).length,
     fundingTags: Object.keys(state.masters.fundingTags).length,
-    rvgCodes: Object.keys(state.masters.rvgCodes).length,
+    rvgGroups: Object.keys(state.masters.rvgGroups).length,
     modifierCodes: Object.keys(state.masters.modifierCodes).length,
     recurringBookings: Object.keys(state.masters.recurringBookings).length,
     patients: Object.keys(state.masters.patients).length,

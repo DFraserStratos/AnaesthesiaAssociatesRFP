@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { accent, neutral } from '../../theme/tokens'
-import type { ModifierCode, Procedure, RvgCode } from '../../domain/types'
+import type { ModifierCode, Procedure, RvgGroup } from '../../domain/types'
 import { MODIFIER_CODES, modifierBandOf, modifierUnits, toggleModifierCode } from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
@@ -10,7 +10,8 @@ import { Caption } from './ui'
 
 interface ModifierChipsProps {
   procedure: Procedure
-  baseCode?: RvgCode | undefined
+  /** The Procedure's RVG group: its INTERIM `includesModifierCodes` (Phase 19b's) strikes those chips through. */
+  rvgGroup?: RvgGroup | undefined
   actor: Actor
   /** isAdditional or read-only. */
   disabled: boolean
@@ -74,13 +75,13 @@ const STACKING_CODES: readonly ModifierCode[] = MODIFIER_CODES.filter(
  * the domain's verbatim refusal reason beneath. That was true of the chips and
  * is now true of the segments too.
  */
-export function ModifierChips({ procedure, baseCode, actor, disabled, onError }: ModifierChipsProps) {
+export function ModifierChips({ procedure, rvgGroup, actor, disabled, onError }: ModifierChipsProps) {
   const { variant } = useSurface()
   const web = variant === 'web'
   const selected = new Set(procedure.selectedModifierCodes)
 
   const absorbs = (code: string) =>
-    baseCode !== undefined && baseCode.absorbsModifierCodes.includes(code)
+    rvgGroup?.includesModifierCodes?.includes(code) === true
 
   function toggle(code: string) {
     const next = toggleModifierCode(procedure.selectedModifierCodes, code)
@@ -170,7 +171,7 @@ export function ModifierChips({ procedure, baseCode, actor, disabled, onError }:
       </Row>
 
       {absorbed.map((m) => {
-        const reason = modifierUnits([m.code], baseCode).refused[0]?.reason
+        const reason = modifierUnits([m.code], rvgGroup).refused[0]?.reason
         return reason !== undefined ? <Caption key={m.code}>{reason}</Caption> : null
       })}
       <Caption>

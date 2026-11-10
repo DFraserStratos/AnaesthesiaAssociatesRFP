@@ -92,7 +92,7 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
   if (anaesthetist === undefined) return undefined
   const ctx: InvoiceBuildContext = {
     anaesthetist,
-    rvgCodes: seed.masters.rvgCodes,
+    rvgGroups: seed.masters.rvgGroups,
     contracts: seed.masters.contracts,
     contractPrices: Object.values(seed.masters.contractPrices),
     parties: seed.masters.parties,

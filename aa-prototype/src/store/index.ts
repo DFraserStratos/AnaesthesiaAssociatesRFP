@@ -233,6 +233,7 @@ export {
 export { createParty, editParty, partyContractFacts, type PartyFields } from './partyActions'
 // Catch-up Phase 18a: AA's specialties and funding tags (Admin Master data).
 export { createSpecialty, renameSpecialty, removeSpecialty } from './specialtyActions'
+export { createRvgGroup, editRvgGroup, retireRvgGroup, restoreRvgGroup, pickRvgGroup } from './rvgGroupActions'
 export { createFundingTag, editFundingTag, moveFundingTagInList, removeFundingTag, type FundingTagFields } from './fundingTagActions'
 export {
   createContract,

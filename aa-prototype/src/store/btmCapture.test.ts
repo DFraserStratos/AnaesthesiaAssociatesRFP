@@ -14,7 +14,7 @@ import { completeBooking, editProcedure, submitList } from './lifecycle'
 import { auditForEntity, isListBilled, proceduresForBooking } from './selectors'
 import { clockISO, mutate, type Actor } from './mutate'
 import { feeFor, resolveBtm } from '../domain/billing/fee'
-import { ANAE, SEED_MARKERS, SEED_LIST_IDS } from '../domain/seed'
+import { ANAE, RVG_GROUP, SEED_MARKERS, SEED_LIST_IDS } from '../domain/seed'
 import type { Procedure } from '../domain/types'
 
 const SOUTER: Actor = {
@@ -53,8 +53,8 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
       procedure.governingContractId !== undefined
         ? state.masters.contracts[procedure.governingContractId]
         : undefined
-    const baseCode =
-      procedure.rvgBaseCode !== undefined ? state.masters.rvgCodes[procedure.rvgBaseCode] : undefined
+    const rvgGroup =
+      procedure.rvgGroupId !== undefined ? state.masters.rvgGroups[procedure.rvgGroupId] : undefined
     const nonRvgLines = Object.values(state.schedule.billingLines).filter(
       (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
     )
@@ -65,7 +65,7 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
       nonRvgLines,
     }
     if (contract !== undefined) ctx.contract = contract
-    if (baseCode !== undefined) ctx.baseCode = baseCode
+    if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
     if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
     const fee = feeFor(procedure, ctx)
     totals.push(fee.total)
@@ -129,7 +129,7 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
     expect(souter.unitValue).toBe(26.5)
     expect(strand.unitValue).toBe(42)
 
-    // B6 (20941) + T2 (30 min) + M0 (AS1) = 8 units, no contract → the
+    // B6 (A3, lap chole) + T2 (30 min) + M0 (AS1) = 8 units, no contract → the
     // anaesthetist's OWN unit value applies.
     const procedure: Procedure = {
       id: 'P-TEST',
@@ -137,16 +137,16 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
       description: 'Laparoscopic cholecystectomy',
       isAdditional: false,
       selectedModifierCodes: [],
-      rvgBaseCode: '20941',
+      rvgGroupId: RVG_GROUP.a3!,
       asaClass: 'AS1',
       anaestheticStartISO: '2026-07-21T09:00:00',
       handoverISO: '2026-07-21T09:30:00',
     }
-    const baseCode = masters.rvgCodes['20941']
-    if (baseCode === undefined) throw new Error('missing code')
+    const rvgGroup = masters.rvgGroups[RVG_GROUP.a3!]
+    if (rvgGroup === undefined) throw new Error('missing RVG group')
 
-    const souterFee = feeFor(procedure, { anaesthetist: souter, baseCode })
-    const strandFee = feeFor(procedure, { anaesthetist: strand, baseCode })
+    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup })
+    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup })
     expect(souterFee.billableUnits).toBe(8)
     expect(souterFee.total).toBe(212)
     expect(strandFee.billableUnits).toBe(8)
@@ -216,14 +216,14 @@ describe('B/T/M provenance semantics (the reset link contract)', () => {
       }).ok,
     ).toBe(true)
     let procedure = api.getState().schedule.procedures[procedureId]!
-    let btm = resolveBtm(procedure, api.getState().masters.rvgCodes[procedure.rvgBaseCode ?? ''])
+    let btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''])
     expect(btm.time).toEqual({ units: 5, source: 'overridden' })
 
     // "Use seeded value": clearing the capture re-derives from the stamps
     // (no handover seeded → 0 time units, seeded provenance).
     expect(editProcedure(api, SOUTER, procedureId, { timeUnitsCaptured: undefined }).ok).toBe(true)
     procedure = api.getState().schedule.procedures[procedureId]!
-    btm = resolveBtm(procedure, api.getState().masters.rvgCodes[procedure.rvgBaseCode ?? ''])
+    btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''])
     expect(btm.time).toEqual({ units: 0, source: 'seeded' })
   })
 })

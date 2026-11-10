@@ -32,6 +32,7 @@ import { newAttachment } from './attachmentActions'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
 import { isOpenSlot } from '../domain/slotStatus'
+import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { placeListOnSlot } from './slotActions'
 
 // ---------------------------------------------------------------------------
@@ -44,7 +45,8 @@ export interface CreateBookingInput {
   scheduledTime?: string
   /** The procedure/operation description. */
   operation: string
-  rvgBaseCode?: string
+  /** The optional RVG code: an RVG group row by id (catch-up Phase 19). Never changes `operation`. */
+  rvgGroupId?: string
   /** Explicit billing route (the RFP: set explicitly, never derived). */
   billingRoute: BillingRoute
   insurerId?: string
@@ -90,6 +92,8 @@ export function createBooking(
   if (input.operation.trim() === '') {
     return refuse('operationRequired', 'An operation description is required.')
   }
+  const pickRefused = rvgGroupPickRefusal(state.masters.rvgGroups, input.rvgGroupId, undefined)
+  if (pickRefused !== null) return refuse(pickRefused.code, pickRefused.message)
 
   // Shared intake dedupe — may reuse an existing Patient or create one. A bad
   // NHI is surfaced verbatim before any Booking is created.
@@ -138,7 +142,7 @@ export function createBooking(
       isAdditional: false,
       selectedModifierCodes: [],
     }
-    if (input.rvgBaseCode !== undefined) procedure.rvgBaseCode = input.rvgBaseCode
+    if (input.rvgGroupId !== undefined) procedure.rvgGroupId = input.rvgGroupId
     if (input.insurerId !== undefined) procedure.insurerId = input.insurerId
     if (input.billablePartyId !== undefined) procedure.billablePartyId = input.billablePartyId
     if (input.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = input.patientPaymentCategory

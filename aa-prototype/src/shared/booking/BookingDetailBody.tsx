@@ -195,7 +195,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     if (anaesthetist === undefined) return []
     const ctx: BookingBillingContext = {
       anaesthetist,
-      rvgCodes: masters.rvgCodes,
+      rvgGroups: masters.rvgGroups,
       contracts: masters.contracts,
       contractPrices: Object.values(masters.contractPrices),
       parties: masters.parties,
@@ -625,7 +625,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           {procedures.map((procedure) => (
             <div key={procedure.id} style={{ fontSize: 14, color: neutral.ink }}>
               {procedure.description}
-              {procedure.rvgBaseCode !== undefined && <span className="mono" style={{ marginLeft: 8, fontSize: 12, color: neutral.slate }}>{procedure.rvgBaseCode}</span>}
+              {procedure.rvgGroupId !== undefined && masters.rvgGroups[procedure.rvgGroupId] !== undefined && (
+                <span className="mono" style={{ marginLeft: 8, fontSize: 12, color: neutral.slate }}>{masters.rvgGroups[procedure.rvgGroupId]!.code}</span>
+              )}
             </div>
           ))}
           <div style={{ fontSize: 12.5, color: neutral.mist }}>The fee shows once an anaesthetist is assigned.</div>

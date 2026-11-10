@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { elevation, neutral, radius, scrim } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 
@@ -10,6 +10,16 @@ interface DialogProps {
   hideHandle?: boolean
 }
 
+/** The open dialogs' root elements: Escape closes only the topmost (last in document order). */
+const OPEN_DIALOGS = new Set<HTMLElement>()
+
+function isTopmost(el: HTMLElement): boolean {
+  for (const other of OPEN_DIALOGS) {
+    if (other !== el && el.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING) return false
+  }
+  return true
+}
+
 /**
  * The web `SurfaceProvider`'s `Overlay` (convention 16): a centred desktop
  * dialog with the same `{open, onClose, children, hideHandle}` signature as the
@@ -19,18 +29,30 @@ interface DialogProps {
  * the viewport regardless of where the detail panel sits.
  */
 export function Dialog({ open, onClose, children }: DialogProps) {
+  // The latest onClose, so the effect below runs only on open and close and a
+  // re-render never moves this dialog up the stack.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+  const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!open) return undefined
+    const el = rootRef.current
+    if (!open || el === null) return undefined
+    OPEN_DIALOGS.add(el)
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      // Escape closes only the topmost dialog (catch-up Phase 19: the RVG code
+      // picker opens over the Add booking dialog, which must survive it).
+      if (e.key === 'Escape' && el !== null && isTopmost(el)) onCloseRef.current()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      OPEN_DIALOGS.delete(el)
+    }
+  }, [open])
 
   if (!open) return null
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div ref={rootRef} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div
         onClick={onClose}
         aria-hidden

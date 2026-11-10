@@ -14,7 +14,7 @@ import { createParty } from './partyActions'
 import { createHospital } from './mastersActions'
 import * as contractActions from './contractActions'
 import { CONTRACT_REFUSAL_MESSAGES } from '../domain/billing/contracts'
-import { CONTRACT, PARTY, SURG } from '../domain/seed'
+import { CONTRACT, PARTY, RVG_GROUP, SURG } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
@@ -152,7 +152,7 @@ describe('no Contract is created with a hospital or a Party (RV-06)', () => {
 describe('fixed-price rows (interim until Phase 19a)', () => {
   it('adds and edits a row on a fixed-price Contract only', () => {
     const api = createAppStore()
-    const added = addContractPrice(api, OFFICE, { contractId: CONTRACT.cosFixed, rvgBaseCode: '47516', price: 1200 })
+    const added = addContractPrice(api, OFFICE, { contractId: CONTRACT.cosFixed, rvgGroupId: RVG_GROUP.aaHipReplacement!, price: 1200 })
     expect(added.ok).toBe(true)
     if (!added.ok) return
     expect(editContractPrice(api, OFFICE, added.value.id, { price: 1250 }).ok).toBe(true)

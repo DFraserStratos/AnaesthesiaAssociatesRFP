@@ -14,6 +14,7 @@ import type { Booking, Procedure } from '../types'
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
 import { CONTRACT } from './contracts'
+import { rvgGroupIdForLegacyCode } from './rvgGroups'
 
 export const ACCEPTANCE_BEAT_LIST_ID = projectedListId(ANAE.beaumont, '2026-07-31', 'AM')
 export const ACCEPTANCE_BEAT_PATIENT_ID = 'PT0120'
@@ -41,7 +42,7 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     id: `P${String(next.procedure).padStart(4, '0')}`,
     bookingId,
     description: 'Cataract extraction with IOL',
-    rvgBaseCode: '42702',
+    rvgGroupId: rvgGroupIdForLegacyCode('42702'),
     isAdditional: false,
     selectedModifierCodes: [],
     billingRoute: 'hospital',

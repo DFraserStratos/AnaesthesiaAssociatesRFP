@@ -20,6 +20,8 @@ import { validateBookingForBilling, type BookingBillingContext } from '../billin
 import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
+import { ANATOMY_HEADINGS, baseUnitsFor } from '../billing/rvgGroups'
+import { AA_OWN_ROW_KEYS, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP, RVG_GROUPS } from './rvgGroups'
 import { displayStatusKey, projectedListId, slotIdFor } from '../slots'
 
 /** Pre-horizon backdrop history (the store's `isBackdropList`; the domain test does not import the store). */
@@ -39,7 +41,7 @@ function billingContextFor(state: SeedState, booking: Booking): BookingBillingCo
   if (anaesthetist === undefined) throw new Error(`list ${list.id} has no anaesthetist`)
   const ctx: BookingBillingContext = {
     anaesthetist,
-    rvgCodes: state.masters.rvgCodes,
+    rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
     contractPrices: Object.values(state.masters.contractPrices),
     parties: state.masters.parties,
@@ -442,8 +444,8 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
         procedure.governingContractId !== undefined
           ? seed.masters.contracts[procedure.governingContractId]
           : undefined
-      const baseCode =
-        procedure.rvgBaseCode !== undefined ? seed.masters.rvgCodes[procedure.rvgBaseCode] : undefined
+      const rvgGroup =
+        procedure.rvgGroupId !== undefined ? seed.masters.rvgGroups[procedure.rvgGroupId] : undefined
       const nonRvgLines = Object.values(seed.schedule.billingLines).filter(
         (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
       )
@@ -454,7 +456,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
         nonRvgLines,
       }
       if (contract !== undefined) ctx.contract = contract
-      if (baseCode !== undefined) ctx.baseCode = baseCode
+      if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
       if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
       const fee = feeFor(procedure, ctx)
       totals.push(fee.total)
@@ -699,7 +701,7 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
       const procs = proceduresForBooking(seed, b.id)
       expect(procs).toHaveLength(1)
       expect(procs[0]).toMatchObject({ billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPostProcedure' })
-      expect(procs[0]!.rvgBaseCode).toBeDefined()
+      expect(procs[0]!.rvgGroupId).toBeDefined()
     }
     expect(seed.schedule.lists['LD-002']).toMatchObject({ dateISO: '2026-07-22', session: 'PM', hospitalId: HOSP.forte })
   })
@@ -801,5 +803,102 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(contracts['CT-COS-FIXED']?.pricing.kind).toBe('fixed')
     expect(Object.values(seed.masters.contractPrices).filter((p) => p.contractId === 'CT-COS-FIXED')).toEqual([])
     expect(Object.values(contracts).filter((c) => c.permitsRateTime).map((c) => c.id)).toEqual(['CT-ARIA-HOURLY'])
+  })
+})
+
+describe('the RVG groups (catch-up Phase 19; US-05.1.1, US-05.1.3, RV-41)', () => {
+  const seed = buildSeed()
+  const groups = Object.values(seed.masters.rvgGroups)
+  const codes = (code: string) => groups.filter((g) => g.code === code)
+
+  it('every row has base units above 0, a range holding its figure, modifier units 0, and an opaque id', () => {
+    for (const g of groups) {
+      expect(Number.isInteger(g.baseUnits) && g.baseUnits > 0).toBe(true)
+      if (g.baseUnitsRange !== undefined) {
+        expect(g.baseUnitsRange.min).toBe(g.baseUnits)
+        expect(g.baseUnitsRange.max).toBeGreaterThan(g.baseUnits)
+      }
+      expect(g.modifierUnits).toBe(0)
+      expect(g.retired).toBe(false)
+      expect(g.id).toMatch(/^RG\d{3}$/)
+      expect(g.description).not.toMatch(/[–—]/)
+    }
+    expect(new Set(groups.map((g) => g.id)).size).toBe(RVG_GROUPS.length)
+  })
+
+  it('the same code sits on more than one row: both T2s and both P6s, told apart by description and units', () => {
+    const published = (code: string) => codes(code).filter((g) => !AA_OWN_ROW_KEYS.some((k) => RVG_GROUP[k] === g.id))
+    expect(published('T2').map((g) => g.baseUnits).sort()).toEqual([4, 5])
+    expect(published('P6').map((g) => g.baseUnits).sort((a, b) => a - b)).toEqual([4, 10])
+    expect(new Set(published('T2').map((g) => g.description)).size).toBe(2)
+  })
+
+  it('holds every group the 8 October wording table maps to, and the published ranges', () => {
+    const ar35 = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6a', 'N1', 'T1', 'T2', 'T3', 'UL1', 'UL2', 'UL3', 'LL1', 'LL3', 'LL4', 'LL5', 'LL6', 'A1', 'A2', 'A3', 'A4', 'P1', 'P2', 'P4', 'E1', 'E2', 'S2', 'S6', 'S8b', 'S9b']
+    for (const code of ar35) expect(codes(code).length, code).toBeGreaterThan(0)
+    const ranged: Record<string, [number, number]> = { H4: [10, 12], N4: [10, 14], T5c: [8, 10], A4: [6, 8], A6: [12, 14], A12: [8, 10], A13: [12, 14], R2: [6, 8] }
+    for (const [code, [min, max]] of Object.entries(ranged)) {
+      expect(codes(code)[0]?.baseUnitsRange, code).toEqual({ min, max })
+      expect(codes(code)[0]?.baseUnits, code).toBe(min)
+    }
+  })
+
+  it('holds every Neurosurgery and Spine row of the included-modifier CSV, with its base units (for Phase 19b)', () => {
+    const csv: Record<string, number> = { H7A: 10, H7b: 12, H8a: 12, H8b: 14, H9a: 20, H9b: 22, S1: 8, S2: 8, S3a: 10, S3b: 12, S4: 16, S5: 20, S6: 8, S7: 8, S8a: 8, S8b: 10, S9a: 10, S9b: 12, S9c: 14, S10: 18 }
+    for (const [code, units] of Object.entries(csv)) {
+      const published = codes(code).filter((g) => g.anatomy === 'Neurosurgery' || g.anatomy === 'Spine')
+      expect(published.map((g) => g.baseUnits), code).toEqual([units])
+    }
+  })
+
+  it('every anatomy heading has a row; AA rows sit under the guide headings', () => {
+    const headings = new Set(groups.map((g) => g.anatomy))
+    for (const h of ANATOMY_HEADINGS) expect(headings.has(h), h).toBe(true)
+    expect([...headings].every((h) => ANATOMY_HEADINGS.includes(h))).toBe(true)
+  })
+
+  it('every seeded Procedure carrying a code resolves, keeps its base units in the guide, and raises no warning', () => {
+    const procs = Object.values(seed.schedule.procedures)
+    expect(procs.some((p) => p.rvgGroupId !== undefined)).toBe(true)
+    for (const p of procs) {
+      expect((p as unknown as Record<string, unknown>)['rvgBaseCode']).toBeUndefined()
+      if (p.rvgGroupId === undefined) continue
+      const g = seed.masters.rvgGroups[p.rvgGroupId]
+      expect(g, p.id).toBeDefined()
+      expect(baseUnitsFor({ procedure: p, group: g! }).outsideGuide, p.id).toBe(false)
+    }
+    for (const price of Object.values(seed.masters.contractPrices)) {
+      if (price.rvgGroupId !== undefined) expect(seed.masters.rvgGroups[price.rvgGroupId], price.id).toBeDefined()
+    }
+  })
+
+  it('the interim included P1 sits only on the rows remapped from the legacy absorbing codes', () => {
+    const absorbing = ['47516', '47519', '48939'].map((c) => LEGACY_CODE_TO_RVG_GROUP[c]!.groupId)
+    const withP1 = groups.filter((g) => g.includesModifierCodes !== undefined).map((g) => g.id).sort()
+    expect(withP1).toEqual([...absorbing].sort())
+    for (const g of groups.filter((x) => x.includesModifierCodes !== undefined)) expect(g.includesModifierCodes).toEqual(['P1'])
+    // No legacy code that did not absorb shares a row that does.
+    for (const [code, entry] of Object.entries(LEGACY_CODE_TO_RVG_GROUP)) {
+      if (!['47516', '47519', '48939'].includes(code)) expect(absorbing).not.toContain(entry.groupId)
+    }
+  })
+
+  it('a published row is used for a legacy code only where its base units equal the legacy figure', () => {
+    for (const [code, entry] of Object.entries(LEGACY_CODE_TO_RVG_GROUP)) {
+      const g = seed.masters.rvgGroups[entry.groupId]!
+      if (entry.legacyRange !== undefined) {
+        expect(g.baseUnitsRange, code).toEqual(entry.legacyRange)
+      } else {
+        expect(g.baseUnitsRange, code).toBeUndefined()
+      }
+    }
+    expect(seed.masters.rvgGroups[RVG_GROUP.aaAppendicectomy!]).toMatchObject({ code: 'A3', baseUnits: 5, description: 'Appendicectomy, laparoscopic' })
+    // The published rows used for legacy codes carry the legacy figure (the pre-Phase 19 table's).
+    const legacyFigure: Record<string, number> = { '20941': 6, '49115': 5, '49558': 4, '50120': 6, '45623': 6, '42725': 4, '42794': 4, '34800': 4 }
+    for (const [code, units] of Object.entries(legacyFigure)) {
+      const g = seed.masters.rvgGroups[LEGACY_CODE_TO_RVG_GROUP[code]!.groupId]!
+      expect(AA_OWN_ROW_KEYS.some((k) => RVG_GROUP[k] === g.id), code).toBe(false)
+      expect(g.baseUnits, code).toBe(units)
+    }
   })
 })

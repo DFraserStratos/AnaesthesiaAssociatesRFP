@@ -89,7 +89,7 @@ export function BtmCaptureBlock({
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const [sheetHint, setSheetHint] = useState(false)
 
-  const { fee, baseCode, contract, nonRvgLines } = useMemo(
+  const { fee, rvgGroup, contract, nonRvgLines } = useMemo(
     () => procedureFee({ procedure, list, ordinal, masters, billingLines }),
     [procedure, list, ordinal, masters, billingLines],
   )
@@ -99,7 +99,7 @@ export function BtmCaptureBlock({
   const contextFailures = forFields(CONTEXT_FIELDS)
   const anchored = new Set<string>([
     ...CONTEXT_FIELDS,
-    'rvgBaseCode',
+    'rvgGroupId',
     'baseUnitsSelected',
     'anaestheticStartISO',
     'handoverISO',
@@ -219,11 +219,11 @@ export function BtmCaptureBlock({
 
         <ProcedureCodeCard
           procedure={procedure}
-          baseCode={baseCode}
-          rvgCodes={masters.rvgCodes}
+          rvgGroup={rvgGroup}
+          rvgGroups={masters.rvgGroups}
           actor={actor}
           canCapture={canCapture}
-          failures={forFields(['rvgBaseCode', 'baseUnitsSelected'])}
+          failures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
           onError={onError}
         />
       </Pair>
@@ -239,7 +239,7 @@ export function BtmCaptureBlock({
       <UnitsCard
         procedure={procedure}
         btm={fee.btm}
-        baseCode={baseCode}
+        rvgGroup={rvgGroup}
         actor={actor}
         canCapture={canCapture}
         isAdditional={procedure.isAdditional}

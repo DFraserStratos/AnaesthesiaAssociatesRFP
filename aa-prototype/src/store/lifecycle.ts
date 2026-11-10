@@ -36,6 +36,7 @@ import {
 import type { AppState, AppStoreApi } from './appStore'
 import { billingContextForBooking, bookingsForList, proceduresForBooking } from './selectors'
 import { emitAppEvent } from './events'
+import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 
 // ---------------------------------------------------------------------------
 // Shared checks
@@ -490,6 +491,27 @@ export function editProcedure(
   if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
+  // Any whole base-unit value of 0 or more is accepted (D3, catch-up Phase 19):
+  // no range check here; an out-of-range value only warns the office.
+  if ('baseUnitsSelected' in patch && patch.baseUnitsSelected !== undefined && !isRecordableBaseUnits(patch.baseUnitsSelected)) {
+    return refuse('baseUnitsInvalid', BASE_UNITS_WHOLE_MESSAGE)
+  }
+  if (patch.baseUnitsCaptured?.source === 'overridden' && !isRecordableBaseUnits(patch.baseUnitsCaptured.units)) {
+    return refuse('baseUnitsInvalid', BASE_UNITS_WHOLE_MESSAGE)
+  }
+  if ('rvgGroupId' in patch) {
+    const pick = rvgGroupPickRefusal(state.masters.rvgGroups, patch.rvgGroupId, procedure.rvgGroupId)
+    if (pick !== null) return refuse(pick.code, pick.message)
+    // A new row starts from its own starting value, as `pickRvgGroup` does:
+    // a chosen or typed value from the old row is cleared unless this patch sets one.
+    if (patch.rvgGroupId !== procedure.rvgGroupId) {
+      patch = {
+        ...('baseUnitsSelected' in patch ? {} : { baseUnitsSelected: undefined }),
+        ...('baseUnitsCaptured' in patch ? {} : { baseUnitsCaptured: undefined }),
+        ...patch,
+      }
+    }
+  }
   // An open-price Contract is never chosen this way (catch-up Phase 18a): it
   // has no price of its own, and Phase 20's "Other price" picks it with an amount.
   if (patch.governingContractId !== undefined && patch.governingContractId !== procedure.governingContractId) {

@@ -550,7 +550,11 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     const before = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
     const res = raise.run(api, day)
     expect(res.ok).toBe(true)
-    expect(res.message).toContain('1 rule registered')
+    expect(res.message).toContain('2 rules registered')
+    // multiWarning (catch-up Phase 19): the prepayment sample and the base-units sample, each with its own text.
+    const multi = warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning)
+    expect(multi.map((w) => w.ruleId).sort()).toEqual(['baseUnitsOutsideGuide', 'prepaymentUnpaid'])
+    expect(multi.find((w) => w.ruleId === 'baseUnitsOutsideGuide')).toMatchObject({ kind: 'afterProcedure', strength: 'mild' })
     expect(raise.disabledReason(api.getState(), day)).toBe('Samples already raised')
     expect(clear.disabledReason(api.getState(), day)).toBeNull()
     const key = warningsForBooking(api.getState(), AM_TARGET!)[0]!.key
@@ -561,12 +565,13 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     expect(clear.disabledReason(api.getState(), day)).toBe('Nothing staged')
   })
 
-  it('on a Booking: Riley already carries it; an unknown Booking is not seeded', () => {
+  it('on a Booking: Riley already carries the prepayment one, so takes only the base-units sample; an unknown Booking is not seeded', () => {
     const api = createAppStore()
     const raise = byId('raise-sample-warnings')
-    expect(raise.disabledReason(api.getState(), ctxFor(rileyPath, { listId: SEED_LIST_IDS.prepaymentUnpaidList, bookingId: RILEY }))).toBe(
-      'This Booking already carries these warnings',
-    )
+    const riley = ctxFor(rileyPath, { listId: SEED_LIST_IDS.prepaymentUnpaidList, bookingId: RILEY })
+    expect(raise.disabledReason(api.getState(), riley)).toBeNull()
+    expect(raise.run(api, riley).ok).toBe(true)
+    expect(raise.disabledReason(api.getState(), riley)).toBe('Samples already raised')
     expect(raise.disabledReason(api.getState(), ctxFor('/admin/day/2026-07-21/bookings/BK9999', { bookingId: 'BK9999' }))).toBe(
       'Samples stage on seeded Bookings only',
     )

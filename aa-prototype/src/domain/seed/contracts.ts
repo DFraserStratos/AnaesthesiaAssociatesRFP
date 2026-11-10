@@ -36,6 +36,7 @@ import { SURG } from './cast'
 import { FUNDING_TAGS, TAG } from './fundingTags'
 import { PARTIES, PARTY } from './parties'
 import { SPC } from './specialties'
+import { RVG_GROUP } from './rvgGroups'
 
 export const CONTRACT = {
   noContractRvg: 'CT-NO-CONTRACT',
@@ -146,10 +147,11 @@ export const CONTRACTS: readonly Contract[] = withFallbacks(buildContracts())
 /**
  * The fixed-price rows for Doyle's bariatric Contract (INTERIM until Phase
  * 19a), including the second-procedure ordinal rule (most specific match wins).
+ * Keyed by RVG group row since catch-up Phase 19 (same prices and ordinal).
  */
 export const CONTRACT_PRICES: readonly ContractPrice[] = [
-  { id: 'CP-BAR-1', contractId: CONTRACT.doyleBariatric, rvgBaseCode: '20880', price: 2800 },
-  { id: 'CP-BAR-2', contractId: CONTRACT.doyleBariatric, rvgBaseCode: '20882', price: 2400 },
+  { id: 'CP-BAR-1', contractId: CONTRACT.doyleBariatric, rvgGroupId: RVG_GROUP.aaGastricBypass, price: 2800 },
+  { id: 'CP-BAR-2', contractId: CONTRACT.doyleBariatric, rvgGroupId: RVG_GROUP.aaSleeveGastrectomy, price: 2400 },
   // Concurrent hernia repair as the SECOND procedure of a bariatric case.
-  { id: 'CP-BAR-3', contractId: CONTRACT.doyleBariatric, rvgBaseCode: '49120', procedureOrdinal: 2, price: 950 },
+  { id: 'CP-BAR-3', contractId: CONTRACT.doyleBariatric, rvgGroupId: RVG_GROUP.aaUmbilicalHernia, procedureOrdinal: 2, price: 950 },
 ] as const

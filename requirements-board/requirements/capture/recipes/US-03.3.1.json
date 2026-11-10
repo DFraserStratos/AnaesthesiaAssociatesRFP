@@ -15,7 +15,7 @@
           "highlight": [
             "[data-shot=capture-procedure-code]"
           ],
-          "caption": "Procedure code with its seeded base units"
+          "caption": "The RVG code with its base units from the RVG group"
         },
         {
           "state": "open",
@@ -30,7 +30,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Picker grouped by anatomical site (earlier design: now RVG body headings)"
+          "caption": "The type-ahead opens on a short list with the search box focused"
         },
         {
           "state": "search",
@@ -42,8 +42,8 @@
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search code or name\"]",
-              "value": "hip"
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H1"
             },
             {
               "wait": 400
@@ -52,7 +52,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Searching the picker by code or name"
+          "caption": "Typing H1 lists every H1 row with its description and base units"
         }
       ]
     },
@@ -68,7 +68,7 @@
           "highlight": [
             "[data-shot=capture-procedure-code]"
           ],
-          "caption": "Procedure code with its seeded base units"
+          "caption": "The RVG code with its base units from the RVG group"
         },
         {
           "state": "open",
@@ -83,7 +83,7 @@
           "highlight": [
             "[data-aa-mobile-product] [role=dialog]"
           ],
-          "caption": "Picker grouped by anatomical site (earlier design: now RVG body headings)"
+          "caption": "The type-ahead opens on a short list with the search box focused"
         },
         {
           "state": "search",
@@ -95,8 +95,8 @@
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search code or name\"]",
-              "value": "hip"
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H1"
             },
             {
               "wait": 400
@@ -105,7 +105,169 @@
           "highlight": [
             "[data-aa-mobile-product] [role=dialog]"
           ],
-          "caption": "Searching the picker by code or name"
+          "caption": "Typing H1 lists every H1 row with its description and base units"
+        }
+      ]
+    },
+    {
+      "name": "ranged-base-units",
+      "app": "web",
+      "caption": "Base units on a ranged RVG group",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "start",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H4"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] button[data-rvg-code=H4]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "A ranged group starts at its starting figure"
+        },
+        {
+          "state": "outside",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H4"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] button[data-rvg-code=H4]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=rvg-range-units] button[aria-label^=\"Base units\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=rvg-range-units] input",
+              "value": "14"
+            },
+            {
+              "press": "Enter",
+              "on": "[data-shot=rvg-range-units] input"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=rvg-range-units]"
+          ],
+          "caption": "Any value is accepted; outside the range raises a warning for the office"
+        }
+      ]
+    },
+    {
+      "name": "ranged-base-units",
+      "app": "mobile",
+      "caption": "Base units on a ranged RVG group",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "start",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H4"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] button[data-rvg-code=H4]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "A ranged group starts at its starting figure"
+        },
+        {
+          "state": "outside",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "value": "H4"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] button[data-rvg-code=H4]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=rvg-range-units] button[aria-label^=\"Base units\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=rvg-range-units] input",
+              "value": "14"
+            },
+            {
+              "press": "Enter",
+              "on": "[data-shot=rvg-range-units] input"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=rvg-range-units]"
+          ],
+          "caption": "Any value is accepted; outside the range raises a warning for the office"
         }
       ]
     }
