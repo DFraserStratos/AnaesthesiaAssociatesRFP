@@ -455,9 +455,10 @@ export function assignListToSlot(
  * its core for the anaesthetist's own move, which shows no warning
  * (US-01.4.5). The office's acknowledgement is passed in by `reassignList`.
  * A move re-checks no prepayment and recalculates no invoice (US-06.3.5,
- * US-06.5.4: an honour system). PHASE 41 SEAM: the payable's payee repoint
- * for a prepaid Booking on a move (OQ-80, D38) hangs on the move's audit event
- * (`list.reassign` here, `list.ownerMove` on an anaesthetist's own move).
+ * US-06.5.4: an honour system). Nothing hangs on the move's audit event for
+ * money: a prepaid Booking's payable is the AA Holding account, so a move
+ * changes nothing in the ledger and nothing is repointed (D38, OQ-80; the
+ * Phase 41 payee-repoint seam was removed in Phase 32a).
  */
 export interface MoveListOptions {
   /** What the vacated session becomes: the default status (Free) unless another active status is chosen (OQ-84's recommendation). */

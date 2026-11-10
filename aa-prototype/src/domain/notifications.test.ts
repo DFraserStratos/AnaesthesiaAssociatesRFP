@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationText, pageOf } from './notifications'
+import { surnameCommaInitial } from './names'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
 
 const masters = {
@@ -82,8 +83,21 @@ describe('pageOf', () => {
 })
 
 describe('NOTIFICATION_POOL_RULE (OQ-79 recommendation)', () => {
-  it('keeps List moves only, every notice, with no read or actioned state', () => {
-    expect(NOTIFICATION_POOL_RULE).toEqual({ sources: ['listMoved'], expiresAfterDays: null, actionable: false, pageSize: 6 })
+  it("keeps List moves and the optional single-Booking notice (D58), every notice, with no read or actioned state", () => {
+    expect(NOTIFICATION_POOL_RULE).toEqual({ sources: ['listMoved', 'bookingMoved'], expiresAfterDays: null, actionable: false, pageSize: 6 })
     expect(MOVED_TO_ME_DAYS).toBe(7)
+  })
+})
+
+describe('a single Booking moved (catch-up Phase 32a)', () => {
+  it('reads as one sentence naming both anaesthetists, the patient, the session and the new List', () => {
+    const booking = n({ kind: 'bookingMoved', bookingId: 'BK1', patientName: surnameCommaInitial('Annette Riley') })
+    expect(notificationText(booking, masters)).toBe("Dr Hughes moved a Booking (Riley, A., Thu 23 Jul AM, St George's) to Dr Sharma. A new List was created.")
+    expect(notificationText({ ...booking, patientName: undefined }, masters)).toBe("Dr Hughes moved a Booking (Thu 23 Jul AM, St George's) to Dr Sharma. A new List was created.")
+    expect(notificationText(booking, masters)).not.toMatch(/[–—]|prefer|tier/i)
+  })
+  it('shortens a patient to surname and initial', () => {
+    expect(surnameCommaInitial('Annette Riley')).toBe('Riley, A.')
+    expect(surnameCommaInitial('Cher')).toBe('Cher')
   })
 })

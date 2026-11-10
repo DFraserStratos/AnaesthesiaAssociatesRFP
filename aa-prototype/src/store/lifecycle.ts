@@ -575,7 +575,7 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
   const state = api.getState()
   const found = getBooking(state, bookingId)
   if (found === undefined) return refuse('notFound', 'Booking not found.')
-  const { booking, list: source } = found
+  const { list: source } = found
   const target = state.schedule.lists[toListId]
   // A removed Draft List takes no Bookings (it has left every view but History).
   if (target === undefined || target.removedAtISO !== undefined) return refuse('notFound', 'Target List not found.')
@@ -592,11 +592,14 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
       )
     }
   } else if (actor.role === 'anaesthetist') {
-    if (
-      actor.anaesthetistId !== undefined &&
-      (actor.anaesthetistId !== source.anaesthetistId || actor.anaesthetistId !== target.anaesthetistId)
-    ) {
+    if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== source.anaesthetistId) {
       return refuse('notOwnList', 'Anaesthetists can only move Bookings between their own Lists.')
+    }
+    // Catch-up Phase 32a: an anaesthetist hands a Booking to a colleague only
+    // through the one sanctioned path, `moveBookingToAnaesthetist`, which makes
+    // a new List in the colleague's free session (never onto an existing List).
+    if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== target.anaesthetistId) {
+      return refuse('notOwnList', 'To hand a Booking to a colleague, use Move to a colleague.')
     }
     if (source.state !== 'ACTIVE' || target.state !== 'ACTIVE') {
       return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
@@ -613,13 +616,21 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
       before: { listId: source.id },
       after: { listId: target.id },
     },
-    (s) => ({
-      schedule: {
-        ...s.schedule,
-        bookings: { ...s.schedule.bookings, [bookingId]: { ...booking, listId: target.id } },
-      },
-    }),
+    (s) => ({ schedule: reassignBookingCore(s.schedule, bookingId, target.id) }),
   )
   return ok(undefined)
+}
+
+/**
+ * The move itself, guard-free and draft level: the Booking (its Procedures
+ * follow by `bookingId`) now sits on `toListId`. No audit, no commit: the
+ * caller has checked and writes its own event. `reassignBooking` (office,
+ * integration, an anaesthetist between her own Lists) and Phase 32a's
+ * `moveBookingToAnaesthetist` both run it, so a Booking moves one way.
+ */
+export function reassignBookingCore(schedule: AppState['schedule'], bookingId: string, toListId: string): AppState['schedule'] {
+  const booking = schedule.bookings[bookingId]
+  if (booking === undefined) throw new Error(`reassignBookingCore: no Booking ${bookingId}`)
+  return { ...schedule, bookings: { ...schedule.bookings, [bookingId]: { ...booking, listId: toListId } } }
 }
 

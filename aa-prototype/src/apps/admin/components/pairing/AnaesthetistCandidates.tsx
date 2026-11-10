@@ -7,6 +7,10 @@
  * its tier pill and, where it applies, a Preferred pill. Reused by Phase 28's
  * availability finder and Phase 31's Draft List assignment. Admin only: the
  * anaesthetists' own views of colleagues are never tier-ordered.
+ *
+ * The shared type-ahead box (catch-up Phase 32a; US-01.4.2 "a search box also
+ * filters the names as letters are typed") narrows the rows by name after
+ * ranking, so the tier order and the groups never change as she types.
  */
 
 import { useMemo, useState, type ReactNode } from 'react'
@@ -20,7 +24,8 @@ import {
 } from '../../../../domain/pairingPreferences'
 import type { PriorityTier } from '../../../../domain/types'
 import { titledSurname } from '../../../../shared/format'
-import { Segmented } from '../../../../shared/ui'
+import { NameSearchBox, Segmented } from '../../../../shared/ui'
+import { matchesNameQuery } from '../../../../domain/names'
 import { useAppStore } from '../../../../store'
 import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
@@ -54,8 +59,9 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
   const entries = usePairingEntries()
   const tiers = usePriorityTiers()
   const [filter, setFilter] = useState<TierFilter>('all')
+  const [query, setQuery] = useState('')
 
-  const ranked = useMemo(
+  const rankedAll = useMemo(
     () =>
       rankAnaesthetistCandidates({
         candidates,
@@ -67,6 +73,10 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
       }),
     [candidates, entries, tiers, surgeonId, requestKey, filter],
   )
+  const ranked = useMemo(() => {
+    const keep = (c: RankedCandidate) => matchesNameQuery(anaesthetists[c.anaesthetistId]?.name ?? '', query)
+    return { ...rankedAll, clear: rankedAll.clear.filter(keep), notPreferred: rankedAll.notPreferred.filter(keep) }
+  }, [rankedAll, anaesthetists, query])
 
   if (candidates.length === 0) {
     return <div style={{ fontSize: 13, color: neutral.mist }}>{emptyText}</div>
@@ -80,8 +90,13 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
       <div data-shot="tier-filter">
         <Segmented label="Filter by tier" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
       </div>
+      <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 360, overflow: 'auto', paddingRight: 2 }}>
-        {nothingInTier && <div style={{ fontSize: 13, color: neutral.mist }}>No one in {TIER_LABELS[Number(filter) as PriorityTier]} is free for this session.</div>}
+        {nothingInTier && (
+          <div style={{ fontSize: 13, color: neutral.mist }}>
+            {query.trim() !== '' ? 'No anaesthetist matches' : `No one in ${TIER_LABELS[Number(filter) as PriorityTier]} is free for this session.`}
+          </div>
+        )}
         {ranked.clear.length > 0 && (
           <Group shot="candidates-clear" heading="In tier order">
             {ranked.clear.map((c, i) => (

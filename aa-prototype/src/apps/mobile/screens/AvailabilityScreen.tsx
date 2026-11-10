@@ -166,7 +166,11 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
 
       {/* Tab bar clearance is the `DockSpacer` at the tail, not padding here. */}
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <MovedToYouPanel anaesthetistId={anaesthetistId} onOpenList={(id) => navigate(`/mobile/lists/${id}`)} />
+        <MovedToYouPanel
+          anaesthetistId={anaesthetistId}
+          onOpenList={(id) => navigate(`/mobile/lists/${id}`)}
+          onOpenBooking={(listId, bookingId) => navigate(`/mobile/lists/${listId}/bookings/${bookingId}`)}
+        />
         {/* My availability */}
         <div data-shot="availability-mine" style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

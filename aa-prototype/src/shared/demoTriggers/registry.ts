@@ -74,6 +74,9 @@ import {
   stageBusyMorning,
   stageColleagueMoveToOffice,
   stageColleagueMoveToPersona,
+  bookingMoveCandidates,
+  bookingMoveCandidateRefusal,
+  stageColleagueBookingMove,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
@@ -836,6 +839,60 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: in the framed build, move a List as Dr Souter on Web Availability and see the notice as the office.',
+  },
+  // ── Admin · Day: a colleague hands one Booking to Dr Souter (catch-up Phase 32a) ──
+  {
+    id: 'colleague-hands-booking-to-souter',
+    label: 'Colleague hands a Booking to Dr Souter',
+    description:
+      "A colleague moves one of their Bookings into Dr Souter's free session, as themselves, at once, with the optional office notice ticked: a new List appears on her row and the notice tops the shared pool. Only where her session is free and empty; nothing sets anyone available. Never a scripted beat's List.",
+    screen: 'Admin · Day view',
+    routes: [ADMIN_DAY],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) =>
+      bookingMoveCandidateRefusal(state, ANAE.souter, 'No colleague Booking fits a session Dr Souter is free in', isoParam(ctx.params['dateISO'])),
+    run: (api, ctx) => {
+      const res = stageColleagueBookingMove(api, ANAE.souter, { dateISO: isoParam(ctx.params['dateISO']), tellOffice: true })
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)
+      const where = state.masters.hospitals[res.value.hospitalId]?.name ?? res.value.hospitalId
+      return { ok: true, message: `${who} moved a Booking (${dayLabel(res.value.dateISO)} ${res.value.session}, ${where}) to Dr Souter. A new List was created.` }
+    },
+    indexPath: () => '/admin/day/2026-07-22',
+  },
+  // ── Mobile · Lists: a colleague moves a Booking to the persona (catch-up Phase 32a; PWA parity) ──
+  {
+    id: 'colleague-moves-booking-to-me',
+    label: 'Colleague moves a Booking to me',
+    description:
+      "Stands in for a colleague on the phone: they hand one of their Bookings into Dr Souter's free session, as themselves, at once, so a new List appears on her Lists with the Moved to you notice. A session she is not available in is not offered until she sets it available in My calendar. Nobody accepts or confirms.",
+    screen: 'Mobile · Lists',
+    routes: [...MOBILE_LISTS],
+    surfaces: ['pwa'],
+    badge: 'colleague-stand-in',
+    choices: (state) =>
+      bookingMoveCandidates(state, ANAE.souter).map((c) => ({
+        id: c.bookingId,
+        label: `${drSurname(state.masters.anaesthetists[c.fromAnaesthetistId]?.name ?? c.fromAnaesthetistId)} · ${dayLabel(c.dateISO)} ${c.session} · ${state.masters.hospitals[c.hospitalId]?.name ?? c.hospitalId}`,
+      })),
+    defaultChoice: (state) => bookingMoveCandidates(state, ANAE.souter)[0]?.bookingId,
+    disabledReason: (state, _ctx, choiceId) => {
+      const none = bookingMoveCandidateRefusal(state, ANAE.souter, 'No colleague Booking fits a session you are free in. Set a session available first.')
+      if (none !== null) return none
+      return choiceId === undefined || bookingMoveCandidates(state, ANAE.souter).some((c) => c.bookingId === choiceId) ? null : 'Choose a colleague Booking'
+    },
+    run: (api, _ctx, choiceId) => {
+      const res = stageColleagueBookingMove(api, ANAE.souter, choiceId !== undefined ? { choiceId } : {})
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)
+      const where = state.masters.hospitals[res.value.hospitalId]?.name ?? res.value.hospitalId
+      // Never names a preference, a tier, a Draft List or a slot (D44, D54).
+      return { ok: true, message: `${who} moved a Booking (${dayLabel(res.value.dateISO)} ${res.value.session}, ${where}) to you. It is on a new List in your free session.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: in the framed build, move a Booking as Dr Souter from its Booking screen and see the new List as the office.',
   },
   // ── Admin · Draft Lists: a request arrives from a surgeon's room (catch-up Phase 31) ──
   {

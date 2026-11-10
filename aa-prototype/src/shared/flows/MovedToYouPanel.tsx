@@ -4,7 +4,7 @@ import { neutral, radius } from '../../theme/tokens'
 import { useAppStore } from '../../store'
 import type { Notification } from '../../domain/types'
 import { drSurname, locationName } from '../format'
-import { useMovedToMe } from './useListMoves'
+import { useBookingsMovedToMe, useMovedToMe } from './useListMoves'
 
 /** The mover as the apps name them ("Dr Hughes"), or a plain fallback when the record is gone. */
 function moverName(fromName: string | undefined): string {
@@ -16,8 +16,8 @@ export function movedToYouLine(n: Notification, names: { from: string | undefine
   return `${moverName(names.from)} moved ${format(parseISO(n.dateISO), 'EEE d MMM')} ${n.session}, ${names.hospital}, to you.`
 }
 
-/** List detail's line: "Moved to you by Dr Hughes on Tue 21 Jul". */
-export function movedToYouByLine(n: Notification, fromName: string | undefined): string {
+/** List detail's line: "Moved to you by Dr Hughes on Tue 21 Jul" (a List, or a single Booking, Phase 32a). */
+export function movedToYouByLine(n: Pick<Notification, 'atISO'>, fromName: string | undefined): string {
   return `Moved to you by ${moverName(fromName)} on ${format(parseISO(n.atISO), 'EEE d MMM')}`
 }
 
@@ -28,12 +28,23 @@ export function movedToYouByLine(n: Notification, fromName: string | undefined):
  * nothing about pairing preferences (US-01.4.5 "Nothing revealed"). Shown at
  * the top of Find cover on mobile and web while there is something to show.
  */
-export function MovedToYouPanel({ anaesthetistId, onOpenList }: { anaesthetistId: string; onOpenList?: (listId: string) => void }) {
+export function MovedToYouPanel({
+  anaesthetistId,
+  onOpenList,
+  onOpenBooking,
+}: {
+  anaesthetistId: string
+  onOpenList?: (listId: string) => void
+  /** A single Booking a colleague handed her (Phase 32a): open it on its new List. */
+  onOpenBooking?: (listId: string, bookingId: string) => void
+}) {
   const notices = useMovedToMe(anaesthetistId)
+  const bookingNotices = useBookingsMovedToMe(anaesthetistId)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const lists = useAppStore((s) => s.schedule.lists)
-  if (notices.length === 0) return null
+  const bookings = useAppStore((s) => s.schedule.bookings)
+  if (notices.length === 0 && bookingNotices.length === 0) return null
   return (
     <section
       data-shot="moved-to-you"
@@ -46,6 +57,36 @@ export function MovedToYouPanel({ anaesthetistId, onOpenList }: { anaesthetistId
         </span>
         <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>Moved to you</span>
       </div>
+      {bookingNotices.map((m) => {
+        // "Dr Souter moved a Booking to you: Wed 22 Jul AM, Christchurch Eye Surgery" (catch-up Phase 32a).
+        const list = lists[m.listId]
+        const where = list !== undefined && list.state !== 'DRAFT' ? `${format(parseISO(list.dateISO), 'EEE d MMM')} ${list.session}, ${locationName(list.hospitalId, hospitals)}` : 'a new List'
+        const line = `${moverName(anaesthetists[m.fromAnaesthetistId]?.name)} moved a Booking to you: ${where}`
+        const stillHers = list?.anaesthetistId === anaesthetistId && bookings[m.bookingId]?.listId === m.listId
+        const body = (
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 13.5, lineHeight: '19px', color: neutral.ink }}>{line}</span>
+            {m.message !== undefined && <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>"{m.message}"</span>}
+            <span style={{ fontSize: 12, color: neutral.mist }}>{format(parseISO(m.atISO), 'EEE d MMM, HH:mm')}</span>
+          </span>
+        )
+        return onOpenBooking !== undefined && stillHers ? (
+          <button
+            key={m.auditId}
+            type="button"
+            data-shot="moved-to-you-booking-row"
+            onClick={() => onOpenBooking(m.listId, m.bookingId)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, border: 'none', background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+          >
+            {body}
+            <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
+          </button>
+        ) : (
+          <div key={m.auditId} data-shot="moved-to-you-booking-row" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, background: neutral.bg }}>
+            {body}
+          </div>
+        )
+      })}
       {notices.map((n) => {
         const line = movedToYouLine(n, { from: anaesthetists[n.fromAnaesthetistId]?.name, hospital: locationName(n.hospitalId, hospitals) })
         const stillHers = lists[n.listId]?.anaesthetistId === anaesthetistId

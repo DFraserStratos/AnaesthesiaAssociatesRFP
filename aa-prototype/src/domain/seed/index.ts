@@ -77,6 +77,7 @@ import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaest
 import { buildHistory } from './history'
 import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftListBookings, seedRecurringClashDraftLists } from './draftLists'
 import { buildSeedAudit } from './audit'
+import { ACCEPTANCE_BEAT_LIST_ID, seedBookingMoveBookings } from './bookingMoves'
 import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
 
 export {
@@ -435,6 +436,10 @@ function buildSeedInternal(): SeedBuild {
   const draftBookings = seedDraftListBookings(bookingsBuild.next)
   for (const b of draftBookings.bookings) bookingsRec[b.id] = b
   for (const p of draftBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 32a: the acceptance beat's one Booking, after every other id.
+  const moveBookings = seedBookingMoveBookings(draftBookings.next)
+  for (const b of moveBookings.bookings) bookingsRec[b.id] = b
+  for (const p of moveBookings.procedures) proceduresRec[p.id] = p
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
   const reconciled = reconcileAllConflicts(lists, { slots, statuses: slotStatuses, holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
@@ -506,8 +511,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: draftBookings.next.booking,
-      procedure: draftBookings.next.procedure,
+      booking: moveBookings.next.booking,
+      procedure: moveBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
@@ -594,6 +599,8 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     // S5: Souter Tue 21 PM and Whitaker Fri 17.
     SEED_LIST_IDS.souterPm21,
     SEED_LIST_IDS.whitakerFri17,
+    // S2 Beat 3d (catch-up Phase 32a): the List Dr Souter hands one Booking from.
+    projectedListId(ANAE.souter, '2026-07-22', 'AM'),
   ],
   slotIds: [
     // S2: Beat 1b assigns the St George's Draft List into Fitzgerald's Tue 21
@@ -607,6 +614,8 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     slotIdFor(ANAE.souter, '2026-08-14', 'PM'),
     slotIdFor(ANAE.souter, '2026-08-28', 'PM'),
     slotIdFor(ANAE.souter, '2026-09-11', 'PM'),
+    // S2 Beat 3d (catch-up Phase 32a): Dr Whitaker's Wed 22 AM, where the Booking lands as a new List.
+    slotIdFor(ANAE.whitaker, '2026-07-22', 'AM'),
   ],
 } as const
 
@@ -624,6 +633,38 @@ export const LIST_MOVE_DEMO = {
   privacyColleagueId: ANAE.ropata,
   returnListId: projectedListId(ANAE.souter, '2026-07-23', 'AM'),
   unavailableSlotId: slotIdFor(ANAE.souter, '2026-07-23', 'PM'),
+} as const
+
+/**
+ * The single-Booking move demo (catch-up Phase 32a; US-01.4.7, US-01.4.6; seed
+ * tests pin each). S2 Beat 3d: Dr Souter's Wed 22 Jul AM List at Christchurch
+ * Eye Surgery (Mr Whitford) and its first Booking, whose session has free
+ * colleagues of several tiers (Delaney, Morrison, Ngata, Ropata, Sharma,
+ * Whitaker), Dr Chen not available, and Dr Fitzgerald already holding a List;
+ * the Booking goes to Dr Whitaker (scripted), a second one to Dr Ropata with the
+ * office tick off. The not-preferred receiver: Mrs Riley's Booking on S4's Fri
+ * 24 AM List (Ms Lim) with Dr Ropata free (PP-005), used with a Reset. The
+ * prepaid honour check: the paid Nair Booking (Fri 24 PM), Reset after. The PWA
+ * stand-in's candidate: Dr Hughes's Wed 22 PM Booking into Souter's free Wed 22
+ * PM. The acceptance beat: the appended Booking on Dr Beaumont's Fri 31 Jul AM,
+ * offered once Souter sets Fri 31 AM available. Only the Beat 3d List and
+ * Whitaker's session are scripted.
+ */
+export const BOOKING_MOVE_DEMO = {
+  sourceListId: projectedListId(ANAE.souter, '2026-07-22', 'AM'),
+  bookingId: 'BK0046',
+  secondBookingId: 'BK0047',
+  receiverId: ANAE.whitaker,
+  secondReceiverId: ANAE.ropata,
+  unavailableColleagueId: ANAE.chen,
+  listHoldingColleagueId: ANAE.fitzgerald,
+  notPreferredBookingId: 'BK0034',
+  notPreferredReceiverId: ANAE.ropata,
+  prepaidBookingId: 'BK0038',
+  standInBookingId: 'BK0140',
+  standInSlotId: slotIdFor(ANAE.souter, '2026-07-22', 'PM'),
+  acceptanceListId: ACCEPTANCE_BEAT_LIST_ID,
+  acceptanceSlotId: slotIdFor(ANAE.souter, '2026-07-31', 'AM'),
 } as const
 
 /**

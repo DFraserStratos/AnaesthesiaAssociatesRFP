@@ -109,7 +109,10 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v26: the specialist directory (`seed/specialistDirectory.ts`): 40 more
+/** v27: catch-up Phase 32a: the single-Booking move; one appended seed Booking
+ *  (BK0162, the acceptance beat) and the pool's `bookingMoved` kind (a v26
+ *  store, which lacks the Booking, reseeds).
+ * v26: the specialist directory (`seed/specialistDirectory.ts`): 40 more
  *  surgeons' rooms and 131 more surgeons, fictional, from AA's list of 3
  *  November 2026; master data only, named by no List.
  * v25: catch-up Phase 32: the shared notification pool (`notifications`, seeds
@@ -191,7 +194,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 26
+export const PERSIST_VERSION = 27
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

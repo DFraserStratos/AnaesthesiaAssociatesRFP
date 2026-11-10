@@ -15,14 +15,15 @@
 
 import { ANAE, SCRIPTED_BEAT_SCHEDULE } from '../domain/seed'
 import { canReceiveList, ownMoveRefusal, pushTargets } from '../domain/listMoves'
+import { bookingMoveRefusal, bookingPlacement } from '../domain/bookingMoves'
 import { SEED_STATUS } from '../domain/slotStatus'
 import { slotIdFor } from '../domain/slots'
 import type { AssignedList } from '../domain/types'
 import type { AppState, AppStoreApi } from './appStore'
 import { anaesthetistActor } from './demoActors'
-import { moveListToOffice, pushListToSlot, type OwnMoveResult } from './listMoveActions'
+import { moveBookingToAnaesthetist, moveListToOffice, pushListToSlot, type BookingMoveResult, type OwnMoveResult } from './listMoveActions'
 import { ok, refuse, type Outcome } from './mutate'
-import { moveInputOf } from './selectors'
+import { bookingMoveInputOf, moveInputOf } from './selectors'
 
 /** The persona the anaesthetist apps act as: her Lists are never a colleague's move. */
 export const LIST_MOVE_DEMO_PERSONA = ANAE.souter
@@ -160,4 +161,67 @@ export function stageColleagueMoveToPersona(api: AppStoreApi, personaId: string)
   const out = pushListToSlot(api, actor, found.list.id, found.toSlotId)
   if (!out.ok) return out
   return ok({ ...out.value, fromAnaesthetistId: found.list.anaesthetistId, dateISO: found.list.dateISO })
+}
+
+// ---------------------------------------------------------------------------
+// A colleague hands a single Booking to the persona (catch-up Phase 32a;
+// US-01.4.7). The same rules: acting as the colleague through the product's
+// own `moveBookingToAnaesthetist`, never a scripted List or session, never a
+// List with a conflict. A candidate exists only where the persona's session is
+// free and empty: no trigger ever sets anyone's availability, so a session she
+// is not available in is offered only after she sets it available herself.
+// ---------------------------------------------------------------------------
+
+/** One Booking a colleague could hand the persona: the first non-cancelled Booking of a candidate List. */
+export interface BookingMoveCandidate {
+  bookingId: string
+  fromAnaesthetistId: string
+  listId: string
+  dateISO: string
+  session: string
+  hospitalId: string
+}
+
+/** Colleague Bookings the persona could receive, from `fromISO` (default today), in date, session, List order. */
+export function bookingMoveCandidates(state: DemoState, personaId: string, fromISO?: string): BookingMoveCandidate[] {
+  const input = bookingMoveInputOf(state)
+  const todayISO = state.clock.todayISO
+  const bookings = Object.values(state.schedule.bookings).sort((a, b) => a.id.localeCompare(b.id))
+  const out: BookingMoveCandidate[] = []
+  for (const list of colleagueMoveCandidates(state, fromISO)) {
+    if (list.anaesthetistId === personaId) continue
+    if (SCRIPTED_SLOTS.has(slotIdFor(personaId, list.dateISO, list.session))) continue
+    const booking = bookings.find(
+      (b) => b.listId === list.id && bookingMoveRefusal(input, b.id, list.anaesthetistId, todayISO) === null && bookingPlacement(input, b.id, personaId).ok,
+    )
+    if (booking === undefined) continue
+    out.push({ bookingId: booking.id, fromAnaesthetistId: list.anaesthetistId, listId: list.id, dateISO: list.dateISO, session: list.session, hospitalId: list.hospitalId })
+  }
+  return out
+}
+
+/** Why a colleague cannot hand the persona a Booking (none fits a session she is free in), or null. */
+export function bookingMoveCandidateRefusal(state: DemoState, personaId: string, message: string, fromISO?: string): string | null {
+  return bookingMoveCandidates(state, personaId, fromISO).length === 0 ? message : null
+}
+
+/**
+ * A colleague hands the persona one of their Bookings, at once, as themselves:
+ * the chosen candidate (`choiceId` is its Booking id), else the first from
+ * `dateISO` on. A new List appears in her free session.
+ */
+export function stageColleagueBookingMove(
+  api: AppStoreApi,
+  personaId: string,
+  options: { dateISO?: string; choiceId?: string; tellOffice?: boolean } = {},
+): Outcome<BookingMoveResult & BookingMoveCandidate> {
+  const state = api.getState()
+  const candidates = bookingMoveCandidates(state, personaId, options.dateISO)
+  const found = options.choiceId !== undefined ? candidates.find((c) => c.bookingId === options.choiceId) : candidates[0]
+  if (found === undefined) return refuse('notAvailable', 'No colleague Booking fits a session Dr Souter is free in')
+  const actor = anaesthetistActor(state, found.fromAnaesthetistId)
+  if (actor === undefined) return refuse('notAvailable', 'No colleague Booking fits a session Dr Souter is free in')
+  const out = moveBookingToAnaesthetist(api, actor, found.bookingId, personaId, { tellOffice: options.tellOffice === true })
+  if (!out.ok) return out
+  return ok({ ...found, ...out.value })
 }

@@ -204,3 +204,22 @@ describe('the notification pool and the cover marker gone (catch-up Phase 32)', 
     expect(freshAppState().notifications).toEqual({})
   })
 })
+
+describe('the single-Booking move seed (catch-up Phase 32a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards a v26 store without the acceptance beat's Booking, and reseeds with it", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(27)
+    const fresh = freshAppState()
+    const bookings = { ...fresh.schedule.bookings }
+    delete bookings['BK0162']
+    const stale = { ...fresh, schedule: { ...fresh.schedule, bookings } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 26 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.bookings['BK0162']?.listId).toBe('L-31902-2026-07-31-AM')
+  })
+})

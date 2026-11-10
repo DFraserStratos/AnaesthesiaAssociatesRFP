@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
 import { bookingCountLabel } from '../../../shared/scheduleTerms'
-import { latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
+import { bookingMovesOntoList, latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
@@ -145,6 +145,7 @@ function ListBody({
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <ConflictPanel list={list} actor={actor} />
           <MovedHereLine listId={list.id} anaesthetistId={list.anaesthetistId} />
+          <BookingMovedHereLine listId={list.id} />
 
           <Section label="Session">
             <Row label="Times">
@@ -365,6 +366,32 @@ function MovedHereLine({ listId, anaesthetistId }: { listId: string; anaesthetis
     <div data-shot="drawer-moved-here" style={{ background: neutral.bg, borderRadius: radius.card, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
       Moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, an anaesthetist's own move · <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(n.atISO), 'EEE d MMM HH:mm')}</span>
       {n.message !== undefined && <div style={{ color: neutral.slate, marginTop: 2 }}>"{n.message}"</div>}
+    </div>
+  )
+}
+
+/**
+ * The drawer's line for a Booking an anaesthetist handed to a colleague, which
+ * made this List (catch-up Phase 32a; US-01.4.7). Read from the move's audit
+ * event, so it shows whether or not the mover told the office. Neutral: it
+ * needs no action. Nothing about pairing preferences.
+ */
+function BookingMovedHereLine({ listId }: { listId: string }) {
+  const audit = useAppStore((s) => s.audit)
+  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const moves = useMemo(() => bookingMovesOntoList({ audit }, listId), [audit, listId])
+  if (moves.length === 0) return null
+  return (
+    <div data-shot="drawer-booking-moved-here" style={{ background: neutral.bg, borderRadius: radius.card, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {moves.map((m) => {
+        const from = anaesthetists[m.fromAnaesthetistId]?.name
+        return (
+          <div key={m.auditId}>
+            Booking moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(m.atISO), 'EEE d MMM HH:mm')}</span>
+            {m.message !== undefined && <div style={{ color: neutral.slate, marginTop: 2 }}>"{m.message}"</div>}
+          </div>
+        )
+      })}
     </div>
   )
 }
