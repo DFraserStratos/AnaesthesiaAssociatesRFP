@@ -319,3 +319,29 @@ test('legacy /cards/ bookmarks redirect, replacing history, to the same Booking'
   await page.goto(`/web/lists/${list}/cards/C9999`)
   await expect(page).toHaveURL(new RegExp(`/web/lists/${list}$`))
 })
+
+// ---------------------------------------------------------------------------
+// The date lookup and search hold their place (catch-up Phase 38a)
+// ---------------------------------------------------------------------------
+
+test('web: /web/lists?day=2026-03-13 loads the day, and Back from List detail returns to it', async ({ page }) => {
+  await page.goto('/web/lists?day=2026-03-13')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="web-lookback-day"] tr[data-list-id="L-HIST-2026-03-13-AM"]').click()
+  await expect(page).toHaveURL(/\/web\/lists\/L-HIST-2026-03-13-AM$/)
+  // The page's own back button (the nav tab, also named Lists, comes first).
+  await page.getByRole('button', { name: 'Lists', exact: true }).last().click()
+  await expect(page).toHaveURL(/\/web\/lists\?day=2026-03-13$/)
+  await page.reload()
+  await expect(page.locator('[data-shot="web-lookback-day"]')).toBeVisible()
+})
+
+test('mobile: /mobile/lists?day=2026-03-13, back from a List returns to the day', async ({ page }) => {
+  await page.goto('/mobile/lists?day=2026-03-13')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-list-id="L-HIST-2026-03-13-AM"]').click()
+  await expect(page).toHaveURL(/\/mobile\/lists\/L-HIST-2026-03-13-AM$/)
+  await page.getByTestId('slide-list').getByRole('button', { name: 'Lists', exact: true }).click()
+  await expect(page).toHaveURL(/\/mobile\/lists\?day=2026-03-13$/)
+  await expect(page.getByTestId('mobile-lists-day-chip')).toContainText('Fri 13 Mar 2026')
+})

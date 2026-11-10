@@ -204,3 +204,22 @@ describe('the notification pool and the cover marker gone (catch-up Phase 32)', 
     expect(freshAppState().notifications).toEqual({})
   })
 })
+
+describe('the browsable history (catch-up Phase 38a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v26 store without the January to March history and reseeds with it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(27)
+    const fresh = freshAppState()
+    const lists = { ...fresh.schedule.lists }
+    for (const id of Object.keys(lists)) if (/^L-HIST-\d{4}-/.test(id)) delete lists[id]
+    const stale = { ...fresh, schedule: { ...fresh.schedule, lists } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 26 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.lists['L-HIST-2026-03-13-AM']).toBeDefined()
+  })
+})

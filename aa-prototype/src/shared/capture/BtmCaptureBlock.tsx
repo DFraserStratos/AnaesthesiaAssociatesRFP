@@ -215,7 +215,7 @@ export function BtmCaptureBlock({
       )}
 
       <Pair>
-        <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} onError={onError} />
+        <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} locked={list.state === 'AUTHORISED'} onError={onError} />
 
         <ProcedureCodeCard
           procedure={procedure}

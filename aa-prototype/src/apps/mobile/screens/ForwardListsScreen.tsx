@@ -6,6 +6,13 @@
  * back. Submitted Lists show less prominently and stay editable. A List leaves
  * when the office authorises it (`hasLeftMainView`), never on the billing stamp;
  * it is then found by search. Week and Month bound only the forward part.
+ *
+ * Above the chips sit the search field and the calendar button (US-03.1.6,
+ * US-03.1.7): typing two or more characters shows the results in place of the
+ * sections; picking a day shows that date's Lists under a teal day chip. Both
+ * are view state in the URL (`?q=`, `?day=`), written with replace by the route;
+ * the date sheet's open state stays local to the route, which renders it above
+ * the slide stack. Search and the day view are exclusive.
  */
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -21,6 +28,8 @@ import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { dayHeading, drSurname, locationName } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { resolveDisplayStatus } from '../../../shared'
+import { DayChip, LookbackDayView, LookbackResults, LookbackSearchRow, useBookingSearch } from './ListsLookback'
+import { searchCountLine } from '../../../shared/schedule'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -67,6 +76,15 @@ interface ForwardListsScreenProps {
   personaName: string
   initials: string
   onOpenList: (listId: string) => void
+  /** The search text (`?q=`). */
+  query?: string
+  /** The picked day (`?day=`), or null for the main view. */
+  dayISO?: string | null
+  onQueryChange?: (query: string) => void
+  onDayChange?: (dayISO: string | null) => void
+  onOpenBooking?: (listId: string, bookingId: string) => void
+  /** Open the date sheet (the route renders it above the slide stack and the tab bar). */
+  onOpenCalendar?: () => void
 }
 
 function groupByDate(rows: Row[]): Section[] {
@@ -81,7 +99,18 @@ function groupByDate(rows: Row[]): Section[] {
     .map(([date, dayRows]) => ({ date, rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)) }))
 }
 
-export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOpenList }: ForwardListsScreenProps) {
+export function ForwardListsScreen({
+  anaesthetistId,
+  personaName,
+  initials,
+  onOpenList,
+  query = '',
+  dayISO = null,
+  onQueryChange = () => undefined,
+  onDayChange = () => undefined,
+  onOpenBooking = () => undefined,
+  onOpenCalendar = () => undefined,
+}: ForwardListsScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const appSettings = useAppStore((s) => s.appSettings)
@@ -96,6 +125,10 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
 
   const scrollerRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
+  const results = useBookingSearch(anaesthetistId, query, todayISO)
+  const searching = results.query.kind === 'nhi' || results.query.kind === 'name'
+  const mode: 'main' | 'day' | 'search' = searching ? 'search' : dayISO !== null ? 'day' : 'main'
+  const shown = results.upcoming.length + results.past.length
 
   // Greet by surname ("Kia ora, Dr Souter") — the same short form as the web
   // dashboard, single-sourced in `drSurname`.
@@ -234,16 +267,22 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
   // scroll, since the slide stack keeps this layer mounted.
   useLayoutEffect(() => {
     const scroller = scrollerRef.current
+    if (scroller === null) return
+    if (mode !== 'main') {
+      scroller.scrollTop = 0
+      return
+    }
     const anchor = todayRef.current
-    if (scroller === null || anchor === null) return
+    if (anchor === null) return
     scroller.scrollTop = Math.max(0, anchor.offsetTop - 2)
-  }, [filter])
+  }, [filter, mode, dayISO])
 
   function showEarlier() {
     const scroller = scrollerRef.current
     if (scroller === null) return
     const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    scroller.scrollTo({ top: 0, behavior: reduce === true ? 'auto' : 'smooth' })
+    if (typeof scroller.scrollTo === 'function') scroller.scrollTo({ top: 0, behavior: reduce === true ? 'auto' : 'smooth' })
+    else scroller.scrollTop = 0
   }
 
   function renderRows(rows: Row[]) {
@@ -276,10 +315,23 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
           See the inset contract in `theme/global.css`. */}
       <div data-testid="mobile-lists-header" style={{ padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px 0', flex: 'none' }}>
         <MobileHeader eyebrow={dayHeading(todayISO, todayISO)} title={`Kia ora, ${greetingName}`} initials={initials} />
+        <div style={{ marginTop: 14 }}>
+          <LookbackSearchRow
+            query={query}
+            onQueryChange={onQueryChange}
+            onOpenCalendar={onOpenCalendar}
+          />
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, padding: '16px 20px 10px', flex: 'none' }}>
-        {FILTERS.map((f) => {
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', minHeight: 38, padding: '12px 20px 10px', flex: 'none' }}>
+        {mode === 'search' && (
+          <div role="status" data-testid="mobile-lists-search-count" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>
+            {shown === 0 ? 'No matches' : searchCountLine(results.total, shown, query)}
+          </div>
+        )}
+        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
+        {mode === 'main' && FILTERS.map((f) => {
           const active = f.key === filter
           return (
             <button
@@ -311,7 +363,19 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
           `DockSpacer` at the tail rather than padding here, because trailing
           padding contributes no scrollable extent on WebKit. */}
       <div ref={scrollerRef} data-testid="mobile-lists-scroll" style={{ flex: 1, overflow: 'auto', padding: '0 20px 0', position: 'relative' }}>
-        {earlierCount > 0 && (
+        {mode === 'search' && (
+          <>
+            <LookbackResults upcoming={results.upcoming} past={results.past} onOpenBooking={onOpenBooking} />
+            <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
+          </>
+        )}
+        {mode === 'day' && dayISO !== null && (
+          <>
+            <LookbackDayView anaesthetistId={anaesthetistId} dateISO={dayISO} todayISO={todayISO} onOpenList={onOpenList} />
+            <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
+          </>
+        )}
+        {mode === 'main' && earlierCount > 0 && (
           <section aria-label="Earlier Lists not yet authorised" data-shot="mobile-main-view-earlier-group">
             <div style={{ fontSize: 13, fontWeight: 600, color: neutral.slate, margin: '16px 0 0' }}>Earlier, not yet authorised</div>
             {earlier.map((section) => (
@@ -325,6 +389,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         )}
 
         {/* The forward part fills at least the scroller, so Today can sit at its top. */}
+        {mode === 'main' && (
         <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
           <div ref={todayRef} data-testid="mobile-lists-today">
             <DayHeading>{dayHeading(todayISO, todayISO)}</DayHeading>
@@ -368,6 +433,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
           {/* No column gap on this scroller, so the full clearance goes here. */}
           <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
         </div>
+        )}
       </div>
     </div>
   )

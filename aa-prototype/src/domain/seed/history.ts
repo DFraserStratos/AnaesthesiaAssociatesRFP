@@ -49,7 +49,7 @@ import { roundToCents } from '../billing/money'
 import { GST_RATE } from '../billing/invoiceBuild'
 import { xeroIndividualContactName } from '../xeroContact'
 import { ANAE, HOSP, ORG, SURG } from './cast'
-import { BP, PAT } from './patients'
+import { BP, genericPatientIds, PAT } from './patients'
 
 /** The masters buildHistory needs (structural — avoids a circular import of SeedMasters). */
 export interface HistoryMasters {
@@ -98,12 +98,115 @@ export interface HistoryAccount {
    */
   listKey?: string
   session?: 'AM' | 'PM'
+  /** The Booking's scheduled time on its List (the browsable history; catch-up Phase 38a). */
+  scheduledTime?: string
 }
 
 const HOSP_STG: CounterpartyRef = { kind: 'hospital', id: HOSP.stg }
 const HOSP_SX: CounterpartyRef = { kind: 'hospital', id: HOSP.sx }
 const HOSP_CPH: CounterpartyRef = { kind: 'hospital', id: HOSP.cph }
 const ORG_COS: CounterpartyRef = { kind: 'organisation', id: ORG.cos }
+
+/** A generic patient by fixed index (no RNG; the pool is deterministic). */
+function generic(index: number): string {
+  const id = genericPatientIds()[index]
+  if (id === undefined) throw new Error(`no generic patient at ${index}`)
+  return id
+}
+
+/** One paid account on a shared List (the browsable history). */
+function lookback(
+  key: string,
+  listDate: string,
+  session: 'AM' | 'PM',
+  scheduledTime: string,
+  patientId: string,
+  where: { counterparty: CounterpartyRef; surgeonId: string; hospitalId?: string; listHospitalId?: string },
+  description: string,
+  rvgBaseCode: string | undefined,
+  total: number,
+  accRelated: boolean,
+  money: { raised: string; paid: string; disbursed: string },
+): HistoryAccount {
+  return {
+    key,
+    patientId,
+    ...where,
+    description,
+    ...(rvgBaseCode !== undefined ? { rvgBaseCode } : {}),
+    serviceISO: listDate,
+    raisedISO: `${money.raised}T09:00:00`,
+    total,
+    accRelated,
+    paidState: 'paid',
+    paidAtISO: `${money.paid}T10:00:00`,
+    disbursedAtISO: `${money.disbursed}T09:00:00`,
+    listKey: `${listDate}-${session}`,
+    session,
+    scheduledTime,
+  }
+}
+
+const STG_LIM = { counterparty: HOSP_STG, surgeonId: SURG.lim, hospitalId: HOSP.stg }
+const STG_HALE = { counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg }
+const STG_DOYLE = { counterparty: HOSP_STG, surgeonId: SURG.doyle, hospitalId: HOSP.stg }
+const SX_PATEL = { counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx }
+const CPH_OKAFOR = { counterparty: HOSP_CPH, surgeonId: SURG.okafor, hospitalId: HOSP.cph }
+const ACC_HALE = { counterparty: ORG_COS, surgeonId: SURG.hale, listHospitalId: HOSP.stg }
+
+/**
+ * The browsable history (catch-up Phase 38a): twelve Lists, 29 Bookings, Monday
+ * 12 January to Friday 27 March 2026, all paid and disbursed before 1 April.
+ * The pinned List is Fri 13 March AM at St George's (`SEED_LOOKBACK`), with
+ * Sarah Mitchell's earlier Booking on it.
+ */
+const LOOKBACK_ACCOUNTS: readonly HistoryAccount[] = [
+  // Mon 12 Jan PM · St George's · Ms G. Lim
+  lookback('hb01', '2026-01-12', 'PM', '13:15', generic(40), STG_LIM, 'Excision of skin lesion, flap repair', undefined, 720.0, false, { raised: '2026-01-13', paid: '2026-01-27', disbursed: '2026-01-29' }),
+  lookback('hb02', '2026-01-12', 'PM', '14:30', generic(41), STG_LIM, 'Carpal tunnel release', undefined, 455.0, false, { raised: '2026-01-13', paid: '2026-01-27', disbursed: '2026-01-29' }),
+  // Tue 20 Jan AM · St George's · Mr T. Hale
+  lookback('hb03', '2026-01-20', 'AM', '07:45', PAT.tane, STG_HALE, 'Knee arthroscopy', '49558', 845.0, false, { raised: '2026-01-21', paid: '2026-02-04', disbursed: '2026-02-06' }),
+  lookback('hb04', '2026-01-20', 'AM', '09:00', generic(42), STG_HALE, 'Shoulder arthroscopy', '47516', 690.0, false, { raised: '2026-01-21', paid: '2026-02-04', disbursed: '2026-02-06' }),
+  lookback('hb05', '2026-01-20', 'AM', '10:30', generic(43), STG_HALE, 'Hip hemiarthroplasty', '47519', 1180.0, false, { raised: '2026-01-21', paid: '2026-02-04', disbursed: '2026-02-06' }),
+  // Thu 29 Jan AM · Christchurch Public · Mr C. Okafor
+  lookback('hb06', '2026-01-29', 'AM', '08:00', generic(44), CPH_OKAFOR, 'Laparoscopic cholecystectomy', '20941', 1150.0, false, { raised: '2026-01-30', paid: '2026-02-13', disbursed: '2026-02-17' }),
+  lookback('hb07', '2026-01-29', 'AM', '10:00', generic(45), CPH_OKAFOR, 'Appendicectomy, laparoscopic', '20950', 610.0, false, { raised: '2026-01-30', paid: '2026-02-13', disbursed: '2026-02-17' }),
+  // Tue 3 Feb PM · Southern Cross · Ms K. Patel
+  lookback('hb08', '2026-02-03', 'PM', '13:15', generic(46), SX_PATEL, 'Laparoscopic cholecystectomy', '20941', 1240.0, false, { raised: '2026-02-04', paid: '2026-02-18', disbursed: '2026-02-20' }),
+  lookback('hb09', '2026-02-03', 'PM', '14:45', generic(47), SX_PATEL, 'Inguinal hernia repair', undefined, 680.0, false, { raised: '2026-02-04', paid: '2026-02-18', disbursed: '2026-02-20' }),
+  lookback('hb10', '2026-02-03', 'PM', '16:00', generic(48), SX_PATEL, 'Knee arthroscopy', '49558', 520.0, false, { raised: '2026-02-04', paid: '2026-02-18', disbursed: '2026-02-20' }),
+  // Mon 9 Feb PM · St George's · Ms G. Lim
+  lookback('hb11', '2026-02-09', 'PM', '13:15', generic(49), STG_LIM, 'Breast reduction', undefined, 1420.0, false, { raised: '2026-02-10', paid: '2026-02-24', disbursed: '2026-02-26' }),
+  lookback('hb12', '2026-02-09', 'PM', '15:30', generic(50), STG_LIM, 'Excision of skin lesion, flap repair', undefined, 480.0, false, { raised: '2026-02-10', paid: '2026-02-24', disbursed: '2026-02-26' }),
+  // Tue 17 Feb AM · St George's · Mr T. Hale (one ACC account)
+  lookback('hb13', '2026-02-17', 'AM', '07:45', generic(51), ACC_HALE, 'ACC knee reconstruction', '49558', 980.0, true, { raised: '2026-02-18', paid: '2026-03-04', disbursed: '2026-03-06' }),
+  lookback('hb14', '2026-02-17', 'AM', '09:30', generic(52), STG_HALE, 'Shoulder arthroscopy', '47516', 690.0, false, { raised: '2026-02-18', paid: '2026-03-04', disbursed: '2026-03-06' }),
+  lookback('hb15', '2026-02-17', 'AM', '11:00', generic(53), STG_HALE, 'Knee arthroscopy', '49558', 845.0, false, { raised: '2026-02-18', paid: '2026-03-04', disbursed: '2026-03-06' }),
+  // Thu 26 Feb AM · Christchurch Public · Mr C. Okafor
+  lookback('hb16', '2026-02-26', 'AM', '08:00', generic(54), CPH_OKAFOR, 'Appendicectomy, laparoscopic', '20950', 610.0, false, { raised: '2026-02-27', paid: '2026-03-12', disbursed: '2026-03-16' }),
+  lookback('hb17', '2026-02-26', 'AM', '09:45', generic(55), CPH_OKAFOR, 'Cystoscopy', '50120', 480.0, false, { raised: '2026-02-27', paid: '2026-03-12', disbursed: '2026-03-16' }),
+  // Tue 3 Mar PM · Southern Cross · Ms K. Patel
+  lookback('hb18', '2026-03-03', 'PM', '13:15', PAT.bennett, SX_PATEL, 'Inguinal hernia repair', undefined, 680.0, false, { raised: '2026-03-04', paid: '2026-03-17', disbursed: '2026-03-19' }),
+  lookback('hb19', '2026-03-03', 'PM', '14:30', generic(56), SX_PATEL, 'Laparoscopic cholecystectomy', '20941', 1150.0, false, { raised: '2026-03-04', paid: '2026-03-17', disbursed: '2026-03-19' }),
+  lookback('hb20', '2026-03-03', 'PM', '16:00', generic(57), SX_PATEL, 'Knee arthroscopy', '49558', 520.0, false, { raised: '2026-03-04', paid: '2026-03-17', disbursed: '2026-03-19' }),
+  // Tue 10 Mar AM · St George's · Mr T. Hale
+  lookback('hb21', '2026-03-10', 'AM', '07:45', generic(58), STG_HALE, 'Hip hemiarthroplasty', '47519', 1180.0, false, { raised: '2026-03-11', paid: '2026-03-24', disbursed: '2026-03-26' }),
+  lookback('hb22', '2026-03-10', 'AM', '10:00', generic(59), STG_HALE, 'Knee arthroscopy', '49558', 845.0, false, { raised: '2026-03-11', paid: '2026-03-24', disbursed: '2026-03-26' }),
+  // Fri 13 Mar AM · St George's · Mr P. Doyle (the pinned List, SEED_LOOKBACK)
+  lookback('hb23', '2026-03-13', 'AM', '08:00', PAT.mitchell, STG_DOYLE, 'Laparoscopic cholecystectomy', '20941', 1240.0, false, { raised: '2026-03-14', paid: '2026-03-25', disbursed: '2026-03-27' }),
+  lookback('hb24', '2026-03-13', 'AM', '09:30', generic(60), STG_DOYLE, 'Inguinal hernia repair', undefined, 680.0, false, { raised: '2026-03-14', paid: '2026-03-25', disbursed: '2026-03-27' }),
+  lookback('hb25', '2026-03-13', 'AM', '11:00', generic(61), STG_DOYLE, 'Appendicectomy, laparoscopic', '20950', 610.0, false, { raised: '2026-03-14', paid: '2026-03-25', disbursed: '2026-03-27' }),
+  // Tue 24 Mar PM · Southern Cross · Ms K. Patel
+  lookback('hb26', '2026-03-24', 'PM', '13:15', generic(62), SX_PATEL, 'Laparoscopic cholecystectomy', '20941', 1150.0, false, { raised: '2026-03-25', paid: '2026-03-30', disbursed: '2026-03-31' }),
+  lookback('hb27', '2026-03-24', 'PM', '15:00', generic(63), SX_PATEL, 'Knee arthroscopy', '49558', 520.0, false, { raised: '2026-03-25', paid: '2026-03-30', disbursed: '2026-03-31' }),
+  // Fri 27 Mar AM · St George's · Mr P. Doyle
+  lookback('hb28', '2026-03-27', 'AM', '08:00', generic(64), STG_DOYLE, 'Inguinal hernia repair', undefined, 680.0, false, { raised: '2026-03-27', paid: '2026-03-30', disbursed: '2026-03-31' }),
+  lookback('hb29', '2026-03-27', 'AM', '09:30', generic(65), STG_DOYLE, 'Appendicectomy, laparoscopic', '20950', 610.0, false, { raised: '2026-03-27', paid: '2026-03-30', disbursed: '2026-03-31' }),
+]
+
+/** The pinned history List the look-back tests, shots and the demo guide use. */
+export const LOOKBACK_LIST_ID = 'L-HIST-2026-03-13-AM'
+export const LOOKBACK_DATE_ISO = '2026-03-13'
 
 /**
  * Souter's historical accounts. Dates all fall BEFORE the canvas horizon start
@@ -130,6 +233,14 @@ const ACCOUNTS: readonly HistoryAccount[] = [
   // Billable-party (guardian) paid account — a non-patient individual contact
   // that the nightly archive job can retire (the billableParty-eligible path).
   { key: 'pa05', patientId: PAT.park, counterparty: { kind: 'billableParty', id: BP.guardian }, surgeonId: SURG.reid, listHospitalId: HOSP.ces, description: 'Paediatric strabismus, guardian funded', serviceISO: '2026-05-08', raisedISO: '2026-05-09T09:00:00', total: 540.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-05-14T10:00:00', disbursedAtISO: '2026-05-16T09:00:00' },
+  // --- Browsable history, January to March 2026 (catch-up Phase 38a) ---
+  // Twelve multi-Booking Lists Dr Souter can find by search or by date, at her
+  // usual hospitals with their surgeons, appended so every existing id, invoice
+  // number, amount and date above is unchanged. Every account is paid, received
+  // and disbursed before 1 April 2026, so no outstanding figure, Awaiting
+  // collection, Balances, S3 or S4 number moves. No two backdrop Lists share a
+  // date and session (Wed 18 Mar AM is L-HIST-08). Hand-written: no RNG draw.
+  ...LOOKBACK_ACCOUNTS,
 ] as const
 
 export interface HistoryBuild {
@@ -318,6 +429,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       patientId: acc.patientId,
       completed: true,
       completedAtISO: acc.raisedISO,
+      ...(acc.scheduledTime !== undefined ? { scheduledTime: acc.scheduledTime } : {}),
       attachments: [],
       lastModifiedBy: 'Billing run',
       lastModifiedAtISO: acc.raisedISO,

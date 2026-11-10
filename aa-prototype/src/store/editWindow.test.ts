@@ -137,6 +137,13 @@ describe('authorise is completion-gated (catch-up Phase 38a)', () => {
 })
 
 describe('changedSinceSubmitted', () => {
+  it('no seeded submitted List starts with the cue (each staged submit follows its completions)', () => {
+    const state = store().getState()
+    const submitted = Object.values(state.schedule.lists).filter((l) => l.state === 'SUBMITTED')
+    expect(submitted.length).toBeGreaterThan(0)
+    for (const l of submitted) expect(changedSinceSubmitted(state, l.id), l.id).toBeNull()
+  })
+
   it('is null for a freshly submitted List and after an office edit', () => {
     const api = store()
     expect(changedSinceSubmitted(api.getState(), MON_PM)).toBeNull()

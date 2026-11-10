@@ -1,18 +1,27 @@
 import { useMemo, useState } from 'react'
 import { locationName } from '../../../shared/format'
 import { addDays, format, parseISO } from 'date-fns'
-import { neutral, radius } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import type { AssignedList, Booking, DisplayKey } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { hasLeftMainView, listProgress, type ListProgress } from '../../../domain/listProgress'
 import { mainViewFor, timesForList, useAppStore, type SlotView } from '../../../store'
 import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, StatusLegend } from '../../../shared'
 import { Panel } from '../components'
+import { searchCountLine } from '../../../shared/schedule'
+import { useWebBookingSearch, WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from './ListsLookback'
 
 interface ListsScreenProps {
   anaesthetistId: string
   todayISO: string
   onOpenList: (listId: string) => void
+  /** The search text (`?q=`). */
+  query?: string
+  /** The picked date (`?day=`), or null for the main view. */
+  dayISO?: string | null
+  onQueryChange?: (query: string) => void
+  onDayChange?: (dayISO: string | null) => void
+  onOpenBooking?: (listId: string, bookingId: string) => void
 }
 
 interface Row {
@@ -49,8 +58,22 @@ const COLUMNS = 7
  * app reads (catch-up Phase 28). A List leaves at AUTHORISED (`hasLeftMainView`);
  * search finds it afterwards. The Progress column reads `LIST_PROGRESS_LABEL`;
  * a submitted List is quieter and still editable.
+ *
+ * Search (`?q=`, two or more characters) shows the anaesthetist's matching
+ * Bookings in place of the table, Upcoming then Past; "Go to date" (`?day=`)
+ * shows that date's Lists under a date chip (US-03.1.6, US-03.1.7). The two are
+ * exclusive; both live in the URL so Back from detail returns to them.
  */
-export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScreenProps) {
+export function ListsScreen({
+  anaesthetistId,
+  todayISO,
+  onOpenList,
+  query = '',
+  dayISO = null,
+  onQueryChange = () => undefined,
+  onDayChange = () => undefined,
+  onOpenBooking = () => undefined,
+}: ListsScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
@@ -60,6 +83,10 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
+  const results = useWebBookingSearch(anaesthetistId, query, todayISO)
+  const mode: 'main' | 'day' | 'search' =
+    results.query.kind === 'nhi' || results.query.kind === 'name' ? 'search' : dayISO !== null ? 'day' : 'main'
+  const shown = results.upcoming.length + results.past.length
 
   const { earlier, upcoming } = useMemo(() => {
     const active = new Map<string, Booking[]>()
@@ -168,18 +195,52 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
           <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Lists</h1>
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Your Lists from today, with any earlier ones not yet authorised. From/To are the actual session times.</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate }}>
-            To
-            <input type="date" value={toISO} min={todayISO} onChange={(e) => setToISO(e.target.value)} style={dateInputStyle} />
-          </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <WebSearchField query={query} onQueryChange={onQueryChange} />
+          <WebGoToDate anaesthetistId={anaesthetistId} dayISO={dayISO} onDayChange={onDayChange} />
+          {mode === 'main' && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate }}>
+              To
+              <input type="date" value={toISO} min={todayISO} onChange={(e) => setToISO(e.target.value)} style={dateInputStyle} />
+            </label>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <StatusLegend variant="chips" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minHeight: 32 }}>
+        {mode === 'main' && <StatusLegend variant="chips" />}
+        {mode === 'day' && dayISO !== null && <WebDayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
+        {mode === 'search' && (
+          <>
+            <span role="status" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>
+              {shown === 0 ? 'No matches' : searchCountLine(results.total, shown, query)}
+            </span>
+            <button
+              type="button"
+              onClick={() => onQueryChange('')}
+              style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Clear search
+            </button>
+          </>
+        )}
       </div>
 
+      {mode === 'search' && (
+        <Panel flush>
+          <div style={{ overflowX: 'auto' }}>
+            <WebResultsTable upcoming={results.upcoming} past={results.past} onOpenBooking={onOpenBooking} />
+          </div>
+        </Panel>
+      )}
+      {mode === 'day' && dayISO !== null && (
+        <Panel flush>
+          <div style={{ overflowX: 'auto' }}>
+            <WebDayTable anaesthetistId={anaesthetistId} dateISO={dayISO} todayISO={todayISO} onOpenList={onOpenList} />
+          </div>
+        </Panel>
+      )}
+      {mode === 'main' && (
       <Panel flush>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -214,6 +275,7 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
           </table>
         </div>
       </Panel>
+      )}
     </div>
   )
 }
