@@ -24,9 +24,10 @@ describe('listProgress', () => {
     expect(listProgress({ state: 'ACTIVE', dateISO: '2026-07-14' }, [], TODAY)).toBe('upcoming')
   })
 
-  it('SUBMITTED is submitted whatever its Bookings say', () => {
+  it('SUBMITTED is submitted, or to finish while a reopened or added Booking is incomplete', () => {
     expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-07-20' }, [done], TODAY)).toBe('submitted')
-    expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-07-20' }, [open], TODAY)).toBe('submitted')
+    expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-07-20' }, [done, open], TODAY)).toBe('toFinish')
+    expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-07-27' }, [open], TODAY)).toBe('toFinish')
   })
 
   it('AUTHORISED is invoiced with the billing stamp and authorised without it', () => {

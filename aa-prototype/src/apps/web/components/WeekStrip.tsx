@@ -5,7 +5,7 @@ import { brand, neutral } from '../../../theme/tokens'
 import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
 import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
-import { hasLeftMainView, LIST_PROGRESS_LABEL } from '../../../domain/listProgress'
+import { hasLeftMainView, LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { slotTimeRange, weekDays, locationName } from '../../../shared/format'
 import { Panel } from './Panel'
 
@@ -38,6 +38,7 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
 
   const days = useMemo(() => weekDays(weekAnchorISO), [weekAnchorISO])
   const views = useMemo(() => {
@@ -56,6 +57,14 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
     // the mobile main view and the web Lists table.
     const v = views.get(`${dateISO}|${session}`)
     return v?.list !== undefined && hasLeftMainView(v.list) ? undefined : v
+  }
+
+  /** Submitted with nothing left to finish: the design's ✓ (a reopened Booking reads To finish instead). */
+  function submittedDone(v: SlotView | undefined): boolean {
+    const list = v?.list
+    if (list === undefined) return false
+    const active = Object.values(bookingsRecord).filter((b) => b.listId === list.id && b.cancellation === undefined)
+    return listProgress(list, active, todayISO) === 'submitted'
   }
 
   function labels(v: SlotView): { l1: string; l2: string } {
@@ -121,11 +130,11 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
                 }}
               >
                 {mergedHoliday && am !== undefined ? (
-                  <Block view={am} labels={labels(am)} onOpenList={onOpenList} tall />
+                  <Block view={am} labels={labels(am)} onOpenList={onOpenList} submitted={submittedDone(am)} tall />
                 ) : (
                   <>
-                    <Block view={am} labels={am !== undefined ? labels(am) : undefined} onOpenList={onOpenList} />
-                    <Block view={pm} labels={pm !== undefined ? labels(pm) : undefined} onOpenList={onOpenList} />
+                    <Block view={am} labels={am !== undefined ? labels(am) : undefined} onOpenList={onOpenList} submitted={submittedDone(am)} />
+                    <Block view={pm} labels={pm !== undefined ? labels(pm) : undefined} onOpenList={onOpenList} submitted={submittedDone(pm)} />
                   </>
                 )}
               </div>
@@ -166,11 +175,14 @@ function Block({
   labels,
   onOpenList,
   tall,
+  submitted = false,
 }: {
   view: SlotView | undefined
   labels?: { l1: string; l2: string }
   onOpenList: (listId: string) => void
   tall?: boolean
+  /** Submitted with every Booking complete (`listProgress`): quieter, with the ✓. */
+  submitted?: boolean
 }) {
   const height = tall === true ? 110 : 52
   const resolved = useDisplayStatus(view?.displayKey ?? '')
@@ -180,7 +192,6 @@ function Block({
   const list = view.list
   const c = resolved.visual
   const isFree = c.treatment === 'dashed'
-  const submitted = list?.state === 'SUBMITTED'
   const bg = c.tint
   const timeRange = list === undefined && !view.open ? undefined : slotTimeRange(view.times)
   // Only a List opens; an empty session has nothing to open.

@@ -21,11 +21,15 @@ export function hasLeftMainView(list: Pick<List, 'state'>): boolean {
 
 /** A List's progress, from its anaesthetist's side. */
 export type ListProgress =
-  /** ACTIVE, dated today or earlier, with a Booking still to complete. */
+  /**
+   * A Booking still to complete: ACTIVE and dated today or earlier, or
+   * SUBMITTED with a Booking reopened or added since submit (owner, 2026-11-10:
+   * she sees what blocks the office's authorise).
+   */
   | 'toFinish'
   /** ACTIVE with at least one Booking and every Booking complete. */
   | 'readyToSubmit'
-  /** SUBMITTED: still on the main view, less prominent, still editable (D63). */
+  /** SUBMITTED with every Booking complete: on the main view, less prominent, still editable (D63). */
   | 'submitted'
   /** AUTHORISED with its invoices raised (`billedAtISO` stamped). */
   | 'invoiced'
@@ -54,11 +58,12 @@ export function listProgress(
   todayISO: string,
 ): ListProgress {
   if (list.state === 'AUTHORISED') return list.billedAtISO !== undefined ? 'invoiced' : 'authorised'
-  if (list.state === 'SUBMITTED') return 'submitted'
-  if (list.state !== 'ACTIVE') return 'upcoming'
   const total = activeBookings.length
-  if (total === 0) return 'upcoming'
   const done = activeBookings.filter((b) => b.completed).length
+  // A reopened or added Booking blocks authorise: she sees it as to finish (owner, 2026-11-10).
+  if (list.state === 'SUBMITTED') return done < total ? 'toFinish' : 'submitted'
+  if (list.state !== 'ACTIVE') return 'upcoming'
+  if (total === 0) return 'upcoming'
   if (done === total) return 'readyToSubmit'
   return list.dateISO <= todayISO ? 'toFinish' : 'upcoming'
 }

@@ -6,7 +6,7 @@
 import { cleanup, act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { freshAppState, useAppStore, type Actor } from '../../../store'
+import { freshAppState, uncompleteBooking, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
 import { ANAE, SEED_LIST_IDS, SEED_LOOKBACK } from '../../../domain/seed'
 import { MobileListsRoute } from '../routes'
@@ -84,6 +84,23 @@ describe('the mobile main view (US-07.4.2)', () => {
     const hint = screen.getByRole('button', { name: /2 earlier Lists not yet authorised/ })
     fireEvent.click(hint)
     expect(scroller.scrollTop).toBe(0)
+  })
+
+  it('a Booking reopened on a submitted List shows it as to finish, under To-Do, not Done (owner, 2026-11-10)', () => {
+    const pm = SEED_LIST_IDS.souterMon20Pm
+    const booking = Object.values(useAppStore.getState().schedule.bookings).find((b) => b.listId === pm && b.cancellation === undefined)!
+    act(() => {
+      uncompleteBooking(useAppStore, SOUTER, booking.id)
+    })
+    renderAt('/mobile/lists')
+    const row = document.querySelector(`[data-list-id="${pm}"]`)
+    expect(row?.textContent).toContain('1 to finish')
+    expect(row).not.toHaveAttribute('data-quiet')
+    fireEvent.click(screen.getByRole('button', { name: 'To-Do' }))
+    expect(document.querySelector(`[data-list-id="${pm}"]`)).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(document.querySelector(`[data-list-id="${pm}"]`)).toBeNull()
+    expect(document.querySelector(`[data-list-id="${SEED_LIST_IDS.souterMon20Am}"]`)).not.toBeNull()
   })
 
   it('Done shows the submitted Lists; an authorised List appears under no chip', () => {

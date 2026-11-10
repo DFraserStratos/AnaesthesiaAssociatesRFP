@@ -199,11 +199,12 @@ export function ForwardListsScreen({
       }
     }
 
-    // To-Do: ACTIVE with a Booking still to complete; Done: submitted (US-07.2.1).
+    // To-Do: a Booking still to complete, on an ACTIVE List or reopened on a
+    // submitted one; Done: submitted with every Booking complete (US-07.2.1).
     // Authorised Lists appear under no chip (they have left the main view).
     const inChip = (l: AssignedList): boolean => {
-      if (filter === 'todo') return l.state === 'ACTIVE' && activeBookings(l.id).some((c) => !c.completed)
-      if (filter === 'done') return l.state === 'SUBMITTED'
+      if (filter === 'todo') return (l.state === 'ACTIVE' || l.state === 'SUBMITTED') && activeBookings(l.id).some((c) => !c.completed)
+      if (filter === 'done') return progressOf(l) === 'submitted'
       return true
     }
 
