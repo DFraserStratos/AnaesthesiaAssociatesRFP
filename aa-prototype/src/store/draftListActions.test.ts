@@ -56,7 +56,7 @@ import {
 } from './selectors'
 import { openWarnings } from './warnings'
 import { sicknessCandidates } from './demoSimulations'
-import { ANAE, HOSP, SEED_DRAFT_LIST_IDS, SURG } from '../domain/seed'
+import { ANAE, HOSP, SEED_DRAFT_LIST_IDS, SEED_LIST_IDS, SURG } from '../domain/seed'
 import { slotIdFor } from '../domain/slots'
 import { isActivePairing } from '../domain/listPairing'
 import { assigned, draft } from '../test/lists'
@@ -208,15 +208,21 @@ describe('assignDraftList (US-01.6.3)', () => {
     expect(passed.ok ? '' : passed.message).toBe("This Draft List's day has passed. Change its date or remove it.")
   })
 
-  it('warns, never blocks: a closed session assigns and raises a conflict, naming the status and asking the office to check', () => {
+  it('refuses a session marked not available (US-01.6.3, D59): it is made available first, then assigns', () => {
     const api = store()
     const clash = 'LD-RCB016-2026-07-21-AM'
+    const before = api.getState().schedule
     const out = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.ngata })
-    expect(out.ok).toBe(true)
-    expect(out.ok && out.value.warnings[0]).toMatch(/^Dr Ngata is on .+ for this session\. Assigning flags a conflict on the List\. Check with Dr Ngata first\.$/)
-    const list = assigned(api.getState().schedule.lists[clash])
-    expect(list.conflicts).toMatchObject([{ kind: 'availability' }])
-    expect(conflictRows(api.getState()).some((r) => r.listId === clash && r.reason === 'Anaesthetist unavailable')).toBe(true)
+    expect(code(out)).toBe('sessionNotOpen')
+    expect(out.ok ? '' : out.message).toBe('Dr Ngata has marked this session not available. They need to make it available first.')
+    expect(api.getState().schedule).toBe(before)
+    // Dr Ngata agrees and makes it available: the assignment goes through, with no conflict.
+    expect(setAvailability(api, OFFICE, ANAE.ngata, TUE21, 'AM', 'free').ok).toBe(true)
+    const again = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.ngata })
+    expect(again.ok).toBe(true)
+    expect(again.ok && again.value.warnings.some((w) => /flags a conflict/.test(w))).toBe(false)
+    expect(assigned(api.getState().schedule.lists[clash]).conflicts).toEqual([])
+    expect(conflictRows(api.getState()).some((r) => r.listId === clash)).toBe(false)
   })
 
   it('a not-preferred pairing assigns and writes one acknowledgement; a preferred one writes none', () => {
@@ -305,21 +311,21 @@ describe('redateDraftList and removeDraftList (US-01.6.4)', () => {
 })
 
 describe('detachListToDraft (ACTIVE back to DRAFT, built for Phase 32)', () => {
-  it('keeps the id, Bookings, notes and holiday conflicts; leaves the session; drops availability conflicts; refuses a SUBMITTED List', () => {
+  it('keeps the id, Bookings, notes and holiday conflicts; leaves the session; refuses a SUBMITTED List', () => {
     const api = store()
     const s = api.getState()
-    // Rutherford's Wed 22 AM List carries an availability conflict (the seeded sickness).
-    const rutherford = assigned(s.schedule.lists['L-29104-2026-07-22-AM'])
-    const out = detachListToDraft(s.schedule, rutherford.id, { origin: 'movedToOffice', by: 'Dr Rutherford', atISO: clockISO(s.clock) })
+    // Souter's Tue 21 AM List (St George's), in an open session.
+    const souter = assigned(s.schedule.lists[SEED_LIST_IDS.souterAm21])
+    const out = detachListToDraft(s.schedule, souter.id, { origin: 'movedToOffice', by: 'Dr Rutherford', atISO: clockISO(s.clock) })
     expect(out.ok).toBe(true)
     if (!out.ok) return
-    expect(out.value.list).toMatchObject({ id: rutherford.id, state: 'DRAFT', hospitalId: rutherford.hospitalId, surgeonId: rutherford.surgeonId, draft: { origin: 'movedToOffice', fromAnaesthetistId: ANAE.rutherford } })
+    expect(out.value.list).toMatchObject({ id: souter.id, state: 'DRAFT', hospitalId: souter.hospitalId, surgeonId: souter.surgeonId, draft: { origin: 'movedToOffice', fromAnaesthetistId: ANAE.souter } })
     expect(out.value.list.anaesthetistId).toBeUndefined()
     expect(out.value.list.slotId).toBeUndefined()
-    expect(out.value.list.conflicts).toEqual([])
+    expect(out.value.list.conflicts).toEqual(souter.conflicts.filter((c) => c.kind === 'holiday'))
     expect(out.value.meta).toMatchObject({ action: 'draftList.detach', before: { state: 'ACTIVE' }, after: { state: 'DRAFT', anaesthetistId: null, slotId: null } })
-    // The vacated session keeps the status the caller set (unavailable here) and holds no List.
-    expect(out.value.schedule.slots[rutherford.slotId]?.status).toBe('unavailable')
+    // The vacated session keeps its status (the caller sets it) and holds no List.
+    expect(out.value.schedule.slots[souter.slotId]?.status).toBe(s.schedule.slots[souter.slotId]?.status)
     const submitted = submittedLists(api.getState())[0]!
     expect(code(detachListToDraft(s.schedule, submitted.id, { origin: 'movedToOffice', by: 'x', atISO: clockISO(s.clock) }))).toBe('notActive')
   })
@@ -487,12 +493,13 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     expect(Object.values(api.getState().schedule.lists).some((l) => l.draft?.origin === 'recurringClash' && l.dateISO < TUE21)).toBe(false)
   })
 
-  it('the office marking a booked session unavailable still gives Phase 30\'s conflict (an anaesthetist is asked where the List goes, Phase 32)', () => {
+  it('the office marking a booked session unavailable is asked where the List goes, like the anaesthetist (D59; catch-up Phase 32b): never a conflict', () => {
     const api = store()
     const booked = slotViewsForDate(api.getState(), THU23).find((v) => v.list !== undefined && v.list.state === 'ACTIVE')!
-    setAvailability(api, OFFICE, booked.slot.anaesthetistId, THU23, booked.slot.session, 'unavailable')
-    expect(api.getState().schedule.lists[booked.list!.id]?.conflicts.some((c) => c.kind === 'availability')).toBe(true)
+    const out = setAvailability(api, OFFICE, booked.slot.anaesthetistId, THU23, booked.slot.session, 'unavailable')
+    expect(code(out)).toBe('holdsList')
     expect(api.getState().schedule.lists[booked.list!.id]?.state).toBe('ACTIVE')
+    expect(api.getState().schedule.lists[booked.list!.id]?.conflicts.every((c) => c.kind === 'holiday')).toBe(true)
   })
 })
 

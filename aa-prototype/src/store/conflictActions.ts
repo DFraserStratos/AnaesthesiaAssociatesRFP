@@ -19,7 +19,7 @@ import { conflictLookups } from './conflictReconcile'
 function expectedFor(state: AppState, list: List) {
   return expectedConflicts(
     list,
-    conflictFactsFor(list, { slots: state.schedule.slots, statuses: state.masters.slotStatuses, holidays: holidayIndex(state.masters.holidays) }),
+    conflictFactsFor(list, { holidays: holidayIndex(state.masters.holidays) }),
   )
 }
 

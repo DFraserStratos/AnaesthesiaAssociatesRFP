@@ -1,8 +1,9 @@
 /**
- * The inline conflict warning before confirm (catch-up Phase 30; US-01.5.2
- * AC3, OQ-09 soft warning): the closure or the unavailability an assignment,
- * phone booking, edit or move would land on, in the warning tint. It never
- * disables the confirm: the office goes ahead and the List is flagged.
+ * The inline conflict warning before confirm (catch-up Phase 30; US-01.5.2,
+ * OQ-09 soft warning): the hospital closure an assignment, phone booking or
+ * edit would land on, in the warning tint. It never disables the confirm: the
+ * office goes ahead and the List is flagged. A closed session is never a
+ * conflict (D59): the store refuses it instead (catch-up Phase 32b).
  */
 
 import { useMemo } from 'react'
@@ -12,18 +13,14 @@ import { useAppStore, useConflictLookups } from '../../../../store'
 import { radius, semantic } from '../../../../theme/tokens'
 
 /** The conflicts a target would raise (`conflictPreview` over the live records). */
-export function useConflictPreview(target: { dateISO: string; hospitalId?: string; slotId?: string } | null): ExpectedConflict[] {
-  const slots = useAppStore((s) => s.schedule.slots)
-  const statuses = useAppStore((s) => s.masters.slotStatuses)
+export function useConflictPreview(target: { dateISO: string; hospitalId?: string } | null): ExpectedConflict[] {
   const holidays = useAppStore((s) => s.masters.holidays)
   const dateISO = target?.dateISO
   const hospitalId = target?.hospitalId
-  const slotId = target?.slotId
   return useMemo(() => {
     if (dateISO === undefined) return []
-    const slot = slotId !== undefined ? slots[slotId] : undefined
-    return conflictPreview({ dateISO, hospitalId: hospitalId === '' ? undefined : hospitalId, slot, statuses, holidays })
-  }, [dateISO, hospitalId, slotId, slots, statuses, holidays])
+    return conflictPreview({ dateISO, hospitalId: hospitalId === '' ? undefined : hospitalId, holidays })
+  }, [dateISO, hospitalId, holidays])
 }
 
 /** "Southern Cross · closed" in a hospital select when that hospital is closed on the date. */
@@ -39,13 +36,11 @@ export function useHospitalOptionLabel(dateISO: string | undefined): (hospitalId
 
 export function ConflictCallout({
   conflicts,
-  anaesthetistId,
   hospitalId,
   subject = 'List',
   shot = 'conflict-warning',
 }: {
   conflicts: readonly ExpectedConflict[]
-  anaesthetistId: string | undefined
   hospitalId?: string
   /** What is accepted and flagged: the List, or a Booking on it. */
   subject?: 'List' | 'Booking'
@@ -64,7 +59,7 @@ export function ConflictCallout({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {conflicts.map((c) => (
           <strong key={c.cause} style={{ fontWeight: 600 }}>
-            {describeConflict(c, { anaesthetistId, hospitalId: hospitalId ?? '' }, lookups).detail}
+            {describeConflict(c, { hospitalId: hospitalId ?? '' }, lookups).detail}
           </strong>
         ))}
         <span>{tail} You can still go ahead.</span>

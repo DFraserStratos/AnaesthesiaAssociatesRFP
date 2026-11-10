@@ -8,8 +8,8 @@
  * `shared/demoTriggers`; the bodies live here so the PWA closure stays pure.
  *
  * Candidates are deterministic (date, then session, then id), never the
- * persona's own Lists, never a List with a conflict (the Conflicts screen S2
- * shows), and never anything in `SCRIPTED_BEAT_SCHEDULE`, as the List moved or
+ * persona's own Lists, never a List with a conflict (a hospital closure the
+ * Conflicts screen shows), and never anything in `SCRIPTED_BEAT_SCHEDULE`, as the List moved or
  * the session it moves into.
  */
 
@@ -17,14 +17,15 @@ import { ANAE, SCRIPTED_BEAT_SCHEDULE } from '../domain/seed'
 import { canReceiveList, ownMoveRefusal, pushTargets } from '../domain/listMoves'
 import { bookingMoveRefusal, bookingPlacement } from '../domain/bookingMoves'
 import { titledSurname } from '../domain/names'
-import { SEED_STATUS } from '../domain/slotStatus'
+import { isOpenForBooking, SEED_STATUS, statusFor } from '../domain/slotStatus'
 import { slotIdFor } from '../domain/slots'
 import type { AssignedList } from '../domain/types'
 import type { AppState, AppStoreApi } from './appStore'
 import { anaesthetistActor } from './demoActors'
 import { moveBookingToAnaesthetist, moveListToOffice, pushListToSlot, type BookingMoveResult, type OwnMoveResult } from './listMoveActions'
 import { ok, refuse, type Outcome } from './mutate'
-import { bookingMoveInputOf, moveInputOf } from './selectors'
+import { bookingMoveInputOf, closedEmptyColleagueSlots, listInSlot, moveInputOf } from './selectors'
+import { setAvailability } from './slotActions'
 
 /** The persona the anaesthetist apps act as: her Lists are never a colleague's move. */
 export const LIST_MOVE_DEMO_PERSONA = ANAE.souter
@@ -52,7 +53,7 @@ export function colleagueMoveCandidates(state: DemoState, fromISO?: string): Ass
     if (list.anaesthetistId === LIST_MOVE_DEMO_PERSONA || list.dateISO < start) continue
     if (SCRIPTED_LISTS.has(list.id) || SCRIPTED_SLOTS.has(list.slotId)) continue
     if (state.schedule.slots[list.slotId] === undefined) continue
-    // A List with a conflict is on the Conflicts screen a beat shows (S2 Beat 3): never moved by a demo.
+    // A List with a conflict (a closure) is on the Conflicts screen a beat shows: never moved by a demo.
     if (list.conflicts.length > 0) continue
     // The demo acts as the List's owner: an inactive one cannot (the count then matches what runs).
     if (state.masters.anaesthetists[list.anaesthetistId]?.active !== true) continue
@@ -169,8 +170,8 @@ export function stageColleagueMoveToPersona(api: AppStoreApi, personaId: string)
 // US-01.4.7). The same rules: acting as the colleague through the product's
 // own `moveBookingToAnaesthetist`, never a scripted List or session, never a
 // List with a conflict. A candidate exists only where the persona's session is
-// free and empty: no trigger ever sets anyone's availability, so a session she
-// is not available in is offered only after she sets it available herself.
+// free and empty: no trigger here sets the persona's availability, so a session
+// she is not available in is offered only after she sets it available herself.
 // ---------------------------------------------------------------------------
 
 /** One Booking a colleague could hand the persona: the first non-cancelled Booking of a candidate List. */
@@ -232,4 +233,46 @@ export function stageColleagueBookingMove(
   const out = moveBookingToAnaesthetist(api, actor, found.bookingId, personaId, { tellOffice: options.tellOffice === true })
   if (!out.ok) return out
   return ok({ ...found, ...out.value })
+}
+
+// ---------------------------------------------------------------------------
+// "Ask Dr X to make this session available" (catch-up Phase 32b; US-01.6.3,
+// D59): the office never assigns onto an unavailable session; it is made
+// available first, with the anaesthetist's agreement. The stand-in plays that
+// anaesthetist agreeing: their own availability write, as themselves, to Free.
+// ---------------------------------------------------------------------------
+
+/** Why the colleague stand-in cannot free this session, or null. */
+export function makeAvailableRefusal(state: Pick<AppState, 'schedule' | 'masters'>, slotId: string): string | null {
+  const slot = state.schedule.slots[slotId]
+  if (slot === undefined) return 'Session not found'
+  if (listInSlot(state, slotId) !== undefined) return 'This session holds a List'
+  if (isOpenForBooking(statusFor(state.masters.slotStatuses, slot.status))) return 'Already available'
+  if (state.masters.anaesthetists[slot.anaesthetistId]?.active !== true) return 'This anaesthetist is not active'
+  // Only a status the anaesthetist may set herself can she clear (the office set the others).
+  if (statusFor(state.masters.slotStatuses, slot.status)?.anaesthetistCanSet !== true) return 'Set by the office: the office changes it'
+  return null
+}
+
+/** The anaesthetist sets their own closed, empty session Free (`setAvailability` as `anaesthetistActor`), never one holding a List. */
+export function makeSessionAvailableAsColleague(api: AppStoreApi, slotId: string): Outcome<{ slotId: string; anaesthetistId: string }> {
+  const state = api.getState()
+  const reason = makeAvailableRefusal(state, slotId)
+  if (reason !== null) return refuse('notEligible', reason)
+  const slot = state.schedule.slots[slotId]!
+  const actor = anaesthetistActor(state, slot.anaesthetistId)
+  if (actor === undefined) return refuse('notFound', 'Anaesthetist not found')
+  const out = setAvailability(api, actor, slot.anaesthetistId, slot.dateISO, slot.session, SEED_STATUS.free, '')
+  if (!out.ok) return refuse(out.code, out.message)
+  return ok({ slotId, anaesthetistId: slot.anaesthetistId })
+}
+
+/** Closed, empty colleague sessions on a List's day and session (the open picker's blocked rows), by surname, that the stand-in can free. */
+export function closedColleagueSessions(state: Pick<AppState, 'schedule' | 'masters'>, listId: string): string[] {
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return []
+  const own = list.state !== 'DRAFT' ? list.anaesthetistId : undefined
+  return closedEmptyColleagueSlots(state, list.dateISO, list.session, own)
+    .filter((slot) => makeAvailableRefusal(state, slot.id) === null)
+    .map((slot) => slot.id)
 }

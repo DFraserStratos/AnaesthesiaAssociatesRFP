@@ -9,7 +9,7 @@ import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../.
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { bookingFee } from '../../../shared/capture'
-import { AddBookingFlow, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
+import { AddBookingFlow, AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
 import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
@@ -157,6 +157,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
               {movedToYouByLine(moved.atISO, moved.fromName)}
             </div>
           )}
+          {/* Alert the office (catch-up Phase 32b, US-03.6.3): her own List only. */}
+          <div style={{ marginTop: 10, maxWidth: 520 }}>
+            <AlertOfficeEntry actor={actor} target={{ listId }} compact />
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {movable && movePrompt !== null && (

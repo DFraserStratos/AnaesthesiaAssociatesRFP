@@ -556,7 +556,12 @@
   after she sets it available, her acceptance). On Admin Day and Notifications, <strong>Colleague moves a
   List to the office</strong> stages another anaesthetist's own move (or a busy morning of eight); on Admin
   Day, <strong>Colleague hands a Booking to Dr Souter</strong> puts a new List on her row with the office
-  notice ticked. The control panel is the index, with
+  notice ticked. On Admin Day and Conflicts, <strong>Simulate sickness</strong> records a phoned-in sickness
+  as the office and sends the List to the office or a colleague in the same step, never a conflict. In the
+  Assign Draft List and Reassign pickers each unavailable colleague shows read only with <strong>Ask Dr X to
+  make this session available</strong> (Colleague stand-in); on a handset List or Booking, <strong>Office
+  resolves this alert</strong> (Office stand-in) plays the office ticking her alert. Alert the office, the
+  tick and Show resolved are product actions. The control panel is the index, with
   an Open screen link per entry.
   Grey <span class="chip">Future scope</span> badges mark the HL7 v2 and FHIR tooling (the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, the hospital-message actions): in scope
@@ -599,8 +604,8 @@
       <p style="font-size:13px"><strong>May:</strong> edit own Bookings on ACTIVE Lists, submit when every uncancelled Booking is
       complete, still change a submitted List of her own until the office authorises it, see colleagues'
       session availability (not their patient details), move one of her own Lists to a free colleague
-      or back to the office, and hand one Booking to a colleague who is free that session (a new List of
-      theirs). Her main view starts at today, with earlier Lists not yet authorised a scroll back; past
+      or back to the office, hand one Booking to a colleague who is free that session (a new List of
+      theirs), and alert the office about a Booking or List with a note. Her main view starts at today, with earlier Lists not yet authorised a scroll back; past
       work is found by patient name, NHI or date. <strong>May not:</strong>
       edit an authorised List, authorise, or touch master data.</p>
     </div>
@@ -620,7 +625,7 @@
       standing arrangements, ad-hoc bookings, hospital changes, cancellations and short-notice cover.</p>
       <p style="font-size:13px">The one-day dashboard is the control tower: move one Booking for a routine
       reschedule, reassign a whole List for illness cover, preserving Bookings and audit through every change.
-      Sees the team's notifications of Lists anaesthetists have moved, and assigns the Draft Lists they return.
+      Sees the team's notifications of Lists anaesthetists have moved and their alerts to the office, ticks each one resolved once dealt with (it leaves for the whole office; Show resolved brings it back), and assigns the Draft Lists they return. Records a sickness phoned in with Change status on the Day view: the List goes back to the office or on to a colleague there and then.
       Maintains schedule-related master data such as anaesthetists, recurring bookings and hospital holidays (adding, editing and deleting closures),
       and surgeons, their rooms and groups, the office's private pairing preferences and the anaesthetists'
       priority tiers.</p>
@@ -748,9 +753,13 @@
     arranged cover, the office views free anaesthetists
     (Find available, or the Reassign list picker: in priority-tier order, with any not-preferred pairing
     grouped apart and warned, never blocked) and reassigns the whole List: it moves into the colleague's
-    free session with its Bookings and history, keeping its id, and the vacated session returns to Free
-    unless the office marks it Unavailable or Holiday (US-01.4.1; the default is OQ-84, still open).
-    Nothing about billing is recalculated. <span class="chip ready">Ready</span></p>
+    free session with its Bookings and history, keeping its id. Whoever moves a List, the anaesthetist or
+    the office, chooses what the vacated session becomes, Free or Unavailable (OQ-84, answered). A
+    sickness the office records (Change status on the Day view) never leaves the List in place: the same
+    "Where does this List go?" step returns it or hands it on, and Conflicts covers hospital closures
+    only. A colleague marked unavailable is never picked: the session is made available first. An
+    anaesthetist unsure about a Booking or List uses Alert the office with a note; it stays in the
+    office's notifications until ticked resolved. Nothing about billing is recalculated. <span class="chip ready">Ready</span></p>
     <p>For one case rather than the whole List, she uses <strong>Move to a colleague</strong> on the
     Booking: a colleague free that session, found by typing a name or from the free list in name order,
     takes it as a new List in their session, never added to an existing List; a colleague on leave is
@@ -885,7 +894,7 @@
       <tr><th>Admin Web App</th><th>URL</th></tr>
       <tr><td>Day view</td><td><code>/admin/day/2026-07-21</code> (A to Z order: add <code>?sort=az</code>)</td></tr>
       <tr><td>Booking detail</td><td><code>/admin/day/2026-07-21/bookings/&lt;bookingId&gt;</code></td></tr>
-      <tr><td>Conflicts</td><td><code>/admin/conflicts</code> (filters in the URL, e.g. <code>?reason=unavailable</code>, <code>?cleared=1</code>)</td></tr>
+      <tr><td>Conflicts</td><td><code>/admin/conflicts</code> (filters in the URL, e.g. <code>?hospital=</code>, <code>?cleared=1</code>; hospital closures only)</td></tr>
       <tr><td>Review queue</td><td><code>/admin/review</code></td></tr>
       <tr><td>One List under review</td><td><code>/admin/review/&lt;listId&gt;</code></td></tr>
       <tr><td>Invoices</td><td><code>/admin/invoices</code></td></tr>
@@ -976,19 +985,19 @@
       <div class="row"><span class="k">Optional</span><span>On the surgeon picker, show the separate <strong>Not preferred with Dr Sharma</strong> group. If time allows, select <strong>Ms A. Reid</strong> to show the soft amber warning and <strong>Continue anyway</strong>, then return to <strong>Mr T. Hale</strong>. The scripted path is unchanged.</span></div>
     </div>
     <div class="beat">
-      <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Select Conflicts in the side nav (its amber badge counts the open conflicts). Dr James Rutherford's Wed 22 Jul AM row reads Anaesthetist unavailable: "Dr Rutherford is marked Unavailable for this session. Note: unwell, short notice." He phoned in sick and the office recorded it, so his Christchurch Eye Surgery List is still in place. The four Southern Cross rows below it are a theatre maintenance closure on the same day.</li><li>On Rutherford's row select Reassign. The candidates are in tier order with a tier pill on each; Dr Priya Sharma is in the main group with a Preferred pill. Pick her by name, since the order within a tier varies each time the picker opens. Colleagues whose AM is closed sit apart under a collapsed Not available group.</li><li>The vacated session defaults to Keep as is (Unavailable), because Dr Rutherford is still unwell &#8594; Confirm reassignment.</li><li>The row leaves the screen, the badge drops by one, and the line reads "Conflict cleared: Dr Priya Sharma now covers Wed 22 Jul AM." Select Day on any Wed 22 row, then open Sharma AM &#8594; History.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A sickness the office records is a conflict, not a crisis. The Bookings stay, the List turns amber, and the office covers it from one screen instead of a printed report. This office-led reassignment is for when nobody has arranged cover; Beat 3c shows the anaesthetist moving her own List."</span></div>
+      <h4>Beat 3 · illness cover, a sick anaesthetist's List handed on</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Stay on Admin Web App &#8594; Day view &#8594; Wed 22 Jul. Dr James Rutherford's AM reads Unavailable ("Unwell, short notice"), with no List and no flag: he phoned in sick at 07:40, the office recorded it, and his Christchurch Eye Surgery List went straight back to the office.</li><li>In the Draft Lists band, open Rutherford's Christchurch Eye Surgery · Mr J. Whitford block. The drawer reads "Returned: anaesthetist unavailable".</li><li>Select See everyone (or Assign). The candidates are in tier order, and within a tier a Preferred pairing comes first. Pick Dr Priya Sharma by name (Tier 2, Preferred with Mr Whitford), since the order within a tier varies each time the picker opens. Colleagues whose AM is closed show under Not available, read only: the office never assigns onto an unavailable session.</li><li>Select Assign Draft List.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Sickness is never left as a flag. The List comes straight back to the office and is handed on from one screen."</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing about billing is recalculated. It is different from moving one patient Booking, which Beat 3d shows."</span></div>
-      <div class="row"><span class="k">Say</span><span class="say">"The office's private knowledge is now data: who works well with whom, either way round, and the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on top. Only the office ever sees it."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The Conflicts screen groups Wed 22 Jul, Mon 26 Oct and Fri 13 Nov by date, each row with its reason, anaesthetist, hospital, availability and Booking count. The picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred pill) and shows no warning for Sharma. A brief List reassigned moment confirms the move. On the Day grid the List sits in Sharma's AM with no conflict, Dr Rutherford's AM reads Unavailable, and History records one reassignment. (Rutherford's List carries no Bookings in the seed; Beat 3a shows a sickness on a List with Bookings.)</span></div>
-      <div class="row"><span class="k">Optional</span><span>Use the picker's Filter by tier, or open Dr Alistair Chen's Tue 21 PM Christchurch Eye Surgery List &#8594; Reassign list to show Dr Sharma apart under Not preferred with Ms Reid. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session, which Beat 2 books.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The office's private knowledge is now data: who works well with whom, either way round, and the directors' priority tiers. It orders the suggestions, tier first, then preferred pairing, shuffled within that so no one is always on top. Only the office ever sees it."</span></div>
+      <div class="row"><span class="k">Expect</span><span>A brief Draft List assigned moment; the List on Sharma's AM row, ACTIVE; Rutherford's AM still Unavailable; no conflict. Conflicts shows only the Southern Cross closure rows (Wed 22, Mon 26 Oct and Fri 13 Nov). (Rutherford's List carries no Bookings in the seed; Beat 3a shows a sickness on a List with Bookings.)</span></div>
+      <div class="row"><span class="k">Optional</span><span>To show the office recording a sickness itself, open any booked session on the Day view, Change status &#8594; Unavailable &#8594; Continue: the sheet asks Where does this List go? (Return to the office, or a colleague in tier order), then what the session becomes. Or open Dr Alistair Chen's Tue 21 PM Christchurch Eye Surgery List &#8594; Reassign list to show Dr Sharma apart under Not preferred with Ms Reid. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session, which Beat 2 books.</span></div>
     </div>
     <div class="beat">
       <h4>Optional Beat 3a · a sickness phoned in, and a closure that moves</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the Day view for Wed 22 Jul, open Demo actions &#8594; Simulate sickness, choose Dr Sharma · PM · Southern Cross (it has Bookings) and Run.</li><li>Open Conflicts: Sharma's PM now shows Anaesthetist unavailable with "(phoned in, simulated)" in the note, its Bookings counted, beside its Southern Cross closure.</li><li>Go to Master data &#8594; Hospitals &amp; holidays, select the Theatre maintenance closure pill on Southern Cross and move it to Thu 23 Jul (or Delete holiday).</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"The flag follows the facts. Move or delete the closure and its flags clear; the office can also clear one with a note and flag it again later."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The result line counts the flags raised and cleared ("Holiday updated. 2 Lists flagged, 4 flags cleared."), and the Wed 22 Southern Cross rows leave Conflicts.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the Day view for Wed 22 Jul, open Demo actions &#8594; Simulate sickness, choose Dr Sharma · PM · Southern Cross, to the office (it has Bookings) or ..., to Dr X, and Run.</li><li>The result line says where the List went ("The List went back to the Draft Lists with its Bookings. No conflict."). Sharma's PM reads Unavailable; nothing new appears on Conflicts.</li><li>Go to Master data &#8594; Hospitals &amp; holidays, select the Theatre maintenance closure pill on Southern Cross and move it to Thu 23 Jul (or Delete holiday).</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"A sickness never leaves a List with someone who will not be there. A closure is different: the List can still run elsewhere, so it is a flag that follows the facts. Move or delete the closure and its flags clear; the office can also clear one with a note and flag it again later."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The holiday result line counts the flags raised and cleared, and the Wed 22 Southern Cross rows leave Conflicts.</span></div>
     </div>
     <div class="beat">
       <h4>Optional Beat 3b · a recurring booking reaches the canvas at once</h4>
@@ -1001,7 +1010,8 @@
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Switch to the Anaesthetist Web App (Dr Souter) and open Availability on Mon 27 Jul (<code>/web/availability?date=2026-07-27</code>). Her St George's PM List (Ms G. Lim) shows Move.</li><li>Move &#8594; Hand on to a colleague. The colleagues free that session are one plain list in surname order. Choose Dr Hannah Ropata: the confirm step says she gets the List and its Booking straight away, with no warning of any kind. Keep Free for your own session &#8594; Move List.</li><li>Switch to the Admin Web App &#8594; Day view &#8594; Mon 27 Jul: the List sits on Dr Ropata's row, and the rail's Notifications card (under Draft Lists) reads "Dr Souter moved Mon 27 Jul PM (St George's, Ms G. Lim) to Dr Ropata". Open it: the drawer says "Moved here by Dr Souter".</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Anaesthetists usually find their own cover, often at 6am. Here she moves her List herself, to a colleague who is free or back to the office, and it happens at once: AA runs a high-trust system. She sees who is available, nothing else: the office's private pairing preferences are never shown to anaesthetists and never warn them, because a covered List beats an uncovered one and they will talk anyway. The List moves with its Bookings and history, exactly like the office's own reassignment, and nothing about the patient's prepayment is recalculated. If she marks a booked session off, the app asks where its List goes, so no List is left with someone who will not be there. Every move lands in the office's shared notifications, which are not to-dos: nothing needs approving."</span></div>
       <div class="row"><span class="k">Expect</span><span>The done state ("Moved to Dr Ropata. Dr Ropata and the office can see it now."), the List on Dr Ropata's row, the notification on the rail and on Notifications, nothing new on the To-do card, and no preference, tier or warning anywhere on the anaesthetist's side. (Dr Ropata has a not-preferred pairing with Ms Lim in the office's private data: that is the point. The office's own Reassign of the same List would still warn.)</span></div>
-      <div class="row"><span class="k">Optional</span><span>On mobile Availability pick Thu 23 &#8594; Change Thu 23 Jul &#8594; the PM session's Change &#8594; Unavailable &#8594; Save. The app asks: Return to the office or Hand on to a colleague. Return it, and Admin Day shows a new Draft List with its Bookings, "Returned: anaesthetist unavailable".</span></div>
+      <div class="row"><span class="k">Optional</span><span>On mobile Availability pick Thu 23 &#8594; Change Thu 23 Jul &#8594; the PM session's Change &#8594; Unavailable &#8594; Save. The app asks: Return to the office or Hand on to a colleague, then what her session becomes (Unavailable, already chosen, or Free). Return it, and Admin Day shows a new Draft List with its Bookings, "Returned: anaesthetist unavailable".</span></div>
+      <div class="row"><span class="k">Optional</span><span>On a Booking (web or mobile), Alert the office, add a note and Send to the office. In Admin Notifications the alert shows with the note and the active count; Resolve ticks it, and Show resolved brings it back with who resolved it and when.</span></div>
       <div class="row"><span class="k">Optional</span><span>Admin Day &#8594; Demo actions &#8594; Colleague moves a List to the office, then A busy morning (8 moves), and open Notifications to page through the shared pool.</span></div>
     </div>
     <div class="beat">
@@ -1029,7 +1039,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Booking and hands the List to the Billing Engine."</span></div>
       <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls. Until now the List stayed on Dr Morrison's main view, less prominent, and she could still change it (Review would show "Changed since submitted"); now it leaves her main view and her search finds it.</span></div>
     </div>
-    <div class="callout warn">Discovery: settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no acceptance and no office confirmation (OQ-39), every move posts to one shared notification pool for the whole office (OQ-65), and her own move shows no preference warning (OQ-43); settled: she moves a single Booking to a colleague free in that session, found by name or from the free list, always as a new List in their session, with telling the office her option (OQ-85), colleagues by availability alone, never by tier or pairing (OQ-113), and a prepaid Booking's payable stays the AA Holding account with nothing recalculated (OQ-80); a move into an existing List is not allowed for now and may change if it does not work in practice (OQ-85); open: short-notice sickness (OQ-81 part 3), shown here as a conflict the office records; settled context rather than a question: availability is a status on each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64 answered), and the status values are a list AA maintains, starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); what the vacated session shows after a move (OQ-84: the prototype asks the anaesthetist, Free by default, and returns it to Free on the office's reassignment unless the office marks it otherwise); what else posts to the notification pool and how long notices last (OQ-79: the prototype keeps every List move and every single-Booking move the mover chose to tell the office about, newest first and paged, with no expiry and no read or actioned state); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).</div>
+    <div class="callout warn">Discovery: settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no acceptance and no office confirmation (OQ-39), every move posts to one shared notification pool for the whole office (OQ-65), and her own move shows no preference warning (OQ-43); settled: she moves a single Booking to a colleague free in that session, found by name or from the free list, always as a new List in their session, with telling the office her option (OQ-85), colleagues by availability alone, never by tier or pairing (OQ-113), and a prepaid Booking's payable stays the AA Holding account with nothing recalculated (OQ-80); a move into an existing List is not allowed for now and may change if it does not work in practice (OQ-85); settled: short-notice sickness never leaves a List in place, the office returns it or hands it on there and then, and the conflict flag covers hospital closures only (OQ-81 part 3); settled context rather than a question: availability is a status on each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64 answered), and the status values are a list AA maintains, starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); settled: whoever moves a List is asked what the vacated session becomes, Free or Unavailable (OQ-84); settled: notices are active until an admin ticks them resolved, nothing expires, and alerts to the office join List moves in the pool (OQ-79); open: the panel's place and layout are our design for AA to check (US-13.8.1), and whether an alerted Booking may still be submitted (the prototype allows it); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders; still open); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
@@ -1288,13 +1298,18 @@
       Billing Engine screen is left open. The prototype places monitoring in Admin Web.</p></div>
     <div class="card"><h3>5 · List reassignment mechanics</h3><p style="font-size:14px">Settled by
       US-01.4.1: the List moves into the colleague's free session with its id, Bookings and history, and
-      nothing about billing is recalculated. Open (OQ-84): the vacated session's default; the prototype
-      uses Free, with Unavailable or Holiday on request. From a session already marked unavailable (a
-      recorded sickness) it keeps that status by default ("Keep as is"). On her own move the anaesthetist
-      chooses, Free by default. Answered (D7, OQ-39): an anaesthetist moves her own List at once, back to
+      nothing about billing is recalculated. Answered (D60, OQ-84): whoever moves a List, the anaesthetist
+      or the office, chooses what the vacated session becomes, Free or Unavailable, on every path; Free is
+      chosen first, and when the move comes from marking the session unavailable, that status is chosen
+      first. Answered (D7, OQ-39): an anaesthetist moves her own List at once, back to
       the office (a Draft List) or into a colleague's free session; nobody accepts and the office does not
       confirm. Answered (D15, OQ-65): every such move posts to one shared notification pool in the Admin
-      App, separate from the to-do list; what else posts, and for how long, is open (OQ-79). Answered
+      App, separate from the to-do list. Answered (D58, OQ-79): notices are active or resolved; an admin
+      ticks one (the same tick as a to-do's Clear) and it is hidden for the whole office, Show resolved
+      brings it back with who and when, and nothing expires; an anaesthetist's Alert the office joins the
+      pool (whether an alerted Booking may still be submitted is open; the prototype allows it).
+      Answered (OQ-102's 19 October note, D54): the office's pickers order free colleagues by tier, then
+      preferred pairing; the anaesthetist apps stay by availability alone. Answered
       (D44, OQ-43): no warning on the anaesthetist's own move; she sees colleagues by availability
       alone. Answered (D61, OQ-85; D54, OQ-113): she can also move a single Booking, to a colleague free
       in that session, found by typing a name or from the free list in name order; it always becomes a new
@@ -1302,17 +1317,18 @@
       is her option. Answered (D38, OQ-80): the payable follows the Booking; a prepaid Booking's payable
       stays the AA Holding account, the new anaesthetist claims the prepaid amount, and nothing is
       recalculated or repointed. Whoever submits a List did every procedure on it.</p></div>
-    <div class="card"><h3>6 · Availability and holiday conflicts</h3><p style="font-size:14px">Answered
+    <div class="card"><h3>6 · Hospital-closure conflicts (unavailability is never one)</h3><p style="font-size:14px">Answered
       (OQ-09): a soft warning. Nothing blocks the office; the List is accepted and flagged. A conflict is a
-      List at a closed hospital, or a List (and its Bookings) in a session already marked unavailable,
-      including a sickness the office records when an anaesthetist phones in (provisional: short-notice
-      sickness is still open, OQ-81 part 3). The List changes colour (amber, with its kind's bar and a
-      reason line) and shows on the Conflicts screen across every date. It clears when the clash goes (the
-      closure moved or deleted, the session available again, the List reassigned to an available
-      anaesthetist) or when the office clears it, with an optional note and "Flag again". Not conflicts: a
-      recurring booking landing on an unavailable session becomes a Draft List (Phase 31), and an
-      anaesthetist who marks a booked session unavailable is asked first whether the List returns to the
-      office or goes to a colleague (US-01.5.5).</p></div>
+      List at a closed hospital. An anaesthetist's unavailability, short-notice sickness included, is never
+      a conflict (D59, OQ-81 part 3 answered): whoever marks a booked session unavailable, the office
+      included, returns the List to the office or hands it to a colleague there and then. The List changes
+      colour (amber, with its kind's bar and a reason line) and shows on the Conflicts screen across every
+      date. It clears when the clash goes (the closure moved or deleted, or the List's hospital changed) or
+      when the office clears it, with an optional note and "Flag again". The office never assigns or moves
+      a List onto an unavailable session: it is made available first, with the anaesthetist's agreement
+      (US-01.6.3). Not conflicts: a recurring booking landing on an unavailable session becomes a Draft
+      List (Phase 31), and anyone who marks a booked session unavailable is asked first whether the List
+      returns to the office or goes to a colleague (US-01.5.5).</p></div>
     <div class="card"><h3>7 · Split-billing invoice count</h3><p style="font-size:14px">Grouping text says
       same-counterparty Procedures share an invoice; split-billing text says two invoices. The prototype
       groups by counterparty, two invoices when funders differ.</p></div>

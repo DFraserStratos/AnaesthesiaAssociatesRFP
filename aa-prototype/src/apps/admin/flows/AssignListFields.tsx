@@ -67,7 +67,6 @@ export function AssignListFields({
   draft,
   onChange,
   withNote = true,
-  slotId,
   subject = 'List',
 }: {
   anaesthetistId: string
@@ -75,16 +74,15 @@ export function AssignListFields({
   draft: AssignDraft
   onChange: (next: AssignDraft) => void
   withNote?: boolean
-  /** The session being filled: its closed status warns before confirm (catch-up Phase 30). */
-  slotId?: string
   /** What the warning says is accepted and flagged (phone advice: the Booking). */
   subject?: 'List' | 'Booking'
 }) {
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const aaRoomsId = Object.values(hospitals).find((h) => h.locationType === 'aaRooms')?.id
-  // Soft warning only (OQ-09): the closure or unavailability this would land
-  // on, before confirm, never disabling it (US-01.5.2 AC3).
-  const conflicts = useConflictPreview({ dateISO, hospitalId: draft.hospitalId, ...(slotId !== undefined ? { slotId } : {}) })
+  // Soft warning only (OQ-09): the hospital closure this would land on, before
+  // confirm, never disabling it (US-01.5.2). A closed session is refused by the
+  // store instead (catch-up Phase 32b, D59).
+  const conflicts = useConflictPreview({ dateISO, hospitalId: draft.hospitalId })
   const optionLabel = useHospitalOptionLabel(dateISO)
   return (
     <>
@@ -97,7 +95,7 @@ export function AssignListFields({
           ))}
         </select>
       </label>
-      <ConflictCallout conflicts={conflicts} anaesthetistId={anaesthetistId} hospitalId={draft.hospitalId} subject={subject} shot={subject === 'Booking' ? 'phone-advice-conflict-warning' : 'assign-list-conflict-warning'} />
+      <ConflictCallout conflicts={conflicts} hospitalId={draft.hospitalId} subject={subject} shot={subject === 'Booking' ? 'phone-advice-conflict-warning' : 'assign-list-conflict-warning'} />
 
       <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <FieldLabel>Surgeon</FieldLabel>

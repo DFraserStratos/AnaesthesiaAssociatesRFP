@@ -13,26 +13,33 @@ import { addDaysISO } from './clock'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
 
 /**
- * What posts to the pool and how long a notice lasts (OQ-79, OPEN: the
- * recommendation is built and labelled provisional on the Notifications page).
- * List moves only; every notice is kept (no expiry); no read or actioned state;
- * newest first, paged. If OQ-79 is answered, change only this rule and the
- * selectors behind it: an expiry becomes a filter on `atISO` against the demo
- * clock (the records stay); "mark as seen" is new scope (per-user state the
- * pool deliberately does not have).
+ * What posts to the pool and how a notice ends (OQ-79 answered 19 October,
+ * D58; catch-up Phase 32b): an anaesthetist's List move, a single-Booking move
+ * when she ticks "Tell the office", and an "alert the office" with a note
+ * (US-03.6.3). A notice is active until an admin ticks it resolved
+ * (`actionable`), which hides it for every admin; nothing expires; newest
+ * first, paged.
  */
 export const NOTIFICATION_POOL_RULE = {
-  // 'bookingMoved' is D58's optional source (OQ-79, Phase 32a): posted only when
-  // the anaesthetist moving a single Booking ticks "Tell the office".
-  sources: ['listMoved', 'bookingMoved'],
+  sources: ['listMoved', 'bookingMoved', 'officeAlert'],
   expiresAfterDays: null,
-  actionable: false,
+  actionable: true,
   pageSize: 6,
 } as const satisfies {
   sources: readonly Notification['kind'][]
   expiresAfterDays: number | null
   actionable: boolean
   pageSize: number
+}
+
+/** A notice nobody has ticked yet (US-13.8.3: active until resolved; nothing expires). */
+export function isActive(n: Pick<Notification, 'resolvedAt'>): boolean {
+  return n.resolvedAt === undefined
+}
+
+/** How many notices are active (US-13.8.1 "Count"). */
+export function activeCount(notifications: readonly Pick<Notification, 'resolvedAt'>[]): number {
+  return notifications.filter(isActive).length
 }
 
 /** How many demo days the receiving colleague's "Moved to you" panel looks back (a display window; the records stay). */
@@ -69,10 +76,22 @@ export function notificationListLine(n: Notification, masters: NotificationMaste
  * Reid) to Dr Sharma", "Dr Hughes returned ... to the office", plus "when
  * marking the session not available" for a hand-on from the unavailable prompt.
  * A single Booking (Phase 32a): "Dr Souter moved a Booking (Riley, A., Thu 23
- * Jul AM, St George's) to Dr Hughes. A new List was created."
+ * Jul AM, St George's) to Dr Hughes. A new List was created." An alert (Phase
+ * 32b): "Dr Souter asked the office to check Thu 23 Jul AM (St George's, Ms A.
+ * Reid)", its note shown beneath by the panel.
  */
 export function notificationText(n: Notification, masters: NotificationMasters): string {
   const by = anaesthetistShort(masters, n.fromAnaesthetistId)
+  if (n.kind === 'officeAlert') {
+    // "Dr Souter asked the office to check Thu 23 Jul AM (St George's, Ms A. Reid)", or
+    // "... to check a Booking (Walker, H., Thu 23 Jul AM, St George's)". The note shows beneath.
+    if (n.bookingId !== undefined) {
+      const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'
+      const parts = [n.patientName, `${shortDateLabel(n.dateISO)} ${n.session}`, hospital].filter((p): p is string => p !== undefined && p !== '')
+      return `${by} asked the office to check a Booking (${parts.join(', ')})`
+    }
+    return `${by} asked the office to check ${notificationListLine(n, masters)}`
+  }
   if (n.kind === 'bookingMoved') {
     // "Dr Souter moved a Booking (Riley, A., Thu 23 Jul AM, St George's) to Dr Hughes. A new List was created."
     const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'

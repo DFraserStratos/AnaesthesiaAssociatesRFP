@@ -23,6 +23,8 @@ export interface DemoContextValues {
   'adminDraftLists.openListId': string
   /** Admin · Master data: the view in the sub-nav (`?view=`; catch-up Phase 31's "Stage recurring clash"). */
   'adminMasters.view': string
+  /** Admin · the List an open Assign or Reassign picker is placing (catch-up Phase 32b's colleague stand-in). */
+  'adminPicker.listId': string
 }
 
 export type DemoContextKey = keyof DemoContextValues
@@ -53,6 +55,15 @@ export function useDemoTriggerContext<K extends DemoContextKey>(key: K, value: D
     useDemoContextStore.getState().publish(key, value)
   }, [key, value])
   useEffect(() => () => useDemoContextStore.getState().withdraw(key), [key])
+}
+
+/** Publish `value` under `key` only while `active` (a sheet that stays mounted when closed). */
+export function useDemoTriggerContextWhile<K extends DemoContextKey>(key: K, value: DemoContextValues[K], active: boolean): void {
+  useEffect(() => {
+    if (!active) return undefined
+    useDemoContextStore.getState().publish(key, value)
+    return () => useDemoContextStore.getState().withdraw(key)
+  }, [key, value, active])
 }
 
 /** Everything currently published (read by the bar menu and the PWA sheet). */

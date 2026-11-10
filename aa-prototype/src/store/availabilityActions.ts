@@ -8,13 +8,13 @@
  * single-instance edit or delete as an exception, so no later series write,
  * clock roll-forward or horizon extension overwrites it; nothing reads
  * availability from the series, only from Slots. Where a Slot holds a List, the
- * List keeps showing in place of the status and is never edited here: its
- * availability conflict comes from the one rule `mutate()` runs (catch-up
- * Phase 30, `domain/conflicts.ts`).
+ * List keeps showing in place of the status and is never edited here; a closed
+ * status over it is refused for every actor (`holdsList`), so the List moves
+ * first (`markUnavailableAndMoveList`). Unavailability is never a conflict
+ * (D59; catch-up Phase 32b).
  *
  * Each action is one `mutate()`, all or nothing on refusal, with one audit
- * entry plus one per List conflict raised or resolved (appended by the
- * reconcile), and timestamps from the demo clock.
+ * entry and timestamps from the demo clock.
  * Refusals and audit labels say session, never "slot" (OQ-64).
  */
 
@@ -40,7 +40,7 @@ import {
 } from '../domain/availabilitySeries'
 import type { SeriesCalendarEntry } from '../domain/seed/canvas'
 import { slotIdFor } from '../domain/slots'
-import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type MutationResult, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listIndexBySlot, scheduleHorizon } from './selectors'
 
@@ -54,19 +54,11 @@ export interface AvailabilityOutcome {
   set: number
   /** Sessions already as asked. */
   unchanged: number
-  /**
-   * Lists the write flagged with a conflict. Only the office's writes can flag
-   * one (an anaesthetist's closed status over a List is refused, catch-up
-   * Phase 32); no screen reads it today, the store's tests do.
-   */
-  flagged: string[]
-  /** Lists whose availability flag was cleared. */
-  cleared: string[]
   /** Series instances changed or deleted on their own (an exception written). */
   seriesEdited: number
   /** Sessions a series left as they were (already set to something else). */
   leftAsIs: number
-  /** Changed sessions that hold a List (the List stays in place either way). */
+  /** Changed sessions that hold a List (an open status only: a closed one is refused over a List). */
   holdingLists: number
   /** The status written (the default status for a removal). */
   statusKey: SlotStatusKey
@@ -74,7 +66,7 @@ export interface AvailabilityOutcome {
 }
 
 function emptyOutcome(statusKey: SlotStatusKey): AvailabilityOutcome {
-  return { set: 0, unchanged: 0, flagged: [], cleared: [], seriesEdited: 0, leftAsIs: 0, holdingLists: 0, statusKey }
+  return { set: 0, unchanged: 0, seriesEdited: 0, leftAsIs: 0, holdingLists: 0, statusKey }
 }
 
 // ---------------------------------------------------------------------------
@@ -137,31 +129,39 @@ export interface SessionWriteResult {
   unchanged: number
   holdingLists: number
   /**
-   * Lists an ANAESTHETIST's write would leave in a session she is newly marking
-   * closed (catch-up Phase 32; US-01.5.5, RV-30). Every caller refuses with
-   * `holdsList` before it writes when this is non-empty, so the move sheet's
-   * unavailable prompt ("Return to the office" or "Hand on to a colleague") is
-   * the only way through. Always empty for the office.
+   * Lists a write would leave in a session it newly marks closed, whoever the
+   * actor (catch-up Phase 32 for the anaesthetist, 32b for the office; US-01.5.5,
+   * D59, RV-25, RV-30). Every caller refuses with `holdsList` before it writes
+   * when this is non-empty, so "Where does this List go?" (the move sheet's
+   * unavailable prompt, or the office's status sheet) is the only way through:
+   * `markUnavailableAndMoveList`.
    */
   heldListIds: string[]
   /**
-   * Her SUBMITTED or AUTHORISED Lists such a write would strand: only the
-   * office can move those, so the write is refused outright (no prompt to open).
+   * Lists such a write would strand that this actor cannot move: for an
+   * anaesthetist her SUBMITTED or AUTHORISED Lists (the office's to move), for
+   * the office an AUTHORISED List (locked). Refused outright, no prompt.
    */
   lockedLists: { id: string; dateISO: string; session: string; state: string }[]
 }
 
 /**
- * The return-or-assign guard (US-01.5.5): refused, before any write, when an
- * anaesthetist would mark closed a session that holds a List. The refusal
- * carries every affected List (`details.listIds`, in date order) so the UI can
- * prompt for each in turn. The office's paths (a sickness phoned in, a
- * hospital closure) keep the derived conflict (US-01.5.2, OQ-81 part 3).
+ * The return-or-assign guard (US-01.5.5, D59): refused, before any write, when
+ * anyone, the office included, would mark closed a session that holds a List.
+ * The refusal carries every affected List (`details.listIds`, in date order) so
+ * the UI can prompt for each in turn. Unavailability is never a conflict: a
+ * sickness phoned in goes through the same prompt (catch-up Phase 32b).
  */
-export function holdsListRefusal<T>(result: Pick<SessionWriteResult, 'heldListIds'> & Partial<Pick<SessionWriteResult, 'lockedLists'>>): Outcome<T> | null {
+export function holdsListRefusal<T>(
+  result: Pick<SessionWriteResult, 'heldListIds'> & Partial<Pick<SessionWriteResult, 'lockedLists'>>,
+  actor?: Pick<Actor, 'role'>,
+): Outcome<T> | null {
   const locked = result.lockedLists?.[0]
   if (locked !== undefined) {
     const when = `${shortDateLabel(locked.dateISO)} ${locked.session}`
+    if (actor?.role === 'office') {
+      return refuse('holdsLockedList', `The ${when} List is authorised and locked, so its session cannot be marked not available.`, { listIds: [locked.id] })
+    }
     const what = locked.state === 'AUTHORISED' ? 'authorised' : 'submitted'
     return refuse('holdsLockedList', `Your ${when} List has been ${what}, so only the office can move it. Ask the office to change this session.`, { listIds: [locked.id] })
   }
@@ -178,14 +178,11 @@ export function holdsListRefusal<T>(result: Pick<SessionWriteResult, 'heldListId
 /**
  * Apply session writes inside a mutate recipe: write each Slot's status and
  * note directly. This is the one place every Slot-status write passes through
- * (one-off, range, series create or delete, instance edits, the office's
- * sickness record), so the return-or-assign guard lives here (catch-up Phase
- * 32): for an anaesthetist actor it reports, in `heldListIds`, every List a
- * closed status would strand, and each caller refuses (`holdsListRefusal`)
- * before writing. It never touches a List: for the office the List in a
- * session keeps its surgeon, hospital, Bookings, times and kind, and the one
- * conflict rule in `mutate()` flags it when the status is closed and resolves
- * the flag when it is bookable again (catch-up Phase 30; OQ-81 part 3).
+ * (one-off, range, series create or delete, instance edits), so the
+ * return-or-assign guard lives here (catch-up Phase 32, and 32b for the
+ * office, D59): for any actor it reports, in `heldListIds`, every List a closed
+ * status would strand, and each caller refuses (`holdsListRefusal`) before
+ * writing. It never touches a List, and a closed session is never a conflict.
  */
 export function applySessionWrites(
   state: Pick<AppState, 'schedule' | 'masters'>,
@@ -218,8 +215,10 @@ export function applySessionWrites(
     const held = listBySlot.get(current.id)
     if (held !== undefined) {
       result.holdingLists += 1
-      if (actor.role === 'anaesthetist' && statusChanged && !isOpenForBooking(status)) {
-        if (held.state === 'ACTIVE') result.heldListIds.push(held.id)
+      if (statusChanged && !isOpenForBooking(status)) {
+        // The anaesthetist moves only her ACTIVE Lists; the office can hand on a SUBMITTED one too.
+        const movable = held.state === 'ACTIVE' || (actor.role !== 'anaesthetist' && held.state === 'SUBMITTED')
+        if (movable) result.heldListIds.push(held.id)
         else result.lockedLists.push({ id: held.id, dateISO: held.dateISO, session: held.session, state: held.state })
       }
     }
@@ -232,11 +231,6 @@ export function applySessionWrites(
   return result
 }
 
-/** An availability outcome's List counts, from the mutation's conflict result. */
-function conflictCounts(result: MutationResult): Pick<AvailabilityOutcome, 'flagged' | 'cleared'> {
-  const raised = new Set(result.conflictsRaised)
-  return { flagged: [...result.conflictsRaised], cleared: result.conflictsResolved.filter((id) => !raised.has(id)) }
-}
 
 /**
  * When a write lands on a series instance with a new status or note, the
@@ -287,24 +281,24 @@ export function setOneSessionAvailability(
   session: Session,
   statusKey: SlotStatusKey,
   note?: string,
-): Outcome<{ result: 'updated' | 'conflictFlagged' | 'noChange' }> {
+): Outcome<{ result: 'updated' | 'noChange' }> {
   const state = api.getState()
-  const guard = actorRefusal<{ result: 'updated' | 'conflictFlagged' | 'noChange' }>(state, actor, anaesthetistId)
+  const guard = actorRefusal<{ result: 'updated' | 'noChange' }>(state, actor, anaesthetistId)
   if (guard !== null) return guard
-  const bad = statusRefusal<{ result: 'updated' | 'conflictFlagged' | 'noChange' }>(state.masters.slotStatuses, actor, statusKey)
+  const bad = statusRefusal<{ result: 'updated' | 'noChange' }>(state.masters.slotStatuses, actor, statusKey)
   if (bad !== null) return bad
   const slot = state.schedule.slots[slotIdFor(anaesthetistId, dateISO, session)]
   if (slot === undefined) return refuse('noSlot', 'There is no session on that day: it is before the start date or outside the schedule horizon.')
-  const locked = replacedStatusRefusal<{ result: 'updated' | 'conflictFlagged' | 'noChange' }>(state.masters.slotStatuses, actor, [slot])
+  const locked = replacedStatusRefusal<{ result: 'updated' | 'noChange' }>(state.masters.slotStatuses, actor, [slot])
   if (locked !== null) return locked
   const writes: SessionWrite[] = [{ slot, statusKey, ...(note !== undefined ? { note } : {}) }]
   const preview = applySessionWrites(state, actor, writes)
-  const held = holdsListRefusal<{ result: 'updated' | 'conflictFlagged' | 'noChange' }>(preview)
+  const held = holdsListRefusal<{ result: 'updated' | 'noChange' }>(preview, actor)
   if (held !== null) return held
   if (preview.changedSlotIds.length === 0) return ok({ result: 'noChange' })
 
   const metas: MutationMeta[] = []
-  const mutation = mutate(api, actor, metas, (s) => {
+  mutate(api, actor, metas, (s) => {
     const applied = applySessionWrites(s, actor, writes)
     const next = applied.slots[slot.id]
     const labelOf = (key: SlotStatusKey) => displayStatusLabel(key, s.masters.slotStatuses, true)
@@ -321,7 +315,7 @@ export function setOneSessionAvailability(
     const series = withEditedExceptions(s.schedule.availabilitySeries, s.schedule.slots, writes, new Set(applied.changedSlotIds))
     return { schedule: { ...s.schedule, slots: applied.slots, availabilitySeries: series.series } }
   })
-  return ok({ result: mutation.conflictsRaised.length > 0 ? 'conflictFlagged' : 'updated' })
+  return ok({ result: 'updated' })
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +329,11 @@ export interface AvailabilityRangeInput {
   sessions: SessionChoice
   statusKey: SlotStatusKey
   note?: string
+  /**
+   * Catch-up Phase 32b (D60): sessions her Lists left first, from the unavailable
+   * prompt, that she chose to make Free: the range leaves them so.
+   */
+  skipSlotIds?: readonly string[]
 }
 
 /** Sessions per status, keyed by the status's long label at the time (the audit is a snapshot). */
@@ -368,11 +367,13 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
   if (!['AM', 'PM', 'both'].includes(input.sessions)) return refuse('invalidSessions', 'Choose AM, PM or both.')
 
   const writes: SessionWrite[] = []
+  const skip = new Set(input.skipSlotIds ?? [])
   for (const { dateISO, session } of slotsInRange(input.fromISO, input.toISO, input.sessions)) {
     const slot = state.schedule.slots[slotIdFor(input.anaesthetistId, dateISO, session)]
     if (slot === undefined) {
       return refuse('noSlot', `There is no ${session} session on ${shortDateLabel(dateISO)}: it is before the start date.`)
     }
+    if (skip.has(slot.id)) continue
     writes.push({ slot, statusKey: input.statusKey, ...(input.note !== undefined ? { note: input.note } : {}) })
   }
 
@@ -381,12 +382,12 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
 
   const outcome = emptyOutcome(input.statusKey)
   const preview = applySessionWrites(state, actor, writes)
-  const held = holdsListRefusal<AvailabilityOutcome>(preview)
+  const held = holdsListRefusal<AvailabilityOutcome>(preview, actor)
   if (held !== null) return held
   if (preview.changedSlotIds.length === 0) return ok({ ...outcome, unchanged: preview.unchanged })
 
   const metas: MutationMeta[] = []
-  const mutation = mutate(api, actor, metas, (s) => {
+  mutate(api, actor, metas, (s) => {
     const applied = applySessionWrites(s, actor, writes)
     const changed = new Set(applied.changedSlotIds)
     const series = withEditedExceptions(s.schedule.availabilitySeries, s.schedule.slots, writes, changed)
@@ -417,7 +418,6 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
     })
     return { schedule: { ...s.schedule, slots: applied.slots, availabilitySeries: series.series } }
   })
-  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 
@@ -454,7 +454,7 @@ export function clearAvailability(api: AppStoreApi, actor: Actor, slotId: string
   if (preview.changedSlotIds.length === 0) return ok({ ...outcome, unchanged: 1 })
 
   const metas: MutationMeta[] = []
-  const mutation = mutate(api, actor, metas, (s) => {
+  mutate(api, actor, metas, (s) => {
     const applied = applySessionWrites(s, actor, writes)
     outcome.set = applied.changedSlotIds.length
     outcome.holdingLists = applied.holdingLists
@@ -482,7 +482,6 @@ export function clearAvailability(api: AppStoreApi, actor: Actor, slotId: string
     })
     return { schedule: { ...s.schedule, slots: applied.slots, availabilitySeries } }
   })
-  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 
@@ -520,10 +519,13 @@ function seriesWrites(
   horizonEndISO: string,
   statuses: SlotStatusRecords,
   adoptSlotIds: ReadonlySet<string> = new Set(),
+  skipSlotIds: ReadonlySet<string> = new Set(),
 ): { writes: SessionWrite[]; leftAsIs: number } {
   const plan = planSeriesWrite(series, slots, { fromISO: series.startISO, toISO: horizonEndISO }, statuses)
   const writes: SessionWrite[] = plan.set.flatMap((p) => {
     const slot = slots[p.slotId]
+    // A session whose List just left and that she chose to make Free (D60) keeps her choice.
+    if (skipSlotIds.has(p.slotId)) return []
     return slot === undefined ? [] : [{ slot, statusKey: p.statusKey, ...(p.note !== undefined ? { note: p.note } : {}), seriesId: series.id }]
   })
   let adopted = 0
@@ -556,6 +558,8 @@ export function createAvailabilitySeries(
     beyondHorizon?: boolean
     /** Catch-up Phase 32: sessions her Lists left first, from the unavailable prompt, for the series to take as its own. */
     adoptSlotIds?: readonly string[]
+    /** Catch-up Phase 32b (D60): sessions her Lists left first that she chose to make Free; the series leaves them so. */
+    skipSlotIds?: readonly string[]
   } = {},
 ): Outcome<AvailabilityOutcome> {
   const state = api.getState()
@@ -575,15 +579,16 @@ export function createAvailabilitySeries(
   // The return-or-assign guard (US-01.5.5): plan the series on today's Slots first.
   const preview = seriesFromDraft(draft, 'preview', clockISO(state.clock))
   const adopt = new Set(options.adoptSlotIds ?? [])
-  const held = holdsListRefusal<AvailabilityOutcome>(applySessionWrites(state, actor, seriesWrites(preview, state.schedule.slots, horizonEndISO, state.masters.slotStatuses, adopt).writes))
+  const skip = new Set(options.skipSlotIds ?? [])
+  const held = holdsListRefusal<AvailabilityOutcome>(applySessionWrites(state, actor, seriesWrites(preview, state.schedule.slots, horizonEndISO, state.masters.slotStatuses, adopt, skip).writes), actor)
   if (held !== null) return held
 
   const outcome = emptyOutcome(draft.statusKey)
   const metas: MutationMeta[] = []
-  const mutation = mutate(api, actor, metas, (s) => {
+  mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'availabilitySeries')
     const series = seriesFromDraft(draft, alloc.id, clockISO(s.clock))
-    const { writes, leftAsIs } = seriesWrites(series, s.schedule.slots, horizonEndISO, s.masters.slotStatuses, adopt)
+    const { writes, leftAsIs } = seriesWrites(series, s.schedule.slots, horizonEndISO, s.masters.slotStatuses, adopt, skip)
     const applied = applySessionWrites(s, actor, writes)
     outcome.seriesId = series.id
     outcome.set = applied.changedSlotIds.length
@@ -613,7 +618,6 @@ export function createAvailabilitySeries(
       counters: alloc.counters,
     }
   })
-  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 
@@ -636,7 +640,7 @@ export function deleteAvailabilitySeries(api: AppStoreApi, actor: Actor, seriesI
   const outcome = emptyOutcome(defaultKey)
   outcome.seriesId = seriesId
   const metas: MutationMeta[] = []
-  const mutation = mutate(api, actor, metas, (s) => {
+  mutate(api, actor, metas, (s) => {
     const current = s.schedule.availabilitySeries[seriesId] ?? series
     const writes: SessionWrite[] = []
     const keptIds = new Set<string>()
@@ -672,7 +676,6 @@ export function deleteAvailabilitySeries(api: AppStoreApi, actor: Actor, seriesI
       },
     }
   })
-  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 

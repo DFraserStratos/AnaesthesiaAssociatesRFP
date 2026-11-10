@@ -2,20 +2,20 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "32b"
+      "32c"
     ],
-    "note": "32a and 38a are done (2026-11-10). 32b finishes the Schedule track; 32c (out-of-hours Lists) follows it, since 38a is done. The Contracts track (18 on) resumes after 32c."
+    "note": "32a, 38a and 32b are done (2026-11-10). 32c (out-of-hours Lists) is the last Schedule phase; the Contracts track (18 on) resumes after it."
   },
   "guidance": {
     "as_of": "2026-11-10",
-    "headline": "Start 32b now. 32c follows it.",
-    "headline_sub": "32a (the single-Booking move) and 38a (edit until AUTHORISED, the main view and search) are done and merged. 32b is the last Schedule phase before 32c; the Contracts track (18 on) resumes after 32c, in the ROADMAP's run order.",
-    "parallel": "Only 32b is next in the run order. 18 and 26 have their dependencies met but come later in the run order (see below), so run 32b on its own.",
+    "headline": "Start 32c now. The Contracts track follows it.",
+    "headline_sub": "32b (unavailability never a conflict, notices that resolve, alert the office) is done, after 32a and 38a. 32c builds the out-of-hours List on top of 32b's unavailability and move paths; the Contracts track (18 on) resumes after 32c, in the ROADMAP's run order.",
+    "parallel": "Only 32c is next in the run order. 18 and 26 have their dependencies met but come later in the run order (see below), so run 32c on its own.",
     "safe": {
-      "32b": "Its one question (OQ-102, the names for preference lists and tiers) is naming only, so a later answer is a text change. The 5 November update only re-pointed its office-review mentions to 21a."
+      "32c": "It has no open question: it builds D84's working design (provisional, kept in one module), so a later design decision is a contained change. Its dependencies (32b and 38a) are done."
     },
     "wait": {
-      "18": "Its dependency (17) is done, but the run order puts the Contracts track after 32b and 32c; four of its questions are still open (OQ-73, OQ-114, OQ-133, OQ-135).",
+      "18": "Its dependency (17) is done, but the run order puts the Contracts track after 32c; four of its questions are still open (OQ-73, OQ-114, OQ-133, OQ-135).",
       "26": "Its dependency (17) is done, but the run order puts it after the Contracts track (18 to 25)."
     }
   }

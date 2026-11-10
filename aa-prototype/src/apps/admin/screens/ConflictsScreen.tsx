@@ -1,22 +1,20 @@
 /**
- * Conflicts (catch-up Phase 30; US-01.5.4 "Availability conflict dashboard";
- * OQ-09 soft warning). Every live conflict across dates, grouped by day: the
- * catalogue's two kinds only, a List at a closed hospital and a List whose
- * anaesthetist is unavailable for the session (an office-recorded sickness
- * included). Recurring clashes and Lists an anaesthetist returns are Draft
- * Lists (Phase 31's view), not rows here. The Bookings stay in place: the
- * office reassigns to cover (the conflict clears when the new session is
- * available) or clears the flag. Filters live in the URL, like the Day view's
- * `?sort=`. Desktop layout in the Admin chrome (Admin Review's header and
- * table anatomy).
+ * Conflicts (catch-up Phase 30; US-01.5.4; OQ-09 soft warning). Every live
+ * conflict across dates, grouped by day: a List at a closed hospital, the one
+ * kind left (catch-up Phase 32b, D59: an anaesthetist's unavailability,
+ * sickness included, is never a conflict; the List goes back to the office as
+ * a Draft List or to a colleague when the session is marked). Recurring
+ * clashes and returned Lists are Draft Lists (Phase 31's view), not rows here.
+ * The Bookings stay in place: the office reassigns to cover or clears the
+ * flag. Filters live in the URL, like the Day view's `?sort=`. Desktop layout
+ * in the Admin chrome (Admin Review's header and table anatomy).
  */
 
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { addDays, format, parseISO } from 'date-fns'
-import { CONFLICT_REASONS, conflictFromCause, type ConflictReason, type ExpectedConflict } from '../../../domain/conflicts'
+import { CONFLICT_REASONS, conflictFromCause, type ExpectedConflict } from '../../../domain/conflicts'
 import { conflictRows, restoreListConflict, scheduleHorizon, useAppStore, type Actor, type ConflictRow } from '../../../store'
-import { StatusChip } from '../../../shared'
 import { drSurname, hhmm, locationName, shortDay } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { isAssignedList } from '../../../domain/draftLists'
@@ -31,14 +29,8 @@ import { selectControlStyle } from '../flows/fieldChrome'
 const cellStyle = { ...adminCell(), verticalAlign: 'top' as const }
 const headCellStyle = adminHead()
 
-type ReasonFilter = 'all' | 'closed' | 'unavailable'
 type WhenFilter = 'today' | 'twoWeeks' | 'canvas' | 'past'
 
-const REASON_OPTIONS: { value: ReasonFilter; label: string; reason?: ConflictReason }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'closed', label: 'Hospital closed', reason: 'Hospital closed' },
-  { value: 'unavailable', label: 'Anaesthetist unavailable', reason: 'Anaesthetist unavailable' },
-]
 const WHEN_OPTIONS: { value: WhenFilter; label: string }[] = [
   { value: 'today', label: 'From today' },
   { value: 'twoWeeks', label: 'Next 2 weeks' },
@@ -59,7 +51,6 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
   const horizon = scheduleHorizon({ clock, appSettings })
 
   // Unknown values in a hand-typed URL fall back to the defaults.
-  const reasonParam: ReasonFilter = REASON_OPTIONS.some((o) => o.value === params.get('reason')) ? (params.get('reason') as ReasonFilter) : 'all'
   const whenParam: WhenFilter = WHEN_OPTIONS.some((o) => o.value === params.get('when')) ? (params.get('when') as WhenFilter) : 'today'
   const hospitalParam = params.get('hospital') ?? ''
   const anaesthetistParam = params.get('anaesthetist') ?? ''
@@ -85,20 +76,18 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
     }
   }, [whenParam, todayISO, horizon.startISO, horizon.endISO])
 
-  const reason = REASON_OPTIONS.find((o) => o.value === reasonParam)?.reason
   const rows = useMemo(
     () =>
       conflictRows(
         { schedule, masters },
         {
           ...range,
-          ...(reason !== undefined ? { reason } : {}),
           ...(hospitalParam !== '' ? { hospitalId: hospitalParam } : {}),
           ...(anaesthetistParam !== '' ? { anaesthetistId: anaesthetistParam } : {}),
           includeCleared: showCleared,
         },
       ),
-    [schedule, masters, range, reason, hospitalParam, anaesthetistParam, showCleared],
+    [schedule, masters, range, hospitalParam, anaesthetistParam, showCleared],
   )
   const liveCount = rows.filter((r) => r.clear === undefined).length
   const groups = useMemo(() => {
@@ -126,7 +115,7 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
     if (list === undefined) return
     const who = drSurname(nameOf(list.anaesthetistId))
     const when = `${shortDay(list.dateISO)} ${list.session}`
-    // Name what is left: a closure moves with the List, and a closed target flags it again.
+    // Name what is left: a closure moves with the List.
     const left = [...new Set(list.conflicts.map((c) => CONFLICT_REASONS[c.kind].toLowerCase()))]
     setConfirmation(
       left.length === 0
@@ -140,7 +129,7 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Conflicts</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 760, lineHeight: '19px' }}>
-          Lists at a closed hospital, and Lists whose anaesthetist is unavailable for the session. Bookings stay in place; reassign to cover, or clear.{' '}
+          Lists at a hospital that is closed that day. Bookings stay in place; reassign to cover, or clear.{' '}
           <span data-shot="conflicts-count" style={{ color: neutral.ink, fontWeight: 600 }}>
             {liveCount} open
           </span>
@@ -150,23 +139,6 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
 
       {/* Filters: Admin Review's chips and selects, state in the URL. */}
       <div data-shot="conflicts-filters" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-        <div role="group" aria-label="Reason" style={{ display: 'inline-flex', gap: 6 }}>
-          {REASON_OPTIONS.map((o) => {
-            const active = o.value === reasonParam
-            return (
-              <button
-                key={o.value}
-                type="button"
-                className="aa-filter-toggle"
-                aria-pressed={active}
-                onClick={() => setParam('reason', o.value === 'all' ? null : o.value)}
-                style={{ padding: '6px 12px', borderRadius: radius.pill, border: `1px solid ${active ? accent.base : neutral.line}`, background: active ? accent.tint : neutral.surface, color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
-              >
-                {o.label}
-              </button>
-            )
-          })}
-        </div>
         <select aria-label="When" value={whenParam} onChange={(e) => setParam('when', e.target.value === 'today' ? null : e.target.value)} style={smallSelect}>
           {WHEN_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -217,14 +189,14 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                   <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1040, tableLayout: 'fixed' }}>
                     {/* One set of widths, so the day groups line up. */}
                     <colgroup>
-                      {[64, 170, 160, 130, undefined, 130, 84, 236].map((w, i) => (
+                      {[64, 170, 160, 130, undefined, 84, 236].map((w, i) => (
                         <col key={i} style={w !== undefined ? { width: w } : undefined} />
                       ))}
                     </colgroup>
                     <thead>
                       <tr>
-                        {['Session', 'Anaesthetist', 'Hospital', 'Surgeon', 'Reason', 'Availability', 'Bookings', ''].map((h, i) => (
-                          <th key={h === '' ? 'actions' : h} style={{ ...headCellStyle, textAlign: i === 6 ? 'right' : 'left' }}>{h}</th>
+                        {['Session', 'Anaesthetist', 'Hospital', 'Surgeon', 'Reason', 'Bookings', ''].map((h, i) => (
+                          <th key={h === '' ? 'actions' : h} style={{ ...headCellStyle, textAlign: i === 5 ? 'right' : 'left' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -252,7 +224,6 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                                 </div>
                               )}
                             </td>
-                            <td style={cellStyle}>{r.statusKey !== '' && <StatusChip status={r.statusKey} />}</td>
                             <td className="mono" style={{ ...cellStyle, ...muted, textAlign: 'right', fontWeight: 600 }}>{r.bookingCount}</td>
                             <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
                               <span style={{ display: 'inline-flex', gap: 14 }}>

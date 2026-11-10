@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "to-colleague",
-          "caption": "Moved to a colleague: the notification names both anaesthetists",
+          "caption": "Moved to a colleague: the notification names both anaesthetists, with the tick to resolve it",
           "steps": [
             {
               "trigger": "colleague-moves-list-to-office",

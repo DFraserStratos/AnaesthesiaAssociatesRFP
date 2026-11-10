@@ -25,9 +25,10 @@ async function cleanCopy(page: Page, where: string) {
 
 test('Draft Lists: soonest first, the band and rail card, and assigning St George\'s to Dr Fitzgerald makes it ACTIVE', async ({ page }) => {
   await fresh(page, '/admin/draft-lists')
-  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('15')
+  // Sixteen since catch-up Phase 32b: Dr Rutherford's returned Wed 22 AM List.
+  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('16')
   const rows = page.locator('tr[data-draft-list-row]')
-  await expect(rows).toHaveCount(15)
+  await expect(rows).toHaveCount(16)
   await expect(rows.first()).toHaveAttribute('data-draft-list-row', 'LD-RCB016-2026-07-21-AM')
   await expect(rows.nth(1)).toHaveAttribute('data-draft-list-row', 'LD-001')
   await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('3 d 22 h')
@@ -38,7 +39,7 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   await page.waitForLoadState('networkidle')
   const band = page.locator('[data-shot="daygrid-draft-band"]')
   await expect(band).toHaveAttribute('data-draft-band-count', '2')
-  await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toContainText('See all 15')
+  await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toContainText('See all 16')
   await expect(page.getByText(/· 2 Draft Lists$/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p31-02-day-band.png', fullPage: true })
 

@@ -173,16 +173,17 @@ describe('assignListToSlot', () => {
     expect(api.getState().audit.filter((a) => a.action === 'list.conflict')).toHaveLength(1)
   })
 
-  it('accepts and flags a session marked unavailable (OQ-09 soft warning; catch-up Phase 30 replaced the interim refusal)', () => {
+  it('refuses a session marked not available (US-01.6.3, D59; catch-up Phase 32b): it is made available first', () => {
     const api = store()
     const ngataAm = slotIdFor(ANAE.ngata, TUE21, 'AM')
+    const before = api.getState().schedule
     const out = assign(api, ngataAm)
-    expect(out.ok).toBe(true)
-    if (!out.ok) return
-    const list = assigned(api.getState().schedule.lists[out.value.listId])
-    expect(list.slotId).toBe(ngataAm)
-    expect(list.conflicts).toMatchObject([{ kind: 'availability', slotId: ngataAm }])
-    expect(api.getState().audit.filter((a) => a.action === 'list.conflict' && a.entityId === list.id)).toHaveLength(1)
+    expect(out).toMatchObject({ ok: false, code: 'sessionNotOpen', message: 'Dr Ngata has marked this session not available. They need to make it available first.' })
+    expect(api.getState().schedule).toBe(before)
+    expect(setAvailability(api, OFFICE, ANAE.ngata, TUE21, 'AM', 'free').ok).toBe(true)
+    const again = assign(api, ngataAm)
+    expect(again.ok).toBe(true)
+    if (again.ok) expect(assigned(api.getState().schedule.lists[again.value.listId]).conflicts).toEqual([])
   })
 
   it('a not-preferred pairing warns, never refuses: the office records one acknowledgement; a preferred or ended pairing records none', () => {
@@ -224,17 +225,16 @@ describe('the displayed status', () => {
     expect(slotView(api.getState(), pm.slotId)?.displayKey).toBe(pm.kind)
   })
 
-  it('a holiday session reads Holiday when empty and keeps its List\'s kind, with a conflict, when it holds one', () => {
+  it('a holiday session reads Holiday when empty; a session holding a List shows its kind and is never marked Holiday over it', () => {
     const api = store()
     expect(setAvailability(api, OFFICE, ANAE.strand, TUE21, 'PM', 'holiday').ok).toBe(true)
     expect(slotView(api.getState(), STRAND_PM)?.displayKey).toBe('holiday')
     const souterAm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     expect(setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')).toMatchObject({ ok: false, code: 'holdsList' })
-    const out = setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'holiday')
-    expect(out.ok && out.value.result).toBe('conflictFlagged')
+    // The office too is asked where the List goes (D59): the List never stays on a Holiday session.
+    expect(setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'holiday')).toMatchObject({ ok: false, code: 'holdsList' })
     expect(slotView(api.getState(), souterAm.slotId)?.displayKey).toBe(souterAm.kind)
     expect(api.getState().schedule.lists[souterAm.id]?.kind).toBe(souterAm.kind)
-    expect(api.getState().schedule.lists[souterAm.id]?.conflicts.filter((c) => c.kind === 'availability')).toHaveLength(1)
   })
 
   it('after a phone-advice assignment, the admin, mobile and web views and every finder agree it is booked (US-01.4.2)', () => {
@@ -272,16 +272,14 @@ describe('setAvailability', () => {
     expect(after.audit.at(-1)).toMatchObject({ action: 'session.status', entityId: SHARMA_PM })
   })
 
-  it('marking a session holding a List free writes no conflict; repeated blocks leave at most one', () => {
+  it('marking a session holding a List free writes no conflict; closing it is refused for every actor, so no conflict ever appears', () => {
     const api = store()
     const list = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
-    const conflicts = () => assigned(api.getState().schedule.lists[list.id]).conflicts.filter((c) => c.kind === 'availability')
     expect(setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'free').ok).toBe(true)
-    expect(conflicts()).toHaveLength(0)
-    setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'unavailable')
-    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'free')
-    setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'unavailable', 'Again')
-    expect(conflicts()).toHaveLength(1)
+    expect(setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsList' })
+    expect(setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'unavailable', 'Again')).toMatchObject({ ok: false, code: 'holdsList' })
+    expect(assigned(api.getState().schedule.lists[list.id]).conflicts).toEqual([])
+    expect(api.getState().audit.some((a) => a.action === 'list.conflict')).toBe(false)
   })
 
   it('refuses another anaesthetist, a feed, and a day with no session', () => {
@@ -345,19 +343,23 @@ describe('reassignList: the List moves between sessions', () => {
     expect(api.getState().schedule.lists[id]?.slotId).toBe(slotIdFor(ANAE.rutherford, TUE21, 'PM'))
   })
 
-  it('a reassign onto a closed session is accepted and flagged (OQ-09); moving back to an open one resolves it', () => {
+  it('a reassign onto a closed session is refused (US-01.6.3, D59; catch-up Phase 32b): no List moves onto an unavailable session', () => {
     const api = store()
     const id = SEED_LIST_IDS.rutherfordPm21
+    const before = api.getState().schedule
     // Ngata is unavailable all Tue 21 (ICU on call).
-    expect(reassignList(api, OFFICE, id, ANAE.ngata).ok).toBe(true)
-    const moved = assigned(api.getState().schedule.lists[id])
-    expect(moved.anaesthetistId).toBe(ANAE.ngata)
-    expect(moved.conflicts).toMatchObject([{ kind: 'availability' }])
-    expect(reassignList(api, OFFICE, id, ANAE.rutherford).ok).toBe(true)
-    expect(assigned(api.getState().schedule.lists[id]).conflicts).toEqual([])
-    expect(api.getState().audit.filter((a) => a.entityId === id).map((a) => a.action)).toEqual(
-      expect.arrayContaining(['list.conflict', 'list.conflictResolved']),
-    )
+    expect(reassignList(api, OFFICE, id, ANAE.ngata)).toMatchObject({ ok: false, code: 'targetNotOpen', message: 'Dr Ngata has marked this session not available. They need to make it available first.' })
+    expect(api.getState().schedule).toBe(before)
+  })
+
+  it('the vacated session is the office\'s choice, Free or Unavailable, validated in the store (D60)', () => {
+    const api = store()
+    const id = SEED_LIST_IDS.rutherfordPm21
+    const from = assigned(api.getState().schedule.lists[id]).slotId
+    expect(reassignList(api, OFFICE, id, ANAE.sharma, 'holiday')).toMatchObject({ ok: false, code: 'invalidVacatedStatus' })
+    expect(reassignList(api, OFFICE, id, ANAE.sharma, 'nope')).toMatchObject({ ok: false, code: 'invalidVacatedStatus' })
+    expect(reassignList(api, OFFICE, id, ANAE.sharma, 'unavailable').ok).toBe(true)
+    expect(api.getState().schedule.slots[from]?.status).toBe('unavailable')
   })
 
   it('an office move onto a not-preferred pairing writes one acknowledgement; an anaesthetist\'s own move writes none (US-01.4.5)', () => {

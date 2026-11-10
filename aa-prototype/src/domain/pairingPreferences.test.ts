@@ -97,6 +97,22 @@ describe('pairing status and the warning', () => {
     expect(ranked.clear[0]?.preferred).toBe(true)
   })
 
+  it('orders by tier, then preferred pairing within a tier, then the seeded shuffle; never lifts a preferred colleague over a better tier (US-13.6.4; catch-up Phase 32b)', () => {
+    const tiers: Record<string, PriorityTier> = { A1: 2, A2: 2, A3: 2, A4: 1, A5: 3 }
+    const preferred = [entry({ id: 'Q1', kind: 'PREFERRED', anaesthetistId: 'A3', surgeonId: 'WHIT' }), entry({ id: 'Q2', kind: 'PREFERRED', anaesthetistId: 'A5', surgeonId: 'WHIT' })]
+    for (const key of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) {
+      const ranked = rankAnaesthetistCandidates({ candidates: ['A1', 'A2', 'A3', 'A4', 'A5'], entries: preferred, tiers, surgeonId: 'WHIT', requestKey: key })
+      const ids = ranked.clear.map((c) => c.anaesthetistId)
+      expect(ids[0]).toBe('A4')
+      expect(ids[1]).toBe('A3')
+      expect(ids.slice(2, 4).sort()).toEqual(['A1', 'A2'])
+      expect(ids[4]).toBe('A5')
+    }
+    // Ordering only: the same members either way.
+    const plain = rankAnaesthetistCandidates({ candidates: ['A1', 'A2', 'A3', 'A4', 'A5'], entries: [], tiers, surgeonId: 'WHIT', requestKey: 'k1' })
+    expect(plain.clear.map((c) => c.anaesthetistId).sort()).toEqual(['A1', 'A2', 'A3', 'A4', 'A5'])
+  })
+
   it('not preferred on one side wins over preferred on the other', () => {
     const pref = entry({ id: 'P5', kind: 'PREFERRED', raisedBy: 'ANAESTHETIST' })
     expect(pairingStatus([SURGEON_SIDE, pref], 'A1', 'REID')).toBe('NOT_PREFERRED')

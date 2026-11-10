@@ -2,14 +2,14 @@
  * Conflicts, as one derived rule (catch-up Phase 30; US-01.5.2, US-01.5.4,
  * FT-01.5; OQ-09 answered: a soft warning, never a block).
  *
- * A List conflicts when, and only when:
- * - `holiday`: its hospital is closed on its date (a hospital holiday row), or
- * - `availability`: the Slot it sits in carries a closed status (Phase 29's
- *   `isClosed`, keyed on the status's fixed ID, so a relabelled status changes
- *   only the wording).
- * An AUTHORISED List (locked, nothing left to resolve) and a seeded backdrop
- * List never conflict. A List with no Slot record (Phase 31's Draft Lists) can
- * carry a `holiday` conflict but never an `availability` one.
+ * A List conflicts when, and only when, its hospital is closed on its date (a
+ * hospital holiday row): kind `holiday`. An anaesthetist's unavailability,
+ * short-notice sickness included, is never a conflict (D59, OQ-81 part 3;
+ * catch-up Phase 32b): a List never stays on a closed session, because every
+ * status write that closes a session holding a List moves the List first
+ * (`markUnavailableAndMoveList`). An AUTHORISED List (locked, nothing left to
+ * resolve) and a seeded backdrop List never conflict. A Draft List can carry a
+ * `holiday` conflict.
  *
  * "Booked List" in the catalogue (US-01.5.2 AC2, US-01.5.4 AC1) reads as any
  * assigned List, with or without Bookings: a List exists only once assigned,
@@ -22,8 +22,7 @@
  * stored. Pure: no React, no store, no `shared/`.
  */
 
-import { isClosed, statusFor, type SlotStatusRecords } from './slotStatus'
-import type { ConflictClear, HospitalHoliday, List, ListConflict, Slot, SlotStatusKey } from './types'
+import type { ConflictClear, HospitalHoliday, List, ListConflict } from './types'
 
 // ---------------------------------------------------------------------------
 // Backdrop history (moved here from store/selectors.ts so the domain can read it)
@@ -49,16 +48,14 @@ export function isBackdropList(list: Pick<List, 'id'>): boolean {
 // ---------------------------------------------------------------------------
 
 export const holidayCause = (holidayId: string): string => `holiday:${holidayId}`
-export const availabilityCause = (slotId: string, statusKey: SlotStatusKey): string => `availability:${slotId}:${statusKey}`
 
 /** A conflict as its facts, before it is stamped with when it was raised. */
 export type ExpectedConflict = Omit<ListConflict, 'raisedAtISO'>
 
 /** Rebuild a conflict's facts from its cause (a cleared conflict is held only as its cause). */
 export function conflictFromCause(cause: string): ExpectedConflict | null {
-  const [kind, a, b] = cause.split(':')
+  const [kind, a] = cause.split(':')
   if (kind === 'holiday' && a !== undefined && a !== '') return { kind: 'holiday', cause, holidayId: a }
-  if (kind === 'availability' && a !== undefined && b !== undefined) return { kind: 'availability', cause, slotId: a, statusKey: b }
   return null
 }
 
@@ -84,25 +81,13 @@ export function holidayIndex(holidays: Readonly<Record<string, HospitalHoliday>>
   return index
 }
 
-/** Everything the rule reads for one List. */
+/** Everything the rule reads for one List: the holidays at its hospital on its date. */
 export interface ConflictFacts {
-  /** The List's Slot record, or undefined (a Draft List, or a backdrop List). */
-  slot: Pick<Slot, 'id' | 'status'> | undefined
-  statuses: SlotStatusRecords
-  /** The holidays at the List's hospital on its date. */
   holidays: readonly HospitalHoliday[]
 }
 
-export function conflictFactsFor(
-  list: Pick<List, 'slotId' | 'dateISO' | 'hospitalId'>,
-  inputs: { slots: Readonly<Record<string, Slot>>; statuses: SlotStatusRecords; holidays: HolidayIndex },
-): ConflictFacts {
-  return {
-    // A Draft List has no Slot, so it can carry a holiday conflict but never an availability one (catch-up Phase 31).
-    slot: list.slotId === undefined ? undefined : inputs.slots[list.slotId],
-    statuses: inputs.statuses,
-    holidays: inputs.holidays.get(holidayKey(list.dateISO, list.hospitalId)) ?? [],
-  }
+export function conflictFactsFor(list: Pick<List, 'dateISO' | 'hospitalId'>, inputs: { holidays: HolidayIndex }): ConflictFacts {
+  return { holidays: inputs.holidays.get(holidayKey(list.dateISO, list.hospitalId)) ?? [] }
 }
 
 // ---------------------------------------------------------------------------
@@ -110,12 +95,12 @@ export function conflictFactsFor(
 // ---------------------------------------------------------------------------
 
 /**
- * The conflicts a List should carry, in a stable order (holidays by id, then
- * availability). `ignoreLock` computes the facts for an AUTHORISED List too,
- * which the store uses to tell a clash going (resolved) from a List locking.
+ * The conflicts a List should carry, in a stable order (holidays by id).
+ * `ignoreLock` computes the facts for an AUTHORISED List too, which the store
+ * uses to tell a clash going (resolved) from a List locking.
  */
 export function expectedConflicts(
-  list: Pick<List, 'id' | 'state' | 'slotId' | 'removedAtISO'>,
+  list: Pick<List, 'id' | 'state' | 'removedAtISO'>,
   facts: ConflictFacts,
   options: { ignoreLock?: boolean } = {},
 ): ExpectedConflict[] {
@@ -123,12 +108,7 @@ export function expectedConflicts(
   // A removed Draft List has left every view but History (US-01.6.4).
   if (list.removedAtISO !== undefined) return []
   if (list.state === 'AUTHORISED' && options.ignoreLock !== true) return []
-  const out: ExpectedConflict[] = facts.holidays.map((h) => ({ kind: 'holiday', cause: holidayCause(h.id), holidayId: h.id }))
-  const slot = facts.slot
-  if (slot !== undefined && slot.id === list.slotId && isClosed(statusFor(facts.statuses, slot.status))) {
-    out.push({ kind: 'availability', cause: availabilityCause(slot.id, slot.status), slotId: slot.id, statusKey: slot.status })
-  }
-  return out
+  return facts.holidays.map((h) => ({ kind: 'holiday', cause: holidayCause(h.id), holidayId: h.id }))
 }
 
 /** A clear that still applies: its cause is among the expected conflicts. */
@@ -188,13 +168,13 @@ export function reconcileListConflicts(list: List, expected: readonly ExpectedCo
  */
 export function reconcileAllConflicts(
   lists: Readonly<Record<string, List>>,
-  inputs: { slots: Readonly<Record<string, Slot>>; statuses: SlotStatusRecords; holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[] },
+  inputs: { holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[] },
   atISO: string,
 ): Record<string, List> {
   const holidays = holidayIndex(inputs.holidays)
   let out: Record<string, List> | null = null
   for (const list of Object.values(lists)) {
-    const expected = expectedConflicts(list, conflictFactsFor(list, { slots: inputs.slots, statuses: inputs.statuses, holidays }))
+    const expected = expectedConflicts(list, conflictFactsFor(list, { holidays }))
     const { next } = reconcileListConflicts(list, expected, atISO)
     if (next !== list) {
       out ??= { ...lists }
@@ -208,21 +188,16 @@ export function reconcileAllConflicts(
 // Wording
 // ---------------------------------------------------------------------------
 
-export type ConflictReason = 'Hospital closed' | 'Anaesthetist unavailable'
+export type ConflictReason = 'Hospital closed'
 
 export const CONFLICT_REASONS: Record<ListConflict['kind'], ConflictReason> = {
   holiday: 'Hospital closed',
-  availability: 'Anaesthetist unavailable',
 }
 
 /** What the wording reads. Names arrive formatted (the domain never imports `shared/`). */
 export interface ConflictLookups {
   holidays: Readonly<Record<string, HospitalHoliday>>
   hospitalName: (hospitalId: string) => string
-  /** "Dr Rutherford" */
-  anaesthetistName: (anaesthetistId: string) => string
-  slots: Readonly<Record<string, Slot>>
-  statuses: SlotStatusRecords
 }
 
 function sentence(text: string): string {
@@ -230,38 +205,18 @@ function sentence(text: string): string {
   return /[.!?)]$/.test(t) ? t : `${t}.`
 }
 
-/** A note quoted mid-sentence: lower-case the first letter unless the first word is an acronym or a title. */
-function quotedNote(note: string): string {
-  const t = note.trim()
-  const first = t.split(/\s+/)[0] ?? ''
-  const keep = /^[A-Z]{2,}/.test(first) || /^(Dr|Mr|Ms|Mrs|Miss|Prof)\b/.test(first)
-  return sentence(keep ? t : t.charAt(0).toLowerCase() + t.slice(1))
-}
-
-/**
- * The reason and detail line for a conflict, for display and audit. The status
- * word is the status's current label (the cause keeps its fixed ID). No dashes,
- * and never the word "slot" (OQ-64).
- */
+/** The reason and detail line for a conflict, for display and audit. No dashes, and never the word "slot" (OQ-64). */
 export function describeConflict(
-  conflict: Pick<ListConflict, 'kind' | 'holidayId' | 'slotId' | 'statusKey'>,
-  list: Pick<List, 'anaesthetistId' | 'hospitalId'>,
+  conflict: Pick<ListConflict, 'kind' | 'holidayId'>,
+  list: Pick<List, 'hospitalId'>,
   lookups: ConflictLookups,
 ): { reason: ConflictReason; detail: string } {
   const reason = CONFLICT_REASONS[conflict.kind]
-  if (conflict.kind === 'holiday') {
-    const holiday = conflict.holidayId !== undefined ? lookups.holidays[conflict.holidayId] : undefined
-    const hospitalId = holiday?.hospitalId ?? list.hospitalId
-    const hospital = hospitalId !== undefined ? lookups.hospitalName(hospitalId) : 'The hospital'
-    if (holiday === undefined) return { reason, detail: `${hospital} is closed on this date.` }
-    return { reason, detail: `${hospital} is closed: ${sentence(holiday.name)}` }
-  }
-  const who = list.anaesthetistId !== undefined ? lookups.anaesthetistName(list.anaesthetistId) : 'The anaesthetist'
-  const label = statusFor(lookups.statuses, conflict.statusKey)?.label ?? 'unavailable'
-  const slot = conflict.slotId !== undefined ? lookups.slots[conflict.slotId] : undefined
-  const note = slot !== undefined && slot.status === conflict.statusKey ? (slot.note ?? '').trim() : ''
-  const base = `${who} is marked ${label} for this session.`
-  return { reason, detail: note === '' ? base : `${base} Note: ${quotedNote(note)}` }
+  const holiday = conflict.holidayId !== undefined ? lookups.holidays[conflict.holidayId] : undefined
+  const hospitalId = holiday?.hospitalId ?? list.hospitalId
+  const hospital = hospitalId !== undefined ? lookups.hospitalName(hospitalId) : 'The hospital'
+  if (holiday === undefined) return { reason, detail: `${hospital} is closed on this date.` }
+  return { reason, detail: `${hospital} is closed: ${sentence(holiday.name)}` }
 }
 
 // ---------------------------------------------------------------------------
@@ -269,21 +224,17 @@ export function describeConflict(
 // ---------------------------------------------------------------------------
 
 /**
- * The conflicts an assignment, phone booking, edit or move would raise, for
- * the warning shown before confirm (which never disables it).
+ * The conflicts an assignment, phone booking or edit would raise (a closed
+ * hospital), for the warning shown before confirm (which never disables it).
  */
 export function conflictPreview(input: {
   dateISO: string
   hospitalId: string | undefined
-  slot: Pick<Slot, 'id' | 'status'> | undefined
-  statuses: SlotStatusRecords
   holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[]
 }): ExpectedConflict[] {
   const index = holidayIndex(input.holidays)
   const facts: ConflictFacts = {
-    slot: input.slot,
-    statuses: input.statuses,
     holidays: input.hospitalId === undefined ? [] : (index.get(holidayKey(input.dateISO, input.hospitalId)) ?? []),
   }
-  return expectedConflicts({ id: '', state: 'ACTIVE', slotId: input.slot?.id ?? '' }, facts)
+  return expectedConflicts({ id: '', state: 'ACTIVE' }, facts)
 }

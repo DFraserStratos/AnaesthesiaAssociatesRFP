@@ -80,13 +80,10 @@
             },
             {
               "click": "role=button[name=\"Confirm reassignment\"]"
-            },
-            {
-              "wait": 250
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-testid=list-reassignment-overlay]"
           ],
           "caption": "List reassigned to Hughes, Rawiri"
         },

@@ -6,19 +6,19 @@
  * ranks everyone ONCE through Phase 17's `rankAnaesthetistCandidates` (one
  * request key per opening, the tier filter applied there) and splits the
  * ranking by availability, so the tier order holds inside each group:
- * - Free: free sessions with no not-preferred pairing, tier order, shuffled
- *   within a tier;
+ * - Free: free sessions with no not-preferred pairing, tier order, then
+ *   preferred pairing within a tier, shuffled within that (catch-up Phase 32b);
  * - "Not preferred with Ms Reid": free, with a not-preferred pairing, still
  *   selectable;
- * - Not available: a closed session (any closed status, its own label),
- *   selectable with a warning, tier order;
+ * - Not available: a closed session (any closed status, its own label), tier
+ *   order, shown but never selectable (US-01.6.3, D59; catch-up Phase 32b): it
+ *   is made available first, with the anaesthetist's agreement;
  * - Already has a List: never selectable; resolve it in the Day view first.
  * One tier filter narrows every group; "Everyone / Free only" is the
  * finder's own control. Admin only (Phase 17's privacy boundary).
  */
 
 import { useMemo, useState, type ReactNode } from 'react'
-import { TriangleAlert } from 'lucide-react'
 import {
   PAIRING_LABELS,
   TIER_LABELS,
@@ -32,13 +32,13 @@ import { effectiveSlotTimes } from '../../../../domain/slots'
 import { StatusChip } from '../../../../shared'
 import { NameSearchBox, Segmented } from '../../../../shared/ui'
 import { draftListAvailabilityFor, useAppStore } from '../../../../store'
-import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
+import { accent, neutral, radius } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
-import { CandidateRow, FILTER_OPTIONS, Group, type TierFilter } from './AnaesthetistCandidates'
+import { CandidateRow, ClosedColleagueRow, FILTER_OPTIONS, Group, type TierFilter } from './AnaesthetistCandidates'
 import { TierPill } from './Pills'
 import { usePairingEntries, usePriorityTiers } from './useOfficePairings'
 
-export type CandidateGroup = 'free' | 'notPreferred' | 'notAvailable'
+export type CandidateGroup = 'free' | 'notPreferred'
 
 type Reach = 'everyone' | 'free'
 const REACH_OPTIONS: { value: Reach; label: string }[] = [
@@ -80,6 +80,7 @@ export function useDraftListCandidates(listId: string, requestKey: string, tierF
     const notAvailable = mergeByTier(ranked.clear.filter((c) => closedIds.has(c.anaesthetistId)), ranked.notPreferred.filter((c) => closedIds.has(c.anaesthetistId)))
     const occupied = availability.occupied.filter((r) => shown.has(r.anaesthetistId))
     const statusOf = new Map([...availability.free, ...availability.notAvailable].map((r) => [r.anaesthetistId, r.statusKey]))
+    const slotOf = new Map(availability.notAvailable.map((r) => [r.anaesthetistId, r.slotId]))
     const timesOf = new Map(
       [...availability.free, ...availability.notAvailable].flatMap((r) => {
         const slot = slots[r.slotId]
@@ -88,7 +89,7 @@ export function useDraftListCandidates(listId: string, requestKey: string, tierF
     )
     const free = ranked.clear.filter((c) => freeIds.has(c.anaesthetistId))
     const notPreferred = ranked.notPreferred.filter((c) => freeIds.has(c.anaesthetistId))
-    return { free, notPreferred, notAvailable, occupied, statusOf, timesOf, surgeonId }
+    return { free, notPreferred, notAvailable, occupied, statusOf, slotOf, timesOf, surgeonId }
   }, [lists, slots, anaesthetists, slotStatuses, entries, tiers, surgeonId, requestKey, tierFilter, listId, settings])
 }
 
@@ -190,11 +191,9 @@ export function DraftListCandidates({
         )}
         {everyone && groups.notAvailable.length > 0 && (
           <Group shot="candidates-not-available" heading="Not available">
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: semantic.warning.onTint }}>
-              <TriangleAlert size={13} aria-hidden style={{ color: semantic.warning.solid, flex: 'none' }} />
-              Assigning one of these flags a conflict on the List. Check with them first.
-            </div>
-            {rows(groups.notAvailable, 'notAvailable', statusTrailing)}
+            {groups.notAvailable.map((c) => (
+              <ClosedColleagueRow key={c.anaesthetistId} slotId={groups.slotOf.get(c.anaesthetistId) ?? ''} tier={c.tier} />
+            ))}
           </Group>
         )}
         {everyone && groups.occupied.length > 0 && (

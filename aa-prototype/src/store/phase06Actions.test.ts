@@ -278,12 +278,12 @@ describe('seeded day notes', () => {
 // ---------------------------------------------------------------------------
 
 describe('Wed-22 conflicts (real facts since catch-up Phase 30)', () => {
-  it('seeds holiday and availability conflicts on Wed 22, leaving Tue 21 pristine', () => {
+  it('seeds hospital-closure conflicts on Wed 22 (never an availability one, D59), leaving Tue 21 pristine', () => {
     const api = store()
     const wed = listsForDate(api.getState(), WED22)
-    const kinds = wed.flatMap((l) => l.conflicts.map((c) => c.kind))
+    const kinds = wed.flatMap((l) => l.conflicts.map((c) => c.kind as string))
     expect(kinds).toContain('holiday')
-    expect(kinds).toContain('availability')
+    expect(kinds.every((k) => k === 'holiday')).toBe(true)
     const tue = listsForDate(api.getState(), DEMO_TODAY)
     expect(tue.every((l) => l.conflicts.length === 0)).toBe(true)
   })

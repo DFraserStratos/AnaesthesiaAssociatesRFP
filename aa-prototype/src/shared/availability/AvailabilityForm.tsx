@@ -87,8 +87,14 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
         listIds,
         statusKey,
         onDone: (allMoved) => {
-          if (allMoved) save(listIds.length, slotIds)
-          else setError('Not saved. Sessions whose List you moved are already marked; the others are unchanged.')
+          if (!allMoved) {
+            setError('Not saved. Sessions whose List you moved are already marked; the others are unchanged.')
+            return
+          }
+          // A session she chose to make Free when its List left keeps her choice (D60, catch-up Phase 32b).
+          const slotsNow = useAppStore.getState().schedule.slots
+          const keptFree = slotIds.filter((id) => slotsNow[id]?.status !== statusKey)
+          save(listIds.length, slotIds.filter((id) => !keptFree.includes(id)), keptFree)
         },
       })
       return
@@ -125,7 +131,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
   }
 
   /** `movedLists`: the Lists the unavailable prompt moved first (catch-up Phase 32), for the result line. */
-  function save(movedLists = 0, movedSlotIds: readonly string[] = []) {
+  function save(movedLists = 0, movedSlotIds: readonly string[] = [], keptFreeSlotIds: readonly string[] = []) {
     const label = statusFor(records, statusKey)?.longLabel ?? 'that status'
     const trimmed = note.trim()
     const movedFirst = movedLists > 0 ? { movedFirst: { lists: movedLists, sessionsAlreadySet: trimmed === '' ? movedLists : 0 } } : {}
@@ -140,7 +146,10 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
         ...(untilISO !== null ? { untilISO } : {}),
         ...(trimmed !== '' ? { note: trimmed } : {}),
       }
-      const out = createAvailabilitySeries(useAppStore, actor, draft, movedSlotIds.length > 0 ? { adoptSlotIds: movedSlotIds } : {})
+      const out = createAvailabilitySeries(useAppStore, actor, draft, {
+        ...(movedSlotIds.length > 0 ? { adoptSlotIds: movedSlotIds } : {}),
+        ...(keptFreeSlotIds.length > 0 ? { skipSlotIds: keptFreeSlotIds } : {}),
+      })
       if (!out.ok) {
         refused(out)
         return
@@ -150,7 +159,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
       onSaved?.(line)
       return
     }
-    const out = setAvailabilityRange(useAppStore, actor, { anaesthetistId, fromISO, toISO, sessions, statusKey, note: trimmed })
+    const out = setAvailabilityRange(useAppStore, actor, { anaesthetistId, fromISO, toISO, sessions, statusKey, note: trimmed, ...(keptFreeSlotIds.length > 0 ? { skipSlotIds: keptFreeSlotIds } : {}) })
     if (!out.ok) {
       refused(out)
       return

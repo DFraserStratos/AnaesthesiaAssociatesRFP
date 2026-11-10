@@ -11,6 +11,7 @@ import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
 import { editList } from './lifecycle'
 import { reassignList } from './slotActions'
+import { assignDraftList } from './draftListActions'
 import { addRecurringBooking, editRecurringBooking } from './mastersActions'
 import { addPairingPreference, endPairingPreference } from './officePrivate'
 import { ANAE, HOSP, SURG } from '../domain/seed'
@@ -96,7 +97,8 @@ describe('reassignList', () => {
   it('onto a clear or preferred anaesthetist writes none', () => {
     const api = createAppStore()
     expect(reassignList(api, OFFICE, CHEN_PM, ANAE.hughes).ok).toBe(true)
-    expect(reassignList(api, OFFICE, RUTHERFORD_WED, ANAE.sharma).ok).toBe(true)
+    // Rutherford's Wed 22 AM List is a returned Draft List since catch-up Phase 32b: assigned, not reassigned.
+    expect(assignDraftList(api, OFFICE, RUTHERFORD_WED, { anaesthetistId: ANAE.sharma }).ok).toBe(true)
     expect(acks(api)).toHaveLength(0)
   })
 })

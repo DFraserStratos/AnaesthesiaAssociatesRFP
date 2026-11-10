@@ -11,6 +11,7 @@ import {
   addHospitalHoliday,
   addRecurringBooking,
   applyRecurringBookingsToCanvas,
+  assignDraftList,
   assignListToSlot,
   clearListConflict,
   createBooking,
@@ -18,7 +19,7 @@ import {
   editHospitalHoliday,
   editList,
   editRecurringBooking,
-  reassignList,
+  markUnavailableAndMoveList,
   restoreListConflict,
   retireRecurringBooking,
   setAvailability,
@@ -47,7 +48,12 @@ function assertNoStaleFlag(api: BoundAppStore, step: string): void {
   const s = api.getState()
   const holidays = holidayIndex(s.masters.holidays)
   for (const list of Object.values(s.schedule.lists)) {
-    const expected = expectedConflicts(list, conflictFactsFor(list, { slots: s.schedule.slots, statuses: s.masters.slotStatuses, holidays }))
+    const expected = expectedConflicts(list, conflictFactsFor(list, { holidays }))
+    // D59: a List never sits on a closed session.
+    if (list.slotId !== undefined) {
+      const slot = s.schedule.slots[list.slotId]
+      if (slot !== undefined) expect(s.masters.slotStatuses[slot.status]?.bookable, `${step}: ${list.id} on a closed session`).toBe(true)
+    }
     const live = liveClears(list, expected)
     expect(live.length, `${step}: ${list.id} holds a stale clear`).toBe((list.conflictClears ?? []).length)
     const cleared = new Set(live.map((c) => c.cause))
@@ -65,10 +71,12 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
       assertNoStaleFlag(api, name)
     }
     assertNoStaleFlag(api, 'seed')
-    step('the office blocks a booked session (a sickness phoned in)', () => setAvailability(api, OFFICE, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable'))
+    step('the office marks a booked session not available (a sickness phoned in): the List goes back first', () =>
+      markUnavailableAndMoveList(api, OFFICE, slotIdFor(ANAE.souter, DEMO_TODAY, 'AM'), 'unavailable', { route: 'office' }),
+    )
     let phoneList = ''
-    step('phone-book onto an unavailable session', () => {
-      const out = assignListToSlot(api, OFFICE, slotIdFor(ANAE.ngata, DEMO_TODAY, 'AM'), { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
+    step('phone-book onto a free session', () => {
+      const out = assignListToSlot(api, OFFICE, slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'), { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
       if (out.ok) phoneList = out.value.listId
       return out.ok ? createBooking(api, OFFICE, phoneList, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test', billingRoute: 'hospital' }) : out
     })
@@ -80,7 +88,7 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
     })
     step('edit it to another date', () => editHospitalHoliday(api, OFFICE, holidayId, { dateISO: '2026-07-28' }))
     step('change a List hospital onto a closure', () => editList(api, OFFICE, SEED_LIST_IDS.integrationSxList, { hospitalId: HOSP.stg }))
-    step('reassign the sick anaesthetist\'s List', () => reassignList(api, OFFICE, `L-${ANAE.rutherford}-${WED22}-AM`, ANAE.sharma, 'unavailable'))
+    step("assign the sick anaesthetist's returned List", () => assignDraftList(api, OFFICE, `L-${ANAE.rutherford}-${WED22}-AM`, { anaesthetistId: ANAE.sharma }))
     step('un-block', () => setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'free'))
     const flagged = Object.values(api.getState().schedule.lists).find((l) => l.conflicts.some((c) => c.kind === 'holiday' && c.holidayId === 'HH900'))!
     step('office clear', () => clearListConflict(api, OFFICE, flagged.id, holidayCause('HH900'), 'Theatre confirmed running'))
@@ -100,9 +108,13 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
       if (!hol.ok) return hol
       return addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.hughes, dayOfWeek: 6, session: 'AM', kind: 'private', hospitalId: HOSP.cph, surgeonId: SURG.hale })
     })
-    step('office records a sickness over a booked session', () => setAvailability(api, OFFICE, ANAE.ngata, WED22, 'PM', 'unavailable', 'Unwell'))
-    step('a series over booked sessions (the office)', () =>
-      createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [1], everyWeeks: 2, startISO: '2026-08-03' }),
+    step('office records a sickness over a booked session and hands the List on', () => {
+      const s = api.getState()
+      const to = Object.values(s.schedule.slots).find((x) => x.dateISO === WED22 && x.session === 'PM' && x.anaesthetistId !== ANAE.ngata && x.status === 'free' && listInSlot(s, x.id) === undefined)!
+      return markUnavailableAndMoveList(api, OFFICE, slotIdFor(ANAE.ngata, WED22, 'PM'), 'unavailable', { route: 'colleague', toSlotId: to.id }, { note: 'Unwell' })
+    })
+    step('a series over empty sessions (the office)', () =>
+      createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [6], everyWeeks: 2, startISO: '2026-08-01' }),
     )
     const instance = Object.values(api.getState().schedule.slots).find((s) => s.anaesthetistId === ANAE.souter && s.seriesId !== undefined)!
     step('clear one instance', () => clearAvailability(api, SOUTER, instance.id))
@@ -120,31 +132,25 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
 })
 
 describe('each path raises once and resolves the right conflict', () => {
-  it('the office blocking a booked session raises one availability conflict, never stacking; un-blocking resolves it with no new one', () => {
+  it('the office marking a booked session not available never raises a conflict: refused with the List, then the List leaves first (D59)', () => {
     const api = store()
     const id = SEED_LIST_IDS.souterAm21
-    // The anaesthetist herself is asked where the List goes instead (catch-up Phase 32, US-01.5.5).
-    expect(setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsList' })
-    setAvailability(api, OFFICE, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable')
-    setAvailability(api, OFFICE, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable', 'still away')
-    expect(api.getState().schedule.lists[id]!.conflicts).toHaveLength(1)
-    expect(audit(api, 'list.conflict', id)).toHaveLength(1)
-    setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'free')
-    expect(api.getState().schedule.lists[id]!.conflicts).toEqual([])
-    expect(audit(api, 'list.conflictResolved', id)).toHaveLength(1)
-    expect(audit(api, 'list.conflict', id)).toHaveLength(1)
+    for (const actor of [SOUTER, OFFICE]) {
+      expect(setAvailability(api, actor, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsList' })
+    }
+    expect(markUnavailableAndMoveList(api, OFFICE, slotIdFor(ANAE.souter, DEMO_TODAY, 'AM'), 'unavailable', { route: 'office' }).ok).toBe(true)
+    expect(api.getState().schedule.lists[id]!.state).toBe('DRAFT')
+    expect(audit(api, 'list.conflict')).toHaveLength(0)
   })
 
-  it('reassigning to an available anaesthetist resolves the availability conflict and keeps a holiday one', () => {
+  it("assigning the returned Draft List to an available anaesthetist keeps a holiday conflict", () => {
     const api = store()
     const id = `L-${ANAE.rutherford}-${WED22}-AM`
     addHospitalHoliday(api, OFFICE, HOSP.ces, WED22, 'Lift out of service')
-    expect(api.getState().schedule.lists[id]!.conflicts.map((c) => c.kind).sort()).toEqual(['availability', 'holiday'])
-    expect(reassignList(api, OFFICE, id, ANAE.sharma, 'unavailable').ok).toBe(true)
     expect(api.getState().schedule.lists[id]!.conflicts.map((c) => c.kind)).toEqual(['holiday'])
-    const resolved = audit(api, 'list.conflictResolved', id)
-    expect(resolved).toHaveLength(1)
-    expect(resolved[0]!.after).toMatchObject({ change: 'listReassigned' })
+    expect(assignDraftList(api, OFFICE, id, { anaesthetistId: ANAE.sharma }).ok).toBe(true)
+    expect(api.getState().schedule.lists[id]!.conflicts.map((c) => c.kind)).toEqual(['holiday'])
+    expect(audit(api, 'list.conflictResolved', id)).toHaveLength(0)
   })
 
   it('changing the hospital off a closure resolves it; onto one raises it', () => {

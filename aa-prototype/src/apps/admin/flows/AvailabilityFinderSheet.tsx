@@ -2,8 +2,8 @@
  * Find available (catch-up Phase 28; US-01.4.2 for the office, US-01.3.5 and
  * US-01.3.6 on Phase 17's helper). For a day and session, every anaesthetist
  * whose session is open (free and holding no List, `isOpenSlot`), listed by
- * Phase 17's `AnaesthetistCandidates`: priority tier order, shuffled within a
- * tier from the request key (date, session and `suggestionSeq`), with the
+ * Phase 17's `AnaesthetistCandidates`: priority tier order, then preferred
+ * pairing within a tier (catch-up Phase 32b), shuffled within that from the request key (date, session and `suggestionSeq`), with the
  * tier filter, Preferred pills and, once a surgeon is chosen, the
  * not-preferred pairings in their own group, still selectable. No ordering or
  * grouping logic lives here: one rule, one place. Picking a row opens that

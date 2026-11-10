@@ -18,8 +18,8 @@
  * order, never grouped, marked or ordered otherwise.
  *
  * ONE RULE EACH: ownership, state and date are Phase 32's `ownMoveRefusal`;
- * whether a session can take the work is Phase 32's `receiveRefusal` with
- * `requireOpen`. This file maps their answers to a single Booking's words.
+ * whether a session can take the work is Phase 32's `receiveRefusal` (open
+ * sessions only, for every actor). This file maps their answers to a single Booking's words.
  */
 
 import { ownMoveRefusal, receiveRefusal, type ListMoveInput, type MoveRefusal } from './listMoves'
@@ -102,7 +102,7 @@ function receiverRow(
   occupied?: ReadonlySet<string>,
 ): BookingReceiver {
   const slotId = slotIdFor(anaesthetistId, source.list.dateISO, source.list.session)
-  const refusal = receiveRefusal(input, source.from, slotId, { requireOpen: true, ...(occupied !== undefined ? { occupied } : {}) })
+  const refusal = receiveRefusal(input, source.from, slotId, { ...(occupied !== undefined ? { occupied } : {}) })
   if (refusal === null) return { anaesthetistId, name, offer: { slotId }, line: RECEIVER_LINES.offer }
   if (refusal.code === 'notFound') return { anaesthetistId, name, offer: null, block: 'noSlot', line: RECEIVER_LINES.noSlot }
   if (refusal.code === 'slotOccupied') return { anaesthetistId, name, offer: null, block: 'hasList', line: RECEIVER_LINES.hasList }

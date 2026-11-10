@@ -1,8 +1,9 @@
 /**
  * The one result line an availability action shows (catch-up Phase 29;
  * US-01.2.1, US-01.5.3). Pure. It says only what happened: sessions set, left
- * as they were, and Lists flagged on (or cleared from) the office's Day view.
- * Nothing claims the office was notified or told. No dashes, no "slot".
+ * as they were, and Lists that stay in place under an open status (a closed one
+ * is never written over a List: catch-up Phase 32b, D59). Nothing claims the
+ * office was notified or told. No dashes, no "slot".
  */
 
 import { format, parseISO } from 'date-fns'
@@ -19,11 +20,9 @@ function when(fromISO?: string, toISO?: string): string {
   return `, ${format(parseISO(fromISO), 'd MMM')} to ${format(parseISO(toISO), 'd MMM')}`
 }
 
-function listLines(outcome: Pick<AvailabilityOutcome, 'cleared' | 'holdingLists'>): string[] {
+function listLines(outcome: Pick<AvailabilityOutcome, 'holdingLists'>): string[] {
   const lines: string[] = []
-  const c = outcome.cleared.length
-  if (c > 0) lines.push(`${c} ${plural(c, "List's conflict was", "Lists' conflicts were")} resolved.`)
-  if (c === 0 && outcome.holdingLists > 0) {
+  if (outcome.holdingLists > 0) {
     lines.push(`${plural(outcome.holdingLists, 'The List stays', 'The Lists stay')} in place.`)
   }
   return lines

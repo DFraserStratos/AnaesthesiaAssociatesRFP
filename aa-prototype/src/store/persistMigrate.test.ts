@@ -170,7 +170,7 @@ describe('Draft Lists and the pairing rule (catch-up Phase 31)', () => {
       expect(l.hospitalId, l.id).toBeTruthy()
       expect(l.surgeonId, l.id).toBeTruthy()
     }
-    expect(Object.values(fresh.schedule.lists).filter((l) => l.state === 'DRAFT')).toHaveLength(15)
+    expect(Object.values(fresh.schedule.lists).filter((l) => l.state === 'DRAFT')).toHaveLength(16)
     expect(fresh.masters.hospitals['H-AAROOMS']).toMatchObject({ locationType: 'aaRooms' })
   })
 })
@@ -240,5 +240,35 @@ describe('the single-Booking move seed (catch-up Phase 32a)', () => {
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 27 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.schedule.bookings['BK0162']?.listId).toBe('L-31902-2026-07-31-AM')
+  })
+})
+
+describe('unavailability is never a conflict (catch-up Phase 32b)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards a v28 store holding an 'availability' conflict on Rutherford's Wed 22 AM List, and reseeds it as a returned Draft List", () => {
+    expect(PERSIST_VERSION).toBe(29)
+    const fresh = freshAppState()
+    const id = 'L-29104-2026-07-22-AM'
+    const draft = fresh.schedule.lists[id]!
+    // The v28 shape: the List in Rutherford's closed session, flagged by the old availability rule.
+    const staleList = {
+      ...draft,
+      state: 'ACTIVE',
+      anaesthetistId: '29104',
+      slotId: 'S-29104-2026-07-22-AM',
+      conflicts: [{ kind: 'availability', cause: 'availability:S-29104-2026-07-22-AM:unavailable', raisedAtISO: '2026-07-21T08:00:00', slotId: 'S-29104-2026-07-22-AM', statusKey: 'unavailable' }],
+    }
+    const stale = { ...fresh, schedule: { ...fresh.schedule, lists: { ...fresh.schedule.lists, [id]: staleList } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 28 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.lists[id]?.state).toBe('DRAFT')
+    expect(s.schedule.lists[id]?.draft?.origin).toBe('unavailableReturn')
+    const kinds = Object.values(s.schedule.lists).flatMap((l) => l.conflicts.map((c) => c.kind as string))
+    expect(kinds.every((k) => k === 'holiday')).toBe(true)
   })
 })

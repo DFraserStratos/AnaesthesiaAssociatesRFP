@@ -49,11 +49,13 @@ describe('refusals (ownership is enforced in the store)', () => {
     const api = store()
     const before = api.getState()
     const target = colleagueSlot(ANAE.chen)
-    for (const actor of [OFFICE, { who: 'Feed', role: 'system', source: 'integration' } as Actor]) {
+    const feed = { who: 'Feed', role: 'system', source: 'integration' } as Actor
+    for (const actor of [OFFICE, feed]) {
       expect(code(moveListToOffice(api, actor, MOVABLE))).toBe('ownerOnly')
       expect(code(pushListToSlot(api, actor, MOVABLE, target))).toBe('ownerOnly')
-      expect(code(markUnavailableAndMoveList(api, actor, LIST_MOVE_DEMO.unavailableSlotId, 'unavailable', { route: 'office' }))).toBe('ownerOnly')
     }
+    // Marking a session not available is the office's too (D59, catch-up Phase 32b); never a feed's.
+    expect(code(markUnavailableAndMoveList(api, feed, LIST_MOVE_DEMO.unavailableSlotId, 'unavailable', { route: 'office' }))).toBe('notAllowed')
     expect(code(moveListToOffice(api, SHARMA, MOVABLE))).toBe('notOwnList')
     expect(code(pushListToSlot(api, SHARMA, MOVABLE, target))).toBe('notOwnList')
     expect(code(markUnavailableAndMoveList(api, SHARMA, LIST_MOVE_DEMO.unavailableSlotId, 'unavailable', { route: 'office' }))).toBe('notOwnList')
@@ -273,15 +275,15 @@ describe('mark unavailable while holding a List (US-01.5.5)', () => {
     expect(Object.keys(api.getState().notifications)).toHaveLength(2)
   })
 
-  it('a series and a single-instance edit over a booked session are refused for her too', () => {
+  it('a series and a single-session edit over a booked session are refused for her and for the office alike (D59)', () => {
     const api = store()
     // Souter's Monday PM recurring Lists.
     const series: AvailabilitySeriesDraft = { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'PM', weekdays: [1], everyWeeks: 1, startISO: '2026-08-24', untilISO: '2026-08-24' }
-    expect(createAvailabilitySeries(api, SOUTER, series)).toMatchObject({ ok: false, code: 'holdsList' })
-    // The office paints it (flagged), then she edits that one instance to Holiday: refused.
-    expect(createAvailabilitySeries(api, OFFICE, series).ok).toBe(true)
-    const instance = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-24', toISO: '2026-08-24', sessions: 'PM', statusKey: 'holiday' })
-    expect(instance).toMatchObject({ ok: false, code: 'holdsList' })
+    for (const actor of [SOUTER, OFFICE]) {
+      expect(createAvailabilitySeries(api, actor, series)).toMatchObject({ ok: false, code: 'holdsList' })
+      const one = setAvailabilityRange(api, actor, { anaesthetistId: ANAE.souter, fromISO: '2026-08-24', toISO: '2026-08-24', sessions: 'PM', statusKey: 'holiday' })
+      expect(one).toMatchObject({ ok: false, code: 'holdsList' })
+    }
   })
 
   it('a series retried after the prompt takes the moved sessions as its own (review fix)', () => {
@@ -306,15 +308,17 @@ describe('mark unavailable while holding a List (US-01.5.5)', () => {
     expect(out).toMatchObject({ ok: false, code: 'holdsLockedList', message: 'Your Thu 23 Jul AM List has been submitted, so only the office can move it. Ask the office to change this session.' })
   })
 
-  it("the office's sickness entry on a booked session still raises the conflict and keeps the List (US-01.5.2, OQ-81 part 3)", () => {
+  it("the office's sickness entry on a booked session is asked where the List goes too, and never raises a conflict (D59)", () => {
     const api = store()
     const list = listInSlot(api.getState(), slotId)!
-    expect(setAvailability(api, OFFICE, ANAE.souter, THU23, 'PM', 'unavailable', 'Unwell').ok).toBe(true)
+    expect(setAvailability(api, OFFICE, ANAE.souter, THU23, 'PM', 'unavailable', 'Unwell')).toMatchObject({ ok: false, code: 'holdsList' })
     expect(listInSlot(api.getState(), slotId)?.id).toBe(list.id)
-    expect(assigned(api.getState().schedule.lists[list.id]).conflicts.some((c) => c.kind === 'availability')).toBe(true)
-    // Her own move afterwards keeps the office's closed status: a move never reopens it.
-    expect(pushListToSlot(api, SOUTER, list.id, pushTargets({ lists: api.getState().schedule.lists, slots: api.getState().schedule.slots, anaesthetists: api.getState().masters.anaesthetists, slotStatuses: api.getState().masters.slotStatuses }, list.id)[0]!.slotId).ok).toBe(true)
-    expect(api.getState().schedule.slots[slotId]?.status).toBe('unavailable')
+    const pool = Object.keys(api.getState().notifications).length
+    expect(markUnavailableAndMoveList(api, OFFICE, slotId, 'unavailable', { route: 'office' }, { note: 'Unwell' }).ok).toBe(true)
+    expect(api.getState().schedule.lists[list.id]).toMatchObject({ state: 'DRAFT', draft: { origin: 'unavailableReturn', by: 'Kirsty W.' } })
+    expect(api.getState().schedule.slots[slotId]).toMatchObject({ status: 'unavailable', note: 'Unwell' })
+    expect(Object.keys(api.getState().notifications)).toHaveLength(pool)
+    expect(api.getState().audit.some((a) => a.action === 'list.conflict')).toBe(false)
   })
 })
 

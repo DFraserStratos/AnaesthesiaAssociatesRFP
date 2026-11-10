@@ -295,14 +295,14 @@ const PINNED_CLASHES = 18
  * Rutherford AM), Mon 26 Oct 8 and Fri 13 Nov 5 (Labour Day and Canterbury
  * Anniversary). After it, the same Lists plus the Southern Cross Wed 22
  * closure's three others (Ngata PM, Sharma PM, Hughes AM), each with a real
- * cause: Rutherford's office-recorded sickness and the closure HH900.
+ * cause: the closure HH900. Since catch-up Phase 32b Rutherford's Wed 22 AM
+ * List is no longer flagged: his sickness returned it as a Draft List (D59).
  */
 const FLAGGED_BEFORE_PHASE_30 = [
   'L-25490-2026-07-22-PM',
   'L-25490-2026-10-26-AM',
   'L-27731-2026-10-26-PM',
   'L-27731-2026-11-13-AM',
-  'L-29104-2026-07-22-AM',
   'L-29104-2026-10-26-AM',
   'L-31902-2026-10-26-AM',
   'L-31902-2026-11-13-AM',
@@ -324,7 +324,7 @@ describe('seed conflicts are facts (catch-up Phase 30)', () => {
 
   it('every seeded conflict equals the one rule for its List: no fabricated flag, none missing', () => {
     for (const list of lists) {
-      const expected = expectedConflicts(list, conflictFactsFor(list, { slots: seed.schedule.slots, statuses: seed.masters.slotStatuses, holidays }))
+      const expected = expectedConflicts(list, conflictFactsFor(list, { holidays }))
       expect(list.conflicts.map(({ raisedAtISO: _r, ...c }) => c), list.id).toEqual(expected)
     }
   })
@@ -334,12 +334,31 @@ describe('seed conflicts are facts (catch-up Phase 30)', () => {
     expect(flagged).toEqual([...FLAGGED_BEFORE_PHASE_30, ...SOUTHERN_CROSS_WED22_DRAFT_LISTS, ...SOUTHERN_CROSS_WED22_ADDITIONS].sort())
   })
 
-  it('Rutherford Wed 22 AM: an office-recorded sickness, the List in place (it seeds no Bookings)', () => {
-    const list = assigned(seed.schedule.lists[projectedListId(ANAE.rutherford, '2026-07-22', 'AM')])
-    expect(seed.schedule.slots[list.slotId]).toMatchObject({ status: 'unavailable', note: SEED_SICKNESS.note })
-    expect(list.conflicts).toMatchObject([{ kind: 'availability', statusKey: 'unavailable' }])
-    const recorded = seed.audit.find((a) => a.action === 'session.status' && a.entityId === list.slotId)
-    expect(recorded).toMatchObject({ role: 'office', who: 'Kirsty W.' })
+  it('Rutherford Wed 22 AM (catch-up Phase 32b, D59): the office recorded his sickness and returned the List, a Draft List with no conflict', () => {
+    const id = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
+    const list = seed.schedule.lists[id]!
+    expect(list).toMatchObject({ state: 'DRAFT', dateISO: '2026-07-22', session: 'AM', hospitalId: HOSP.ces, conflicts: [] })
+    expect(list.draft).toMatchObject({ origin: 'unavailableReturn', by: 'Kirsty W.', fromAnaesthetistId: ANAE.rutherford, sinceISO: SEED_SICKNESS.recordedAtISO })
+    expect(list.slotId).toBeUndefined()
+    expect(list.anaesthetistId).toBeUndefined()
+    const slotId = slotIdFor(ANAE.rutherford, '2026-07-22', 'AM')
+    expect(seed.schedule.slots[slotId]).toMatchObject({ status: 'unavailable', note: SEED_SICKNESS.note })
+    expect(Object.values(seed.schedule.lists).some((l) => l.slotId === slotId)).toBe(false)
+    expect(seed.audit.find((a) => a.action === 'session.status' && a.entityId === slotId)).toMatchObject({ role: 'office', who: 'Kirsty W.' })
+    expect(seed.audit.find((a) => a.action === 'draftList.detach' && a.entityId === id)).toMatchObject({ role: 'office', who: 'Kirsty W.', after: { origin: 'unavailableReturn' } })
+    // S2 Beat 3's receiver: Dr Sharma's Wed 22 AM is Free and empty.
+    const sharma = slotIdFor(ANAE.sharma, '2026-07-22', 'AM')
+    expect(seed.schedule.slots[sharma]?.status).toBe('free')
+    expect(Object.values(seed.schedule.lists).some((l) => l.slotId === sharma)).toBe(false)
+  })
+
+  it('no seeded List sits on a closed session (D59): every closed session is empty', () => {
+    for (const l of lists) {
+      if (l.slotId === undefined) continue
+      const slot = seed.schedule.slots[l.slotId]
+      if (slot === undefined) continue
+      expect(seed.masters.slotStatuses[slot.status]?.bookable, `${l.id} on ${slot.status}`).toBe(true)
+    }
   })
 
   it('the Southern Cross Wed 22 closure (HH900) flags every List there that day, Morrison PM included', () => {
@@ -616,6 +635,7 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
 
 /** Every seeded Draft List: three requests and the recurring clashes from today on (OQ-81 part 2). */
 const SEEDED_DRAFT_LISTS = [
+  'L-29104-2026-07-22-AM',
   'LD-001',
   'LD-002',
   'LD-003',
@@ -637,10 +657,11 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
   const all = Object.values(seed.schedule.lists)
   const drafts = all.filter((l) => l.state === 'DRAFT')
 
-  it('pins the fifteen: three requests and twelve recurring clashes', () => {
+  it("pins the sixteen: three requests, twelve recurring clashes and Rutherford's returned List (catch-up Phase 32b)", () => {
     expect(drafts.map((l) => l.id).sort()).toEqual(SEEDED_DRAFT_LISTS)
     expect(drafts.filter((l) => l.draft?.origin === 'request')).toHaveLength(3)
     expect(drafts.filter((l) => l.draft?.origin === 'recurringClash')).toHaveLength(12)
+    expect(drafts.filter((l) => l.draft?.origin === 'unavailableReturn').map((l) => l.id)).toEqual(['L-29104-2026-07-22-AM'])
   })
 
   it('every Draft List is DRAFT with a hospital and surgeon that resolve and neither anaesthetist nor session; every other List has both', () => {
@@ -689,7 +710,7 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
       expect(matching, clash.slotId).toHaveLength(slot.dateISO >= DEMO_TODAY ? 1 : 0)
       for (const l of matching) {
         expect(l.recurringBookingId).toBe(clash.recurringBookingId)
-        expect(l.conflicts.some((c) => c.kind === 'availability')).toBe(false)
+        expect(l.conflicts.every((c) => c.kind === 'holiday')).toBe(true)
       }
     }
     // The closed sessions keep their status: the clash takes no session.

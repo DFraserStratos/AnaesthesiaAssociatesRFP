@@ -283,12 +283,14 @@ export interface RankedCandidate {
 
 /**
  * Candidate anaesthetists for a List's surgeon (US-01.3.5 second bullet,
- * US-01.3.6). Not-preferred candidates (either side) go to their own group;
- * each group is ordered by tier, Tier 1 first, and shuffled within a tier by
- * a seeded shuffle keyed on `requestKey` (never Math.random, never the
- * clock: the same key replays the same order). Preferred pairings are marked,
- * not lifted (the room never said they should change the order). With no
- * surgeon, everyone is clear. `tierFilter` narrows both groups.
+ * US-01.3.6, US-13.6.4). Not-preferred candidates (either side) go to their
+ * own group; each group is ordered by tier, Tier 1 first, then preferred
+ * pairing before the rest within a tier (OQ-102's 19 October note; catch-up
+ * Phase 32b), then a seeded shuffle keyed on `requestKey` (never Math.random,
+ * never the clock: the same key replays the same order). Ordering only:
+ * nothing is assigned. The office's finders only: the anaesthetist apps never
+ * call this (D54). With no surgeon, everyone is clear. `tierFilter` narrows
+ * both groups.
  */
 export function rankAnaesthetistCandidates(input: {
   candidates: readonly AnaesthetistId[]
@@ -323,8 +325,8 @@ export function rankAnaesthetistCandidates(input: {
         notPreferredEntries,
       }
     })
-    // Array.prototype.sort is stable, so the shuffle survives within a tier.
-    .sort((a, b) => a.tier - b.tier)
+    // Array.prototype.sort is stable, so the shuffle survives within a tier and pairing.
+    .sort((a, b) => a.tier - b.tier || Number(b.preferred) - Number(a.preferred))
     .filter((c) => input.tierFilter === undefined || input.tierFilter === null || input.tierFilter.has(c.tier))
   return {
     clear: ranked.filter((c) => c.notPreferredEntries.length === 0),

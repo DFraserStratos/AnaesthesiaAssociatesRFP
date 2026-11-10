@@ -2,13 +2,15 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { assigned } from '../../../test/lists'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE } from '../../../domain/seed'
-import { freshAppState, setAvailability, useAppStore, type Actor } from '../../../store'
+import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared/surface'
 import { ReassignListFlow } from './ReassignListFlow'
 import { projectedListId } from '../../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SOURCE_ID = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
+// Dr Souter's Wed 22 AM Christchurch Eye Surgery List (Mr J. Whitford): Dr Rutherford's
+// sickness returned his own Wed 22 AM List as a Draft List (catch-up Phase 32b), and his AM is closed.
+const SOURCE_ID = projectedListId(ANAE.souter, '2026-07-22', 'AM')
 // Dr Chen's Tue 21 PM Christchurch Eye Surgery List is Ms A. Reid's; Reid has a
 // seeded not-preferred entry with Dr Sharma, who is free that PM (Phase 17).
 const CHEN_PM = projectedListId(ANAE.chen, '2026-07-21', 'PM')
@@ -109,29 +111,33 @@ describe('ReassignListFlow', () => {
     expect(useAppStore.getState().audit.some((a) => a.action === 'list.pairingAcknowledged' && a.entityId === CHEN_PM)).toBe(true)
   })
 
-  it('from a closed session (the seeded office-recorded sickness) the vacated session defaults to Keep as is (catch-up Phase 30)', () => {
+  it('a colleague marked not available is shown apart, read-only, with the colleague stand-in; never selectable (US-01.6.3, D59)', () => {
     renderFlow(SOURCE_ID)
-    // Colleagues whose AM is closed sit apart, collapsed, after the open sessions.
-    expect(document.querySelector('[data-shot="reassign-not-available"]')).not.toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /Sharma, Priya.*Free AM/ }))
-    const vacated = document.querySelector('select[data-shot="reassign-vacated"]') as HTMLSelectElement
-    expect(vacated.value).toBe('unavailable')
-    expect(vacated.selectedOptions[0]?.textContent).toMatch(/^Keep as is/)
-    expect(screen.getByText(/stays Unavailable unless you mark it otherwise/)).toBeInTheDocument()
+    const apart = document.querySelector('[data-shot="reassign-not-available"]') as HTMLElement
+    expect(apart).not.toBeNull()
+    const row = apart.querySelector(`[data-candidate-closed="${ANAE.rutherford}"]`) as HTMLElement
+    expect(row).not.toBeNull()
+    expect(row.tagName).not.toBe('BUTTON')
+    expect(row.getAttribute('role')).toBe('group')
+    expect(row.getAttribute('aria-label')).toMatch(/: not available this session$/)
+    expect(row).toHaveTextContent('Not available this session')
+    expect(document.body.textContent).not.toMatch(/flags it as a conflict|Keep as is/)
+    // The stand-in plays Dr Rutherford making his session available: his row becomes a candidate.
+    fireEvent.click(within(row).getByRole('button', { name: 'Ask Dr Rutherford to make this session available' }))
+    expect(useAppStore.getState().schedule.slots[`S-${ANAE.rutherford}-2026-07-22-AM`]?.status).toBe('free')
+    expect(screen.getByRole('button', { name: /Rutherford, James.*Free AM/ })).toBeInTheDocument()
   })
 
-  it('defaults the vacated session to Free; choosing Unavailable marks it so, with no "regenerated" anywhere (US-01.4.1, OQ-84)', () => {
+  it('the vacated session is the shared control, Free first; choosing Unavailable marks it so, with no "regenerated" anywhere (US-01.4.1, D60)', () => {
     vi.useFakeTimers()
-    // Free the session first (the seed records it as an office-recorded sickness).
-    setAvailability(useAppStore, { who: 'Kirsty W.', role: 'office', source: 'office' }, ANAE.rutherford, '2026-07-22', 'AM', 'free')
     const before = assigned(useAppStore.getState().schedule.lists[SOURCE_ID])
     renderFlow(SOURCE_ID)
     fireEvent.click(screen.getByRole('button', { name: /Sharma, Priya.*Free AM/ }))
-    const vacated = document.querySelector('select[data-shot="reassign-vacated"]') as HTMLSelectElement
-    expect(vacated.value).toBe('free')
-    expect(screen.getByText(/returns to Free unless you mark it otherwise/)).toBeInTheDocument()
-    expect(document.body.textContent).not.toMatch(/regenerat|absorb/i)
-    fireEvent.change(vacated, { target: { value: 'unavailable' } })
+    const group = screen.getByRole('radiogroup', { name: /session after the move/ })
+    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Free', 'Unavailable'])
+    expect(within(group).getByRole('radio', { name: 'Free' })).toHaveAttribute('aria-checked', 'true')
+    expect(document.body.textContent).not.toMatch(/regenerat|absorb|still being confirmed|unless you mark it otherwise/i)
+    fireEvent.click(within(group).getByRole('radio', { name: 'Unavailable' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm reassignment' }))
     const after = assigned(useAppStore.getState().schedule.lists[SOURCE_ID])
     expect(after.id).toBe(before.id)

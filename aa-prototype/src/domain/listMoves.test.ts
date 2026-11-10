@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { canReceiveList, isMovableByOwner, movableListsFor, ownMoveRefusal, pushTargets, receiveRefusal, VACATED_SESSION_DEFAULT, type ListMoveInput } from './listMoves'
+import { canReceiveList, isMovableByOwner, movableListsFor, ownMoveRefusal, pushTargets, receiveRefusal, sessionNotOpenRefusal, defaultVacated, vacatedChoices, type ListMoveInput } from './listMoves'
 import { titledSurname } from './names'
 import { seedSlotStatusRecords } from './seed'
 import { SEED_STATUS } from './slotStatus'
@@ -79,21 +79,26 @@ describe('receiveRefusal (the one receive rule)', () => {
   const from = input.slots[slotIdFor('A1', DAY, 'AM')]!
 
   it('refuses a missing, the same, another day or session, and an occupied session', () => {
-    expect(receiveRefusal(input, from, 'S-NOPE', { requireOpen: false })?.code).toBe('notFound')
-    expect(receiveRefusal(input, from, from.id, { requireOpen: false })?.code).toBe('sameSlot')
-    expect(receiveRefusal(input, from, slotIdFor('A1', DAY, 'PM'), { requireOpen: false })?.code).toBe('differentSession')
-    expect(receiveRefusal(input, from, slotIdFor('A5', DAY, 'AM'), { requireOpen: false })?.code).toBe('slotOccupied')
+    expect(receiveRefusal(input, from, 'S-NOPE')?.code).toBe('notFound')
+    expect(receiveRefusal(input, from, from.id)?.code).toBe('sameSlot')
+    expect(receiveRefusal(input, from, slotIdFor('A1', DAY, 'PM'))?.code).toBe('differentSession')
+    expect(receiveRefusal(input, from, slotIdFor('A5', DAY, 'AM'))?.code).toBe('slotOccupied')
   })
 
-  it("accepts a closed session for the office, but not for an anaesthetist's own move", () => {
+  it('refuses a closed session for every actor, the office included (US-01.6.3, D59)', () => {
     const closed = slotIdFor('A4', DAY, 'AM')
-    expect(receiveRefusal(input, from, closed, { requireOpen: false })).toBeNull()
-    expect(receiveRefusal(input, from, closed, { requireOpen: true })).toEqual({ code: 'targetNotOpen', message: "Dr Hughes's session cannot take a List." })
+    expect(receiveRefusal(input, from, closed)).toEqual({ code: 'targetNotOpen', message: 'Dr Hughes has marked this session not available. They need to make it available first.' })
     expect(canReceiveList(input, from, closed)).toBe(false)
   })
 
+  it('sessionNotOpenRefusal: an open session of an active anaesthetist only', () => {
+    expect(sessionNotOpenRefusal(input, input.slots[slotIdFor('A2', DAY, 'AM')]!)).toBeNull()
+    expect(sessionNotOpenRefusal(input, input.slots[slotIdFor('A4', DAY, 'AM')]!)?.code).toBe('sessionNotOpen')
+    expect(sessionNotOpenRefusal(input, input.slots[slotIdFor('A6', DAY, 'AM')]!)?.code).toBe('anaesthetistInactive')
+  })
+
   it('refuses an inactive colleague on an own move', () => {
-    expect(receiveRefusal(input, from, slotIdFor('A6', DAY, 'AM'), { requireOpen: true })?.code).toBe('targetNotOpen')
+    expect(receiveRefusal(input, from, slotIdFor('A6', DAY, 'AM'))?.code).toBe('targetNotOpen')
     expect(canReceiveList(input, from, slotIdFor('A2', DAY, 'AM'))).toBe(true)
   })
 })
@@ -163,7 +168,7 @@ describe('pushTargets (US-01.4.5 "Availability only")', () => {
     const offered = new Set(pushTargets(input, 'L1').map((t) => t.slotId))
     for (const s of Object.values(input.slots)) {
       if (s.anaesthetistId === 'A1') continue
-      expect(offered.has(s.id), s.id).toBe(receiveRefusal(input, from, s.id, { requireOpen: true }) === null)
+      expect(offered.has(s.id), s.id).toBe(receiveRefusal(input, from, s.id) === null)
     }
   })
 
@@ -187,8 +192,13 @@ describe('movableListsFor and the vacated default', () => {
     expect(movableListsFor(input, 'A1', TODAY, '2026-07-27').map((l) => l.id)).toEqual(['L2', 'L1'])
   })
 
-  it('defaults the vacated session to Free (OQ-84 recommendation)', () => {
-    expect(VACATED_SESSION_DEFAULT).toBe(SEED_STATUS.free)
+  it('the vacated-session choice (D60): Free first on a plain move, the status being set first when marking not available', () => {
+    expect(vacatedChoices()).toEqual([SEED_STATUS.free, SEED_STATUS.unavailable])
+    expect(defaultVacated()).toBe(SEED_STATUS.free)
+    expect(vacatedChoices(SEED_STATUS.unavailable)).toEqual([SEED_STATUS.unavailable, SEED_STATUS.free])
+    expect(defaultVacated(SEED_STATUS.unavailable)).toBe(SEED_STATUS.unavailable)
+    expect(vacatedChoices(SEED_STATUS.holiday)).toEqual([SEED_STATUS.holiday, SEED_STATUS.free])
+    expect(defaultVacated(SEED_STATUS.holiday)).toBe(SEED_STATUS.holiday)
   })
 
   it('shortens master names with their title', () => {

@@ -51,6 +51,8 @@ Bookings and capture the data AA needs for billing.
 8a. From a Booking, **Move to a colleague**: hand one Booking to a colleague who is free that session,
    found by typing a name or from the free list. If someone else is doing a Booking, she moves it to
    them before she submits: whoever submits a List did every procedure on it.
+8b. From a Booking or a List, **Alert the office** with a note when she is unsure about it; the
+   office sees it in its notifications until someone there deals with it.
 9. Create a missing Booking manually.
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
@@ -164,8 +166,11 @@ short-notice cover.
 10. Review the audit history when a change needs explanation.
 11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with.
 12. Assign Draft Lists: Lists with no anaesthetist yet, picked from a grouped, tier-ordered list.
-13. See the team's notifications of Lists anaesthetists have moved, and assign the Draft Lists they
-    return.
+13. See the team's notifications of Lists anaesthetists have moved and their alerts to the office,
+    tick each one resolved once dealt with (it leaves for the whole office; Show resolved brings it
+    back), and assign the Draft Lists they return.
+14. Record a sickness phoned in (Change status on the Day view): the List goes back to the office or on
+    to a colleague there and then, never left on the unavailable session.
 
 ### Permissions
 

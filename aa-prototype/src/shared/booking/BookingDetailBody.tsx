@@ -32,6 +32,8 @@ import {
   CancelBookingSheet,
   EditPatientSheet,
   MoveBookingToColleagueSheet,
+  AlertOfficeEntry,
+  OfficeAlertLine,
   EditProcedureSheet,
   RemoveProcedureSheet,
   movedToYouByLine,
@@ -666,6 +668,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const actions = (
     <>
       {/* Actions */}
+      {/* Alert the office (catch-up Phase 32b, US-03.6.3): the owner asks; the office sees and ticks it here. */}
+      {actor.role === 'anaesthetist' && !cancelled && <AlertOfficeEntry actor={actor} target={{ listId: list.id, bookingId }} />}
+      {isOffice && <OfficeAlertLine actor={actor} target={{ listId: list.id, bookingId }} />}
       {canMove && (
         <div data-shot="move-booking-action" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
           <Button

@@ -1,7 +1,8 @@
 /**
  * Slot and List actions (catch-up Phase 28; EP-01, FT-01.1, FT-01.2,
  * US-01.1.4, US-01.2.3, US-01.3.3, US-01.4.1; OQ-17, OQ-27, OQ-64 answered;
- * OQ-84's recommendation, provisional in the Decisions log).
+ * OQ-84 answered, D60: whoever moves a List chooses what the vacated session
+ * becomes; catch-up Phase 32b).
  *
  * A Slot is the AM or PM box every active anaesthetist has on every horizon
  * day; its status is the one availability mechanism. A List is created only
@@ -26,7 +27,7 @@ import type {
 import { LIST_KINDS } from '../domain/types'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
 import { effectiveSlotTimes, isWallTime, slotDatesFor } from '../domain/slots'
-import { defaultSlotStatusKey, statusFor } from '../domain/slotStatus'
+import { statusFor } from '../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import {
   canvasAnaesthetists,
@@ -36,10 +37,10 @@ import {
   type CanvasMasters,
   type GeneratedCanvas,
 } from '../domain/seed'
-import { pairingAcknowledgement } from '../domain/pairingPreferences'
-import { receiveRefusal } from '../domain/listMoves'
+import { pairingAcknowledgement, rankAnaesthetistCandidates } from '../domain/pairingPreferences'
+import { defaultVacated, receiveRefusal, sessionNotOpenRefusal, vacatedChoices } from '../domain/listMoves'
 import { pairingIssues } from '../domain/listPairing'
-import { answeringLists, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
+import { answeringLists, draftFromActive, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
 import { answeredKey } from '../domain/recurringBookingProjection'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -313,8 +314,8 @@ export interface DetachOptions {
  * Refuses a List that is not ACTIVE (`notActive`: a SUBMITTED or AUTHORISED
  * List never goes back). The List keeps its id, Bookings, notes and holiday
  * conflicts and its `recurringBookingId`; it leaves its Slot (whose own times
- * go back to the defaults; its status is whatever the caller set), loses its
- * availability conflicts, and gets a fresh draft trail. It re-triggers no
+ * go back to the defaults; its status is whatever the caller set), and gets a
+ * fresh draft trail (`draftFromActive`, shared with the seed). It re-triggers no
  * prepayment calculation (US-06.3.5, D20). Operates on the schedule passed in,
  * inside a mutate recipe.
  */
@@ -326,23 +327,8 @@ export function detachListToDraft(
   const list = schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
   if (list.state !== 'ACTIVE') return refuse('notActive', 'Only an active List can go back to the office.')
-  const { slotId, anaesthetistId, state: _state, ...rest } = list
-  void _state
-  const draft: DraftList = {
-    ...rest,
-    state: 'DRAFT',
-    conflicts: list.conflicts.filter((c) => c.kind === 'holiday'),
-    draft: {
-      origin: options.origin,
-      sinceISO: options.atISO,
-      by: options.by,
-      fromAnaesthetistId: options.fromAnaesthetistId ?? anaesthetistId,
-      // A List assigned from a clash keeps answering for that recurring booking's day.
-      ...(list.draft?.projectedFor !== undefined
-        ? { projectedFor: { ...list.draft.projectedFor, anaesthetistId: list.draft.projectedFor.anaesthetistId ?? list.draft.fromAnaesthetistId ?? anaesthetistId } }
-        : {}),
-    },
-  }
+  const { slotId, anaesthetistId } = list
+  const draft: DraftList = draftFromActive(list, options)
   const slots = { ...schedule.slots }
   const vacated = slots[slotId]
   if (vacated !== undefined && (vacated.startTime !== undefined || vacated.endTime !== undefined)) {
@@ -388,10 +374,11 @@ export interface AssignListFields {
 /**
  * The office assigns a surgeon and a hospital to an available session, which
  * creates its List (US-01.3.3: "an admin assigns a surgeon and hospital to an
- * available Slot"; anaesthetists do not). A hospital closed that day, or a
- * session marked with a closed status, is accepted and flagged by the one
- * rule in `mutate()`, never refused (OQ-09, US-01.5.2; catch-up Phase 30
- * replaced 28's interim `slotNotAvailable` refusal). A not-preferred pairing of the
+ * available Slot"; anaesthetists do not). A hospital closed that day is
+ * accepted and flagged by the one rule in `mutate()` (OQ-09, US-01.5.2). A
+ * session its anaesthetist has marked not available is refused
+ * (`sessionNotOpen`; D59, US-01.6.3, catch-up Phase 32b): it is made available
+ * first, with the anaesthetist's agreement. A not-preferred pairing of the
  * surgeon and the session's anaesthetist is never refused: when the actor is
  * the office the same commit records 17's `list.pairingAcknowledged`
  * (US-01.3.5 "every office path", OQ-43); a preferred pairing writes nothing.
@@ -407,6 +394,8 @@ export function assignListToSlot(
   const slot = state.schedule.slots[slotId]
   if (slot === undefined) return refuse('notFound', 'Session not found.')
   if (listInSlot(state, slotId) !== undefined) return refuse('slotOccupied', 'This session already holds a List.')
+  const closed = sessionNotOpenRefusal(moveInputOf(state), slot)
+  if (closed !== null) return refuse(closed.code, closed.message)
   // The one pairing rule (US-01.3.1, catch-up Phase 31): its first issue, with 28's codes.
   const issue = pairingIssues(fields, state.masters)[0]
   if (issue !== undefined) return refuse(issue.code === 'hospitalUnknown' || issue.code === 'surgeonUnknown' ? 'notFound' : issue.code, issue.message)
@@ -443,13 +432,12 @@ export function assignListToSlot(
  * anaesthetist's Slot, return the vacated Slot to available). The List keeps
  * its id, Bookings, phone notes, attachments and history; its `slotId` and
  * denormalised fields change; it loses its recurring-booking provenance (a
- * move is an edit, so no projection removes or rewrites it). Conflicts follow
- * the one rule in `mutate()`: an availability conflict resolves when the
- * target is open, a holiday conflict stays (the date and hospital move with
- * the List), and a closed target is accepted and flagged (OQ-09; catch-up
- * Phase 30 dropped 28's `targetNotOpen` for a closed target; an occupied one
- * is still refused). The Slot's own times travel to the target and are cleared
- * from the vacated one, which takes `vacatedStatus`.
+ * move is an edit, so no projection removes or rewrites it). A holiday
+ * conflict stays (the date and hospital move with the List). The target must
+ * pass the one receive rule for every actor: free, open and its anaesthetist
+ * active (`targetNotOpen`; D59, catch-up Phase 32b). The Slot's own times
+ * travel to the target and are cleared from the vacated one, which takes
+ * `vacatedStatus` (the mover's choice, D60).
  *
  * It reads, checks and logs NO pairing preference: Phases 32 and 32a reuse
  * its core for the anaesthetist's own move, which shows no warning
@@ -461,28 +449,37 @@ export function assignListToSlot(
  * Phase 41 payee-repoint seam was removed in Phase 32a).
  */
 export interface MoveListOptions {
-  /** What the vacated session becomes: the default status (Free) unless another active status is chosen (OQ-84's recommendation). */
+  /** What the vacated session becomes (D60): Free unless the office chooses Unavailable (`vacatedChoices`). */
   vacatedStatus?: SlotStatusKey
   /** The office's pairing acknowledgement, recorded in the same commit (`reassignList` only; never an anaesthetist's move). */
   pairingAcknowledgement?: MutationMeta
 }
 
 /**
- * The vacated session after a List leaves it (both moves share this): it takes
- * `status`, loses its own times, and, if it was a series instance, leaves the
- * series as an edited instance so no later generation repaints it (catch-up
- * Phase 29). Returns the Slot, the series patch and the `session.status` meta
- * (when the status changes). Pure.
+ * The vacated session after a List leaves it (every move shares this): it
+ * takes `status` (the mover's choice, D60), loses its own times, and, if it was
+ * a series instance, leaves the series as an edited instance so no later
+ * generation repaints it (catch-up Phase 29). `note`, when given (the
+ * mark-unavailable path), replaces the session's note; a blank one clears it.
+ * Returns the Slot, the series patch and the `session.status` meta (when the
+ * status or note changes). Pure.
  */
 export function vacateSlot(
   schedule: Pick<AppState['schedule'], 'availabilitySeries'>,
   from: Slot,
   status: SlotStatusKey,
+  note?: string,
 ): { slot: Slot; availabilitySeries?: AppState['schedule']['availabilitySeries']; meta?: MutationMeta } {
   const slot: Slot = { ...from, status }
   delete slot.startTime
   delete slot.endTime
   delete slot.seriesId
+  const trimmed = note?.trim()
+  if (trimmed !== undefined) {
+    if (trimmed !== '') slot.note = trimmed
+    else delete slot.note
+  }
+  const noteChanged = (slot.note ?? '') !== (from.note ?? '')
   const series = from.seriesId !== undefined ? schedule.availabilitySeries[from.seriesId] : undefined
   return {
     slot,
@@ -492,21 +489,31 @@ export function vacateSlot(
             ...schedule.availabilitySeries,
             [series.id]: {
               ...series,
-              exceptions: { ...series.exceptions, [instanceKey(from.dateISO, from.session)]: { kind: 'edited' as const, statusKey: status } },
+              exceptions: {
+                ...series.exceptions,
+                [instanceKey(from.dateISO, from.session)]: { kind: 'edited' as const, statusKey: status, ...(slot.note !== undefined ? { note: slot.note } : {}) },
+              },
             },
           },
         }
       : {}),
-    ...(status !== from.status
-      ? { meta: { entityType: 'session', entityId: from.id, action: 'session.status', before: { status: from.status }, after: { status }, stampBookingId: null } }
+    ...(status !== from.status || noteChanged
+      ? {
+          meta: {
+            entityType: 'session',
+            entityId: from.id,
+            action: 'session.status',
+            before: { status: from.status, ...(from.note !== undefined ? { note: from.note } : {}) },
+            after: { status, ...(slot.note !== undefined ? { note: slot.note } : {}) },
+            stampBookingId: null,
+          },
+        }
       : {}),
   }
 }
 
 export interface MoveCoreOptions {
   vacatedStatus: SlotStatusKey
-  /** An anaesthetist's own move: the receiver must be active and the session open (`receiveRefusal`'s `requireOpen`). */
-  requireOpen: boolean
 }
 
 export interface MoveCoreResult {
@@ -537,7 +544,7 @@ export function moveListToSlotCore(
   if (list.state === 'AUTHORISED') return refuse('listAuthorised', 'An authorised List is locked and cannot be moved.')
   const from = state.schedule.slots[list.slotId]
   if (from === undefined) return refuse('notFound', "This List's session is outside the schedule.")
-  const receive = receiveRefusal(moveInputOf(state), from, toSlotId, { requireOpen: options.requireOpen })
+  const receive = receiveRefusal(moveInputOf(state), from, toSlotId)
   if (receive !== null) return refuse(receive.code, receive.message)
   const to = state.schedule.slots[toSlotId] as Slot
   const vacatedRecord = statusFor(state.masters.slotStatuses, options.vacatedStatus)
@@ -585,8 +592,10 @@ export function moveListToSlot(
   if (actor.source === 'integration') return refuse('integrationForbidden', 'A feed cannot move a List.')
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can reassign a List.')
   const state = api.getState()
-  const vacatedStatus = options.vacatedStatus ?? defaultSlotStatusKey(state.masters.slotStatuses)
-  const core = moveListToSlotCore(state, listId, toSlotId, { vacatedStatus, requireOpen: false })
+  const vacatedStatus = options.vacatedStatus ?? defaultVacated()
+  const badVacated = vacatedStatusRefusal<{ listId: string; vacatedSlotId: string }>(state.masters.slotStatuses, actor, vacatedStatus, vacatedChoices())
+  if (badVacated !== null) return badVacated
+  const core = moveListToSlotCore(state, listId, toSlotId, { vacatedStatus })
   if (!core.ok) return core
   const { list, from, to } = core.value
   const metas: MutationMeta[] = [
@@ -603,7 +612,7 @@ export function moveListToSlot(
   ]
   // Re-run the core on the state the recipe sees (the same state: nothing commits in between).
   mutate(api, actor, metas, (s) => {
-    const again = moveListToSlotCore(s, listId, toSlotId, { vacatedStatus, requireOpen: false })
+    const again = moveListToSlotCore(s, listId, toSlotId, { vacatedStatus })
     if (!again.ok) throw new Error(`moveListToSlot: ${again.message}`)
     return { schedule: again.value.schedule }
   })
@@ -613,10 +622,10 @@ export function moveListToSlot(
 /**
  * The office reassigns a List to a colleague's open session on the same day
  * and session (US-01.4.1, the illness-cover case): the List moves intact and
- * the vacated session returns to Free unless the office marks it Unavailable
- * or Holiday (OQ-84's recommendation, provisional). Phase 17's acknowledgement
- * of a not-preferred pairing (the List's surgeon against the colleague) is
- * written here, the office entry point, never in `moveListToSlot`.
+ * the office chooses what the vacated session becomes, Free or Unavailable
+ * (D60, OQ-84 answered; Free when not given). Phase 17's acknowledgement of a
+ * not-preferred pairing (the List's surgeon against the colleague) is written
+ * here, the office entry point, never in `moveListToSlot`.
  */
 export function reassignList(
   api: AppStoreApi,
@@ -634,13 +643,68 @@ export function reassignList(
   if (colleague === undefined) return refuse('notFound', 'Target anaesthetist not found.')
   const to = slotFor(state, toAnaesthetistId, list.dateISO, list.session)
   if (to === undefined) return refuse('noTargetSession', `${colleague.name} has no session then.`)
-  const ack = pairingAcknowledgement(state.officePrivate.pairingPreferences, toAnaesthetistId, list.surgeonId)
+  const ack = officePairingAckMeta(state, listId, toAnaesthetistId)
   return moveListToSlot(api, actor, listId, to.id, {
     ...(vacatedStatus !== undefined ? { vacatedStatus } : {}),
-    ...(ack !== null
-      ? { pairingAcknowledgement: { entityType: 'list', entityId: list.id, action: 'list.pairingAcknowledged', after: ack, stampBookingId: null } }
-      : {}),
+    ...(ack !== null ? { pairingAcknowledgement: ack } : {}),
   })
+}
+
+/**
+ * Phase 17's acknowledgement meta when the office puts a List with a
+ * not-preferred pairing on this colleague (US-01.3.5 "every office path"), or
+ * null. Lives here, on the privacy boundary's allowlist, so the office path of
+ * `markUnavailableAndMoveList` reuses it without naming the private slice.
+ */
+export function officePairingAckMeta(state: Pick<AppState, 'schedule' | 'officePrivate'>, listId: string, toAnaesthetistId: string): MutationMeta | null {
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return null
+  const ack = pairingAcknowledgement(state.officePrivate.pairingPreferences, toAnaesthetistId, list.surgeonId)
+  return ack === null ? null : { entityType: 'list', entityId: listId, action: 'list.pairingAcknowledged', after: ack, stampBookingId: null }
+}
+
+/**
+ * The first colleague the office's order offers for a List (US-13.6.4,
+ * US-01.3.6; catch-up Phase 32b): open sessions that day and session only (the
+ * one receive rule), tier, then preferred pairing, then the seeded shuffle on a
+ * fixed key, so a demo replays the same pick. A not-preferred colleague only
+ * when nobody else is free. Lives here, on the privacy boundary's allowlist,
+ * for "Simulate sickness"'s colleague choice. Undefined when nobody is free.
+ */
+export function firstOfficeColleagueSlot(state: Pick<AppState, 'schedule' | 'masters' | 'officePrivate'>, listId: string): string | undefined {
+  const list = state.schedule.lists[listId]
+  if (list === undefined || list.state === 'DRAFT') return undefined
+  const from = state.schedule.slots[list.slotId]
+  if (from === undefined) return undefined
+  const input = moveInputOf(state)
+  const slotByAnaesthetist = new Map<string, string>()
+  for (const a of Object.values(state.masters.anaesthetists)) {
+    if (a.registrationNumber === list.anaesthetistId) continue
+    const to = slotFor(state, a.registrationNumber, list.dateISO, list.session)
+    if (to !== undefined && receiveRefusal(input, from, to.id) === null) slotByAnaesthetist.set(a.registrationNumber, to.id)
+  }
+  const ranked = rankAnaesthetistCandidates({
+    candidates: [...slotByAnaesthetist.keys()],
+    entries: state.officePrivate.pairingPreferences,
+    tiers: state.officePrivate.priorityTiers,
+    surgeonId: list.surgeonId,
+    requestKey: `office-colleague:${listId}`,
+  })
+  const first = ranked.clear[0] ?? ranked.notPreferred[0]
+  return first === undefined ? undefined : slotByAnaesthetist.get(first.anaesthetistId)
+}
+
+/**
+ * Whether `key` may be what the vacated session becomes (D60): a status in
+ * use, one of `allowed` (`vacatedChoices`), and, for an anaesthetist, one she
+ * may set. The one store check for every move path.
+ */
+export function vacatedStatusRefusal<T>(statuses: AppState['masters']['slotStatuses'], actor: Actor, key: SlotStatusKey, allowed: readonly SlotStatusKey[]): Outcome<T> | null {
+  const status = statusFor(statuses, key)
+  if (status === undefined || status.retiredAtISO !== undefined || !allowed.includes(key) || (actor.role === 'anaesthetist' && !status.anaesthetistCanSet)) {
+    return refuse('invalidVacatedStatus', actor.role === 'anaesthetist' ? 'Choose what your session becomes.' : 'Choose what the session becomes: Free or Unavailable.')
+  }
+  return null
 }
 
 // ---------------------------------------------------------------------------
@@ -655,12 +719,10 @@ export function reassignList(
  * may set). The write is the range action's (`setOneSessionAvailability`,
  * through the shared per-session write `applySessionWrites`):
  *   - an empty session is simply updated;
- *   - a session holding a List marked with a closed status: for the office (a
- *     sickness phoned in) it keeps its List and kind, and the one rule in
- *     `mutate()` flags it (catch-up Phase 30; OQ-81 part 3, provisional); for an
- *     anaesthetist it is refused with `holdsList` (catch-up Phase 32, US-01.5.5):
- *     she says where the List goes first (`markUnavailableAndMoveList`);
- *   - a bookable status resolves that conflict.
+ *   - a session holding a List marked with a closed status is refused with
+ *     `holdsList`, for the office as for the anaesthetist (catch-up Phases 32
+ *     and 32b; US-01.5.5, D59): whoever marks it says where the List goes
+ *     first (`markUnavailableAndMoveList`). Unavailability is never a conflict.
  */
 export function setAvailability(
   api: AppStoreApi,
@@ -670,7 +732,7 @@ export function setAvailability(
   session: Session,
   status: SlotStatusKey,
   note?: string,
-): Outcome<{ result: 'updated' | 'conflictFlagged' | 'noChange' }> {
+): Outcome<{ result: 'updated' | 'noChange' }> {
   return setOneSessionAvailability(api, actor, anaesthetistId, dateISO, session, status, note)
 }
 

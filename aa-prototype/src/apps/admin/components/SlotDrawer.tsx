@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius, scrim } from '../../../theme/tokens'
 import { bookingCountLabel } from '../../../shared/scheduleTerms'
 import { bookingMovesOntoList, latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
@@ -10,7 +10,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
-import { useBookingMoveEntries } from '../../../shared/flows'
+import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
 import { drSurname, LIST_STATE_LABELS, locationName, slotTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
 import { surnameFirst } from '../util'
@@ -21,6 +21,7 @@ import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
 import { MoveBookingFlow } from '../flows/MoveBookingFlow'
 import { AssignListSheet } from '../flows/AssignListSheet'
 import { EditSlotTimesSheet } from '../flows/EditSlotTimesSheet'
+import { SessionStatusSheet } from '../flows/SessionStatusSheet'
 import type { AssignedList, Slot } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
@@ -36,15 +37,18 @@ interface SlotDrawerProps {
   initialAssign?: { surgeonId?: string }
 }
 
-type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | 'history' | 'assign' | 'times' | { move: string }
+type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | 'history' | 'assign' | 'times' | { move: string } | { status: string }
 
 /**
  * The Admin Day drawer for one session (catch-up Phase 28; was the List
  * drawer). A session holding a List shows the List in place of the session's
  * status: header with the List's state and kind, Needs attention, Session,
- * Bookings, Attachments, and Edit list, Reassign list and History. An empty
- * session shows its status (Free, Unavailable or Holiday), its times and note,
- * and Assign List, Book (phone advice), Edit times and History. It keeps the
+ * Bookings, Attachments, and Edit list, Reassign list, Change status and
+ * History. An empty session shows its status (Free, Unavailable or Holiday),
+ * its times and note, and Assign List, Book (phone advice), Edit times, Change
+ * status and History; a session marked not available offers no Assign or Book
+ * (US-01.6.3, D59: it is made available first). Change status on a session
+ * holding a List asks where the List goes (catch-up Phase 32b). It keeps the
  * `admin-list-drawer` test id the capture recipes use.
  */
 export function SlotDrawer({ slotId, actor, onClose, onOpenBooking, initialAssign }: SlotDrawerProps) {
@@ -84,6 +88,8 @@ export function SlotDrawer({ slotId, actor, onClose, onOpenBooking, initialAssig
       />
       <PhoneAdviceBooking open={sheet === 'phone'} slotId={slotId_} actor={actor} onClose={() => setSheet('none')} onBooked={() => setSheet('none')} />
       <EditSlotTimesSheet open={sheet === 'times'} slotId={slotId_} actor={actor} onClose={() => setSheet('none')} />
+      {/* Outside the bodies too: returning the List turns this drawer into the empty session's. */}
+      {typeof sheet === 'object' && 'status' in sheet && <SessionStatusSheet open slotId={sheet.status} actor={actor} onClose={() => setSheet('none')} />}
     </>
   )
 }
@@ -119,8 +125,6 @@ function ListBody({
   const anae = masters.anaesthetists[list.anaesthetistId]
   const hospital = locationName(list.hospitalId, masters.hospitals)
   const surgeon = masters.surgeons[list.surgeonId]?.name ?? list.surgeonId
-  const statuses = masters.slotStatuses
-  const sessionClosed = isClosedKey(statuses, slot.status)
 
   return (
     <>
@@ -133,8 +137,6 @@ function ListBody({
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
             <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <StatusChip status={list.kind} />
-              {/* The session's own status beside the List's kind when it is closed (catch-up Phase 30). */}
-              {sessionClosed && <StatusChip status={slot.status} />}
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
@@ -145,6 +147,8 @@ function ListBody({
         {/* Body */}
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <ConflictPanel list={list} actor={actor} />
+          {/* An open "Alert the office" on this List (catch-up Phase 32b, US-03.6.3), with the tick. */}
+          <OfficeAlertLine actor={actor} target={{ listId: list.id }} />
           <MovedHereLine listId={list.id} anaesthetistId={list.anaesthetistId} />
           <BookingMovedHereLine listId={list.id} />
 
@@ -227,9 +231,10 @@ function ListBody({
         </div>
 
         {/* Actions */}
-        <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+        <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
           {list.state !== 'AUTHORISED' && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
+          {list.state !== 'AUTHORISED' && <ActionBtn shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })}>Change status</ActionBtn>}
           <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
         </div>
       </div>
@@ -238,7 +243,7 @@ function ListBody({
 
       <EditListSheet open={sheet === 'edit'} list={list} actor={actor} onClose={() => setSheet('none')} />
       <ReassignListFlow open={sheet === 'reassign'} list={list} actor={actor} onClose={() => setSheet('none')} onReassigned={() => { setSheet('none'); onClose() }} />
-      {typeof sheet === 'object' && (
+      {typeof sheet === 'object' && 'move' in sheet && (
         <MoveBookingFlow open bookingId={sheet.move} actor={actor} onClose={() => setSheet('none')} onMoved={() => setSheet('none')} />
       )}
     </>
@@ -279,7 +284,13 @@ function EmptySessionDrawer({
 
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Section label="Session">
-            <Row label="Status">{displayStatusLabel(slot.status, statuses, true)}</Row>
+            <Row label="Status">
+              {displayStatusLabel(slot.status, statuses, true)}
+              {/* The office sets the anaesthetist's status here, a sickness phoned in included (catch-up Phase 32b). */}
+              <button type="button" data-shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })} style={{ marginLeft: 10, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Change status
+              </button>
+            </Row>
             <Row label="Times">
               {slotTimeRange(times)}
               <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
@@ -291,23 +302,32 @@ function EmptySessionDrawer({
               No List in this session yet. Assign one to give it a surgeon and hospital, or book a patient straight from a call.
             </div>
           ) : (
-            // Soft warning only (OQ-09): a List or Booking added here is accepted and flagged.
-            <div data-shot="drawer-closed-session" style={{ background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, lineHeight: '19px' }}>
-              This session is marked {displayStatusLabel(slot.status, statuses)}. A List or Booking added here is accepted and flagged as a conflict.
+            // A closed session takes no List (US-01.6.3, D59; catch-up Phase 32b): made available first.
+            <div data-shot="drawer-closed-session" style={{ background: neutral.bg, color: neutral.ink, borderRadius: radius.card, padding: 12, fontSize: 13, lineHeight: '19px' }}>
+              This session is marked {displayStatusLabel(slot.status, statuses)}. It needs to be made available, with {anae !== undefined ? drSurname(anae.name) : 'the anaesthetist'}'s agreement, before a List or Booking can go here.
             </div>
           )}
         </div>
 
         {/* The one primary on its own row, the session's other actions beneath. */}
         <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex' }}>
-            <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-            <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>
-            <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
-            <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
-          </div>
+          {open ? (
+            <>
+              <div style={{ display: 'flex' }}>
+                <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+                <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>
+                <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
+                <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+              <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
+              <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+            </div>
+          )}
         </div>
       </div>
 
@@ -342,10 +362,11 @@ function DrawerLink({ onClick, children }: { onClick: () => void; children: Reac
   )
 }
 
-function ActionBtn({ onClick, children, primary }: { onClick: () => void; children: React.ReactNode; primary?: boolean }) {
+function ActionBtn({ onClick, children, primary, shot }: { onClick: () => void; children: React.ReactNode; primary?: boolean; shot?: string }) {
   return (
     <button
       type="button"
+      data-shot={shot}
       onClick={onClick}
       style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? '#FFFFFF' : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}
     >

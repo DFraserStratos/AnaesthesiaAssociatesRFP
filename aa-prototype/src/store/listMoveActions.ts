@@ -1,32 +1,38 @@
 /**
- * An anaesthetist moves her own List (catch-up Phase 32; US-01.4.3, US-01.4.5,
- * US-01.5.5, US-13.8.2; D7, D14, D15, D44, D20 as answered).
+ * Moving a List out of its session: an anaesthetist moves her own List
+ * (catch-up Phase 32; US-01.4.3, US-01.4.5, US-01.5.5, US-13.8.2; D7, D14, D15,
+ * D44, D20 as answered), and anyone, the office included, marks a session that
+ * holds a List not available (catch-up Phase 32b; US-01.5.5, US-01.5.4; D59).
  *
  * - AT ONCE (D7): each action is one `mutate()` commit. There is no request
  *   record, no pending state, no acceptance and no office confirmation.
- * - ONE MOVE, ONE PLACE: all three actions run `ownMoveCore`, which runs Phase
+ * - ONE MOVE, ONE PLACE: every action runs `moveOutCore`, which runs Phase
  *   28's `moveListToSlotCore` for a hand-on or Phase 31's `detachListToDraft`
- *   for a return, writes exactly one `list.ownerMove` event (no `list.reassign`)
- *   and posts exactly one notification (`postNotification`) in the same commit.
- * - OWNER ONLY, ENFORCED HERE: only the List's anaesthetist, only an ACTIVE List
- *   dated today or later (`ownMoveRefusal`). The office keeps its own Reassign.
- * - NO PREFERENCE (US-01.4.5, US-13.6.3, D44): nothing here reads, checks or
- *   logs a pairing preference or a tier, and nothing imports the office's
- *   private slice or the pairing helper. A move to a colleague with a
- *   not-preferred pairing is exactly like any other move.
+ *   for a return, then gives the vacated session the mover's choice (D60).
+ * - THE ANAESTHETIST'S MOVES: only the List's anaesthetist, only an ACTIVE List
+ *   dated today or later (`ownMoveRefusal`); one `list.ownerMove` event and one
+ *   pool notice (`postNotification`) in the same commit. Nothing on her path
+ *   reads, checks or logs a pairing preference or a tier (US-01.4.5, D44, D54).
+ * - THE OFFICE MARKING A SESSION NOT AVAILABLE (D59): a sickness phoned in
+ *   never leaves the List in place. The office returns it (a Draft List,
+ *   origin `unavailableReturn`) or hands it to an open colleague, with Phase
+ *   17's acknowledgement for a not-preferred pairing (asked of `slotActions.ts`,
+ *   so this file never names the office's private slice). It posts no notice:
+ *   the pool is the anaesthetists' moves and alerts. A SUBMITTED List can only
+ *   be handed on; an AUTHORISED List refuses.
  * - NO MONEY (US-06.3.5 AC2, US-06.5.4, D20, an honour system): no prepayment
  *   re-check, no invoice generated, withdrawn, sent or amended, no billing
  *   case, ledger or Xero write.
  */
 
-import { isClosedKey, isOpenForBooking, statusFor } from '../domain/slotStatus'
-import { ownMoveRefusal, VACATED_SESSION_DEFAULT } from '../domain/listMoves'
+import { isClosedKey, statusFor } from '../domain/slotStatus'
+import { defaultVacated, ownMoveRefusal, vacatedChoices } from '../domain/listMoves'
 import { bookingMoveRefusal, bookingPlacement } from '../domain/bookingMoves'
 import { surnameCommaInitial } from '../domain/names'
 import type { AssignedList, OwnMoveCause, OwnMoveRoute, SlotStatusKey } from '../domain/types'
 import { clockISO, mutate, ok, refuse, type Actor, type DomainPatch, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { detachListToDraft, moveListToSlotCore, placeListOnSlot, vacateSlot } from './slotActions'
+import { detachListToDraft, moveListToSlotCore, officePairingAckMeta, placeListOnSlot, vacatedStatusRefusal, vacateSlot } from './slotActions'
 import { reassignBookingCore } from './lifecycle'
 import { replacedStatusRefusal, statusRefusal } from './availabilityActions'
 import { bookingMoveInputOf, listInSlot, moveInputOf } from './selectors'
@@ -35,78 +41,77 @@ import { postNotification } from './notifications'
 export interface OwnMoveResult {
   listId: string
   route: OwnMoveRoute
-  notificationId: string
+  /** The pool notice (an anaesthetist's move only; the office posts none). */
+  notificationId?: string
   /** Route `colleague` only. */
   toAnaesthetistId?: string
   /** What the vacated session became. */
   vacatedStatus: SlotStatusKey
 }
 
-interface OwnMoveCoreOptions {
+interface MoveOutOptions {
   toSlotId?: string
   vacatedStatus: SlotStatusKey
   cause: OwnMoveCause
   message?: string
+  /** The note the session takes with its new status (the mark-unavailable path). */
+  note?: string
 }
+
+const isAnaesthetistActor = (actor: Actor): boolean => actor.role === 'anaesthetist' && actor.source !== 'integration' && actor.anaesthetistId !== undefined
+const isOfficeActor = (actor: Actor): boolean => actor.role === 'office' && actor.source !== 'integration'
 
 /** Anaesthetist actors only: the office has Reassign and its Draft List tools; a feed never moves a List. */
 function actorRefusal<T>(actor: Actor): Outcome<T> | null {
-  if (actor.role !== 'anaesthetist' || actor.source === 'integration' || actor.anaesthetistId === undefined) {
-    return refuse('ownerOnly', "Only the List's anaesthetist moves it this way. The office uses Reassign.")
-  }
-  return null
-}
-
-/** The vacated status an anaesthetist may choose: in use and one she may set. */
-function vacatedRefusal<T>(state: Pick<AppState, 'masters'>, key: SlotStatusKey): Outcome<T> | null {
-  const status = statusFor(state.masters.slotStatuses, key)
-  if (status === undefined || status.retiredAtISO !== undefined || !status.anaesthetistCanSet) {
-    return refuse('invalidVacatedStatus', 'Choose what your session becomes.')
-  }
+  if (!isAnaesthetistActor(actor)) return refuse('ownerOnly', "Only the List's anaesthetist moves it this way. The office uses Reassign.")
   return null
 }
 
 /**
- * The vacated session's status on a plain move: her choice (Free by default,
- * OQ-84). A session already closed (say the office recorded her sick on it)
- * stays as it is: a move never reopens it.
+ * The one move-out core, draft level: the move itself, the vacated session
+ * (with its note on the mark-unavailable path), and the actor's events: for an
+ * anaesthetist one `list.ownerMove` and the pool post; for the office the
+ * `draftList.detach` or `list.reassign` event (plus 17's acknowledgement) and
+ * no notice. Returns the recipe's patch and metas; the caller commits them in
+ * its single `mutate()`.
  */
-function effectiveVacated(state: Pick<AppState, 'schedule' | 'masters'>, list: AssignedList, chosen: SlotStatusKey | undefined): SlotStatusKey {
-  const from = state.schedule.slots[list.slotId]
-  if (from !== undefined && !isOpenForBooking(statusFor(state.masters.slotStatuses, from.status))) return from.status
-  return chosen ?? VACATED_SESSION_DEFAULT
-}
-
-/**
- * The one own-move core, draft level: the move itself, the vacated session,
- * one `list.ownerMove` meta and the pool post. Returns the recipe's patch and
- * metas; the caller commits them in its single `mutate()`.
- */
-function ownMoveCore(
+function moveOutCore(
   state: AppState,
   actor: Actor,
   listId: string,
   route: OwnMoveRoute,
-  options: OwnMoveCoreOptions,
+  options: MoveOutOptions,
 ): Outcome<{ patch: DomainPatch; metas: MutationMeta[]; result: OwnMoveResult }> {
   const list = state.schedule.lists[listId]
   if (list === undefined || list.state === 'DRAFT') return refuse('notFound', 'List not found.')
   const atISO = clockISO(state.clock)
   const from = state.schedule.slots[list.slotId]
   if (from === undefined) return refuse('notFound', "This List's session is outside the schedule.")
+  const office = !isAnaesthetistActor(actor)
 
   let schedule: AppState['schedule']
-  let vacatedMeta: MutationMeta | undefined
   let toAnaesthetistId: string | undefined
   let after: Record<string, unknown>
+  const metas: MutationMeta[] = []
   if (route === 'colleague') {
     if (options.toSlotId === undefined) return refuse('noTarget', 'Choose a colleague.')
-    const core = moveListToSlotCore(state, listId, options.toSlotId, { vacatedStatus: options.vacatedStatus, requireOpen: true })
+    const core = moveListToSlotCore(state, listId, options.toSlotId, { vacatedStatus: options.vacatedStatus })
     if (!core.ok) return core
     schedule = core.value.schedule
-    vacatedMeta = core.value.vacatedMeta
     toAnaesthetistId = core.value.to.anaesthetistId
-    after = { slotId: core.value.to.id, anaesthetistId: toAnaesthetistId, state: 'ACTIVE' }
+    after = { slotId: core.value.to.id, anaesthetistId: toAnaesthetistId, state: list.state }
+    if (office) {
+      metas.push({
+        entityType: 'list',
+        entityId: listId,
+        action: 'list.reassign',
+        before: { slotId: from.id, anaesthetistId: from.anaesthetistId },
+        after: { slotId: core.value.to.id, anaesthetistId: toAnaesthetistId, cause: options.cause },
+        stampBookingId: null,
+      })
+      const ack = officePairingAckMeta(state, listId, toAnaesthetistId)
+      if (ack !== null) metas.push(ack)
+    }
   } else {
     const detached = detachListToDraft(state.schedule, listId, {
       origin: options.cause === 'unavailable' ? 'unavailableReturn' : 'movedToOffice',
@@ -115,14 +120,27 @@ function ownMoveCore(
       fromAnaesthetistId: list.anaesthetistId,
     })
     if (!detached.ok) return detached
-    const vacated = vacateSlot(detached.value.schedule, { ...(detached.value.schedule.slots[from.id] ?? from), status: from.status }, options.vacatedStatus)
-    schedule = {
-      ...detached.value.schedule,
-      slots: { ...detached.value.schedule.slots, [from.id]: vacated.slot },
-      ...(vacated.availabilitySeries !== undefined ? { availabilitySeries: vacated.availabilitySeries } : {}),
-    }
-    vacatedMeta = vacated.meta
+    schedule = detached.value.schedule
     after = { slotId: null, anaesthetistId: null, state: 'DRAFT' }
+    if (office) metas.push(detached.value.meta)
+  }
+
+  // The vacated session: the mover's choice (D60), with the note when it is being marked.
+  const vacatedFrom = { ...(schedule.slots[from.id] ?? from), status: from.status }
+  const vacated = vacateSlot(schedule, vacatedFrom, options.vacatedStatus, options.note)
+  schedule = {
+    ...schedule,
+    slots: { ...schedule.slots, [from.id]: vacated.slot },
+    ...(vacated.availabilitySeries !== undefined ? { availabilitySeries: vacated.availabilitySeries } : {}),
+  }
+
+  if (office) {
+    if (vacated.meta !== undefined) metas.push(vacated.meta)
+    return ok({
+      patch: { schedule },
+      metas,
+      result: { listId, route, ...(toAnaesthetistId !== undefined ? { toAnaesthetistId } : {}), vacatedStatus: options.vacatedStatus },
+    })
   }
 
   // The pool post, inside the same commit; the record is a snapshot of the List as it moved.
@@ -154,7 +172,7 @@ function ownMoveCore(
   }
   return ok({
     patch: { schedule, notifications: post.notifications, counters: post.counters },
-    metas: [ownerMove, ...(vacatedMeta !== undefined ? [vacatedMeta] : [])],
+    metas: [ownerMove, ...(vacated.meta !== undefined ? [vacated.meta] : [])],
     result: {
       listId,
       route,
@@ -183,12 +201,12 @@ function commitCore<R>(api: AppStoreApi, actor: Actor, label: string, core: Move
   return ok(result)
 }
 
-function commit(api: AppStoreApi, actor: Actor, listId: string, route: OwnMoveRoute, options: OwnMoveCoreOptions): Outcome<OwnMoveResult> {
-  return commitCore(api, actor, 'ownMoveCore', (s) => ownMoveCore(s, actor, listId, route, options))
+function commit(api: AppStoreApi, actor: Actor, listId: string, route: OwnMoveRoute, options: MoveOutOptions): Outcome<OwnMoveResult> {
+  return commitCore(api, actor, 'moveOutCore', (s) => moveOutCore(s, actor, listId, route, options))
 }
 
 export interface OwnMoveInput {
-  /** What her session becomes (OQ-84: Free by default). Ignored when the session is already closed. */
+  /** What her session becomes (D60): Free unless she chooses Unavailable. */
   vacatedStatus?: SlotStatusKey
   /** A message for the office and the colleague, kept on the notification. */
   message?: string
@@ -201,10 +219,8 @@ function plainMovePreflight(api: AppStoreApi, actor: Actor, listId: string, inpu
   const state = api.getState()
   const refusal = ownMoveRefusal(moveInputOf(state), listId, actor.anaesthetistId, state.clock.todayISO)
   if (refusal !== null) return refuse(refusal.code, refusal.message)
-  const list = state.schedule.lists[listId] as AssignedList
-  const vacatedStatus = effectiveVacated(state, list, input.vacatedStatus)
-  // Keeping the session's own status (a closed one a move never reopens) needs no choice.
-  const bad = vacatedStatus === state.schedule.slots[list.slotId]?.status ? null : vacatedRefusal<{ vacatedStatus: SlotStatusKey }>(state, vacatedStatus)
+  const vacatedStatus = input.vacatedStatus ?? defaultVacated()
+  const bad = vacatedStatusRefusal<{ vacatedStatus: SlotStatusKey }>(state.masters.slotStatuses, actor, vacatedStatus, vacatedChoices())
   if (bad !== null) return bad
   return ok({ vacatedStatus })
 }
@@ -226,9 +242,9 @@ export function moveListToOffice(api: AppStoreApi, actor: Actor, listId: string,
 /**
  * Hand one of her own Lists on to a colleague, into the colleague's free
  * session that day (US-01.4.3, second bullet; US-01.4.5; US-13.8.2 "Moved to a
- * colleague"). The session must pass the one receive rule with `requireOpen`
- * (so it is one of `pushTargets`; `targetNotOpen` otherwise). The List moves
- * intact and stays ACTIVE, exactly as the office's reassignment moves it.
+ * colleague"). The session must pass the one receive rule (so it is one of
+ * `pushTargets`; `targetNotOpen` otherwise). The List moves intact and stays
+ * ACTIVE, exactly as the office's reassignment moves it.
  */
 export function pushListToSlot(api: AppStoreApi, actor: Actor, listId: string, toSlotId: string, input: OwnMoveInput = {}): Outcome<OwnMoveResult> {
   const pre = plainMovePreflight(api, actor, listId, input)
@@ -239,13 +255,32 @@ export function pushListToSlot(api: AppStoreApi, actor: Actor, listId: string, t
 
 export type UnavailableChoice = { route: 'office' } | { route: 'colleague'; toSlotId: string }
 
+export interface MarkUnavailableOptions {
+  /**
+   * What the session becomes once its List has left (D60): the status being
+   * set by default, or Free (`vacatedChoices(statusKey)`).
+   */
+  vacatedStatus?: SlotStatusKey
+  /** The session's note, kept with its status ("Unwell, short notice"). */
+  note?: string
+  /** An anaesthetist's message for the office and the colleague, kept on the notice. */
+  message?: string
+}
+
 /**
- * Mark a session she holds a List in as not available, and say where the List
- * goes (US-01.5.5; RV-30): in ONE commit the List leaves first (to the office
- * as a Draft List, origin `unavailableReturn`, or into a colleague's free
- * session) and the session takes the closed status, so a List is never left
- * with an anaesthetist who will not be there. The pool post and "no preference
- * warning" apply as on a plain move (US-01.5.5's note; an assumed reading).
+ * Mark a session that holds a List not available, and say where the List goes
+ * (US-01.5.5, US-01.5.4; D59; RV-25, RV-30): in ONE commit the List leaves
+ * first (to the office as a Draft List, origin `unavailableReturn`, or into a
+ * colleague's open session) and the session takes the closed status (or Free,
+ * if the mover chose it), so a List is never left with an anaesthetist who
+ * will not be there. Unavailability is never a conflict.
+ *
+ * - An anaesthetist: her own session and her own movable List; the pool post
+ *   and "no preference warning" apply as on a plain move.
+ * - The office (a sickness phoned in): any anaesthetist's session. An ACTIVE
+ *   List goes back or on; a SUBMITTED List can only be handed on (only an
+ *   ACTIVE List becomes a Draft List); an AUTHORISED List refuses. No notice.
+ *
  * One List per call: a range or series resolves List by List.
  */
 export function markUnavailableAndMoveList(
@@ -254,29 +289,45 @@ export function markUnavailableAndMoveList(
   slotId: string,
   statusKey: SlotStatusKey,
   choice: UnavailableChoice,
-  message?: string,
+  options: MarkUnavailableOptions = {},
 ): Outcome<OwnMoveResult> {
-  const who = actorRefusal<OwnMoveResult>(actor)
-  if (who !== null) return who
+  const anaesthetist = isAnaesthetistActor(actor)
+  if (!anaesthetist && !isOfficeActor(actor)) return refuse('notAllowed', 'Only the anaesthetist or the office can mark a session not available.')
   const state = api.getState()
   const slot = state.schedule.slots[slotId]
   if (slot === undefined) return refuse('notFound', 'Session not found.')
-  if (slot.anaesthetistId !== actor.anaesthetistId) return refuse('notOwnList', 'You can only change your own sessions.')
+  if (anaesthetist && slot.anaesthetistId !== actor.anaesthetistId) return refuse('notOwnList', 'You can only change your own sessions.')
   // The availability actions' own status guards, so the codes and words agree.
   const bad = statusRefusal<OwnMoveResult>(state.masters.slotStatuses, actor, statusKey) ?? replacedStatusRefusal<OwnMoveResult>(state.masters.slotStatuses, actor, [slot])
   if (bad !== null) return bad
   if (!isClosedKey(state.masters.slotStatuses, statusKey)) {
-    return refuse('notClosedStatus', `${statusFor(state.masters.slotStatuses, statusKey)?.label ?? 'That status'} keeps the session open. Choose a status that marks you not available.`)
+    return refuse('notClosedStatus', `${statusFor(state.masters.slotStatuses, statusKey)?.label ?? 'That status'} keeps the session open. Choose a status that marks the session not available.`)
   }
   const list = listInSlot(state, slotId)
   if (list === undefined) return refuse('noList', 'This session has no List to move.')
-  const refusal = ownMoveRefusal(moveInputOf(state), list.id, actor.anaesthetistId, state.clock.todayISO)
-  if (refusal !== null) return refuse(refusal.code, refusal.message)
+  if (anaesthetist) {
+    const refusal = ownMoveRefusal(moveInputOf(state), list.id, actor.anaesthetistId, state.clock.todayISO)
+    if (refusal !== null) return refuse(refusal.code, refusal.message)
+  } else {
+    if (list.state === 'AUTHORISED') return refuse('listAuthorised', 'This List is authorised and locked, so its session cannot be marked not available.')
+    // A past List stays where it was: a returned one could never be assigned again (its day has gone).
+    if (list.dateISO < state.clock.todayISO) return refuse('pastDate', "This List's day has passed, so its session cannot be marked not available.")
+    if (list.state === 'SUBMITTED' && choice.route === 'office') {
+      return refuse('submittedHandOnOnly', 'This List has been submitted, so it can only be handed on to a colleague.')
+    }
+  }
+  const vacatedStatus = options.vacatedStatus ?? defaultVacated(statusKey)
+  const badVacated = vacatedStatusRefusal<OwnMoveResult>(state.masters.slotStatuses, actor, vacatedStatus, vacatedChoices(statusKey))
+  if (badVacated !== null) return badVacated
+  const message = options.message?.trim() ?? ''
+  // The note goes with the closed status; a session left Free takes none (it would read as a sickness).
+  const noteApplies = options.note !== undefined && isClosedKey(state.masters.slotStatuses, vacatedStatus)
   return commit(api, actor, list.id, choice.route, {
     ...(choice.route === 'colleague' ? { toSlotId: choice.toSlotId } : {}),
-    vacatedStatus: statusKey,
+    vacatedStatus,
     cause: 'unavailable',
-    ...(message !== undefined ? { message } : {}),
+    ...(anaesthetist && message !== '' ? { message } : {}),
+    ...(noteApplies ? { note: options.note } : {}),
   })
 }
 

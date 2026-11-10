@@ -74,8 +74,9 @@ describe('AssignDraftListSheet', () => {
     const view = renderSheet(SEED_DRAFT_LIST_IDS.stGeorges)
     const free = rowsIn(view.container, 'candidates-clear')
     expect(tiersOf(free)).toEqual([...tiersOf(free)].sort((a, b) => a - b))
-    const na = rowsIn(view.container, 'candidates-not-available')
-    expect(tiersOf(na)).toEqual([...tiersOf(na)].sort((a, b) => a - b))
+    const closedTiers = (c: HTMLElement) => Array.from(c.querySelectorAll('[data-shot="candidates-not-available"] [data-candidate-closed]')).map((r) => Number(r.querySelector('[data-tier]')?.getAttribute('data-tier')))
+    expect(closedTiers(view.container).length).toBeGreaterThan(0)
+    expect(closedTiers(view.container)).toEqual([...closedTiers(view.container)].sort((a, b) => a - b))
     const orders = new Set<string>([idsOf(free).join(',')])
     for (let i = 0; i < 8; i++) {
       view.reopen()
@@ -86,7 +87,7 @@ describe('AssignDraftListSheet', () => {
     expect(orders.size).toBeGreaterThan(1)
     fireEvent.click(within(view.container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Tier 1'))
     expect(tiersOf(rowsIn(view.container, 'candidates-clear')).every((t) => t === 1)).toBe(true)
-    expect(tiersOf(rowsIn(view.container, 'candidates-not-available')).every((t) => t === 1)).toBe(true)
+    expect(closedTiers(view.container).every((t) => t === 1)).toBe(true)
   })
 
   it('Dr Sharma for Ms Reid\'s request sits apart, still selectable; choosing her warns and reads "Assign anyway"', () => {
@@ -111,11 +112,23 @@ describe('AssignDraftListSheet', () => {
     expect(screen.getByRole('button', { name: 'Assign Draft List' })).toBeInTheDocument()
   })
 
-  it('a closed session warns, naming the status and asking the office to check, and assigns with the success moment', () => {
+  it('a closed session is shown but never selectable; the colleague stand-in makes it available, then it assigns with the success moment (US-01.6.3, D59)', () => {
     vi.useFakeTimers()
-    const { container, onAssigned } = renderSheet(NGATA_CLASH, ANAE.ngata)
-    expect(container.querySelector('[data-shot="assign-draft-list-closed-warning"]')).toHaveTextContent(/Dr Ngata is on .+ for this session\. Assigning flags a conflict on the List\. Check with Dr Ngata first\./)
-    fireEvent.click(screen.getByRole('button', { name: 'Assign anyway' }))
+    const { container, onAssigned } = renderSheet(NGATA_CLASH)
+    const row = container.querySelector(`[data-shot="candidates-not-available"] [data-candidate-closed="${ANAE.ngata}"]`) as HTMLElement
+    expect(row).not.toBeNull()
+    expect(row.tagName).not.toBe('BUTTON')
+    expect(row.getAttribute('role')).toBe('group')
+    expect(row.getAttribute('aria-label')).toMatch(/: not available this session$/)
+    expect(row).toHaveTextContent('Not available this session')
+    expect(container.textContent).not.toMatch(/flags a conflict/)
+    expect(rowsIn(container, 'candidates-not-available')).toEqual([])
+    fireEvent.click(within(row).getByRole('button', { name: 'Ask Dr Ngata to make this session available' }))
+    const ngata = rowsIn(container, 'candidates-clear').find((r) => r.getAttribute('data-candidate') === ANAE.ngata)!
+    expect(ngata).toBeDefined()
+    fireEvent.click(ngata)
+    expect(container.querySelector('[data-shot="assign-draft-list-closed-warning"]')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Draft List' }))
     expect(screen.getByText('Draft List assigned')).toBeInTheDocument()
     act(() => vi.advanceTimersByTime(1100))
     expect(onAssigned).toHaveBeenCalledWith(NGATA_CLASH, slotIdFor(ANAE.ngata, '2026-07-21', 'AM'))

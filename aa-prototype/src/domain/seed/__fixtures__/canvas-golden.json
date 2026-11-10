@@ -2091,23 +2091,13 @@
       "recurringBookingId": null
     },
     "29104|2026-07-22|AM": {
-      "statusKey": "private",
-      "listId": "L-29104-2026-07-22-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CES",
-      "surgeonId": "S-WHITFORD",
-      "notes": null,
-      "startTime": "07:30",
-      "endTime": "12:30",
-      "conflicts": [
-        {
-          "kind": "availability",
-          "cause": "availability:S-29104-2026-07-22-AM:unavailable",
-          "slotId": "S-29104-2026-07-22-AM",
-          "statusKey": "unavailable",
-          "raisedAtISO": "2026-07-21T08:00:00"
-        }
-      ],
+      "statusKey": "unavailable",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "Unwell, short notice",
+      "startTime": null,
+      "endTime": null,
+      "conflicts": [],
       "recurringBookingId": null
     },
     "29104|2026-07-22|PM": {

@@ -35,6 +35,11 @@
  * Catch-up Phase 32a added one row to `bookings` by hand, nothing else: the
  * acceptance beat's Booking BK0162 on Dr Beaumont's Fri 31 Jul AM List
  * (`seed/bookingMoves.ts`), appended after every other seeded Booking.
+ *
+ * Catch-up Phase 32b changed one window row by hand, nothing else: Dr
+ * Rutherford's Wed 22 Jul AM. Unavailability is never a conflict (D59), so his
+ * office-recorded sickness returned the List as a Draft List (it takes no
+ * session) and the row reads Unavailable with the note, no List, no conflict.
  */
 
 import { describe, expect, it } from 'vitest'

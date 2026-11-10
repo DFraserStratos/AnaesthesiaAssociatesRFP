@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Building2, ChevronRight, Users } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { neutral, radius, semantic } from '../../theme/tokens'
 import {
   markUnavailableAndMoveList,
   moveListToOffice,
@@ -10,15 +10,15 @@ import {
   type Actor,
   type OwnMoveResult,
 } from '../../store'
-import { pushTargets, VACATED_SESSION_CHOICES, VACATED_SESSION_DEFAULT, type PushTarget } from '../../domain/listMoves'
-import { isOpenForBooking, statusFor } from '../../domain/slotStatus'
+import { defaultVacated, pushTargets, type PushTarget } from '../../domain/listMoves'
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
 import { drSurname, locationName, matchesNameQuery } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
-import { BackLink, Initials } from './moveSheetParts'
+import { BackLink, ChoiceRow, Initials } from './moveSheetParts'
+import { VacatedSessionChoice } from './VacatedSessionChoice'
 
 interface MoveListSheetProps {
   open: boolean
@@ -46,7 +46,9 @@ type Step = 'where' | 'colleague' | 'confirm' | 'done'
  * in surname order, by availability alone, never grouped, marked or ordered by
  * a preference or a tier, and the confirm step shows no warning of any kind
  * (US-01.4.5). It takes effect at once: nobody accepts or confirms (D7). It
- * never says "Draft List" or "slot".
+ * never says "Draft List" or "slot". Every confirm, the unavailable prompt
+ * included, asks what her session becomes (`VacatedSessionChoice`; D60,
+ * catch-up Phase 32b).
  */
 export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, progress, onClose, onMoved }: MoveListSheetProps) {
   const { Overlay, variant } = useSurface()
@@ -62,7 +64,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
   const [step, setStep] = useState<Step>(toSlotId !== undefined ? 'confirm' : 'where')
   const [route, setRoute] = useState<'office' | 'colleague'>(toSlotId !== undefined ? 'colleague' : 'office')
   const [targetSlotId, setTargetSlotId] = useState<string | undefined>(toSlotId)
-  const [vacated, setVacated] = useState<SlotStatusKey>(VACATED_SESSION_DEFAULT)
+  const [vacated, setVacated] = useState<SlotStatusKey>(defaultVacated(unavailable?.statusKey))
   const [message, setMessage] = useState('')
   /** The shared type-ahead (Phase 32a, US-01.4.2): narrows the free colleagues by name, never reorders them. */
   const [query, setQuery] = useState('')
@@ -78,13 +80,13 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
     setRoute(toSlotId !== undefined ? 'colleague' : 'office')
     setTargetSlotId(toSlotId)
     setStep(toSlotId !== undefined ? 'confirm' : 'where')
-    setVacated(VACATED_SESSION_DEFAULT)
+    setVacated(defaultVacated(unavailable?.statusKey))
     setMessage('')
     setQuery('')
     setError(null)
     setDone(null)
     // Re-initialise only when it opens on a new List or target.
-  }, [open, listId, toSlotId])
+  }, [open, listId, toSlotId, unavailable?.statusKey])
 
   const list = snapshot ?? (liveList !== undefined && liveList.state !== 'DRAFT' ? liveList : undefined)
 
@@ -104,14 +106,6 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
   const colleague = targetSlotId !== undefined ? anaesthetists[slots[targetSlotId]?.anaesthetistId ?? ''] : undefined
   const colleagueShort = colleague !== undefined ? drSurname(colleague.name) : 'Your colleague'
 
-  // Her own session: a plain move offers Free (default) or Unavailable, unless it is already closed (a move never reopens it).
-  const ownSlot = slots[list.slotId]
-  const ownStatus = statusFor(statuses, ownSlot?.status)
-  const ownAlreadyClosed = ownSlot !== undefined && !isOpenForBooking(ownStatus)
-  const vacatedChoices = VACATED_SESSION_CHOICES.filter((k) => {
-    const s = statusFor(statuses, k)
-    return s !== undefined && s.retiredAtISO === undefined && s.anaesthetistCanSet
-  })
   const unavailableLabel = unavailable !== undefined ? resolveDisplayStatus(unavailable.statusKey, statuses).label : ''
 
   function submit() {
@@ -126,7 +120,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
         list!.slotId,
         unavailable.statusKey,
         route === 'colleague' && targetSlotId !== undefined ? { route: 'colleague', toSlotId: targetSlotId } : { route: 'office' },
-        msg,
+        { vacatedStatus: vacated, ...(msg !== undefined ? { message: msg } : {}) },
       )
     } else if (route === 'colleague' && targetSlotId !== undefined) {
       out = pushListToSlot(api, actor, list!.id, targetSlotId, { vacatedStatus: vacated, ...(msg !== undefined ? { message: msg } : {}) })
@@ -249,26 +243,14 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
                 : `Your ${hospital} ${list.session} List goes back to the office with its ${bookingWord}, and the office finds someone for it.`}
             </div>
 
-            {unavailable !== undefined ? (
-              <div style={{ fontSize: 13, color: neutral.ink }}>
-                Your session: <strong>{resolveDisplayStatus(unavailable.statusKey, statuses).longLabel}</strong>
-              </div>
-            ) : ownAlreadyClosed ? (
-              <div style={{ fontSize: 13, color: neutral.ink }}>
-                Your session stays <strong>{ownStatus?.longLabel ?? ''}</strong>
-              </div>
-            ) : (
-              <div data-shot="move-vacated" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>Your session after the move</span>
-                <div role="radiogroup" aria-label="Your session after the move" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {vacatedChoices.map((k) => (
-                    <StatusChoice key={k} statusKey={k} selected={vacated === k} onSelect={() => setVacated(k)} />
-                  ))}
-                </div>
-                {/* OQ-84, open: the one provisional hint (VACATED_SESSION_DEFAULT). */}
-                <span style={{ fontSize: 12, color: neutral.mist }}>Free unless you choose otherwise. What a session becomes after a move is still being confirmed with AA.</span>
-              </div>
-            )}
+            <VacatedSessionChoice
+              label="Your session after the move"
+              value={vacated}
+              onChange={setVacated}
+              anaesthetist
+              shot="move-vacated"
+              {...(unavailable !== undefined ? { statusBeingSet: unavailable.statusKey } : {})}
+            />
 
             <TextArea label="Add a message" value={message} onChange={setMessage} placeholder={route === 'colleague' ? `Optional note for ${colleagueShort} and the office` : 'Optional note for the office'} />
             {error !== null && (
@@ -317,72 +299,5 @@ function ListHeader({ title, line, progress }: { title: string; line: string; pr
       <span style={{ fontSize: 14, color: neutral.ink }}>{title}</span>
       <span style={{ fontSize: 13, color: neutral.slate }}>{line}</span>
     </div>
-  )
-}
-
-function ChoiceRow({ icon, title, line, onClick, disabled = false, shot }: { icon: React.ReactNode; title: string; line: string; onClick: () => void; disabled?: boolean; shot: string }) {
-  return (
-    <button
-      type="button"
-      data-shot={shot}
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 14px',
-        minHeight: 64,
-        borderRadius: radius.card,
-        border: `1px solid ${neutral.line}`,
-        background: neutral.surface,
-        fontFamily: 'inherit',
-        textAlign: 'left',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
-      }}
-    >
-      <span aria-hidden style={{ width: 36, height: 36, borderRadius: 999, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-        {icon}
-      </span>
-      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{title}</span>
-        <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>{line}</span>
-      </span>
-      {!disabled && <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />}
-    </button>
-  )
-}
-
-/** A vacated-session status choice: the master's swatch and label (by fixed id), teal ring when chosen. */
-function StatusChoice({ statusKey, selected, onSelect }: { statusKey: SlotStatusKey; selected: boolean; onSelect: () => void }) {
-  const statuses = useSlotStatusRecords()
-  const r = resolveDisplayStatus(statusKey, statuses)
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      data-shot={`move-vacated-${statusKey}`}
-      onClick={onSelect}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-        height: 40,
-        padding: '0 14px',
-        borderRadius: 999,
-        border: selected ? `2px solid ${accent.base}` : `1px solid ${neutral.line}`,
-        background: selected ? accent.tint : neutral.surface,
-        fontFamily: 'inherit',
-        fontSize: 13,
-        fontWeight: 600,
-        color: neutral.ink,
-        cursor: 'pointer',
-      }}
-    >
-      <span aria-hidden style={{ width: 12, height: 12, borderRadius: 4, background: r.visual.blockBackground, border: r.visual.border ?? `1px solid ${r.visual.solid}` }} />
-      {r.label}
-    </button>
   )
 }

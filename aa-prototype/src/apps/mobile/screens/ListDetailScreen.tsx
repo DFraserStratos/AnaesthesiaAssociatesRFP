@@ -11,7 +11,7 @@ import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
-import { SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
+import { AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
@@ -174,6 +174,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
             )}
           </div>
         )}
+
+        {/* Alert the office (catch-up Phase 32b, US-03.6.3): her own List only. */}
+        <div style={{ marginTop: 10 }}>
+          <AlertOfficeEntry actor={actor} target={{ listId }} compact />
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>

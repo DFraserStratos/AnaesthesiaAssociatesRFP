@@ -6,12 +6,12 @@
     {
       "name": "notification-pool",
       "app": "admin",
-      "caption": "One shared pool of notifications for the admin team, newest first, separate from the to-do list",
+      "caption": "One shared pool of active notices for the admin team, with a count, newest first, separate from the to-do list",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
           "state": "card",
-          "caption": "Admin Day: the Notifications card under the To-do and Draft Lists cards",
+          "caption": "Admin Day: the Notifications card with the count of active notices and a tick on each",
           "steps": [
             {
               "trigger": "colleague-moves-list-to-office",
@@ -27,7 +27,7 @@
         },
         {
           "state": "page-1",
-          "caption": "The Notifications page after a busy morning: newest first, the same for every admin",
+          "caption": "The Notifications page after a busy morning: active notices newest first, the same for every admin",
           "steps": [
             {
               "goto": "/admin/notifications"
@@ -41,7 +41,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=\"admin-notifications-table\"]"
+            "[data-shot=\"admin-notifications-table\"]",
+            "[data-shot=\"admin-notifications-page-count\"]"
           ]
         },
         {

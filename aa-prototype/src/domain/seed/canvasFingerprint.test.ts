@@ -58,6 +58,8 @@ describe('canvas fingerprint (Phase 17, re-pinned in Phase 28)', () => {
   it('matches the pinned canvas', () => {
     // Re-pinned in catch-up Phase 38a: the twelve browsable-history backdrop Lists
     // (January to March 2026) were appended; the slots and every other List are unchanged.
-    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 1129, hash: 2258258707 })
+    // Re-pinned in catch-up Phase 32b: Dr Rutherford's Wed 22 Jul AM List is a returned
+    // Draft List (D59), so it leaves his session; same counts, nothing else moved.
+    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 1129, hash: 2458698000 })
   })
 })

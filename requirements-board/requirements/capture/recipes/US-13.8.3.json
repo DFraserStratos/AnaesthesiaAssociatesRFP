@@ -1,0 +1,84 @@
+{
+  "id": "US-13.8.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "resolve-notice",
+      "app": "admin",
+      "caption": "An admin ticks a notice resolved; it is hidden for everyone and kept",
+      "start": "/admin/notifications",
+      "states": [
+        {
+          "state": "active",
+          "caption": "An active notice with its tick, and the count of active notices",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "one"
+            },
+            {
+              "wait": "[data-notification-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"notification-tick\"]",
+            "[data-shot=\"admin-notifications-page-count\"]"
+          ]
+        },
+        {
+          "state": "resolved",
+          "caption": "Ticked: the notice leaves the page for every admin and the count drops",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "one"
+            },
+            {
+              "wait": "[data-notification-row]"
+            },
+            {
+              "click": "[data-shot=\"notification-tick\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"admin-notifications-table\"]",
+            "[data-shot=\"admin-notifications-page-count\"]"
+          ]
+        },
+        {
+          "state": "show-resolved",
+          "caption": "Show resolved brings it back, with who resolved it and when",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "one"
+            },
+            {
+              "wait": "[data-notification-row]"
+            },
+            {
+              "click": "[data-shot=\"notification-tick\"]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-shot=\"admin-notifications-show-resolved\"] input"
+            },
+            {
+              "wait": "[data-notification-resolved=\"true\"]"
+            }
+          ],
+          "highlight": [
+            "[data-notification-resolved=\"true\"]",
+            "[data-shot=\"admin-notifications-show-resolved\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

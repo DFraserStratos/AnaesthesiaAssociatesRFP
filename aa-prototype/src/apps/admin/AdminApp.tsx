@@ -12,6 +12,7 @@ import {
   bookingCountsByList,
   draftListsForDate,
   waitingDraftListCount,
+  activeNotificationCount,
   rosterForDate,
   scheduleHorizon,
   slotViewsForDate,
@@ -173,6 +174,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const dayDraftLists = useMemo(() => draftListsForDate({ schedule: { lists: listsRecord } }, selectedDate), [listsRecord, selectedDate])
   const bookingCounts = useMemo(() => bookingCountsByList(bookingsRecord), [bookingsRecord])
   const draftListBadge = useMemo(() => waitingDraftListCount({ schedule: { lists: listsRecord } }), [listsRecord])
+  // Active notices (catch-up Phase 32b; US-13.8.1 "Count"): the same count as the rail card and the page.
+  const notificationsRecord = useAppStore((s) => s.notifications)
+  const notificationBadge = useMemo(() => activeNotificationCount({ notifications: notificationsRecord }), [notificationsRecord])
 
   // The header line counts Lists as sessions and open sessions as free, read
   // from the same views the grid paints (no second derivation), and the day's
@@ -289,6 +293,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         integrationBadge={integrationCount}
         conflictBadge={conflictCount}
         draftListBadge={draftListBadge}
+        notificationBadge={notificationBadge}
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 

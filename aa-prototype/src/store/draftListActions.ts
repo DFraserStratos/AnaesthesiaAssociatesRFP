@@ -22,12 +22,13 @@
 
 import { notPreferredEntryIds, notPreferredWarning, pairingAcknowledgement } from '../domain/pairingPreferences'
 import { DRAFT_ASSIGN_WARNINGS, isDraftList, isRemoved, removeBlockedReason } from '../domain/draftLists'
-import { isClosedKey, isOpenSlot, statusFor } from '../domain/slotStatus'
+import { isOpenSlot } from '../domain/slotStatus'
+import { sessionNotOpenRefusal } from '../domain/listMoves'
 import { LIST_KINDS, type DraftList, type ListKind, type RequestSource, type Session } from '../domain/types'
 import { drName } from './conflictReconcile'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { listInSlot, scheduleHorizon, slotFor } from './selectors'
+import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { attachListToSlot, insertDraftList, pairingRefusal } from './slotActions'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -171,10 +172,11 @@ export interface AssignDraftListResult {
  * is the one its day and session fix (US-01.6.3). In one commit the same List
  * id goes ACTIVE in that anaesthetist's session through `attachListToSlot`,
  * keeping its Bookings, hospital, surgeon and notes, and the draft trail gains
- * `assignedAtISO` (US-01.6.3 "Becomes active", "Audited"). A closed session
- * or a not-preferred pairing is never refused (US-01.6.3, US-01.3.5,
- * US-01.5.2): the reconcile flags the closed session, and a not-preferred
- * pairing writes 17's `list.pairingAcknowledged`.
+ * `assignedAtISO` (US-01.6.3 "Becomes active", "Audited"). A session its
+ * anaesthetist has marked not available is refused (`sessionNotOpen`;
+ * US-01.6.3 "Slot must be available", D59, catch-up Phase 32b): it is made
+ * available first, with the anaesthetist's agreement. A not-preferred pairing
+ * is never refused (US-01.3.5): it writes 17's `list.pairingAcknowledged`.
  */
 export function assignDraftList(
   api: AppStoreApi,
@@ -199,12 +201,10 @@ export function assignDraftList(
   if (listInSlot(state, slot.id) !== undefined) {
     return refuse('slotOccupied', `${drName(state.masters, anaesthetist.registrationNumber)} already has a List that session. Resolve it first.`)
   }
+  const closed = sessionNotOpenRefusal(moveInputOf(state), slot)
+  if (closed !== null) return refuse(closed.code, closed.message)
 
   const warnings: string[] = []
-  const who = drName(state.masters, anaesthetist.registrationNumber)
-  if (isClosedKey(state.masters.slotStatuses, slot.status)) {
-    warnings.push(DRAFT_ASSIGN_WARNINGS.closedSession(who, statusFor(state.masters.slotStatuses, slot.status)?.label ?? slot.status))
-  }
   const notPreferred = notPreferredWarning(state.masters, state.officePrivate.pairingPreferences, input.anaesthetistId, list.surgeonId)
   if (notPreferred !== null) warnings.push(notPreferred.message)
   if (list.conflicts.some((c) => c.kind === 'holiday')) {

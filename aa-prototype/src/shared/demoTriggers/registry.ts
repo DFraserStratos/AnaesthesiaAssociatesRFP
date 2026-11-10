@@ -77,6 +77,11 @@ import {
   bookingMoveCandidates,
   bookingMoveCandidateRefusal,
   stageColleagueBookingMove,
+  closedColleagueSessions,
+  officeResolvesAlert,
+  officeResolvesAlertRefusal,
+  makeAvailableRefusal,
+  makeSessionAvailableAsColleague,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
@@ -89,7 +94,7 @@ import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { drSurname, formatCurrency } from '../format'
 import { isAssignedList } from '../../domain/draftLists'
 import { useDemoTriggerMemory } from './memory'
-import { simulateSickness, sicknessCandidates, sicknessRefusal } from '../../store/demoSimulations'
+import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
 
 // ---------------------------------------------------------------------------
@@ -353,12 +358,37 @@ function photoCaptureDisabledReason(state: AppState, listId: string): string | n
 
 
 /** Simulate sickness: the viewed day's Lists (the Day view's date; on Conflicts, today), Lists with Bookings first. */
+/**
+ * One choice per candidate List "to the office" (an ACTIVE List), and "to Dr X"
+ * when an open colleague exists (the office's first pick: tier, then
+ * preferred pairing). Ids are `<listId>|office` or `<listId>|colleague`.
+ */
 function sicknessChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
   const dateISO = ctx.params['dateISO'] ?? state.clock.todayISO
-  return sicknessCandidates(state, dateISO).map((l) => ({
-    id: l.id,
-    label: `${drSurname(state.masters.anaesthetists[l.anaesthetistId]?.name ?? l.anaesthetistId)} · ${l.session} · ${state.masters.hospitals[l.hospitalId]?.name ?? l.hospitalId}`,
-  }))
+  return sicknessCandidates(state, dateISO).flatMap((l) => {
+    const head = `${drSurname(state.masters.anaesthetists[l.anaesthetistId]?.name ?? l.anaesthetistId)} · ${l.session} · ${state.masters.hospitals[l.hospitalId]?.name ?? l.hospitalId}`
+    const out: { id: string; label: string }[] = []
+    if (l.state === 'ACTIVE') out.push({ id: `${l.id}|office`, label: `${head}, to the office` })
+    const toSlotId = sicknessColleagueSlot(state, l.id)
+    const to = toSlotId !== undefined ? state.schedule.slots[toSlotId] : undefined
+    if (to !== undefined) out.push({ id: `${l.id}|colleague`, label: `${head}, to ${drSurname(state.masters.anaesthetists[to.anaesthetistId]?.name ?? to.anaesthetistId)}` })
+    return out
+  })
+}
+
+function sicknessChoiceParts(choiceId: string): { listId: string; route: SicknessRoute } {
+  const [listId = '', route] = choiceId.split('|')
+  return { listId, route: route === 'colleague' ? 'colleague' : 'office' }
+}
+
+/** Closed, empty colleague sessions for the List an open picker is assigning or moving (the stand-in's choices). */
+function makeAvailableChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
+  const listId = ctx.published['adminPicker.listId']
+  if (listId === undefined) return []
+  return closedColleagueSessions(state, listId).map((slotId) => {
+    const slot = state.schedule.slots[slotId]!
+    return { id: slotId, label: `${drSurname(state.masters.anaesthetists[slot.anaesthetistId]?.name ?? slot.anaesthetistId)}, ${format(parseISO(slot.dateISO), 'EEE d MMM')} ${slot.session}` }
+  })
 }
 
 export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
@@ -748,12 +778,11 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => null,
     indexEmptyReason: `PWA only: the framed build plays the office in Admin (Assign on ${DRAFT_LISTS}).`,
   },
-  // ── Admin · Day and Conflicts: an office-recorded sickness (catch-up Phase 30) ──
+  // ── Admin · Day and Conflicts: an office-recorded sickness (catch-up Phase 30, re-pointed in 32b) ──
   {
     id: 'simulate-sickness',
     label: 'Simulate sickness',
-    description:
-      "An anaesthetist phones in sick and the office records it: their session on the chosen List is marked unavailable by the office, the List keeps its Bookings, and the conflict shows on the Day view and the Conflicts screen. Provisional reading of OQ-81 part 3.",
+    description: `An anaesthetist phones in sick and the office records it: their session on the chosen List is marked unavailable and, in the same step, the List goes back to the office as a ${DRAFT_LIST} or on to the first free colleague in the office's order. Unavailability is never a conflict.`,
     screen: 'Admin · Day view and Conflicts',
     routes: [ADMIN_DAY, ADMIN_CONFLICTS],
     surfaces: ['bar'],
@@ -761,29 +790,88 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     defaultChoice: (state, ctx) => {
       const slotId = ctx.published['adminDay.selectedSlotId']
       const held = slotId !== undefined ? listInSlot(state, slotId) : undefined
-      return held !== undefined && sicknessChoices(state, ctx).some((c) => c.id === held.id) ? held.id : undefined
+      if (held === undefined) return undefined
+      return sicknessChoices(state, ctx).find((c) => sicknessChoiceParts(c.id).listId === held.id)?.id
     },
     disabledReason: (state, ctx, choiceId) => {
       const choices = sicknessChoices(state, ctx)
       if (choices.length === 0) return 'No Lists on this day'
-      return sicknessRefusal(state, choiceId ?? choices[0]!.id)
+      const { listId, route } = sicknessChoiceParts(choiceId ?? choices[0]!.id)
+      return sicknessRefusal(state, listId, route)
     },
     run: (api, ctx, choiceId) => {
       const choices = sicknessChoices(api.getState(), ctx)
-      const listId = choiceId ?? choices[0]?.id
-      if (listId === undefined) return { ok: false, message: 'No Lists on this day' }
-      const res = simulateSickness(api, listId)
+      const picked = choiceId ?? choices[0]?.id
+      if (picked === undefined) return { ok: false, message: 'No Lists on this day' }
+      const { listId, route } = sicknessChoiceParts(picked)
+      const before = api.getState().schedule.lists[listId]
+      if (!isAssignedList(before)) return { ok: false, message: 'This List has no anaesthetist yet' }
+      const res = simulateSickness(api, listId, route)
       if (!res.ok) return { ok: false, message: res.message }
       const state = api.getState()
-      const list = state.schedule.lists[listId]
-      if (!isAssignedList(list)) return { ok: false, message: 'This List has no anaesthetist yet' }
-      const who = drSurname(state.masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId)
-      return {
-        ok: true,
-        message: `${who} recorded as ${statusFor(state.masters.slotStatuses, SEED_STATUS.unavailable)?.label ?? 'unavailable'} for ${format(parseISO(list.dateISO), 'EEE d MMM')} ${list.session}. The List keeps its Bookings and is on the Conflicts screen.`,
-      }
+      const who = drSurname(state.masters.anaesthetists[before.anaesthetistId]?.name ?? before.anaesthetistId)
+      const when = `${format(parseISO(before.dateISO), 'EEE d MMM')} ${before.session}`
+      const status = statusFor(state.masters.slotStatuses, SEED_STATUS.unavailable)?.label ?? 'unavailable'
+      const where =
+        res.value.toAnaesthetistId !== undefined
+          ? `went to ${drSurname(state.masters.anaesthetists[res.value.toAnaesthetistId]?.name ?? res.value.toAnaesthetistId)}`
+          : `went back to the ${DRAFT_LISTS}`
+      return { ok: true, message: `${who} recorded as ${status} for ${when}. The List ${where} with its Bookings. No conflict.` }
     },
     indexPath: () => '/admin/day/2026-07-22',
+  },
+  // ── Admin · the Assign and Reassign pickers: a colleague makes a session available (catch-up Phase 32b) ──
+  {
+    id: 'ask-colleague-make-available',
+    label: 'Ask a colleague to make their session available',
+    description:
+      'The office never assigns onto an unavailable session (US-01.6.3). This plays the colleague agreeing: they set their own session Free, so the picker row becomes assignable. Never a session that holds a List.',
+    screen: `Admin · Assign ${DRAFT_LIST} and Reassign pickers`,
+    routes: [ADMIN_DAY, ADMIN_DRAFT_LISTS, ADMIN_CONFLICTS],
+    surfaces: ['bar'],
+    badge: 'colleague-stand-in',
+    when: (_state, ctx) => ctx.published['adminPicker.listId'] !== undefined,
+    choices: (state, ctx) => makeAvailableChoices(state, ctx),
+    disabledReason: (state, ctx, choiceId) => {
+      const slotId = choiceId ?? makeAvailableChoices(state, ctx)[0]?.id
+      if (slotId === undefined) return 'No colleague is marked not available for this session'
+      return makeAvailableRefusal(state, slotId)
+    },
+    run: (api, ctx, choiceId) => {
+      const slotId = choiceId ?? makeAvailableChoices(api.getState(), ctx)[0]?.id
+      if (slotId === undefined) return { ok: false, message: 'No colleague is marked not available for this session' }
+      const res = makeSessionAvailableAsColleague(api, slotId)
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const slot = state.schedule.slots[slotId]!
+      const who = drSurname(state.masters.anaesthetists[res.value.anaesthetistId]?.name ?? res.value.anaesthetistId)
+      return { ok: true, message: `${who} made ${format(parseISO(slot.dateISO), 'EEE d MMM')} ${slot.session} available. You can assign to them now.` }
+    },
+    indexPath: () => `/admin/draft-lists`,
+    indexHint: `Open Assign on a ${DRAFT_LIST}, or Reassign on a List: the button sits on each unavailable colleague's row.`,
+  },
+  // ── Mobile · List and Booking: the office ticks an alert (catch-up Phase 32b; PWA parity) ──
+  {
+    id: 'office-resolves-alert',
+    label: 'Office resolves this alert',
+    description: "Plays the office ticking your open alert on this List or Booking resolved, so the handset shows that the office has dealt with it. In the framed build, tick it in Admin's notifications.",
+    screen: 'Mobile · List and Booking',
+    routes: ['/mobile/lists/:listId', MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => {
+      const listId = ctx.params['listId']
+      if (listId === undefined) return 'Open a List or Booking'
+      return officeResolvesAlertRefusal(state, { listId, ...(ctx.params['bookingId'] !== undefined ? { bookingId: ctx.params['bookingId'] } : {}) })
+    },
+    run: (api, ctx) => {
+      const listId = ctx.params['listId']
+      if (listId === undefined) return { ok: false, message: 'Open a List or Booking' }
+      const res = officeResolvesAlert(api, { listId, ...(ctx.params['bookingId'] !== undefined ? { bookingId: ctx.params['bookingId'] } : {}) })
+      return res.ok ? { ok: true, message: 'The office resolved your alert.' } : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: "PWA only: the framed build plays the office in Admin (Notifications, Resolve).",
   },
   // ── Admin · Day and Notifications: a colleague's own move (catch-up Phase 32) ──
   {

@@ -109,7 +109,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v28: catch-up Phase 32a: the single-Booking move; one appended seed Booking
+/** v29: catch-up Phase 32b: unavailability is never a conflict. Dr Rutherford's
+ *  Wed 22 Jul AM List is seeded as a returned Draft List (origin
+ *  `unavailableReturn`, a `draftList.detach` audit row), and the `availability`
+ *  conflict kind is gone, so a v28 store's stale availability conflicts must not
+ *  survive. Reseeds on load.
+ * v28: catch-up Phase 32a: the single-Booking move; one appended seed Booking
  *  (BK0162, the acceptance beat) and the pool's `bookingMoved` kind (a v27
  *  store, which lacks the Booking, reseeds).
  * v27: catch-up Phase 38a: browsable history January to March 2026 (twelve
@@ -196,7 +201,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 28
+export const PERSIST_VERSION = 29
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

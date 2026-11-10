@@ -125,7 +125,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
         {/* Catch-up Phase 30: a hospital closed that day warns, never blocks (OQ-09). */}
-        <ConflictCallout conflicts={closures} anaesthetistId={list.anaesthetistId} hospitalId={hospitalId} shot="edit-list-conflict-warning" />
+        <ConflictCallout conflicts={closures} hospitalId={hospitalId} shot="edit-list-conflict-warning" />
         {/* Catch-up Phase 17: warn, never block. Only a changed surgeon warns. */}
         <NotPreferredWarning warning={pairingWarning} shot="edit-list-pairing-warning" />
         <Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Save list anyway' : 'Save list'}</Button>

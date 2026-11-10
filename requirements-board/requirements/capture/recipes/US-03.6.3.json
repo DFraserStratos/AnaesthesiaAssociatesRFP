@@ -1,0 +1,235 @@
+{
+  "id": "US-03.6.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "alert-office",
+      "app": "web",
+      "caption": "Alert the office with a note; it stays until someone ticks it",
+      "start": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "states": [
+        {
+          "state": "action",
+          "caption": "Alert the office on her Booking",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"alert-office-action\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"alert-office-action\"]"
+          ]
+        },
+        {
+          "state": "note",
+          "caption": "A note for the office, required",
+          "steps": [
+            {
+              "click": "[data-shot=\"alert-office-action\"] >> role=button[name=\"Alert the office\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=\"alert-office-sheet\"] textarea",
+              "value": "Not sure the funder is right for this one."
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"alert-office-sheet\"]"
+          ]
+        },
+        {
+          "state": "sent",
+          "caption": "Sent: the office has been alerted, with her note",
+          "steps": [
+            {
+              "click": "[data-shot=\"alert-office-action\"] >> role=button[name=\"Alert the office\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=\"alert-office-sheet\"] textarea",
+              "value": "Not sure the funder is right for this one."
+            },
+            {
+              "click": "[data-shot=\"alert-office-send\"] button"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=\"alert-office-done\"] >> role=button[name=\"Done\"]"
+            },
+            {
+              "wait": "[data-shot=\"alert-office-sent\"]"
+            },
+            {
+              "scroll": "[data-shot=\"alert-office-sent\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"alert-office-sent\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "alert-office",
+      "app": "mobile",
+      "caption": "Alert the office with a note; it stays until someone ticks it",
+      "start": "/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "states": [
+        {
+          "state": "action",
+          "caption": "Alert the office on her Booking",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"alert-office-action\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"alert-office-action\"]"
+          ]
+        },
+        {
+          "state": "note",
+          "caption": "A note for the office, required",
+          "steps": [
+            {
+              "click": "[data-shot=\"alert-office-action\"] >> role=button[name=\"Alert the office\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=\"alert-office-sheet\"] textarea",
+              "value": "Not sure the funder is right for this one."
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"alert-office-sheet\"]"
+          ]
+        },
+        {
+          "state": "sent",
+          "caption": "Sent: the office has been alerted, with her note",
+          "steps": [
+            {
+              "click": "[data-shot=\"alert-office-action\"] >> role=button[name=\"Alert the office\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=\"alert-office-sheet\"] textarea",
+              "value": "Not sure the funder is right for this one."
+            },
+            {
+              "click": "[data-shot=\"alert-office-send\"] button"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=\"alert-office-done\"] >> role=button[name=\"Done\"]"
+            },
+            {
+              "wait": "[data-shot=\"alert-office-sent\"]"
+            },
+            {
+              "scroll": "[data-shot=\"alert-office-sent\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"alert-office-sent\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "alert-office",
+      "app": "admin",
+      "caption": "Alert the office with a note; it stays until someone ticks it",
+      "start": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "states": [
+        {
+          "state": "notice",
+          "caption": "Admin Notifications: the alert with its note, active until someone ticks it",
+          "steps": [
+            {
+              "click": "[data-shot=\"alert-office-action\"] >> role=button[name=\"Alert the office\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=\"alert-office-sheet\"] textarea",
+              "value": "Not sure the funder is right for this one."
+            },
+            {
+              "click": "[data-shot=\"alert-office-send\"] button"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "goto": "/admin/notifications"
+            },
+            {
+              "wait": "[data-shot=\"notification-alert-note\"]"
+            }
+          ],
+          "highlight": [
+            "[data-notification-row]:has([data-shot=\"notification-alert-note\"])"
+          ]
+        },
+        {
+          "state": "ticked",
+          "caption": "Ticked resolved on the Booking itself, where the office works",
+          "steps": [
+            {
+              "click": "[data-shot=\"alert-office-action\"] >> role=button[name=\"Alert the office\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=\"alert-office-sheet\"] textarea",
+              "value": "Not sure the funder is right for this one."
+            },
+            {
+              "click": "[data-shot=\"alert-office-send\"] button"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "goto": "/admin/notifications"
+            },
+            {
+              "click": "[data-notification-row] >> role=button[name=\"Open Booking\"]"
+            },
+            {
+              "wait": "[data-shot=\"office-alert-line\"]"
+            },
+            {
+              "scroll": "[data-shot=\"office-alert-line\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"office-alert-line\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

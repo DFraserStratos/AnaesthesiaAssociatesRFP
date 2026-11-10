@@ -46,7 +46,7 @@ import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type R
 import { projectedListId, slotIdFor } from '../slots'
 import { isClosedKey, SEED_STATUS } from '../slotStatus'
 import { reconcileAllConflicts } from '../conflicts'
-import { isAssignedList } from '../draftLists'
+import { draftFromActive, isAssignedList } from '../draftLists'
 import { clearSlot, listInSlotOf, placeList, seedRecordedWindow, setSlot } from './recordedWindow'
 import {
   ANAE,
@@ -261,17 +261,21 @@ function applyDesignFixups({ slots, lists }: Canvas): void {
 }
 
 /**
- * The Wed 22 Jul conflicts, as real facts (catch-up Phase 30; replaces Phase
- * 06's two fabricated messages). Both are flagged by the one rule at the seed's
- * last step (`reconcileAllConflicts`), so they clear the way live ones do:
- * - Dr Rutherford phoned in sick for Wed 22 AM and the office recorded it
- *   (OQ-81 part 3, provisional: a sickness the office records keeps the List
- *   and its Bookings and is a conflict). His Christchurch Eye Surgery List
- *   stays in the session. S2 Beat 3 covers it from the Conflicts screen.
+ * The Wed 22 Jul facts (catch-up Phase 30; re-seeded in 32b):
+ * - Dr Rutherford phoned in sick for Wed 22 AM and the office recorded it at
+ *   07:40. Unavailability is never a conflict (D59, OQ-81 part 3 answered): in
+ *   the same step the office returned his Christchurch Eye Surgery List, so it
+ *   waits as a Draft List (same id, origin `unavailableReturn`), and his
+ *   session reads Unavailable with the note. S2 Beat 3 assigns it from the
+ *   Draft Lists to Dr Sharma, whose Wed 22 AM is Free.
  * - Southern Cross is closed on Wed 22 (`HH900`, in `HOSPITAL_HOLIDAYS`), so
- *   every List there that day is flagged.
+ *   every List there that day is flagged by the one rule at the seed's last
+ *   step (`reconcileAllConflicts`): the conflicts the Conflicts screen shows.
  * Tue 21 and every Souter session stay untouched.
  */
+/** The office user the seeded office records name. */
+const SEED_OFFICE_WHO = 'Kirsty W.'
+
 export const SEED_SICKNESS = {
   anaesthetistId: ANAE.rutherford,
   dateISO: '2026-07-22',
@@ -286,6 +290,29 @@ function applyWed22Facts({ slots }: Canvas): void {
     status: SEED_STATUS.unavailable,
     note: SEED_SICKNESS.note,
   })
+}
+
+/** Dr Rutherford's returned Wed 22 AM List (catch-up Phase 32b; D59): the List id the sickness returned to the office. */
+export const SEED_SICKNESS_LIST_ID = projectedListId(SEED_SICKNESS.anaesthetistId, SEED_SICKNESS.dateISO, SEED_SICKNESS.session)
+
+/**
+ * The office's return of Dr Rutherford's List when it recorded his sickness
+ * (catch-up Phase 32b): the List becomes a Draft List through the store's own
+ * shape (`draftFromActive`), and the session's own times go back to the
+ * defaults, as `detachListToDraft` leaves them. Run after the Bookings are
+ * built, so the seeded RNG stream is untouched. RNG-free.
+ */
+function applySicknessReturn({ lists, slots }: Canvas): void {
+  const list = lists[SEED_SICKNESS_LIST_ID]
+  if (list === undefined || !isAssignedList(list)) throw new Error(`seed: ${SEED_SICKNESS_LIST_ID} is not an assigned List`)
+  const slot = slots[list.slotId]
+  if (slot !== undefined && (slot.startTime !== undefined || slot.endTime !== undefined)) {
+    const next = { ...slot }
+    delete next.startTime
+    delete next.endTime
+    slots[slot.id] = next
+  }
+  lists[list.id] = draftFromActive(list, { origin: 'unavailableReturn', by: SEED_OFFICE_WHO, atISO: SEED_SICKNESS.recordedAtISO })
 }
 
 /**
@@ -396,6 +423,9 @@ function buildSeedInternal(): SeedBuild {
     if (list !== undefined && list.state !== 'DRAFT') lists[id] = { ...list, state: 'SUBMITTED' }
   }
 
+  // Catch-up Phase 32b: the sickness the office recorded returned Rutherford's List (D59).
+  applySicknessReturn(canvas)
+
   const patients = buildPatients(SEED)
 
   const anaesthetistsRec = byId(ANAESTHETISTS, (a) => a.registrationNumber)
@@ -442,7 +472,7 @@ function buildSeedInternal(): SeedBuild {
   for (const p of moveBookings.procedures) proceduresRec[p.id] = p
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
-  const reconciled = reconcileAllConflicts(lists, { slots, statuses: slotStatuses, holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
+  const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
   for (const [id, l] of Object.entries(reconciled)) lists[id] = l
   const sicknessSlot = slots[slotIdFor(SEED_SICKNESS.anaesthetistId, SEED_SICKNESS.dateISO, SEED_SICKNESS.session)]!
   const audit = buildSeedAudit({
@@ -450,10 +480,22 @@ function buildSeedInternal(): SeedBuild {
       ...bookingsBuild.audit,
       ...seedDraftListAudit(seededDraftLists),
       {
+        id: 'seed-sickness-return',
+        entityType: 'list',
+        entityId: SEED_SICKNESS_LIST_ID,
+        who: SEED_OFFICE_WHO,
+        role: 'office',
+        source: 'office',
+        action: 'draftList.detach',
+        atISO: SEED_SICKNESS.recordedAtISO,
+        before: { state: 'ACTIVE', anaesthetistId: SEED_SICKNESS.anaesthetistId, slotId: sicknessSlot.id },
+        after: { state: 'DRAFT', anaesthetistId: null, slotId: null, origin: 'unavailableReturn' },
+      },
+      {
         id: 'seed-sickness',
         entityType: 'session',
         entityId: sicknessSlot.id,
-        who: 'Kirsty W.',
+        who: SEED_OFFICE_WHO,
         role: 'office',
         source: 'office',
         action: 'session.status',

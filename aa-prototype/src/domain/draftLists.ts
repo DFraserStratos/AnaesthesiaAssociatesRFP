@@ -19,6 +19,7 @@ import type {
   AnaesthetistId,
   AssignedList,
   DraftList,
+  DraftOrigin,
   IsoDateTime,
   List,
   RecurringBooking,
@@ -235,13 +236,11 @@ export function answeringLists(lists: Readonly<Record<string, List>>): Map<strin
 }
 
 // ---------------------------------------------------------------------------
-// Assign warnings (US-01.6.3, US-01.5.2): one wording for the sheet and the action
+// Assign warnings (US-01.6.3, US-01.5.2): one wording for the sheet and the action.
+// A closed session is refused, not warned (catch-up Phase 32b, D59).
 // ---------------------------------------------------------------------------
 
 export const DRAFT_ASSIGN_WARNINGS = {
-  /** A closed session (Unavailable, Holiday or any closed status): warn, never refuse. */
-  closedSession: (who: string, statusLabel: string) =>
-    `${who} is on ${statusLabel} for this session. Assigning flags a conflict on the List. Check with ${who} first.`,
   /** The hospital is closed that day: the List keeps Phase 30's conflict. */
   hospitalHoliday: (hospitalName: string) => `${hospitalName} is closed that day (hospital holiday). The List keeps its conflict.`,
 }
@@ -256,4 +255,40 @@ export function nextWeekday(todayISO: string, weekday: number): string {
   let d = addDays(parseISO(todayISO), 1)
   while (d.getDay() !== weekday) d = addDays(d, 1)
   return format(d, 'yyyy-MM-dd')
+}
+
+// ---------------------------------------------------------------------------
+// ACTIVE back to DRAFT (EP-07; catch-up Phases 32 and 32b)
+// ---------------------------------------------------------------------------
+
+/**
+ * The Draft List an ACTIVE List becomes when it goes back to the office (an
+ * anaesthetist's move or return, or the office marking its session not
+ * available; US-01.4.3, US-01.5.5, D59): the same id, Bookings, notes, holiday
+ * conflicts and `recurringBookingId`; no anaesthetist and no Slot; a fresh
+ * draft trail. Pure: the store's `detachListToDraft` and the seed's returned
+ * sickness List (catch-up Phase 32b) both build it here, so they cannot drift.
+ */
+export function draftFromActive(
+  list: AssignedList,
+  options: { origin: Extract<DraftOrigin, 'movedToOffice' | 'unavailableReturn'>; by: string; atISO: string; fromAnaesthetistId?: string },
+): DraftList {
+  const { slotId: _slotId, anaesthetistId, state: _state, ...rest } = list
+  void _slotId
+  void _state
+  return {
+    ...rest,
+    state: 'DRAFT',
+    conflicts: list.conflicts.filter((c) => c.kind === 'holiday'),
+    draft: {
+      origin: options.origin,
+      sinceISO: options.atISO,
+      by: options.by,
+      fromAnaesthetistId: options.fromAnaesthetistId ?? anaesthetistId,
+      // A List assigned from a clash keeps answering for that recurring booking's day.
+      ...(list.draft?.projectedFor !== undefined
+        ? { projectedFor: { ...list.draft.projectedFor, anaesthetistId: list.draft.projectedFor.anaesthetistId ?? list.draft.fromAnaesthetistId ?? anaesthetistId } }
+        : {}),
+    },
+  }
 }

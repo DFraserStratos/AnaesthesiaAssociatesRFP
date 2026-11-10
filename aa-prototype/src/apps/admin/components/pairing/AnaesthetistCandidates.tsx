@@ -22,9 +22,11 @@ import {
   rankAnaesthetistCandidates,
   type RankedCandidate,
 } from '../../../../domain/pairingPreferences'
-import type { PriorityTier } from '../../../../domain/types'
+import type { PriorityTier, Session, Slot } from '../../../../domain/types'
 import { matchesNameQuery, titledSurname } from '../../../../shared/format'
 import { NameSearchBox, Segmented } from '../../../../shared/ui'
+import { StatusChip } from '../../../../shared'
+import { InlineDemoTrigger } from '../../../../shared/demoTriggers'
 import { useAppStore } from '../../../../store'
 import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
@@ -179,5 +181,60 @@ export function CandidateRow({
       <TierPill tier={candidate.tier} />
       {trailing !== undefined && trailing !== null && <span style={{ marginLeft: 4 }}>{trailing}</span>}
     </button>
+  )
+}
+
+/**
+ * A colleague whose session is marked not available (catch-up Phase 32b;
+ * US-01.6.3, D59): shown so the office sees who is out, never selectable. A
+ * neutral row (a labelled group, not a button; no warning colour): the office
+ * never assigns or moves a List onto it. It is made available first, with the
+ * anaesthetist's agreement; the colleague stand-in (a badged demo trigger)
+ * plays that agreement on the row.
+ */
+export function ClosedColleagueRow({ slotId, tier }: { slotId: string; tier?: PriorityTier }) {
+  const slot = useAppStore((s) => s.schedule.slots[slotId])
+  const fullName = useAppStore((s) => (slot !== undefined ? s.masters.anaesthetists[slot.anaesthetistId]?.name : undefined))
+  if (slot === undefined) return null
+  const name = surnameFirst(fullName ?? slot.anaesthetistId)
+  return (
+    <div
+      role="group"
+      aria-label={`${name}: not available this session`}
+      data-candidate-closed={slot.anaesthetistId}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: radius.card, border: `1px dashed ${neutral.lineStrong}`, background: neutral.bg, flexWrap: 'wrap' }}
+    >
+      <span style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>{name}</span>
+        <span style={{ fontSize: 12, color: neutral.mist }}>Not available this session</span>
+      </span>
+      <StatusChip status={slot.status} />
+      {tier !== undefined && <TierPill tier={tier} />}
+      <InlineDemoTrigger id="ask-colleague-make-available" choiceId={slotId} label={`Ask ${titledSurname(fullName ?? '')} to make this session available`} />
+    </div>
+  )
+}
+
+/**
+ * The office's collapsed "Not available" group under a picker (Reassign, the
+ * office's status sheet): the colleagues whose session that day is closed and
+ * empty (`closedEmptyColleagueSlots`), read only, narrowed by the type-ahead.
+ */
+export function NotAvailableColleagues({ slots, session, query, shot }: { slots: readonly Slot[]; session: Session; query: string; shot: string }) {
+  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const shown = slots.filter((x) => matchesNameQuery(anaesthetists[x.anaesthetistId]?.name ?? '', query))
+  if (shown.length === 0) return null
+  return (
+    <details data-shot={shot} style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '8px 12px' }}>
+      <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate }}>Not available ({shown.length})</summary>
+      <div style={{ fontSize: 12, color: neutral.mist, margin: '6px 0 8px' }}>
+        Their {session} session is marked not available. They need to make it available before a List can go there.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {shown.map((x) => (
+          <ClosedColleagueRow key={x.id} slotId={x.id} />
+        ))}
+      </div>
+    </details>
   )
 }

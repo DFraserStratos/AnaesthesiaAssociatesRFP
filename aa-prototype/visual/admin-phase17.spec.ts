@@ -12,7 +12,8 @@ import { test, expect, type Page } from '@playwright/test'
 
 const CHEN_TUE_PM = 'L-45178-2026-07-21-PM'
 const SHARMA_TUE_AM = 'L-41267-2026-07-21-AM'
-const RUTHERFORD_WED_AM = 'L-29104-2026-07-22-AM'
+// Dr Souter's Wed 22 AM (Mr Whitford): Rutherford's own Wed 22 AM List is a returned Draft List since catch-up Phase 32b.
+const RUTHERFORD_WED_AM = 'L-34821-2026-07-22-AM'
 
 async function openList(page: Page, dateISO: string, listId: string) {
   await page.goto(`/admin/day/${dateISO}`)

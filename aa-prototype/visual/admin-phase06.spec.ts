@@ -108,49 +108,34 @@ test('admin mini calendar supports keyboard date navigation', async ({ page }) =
 })
 
 test('admin phase 06 list reassignment', async ({ page }) => {
-  await page.goto('/admin')
-  await page.waitForLoadState('networkidle')
-  await page.locator('input[type="date"]').fill('2026-07-22')
-  await page.waitForTimeout(300)
-
-  // S2 Beat 3: Rutherford phoned in sick (the office recorded Wed 22 AM as
-  // Unavailable, catch-up Phase 30). His availability conflict must not follow
-  // the List into Sharma's open AM session; the vacated session keeps its
-  // Unavailable status by default ("Keep as is").
-  const rutherfordRow = page.getByText('Rutherford, James', { exact: true }).locator('..')
-  await rutherfordRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
-  await expect(page.getByText(/Dr Rutherford is marked .+ for this session\. Note: unwell, short notice\./)).toBeVisible()
-  await page.getByRole('button', { name: 'Reassign list', exact: true }).click()
-  await expect(page.getByText(/whose .* session is free/)).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/a-07-reassign-pick.png', fullPage: true })
-  await page.getByRole('button', { name: /Sharma, Priya.*Free AM/ }).click()
-  await expect(page.getByText(/stays Unavailable unless you mark it otherwise/)).toBeVisible()
-  await expect(page.getByText(/Proposed reading|regenerat|absorb/i)).toHaveCount(0)
-  const vacated = page.locator('select[data-shot="reassign-vacated"]')
-  await expect(vacated).toHaveValue('unavailable')
-  await page.screenshot({ path: 'visual/shots/a-08-reassign-confirm.png', fullPage: true })
-  await page.getByRole('button', { name: 'Confirm reassignment', exact: true }).click()
-  await expect(page.getByTestId('list-reassignment-overlay')).toContainText('List reassigned')
-  await page.waitForTimeout(400)
-  await page.screenshot({ path: 'visual/shots/a-09-reassign-success.png', fullPage: true })
-  await expect(page.getByTestId('list-reassignment-overlay')).toHaveCount(0)
-
-  const sharmaRow = page.getByText('Sharma, Priya', { exact: true }).locator('..')
-  await sharmaRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
-  const drawer = page.getByTestId('admin-list-drawer')
-  await expect(drawer.getByText('Sharma, Priya', { exact: true })).toBeVisible()
-  await expect(drawer.getByText('Anaesthetist unavailable', { exact: true })).toHaveCount(0)
-  await expect(drawer.getByText(/is marked .+ for this session/)).toHaveCount(0)
-  await drawer.getByRole('button', { name: 'History', exact: true }).click()
-  await expect(page.getByText('List reassigned', { exact: true })).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/a-10-reassigned.png', fullPage: true })
-  await page.keyboard.press('Escape')
+  // S2 Beat 3 since catch-up Phase 32b (D59): Rutherford phoned in sick and the
+  // office returned his Wed 22 AM List, so it waits in the Draft Lists with no
+  // conflict. The office assigns it to Dr Sharma from the tier-ordered picker.
   await page.goto('/admin/day/2026-07-22')
   await page.waitForLoadState('networkidle')
-  // Rutherford's vacated AM session is now Unavailable, an empty session with no List.
   const vacatedBlock = page.locator('button[data-slot-id="S-29104-2026-07-22-AM"]')
   await expect(vacatedBlock).toContainText('Unavailable')
   await expect(vacatedBlock).not.toHaveAttribute('data-list-id', /.+/)
+  await page.locator('[data-draft-block="L-29104-2026-07-22-AM"]').click()
+  const drawer = page.locator('[data-shot="admin-draft-list-drawer"]')
+  await expect(drawer).toContainText('Returned: anaesthetist unavailable')
+  await page.screenshot({ path: 'visual/shots/a-07-reassign-pick.png', fullPage: true })
+  await drawer.locator('[data-available="41267"]').getByRole('button', { name: 'Assign' }).click()
+  await expect(page.getByText(/Proposed reading|regenerat|absorb|flags a conflict/i)).toHaveCount(0)
+  await page.screenshot({ path: 'visual/shots/a-08-reassign-confirm.png', fullPage: true })
+  await page.getByRole('button', { name: 'Assign Draft List', exact: true }).click()
+  await expect(page.getByText('Draft List assigned')).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/a-09-reassign-success.png', fullPage: true })
+  await page.keyboard.press('Escape')
+  await page.goto('/admin/day/2026-07-22')
+  await page.waitForLoadState('networkidle')
+  const sharmaAm = page.locator('button[data-slot-id="S-41267-2026-07-22-AM"]')
+  await expect(sharmaAm).toHaveAttribute('data-list-id', 'L-29104-2026-07-22-AM')
+  await sharmaAm.click()
+  const listDrawer = page.getByTestId('admin-list-drawer')
+  await expect(listDrawer.getByText('Sharma, Priya', { exact: true })).toBeVisible()
+  await expect(listDrawer.getByText(/Anaesthetist unavailable|is marked .+ for this session/)).toHaveCount(0)
+  await page.screenshot({ path: 'visual/shots/a-10-reassigned.png', fullPage: true })
 })
 
 test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {

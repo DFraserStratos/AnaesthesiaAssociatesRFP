@@ -39,22 +39,20 @@
       ]
     },
     {
-      "name": "unavailable-conflict",
+      "name": "unavailable-draft",
       "app": "admin",
-      "caption": "A Booking on an unavailable anaesthetist's List is accepted and flagged",
+      "caption": "Unavailability is never a conflict: a sick anaesthetist's session reads Unavailable and the List waits for the office as a Draft List",
       "start": "/admin/day/2026-07-22",
       "states": [
         {
           "steps": [
             {
-              "click": "button[data-list-id=\"L-29104-2026-07-22-AM\"]"
-            },
-            {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=\"drawer-attention\"]"
+            "button[data-slot-id=\"S-29104-2026-07-22-AM\"]",
+            "[data-draft-block=\"L-29104-2026-07-22-AM\"]"
           ]
         }
       ]
@@ -62,13 +60,13 @@
     {
       "name": "phone-advice-warning",
       "app": "admin",
-      "caption": "Booking accepted, List flagged as a conflict",
-      "start": "/admin/day/2026-07-21",
+      "caption": "A Booking at a closed hospital is accepted, and the List flagged as a conflict",
+      "start": "/admin/day/2026-07-22",
       "states": [
         {
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-38455-2026-07-21-AM\"]"
+              "click": "button[data-slot-id=\"S-41267-2026-07-22-AM\"]"
             },
             {
               "wait": 400
@@ -78,6 +76,13 @@
             },
             {
               "wait": 400
+            },
+            {
+              "select": "[data-shot=\"assign-hospital\"]",
+              "value": "H-SX"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [

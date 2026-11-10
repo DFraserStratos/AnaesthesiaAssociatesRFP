@@ -130,6 +130,7 @@ export function AdminDayRoute() {
           onSeeAllDraftLists={() => navigate('/admin/draft-lists')}
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
+          onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}
         />
       </div>
     </>
@@ -268,11 +269,11 @@ function openNotificationTarget(
   else if (target.kind === 'booking') openBooking(target.dateISO, target.bookingId)
 }
 
-/** The shared notification pool (catch-up Phase 32; US-13.8.1) — `/admin/notifications` (`?page=`). */
+/** The shared notification pool (catch-up Phase 32; US-13.8.1, US-13.8.3) — `/admin/notifications` (`?page=`, `?resolved=1`). */
 export function AdminNotificationsRoute() {
   const ctx = useAdminOutlet()
   const navigate = useNavigate()
-  return <NotificationsScreen onOpen={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))} />
+  return <NotificationsScreen actor={ctx.actor} onOpen={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))} />
 }
 
 export function AdminBillingRoute() {

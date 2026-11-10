@@ -49,7 +49,37 @@
           "highlight": [
             "[data-shot=admin-assign-draft-list]"
           ],
-          "caption": "Assign Draft List, Everyone: Free, Not preferred, Not available and Already has a List, tier-ordered"
+          "caption": "Assign Draft List, Everyone: Free by tier then Preferred, Not preferred apart, Not available shown but never selectable"
+        },
+        {
+          "state": "not-available",
+          "caption": "A colleague marked unavailable cannot be picked; the session is made available first, with their agreement",
+          "steps": [
+            {
+              "goto": "/admin/draft-lists"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-draft-list-row=\"LD-RCB016-2026-07-21-AM\"] >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Everyone\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=\"candidates-not-available\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"candidates-not-available\"] [data-candidate-closed=\"38455\"]"
+          ]
         },
         {
           "state": "warning",
@@ -88,7 +118,7 @@
           "highlight": [
             "[data-shot=admin-assign-draft-list]"
           ],
-          "caption": "Step 2: the warnings stack and the button reads Assign anyway"
+          "caption": "Step 2: a not-preferred pairing warns and the button reads Assign anyway; an unavailable session is never offered"
         },
         {
           "state": "assigned",

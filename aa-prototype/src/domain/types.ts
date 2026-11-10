@@ -436,21 +436,18 @@ export interface ContractPrice {
 /**
  * A conflict on a List (catch-up Phase 30; US-01.5.2, US-01.5.4; OQ-09 soft
  * warning, never a block). Derived from facts, never stamped: a List conflicts
- * when its hospital is closed on its date (`holiday`) or its Slot's status is
- * closed (`availability`). `domain/conflicts.ts` holds the rule and the
- * wording; `mutate()` reconciles every List whose facts a mutation touched,
- * so renaming a holiday or a status changes the text with no write.
- * `cause` is the stable key a clear is matched on:
- * `holiday:<holidayId>` or `availability:<slotId>:<statusKey>`.
+ * when its hospital is closed on its date (`holiday`). An anaesthetist's
+ * unavailability is never a conflict (D59; catch-up Phase 32b).
+ * `domain/conflicts.ts` holds the rule and the wording; `mutate()` reconciles
+ * every List whose facts a mutation touched, so renaming a holiday changes the
+ * text with no write. `cause` is the stable key a clear is matched on:
+ * `holiday:<holidayId>`.
  */
 export interface ListConflict {
-  kind: 'availability' | 'holiday'
+  kind: 'holiday'
   cause: string
   raisedAtISO: IsoDateTime
   holidayId?: string
-  slotId?: SlotId
-  /** The Slot status's fixed ID (Phase 29), never its label. */
-  statusKey?: SlotStatusKey
 }
 
 /**
@@ -476,27 +473,35 @@ export type OwnMoveCause = 'move' | 'unavailable'
  * What a notification is about. `listMoved`: an anaesthetist moved her own List
  * (Phase 32, always posted). `bookingMoved`: she moved a single Booking to a
  * colleague and ticked "Tell the office" (Phase 32a, optional, D58).
+ * `officeAlert`: she asked the office to check a List or a Booking, with a
+ * note (catch-up Phase 32b; US-03.6.3, D58).
  */
-export type NotificationKind = 'listMoved' | 'bookingMoved'
+export type NotificationKind = 'listMoved' | 'bookingMoved' | 'officeAlert'
 
 /**
  * One record in the Admin App's shared notification pool (catch-up Phase 32;
- * FT-13.8, US-13.8.1, US-13.8.2, DM-41). Append-only: written once, inside
- * the move's own commit, by `postNotification` alone; nothing updates or
- * deletes one. It has no per-user, read or actioned state, so every admin
- * sees the same pool (D15; OQ-79's recommendation). The date, session,
- * hospital and surgeon are a snapshot at the move, so the notice stays true
- * after the List moves again or is re-dated. It carries no pairing preference.
+ * FT-13.8, US-13.8.1, US-13.8.2, US-13.8.3, DM-41). Written once, inside its
+ * action's own commit, by `postNotification` alone; nothing deletes one. A
+ * notice is active or resolved (D58): `resolveNotification` is the one
+ * updater, writing `resolvedAt` and `resolvedBy` once, when an admin ticks it,
+ * which hides it for every admin (no per-user state). Nothing expires. The
+ * date, session, hospital and surgeon are a snapshot when it was posted, so
+ * the notice stays true after the List moves again or is re-dated. It carries
+ * no pairing preference.
  */
 export interface Notification {
   id: string
   atISO: IsoDateTime
   kind: NotificationKind
-  /** The actor's `who` (the anaesthetist who moved the List). */
+  /** The actor's `who` (the anaesthetist who moved the List or raised the alert). */
   byActor: string
+  /** The List moved, or the List the alert is about (an alert on a Booking: the Booking's List). */
   listId: ListId
-  route: OwnMoveRoute
-  cause: OwnMoveCause
+  /** Kinds `listMoved` and `bookingMoved` only. */
+  route?: OwnMoveRoute
+  /** Kinds `listMoved` and `bookingMoved` only. */
+  cause?: OwnMoveCause
+  /** The anaesthetist who moved it, or who raised the alert. */
   fromAnaesthetistId: AnaesthetistId
   /** Route `colleague` only. */
   toAnaesthetistId?: AnaesthetistId
@@ -504,12 +509,16 @@ export interface Notification {
   session: Session
   hospitalId: string
   surgeonId: string
-  /** The message the anaesthetist typed, for the office and the colleague. */
+  /** The message the anaesthetist typed, for the office and the colleague; an alert's required note. */
   message?: string
-  /** Kind `bookingMoved` only: the Booking moved (`listId` is the new List created for it). */
+  /** Kind `bookingMoved`: the Booking moved (`listId` is the new List created for it). Kind `officeAlert`: the Booking the alert is about. */
   bookingId?: BookingId
-  /** Kind `bookingMoved` only: the patient as "Riley, A." when it moved (a snapshot, like the rest). */
+  /** The patient as "Riley, A." when it was posted (a snapshot, like the rest). */
   patientName?: string
+  /** When an admin ticked it resolved (US-13.8.3); absent while active. Written once. */
+  resolvedAt?: IsoDateTime
+  /** Who ticked it (the office actor's `who`); written with `resolvedAt`. */
+  resolvedBy?: string
 }
 
 /**

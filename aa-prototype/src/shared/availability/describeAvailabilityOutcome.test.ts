@@ -8,7 +8,7 @@ import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import type { AvailabilityOutcome } from '../../store'
 
 const outcome = (over: Partial<AvailabilityOutcome> = {}): AvailabilityOutcome => ({
-  set: 0, unchanged: 0, flagged: [], cleared: [], seriesEdited: 0, leftAsIs: 0, holdingLists: 0, statusKey: 'holiday', ...over,
+  set: 0, unchanged: 0, seriesEdited: 0, leftAsIs: 0, holdingLists: 0, statusKey: 'holiday', ...over,
 })
 
 const clean = (line: string) => {
@@ -27,8 +27,8 @@ describe('describeAvailabilityOutcome', () => {
     expect(describeAvailabilityOutcome(outcome({ unchanged: 2 }), { kind: 'range', statusLabel: 'Free' })).toBe('Already Free. Nothing changed.')
   })
 
-  it('never says a List was flagged or the office told (catch-up Phase 32: her closed status over a List is asked about first)', () => {
-    const line = clean(describeAvailabilityOutcome(outcome({ set: 1, flagged: ['L1'] }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21' }))
+  it('never says a List was flagged or the office told (a closed status over a List is asked about first, for every actor)', () => {
+    const line = clean(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21' }))
     expect(line).toBe('1 session set to Unavailable on Tue 21 Jul.')
     expect(line).not.toMatch(/flagged|office/i)
   })
@@ -40,11 +40,9 @@ describe('describeAvailabilityOutcome', () => {
       .toBe('6 sessions set to On holiday. 2 Lists went first, where you chose.')
   })
 
-  it('a bookable status over a List: nothing flagged, a conflict resolved', () => {
+  it('a bookable status over a List: the List stays in place, nothing flagged', () => {
     expect(describeAvailabilityOutcome(outcome({ set: 1, holdingLists: 1 }), { kind: 'range', statusLabel: 'Free', fromISO: '2026-07-21' }))
       .toBe('1 session set to Free on Tue 21 Jul. The List stays in place.')
-    expect(describeAvailabilityOutcome(outcome({ set: 1, cleared: ['L1'], holdingLists: 1 }), { kind: 'range', statusLabel: 'Free' }))
-      .toBe("1 session set to Free. 1 List's conflict was resolved.")
   })
 
   it('a series and its deletion', () => {

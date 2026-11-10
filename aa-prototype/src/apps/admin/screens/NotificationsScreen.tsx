@@ -1,10 +1,11 @@
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
-import { useMemo } from 'react'
-import { notificationPool, type NotificationTarget } from '../../../store'
+import { useMemo, useRef } from 'react'
+import { activeNotificationCount, notificationPool, type Actor, type NotificationTarget } from '../../../store'
 import { cellStyle as cellFactory, headCellStyle as headFactory, textActionStyle } from '../tableChrome'
-import { NotificationText, usePoolState } from '../components/NotificationsCard'
+import { ActiveCount, NotificationText, usePoolState, useResolveWithTick } from '../components/NotificationsCard'
+import { FormError, TickBadge, TickButton } from '../../../shared/ui'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 const cellStyle = cellFactory()
@@ -12,34 +13,54 @@ const headCellStyle = headFactory()
 
 /**
  * The shared notification pool, in full (catch-up Phase 32; FT-13.8,
- * US-13.8.1, US-13.8.2): `/admin/notifications` (`?page=` keeps the place).
- * Newest first, `NOTIFICATION_POOL_RULE.pageSize` a page, with Newer and Older.
- * The same for every admin: there is no read, actioned or per-user state, and
- * no Clear or Done (a notification needs no action; it is not the to-do list
- * and not the Audit screen). Phase 35 adds "Draft update email" to each row.
+ * US-13.8.1, US-13.8.2, US-13.8.3): `/admin/notifications` (`?page=` keeps the
+ * place, `?resolved=1` shows resolved notices too). Newest first,
+ * `NOTIFICATION_POOL_RULE.pageSize` a page, with Newer and Older. Notices are
+ * active or resolved (D58; catch-up Phase 32b): the heading carries the active
+ * count, each active row the shared tick (`TickButton`, the To-do card's
+ * Clear), and "Show resolved" (Claude's proposal, US-13.8.3) brings resolved
+ * rows back, muted, with who resolved them and when. One admin's tick hides a
+ * notice for every admin; nothing expires; there is no un-tick. Phase 35 adds
+ * "Draft update email" to each row.
  */
-export function NotificationsScreen({ onOpen }: { onOpen: (target: NotificationTarget) => void }) {
+export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (target: NotificationTarget) => void }) {
   const state = usePoolState()
   const [params, setParams] = useSearchParams()
   const requested = Number(params.get('page') ?? '1')
   const page = Number.isFinite(requested) ? requested : 1
-  const pool = useMemo(() => notificationPool(state, { page }), [state, page])
+  const showResolved = params.get('resolved') === '1'
+  const pool = useMemo(() => notificationPool(state, { page, showResolved }), [state, page, showResolved])
+  const count = useMemo(() => activeNotificationCount(state), [state])
+  const heading = useRef<HTMLHeadingElement>(null)
+  // After a tick the row leaves; focus goes to the heading, not the page.
+  const { resolving, resolve, error } = useResolveWithTick(actor, () => heading.current?.focus())
+  const office = actor.role === 'office'
 
-  function go(page: number) {
-    setParams(page <= 1 ? {} : { page: String(page) }, { replace: true })
+  function setQuery(next: { page?: number; resolved?: boolean }) {
+    const p = next.page ?? page
+    const r = next.resolved ?? showResolved
+    setParams({ ...(p > 1 ? { page: String(p) } : {}), ...(r ? { resolved: '1' } : {}) }, { replace: true })
   }
+  const go = (p: number) => setQuery({ page: p })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
       <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Notifications</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
-          Lists anaesthetists have moved themselves, newest first. Everyone in the office sees the same notifications.
+        <h1 ref={heading} tabIndex={-1} style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: 10, outline: 'none' }}>
+          Notifications
+          <ActiveCount count={count} shot="admin-notifications-page-count" />
+        </h1>
+        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 760, lineHeight: '19px' }}>
+          Lists anaesthetists have moved themselves, and their alerts to the office, newest first. A notice stays until someone resolves it; resolving it hides it for everyone in the office.
         </div>
-        {/* OQ-79, open: the pool's one provisional caption (NOTIFICATION_POOL_RULE). */}
-        <div data-shot="admin-notifications-provisional" style={{ fontSize: 12, color: neutral.mist, marginTop: 6 }}>
-          What else shows here, and for how long, is still being confirmed with AA.
-        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <label data-shot="admin-notifications-show-resolved" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate, cursor: 'pointer' }}>
+          <input type="checkbox" checked={showResolved} onChange={(e) => setQuery({ page: 1, resolved: e.target.checked })} />
+          Show resolved
+        </label>
+        <FormError message={error} />
       </div>
 
       <div data-shot="admin-notifications-table" style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
@@ -47,12 +68,13 @@ export function NotificationsScreen({ onOpen }: { onOpen: (target: NotificationT
           <colgroup>
             <col style={{ width: 150 }} />
             <col />
-            <col style={{ width: 190 }} />
+            <col style={{ width: 170 }} />
+            <col style={{ width: 120 }} />
             <col style={{ width: 120 }} />
           </colgroup>
           <thead>
             <tr>
-              {['When', 'What happened', 'By', ''].map((h, i) => (
+              {['When', 'What happened', 'By', '', ''].map((h, i) => (
                 <th key={i} style={headCellStyle}>{h}</th>
               ))}
             </tr>
@@ -60,18 +82,27 @@ export function NotificationsScreen({ onOpen }: { onOpen: (target: NotificationT
           <tbody>
             {pool.rows.length === 0 && (
               <tr>
-                <td style={{ ...cellStyle, color: neutral.slate }} colSpan={4}>
-                  No notifications yet. When an anaesthetist moves a List, it shows here.
+                <td style={{ ...cellStyle, color: neutral.slate }} colSpan={5}>
+                  {showResolved ? 'No notifications yet.' : 'Nothing waiting. When an anaesthetist moves a List or alerts the office, it shows here until someone resolves it.'}
                 </td>
               </tr>
             )}
             {pool.rows.map((r) => (
-              <tr key={r.notification.id} data-notification-row={r.notification.id}>
-                <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap', color: neutral.slate }}>{format(parseISO(r.atISO), 'EEE d MMM HH:mm')}</td>
+              <tr key={r.notification.id} data-notification-row={r.notification.id} data-notification-resolved={r.resolved ? 'true' : undefined} style={{ background: r.resolved ? neutral.bg : undefined, opacity: resolving.has(r.notification.id) ? 0.55 : 1, transition: 'opacity 200ms' }}>
+                <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap', color: r.resolved ? neutral.mist : neutral.slate }}>{format(parseISO(r.atISO), 'EEE d MMM HH:mm')}</td>
                 <td style={cellStyle}>
                   <NotificationText row={r} />
                 </td>
-                <td style={cellStyle}>{r.by}</td>
+                <td style={{ ...cellStyle, color: r.resolved ? neutral.slate : undefined }}>{r.by}</td>
+                <td style={{ ...cellStyle, textAlign: 'right' }}>
+                  {office && !r.resolved && (resolving.has(r.notification.id) ? (
+                    <span style={{ display: 'inline-flex' }}><TickBadge size={30} animate /></span>
+                  ) : (
+                    <TickButton compact shot="notification-tick" label={`Resolve notice: ${r.text}`} onClick={() => resolve(r.notification.id)}>
+                      Resolve
+                    </TickButton>
+                  ))}
+                </td>
                 <td style={{ ...cellStyle, textAlign: 'right' }}>
                   {r.target.kind !== 'gone' && (
                     <button type="button" onClick={() => onOpen(r.target)} style={textActionStyle}>

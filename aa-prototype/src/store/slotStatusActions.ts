@@ -94,6 +94,15 @@ export function editSlotStatus(api: AppStoreApi, actor: Actor, key: SlotStatusKe
   const issues = validateSlotStatusDraft(value, state.masters.slotStatuses, { key })
   if (issues.length > 0) return refuse('invalidStatus', issues.join(' '))
   const next = fromDraft(key, value, existing.order, existing.retiredAtISO)
+  // Catch-up Phase 32b (D59): a List never sits on a closed session, so a status
+  // that sessions holding a List carry today or later cannot stop being bookable.
+  if (existing.bookable && !next.bookable) {
+    const held = new Set(Object.values(state.schedule.lists).flatMap((l) => (l.state !== 'DRAFT' && l.dateISO >= state.clock.todayISO ? [l.slotId] : [])))
+    const count = Object.values(state.schedule.slots).filter((sl) => sl.status === key && held.has(sl.id)).length
+    if (count > 0) {
+      return refuse('statusHoldsLists', `${count} ${count === 1 ? 'session' : 'sessions'} with this status ${count === 1 ? 'holds' : 'hold'} a List. Move ${count === 1 ? 'that List' : 'those Lists'} first, or keep the status open for bookings.`)
+    }
+  }
   const before: Record<string, unknown> = {}
   const after: Record<string, unknown> = {}
   for (const field of ['label', 'longLabel', 'description', 'colour', 'treatment', 'bookable', 'anaesthetistCanSet'] as const) {

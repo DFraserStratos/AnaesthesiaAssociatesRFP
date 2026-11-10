@@ -37,6 +37,8 @@ interface RightRailProps {
   /** Catch-up Phase 32: open a notification's List or Draft List, and the Notifications page. */
   onOpenNotification?: (target: NotificationTarget) => void
   onSeeAllNotifications?: () => void
+  /** The Notifications page with Show resolved on (catch-up Phase 32b). */
+  onShowResolvedNotifications?: () => void
 }
 
 export function RightRail(props: RightRailProps) {
@@ -50,7 +52,7 @@ export function RightRail(props: RightRailProps) {
         <DraftListsCard onOpenDraftList={props.onOpenDraftList} onSeeAll={props.onSeeAllDraftLists} />
       )}
       {props.onOpenNotification !== undefined && props.onSeeAllNotifications !== undefined && (
-        <NotificationsCard onOpen={props.onOpenNotification} onSeeAll={props.onSeeAllNotifications} />
+        <NotificationsCard actor={props.actor} onOpen={props.onOpenNotification} onSeeAll={props.onSeeAllNotifications} {...(props.onShowResolvedNotifications !== undefined ? { onShowResolved: props.onShowResolvedNotifications } : {})} />
       )}
       <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
       <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />

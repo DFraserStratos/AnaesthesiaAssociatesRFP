@@ -92,7 +92,10 @@ export {
   type OwnMoveResult,
   type OwnMoveInput,
   type UnavailableChoice,
+  type MarkUnavailableOptions,
 } from './listMoveActions'
+// Alert the office about a List or a Booking (catch-up Phase 32b; US-03.6.3).
+export { alertOffice, officeAlertRefusal, officeResolvesAlert, officeResolvesAlertRefusal, OFFICE_ALERT_NOTE_MAX, type OfficeAlertInput } from './officeAlertActions'
 // An anaesthetist moves a single Booking to a colleague (catch-up Phase 32a).
 export { moveBookingToAnaesthetist, type BookingMoveOptions, type BookingMoveResult } from './listMoveActions'
 export {
@@ -106,13 +109,21 @@ export {
   bookingMoveCandidates,
   bookingMoveCandidateRefusal,
   stageColleagueBookingMove,
+  makeAvailableRefusal,
+  makeSessionAvailableAsColleague,
+  closedColleagueSessions,
   type BookingMoveCandidate,
   BUSY_MORNING_MOVES,
   LIST_MOVE_DEMO_PERSONA,
 } from './listMoveDemo'
+export { closedEmptyColleagueSlots } from './selectors'
 export {
   notificationPool,
   latestNotifications,
+  activeNotificationCount,
+  resolveNotification,
+  activeAlertFor,
+  latestAlertFor,
   latestNotificationForList,
   movedToMe,
   movedToMeForList,

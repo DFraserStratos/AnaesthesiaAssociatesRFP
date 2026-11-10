@@ -2,17 +2,17 @@
 
 Written by `npm run capture` (the board's scripts/capture.ts) on a full run. Do not edit by hand.
 
-Scope: every story plus every feature with no stories (299 items, 299 stories). Features with stories are captured only when they have an overview screen.
+Scope: every story plus every feature with no stories (300 items, 300 stories). Features with stories are captured only when they have an overview screen.
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 152 | 138 |
+| Captured | 154 | 140 |
 | Partial | 54 | 54 |
 | Absent from the app | 59 | 59 |
 | Failed recipe | 0 | 0 |
-| No recipe | 48 | 48 |
+| No recipe | 47 | 47 |
 
-538 screenshots. Items per app: admin 133, web 69, mobile 61, simulator 35.
+550 screenshots. Items per app: admin 135, web 70, mobile 62, simulator 35.
 
 ## Failed recipes (0)
 
@@ -137,7 +137,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (48)
+## No recipe (47)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-01.1.6** Out-of-hours Lists
@@ -155,7 +155,6 @@ None.
 - **US-03.3.8** Age modifier from the patient's age
 - **US-03.3.9** RVG detail follows the pricing kind
 - **US-03.3.10** See what the price comes to
-- **US-03.6.3** Ask the office to check a Booking or List
 - **US-03.7.3** See a Procedure's events
 - **US-03.7.4** Bill a pre-op consult held in AA's room
 - **US-04.1.5** Parties
@@ -179,16 +178,16 @@ None.
 - **US-08.6.5** Credit note option on additional invoices
 - **US-08.6.6** Start a rebill from a copy of the original lines
 - **US-11.4.3** Insurance and approval number on the Booking
+- **US-13.2.4** Reconciliation status at a glance
 - **US-13.4.4** Specialties
 - **US-13.4.5** Funding tags
 - **US-13.5.3** Sign in to the anaesthetist app
 - **US-13.6.5** Practice manager and PA contacts
 - **US-13.6.6** Surgeon specialties
-- **US-13.8.3** Resolve a notice
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (152)
+## Captured (154)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -253,6 +252,7 @@ None.
 - **US-03.5.3** Adjustment reason · web, mobile
 - **US-03.6.1** Mark a Booking complete · web, mobile
 - **US-03.6.2** Incomplete Bookings listed · web, mobile
+- **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
 - **US-04.2.2** Pricing kinds · admin
 - **US-04.2.9** Organisational and individual Contracts · admin
 - **US-04.3.4** Admin sets Contracts at booking setup · admin
@@ -335,6 +335,7 @@ None.
 - **US-13.7.3** Warning flag on a Booking · mobile, web, admin
 - **US-13.8.1** See the team's notifications · admin
 - **US-13.8.2** Notify the team when an anaesthetist moves a List · admin
+- **US-13.8.3** Resolve a notice · admin
 - **US-14.1.1** Parse SIU messages · simulator, admin
 - **US-14.2.1** Internal booking model · simulator
 - **US-14.3.1** Real-time processing · simulator

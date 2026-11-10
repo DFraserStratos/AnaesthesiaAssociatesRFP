@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { Check, TriangleAlert } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
+import { TickButton } from '../ui/TickButton'
 import type { Warning } from '../../domain/warnings'
 import { isOpen } from '../../domain/warnings'
 import { clearWarning, useAppStore, type Actor } from '../../store'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import { hhmm, shortDay } from '../format'
 import { strongestOpen } from './useBookingWarnings'
 import { KIND_LABELS, STRENGTH_LABELS, warningTone } from './tone'
@@ -13,7 +14,7 @@ export function clearanceWhen(atISO: string): string {
   return `${shortDay(atISO)} ${hhmm(atISO)}`
 }
 
-/** The teal Clear button (the only action colour). A mild warning's clear is optional. */
+/** The teal Clear button: the shared tick (`TickButton`, catch-up Phase 32b). A mild warning's clear is optional. */
 export function ClearWarningButton({
   warning,
   onClear,
@@ -27,30 +28,9 @@ export function ClearWarningButton({
   label?: string
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClear}
-      aria-label={label}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        minHeight: compact ? 30 : 36,
-        padding: compact ? '0 10px' : '0 12px',
-        borderRadius: radius.ctl,
-        border: `1px solid ${accent.base}`,
-        background: neutral.surface,
-        color: accent.base,
-        fontFamily: 'inherit',
-        fontSize: compact ? 12 : 13,
-        fontWeight: 600,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <Check size={compact ? 13 : 14} aria-hidden />
+    <TickButton onClick={onClear} compact={compact} {...(label !== undefined ? { label } : {})}>
       {warning.strength === 'mild' ? 'Clear (optional)' : 'Clear'}
-    </button>
+    </TickButton>
   )
 }
 

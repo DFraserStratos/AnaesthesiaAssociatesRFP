@@ -24,6 +24,8 @@ interface SideNavProps {
   conflictBadge?: number
   /** Waiting Draft Lists (catch-up Phase 31; US-01.6.2 "one visible place") — amber, an attention count. */
   draftListBadge?: number
+  /** Active notices in the shared pool (catch-up Phase 32b; US-13.8.1) — amber, an attention count. */
+  notificationBadge?: number
   onNavigate: (section: NavSection) => void
 }
 
@@ -32,13 +34,13 @@ interface SideNavProps {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, conflictBadge = 0, draftListBadge = 0, onNavigate }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, onNavigate }: SideNavProps) {
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
     { section: 'draftLists', label: DRAFT_LISTS, badge: draftListBadge, badgeTone: 'warn' },
     { section: 'conflicts', label: 'Conflicts', badge: conflictBadge, badgeTone: 'warn' },
-    // The shared notification pool (catch-up Phase 32): no badge, it has no read state (OQ-79).
-    { section: 'notifications', label: 'Notifications' },
+    // The shared notification pool: its active notices (catch-up Phase 32b, D58; a resolved notice leaves the count).
+    { section: 'notifications', label: 'Notifications', badge: notificationBadge, badgeTone: 'warn' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
     { section: 'invoices', label: 'Invoices' },
     { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },

@@ -269,6 +269,14 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   a colleague moves one of their Bookings into her free session as a new List, with the office notice
   ticked, so the new List and the pool row show without switching persona. The move itself is plain
   product use: **Move to a colleague** on any of her Bookings (S2 Beat 3d).
+- On **Admin Day** and **Conflicts**, **Demo actions → Simulate sickness** (catch-up Phase 32b) records
+  a phoned-in sickness as the office: pick a List "to the office" or "to Dr X" and the List goes there
+  in the same step, never a conflict.
+- In the Admin **Assign Draft List** and **Reassign** pickers, each colleague marked unavailable shows
+  read only with **Ask Dr X to make this session available** (badged "Colleague stand-in"): it plays
+  that anaesthetist freeing the session, so the row becomes assignable. On a handset List or Booking,
+  **Office resolves this alert** (badged "Office stand-in") plays the office ticking her alert.
+  **Alert the office**, the tick and **Show resolved** are product actions, not demo actions.
 - **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
   actions. Say so plainly: in scope today is the St George's and Southern Cross download into a
@@ -322,15 +330,20 @@ Say:
 
 - Settled by US-01.4.1: the List moves into the colleague's free session, keeping its id, Bookings and
   history; nothing about billing is recalculated.
-- Open (OQ-84): what the vacated session shows. The prototype returns it to Free, and the office can
-  mark it Unavailable or Holiday instead. From a session already marked unavailable (a recorded
-  sickness) it keeps that status by default ("Keep as is"). On her own move the anaesthetist chooses,
-  Free by default.
+- Answered (D60, OQ-84): whoever moves a List, the anaesthetist or the office, chooses what the
+  vacated session becomes, Free or Unavailable, on every path; Free is chosen first, and when the move
+  comes from marking the session unavailable, that status is chosen first.
 - Answered (D7, OQ-39): an anaesthetist moves her own List at once, back to the office (a Draft List)
   or into a colleague's free session. Nobody accepts and the office does not confirm.
 - Answered (D15, OQ-65): every such move posts to one shared notification pool in the Admin App, the
-  same for every admin, separate from the to-do list. What else posts there, and for how long, is
-  open (OQ-79).
+  same for every admin, separate from the to-do list.
+- Answered (D58, OQ-79): notices are active or resolved. An admin ticks one (the same tick as a to-do's
+  Clear) and it is hidden for the whole office; **Show resolved** brings it back with who and when;
+  nothing expires. An anaesthetist's **Alert the office** with a note joins the pool. Whether an
+  alerted Booking may still be submitted is open (the prototype allows it).
+- Answered (OQ-102's 19 October note, D54): the office's pickers order free colleagues by tier, then
+  preferred pairing; the anaesthetist apps stay by availability alone. The names are still open
+  (OQ-102).
 - Answered (D44, OQ-43): no warning on the anaesthetist's own move. She sees colleagues by
   availability alone; pairing preferences are the office's alone and warn only on the office's paths.
 - Answered (D61, OQ-85; D54, OQ-113): she can also move a single Booking, to a colleague free in
@@ -341,20 +354,22 @@ Say:
   Holding account, the new anaesthetist claims the prepaid amount, and nothing is recalculated or
   repointed. Whoever submits a List did every procedure on it (the doer rule).
 
-### 6. Availability and holiday conflicts
+### 6. Hospital-closure conflicts (unavailability is never one)
 
 - Answered (OQ-09): a soft warning. Nothing blocks the office; the List is accepted and flagged.
-- A conflict is a List at a closed hospital, or a List (and its Bookings) in a session already marked
-  unavailable, including a sickness the office records when an anaesthetist phones in (provisional:
-  short-notice sickness is still open, OQ-81 part 3).
+- A conflict is a List at a closed hospital. An anaesthetist's unavailability, short-notice sickness
+  included, is never a conflict (D59, OQ-81 part 3 answered): whoever marks a booked session
+  unavailable, the office included, returns the List to the office or hands it to a colleague there
+  and then.
 - The List changes colour (amber, with its kind's bar and a reason line) and shows on the Conflicts
   screen across every date.
-- It clears when the clash goes (the closure moved or deleted, the session available again, the List
-  reassigned to an available anaesthetist) or when the office clears it, with an optional note and
-  "Flag again".
+- It clears when the clash goes (the closure moved or deleted, or the List's hospital changed) or when
+  the office clears it, with an optional note and "Flag again".
+- The office never assigns or moves a List onto an unavailable session: it is made available first,
+  with the anaesthetist's agreement (US-01.6.3).
 - Not conflicts: a recurring booking landing on an unavailable session becomes a Draft List (Phase 31),
-  and an anaesthetist who marks a booked session unavailable is asked first whether the List returns
-  to the office or goes to a colleague (US-01.5.5).
+  and anyone who marks a booked session unavailable is asked first whether the List returns to the
+  office or goes to a colleague (US-01.5.5).
 
 ### 7. Split-billing invoice count
 

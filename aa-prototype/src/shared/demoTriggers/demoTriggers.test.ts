@@ -12,6 +12,7 @@ import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/
 import { clearWarning, warningsForBooking } from '../../store/warnings'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
 import { setAvailabilityRange } from '../../store/availabilityActions'
+import { alertOffice } from '../../store/officeAlertActions'
 import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { SURGEON_PDFS } from '../../domain/integrations'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
@@ -68,6 +69,8 @@ describe('registry shape', () => {
       // A Master data view rides in `?view=`, which the screen publishes (catch-up Phase 31).
       const view = new URLSearchParams(path.split('?')[1] ?? '').get('view')
       if (view !== null) published['adminMasters.view'] = view
+      // The colleague stand-in shows while an Assign or Reassign picker is open (catch-up Phase 32b).
+      if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-07-22-AM'
       expect(ids(api, path.split('?')[0]!, 'bar', published), `${t.id} at ${path}`).toContain(t.id)
     }
   })
@@ -101,6 +104,64 @@ describe('route scoping', () => {
     expect(ids(api, '/admin/day/2026-07-22/bookings/BK0001')).not.toContain('simulate-sickness')
     const entry = DEMO_TRIGGERS.find((t) => t.id === 'simulate-sickness')!
     expect(entry.surfaces).toEqual(['bar'])
+  })
+
+  it('Simulate sickness (re-pointed in catch-up Phase 32b): a "to the office" row per List and a "to Dr X" row; the List goes, never a conflict', () => {
+    const api = createAppStore()
+    const t = byId('simulate-sickness')
+    const ctx = ctxFor('/admin/day/2026-07-22', { dateISO: '2026-07-22' })
+    const choices = t.choices!(api.getState(), ctx)
+    const sharma = choices.filter((c) => c.id.startsWith('L-41267-2026-07-22-PM|'))
+    expect(sharma.map((c) => c.id)).toEqual(['L-41267-2026-07-22-PM|office', 'L-41267-2026-07-22-PM|colleague'])
+    expect(sharma[0]!.label).toMatch(/, to the office$/)
+    expect(sharma[1]!.label).toMatch(/, to Dr \w+$/)
+    expect(choices.some((c) => c.id.startsWith('L-29104-2026-07-22-AM'))).toBe(false)
+    expect(t.description).not.toMatch(/provisional|conflict shows/i)
+    const office = t.run(api, ctx, sharma[0]!.id)
+    expect(office.ok).toBe(true)
+    expect(office.message).toMatch(/went back to the Draft Lists with its Bookings\. No conflict\.$/)
+    expect(api.getState().schedule.lists['L-41267-2026-07-22-PM']?.state).toBe('DRAFT')
+    const api2 = createAppStore()
+    const colleague = t.run(api2, ctx, 'L-41267-2026-07-22-PM|colleague')
+    expect(colleague.ok).toBe(true)
+    expect(colleague.message).toMatch(/went to Dr \w+ with its Bookings\. No conflict\.$/)
+    expect(api2.getState().schedule.lists['L-41267-2026-07-22-PM']?.state).toBe('ACTIVE')
+    expect(api2.getState().audit.some((a) => a.action === 'list.conflict')).toBe(false)
+  })
+
+  it('Office resolves this alert (catch-up Phase 32b): PWA only, badged, on the List and Booking routes; disabled until there is an open alert', () => {
+    const api = createAppStore()
+    const t = byId('office-resolves-alert')
+    expect(t.surfaces).toEqual(['pwa'])
+    expect(t.badge).toBe('office-stand-in')
+    const listId = SEED_LIST_IDS.souterAm21
+    expect(ids(api, `/mobile/lists/${listId}`, 'pwa')).toContain(t.id)
+    expect(ids(api, `/mobile/lists/${listId}`, 'bar')).not.toContain(t.id)
+    const ctx = ctxFor(`/mobile/lists/${listId}`, { listId })
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No open alert to the office here')
+    expect(alertOffice(api, SOUTER_ACTOR, { listId, note: 'Please check' }).ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(t.run(api, ctx)).toEqual({ ok: true, message: 'The office resolved your alert.' })
+    expect(Object.values(api.getState().notifications).find((n) => n.kind === 'officeAlert')?.resolvedBy).toBe('AA office (simulated)')
+  })
+
+  it('Ask a colleague to make their session available (catch-up Phase 32b): only while a picker is open, badged, never a session holding a List', () => {
+    const api = createAppStore()
+    const t = byId('ask-colleague-make-available')
+    expect(t.badge).toBe('colleague-stand-in')
+    expect(ids(api, '/admin/draft-lists')).not.toContain(t.id)
+    const published = { 'adminPicker.listId': 'L-29104-2026-07-22-AM' }
+    expect(ids(api, '/admin/draft-lists', 'bar', published)).toContain(t.id)
+    const ctx = ctxFor('/admin/draft-lists', {}, published)
+    const rutherford = 'S-29104-2026-07-22-AM'
+    expect(t.choices!(api.getState(), ctx).map((c) => c.id)).toContain(rutherford)
+    expect(t.disabledReason(api.getState(), ctx, rutherford)).toBeNull()
+    expect(t.disabledReason(api.getState(), ctx, `S-${'34821'}-2026-07-22-AM`)).toBe('This session holds a List')
+    const out = t.run(api, ctx, rutherford)
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/^Dr Rutherford made Wed 22 Jul AM available\./)
+    expect(api.getState().schedule.slots[rutherford]?.status).toBe('free')
+    expect(t.disabledReason(api.getState(), ctx, rutherford)).toBe('Already available')
   })
 
   it('Stage post-op shows on Dr Sharma\'s Tue 14 AM review and Booking, and nowhere else', () => {
@@ -283,8 +344,13 @@ describe('session 2 entries', () => {
     expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${active}`, { listId: active }))).toBe('Submit the List first')
   })
 
-  it('every office stand-in declares the PWA surface only', () => {
-    for (const t of DEMO_TRIGGERS.filter((x) => x.badge === 'office-stand-in' || x.badge === 'colleague-stand-in')) expect(t.surfaces).toEqual(['pwa'])
+  it('every office stand-in declares the PWA surface only; a colleague stand-in too, but for the Admin pickers\' one (catch-up Phase 32b)', () => {
+    // The anaesthetist apps run only as Dr Souter, so in Admin the presenter cannot
+    // play Dr Ngata agreeing to free his session: that one colleague stand-in is Admin's.
+    const ADMIN_COLLEAGUE_STAND_INS = ['ask-colleague-make-available']
+    for (const t of DEMO_TRIGGERS.filter((x) => x.badge === 'office-stand-in' || x.badge === 'colleague-stand-in')) {
+      expect(t.surfaces, t.id).toEqual(ADMIN_COLLEAGUE_STAND_INS.includes(t.id) ? ['bar'] : ['pwa'])
+    }
   })
 
   it('PWA Balances offers Dr Souter\'s open invoices as choices and pays the chosen one', () => {

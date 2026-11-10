@@ -134,7 +134,11 @@ test('mobile: marking a booked session Unavailable asks where its List goes', as
 
   await sheet.locator('[data-shot="move-choice-colleague"]').click()
   await sheet.locator('[data-shot="move-colleagues"] button').first().click()
-  await expect(sheet.locator('[data-shot="move-confirm"]')).toContainText('Your session: Unavailable')
+  // The vacated choice is asked here too (D60), the status being set first.
+  await expect(sheet.locator('[data-shot="move-vacated-unavailable"]')).toHaveAttribute('aria-checked', 'true')
+  await expect(sheet.locator('[data-shot="move-vacated-free"]')).toBeVisible()
+  await expect(sheet).not.toContainText('still being confirmed')
+  await page.screenshot({ path: 'visual/shots/p32-10b-mobile-unavailable-vacated.png' })
   await sheet.getByRole('button', { name: 'Move List' }).click()
   await expect(sheet.locator('[data-shot="move-done"]')).toBeVisible()
   await sheet.getByRole('button', { name: 'Done' }).click()
@@ -157,7 +161,7 @@ test('mobile: the move sheet from Find cover', async ({ page }) => {
 
 test('admin: a colleague returns a List, then a busy morning pages the pool', async ({ page }) => {
   await fresh(page, '/admin/day/2026-07-21')
-  await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('No notifications yet')
+  await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Nothing waiting')
   const one = await runDemoAction(page, 'colleague-moves-list-to-office', { choice: 'one', close: true })
   expect(one).toMatch(/returned .+ to the office\. It is now a Draft List\./)
   await expect(page.locator('[data-shot="admin-notifications-rail"] [data-notification-row]')).toHaveCount(1)
@@ -204,7 +208,7 @@ test('web: days off over two booked sessions prompt one List at a time, then app
     if (step === '1 of 2') await page.waitForTimeout(400)
     if (step === '1 of 2') await page.screenshot({ path: 'visual/shots/p32-17-web-range-prompt.png', fullPage: true })
     await sheet.locator('[data-shot="move-choice-office"]').click()
-    await expect(sheet.locator('[data-shot="move-confirm"]')).toContainText('Your session: On holiday')
+    await expect(sheet.locator('[data-shot="move-vacated-holiday"]')).toHaveAttribute('aria-checked', 'true')
     await sheet.getByRole('button', { name: 'Move List' }).click()
     await expect(sheet.locator('[data-shot="move-done"]')).toContainText('Returned to the office')
     await sheet.getByRole('button', { name: 'Done' }).click()

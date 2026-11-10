@@ -9,9 +9,11 @@ export { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID, paymen
 export { demoTriggersFor, initialChoice, type MatchedDemoTrigger } from './match'
 export { useDemoTriggers, useDemoTriggerRows, type DemoTriggerRow } from './useDemoTriggers'
 export { DemoTriggerBadge } from './DemoTriggerBadge'
+export { InlineDemoTrigger } from './InlineDemoTrigger'
 export { useDemoTriggerMemory, type DemoTriggerMemory } from './memory'
 export {
   useDemoTriggerContext,
+  useDemoTriggerContextWhile,
   useDemoTriggerPublished,
   useDemoContextStore,
   type DemoContextKey,

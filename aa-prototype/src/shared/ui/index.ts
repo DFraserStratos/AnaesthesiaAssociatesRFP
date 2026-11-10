@@ -8,6 +8,7 @@ export {
   type SlidingSegmentVariant,
 } from './SlidingSegmentedControl'
 export { TickBadge } from './TickBadge'
+export { TickButton } from './TickButton'
 export { SuccessOverlay } from './SuccessOverlay'
 export { DockSpacer } from './DockSpacer'
 export { NameSearchBox, type NameSearchBoxProps } from './NameSearchBox'

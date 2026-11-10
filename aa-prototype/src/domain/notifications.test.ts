@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationText, pageOf } from './notifications'
+import { activeCount, isActive, MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationText, pageOf } from './notifications'
 import { surnameCommaInitial } from './names'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
 
@@ -82,10 +82,34 @@ describe('pageOf', () => {
   })
 })
 
-describe('NOTIFICATION_POOL_RULE (OQ-79 recommendation)', () => {
-  it("keeps List moves and the optional single-Booking notice (D58), every notice, with no read or actioned state", () => {
-    expect(NOTIFICATION_POOL_RULE).toEqual({ sources: ['listMoved', 'bookingMoved'], expiresAfterDays: null, actionable: false, pageSize: 6 })
+describe('NOTIFICATION_POOL_RULE (OQ-79 answered, D58; catch-up Phase 32b)', () => {
+  it('keeps List moves, the optional single-Booking notice and alerts; a tick resolves a notice; nothing expires', () => {
+    expect(NOTIFICATION_POOL_RULE).toEqual({ sources: ['listMoved', 'bookingMoved', 'officeAlert'], expiresAfterDays: null, actionable: true, pageSize: 6 })
     expect(MOVED_TO_ME_DAYS).toBe(7)
+  })
+
+  it('a notice is active until it carries resolvedAt; the count is the active ones', () => {
+    const active = n()
+    const resolved = n({ id: 'NT0002', resolvedAt: '2026-07-21T10:00:00', resolvedBy: 'Kirsty W.' })
+    expect(isActive(active)).toBe(true)
+    expect(isActive(resolved)).toBe(false)
+    expect(activeCount([active, resolved, n({ id: 'NT0003' })])).toBe(2)
+  })
+})
+
+describe('an alert to the office (catch-up Phase 32b; US-03.6.3)', () => {
+  it('reads as one sentence naming who asked and the List, or the Booking; no dash, no slot, never "flag"', () => {
+    const { route: _r, cause: _c, toAnaesthetistId: _t, ...base } = n()
+    void _r
+    void _c
+    void _t
+    const list: Notification = { ...base, kind: 'officeAlert', message: 'Is the Contract right?' }
+    expect(notificationText(list, masters)).toBe("Dr Hughes asked the office to check Thu 23 Jul AM (St George's, Ms A. Reid)")
+    const booking: Notification = { ...list, bookingId: 'BK1', patientName: surnameCommaInitial('Hemi Walker') }
+    expect(notificationText(booking, masters)).toBe("Dr Hughes asked the office to check a Booking (Walker, H., Thu 23 Jul AM, St George's)")
+    for (const t of [notificationText(list, masters), notificationText(booking, masters)]) {
+      expect(t).not.toMatch(/[–—]|slot|flag/i)
+    }
   })
 })
 

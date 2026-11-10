@@ -40,6 +40,7 @@ import type { BookingBillingContext } from '../domain/billing/validateBookingFor
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
+import { compareBySurname } from '../domain/surgeons'
 import type { ListMoveInput } from '../domain/listMoves'
 import type { BookingMoveInput } from '../domain/bookingMoves'
 import { conflictFromCause, describeConflict, isBackdropList, type ConflictLookups, type ConflictReason } from '../domain/conflicts'
@@ -144,6 +145,29 @@ export function slotFor(state: Pick<SlotState, 'schedule'>, anaesthetistId: stri
 /** The List in a Slot, if any. */
 export function listInSlot(state: Pick<SlotState, 'schedule'>, slotId: string): AssignedList | undefined {
   return listIndexBySlot(state.schedule.lists).get(slotId)
+}
+
+/**
+ * Colleagues' sessions on a day and session that are closed and hold no List
+ * (catch-up Phase 32b; US-01.6.3, D59): the office's pickers show them read
+ * only, and the colleague stand-in can free them. Active anaesthetists only,
+ * by surname; `excludeAnaesthetistId` leaves out the List's own anaesthetist.
+ */
+export function closedEmptyColleagueSlots(
+  state: { schedule: Pick<AppState['schedule'], 'lists' | 'slots'>; masters: Pick<AppState['masters'], 'anaesthetists' | 'slotStatuses'> },
+  dateISO: string,
+  session: Session,
+  excludeAnaesthetistId?: string,
+): Slot[] {
+  const held = listIndexBySlot(state.schedule.lists)
+  const out: { slot: Slot; name: string }[] = []
+  for (const a of Object.values(state.masters.anaesthetists)) {
+    if (!a.active || a.registrationNumber === excludeAnaesthetistId) continue
+    const slot = state.schedule.slots[slotIdFor(a.registrationNumber, dateISO, session)]
+    if (slot === undefined || held.has(slot.id) || isOpenSlot(slot, undefined, state.masters.slotStatuses)) continue
+    out.push({ slot, name: a.name })
+  }
+  return out.sort(compareBySurname).map((x) => x.slot)
 }
 
 function viewOf(slot: Slot, lists: Map<string, AssignedList>, settings: ScheduleSettings, statuses: SlotStatusRecords): SlotView {
@@ -304,7 +328,8 @@ export function availabilityMonthFor(
             }
           : {}),
         ...(v.slot.seriesId !== undefined && line !== undefined ? { series: { id: v.slot.seriesId, line } } : {}),
-        conflict: v.list?.conflicts.some((c) => c.kind === 'availability') ?? false,
+        // A closed hospital (D59: an anaesthetist's unavailability is never a conflict).
+        conflict: (v.list?.conflicts.length ?? 0) > 0,
       }
     }
     out.push(day)
@@ -1456,8 +1481,7 @@ export function useSlotView(slotId: string | undefined): SlotView | undefined {
 /** The names and records `describeConflict` reads, memoised on the masters and Slot records. */
 export function useConflictLookups(): ConflictLookups {
   const masters = useAppStore((s) => s.masters)
-  const slots = useAppStore((s) => s.schedule.slots)
-  return useMemo(() => conflictLookups({ masters, schedule: { slots } }), [masters, slots])
+  return useMemo(() => conflictLookups({ masters }), [masters])
 }
 
 // ---------------------------------------------------------------------------
@@ -1565,8 +1589,6 @@ export interface ConflictRow {
   hospitalId: string
   surgeonId: string
   listState: List['state']
-  /** The session's availability status (its fixed ID; the label comes from the master). */
-  statusKey: string
   /** Bookings not cancelled. */
   bookingCount: number
   kind: ListConflict['kind']
@@ -1581,7 +1603,6 @@ export interface ConflictRow {
 export interface ConflictRowFilter {
   fromISO?: string
   toISO?: string
-  reason?: ConflictReason
   hospitalId?: string
   anaesthetistId?: string
   includeCleared?: boolean
@@ -1589,13 +1610,13 @@ export interface ConflictRowFilter {
 
 const rosterRank = (id: string): number => SEEDED_ORDER.get(id) ?? Number.MAX_SAFE_INTEGER
 
-let conflictRowCache: { lists: object; slots: object; masters: object; bookings: object; rows: ConflictRow[] } | null = null
+let conflictRowCache: { lists: object; masters: object; bookings: object; rows: ConflictRow[] } | null = null
 
 /** Every live and cleared conflict, sorted by date, session, then roster order (memoised on the records). */
 function allConflictRows(state: Pick<AppState, 'schedule' | 'masters'>): ConflictRow[] {
-  const { lists, slots, bookings } = state.schedule
+  const { lists, bookings } = state.schedule
   const c = conflictRowCache
-  if (c !== null && c.lists === lists && c.slots === slots && c.masters === state.masters && c.bookings === bookings) return c.rows
+  if (c !== null && c.lists === lists && c.masters === state.masters && c.bookings === bookings) return c.rows
   const lookups = conflictLookups(state)
   const active = new Map<string, number>()
   for (const b of Object.values(bookings)) if (b.cancellation === undefined) active.set(b.listId, (active.get(b.listId) ?? 0) + 1)
@@ -1613,7 +1634,6 @@ function allConflictRows(state: Pick<AppState, 'schedule' | 'masters'>): Conflic
       hospitalId: list.hospitalId,
       surgeonId: list.surgeonId,
       listState: list.state,
-      statusKey: list.slotId !== undefined ? (slots[list.slotId]?.status ?? '') : '',
       bookingCount: active.get(list.id) ?? 0,
     }
     for (const conflict of list.conflicts) {
@@ -1635,18 +1655,17 @@ function allConflictRows(state: Pick<AppState, 'schedule' | 'masters'>): Conflic
       (a.anaesthetistId ?? '').localeCompare(b.anaesthetistId ?? '') ||
       a.cause.localeCompare(b.cause),
   )
-  conflictRowCache = { lists, slots, masters: state.masters, bookings, rows }
+  conflictRowCache = { lists, masters: state.masters, bookings, rows }
   return rows
 }
 
-/** The Conflicts screen's rows: hospital closures and unavailable anaesthetists only (US-01.5.4), filtered. */
+/** The Conflicts screen's rows: hospital closures only (US-01.5.4; D59, catch-up Phase 32b), filtered. */
 export function conflictRows(state: Pick<AppState, 'schedule' | 'masters'>, filter: ConflictRowFilter = {}): ConflictRow[] {
   return allConflictRows(state).filter(
     (r) =>
       (filter.includeCleared === true || r.clear === undefined) &&
       (filter.fromISO === undefined || r.dateISO >= filter.fromISO) &&
       (filter.toISO === undefined || r.dateISO <= filter.toISO) &&
-      (filter.reason === undefined || r.reason === filter.reason) &&
       (filter.hospitalId === undefined || r.hospitalId === filter.hospitalId) &&
       (filter.anaesthetistId === undefined || r.anaesthetistId === filter.anaesthetistId),
   )

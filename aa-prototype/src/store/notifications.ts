@@ -1,23 +1,30 @@
 /**
  * The Admin App's shared notification pool (catch-up Phase 32; FT-13.8,
- * US-13.8.1, US-13.8.2, DM-41; D15, Vanessa agreed the shared pool
- * 2026-10-07). PWA-safe: pure selectors plus the one draft-level writer.
+ * US-13.8.1, US-13.8.2, US-13.8.3, DM-41; D15, D58). PWA-safe: pure selectors,
+ * the one draft-level creator and the one updater.
  *
- * - `postNotification` is the ONLY writer of `notifications`. It runs inside a
- *   move's own `mutate()` recipe, so the record and the move are one commit.
- *   Nothing updates or deletes a notification.
+ * - `postNotification` is the ONLY creator. It runs inside its action's own
+ *   `mutate()` recipe (a move, an alert), so the record and the action are one
+ *   commit. Nothing deletes a notification.
+ * - `resolveNotification` is the ONLY updater (catch-up Phase 32b, D58): an
+ *   admin ticks a notice resolved, which writes `resolvedAt` and `resolvedBy`
+ *   once, audited `notification.resolve`. It hides the notice for every admin;
+ *   "Show resolved" brings it back with who and when. Nothing expires; there
+ *   is no un-tick.
  * - The selectors take NO user: every admin sees the same pool (AC "Shared").
- *   There is no read, actioned or per-user state (OQ-79's recommendation).
+ *   There is no read or per-user state.
+ * - The colleague's own "Moved to you" notice (`movedToMe`) ignores the
+ *   office's tick: it is her notice, not the office's.
  * - A notification is not a to-do and not a Warning: nothing here feeds 15a's
  *   to-do list.
  */
 
-import { compareNewestFirst, inMovedToMeWindow, NOTIFICATION_POOL_RULE, notificationText, pageOf, type NotificationMasters } from '../domain/notifications'
+import { compareNewestFirst, inMovedToMeWindow, isActive, NOTIFICATION_POOL_RULE, notificationText, pageOf, type NotificationMasters } from '../domain/notifications'
 import type { Notification } from '../domain/types'
-import { allocateId } from './mutate'
-import type { AppState } from './appStore'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
+import type { AppState, AppStoreApi } from './appStore'
 
-export type NotificationInput = Omit<Notification, 'id' | 'kind'> & { kind?: Notification['kind'] }
+export type NotificationInput = Omit<Notification, 'id' | 'kind' | 'resolvedAt' | 'resolvedBy'> & { kind?: Notification['kind'] }
 
 /**
  * Append one notification, inside a mutate recipe (draft level: it returns the
@@ -35,8 +42,8 @@ export function postNotification(
     kind: input.kind ?? 'listMoved',
     byActor: input.byActor,
     listId: input.listId,
-    route: input.route,
-    cause: input.cause,
+    ...(input.route !== undefined ? { route: input.route } : {}),
+    ...(input.cause !== undefined ? { cause: input.cause } : {}),
     fromAnaesthetistId: input.fromAnaesthetistId,
     ...(input.toAnaesthetistId !== undefined ? { toAnaesthetistId: input.toAnaesthetistId } : {}),
     dateISO: input.dateISO,
@@ -47,6 +54,7 @@ export function postNotification(
     ...(input.bookingId !== undefined ? { bookingId: input.bookingId } : {}),
     ...(input.patientName !== undefined ? { patientName: input.patientName } : {}),
   }
+  // A notice is born active: only `resolveNotification` resolves it.
   if (s.notifications[record.id] !== undefined) throw new Error(`postNotification would overwrite ${record.id}`)
   return { notifications: { ...s.notifications, [record.id]: record }, counters: alloc.counters, id: record.id }
 }
@@ -70,9 +78,11 @@ export interface NotificationRow {
   /** The one sentence (`notificationText`). */
   text: string
   atISO: string
-  /** The anaesthetist who moved it (the record's actor). */
+  /** The anaesthetist who moved it or raised the alert (the record's actor). */
   by: string
   target: NotificationTarget
+  /** Ticked resolved by an admin (shown only with "Show resolved"). */
+  resolved: boolean
 }
 
 function targetFor(state: { schedule: Pick<AppState['schedule'], 'lists'> }, listId: string): NotificationTarget {
@@ -90,25 +100,96 @@ function bookingTargetFor(state: { schedule: Pick<AppState['schedule'], 'lists' 
 }
 
 function rowOf(state: PoolState, n: Notification): NotificationRow {
-  const target = n.kind === 'bookingMoved' && n.bookingId !== undefined ? bookingTargetFor(state, n.bookingId) : targetFor(state, n.listId)
-  return { notification: n, text: notificationText(n, state.masters), atISO: n.atISO, by: n.byActor, target }
+  // A single Booking moved, or an alert on a Booking, opens that Booking.
+  const target = n.bookingId !== undefined && (n.kind === 'bookingMoved' || n.kind === 'officeAlert') ? bookingTargetFor(state, n.bookingId) : targetFor(state, n.listId)
+  return { notification: n, text: notificationText(n, state.masters), atISO: n.atISO, by: n.byActor, target, resolved: !isActive(n) }
 }
 
-/** Every notification the rule keeps (OQ-79: List moves, no expiry). */
+/** Every notification the rule keeps (D58: List moves, the optional Booking move, alerts; no expiry). */
 function kept(state: Pick<AppState, 'notifications'>): Notification[] {
   const sources: readonly string[] = NOTIFICATION_POOL_RULE.sources
   return Object.values(state.notifications).filter((n) => sources.includes(n.kind))
 }
 
-/** The pool, newest first, one page (`NOTIFICATION_POOL_RULE.pageSize`). The same for every admin: it takes no user. */
-export function notificationPool(state: PoolState, options: { page: number }): { rows: NotificationRow[]; page: number; pageCount: number; total: number } {
-  const page = pageOf(kept(state), options.page, NOTIFICATION_POOL_RULE.pageSize)
+/**
+ * The pool, newest first, one page (`NOTIFICATION_POOL_RULE.pageSize`): the
+ * active notices, or with `showResolved` every notice, resolved ones marked.
+ * The same for every admin: it takes no user.
+ */
+export function notificationPool(
+  state: PoolState,
+  options: { page: number; showResolved?: boolean },
+): { rows: NotificationRow[]; page: number; pageCount: number; total: number } {
+  const shown = options.showResolved === true ? kept(state) : kept(state).filter(isActive)
+  const page = pageOf(shown, options.page, NOTIFICATION_POOL_RULE.pageSize)
   return { rows: page.rows.map((n) => rowOf(state, n)), page: page.page, pageCount: page.pageCount, total: page.total }
 }
 
-/** The newest `n` notifications (the Admin Day rail card). */
+/** The newest `n` active notifications (the Admin Day rail card). */
 export function latestNotifications(state: PoolState, n: number): NotificationRow[] {
-  return kept(state).sort(compareNewestFirst).slice(0, n).map((x) => rowOf(state, x))
+  return kept(state).filter(isActive).sort(compareNewestFirst).slice(0, n).map((x) => rowOf(state, x))
+}
+
+/** How many notices are active (US-13.8.1 "Count"): the rail card and the page heading. */
+export function activeNotificationCount(state: Pick<AppState, 'notifications'>): number {
+  return kept(state).filter(isActive).length
+}
+
+/**
+ * An admin ticks a notice resolved (catch-up Phase 32b; US-13.8.3, D58): the
+ * only updater of a notification. Office only (never an anaesthetist or a
+ * feed); refuses an unknown id and one already resolved. One `mutate()`
+ * writing `resolvedAt` (the demo clock) and `resolvedBy` once, audited
+ * `notification.resolve` with before and after. It hides the notice for every
+ * admin; the colleague's own "Moved to you" notice is unaffected.
+ */
+export function resolveNotification(api: AppStoreApi, actor: Actor, id: string): Outcome<{ id: string; resolvedAt: string }> {
+  if (actor.role !== 'office' || actor.source === 'integration') return refuse('officeOnly', 'Only the office resolves a notice.')
+  const state = api.getState()
+  const n = state.notifications[id]
+  if (n === undefined) return refuse('notFound', 'Notice not found.')
+  if (!isActive(n)) return refuse('alreadyResolved', `${n.resolvedBy ?? 'Someone'} already resolved this notice.`)
+  const resolvedAt = clockISO(state.clock)
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'notification',
+      entityId: id,
+      action: 'notification.resolve',
+      before: { resolvedAt: null, resolvedBy: null },
+      after: { resolvedAt, resolvedBy: actor.who, kind: n.kind, listId: n.listId, ...(n.bookingId !== undefined ? { bookingId: n.bookingId } : {}) },
+      stampBookingId: null,
+    },
+    (s) => {
+      const current = s.notifications[id]
+      if (current === undefined || !isActive(current)) throw new Error(`resolveNotification: ${id} is not active`)
+      return { notifications: { ...s.notifications, [id]: { ...current, resolvedAt, resolvedBy: actor.who } } }
+    },
+  )
+  return ok({ id, resolvedAt })
+}
+
+/**
+ * The alerts (kind `officeAlert`) about a List, or about a Booking, newest
+ * first. A Booking's alert follows the Booking (matched by its id alone), so a
+ * Booking moved to another List keeps its alert; a List's alert is one with no
+ * Booking on that List.
+ */
+function alertsFor(state: Pick<AppState, 'notifications'>, target: { listId: string; bookingId?: string }): Notification[] {
+  return Object.values(state.notifications)
+    .filter((n) => n.kind === 'officeAlert' && (target.bookingId !== undefined ? n.bookingId === target.bookingId : n.listId === target.listId && n.bookingId === undefined))
+    .sort(compareNewestFirst)
+}
+
+/** The active alert on this List (no `bookingId`) or this Booking, if any: one at a time (US-03.6.3). */
+export function activeAlertFor(state: Pick<AppState, 'notifications'>, target: { listId: string; bookingId?: string }): Notification | undefined {
+  return alertsFor(state, target).find(isActive)
+}
+
+/** The newest alert on this target, active or resolved (the anaesthetist's "dealt with" line). */
+export function latestAlertFor(state: Pick<AppState, 'notifications'>, target: { listId: string; bookingId?: string }): Notification | undefined {
+  return alertsFor(state, target)[0]
 }
 
 /** The newest notification about a List's own move (the drawer's "Moved here by" line), or undefined. A single Booking's notice is not one. */

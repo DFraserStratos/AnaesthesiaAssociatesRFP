@@ -3,22 +3,24 @@
  * path", US-01.3.6; D44). The office chooses ONLY the anaesthetist: the session
  * is fixed by the Draft List's day and session (change its date first to use
  * another day). Step 1 shows everybody potentially available, grouped and
- * tier-ordered through Phase 17's helper; step 2 confirms, with every soft
- * warning stacked above the button, each naming its cause. A closed session
- * or a not-preferred pairing never blocks: the button reads "Assign anyway".
- * The List becomes ACTIVE in that anaesthetist's session, with its Bookings.
+ * tier-ordered through Phase 17's helper (tier, then preferred pairing);
+ * step 2 confirms, with every soft warning stacked above the button, each
+ * naming its cause. A not-preferred pairing never blocks: the button reads
+ * "Assign anyway". A colleague marked not available is shown but cannot be
+ * picked (US-01.6.3, D59; catch-up Phase 32b). The List becomes ACTIVE in that
+ * anaesthetist's session, with its Bookings.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { neutral, radius, semantic } from '../../../theme/tokens'
-import { assignDraftList, bookingCountsByList, slotFor, useAppStore, type Actor } from '../../../store'
-import { isClosedKey, statusFor } from '../../../domain/slotStatus'
+import { assignDraftList, bookingCountsByList, useAppStore, type Actor } from '../../../store'
+import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { DRAFT_ASSIGN_WARNINGS, isDraftList } from '../../../domain/draftLists'
 import { Button, FormError, SuccessOverlay } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
-import { drSurname, locationName, pairingLine } from '../../../shared/format'
+import { locationName, pairingLine } from '../../../shared/format'
 import { LIST_KIND_LABELS } from '../../../domain/types'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 import { surnameFirst } from '../util'
@@ -60,7 +62,8 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
   const onAssignedRef = useRef(onAssigned)
   onAssignedRef.current = onAssigned
   const pairingWarning = useNotPreferredWarning(targetId ?? undefined, list?.surgeonId)
-  const targetSlot = useAppStore((s) => (targetId !== null && list !== undefined ? slotFor(s, targetId, list.dateISO, list.session) : undefined))
+  // The colleague stand-in on a blocked row acts for this List (catch-up Phase 32b).
+  useDemoTriggerContextWhile('adminPicker.listId', listId, open)
 
   // Every opening starts on step 1, or step 2 when the drawer named the anaesthetist.
   useEffect(() => {
@@ -77,20 +80,14 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
     return () => window.clearTimeout(timer)
   }, [assigned, listId])
 
-  const closedLabel = useMemo(() => {
-    if (targetSlot === undefined || !isClosedKey(masters.slotStatuses, targetSlot.status)) return null
-    return statusFor(masters.slotStatuses, targetSlot.status)?.label ?? targetSlot.status
-  }, [targetSlot, masters.slotStatuses])
-
   // Keep showing the assigned List through the success moment.
   if (list === undefined || (!isDraftList(list) && assigned === null)) return null
 
   const target = targetId !== null ? masters.anaesthetists[targetId] : undefined
-  const who = target !== undefined ? drSurname(target.name) : ''
   const passed = list.dateISO < today
   const holiday = list.conflicts.some((c) => c.kind === 'holiday')
   const hospitalName = locationName(list.hospitalId, masters.hospitals)
-  const anyWarning = pairingWarning !== null || closedLabel !== null || holiday
+  const anyWarning = pairingWarning !== null || holiday
 
   function confirm() {
     if (targetId === null) return
@@ -144,11 +141,6 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
             </div>
             <div data-shot={pairingWarning !== null ? 'admin-assign-draft-list-not-preferred' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <NotPreferredWarning warning={pairingWarning} shot="assign-draft-list-pairing-warning" />
-              {closedLabel !== null && (
-                <SoftWarning shot="assign-draft-list-closed-warning">
-                  {DRAFT_ASSIGN_WARNINGS.closedSession(who, closedLabel)}
-                </SoftWarning>
-              )}
               {holiday && <SoftWarning shot="assign-draft-list-holiday-warning">{DRAFT_ASSIGN_WARNINGS.hospitalHoliday(hospitalName)}</SoftWarning>}
             </div>
             <FormError message={error} />

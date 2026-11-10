@@ -99,7 +99,7 @@ export const FIELD_LABELS: Record<string, string> = {
   removeReason: 'Reason removed',
   removedAtISO: 'Removed',
   locationType: 'Location type',
-  fromAnaesthetistId: 'Anaesthetist unavailable',
+  fromAnaesthetistId: 'From anaesthetist',
   draftListIds: DRAFT_LISTS,
   draftListsUpdated: `${DRAFT_LISTS} updated`,
   draftListsRemoved: `${DRAFT_LISTS} removed`,

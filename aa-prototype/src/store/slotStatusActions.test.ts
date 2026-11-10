@@ -117,3 +117,21 @@ describe('availability status master actions', () => {
     expect(api.getState().audit.slice(-2).map((a) => a.action)).toEqual(['availabilityStatus.retire', 'availabilityStatus.restore'])
   })
 })
+
+describe('a status never closes over a List (catch-up Phase 32b review fix, D59)', () => {
+  it('refuses to make a status not bookable while a session holding a List today or later carries it', () => {
+    const api = createAppStore()
+    const open: SlotStatusDraft = { label: 'On call', longLabel: 'On call', description: 'Reachable.', colour: 'free', treatment: 'dashed', bookable: true, anaesthetistCanSet: true, isDefault: false }
+    const added = addSlotStatus(api, OFFICE, open)
+    expect(added.ok).toBe(true)
+    const key = added.ok ? added.value.key : ''
+    // Souter's Tue 21 AM holds a List; an open status over it is allowed.
+    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: key }).ok).toBe(true)
+    const out = editSlotStatus(api, OFFICE, key, { ...open, bookable: false })
+    expect(out.ok ? 'ok' : out.code).toBe('statusHoldsLists')
+    expect(api.getState().masters.slotStatuses[key]?.bookable).toBe(true)
+    // With no List on it, the same edit goes through.
+    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
+    expect(editSlotStatus(api, OFFICE, key, { ...open, bookable: false }).ok).toBe(true)
+  })
+})

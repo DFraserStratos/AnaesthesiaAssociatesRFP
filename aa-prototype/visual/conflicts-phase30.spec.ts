@@ -30,20 +30,25 @@ const MORRISON_WED22_PM = 'L-25490-2026-07-22-PM'
 test('Wed 22 Day grid: conflicted Lists in the amber colour, the legend and the Conflict filter', async ({ page }) => {
   await fresh(page, '/admin/day/2026-07-22')
   const conflicted = page.locator('button[data-conflict="true"]')
-  await expect(conflicted).toHaveCount(5)
-  await expect(page.locator(`button[data-list-id="${RUTHERFORD_WED22_AM}"]`)).toContainText('Anaesthetist unavailable')
+  // Closures only since catch-up Phase 32b (D59): Rutherford's sickness returned his List.
+  await expect(conflicted).toHaveCount(4)
+  const rutherfordAm = page.locator('button[data-slot-id="S-29104-2026-07-22-AM"]')
+  await expect(rutherfordAm).toContainText('Unavailable')
+  await expect(rutherfordAm).not.toHaveAttribute('data-conflict', 'true')
+  await expect(page.locator(`button[data-list-id="${RUTHERFORD_WED22_AM}"]`)).toHaveCount(0)
   await expect(page.locator(`button[data-list-id="${MORRISON_WED22_PM}"]`)).toContainText('Hospital closed')
+  await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
   await expect(page.locator('[data-shot="daygrid-legend-conflict"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p30-01-wed22-grid.png', fullPage: true })
   await page.getByRole('button', { name: 'Conflict', exact: true }).click()
   await expect(page.locator('button[data-list-id]:not([data-conflict])')).toHaveCount(0)
   await cleanCopy(page, 'Day grid')
 
-  // The drawer names the sickness and shows the session's status chip.
+  // The drawer names the closure.
   await page.getByRole('button', { name: 'Conflict', exact: true }).click()
-  await page.locator(`button[data-list-id="${RUTHERFORD_WED22_AM}"]`).click()
+  await page.locator(`button[data-list-id="${MORRISON_WED22_PM}"]`).click()
   const drawer = page.getByTestId('admin-list-drawer')
-  await expect(drawer.getByText(/Dr Rutherford is marked .+ for this session\. Note: unwell, short notice\./)).toBeVisible()
+  await expect(drawer.getByText(/Southern Cross is closed/).first()).toBeVisible()
   await expect(drawer.locator('[data-shot="drawer-attention"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p30-02-drawer-sickness.png', fullPage: true })
 })
@@ -68,52 +73,54 @@ test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
   await expect(page.locator(`tr[data-conflict-row="${MORRISON_WED22_PM}"]:not([data-conflict-cleared])`)).toBeVisible()
 })
 
-test('Conflicts screen: grouped by day, the two kinds, filters in the URL; Simulate sickness and reassign from a row', async ({ page }) => {
+test('Conflicts screen: closures only, grouped by day, filters in the URL; Simulate sickness never adds a row; reassign from a row', async ({ page }) => {
   await fresh(page, '/admin/conflicts')
   await expect(page.getByRole('heading', { name: 'Conflicts', exact: true })).toBeVisible()
-  // 18 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31).
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('20')
+  // 17 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31); no sickness (32b).
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('19')
   for (const d of ['2026-07-22', '2026-10-26', '2026-11-13']) await expect(page.locator(`section[data-conflict-date="${d}"]`)).toBeVisible()
+  await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Hospital closed' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p30-04-conflicts.png', fullPage: true })
   await cleanCopy(page, 'Conflicts')
 
-  await page.getByRole('button', { name: 'Anaesthetist unavailable' }).click()
-  await expect(page).toHaveURL(/reason=unavailable/)
-  await page.reload()
-  await expect(page.locator('tr[data-conflict-row]')).toHaveCount(1)
-  await page.getByRole('button', { name: 'All', exact: true }).click()
-
-  // Simulate sickness on today's grid, then the new row on Conflicts.
+  // Simulate sickness on today's grid: the List goes to the Draft Lists; Conflicts gains nothing.
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
   const msg = await runDemoAction(page, 'simulate-sickness', { close: true })
-  expect(msg).toMatch(/recorded as Unavailable for Tue 21 Jul (AM|PM)\. The List keeps its Bookings/)
+  expect(msg).toMatch(/recorded as Unavailable for Tue 21 Jul (AM|PM)\. The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
   await page.goto('/admin/conflicts')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('section[data-conflict-date="2026-07-21"]')).toContainText('phoned in, simulated')
+  await expect(page.locator('section[data-conflict-date="2026-07-21"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('19')
   await page.screenshot({ path: 'visual/shots/p30-05-simulated-sickness.png', fullPage: true })
 
-  // Reassign Rutherford's Wed 22 AM to Dr Sharma: the row leaves and the badge drops.
-  const badge = page.locator('[data-shot="nav-badge-conflicts"]')
-  const before = Number(await badge.textContent())
-  await page.locator(`tr[data-conflict-row="${RUTHERFORD_WED22_AM}"]`).getByRole('button', { name: 'Reassign' }).click()
-  await expect(page.locator('[data-shot="reassign-not-available"]')).toBeVisible()
-  await page.getByRole('button', { name: /Sharma, Priya.*Free AM/ }).click()
-  await expect(page.locator('select[data-shot="reassign-vacated"]')).toHaveValue('unavailable')
-  await page.getByRole('button', { name: 'Confirm reassignment', exact: true }).click()
-  await expect(page.locator('[data-shot="conflicts-confirmation"]')).toContainText('now covers Wed 22 Jul AM')
-  await expect(page.locator(`tr[data-conflict-row="${RUTHERFORD_WED22_AM}"]`)).toHaveCount(0)
-  await expect(badge).toHaveText(String(before - 1))
+  // Reassign Morrison's Wed 22 PM: the closure goes with the List, so it stays flagged.
+  await page.locator(`tr[data-conflict-row="${MORRISON_WED22_PM}"]`).getByRole('button', { name: 'Reassign' }).click()
+  const pick = page.locator('[data-shot="candidates-clear"] button[data-candidate]').first()
+  await pick.click()
+  await page.getByRole('button', { name: /^Confirm reassignment/ }).click()
+  await expect(page.locator('[data-shot="conflicts-confirmation"]')).toContainText('It is still flagged (hospital closed).')
   await page.screenshot({ path: 'visual/shots/p30-06-reassigned.png', fullPage: true })
 })
 
-test('Phone advice on an unavailable session warns and books; the List is flagged', async ({ page }) => {
+test('An unavailable session takes no List or Booking: the drawer says why and offers Change status; phone advice at a closed hospital warns', async ({ page }) => {
   await fresh(page, '/admin/day/2026-07-21')
   // Ngata is unavailable all Tue 21 (ICU on call): an empty closed session.
   await page.locator('button[data-slot-id="S-38455-2026-07-21-AM"]').click()
   const drawer = page.getByTestId('admin-list-drawer')
-  await expect(drawer.locator('[data-shot="drawer-closed-session"]')).toBeVisible()
-  await drawer.getByRole('button', { name: 'Book (phone advice)' }).click()
+  await expect(drawer.locator('[data-shot="drawer-closed-session"]')).toContainText('This session is marked')
+  await expect(drawer.locator('[data-shot="drawer-closed-session"]')).toContainText("needs to be made available, with Dr Ngata's agreement")
+  await expect(drawer.getByRole('button', { name: 'Assign List' })).toHaveCount(0)
+  await expect(drawer.getByRole('button', { name: 'Book (phone advice)' })).toHaveCount(0)
+  await expect(drawer.locator('[data-shot="drawer-change-status"]')).toBeVisible()
+  await page.keyboard.press('Escape')
+  // A closed hospital still warns, never blocks (US-01.5.2): Sharma's free Wed 22 AM at Southern Cross.
+  await page.goto('/admin/day/2026-07-22')
+  await page.waitForLoadState('networkidle')
+  await page.locator('button[data-slot-id="S-41267-2026-07-22-AM"]').click()
+  await page.getByTestId('admin-list-drawer').getByRole('button', { name: 'Book (phone advice)' }).click()
+  await page.getByLabel('Hospital').selectOption({ label: 'Southern Cross · closed' })
   await expect(page.locator('[data-shot="phone-advice-conflict-warning"]')).toContainText('The Booking will be accepted and the List flagged as a conflict.')
   await page.screenshot({ path: 'visual/shots/p30-07-phone-advice-warning.png', fullPage: true })
 })

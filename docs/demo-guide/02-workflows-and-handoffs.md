@@ -219,7 +219,8 @@ An anaesthetist becomes unavailable or needs cover at short notice.
    off, one occurrence changed or deleted.
 2. She moves one of her Lists to a free colleague or returns it to the office, also when she marks a
    booked session off: the app asks "Return to the office" or "Hand on to a colleague" first, so no
-   List is left with her. It happens at once: nobody accepts and the office does not confirm.
+   List is left with her, and then what her session becomes (the status she is setting, or Free).
+   It happens at once: nobody accepts and the office does not confirm.
 3. The colleagues offered are those free that session, in name order, by availability alone. She
    sees no preference, tier or warning.
 4. A List she returns goes back to the office as a Draft List with its hospital, surgeon and Bookings;
@@ -233,32 +234,44 @@ An anaesthetist becomes unavailable or needs cover at short notice.
    Booking a colleague does moves to a new List of theirs before the procedure, and its payable
    follows. A prepaid Booking's payable stays the AA Holding account: the new anaesthetist claims the
    prepaid amount and nothing is recalculated.
-5. When nobody has arranged cover, Kirsty sees the conflict on the Conflicts screen, or receives the
-   phone call and records the sickness.
-6. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
-   not-preferred pairing grouped apart and warned (never blocked), and reassigns the List.
-7. The vacated session returns to Free, unless the anaesthetist (on her own move) or the office
-   marks it Unavailable or Holiday (OQ-84's recommendation, still open).
+5. When nobody has arranged cover, Kirsty receives the phone call and records the sickness on the
+   Day view (Change status). Unavailability is never a conflict: the same "Where does this List go?"
+   step asks her to return the List to the office (a Draft List) or hand it to a colleague there and
+   then. The Conflicts screen covers hospital closures only.
+6. She views the anaesthetists free at the required AM/PM granularity, in priority-tier order and
+   preferred pairing first within a tier, with any not-preferred pairing grouped apart and warned
+   (never blocked), and assigns or reassigns the List. A colleague marked unavailable shows but cannot
+   be picked: the session is made available first, with that anaesthetist's agreement.
+7. Whoever moves the List, the anaesthetist or the office, chooses what the vacated session becomes:
+   Free or Unavailable (OQ-84, answered).
 8. Every move and reassignment is audited.
+9. An anaesthetist unsure about a Booking or List uses **Alert the office** with a note. It waits in
+   the office's notifications, with the note, until someone there ticks it resolved; submitting is not
+   affected.
 
 ### Handoff
 
 Each anaesthetist's own List move posts to the office's shared notifications (Admin Day's rail and the
 Notifications page), the same for the whole office; a single Booking posts there only when she ticks
 "Tell the office". The colleague sees the List or the Booking with a "Moved to you" notice either way.
-The office then assigns any Draft List returned to it.
+The office then assigns any Draft List returned to it. A notice, or an alert, stays active until an
+admin ticks it resolved, which hides it for the whole office; "Show resolved" brings it back with who
+resolved it and when. Nothing expires.
 
 ### Requirement
 
 US-01.4.1 settles the mechanism: change the List's owner, consume the covering anaesthetist's free
 session, and return the vacated session to available (or mark it unavailable if more appropriate).
-What the vacated session shows by default is OQ-84, still open; the prototype uses Free.
+OQ-84 is answered: whoever moves the List chooses Free or Unavailable for the vacated session. OQ-81
+part 3 is answered: sickness forces a return or a hand-on, never a conflict. Alerts to the office are
+US-03.6.3.
 
 ### What not to say
 
 There is no claiming of open shifts, no acceptance step, no preference warning for the anaesthetist,
 no prepayment recalculation or payee change on a move, no moving a Booking into a colleague's existing
-List, and notifications are not tasks.
+List, no List left on an unavailable session (never "flag the sickness"), and notifications are not
+tasks: a notice is ticked resolved, not done.
 
 ### Source
 

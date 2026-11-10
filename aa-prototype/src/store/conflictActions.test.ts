@@ -118,9 +118,9 @@ describe('hospital holidays: edit and delete (US-01.5.1)', () => {
 describe('accept and flag on Booking paths (US-01.5.2 AC1)', () => {
   it('a Booking created on, or moved onto, a conflicted List is accepted; the List stays flagged', () => {
     const api = store()
-    const created = createBooking(api, OFFICE, RUTHERFORD_AM, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test', billingRoute: 'hospital' })
+    const created = createBooking(api, OFFICE, MORRISON_PM, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test', billingRoute: 'hospital' })
     expect(created.ok).toBe(true)
-    expect(api.getState().schedule.lists[RUTHERFORD_AM]!.conflicts).toHaveLength(1)
+    expect(api.getState().schedule.lists[MORRISON_PM]!.conflicts).toHaveLength(1)
     const souterBooking = Object.values(api.getState().schedule.bookings).find((b) => b.listId === SEED_LIST_IDS.souterAm21 && b.cancellation === undefined)!
     expect(reassignBooking(api, OFFICE, souterBooking.id, MORRISON_PM).ok).toBe(true)
     expect(api.getState().schedule.lists[MORRISON_PM]!.conflicts).toHaveLength(1)
@@ -138,31 +138,29 @@ describe('accept and flag on Booking paths (US-01.5.2 AC1)', () => {
 })
 
 describe('conflict selectors', () => {
-  it('lists only the two kinds, sorted by date, session then roster order, with reason, status and Booking count', () => {
+  it('lists hospital closures only (D59: unavailability is never a conflict), sorted by date, session then roster order, with reason and Booking count', () => {
     const api = store()
     const rows = conflictRows(api.getState(), { fromISO: '2026-07-22', toISO: '2026-07-22' })
     // Dr Beaumont's two Draft Lists show as hospital-closed rows with no anaesthetist (catch-up Phase 31).
-    expect([...rows.map((r) => r.listId)].sort()).toEqual([RUTHERFORD_AM, 'L-46822-2026-07-22-AM', 'L-25490-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-38455-2026-07-22-PM', 'LD-RCB020-2026-07-22-AM', 'LD-RCB021-2026-07-22-PM'].sort())
+    // Rutherford's returned Wed 22 AM List is a Draft List with no conflict (catch-up Phase 32b).
+    expect([...rows.map((r) => r.listId)].sort()).toEqual(['L-46822-2026-07-22-AM', 'L-25490-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-38455-2026-07-22-PM', 'LD-RCB020-2026-07-22-AM', 'LD-RCB021-2026-07-22-PM'].sort())
     expect(rows.every((r, i) => i === 0 || rows[i - 1]!.session <= r.session)).toBe(true)
-    const ruth = rows.find((r) => r.listId === RUTHERFORD_AM)!
-    expect(ruth).toMatchObject({ reason: 'Anaesthetist unavailable', statusKey: 'unavailable', bookingCount: 0 })
-    expect(ruth.detail).toMatch(/Dr Rutherford is marked .+ for this session\. Note: unwell, short notice\./)
-    expect(rows.filter((r) => r.reason === 'Hospital closed')).toHaveLength(6)
+    expect(rows.some((r) => r.listId === RUTHERFORD_AM)).toBe(false)
+    expect(rows.every((r) => r.reason === 'Hospital closed')).toBe(true)
     expect(rows.filter((r) => r.listId.startsWith('LD-')).every((r) => r.anaesthetistId === undefined && r.slotId === undefined)).toBe(true)
     expect(rows.find((r) => r.listId === 'L-41267-2026-07-22-PM')?.bookingCount).toBe(2)
   })
 
-  it('filters by reason, hospital and anaesthetist', () => {
+  it('filters by hospital and anaesthetist (one reason left)', () => {
     const api = store()
     const s = api.getState()
-    expect(conflictRows(s, { reason: 'Anaesthetist unavailable' }).map((r) => r.listId)).toEqual([RUTHERFORD_AM])
     expect(conflictRows(s, { hospitalId: HOSP.ces }).every((r) => r.hospitalId === HOSP.ces)).toBe(true)
     expect(conflictRows(s, { anaesthetistId: ANAE.morrison }).every((r) => r.anaesthetistId === ANAE.morrison)).toBe(true)
   })
 
-  it('counts open conflicts from today: Wed 22, Mon 26 Oct and Fri 13 Nov', () => {
+  it('counts open conflicts from today: Wed 22, Mon 26 Oct and Fri 13 Nov (Rutherford no longer one)', () => {
     const api = store()
-    expect(openConflictCount(api.getState())).toBe(20)
+    expect(openConflictCount(api.getState())).toBe(19)
   })
 
   it('hospitalMonth: closures, Lists and conflicted Lists per day', () => {

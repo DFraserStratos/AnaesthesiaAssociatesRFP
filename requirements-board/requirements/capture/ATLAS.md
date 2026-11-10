@@ -276,9 +276,9 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
-| `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List" or "Open Draft List", the pager `admin-notifications-pager` (Newer / Older), the provisional caption `admin-notifications-provisional`. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger. |
+| `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
-| `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Filters in the URL: `?reason=closed|unavailable`, `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
+| `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
 | `/admin/invoices` | Invoice list. |
@@ -365,8 +365,12 @@ badge carries `data-shot=nav-badge-<section>`.
   Ngata, Beaumont, Hughes; no entry (Tier 4) Ropata, Whitaker, Ngatai.
 - Pickers: Reassign list from Dr Chen's Tue 21 PM (`L-45178-2026-07-21-PM`, Ms Reid) puts Sharma under
   "Not preferred with Ms Reid" (open only; never confirm in a recipe, it uses Sharma's S2 Free PM);
-  Dr Rutherford's Wed 22 AM (`L-29104-2026-07-22-AM`, Mr Whitford) shows six candidates in tier order,
-  Sharma with a Preferred pill. Edit list on Sharma's Tue 21 AM (`L-41267-2026-07-21-AM`) with
+  Dr Souter's Wed 22 AM (`L-34821-2026-07-22-AM`, Mr Whitford) Reassign, or Dr Rutherford's returned
+  Draft List (`L-29104-2026-07-22-AM`, block `[data-draft-block=...]`, See everyone), shows six
+  candidates in tier order, then Preferred first within a tier (catch-up Phase 32b): Sharma with a
+  Preferred pill heads Tier 2. Colleagues whose session is closed are read-only rows
+  `[data-candidate-closed=<reg>]` (Assign: in `candidates-not-available`; Reassign: in the collapsed
+  `reassign-not-available`), each with the badged stand-in `demo-action-ask-colleague-make-available-inline`. Edit list on Sharma's Tue 21 AM (`L-41267-2026-07-21-AM`) with
   `S-REID` selected shows the warning. Within a tier the order is shuffled per opening (seeded), so
   pick a candidate by `[data-candidate=<id>]` or name, never by position.
 
@@ -401,16 +405,19 @@ shown under "List attachments" on mobile and web and read-only in the Admin List
 **Wed 22**
 
 - Souter PM is free.
-- Real conflicts (catch-up Phase 30), five Lists, each block `button[data-conflict=true]` in the amber
+- Rutherford AM (catch-up Phase 32b): his session `S-29104-2026-07-22-AM` is Unavailable, note
+  "Unwell, short notice", recorded by the office (Kirsty W., 07:40), with no List and no conflict: the
+  office returned his Christchurch Eye Surgery List, now a Draft List with the same id
+  (`L-29104-2026-07-22-AM`, origin "Returned: anaesthetist unavailable", block
+  `[data-draft-block=L-29104-2026-07-22-AM]` in the Wed 22 band). The S2 Beat 3 target: assign it to
+  Dr Sharma (Wed 22 AM Free). Unavailability is never a conflict.
+- Real conflicts (catch-up Phase 30), four Lists, each block `button[data-conflict=true]` in the amber
   conflict colour:
-  - Rutherford AM (`L-29104-2026-07-22-AM`, Christchurch Eye Surgery, no Bookings): his session is
-    Unavailable, note "Unwell, short notice", recorded by the office (Kirsty W., an audit row at
-    07:40). The S2 reassign target, from the Conflicts screen.
   - The Southern Cross closure `HH900` "Theatre maintenance closure" flags Morrison PM
     (`L-25490-2026-07-22-PM`), Ngata PM (1 Booking), Sharma PM (`L-41267-2026-07-22-PM`, 2 Bookings)
     and Hughes AM.
 - Other seeded conflicts: Labour Day Mon 26 Oct (8 Lists) and Canterbury Anniversary Fri 13 Nov
-  (5 Lists), every hospital closed. 18 open conflicts in all; Tue 21 has none.
+  (5 Lists), every hospital closed. 17 open List conflicts plus Dr Beaumont's two Draft Lists (the nav badge reads 19); Tue 21 has none.
 
 **Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a; no gate, no
 override). AM is unpaid: Annette Riley's Booking (`BK0034`) carries a small warning triangle on its
@@ -478,6 +485,17 @@ AM List, offered only after Souter sets her Fri 31 AM (`S-34821-2026-07-31-AM`, 
 A moved Booking lands on a new List `LG0001` on.
 
 ## Overlays that need clicks
+
+- **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
+  pick `[data-shot="office-status-choices"] [data-status-choice="unavailable"]`; on a session holding a
+  List, `role=button[name="Continue"]` opens "Where does this List go?" (`office-status-choice-office` or
+  `office-status-choice-colleague` then a `[data-candidate]`), then the confirm step with
+  `office-status-vacated` and `office-status-confirm-button`. An empty session saves at once
+  (`office-status-save`).
+- **Alert the office** (catch-up Phase 32b; a bottom sheet on mobile, a dialog on web): on a Booking
+  scroll to `[data-shot="alert-office-action"]`, click its button, fill
+  `[data-shot="alert-office-sheet"] textarea`, then `[data-shot="alert-office-send"] button` and
+  `role=button[name="Done"]`; on a List the entry is `[data-shot="alert-office-list"]`.
 
 - **Move to a colleague** (catch-up Phase 32a; one sheet: a bottom sheet on mobile, a dialog on web):
   on a Booking, `[data-shot="move-booking-action"] button` (scroll to it first), then the free list
@@ -604,8 +622,9 @@ the exception: use the `trigger` step)
 - Move sheet (catch-up Phase 32; one sheet: a bottom sheet on mobile, a dialog on web):
   `move-sheet`, `move-list-header` (with "1 of 2" in a range), `move-unavailable-line` (its unavailable
   mode), `move-where`, `move-choice-office`, `move-choice-colleague`, `move-colleagues` (rows
-  `move-colleague-<registration>`), `move-confirm`, `move-vacated` (chips `move-vacated-free`,
-  `move-vacated-unavailable`, `aria-checked`), `move-submit` (the "Move List" button), `move-done`;
+  `move-colleague-<registration>`), `move-confirm`, `move-vacated` (the shared vacated-session control, catch-up Phase 32b: chips
+  `move-vacated-free`, `move-vacated-unavailable` or the status being set, `aria-checked`; asked on the
+  unavailable prompt too, with no provisional text), `move-submit` (the "Move List" button), `move-done`;
   `move-lists-intro` before a range or series over several Lists ("Choose where they go"). Entry points:
   `list-move` (List detail "Move this List", mobile and web), `availability-panel-move` (My calendar
   panel), `dashboard-move-list` and `dashboard-move-picker` (web dashboard "Move a List"),
@@ -613,6 +632,21 @@ the exception: use the `trigger` step)
   `list-moved-to-you`, `list-row-badge` ("New" on Forward Lists). Admin: `admin-notifications-rail`
   (Day rail card, under Draft Lists; scroll it into view), `admin-notifications-see-all`,
   `drawer-moved-here` (List drawer), `draft-list-returned-by` (Draft List drawer).
+- Catch-up Phase 32b: `notification-tick` (the shared `TickButton`, "Resolve", on the rail card and the
+  page), `admin-notifications-count` (rail) and `admin-notifications-page-count` (page),
+  `admin-notifications-show-resolved`, `notification-resolved-line`, `notification-alert-note`;
+  `drawer-change-status` (Admin Day drawer: an action on a List's drawer, an inline link on an empty
+  session's Status row); the office's status sheet `office-status-sheet`, `office-status-choices`
+  (`[data-status-choice=<key>]`), `office-status-holds-list`, `office-status-save`,
+  `office-status-where`, `office-status-choice-office`, `office-status-choice-colleague`,
+  `office-status-not-available`, `office-status-confirm`, `office-status-vacated` (chips
+  `office-status-vacated-<key>`), `office-status-pairing-warning`, `office-status-confirm-button`,
+  `office-status-done`; `reassign-vacated` (chips `reassign-vacated-<key>`; was a select);
+  `drawer-closed-session` (now "Dr X has marked this session ... make it available"); Alert the office:
+  `alert-office-list` / `alert-office-booking` (the entry), `alert-office-action` (the button),
+  `alert-office-sheet`, `alert-office-note`, `alert-office-send`, `alert-office-done`,
+  `alert-office-sent`, `alert-office-resolved`; Admin `office-alert-line` with `office-alert-tick`;
+  `nav-badge-notifications` (active notices).
 
 These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
@@ -775,7 +809,9 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>` | `colleague-hands-booking-to-souter` | Catch-up Phase 32a. A colleague hands one of their Bookings into Dr Souter's free, empty session as a new List, with the office notice ticked (from a reset: Dr Hughes's `BK0140` into her Wed 22 PM; the date in the URL or the next with a candidate). Nothing sets anyone available. Bar only |
 | `/mobile/lists`, `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet) | `colleague-moves-booking-to-me` (choice by its label, e.g. "Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery") | Catch-up Phase 32a, badged "Colleague stand-in". A colleague hands her one Booking as a new List in a session she is free in; a session she is not available in (Fri 31 Jul AM, `BK0162`) is offered once she sets it available. PWA only |
 | `/mobile/availability` (PWA Demo sheet) | `colleague-moves-list-to-me` | Catch-up Phase 32, badged "Colleague stand-in". A colleague hands a List into Dr Souter's free session (from the pristine seed, Morrison's Wed 22 PM Southern Cross into her Wed 22 PM); the Moved to you panel and Forward Lists' "New" follow. PWA only |
-| `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: a List id) | Catch-up Phase 30. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)"); the List keeps its Bookings and is flagged. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
+| `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: `<listId>|office` or `<listId>|colleague`) | Catch-up Phase 30, re-pointed in 32b. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)") and, in the same step, the List goes back to the Draft Lists or to the first open colleague in the office's order; never a conflict. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
+| `/admin/day/<date>`, `/admin/draft-lists`, `/admin/conflicts` (only while an Assign or Reassign picker is open) | `ask-colleague-make-available` (choice: a closed session id) | Catch-up Phase 32b, badged Colleague stand-in. Plays the anaesthetist freeing their own closed, empty session (Free, as themselves), so the picker row becomes assignable. Shots use the inline copy on the row, `[data-candidate-closed=<reg>] [data-shot=demo-action-ask-colleague-make-available-inline]`, since the dialog's scrim covers the bar. |
+| `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
