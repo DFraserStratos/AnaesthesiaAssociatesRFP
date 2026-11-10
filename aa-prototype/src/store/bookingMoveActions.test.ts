@@ -10,7 +10,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { moveBookingToAnaesthetist } from './listMoveActions'
 import * as lifecycle from './lifecycle'
-import { authoriseList, cancelBooking, reassignBooking, submitList } from './lifecycle'
+import { authoriseList, cancelBooking, completeBooking, reassignBooking, submitList } from './lifecycle'
+import { addPairingPreference } from './officePrivate'
 import { setAvailabilityRange } from './availabilityActions'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { raisePreProcedureInvoice } from './prepaymentActions'
@@ -178,6 +179,18 @@ describe('US-01.4.7 and US-01.4.6: one move, a new List', () => {
     expect(SURG.lim).toBe(flagged.getState().schedule.lists[SEED_LIST_IDS.prepaymentUnpaidList]!.surgeonId)
   })
 
+  it('AC7, the other side: a not-preferred pairing raised by the anaesthetist changes nothing either', () => {
+    const flagged = store()
+    expect(addPairingPreference(flagged, OFFICE, { kind: 'NOT_PREFERRED', raisedBy: 'ANAESTHETIST', anaesthetistId: D.receiverId, surgeonId: SURG.whitford }).ok).toBe(true)
+    const clean = store()
+    const fFrom = flagged.getState().audit.length
+    const cFrom = clean.getState().audit.length
+    expect(moveBookingToAnaesthetist(flagged, SOUTER, D.bookingId, D.receiverId).ok).toBe(true)
+    expect(moveBookingToAnaesthetist(clean, SOUTER, D.bookingId, D.receiverId).ok).toBe(true)
+    expect(actions(flagged, fFrom)).toEqual(actions(clean, cFrom))
+    expect(flagged.getState().schedule.lists).toEqual(clean.getState().schedule.lists)
+  })
+
   it('one commit, one booking.movedToAnaesthetist with from and to, the List\'s own list.create, and no booking.reassign', () => {
     const api = store()
     const from = api.getState().audit.length
@@ -251,6 +264,29 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
     expect(after).toEqual(before)
     expect(Object.keys(api.getState().billing.invoices).length).toBe(invoicesBefore)
     expect(actions(api, from).filter((a) => /prepay|invoice|billing|xero|payable|payee/i.test(a))).toEqual([])
+  })
+
+  it('prepaid, billed through: the receiver completes, submits and is authorised; no new prepayment invoice, and the payable names the receiver', () => {
+    // The AA Holding account and 27a's transfer are later phases; this is the Phase 09/10 model's version.
+    const api = store()
+    const receiver = freeColleagues(bookingMoveInputOf(api.getState()), D.prepaidBookingId, ANAE.souter)[0]!.anaesthetistId
+    const prePaymentsBefore = Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id)
+    // The seeded prepayment's own case was settled before the move (Phase 09/10); only this List's new billing is asked about.
+    const casesBefore = new Set(Object.keys(api.getState().billing.cases))
+    const out = moveBookingToAnaesthetist(api, SOUTER, D.prepaidBookingId, receiver)
+    expect(out.ok).toBe(true)
+    if (!out.ok) return
+    const them = as(api, receiver)
+    if (api.getState().schedule.bookings[D.prepaidBookingId]?.completed !== true) expect(completeBooking(api, them, D.prepaidBookingId).ok).toBe(true)
+    expect(submitList(api, them, out.value.createdListId).ok).toBe(true)
+    expect(authoriseList(api, OFFICE, out.value.createdListId).ok).toBe(true)
+    expect(runBillingForList(api, out.value.createdListId).ok).toBe(true)
+    handoffListCases(api, out.value.createdListId)
+    const prePaymentsAfter = Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id)
+    expect(prePaymentsAfter).toEqual(prePaymentsBefore)
+    const cases = casesForList(api.getState(), out.value.createdListId).filter((c) => c.accPayId !== undefined && !casesBefore.has(c.id))
+    expect(cases.length).toBeGreaterThan(0)
+    for (const c of cases) expect(api.getState().xero.accPays[c.accPayId!]?.anaesthetistId).toBe(receiver)
   })
 })
 

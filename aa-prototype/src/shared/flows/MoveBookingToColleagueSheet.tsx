@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import {
   bookingRequiresPrepayment,
@@ -12,9 +12,10 @@ import {
 } from '../../store'
 import { bookingMoveReceivers, freeColleagues, type BookingMoveInput, type BookingReceiver } from '../../domain/bookingMoves'
 import type { AssignedList, Booking } from '../../domain/types'
-import { drSurname, initialsOf, locationName } from '../format'
+import { drSurname, locationName } from '../format'
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
+import { Initials } from './moveSheetParts'
 
 /**
  * Move to a colleague: an anaesthetist hands one Booking to a colleague free in
@@ -105,9 +106,9 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
 
   const mover = actor.anaesthetistId ?? ''
   const rows: BookingReceiver[] = useMemo(() => {
-    if (step === 'done') return []
+    if (!open || step === 'done') return []
     return query.trim() === '' ? freeColleagues(input, bookingId, mover) : bookingMoveReceivers(input, bookingId, mover, query)
-  }, [input, bookingId, mover, query, step])
+  }, [open, input, bookingId, mover, query, step])
 
   if (snapshot === undefined) return null
   const { list } = snapshot
@@ -156,7 +157,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
             {header}
             <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-booking-search" />
             <div style={{ fontSize: 13, color: neutral.slate }}>
-              {searching ? 'Everyone matching, in name order' : `Free this session · ${day} ${list.session}`}
+              {searching ? 'Matching colleagues, in name order' : `Free this session · ${day} ${list.session}`}
             </div>
             <ul
               data-shot="move-booking-receivers"
@@ -197,9 +198,6 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
 
         {step === 'confirm' && receiver !== undefined && (
           <div data-shot="move-booking-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <button type="button" onClick={() => setStep('find')} style={backLinkStyle}>
-              <ChevronLeft size={15} strokeWidth={2.4} aria-hidden /> Find a colleague
-            </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Initials name={receiver.name} size={44} />
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -283,21 +281,6 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
   )
 }
 
-const backLinkStyle = {
-  alignSelf: 'flex-start',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 2,
-  border: 'none',
-  background: 'none',
-  padding: 0,
-  color: accent.base,
-  fontFamily: 'inherit',
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
-} as const
-
 /**
  * One colleague. Offered: a button (initials, name, line, chevron). Blocked
  * (away, or already holding a List): the same row in neutral, not a button,
@@ -349,42 +332,17 @@ function ReceiverRow({ receiver, first, onPick }: { receiver: BookingReceiver; f
  */
 function LandingPath({ hospital, session, receiverShort, bookingsOnList }: { hospital: string; session: string; receiverShort: string; bookingsOnList: number }) {
   const left = bookingsOnList - 1
+  const stays = left === 0 ? 'no other Booking stays' : `${left} ${left === 1 ? 'Booking stays' : 'Bookings stay'}`
   return (
     <div aria-hidden style={{ display: 'grid', gridTemplateColumns: '14px 1fr', columnGap: 12, padding: '12px 14px', borderRadius: radius.card, background: neutral.bg }}>
-      <span style={{ width: 10, height: 10, marginTop: 4, marginLeft: 2, borderRadius: 999, border: `2px solid ${neutral.lineStrong}`, background: neutral.surface, boxSizing: 'border-box' }} />
+      <span style={{ width: 10, height: 10, marginTop: 4, marginLeft: 2, borderRadius: radius.pill, border: `2px solid ${neutral.lineStrong}`, background: neutral.surface, boxSizing: 'border-box' }} />
       <span style={{ fontSize: 13, color: neutral.slate }}>
-        Your {hospital} {session} List · {left} {left === 1 ? 'Booking stays' : 'Bookings stay'}
+        Your {hospital} {session} List · {stays}
       </span>
       <span style={{ justifySelf: 'center', width: 2, height: 14, background: neutral.lineStrong, margin: '2px 0' }} />
       <span />
-      <span style={{ width: 10, height: 10, marginTop: 4, marginLeft: 2, borderRadius: 999, background: neutral.ink }} />
+      <span style={{ width: 10, height: 10, marginTop: 4, marginLeft: 2, borderRadius: radius.pill, background: neutral.ink }} />
       <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>New List for {receiverShort} · this Booking</span>
     </div>
-  )
-}
-
-/** Initials in a neutral disc (no tint that could read as a mark). */
-function Initials({ name, size = 36, muted = false }: { name: string; size?: number; muted?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 999,
-        background: muted ? neutral.surface : neutral.sunken,
-        border: muted ? `1px dashed ${neutral.lineStrong}` : 'none',
-        color: muted ? neutral.mist : neutral.ink,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: size > 40 ? 14 : 12,
-        fontWeight: 700,
-        flex: 'none',
-        boxSizing: 'border-box',
-      }}
-    >
-      {initialsOf(name)}
-    </span>
   )
 }

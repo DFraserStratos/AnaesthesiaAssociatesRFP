@@ -23,9 +23,8 @@ import {
   type RankedCandidate,
 } from '../../../../domain/pairingPreferences'
 import type { PriorityTier } from '../../../../domain/types'
-import { titledSurname } from '../../../../shared/format'
+import { matchesNameQuery, titledSurname } from '../../../../shared/format'
 import { NameSearchBox, Segmented } from '../../../../shared/ui'
-import { matchesNameQuery } from '../../../../domain/names'
 import { useAppStore } from '../../../../store'
 import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
@@ -51,15 +50,20 @@ interface AnaesthetistCandidatesProps {
   trailing?: (anaesthetistId: string) => ReactNode
   /** Shown when no one is a candidate at all. */
   emptyText: string
+  /** The type-ahead's text, when the caller also filters rows of its own by it (Reassign's Not available group). */
+  query?: string
+  onQueryChange?: (query: string) => void
 }
 
-export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPick, trailing, emptyText }: AnaesthetistCandidatesProps) {
+export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPick, trailing, emptyText, query: controlledQuery, onQueryChange }: AnaesthetistCandidatesProps) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const surgeonName = useAppStore((s) => (surgeonId !== undefined ? s.masters.surgeons[surgeonId]?.name : undefined))
   const entries = usePairingEntries()
   const tiers = usePriorityTiers()
   const [filter, setFilter] = useState<TierFilter>('all')
-  const [query, setQuery] = useState('')
+  const [ownQuery, setOwnQuery] = useState('')
+  const query = controlledQuery ?? ownQuery
+  const setQuery = onQueryChange ?? setOwnQuery
 
   const rankedAll = useMemo(
     () =>

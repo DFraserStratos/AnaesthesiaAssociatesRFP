@@ -363,6 +363,12 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="list-row-badge"]').first()).toHaveText('New')
   await page.screenshot({ path: 'visual/shots/pwa-15-booking-new-list.png' })
+  // The Booking is on a new List of hers in Wed 22 PM (Christchurch Eye Surgery, Ms Reid), one Booking.
+  await page.getByRole('button', { name: 'Month', exact: true }).click()
+  const wed22pm = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  await expect(wed22pm).toHaveAttribute('data-list-id', /^LG\d{4}$/)
+  await expect(wed22pm).toContainText('Christchurch Eye Surgery')
+  await page.getByRole('button', { name: 'Week', exact: true }).click()
   await page.goto('/mobile/availability')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="moved-to-you-booking-row"]')).toContainText('Dr Hughes moved a Booking to you: Wed 22 Jul PM, Christchurch Eye Surgery')

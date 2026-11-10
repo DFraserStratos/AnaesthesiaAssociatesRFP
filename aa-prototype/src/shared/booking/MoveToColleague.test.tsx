@@ -40,6 +40,18 @@ describe('Move to a colleague on the Booking screen', () => {
     const submitted = bookingsForList(useAppStore.getState(), SEED_LIST_IDS.souterMon20Am)[0]!
     const locked = renderBody(submitted.id, SOUTER_ACTOR)
     expect(locked.container.querySelector('[data-shot="move-booking-action"]')).toBeNull()
+    locked.unmount()
+    // A past day: the office's to move.
+    useAppStore.setState({ clock: { ...useAppStore.getState().clock, todayISO: '2026-07-23' } })
+    const past = renderBody(D.bookingId, SOUTER_ACTOR)
+    expect(past.container.querySelector('[data-shot="move-booking-action"]')).toBeNull()
+    past.unmount()
+    // A cancelled Booking.
+    useAppStore.setState(freshAppState())
+    const b = useAppStore.getState().schedule.bookings[D.secondBookingId]!
+    useAppStore.setState({ schedule: { ...useAppStore.getState().schedule, bookings: { ...useAppStore.getState().schedule.bookings, [b.id]: { ...b, cancellation: { atISO: '2026-07-21T08:00:00', by: 'Kirsty W.', reason: 'Patient unwell' } as typeof b.cancellation } } } })
+    const cancelled = renderBody(D.secondBookingId, SOUTER_ACTOR)
+    expect(cancelled.container.querySelector('[data-shot="move-booking-action"]')).toBeNull()
   })
 
   it('keeps the sheet through the move: the done state shows, then Back to your List leaves', () => {

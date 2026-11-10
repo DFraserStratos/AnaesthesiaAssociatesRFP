@@ -4,7 +4,7 @@
  * search and the name-only order, by availability alone.
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { bookingMoveReceivers, bookingMoveRefusal, bookingPlacement, freeColleagues, RECEIVER_LINES, type BookingMoveInput } from './bookingMoves'
 import { matchesNameQuery } from './names'
 import { seedSlotStatusRecords } from './seed'
@@ -84,7 +84,10 @@ describe('matchesNameQuery (the one type-ahead filter)', () => {
     expect(matchesNameQuery('Dr Rawiri Hughes', 'h')).toBe(true)
     expect(matchesNameQuery('Dr Rawiri Hughes', 'HUG')).toBe(true)
     expect(matchesNameQuery('Dr Rawiri Hughes', 'rawiri  h')).toBe(true)
-    expect(matchesNameQuery('Dr Rawiri Hughes', 'dr')).toBe(false)
+    // A title in the query is ignored, as it is in the name.
+    expect(matchesNameQuery('Dr Rawiri Hughes', 'Dr Hug')).toBe(true)
+    expect(matchesNameQuery('Dr Rawiri Hughes', 'dr')).toBe(true)
+    expect(matchesNameQuery('Dr Andrew Smith', 'Dr Hug')).toBe(false)
     expect(matchesNameQuery('Dr Rawiri Hughes', 'chen')).toBe(false)
   })
 })
@@ -157,6 +160,7 @@ describe('bookingMoveReceivers', () => {
 
   it('takes no preference or tier: the input type is the schedule, the masters and the statuses only', () => {
     expect(Object.keys(input).sort()).toEqual(['anaesthetists', 'bookings', 'lists', 'slotStatuses', 'slots'])
+    expectTypeOf<keyof BookingMoveInput>().toEqualTypeOf<'lists' | 'slots' | 'anaesthetists' | 'slotStatuses' | 'bookings'>()
   })
 })
 

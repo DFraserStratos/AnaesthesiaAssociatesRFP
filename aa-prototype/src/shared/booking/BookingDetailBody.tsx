@@ -174,12 +174,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   )
 
   const cancelled = booking?.cancellation !== undefined
-  // After Move to a colleague the Booking is a colleague's: an anaesthetist no
-  // longer edits it, and once the sheet closes the screen goes back to her List.
-  const movedAway = actor.role === 'anaesthetist' && list !== undefined && list.anaesthetistId !== actor.anaesthetistId
-  useEffect(() => {
-    if (movedAway && !moveOpen) onBack()
-  }, [movedAway, moveOpen, onBack])
+  // A Booking on a colleague's List (after Move to a colleague, or reached by
+  // URL) is not hers to edit. Leaving is explicit: once a move has committed,
+  // closing the sheet returns to her List (no effect, so no navigation loop
+  // while the slide stack keeps this layer mounted).
+  const notHers = actor.role === 'anaesthetist' && list !== undefined && list.anaesthetistId !== actor.anaesthetistId
+  const [movedByHer, setMovedByHer] = useState(false)
+  // Mounted from the first open (and then kept, so the done state outlives the move), not on every Booking screen.
+  const [moveMounted, setMoveMounted] = useState(false)
 
   // Live validation (ctx assembled as billingContextForBooking does). Failures
   // render per-procedure anchors only after the showValidation latch.
@@ -324,7 +326,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // cancel a Booking on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
   // stays blocked on SUBMITTED. Mobile/web pass an anaesthetist actor, so their
   // behaviour is unchanged (ACTIVE-only).
-  const canEdit = !cancelled && !movedAway && list.state !== 'AUTHORISED' && (list.state === 'ACTIVE' || actor.role === 'office')
+  const canEdit = !cancelled && !notHers && list.state !== 'AUTHORISED' && (list.state === 'ACTIVE' || actor.role === 'office')
   // Move to a colleague (catch-up Phase 32a, US-01.4.7): the anaesthetist's own
   // non-cancelled Booking on her ACTIVE List dated today or later. The office
   // keeps its own Move in Admin.
@@ -500,7 +502,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       />
       {movedToMe !== undefined && (
         <div data-shot="booking-moved-to-you" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, color: neutral.ink, borderRadius: radius.card, padding: '10px 12px', fontSize: 13 }}>
-          {movedToYouByLine({ atISO: movedToMe.atISO }, movedToMe.fromName)}
+          {movedToYouByLine(movedToMe.atISO, movedToMe.fromName)}
         </div>
       )}
       {cancelled && (
@@ -667,7 +669,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       {/* Actions */}
       {canMove && (
         <div data-shot="move-booking-action" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-          <Button variant="secondary" block onClick={() => setMoveOpen(true)}>
+          <Button
+            variant="secondary"
+            block
+            onClick={() => {
+              setMoveMounted(true)
+              setMoveOpen(true)
+            }}
+          >
             <Users size={16} aria-hidden /> Move to a colleague
           </Button>
           <span style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>
@@ -755,13 +764,20 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       />
 
       <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'booking', id: bookingId }} actor={actor} onClose={() => setSheet('none')} />
-      {actor.role === 'anaesthetist' && (
+      {actor.role === 'anaesthetist' && moveMounted && (
         <MoveBookingToColleagueSheet
           open={moveOpen}
           actor={actor}
           bookingId={bookingId}
-          onClose={() => setMoveOpen(false)}
-          onBackToList={() => setMoveOpen(false)}
+          onClose={() => {
+            setMoveOpen(false)
+            if (movedByHer) onBack()
+          }}
+          onBackToList={() => {
+            setMoveOpen(false)
+            onBack()
+          }}
+          onMoved={() => setMovedByHer(true)}
         />
       )}
       <CancelBookingSheet open={sheet === 'cancel'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />

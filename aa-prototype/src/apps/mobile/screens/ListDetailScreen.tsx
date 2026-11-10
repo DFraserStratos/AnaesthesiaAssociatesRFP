@@ -152,7 +152,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
             {moved !== undefined && (
               <span data-shot="list-moved-to-you" style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: neutral.slate }}>
-                {movedToYouByLine(moved.notification, moved.fromName)}
+                {movedToYouByLine(moved.atISO, moved.fromName)}
               </span>
             )}
             {movable && movePrompt !== null && (

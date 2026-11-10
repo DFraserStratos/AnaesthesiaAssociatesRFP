@@ -55,6 +55,10 @@ describe('S2 Beat 3d: the movable Booking', () => {
   it("is scripted for Beat 3d (with Whitaker's receiving session), and is none of Phase 32's pinned Lists", () => {
     expect(scriptedLists.has(D.sourceListId)).toBe(true)
     expect(scriptedSlots.has(slotIdFor(D.receiverId, '2026-07-22', 'AM'))).toBe(true)
+    // The beat's other rows stay as the guide says: the second receiver, the colleague away, the List holder.
+    expect(scriptedSlots.has(slotIdFor(D.secondReceiverId, '2026-07-22', 'AM'))).toBe(true)
+    expect(scriptedSlots.has(slotIdFor(D.unavailableColleagueId, '2026-07-22', 'AM'))).toBe(true)
+    expect(scriptedLists.has(`L-${D.listHoldingColleagueId}-2026-07-22-AM`)).toBe(true)
     expect(Object.values(LIST_MOVE_DEMO)).not.toContain(D.sourceListId)
   })
 

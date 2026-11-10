@@ -48,7 +48,7 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 - Billing-run completion: the prototype stamps `billedAt` and removes the List from the
   anaesthetist's work view.
 - There is no `RETURNED` state.
-- `DRAFT` now means a Draft List with no anaesthetist yet; Draft Lists are not in this build.
+- `DRAFT` means a Draft List with no anaesthetist yet (catch-up Phase 31); an assigned List is never DRAFT.
 
 ## Permission matrix
 
@@ -158,6 +158,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Photo of the booking card: Future Work (Demo actions, badged)
 - Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
   (My calendar, a bottom sheet)
+- Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Later: balances
 
 ### Anaesthetist Web
@@ -166,6 +167,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Same List/Booking detail and capture functions
 - Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
   (My availability, the same form as the phone)
+- Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Accounts and GST activity
 
 ### Admin Web
@@ -249,10 +251,17 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   submitted List. On Lists, **Office assigns a List to my next free session** (also an office
   stand-in) assigns a List to Dr Souter's earliest free session, which then shows as a booked List.
   On Availability, **Colleague moves a List into my free session** (badged "Colleague stand-in")
-  plays a colleague handing one of their Lists on to her, so the Moved to you notice shows.
+  plays a colleague handing one of their Lists on to her, so the Moved to you notice shows. On Lists,
+  **Colleague moves a Booking to me** (also "Colleague stand-in", with a choice per candidate) plays a
+  colleague handing her one Booking as a new List in a session she is free in; a session she is not
+  available in is offered only after she sets it available in My calendar (her acceptance).
 - On **Admin Day** and **Notifications**, **Demo actions → Colleague moves a List to the office**
   stages another anaesthetist's own return (One move), or **A busy morning (8 moves)** to show the
   Notifications page paging. Nothing waits for the office, so there is no office stand-in for it.
+- On **Admin Day**, **Demo actions → Colleague hands a Booking to Dr Souter** (catch-up Phase 32a):
+  a colleague moves one of their Bookings into her free session as a new List, with the office notice
+  ticked, so the new List and the pool row show without switching persona. The move itself is plain
+  product use: **Move to a colleague** on any of her Bookings (S2 Beat 3d).
 - **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
   actions. Say so plainly: in scope today is the St George's and Southern Cross download into a
@@ -317,6 +326,13 @@ Say:
   open (OQ-79).
 - Answered (D44, OQ-43): no warning on the anaesthetist's own move. She sees colleagues by
   availability alone; pairing preferences are the office's alone and warn only on the office's paths.
+- Answered (D61, OQ-85; D54, OQ-113): she can also move a single Booking, to a colleague free in
+  that session, found by typing a name or from the free list in name order (never by tier or
+  pairing). It always becomes a new List in their session, never added to an existing List (the rule
+  for now; it may change if it does not work in practice). Telling the office is her option.
+- Answered (D38, OQ-80): the payable follows the Booking; a prepaid Booking's payable stays the AA
+  Holding account, the new anaesthetist claims the prepaid amount, and nothing is recalculated or
+  repointed. Whoever submits a List did every procedure on it (the doer rule).
 
 ### 6. Availability and holiday conflicts
 

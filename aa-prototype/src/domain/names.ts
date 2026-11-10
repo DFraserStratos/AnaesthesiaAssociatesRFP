@@ -10,8 +10,11 @@
  * Dr-only short form would mislabel them (Phase 17 pairing group headings).
  * A name with no title stays whole ("Jane Smith"): no title is invented.
  */
+/** A leading personal title ("Dr ", "Ms. "), the one pattern the name helpers share. */
+const TITLE_PREFIX = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i
+
 export function titledSurname(name: string): string {
-  const match = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i.exec(name.trim())
+  const match = TITLE_PREFIX.exec(name.trim())
   if (match === null) return name.trim()
   const parts = name.trim().slice(match[0].length).split(/\s+/).filter((p) => p !== '')
   const surname = parts[parts.length - 1]
@@ -25,10 +28,11 @@ export function titledSurname(name: string): string {
  * h" both find "Dr Rawiri Hughes"). An empty or blank query matches everyone.
  */
 export function matchesNameQuery(name: string, query: string): boolean {
-  const q = query.trim().toLowerCase().replace(/\s+/g, ' ')
-  if (q === '') return true
-  const bare = name.trim().replace(/^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i, '').toLowerCase().replace(/\s+/g, ' ')
-  return bare.includes(q)
+  const bare = (text: string) => text.trim().replace(/\s+/g, ' ').replace(TITLE_PREFIX, '').toLowerCase()
+  const q = bare(query)
+  // Nothing typed, or a title alone ("Dr", "Dr "): everyone here has one, so it narrows nothing.
+  if (q === '' || /^(dr|mr|ms|mrs|miss|prof)\.?$/i.test(q)) return true
+  return bare(name).includes(q)
 }
 
 /** A patient as the office reads them in a one-line notice: "Annette Riley" -> "Riley, A.". */

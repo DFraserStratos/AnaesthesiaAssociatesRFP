@@ -12,8 +12,7 @@
  *   to-do list.
  */
 
-import { compareNewestFirst, MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationText, pageOf, type NotificationMasters } from '../domain/notifications'
-import { addDaysISO } from '../domain/clock'
+import { compareNewestFirst, inMovedToMeWindow, NOTIFICATION_POOL_RULE, notificationText, pageOf, type NotificationMasters } from '../domain/notifications'
 import type { Notification } from '../domain/types'
 import { allocateId } from './mutate'
 import type { AppState } from './appStore'
@@ -126,9 +125,8 @@ export function latestNotificationForList(state: Pick<AppState, 'notifications'>
  * office names no colleague, so it never shows here.
  */
 export function movedToMe(state: Pick<AppState, 'notifications'>, anaesthetistId: string, todayISO: string): Notification[] {
-  const fromISO = addDaysISO(todayISO, -(MOVED_TO_ME_DAYS - 1))
   return Object.values(state.notifications)
-    .filter((n) => n.kind === 'listMoved' && n.route === 'colleague' && n.toAnaesthetistId === anaesthetistId && n.atISO.slice(0, 10) >= fromISO && n.atISO.slice(0, 10) <= todayISO)
+    .filter((n) => n.kind === 'listMoved' && n.route === 'colleague' && n.toAnaesthetistId === anaesthetistId && inMovedToMeWindow(n.atISO, todayISO))
     .sort(compareNewestFirst)
 }
 
@@ -184,15 +182,28 @@ function newestMoveFirst(a: BookingMove, b: BookingMove): number {
  * "Moved to you" notice). A display window: the audit stays.
  */
 export function bookingsMovedToMe(state: Pick<AppState, 'audit'>, anaesthetistId: string, todayISO: string): BookingMove[] {
-  const fromISO = addDaysISO(todayISO, -(MOVED_TO_ME_DAYS - 1))
   const out: BookingMove[] = []
   for (const entry of state.audit) {
     const move = bookingMoveOf(entry)
-    if (move === undefined || move.toAnaesthetistId !== anaesthetistId) continue
-    const day = move.atISO.slice(0, 10)
-    if (day >= fromISO && day <= todayISO) out.push(move)
+    if (move !== undefined && move.toAnaesthetistId === anaesthetistId && inMovedToMeWindow(move.atISO, todayISO)) out.push(move)
   }
   return out.sort(newestMoveFirst)
+}
+
+/** The received Booking's "Moved to you by" notice: the move that put it on her List, still there, inside the window. */
+export function bookingMovedToMe(
+  state: Pick<AppState, 'audit'> & { schedule: Pick<AppState['schedule'], 'bookings'> },
+  bookingId: string,
+  anaesthetistId: string,
+  todayISO: string,
+): BookingMove | undefined {
+  const move = bookingMoveFor(state, bookingId)
+  return move !== undefined && move.toAnaesthetistId === anaesthetistId && inMovedToMeWindow(move.atISO, todayISO) ? move : undefined
+}
+
+/** The audit's single-Booking move events only (a subscription that changes only when a move lands, not on every write). */
+export function bookingMoveEntries(state: Pick<AppState, 'audit'>): AppState['audit'] {
+  return state.audit.filter((e) => e.action === 'booking.movedToAnaesthetist')
 }
 
 /** The newest single-Booking move that put this Booking where it is, if it is still on that List (the received Booking's "Moved to you by" line). */
@@ -208,12 +219,12 @@ export function bookingMoveFor(state: Pick<AppState, 'audit'> & { schedule: Pick
   return latest !== undefined && latest.listId === booking.listId ? latest : undefined
 }
 
-/** The single-Booking moves onto this List, newest first (the Admin drawer's "Booking moved here by" line). */
-export function bookingMovesOntoList(state: Pick<AppState, 'audit'>, listId: string): BookingMove[] {
+/** The single-Booking moves onto this List whose Booking is still on it, newest first (the Admin drawer's "Booking moved here by" line). */
+export function bookingMovesOntoList(state: Pick<AppState, 'audit'> & { schedule: Pick<AppState['schedule'], 'bookings'> }, listId: string): BookingMove[] {
   const out: BookingMove[] = []
   for (const entry of state.audit) {
     const move = bookingMoveOf(entry)
-    if (move !== undefined && move.listId === listId) out.push(move)
+    if (move !== undefined && move.listId === listId && state.schedule.bookings[move.bookingId]?.listId === listId) out.push(move)
   }
   return out.sort(newestMoveFirst)
 }

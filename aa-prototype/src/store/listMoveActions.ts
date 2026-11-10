@@ -165,19 +165,26 @@ function ownMoveCore(
   })
 }
 
-function commit(api: AppStoreApi, actor: Actor, listId: string, route: OwnMoveRoute, options: OwnMoveCoreOptions): Outcome<OwnMoveResult> {
-  const preflight = ownMoveCore(api.getState(), actor, listId, route, options)
+type MoveCore<R> = (state: AppState) => Outcome<{ patch: DomainPatch; metas: MutationMeta[]; result: R }>
+
+/** Run a move core as a preflight (refusals leave the store untouched), then once inside one `mutate()` commit. */
+function commitCore<R>(api: AppStoreApi, actor: Actor, label: string, core: MoveCore<R>): Outcome<R> {
+  const preflight = core(api.getState())
   if (!preflight.ok) return preflight
   let result = preflight.value.result
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    const core = ownMoveCore(s, actor, listId, route, options)
-    if (!core.ok) throw new Error(`ownMoveCore: ${core.message}`)
-    metas.push(...core.value.metas)
-    result = core.value.result
-    return core.value.patch
+    const run = core(s)
+    if (!run.ok) throw new Error(`${label}: ${run.message}`)
+    metas.push(...run.value.metas)
+    result = run.value.result
+    return run.value.patch
   })
   return ok(result)
+}
+
+function commit(api: AppStoreApi, actor: Actor, listId: string, route: OwnMoveRoute, options: OwnMoveCoreOptions): Outcome<OwnMoveResult> {
+  return commitCore(api, actor, 'ownMoveCore', (s) => ownMoveCore(s, actor, listId, route, options))
 }
 
 export interface OwnMoveInput {
@@ -324,18 +331,7 @@ export function moveBookingToAnaesthetist(
   toAnaesthetistId: string,
   options: BookingMoveOptions = {},
 ): Outcome<BookingMoveResult> {
-  const preflight = bookingMoveCore(api.getState(), actor, bookingId, toAnaesthetistId, options)
-  if (!preflight.ok) return preflight
-  let result = preflight.value.result
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    const core = bookingMoveCore(s, actor, bookingId, toAnaesthetistId, options)
-    if (!core.ok) throw new Error(`bookingMoveCore: ${core.message}`)
-    metas.push(...core.value.metas)
-    result = core.value.result
-    return core.value.patch
-  })
-  return ok(result)
+  return commitCore(api, actor, 'bookingMoveCore', (s) => bookingMoveCore(s, actor, bookingId, toAnaesthetistId, options))
 }
 
 function bookingMoveCore(
@@ -345,8 +341,9 @@ function bookingMoveCore(
   toAnaesthetistId: string,
   options: BookingMoveOptions,
 ): Outcome<{ patch: DomainPatch; metas: MutationMeta[]; result: BookingMoveResult }> {
-  const notActor = actorRefusal<{ patch: DomainPatch; metas: MutationMeta[]; result: BookingMoveResult }>(actor)
-  if (notActor !== null) return notActor
+  if (actor.role !== 'anaesthetist' || actor.source === 'integration' || actor.anaesthetistId === undefined) {
+    return refuse('ownerOnly', "Only the Booking's anaesthetist moves it this way. The office uses Move on the Booking in Admin.")
+  }
   const input = bookingMoveInputOf(state)
   const refusal = bookingMoveRefusal(input, bookingId, actor.anaesthetistId, state.clock.todayISO)
   if (refusal !== null) return refuse(refusal.code, refusal.message)

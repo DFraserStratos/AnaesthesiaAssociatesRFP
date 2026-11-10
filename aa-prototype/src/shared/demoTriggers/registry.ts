@@ -883,7 +883,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return choiceId === undefined || bookingMoveCandidates(state, ANAE.souter).some((c) => c.bookingId === choiceId) ? null : 'Choose a colleague Booking'
     },
     run: (api, _ctx, choiceId) => {
-      const res = stageColleagueBookingMove(api, ANAE.souter, choiceId !== undefined ? { choiceId } : {})
+      const res = stageColleagueBookingMove(api, ANAE.souter, {
+        ...(choiceId !== undefined ? { choiceId } : {}),
+        refusal: 'No colleague Booking fits a session you are free in. Set a session available first.',
+      })
       if (!res.ok) return { ok: false, message: res.message }
       const state = api.getState()
       const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)

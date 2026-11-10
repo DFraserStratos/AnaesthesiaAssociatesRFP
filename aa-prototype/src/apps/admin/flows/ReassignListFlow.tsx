@@ -9,6 +9,7 @@ import { useSlotStatuses } from '../../../shared/status/useSlotStatuses'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
+import { matchesNameQuery } from '../../../shared/format'
 import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { ConflictCallout, useConflictPreview } from '../components/conflicts/ConflictCallout'
 
@@ -50,6 +51,8 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   const anaesthetists = state.masters.anaesthetists
 
   const [targetId, setTargetId] = useState<string | null>(null)
+  // The shared type-ahead's text (Phase 32a): it narrows the candidates and the Not available group alike.
+  const [query, setQuery] = useState('')
   const statusOptions = useSlotStatuses()
   const defaultStatus = defaultSlotStatus(state.masters.slotStatuses)
   const sourceSlot = state.schedule.slots[list.slotId]
@@ -100,6 +103,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         .sort((a, b) => surnameFirst(anaesthetists[a.anaesthetistId]?.name ?? '').localeCompare(surnameFirst(anaesthetists[b.anaesthetistId]?.name ?? ''))),
     [state, anaesthetists, list.anaesthetistId, list.dateISO, list.session],
   )
+  const shownUnavailable = unavailableSlots.filter((s) => matchesNameQuery(anaesthetists[s.anaesthetistId]?.name ?? '', query))
   const target = targetId !== null ? anaesthetists[targetId] : undefined
   const targetSlot = target !== undefined ? slotFor(state, target.registrationNumber, list.dateISO, list.session) : undefined
   const targetConflicts = useConflictPreview(targetSlot !== undefined ? { dateISO: list.dateISO, slotId: targetSlot.id } : null).filter((c) => c.kind === 'availability')
@@ -132,15 +136,17 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
               surgeonId={list.surgeonId}
               requestKey={requestKey}
               onPick={setTargetId}
+              query={query}
+              onQueryChange={setQuery}
               emptyText={`No anaesthetist has a free ${list.session} session on this day.`}
               trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {list.session} →</span>}
             />
-            {unavailableSlots.length > 0 && (
+            {shownUnavailable.length > 0 && (
               <details data-shot="reassign-not-available" style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '8px 12px' }}>
-                <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate }}>Not available ({unavailableSlots.length})</summary>
+                <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate }}>Not available ({shownUnavailable.length})</summary>
                 <div style={{ fontSize: 12, color: neutral.mist, margin: '6px 0 4px' }}>Their {list.session} session is marked unavailable. Moving the List there flags it as a conflict.</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {unavailableSlots.map((s) => (
+                  {shownUnavailable.map((s) => (
                     <button
                       key={s.id}
                       type="button"

@@ -16,6 +16,7 @@
 import { ANAE, SCRIPTED_BEAT_SCHEDULE } from '../domain/seed'
 import { canReceiveList, ownMoveRefusal, pushTargets } from '../domain/listMoves'
 import { bookingMoveRefusal, bookingPlacement } from '../domain/bookingMoves'
+import { titledSurname } from '../domain/names'
 import { SEED_STATUS } from '../domain/slotStatus'
 import { slotIdFor } from '../domain/slots'
 import type { AssignedList } from '../domain/types'
@@ -186,16 +187,21 @@ export interface BookingMoveCandidate {
 export function bookingMoveCandidates(state: DemoState, personaId: string, fromISO?: string): BookingMoveCandidate[] {
   const input = bookingMoveInputOf(state)
   const todayISO = state.clock.todayISO
-  const bookings = Object.values(state.schedule.bookings).sort((a, b) => a.id.localeCompare(b.id))
+  // Each List's Bookings, in id order, gathered once.
+  const byList = new Map<string, string[]>()
+  for (const id of Object.keys(state.schedule.bookings).sort()) {
+    const listId = state.schedule.bookings[id]!.listId
+    byList.set(listId, [...(byList.get(listId) ?? []), id])
+  }
   const out: BookingMoveCandidate[] = []
   for (const list of colleagueMoveCandidates(state, fromISO)) {
     if (list.anaesthetistId === personaId) continue
     if (SCRIPTED_SLOTS.has(slotIdFor(personaId, list.dateISO, list.session))) continue
-    const booking = bookings.find(
-      (b) => b.listId === list.id && bookingMoveRefusal(input, b.id, list.anaesthetistId, todayISO) === null && bookingPlacement(input, b.id, personaId).ok,
-    )
-    if (booking === undefined) continue
-    out.push({ bookingId: booking.id, fromAnaesthetistId: list.anaesthetistId, listId: list.id, dateISO: list.dateISO, session: list.session, hospitalId: list.hospitalId })
+    const ids = byList.get(list.id) ?? []
+    const bookingId = ids.find((id) => bookingMoveRefusal(input, id, list.anaesthetistId, todayISO) === null)
+    // Whether the persona's session can take it depends on the List's day and session only: asked once.
+    if (bookingId === undefined || !bookingPlacement(input, bookingId, personaId).ok) continue
+    out.push({ bookingId, fromAnaesthetistId: list.anaesthetistId, listId: list.id, dateISO: list.dateISO, session: list.session, hospitalId: list.hospitalId })
   }
   return out
 }
@@ -213,14 +219,16 @@ export function bookingMoveCandidateRefusal(state: DemoState, personaId: string,
 export function stageColleagueBookingMove(
   api: AppStoreApi,
   personaId: string,
-  options: { dateISO?: string; choiceId?: string; tellOffice?: boolean } = {},
+  options: { dateISO?: string; choiceId?: string; tellOffice?: boolean; refusal?: string } = {},
 ): Outcome<BookingMoveResult & BookingMoveCandidate> {
   const state = api.getState()
   const candidates = bookingMoveCandidates(state, personaId, options.dateISO)
   const found = options.choiceId !== undefined ? candidates.find((c) => c.bookingId === options.choiceId) : candidates[0]
-  if (found === undefined) return refuse('notAvailable', 'No colleague Booking fits a session Dr Souter is free in')
+  const persona = state.masters.anaesthetists[personaId]
+  const none = `No colleague Booking fits a session ${persona !== undefined ? titledSurname(persona.name) : 'they are'} free in`
+  if (found === undefined) return refuse('notAvailable', options.refusal ?? none)
   const actor = anaesthetistActor(state, found.fromAnaesthetistId)
-  if (actor === undefined) return refuse('notAvailable', 'No colleague Booking fits a session Dr Souter is free in')
+  if (actor === undefined) return refuse('notAvailable', options.refusal ?? none)
   const out = moveBookingToAnaesthetist(api, actor, found.bookingId, personaId, { tellOffice: options.tellOffice === true })
   if (!out.ok) return out
   return ok({ ...found, ...out.value })

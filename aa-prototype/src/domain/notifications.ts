@@ -9,6 +9,7 @@
 
 import { shortDateLabel } from './slotStatus'
 import { titledSurname } from './names'
+import { addDaysISO } from './clock'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
 
 /**
@@ -36,6 +37,12 @@ export const NOTIFICATION_POOL_RULE = {
 
 /** How many demo days the receiving colleague's "Moved to you" panel looks back (a display window; the records stay). */
 export const MOVED_TO_ME_DAYS = 7
+
+/** Whether a move at `atISO` is inside the "Moved to you" window ending today: the one window rule for List and Booking notices. */
+export function inMovedToMeWindow(atISO: string, todayISO: string): boolean {
+  const day = atISO.slice(0, 10)
+  return day >= addDaysISO(todayISO, -(MOVED_TO_ME_DAYS - 1)) && day <= todayISO
+}
 
 export interface NotificationMasters {
   anaesthetists: Readonly<Record<string, Anaesthetist>>

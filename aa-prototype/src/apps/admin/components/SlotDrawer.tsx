@@ -10,6 +10,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
+import { useBookingMoveEntries } from '../../../shared/flows'
 import { drSurname, LIST_STATE_LABELS, locationName, slotTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
 import { surnameFirst } from '../util'
@@ -377,9 +378,10 @@ function MovedHereLine({ listId, anaesthetistId }: { listId: string; anaesthetis
  * needs no action. Nothing about pairing preferences.
  */
 function BookingMovedHereLine({ listId }: { listId: string }) {
-  const audit = useAppStore((s) => s.audit)
+  const entries = useBookingMoveEntries()
+  const bookings = useAppStore((s) => s.schedule.bookings)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
-  const moves = useMemo(() => bookingMovesOntoList({ audit }, listId), [audit, listId])
+  const moves = useMemo(() => bookingMovesOntoList({ audit: entries, schedule: { bookings } }, listId), [entries, bookings, listId])
   if (moves.length === 0) return null
   return (
     <div data-shot="drawer-booking-moved-here" style={{ background: neutral.bg, borderRadius: radius.card, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink, display: 'flex', flexDirection: 'column', gap: 4 }}>

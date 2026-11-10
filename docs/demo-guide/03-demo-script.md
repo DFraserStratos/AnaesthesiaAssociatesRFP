@@ -287,7 +287,8 @@ already seeded.
   office-led reassignment is for when nobody has arranged cover; Beat 3c shows the anaesthetist
   moving her own List."
 - **Say:** "The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing
-  about billing is recalculated. It is different from moving one patient Booking."
+  about billing is recalculated. It is different from moving one patient Booking, which Beat 3d
+  shows."
 - **Say:** "The office's private knowledge is now data: who works well with whom, either way round, and
   the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on
   top. Only the office ever sees it."
@@ -364,6 +365,43 @@ already seeded.
   a not-preferred pairing with Ms Lim in the office's private data: that is the point. The office's
   own Reassign of the same List would still warn.)
 
+### Beat 3d: she hands one Booking to a colleague
+
+- **Click:**
+  - Still on the **Anaesthetist Web App** (Dr Souter), open her **Wed 22 Jul AM** Christchurch Eye
+    Surgery List (Mr J. Whitford) and its first Booking, **Lachlan Robinson**
+    (`/web/lists/L-34821-2026-07-22-AM/bookings/BK0046`). Select **Move to a colleague**.
+  - The sheet opens on **Free this session**: Dr Delaney, Dr Morrison, Dr Ngata, Dr Ropata, Dr Sharma
+    and Dr Whitaker, in name order. Type **ch**: **Dr Alistair Chen** shows, greyed, "Not available
+    this session. They can set it available in their app, then you can move it.", and cannot be
+    picked. (Type **fitz** for Dr Fitzgerald: "Already has a List this session".)
+  - Clear the box, type **whi** and pick **Dr Ben Whitaker**. The confirm step reads "A new List is
+    created in Dr Whitaker's Wed 22 Jul AM session at Christchurch Eye Surgery." and "Dr Whitaker is
+    paid for it." Tick **Tell the office**, then **Move Booking**, then **Back to your List**.
+  - Switch to the **Admin Web App → Day view → Wed 22 Jul**: a new List on Dr Whitaker's AM row,
+    same hospital and surgeon, holding the one Booking; its drawer reads "Booking moved here by Dr
+    Souter". The rail's **Notifications** card reads "Dr Souter moved a Booking (Robinson, L., Wed 22
+    Jul AM, Christchurch Eye Surgery) to Dr Whitaker. A new List was created."
+  - Optional: on **Admin Day**, **Demo actions → Colleague hands a Booking to Dr Souter**: Dr Hughes
+    hands his Wed 22 Jul PM Booking into her free session, and a new List appears on her row.
+- **Say:** "Sometimes it is one case, not the whole List. She finds a colleague who is free that
+  session, by name or from the list, and hands it on straight away, with no pop-ups: who works with
+  whom is the office's business, not hers. It becomes a List for them; it never goes into someone
+  else's List. Someone on leave is not offered until they mark themselves available, which is how
+  they say yes. Telling the office is her choice. Whoever does a Booking is the one paid for it; if it
+  was prepaid, the amount sits with the AA Holding account, the new anaesthetist claims it and nothing
+  is recalculated."
+- **Expected:** the done state ("Moved to Dr Whitaker." and "The office has been told."), her List
+  one Booking shorter and still there, a new List on Dr Whitaker's row, and the pool row (only because
+  the box was ticked; without it there is no pool row, and Dr Whitaker still sees the move on his
+  side). No warning, preference or tier anywhere on her side. The submit sheet on any of her Lists
+  carries one sentence: "Submitting says you did every procedure on this List. If a colleague is doing
+  one, move it to them first."
+- **Presenter note:** in this build the AA Holding account and its transfer at authorisation are not
+  built yet (later phases); say the prepaid line, do not open the ledger. A prepaid Booking (Fri 24
+  PM, Mr Nair) shows "This Booking is prepaid. The prepaid amount stays as agreed, and Dr ... claims
+  it." on the confirm step; Reset after moving one.
+
 ### Optional: find who is free
 
 - **Click:**
@@ -399,7 +437,12 @@ before recurring bookings, a recurring booking on an unavailable session becomes
 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands
 it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no
 acceptance and no office confirmation (OQ-39), every move posts to one shared notification pool for
-the whole office (OQ-65), and her own move shows no preference warning (OQ-43); open: short-notice sickness (OQ-81 part 3), shown here as a
+the whole office (OQ-65), and her own move shows no preference warning (OQ-43); settled: she moves a
+single Booking to a colleague free in that session, found by name or from the free list, always as a
+new List in their session, with telling the office her option (OQ-85), colleagues by availability
+alone, never by tier or pairing (OQ-113), and a prepaid Booking's payable stays the AA Holding
+account with nothing recalculated (OQ-80); a move into an existing List is not allowed for now and
+may change if it does not work in practice (OQ-85); open: short-notice sickness (OQ-81 part 3), shown here as a
 conflict the office records; settled context rather than a question: availability is a status on
 each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64
 answered), and the status values are a list AA maintains, starting from Free, On holiday and
@@ -407,7 +450,8 @@ Unavailable, with the final values to be agreed with AA's users and kept apart f
 (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); what the vacated session shows after a move (OQ-84: the prototype asks the anaesthetist, Free by
 default, and returns it to Free on the office's reassignment unless the office marks it otherwise);
 what else posts to the notification pool and how long notices last (OQ-79: the prototype keeps
-every List move, newest first and paged, with no expiry and no read or actioned state); whether monitoring belongs
+every List move and every single-Booking move the mover chose to tell the office about, newest first
+and paged, with no expiry and no read or actioned state); whether monitoring belongs
 in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
 preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
 Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their

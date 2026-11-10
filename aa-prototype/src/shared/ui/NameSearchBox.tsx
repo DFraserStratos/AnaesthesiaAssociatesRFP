@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
 
@@ -28,6 +28,7 @@ export interface NameSearchBoxProps {
 
 export function NameSearchBox({ value, onChange, label, placeholder, size = 'field', autoFocus = false, shot, width }: NameSearchBoxProps) {
   const [focused, setFocused] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
   const pill = size === 'pill'
   const height = pill ? 36 : 48
   return (
@@ -44,6 +45,7 @@ export function NameSearchBox({ value, onChange, label, placeholder, size = 'fie
       <Search size={pill ? 14 : 16} strokeWidth={2.2} aria-hidden style={{ position: 'absolute', left: pill ? 11 : 14, color: neutral.mist, pointerEvents: 'none' }} />
       <input
         // Text, not "search": the browser's own clear button would double ours.
+        ref={inputRef}
         type="text"
         role="searchbox"
         aria-label={label}
@@ -82,7 +84,11 @@ export function NameSearchBox({ value, onChange, label, placeholder, size = 'fie
         <button
           type="button"
           aria-label="Clear search"
-          onClick={() => onChange('')}
+          onClick={() => {
+            onChange('')
+            // The button leaves with the text: keep focus in the box (and inside a sheet).
+            inputRef.current?.focus()
+          }}
           style={{
             position: 'absolute',
             right: pill ? 6 : 8,

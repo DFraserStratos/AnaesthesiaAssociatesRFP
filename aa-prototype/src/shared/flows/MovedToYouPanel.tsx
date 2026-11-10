@@ -16,9 +16,15 @@ export function movedToYouLine(n: Notification, names: { from: string | undefine
   return `${moverName(names.from)} moved ${format(parseISO(n.dateISO), 'EEE d MMM')} ${n.session}, ${names.hospital}, to you.`
 }
 
+/** "Dr Souter moved a Booking to you: Wed 22 Jul AM, Christchurch Eye Surgery" (a single Booking, Phase 32a), from the move's audit event. */
+export function movedBookingToYouLine(fromName: string | undefined, where: { dateISO: string; session: string; hospital: string } | undefined): string {
+  const tail = where !== undefined ? `: ${format(parseISO(where.dateISO), 'EEE d MMM')} ${where.session}, ${where.hospital}` : ''
+  return `${moverName(fromName)} moved a Booking to you${tail}`
+}
+
 /** List detail's line: "Moved to you by Dr Hughes on Tue 21 Jul" (a List, or a single Booking, Phase 32a). */
-export function movedToYouByLine(n: Pick<Notification, 'atISO'>, fromName: string | undefined): string {
-  return `Moved to you by ${moverName(fromName)} on ${format(parseISO(n.atISO), 'EEE d MMM')}`
+export function movedToYouByLine(atISO: string, fromName: string | undefined): string {
+  return `Moved to you by ${moverName(fromName)} on ${format(parseISO(atISO), 'EEE d MMM')}`
 }
 
 /**
@@ -45,6 +51,30 @@ export function MovedToYouPanel({
   const lists = useAppStore((s) => s.schedule.lists)
   const bookings = useAppStore((s) => s.schedule.bookings)
   if (notices.length === 0 && bookingNotices.length === 0) return null
+  // One list, newest first, whichever kind: a List a colleague moved to her, or a single Booking (Phase 32a).
+  const rows: Row[] = [
+    ...notices.map((n) => ({
+      key: n.id,
+      shot: 'moved-to-you-row',
+      atISO: n.atISO,
+      line: movedToYouLine(n, { from: anaesthetists[n.fromAnaesthetistId]?.name, hospital: locationName(n.hospitalId, hospitals) }),
+      ...(n.message !== undefined ? { message: n.message } : {}),
+      ...(onOpenList !== undefined && lists[n.listId]?.anaesthetistId === anaesthetistId ? { onOpen: () => onOpenList(n.listId) } : {}),
+    })),
+    ...bookingNotices.map((m) => {
+      const list = lists[m.listId]
+      const where = list !== undefined && list.state !== 'DRAFT' ? { dateISO: list.dateISO, session: list.session, hospital: locationName(list.hospitalId, hospitals) } : undefined
+      const stillHers = list?.anaesthetistId === anaesthetistId && bookings[m.bookingId]?.listId === m.listId
+      return {
+        key: m.auditId,
+        shot: 'moved-to-you-booking-row',
+        atISO: m.atISO,
+        line: movedBookingToYouLine(anaesthetists[m.fromAnaesthetistId]?.name, where),
+        ...(m.message !== undefined ? { message: m.message } : {}),
+        ...(onOpenBooking !== undefined && stillHers ? { onOpen: () => onOpenBooking(m.listId, m.bookingId) } : {}),
+      }
+    }),
+  ].sort((a, b) => b.atISO.localeCompare(a.atISO) || b.key.localeCompare(a.key))
   return (
     <section
       data-shot="moved-to-you"
@@ -57,63 +87,45 @@ export function MovedToYouPanel({
         </span>
         <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>Moved to you</span>
       </div>
-      {bookingNotices.map((m) => {
-        // "Dr Souter moved a Booking to you: Wed 22 Jul AM, Christchurch Eye Surgery" (catch-up Phase 32a).
-        const list = lists[m.listId]
-        const where = list !== undefined && list.state !== 'DRAFT' ? `${format(parseISO(list.dateISO), 'EEE d MMM')} ${list.session}, ${locationName(list.hospitalId, hospitals)}` : 'a new List'
-        const line = `${moverName(anaesthetists[m.fromAnaesthetistId]?.name)} moved a Booking to you: ${where}`
-        const stillHers = list?.anaesthetistId === anaesthetistId && bookings[m.bookingId]?.listId === m.listId
-        const body = (
-          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 13.5, lineHeight: '19px', color: neutral.ink }}>{line}</span>
-            {m.message !== undefined && <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>"{m.message}"</span>}
-            <span style={{ fontSize: 12, color: neutral.mist }}>{format(parseISO(m.atISO), 'EEE d MMM, HH:mm')}</span>
-          </span>
-        )
-        return onOpenBooking !== undefined && stillHers ? (
-          <button
-            key={m.auditId}
-            type="button"
-            data-shot="moved-to-you-booking-row"
-            onClick={() => onOpenBooking(m.listId, m.bookingId)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, border: 'none', background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-          >
-            {body}
-            <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
-          </button>
-        ) : (
-          <div key={m.auditId} data-shot="moved-to-you-booking-row" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, background: neutral.bg }}>
-            {body}
-          </div>
-        )
-      })}
-      {notices.map((n) => {
-        const line = movedToYouLine(n, { from: anaesthetists[n.fromAnaesthetistId]?.name, hospital: locationName(n.hospitalId, hospitals) })
-        const stillHers = lists[n.listId]?.anaesthetistId === anaesthetistId
-        const body = (
-          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 13.5, lineHeight: '19px', color: neutral.ink }}>{line}</span>
-            {n.message !== undefined && <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>"{n.message}"</span>}
-            <span style={{ fontSize: 12, color: neutral.mist }}>{format(parseISO(n.atISO), 'EEE d MMM, HH:mm')}</span>
-          </span>
-        )
-        return onOpenList !== undefined && stillHers ? (
-          <button
-            key={n.id}
-            type="button"
-            data-shot="moved-to-you-row"
-            onClick={() => onOpenList(n.listId)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, border: 'none', background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-          >
-            {body}
-            <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
-          </button>
-        ) : (
-          <div key={n.id} data-shot="moved-to-you-row" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, background: neutral.bg }}>
-            {body}
-          </div>
-        )
-      })}
+      {rows.map((r) => (
+        <NoticeRow key={r.key} row={r} />
+      ))}
     </section>
+  )
+}
+
+interface Row {
+  key: string
+  shot: string
+  atISO: string
+  line: string
+  message?: string
+  /** Present while the List or Booking is still hers: the row opens it. */
+  onOpen?: () => void
+}
+
+/** One notice: a button when it opens something, a plain row otherwise. Neutral; it needs no action. */
+function NoticeRow({ row }: { row: Row }) {
+  const body = (
+    <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ fontSize: 13.5, lineHeight: '19px', color: neutral.ink }}>{row.line}</span>
+      {row.message !== undefined && <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>"{row.message}"</span>}
+      <span style={{ fontSize: 12, color: neutral.mist }}>{format(parseISO(row.atISO), 'EEE d MMM, HH:mm')}</span>
+    </span>
+  )
+  return row.onOpen !== undefined ? (
+    <button
+      type="button"
+      data-shot={row.shot}
+      onClick={row.onOpen}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, border: 'none', background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+    >
+      {body}
+      <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
+    </button>
+  ) : (
+    <div data-shot={row.shot} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, background: neutral.bg }}>
+      {body}
+    </div>
   )
 }

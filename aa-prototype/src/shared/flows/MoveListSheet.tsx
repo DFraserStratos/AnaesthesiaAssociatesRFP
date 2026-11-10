@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Building2, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { Building2, ChevronRight, Users } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import {
   markUnavailableAndMoveList,
@@ -13,12 +13,12 @@ import {
 import { pushTargets, VACATED_SESSION_CHOICES, VACATED_SESSION_DEFAULT, type PushTarget } from '../../domain/listMoves'
 import { isOpenForBooking, statusFor } from '../../domain/slotStatus'
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
-import { drSurname, initialsOf, locationName } from '../format'
+import { drSurname, locationName, matchesNameQuery } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
-import { matchesNameQuery } from '../../domain/names'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
+import { BackLink, Initials } from './moveSheetParts'
 
 interface MoveListSheetProps {
   open: boolean
@@ -351,23 +351,6 @@ function ChoiceRow({ icon, title, line, onClick, disabled = false, shot }: { ico
       </span>
       {!disabled && <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />}
     </button>
-  )
-}
-
-function BackLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      <ChevronLeft size={15} strokeWidth={2.4} aria-hidden /> {children}
-    </button>
-  )
-}
-
-/** A colleague's initials in a neutral disc (no tint that could read as a mark). */
-function Initials({ name, size = 36 }: { name: string; size?: number }) {
-  return (
-    <span aria-hidden style={{ width: size, height: size, borderRadius: 999, background: neutral.sunken, color: neutral.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size > 40 ? 14 : 12, fontWeight: 700, flex: 'none' }}>
-      {initialsOf(name)}
-    </span>
   )
 }
 

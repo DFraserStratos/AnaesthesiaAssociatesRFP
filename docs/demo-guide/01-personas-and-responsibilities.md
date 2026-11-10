@@ -32,6 +32,7 @@ Bookings and capture the data AA needs for billing.
 - Add a missing Booking when the hospital and device disagree.
 - Complete work and hand the whole List to the AA office.
 - See availability, and move one of her Lists to a free colleague or back to the office.
+- Hand one Booking to a colleague who is free that session (it becomes a new List of theirs).
 - Later, see outstanding amounts and GST-period activity.
 
 ### Core actions
@@ -46,6 +47,9 @@ Bookings and capture the data AA needs for billing.
 7. Submit the whole List to the office.
 8. Use Availability to mark days off weeks ahead, including repeating days off, and to move one of
    her Lists to a free colleague or back to the office.
+8a. From a Booking, **Move to a colleague**: hand one Booking to a colleague who is free that session,
+   found by typing a name or from the free list. If someone else is doing a Booking, she moves it to
+   them before she submits: whoever submits a List did every procedure on it.
 9. Create a missing Booking manually.
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
@@ -104,6 +108,7 @@ underlying List, Booking and BTM actions.
 - Drill into the same List and Booking detail available on mobile.
 - Create a Booking, add another procedure, and capture BTM data when a desktop is more convenient.
 - Find Free colleagues and move one of her Lists to a free colleague or back to the office.
+- Hand one Booking to a colleague who is free that session, from the Booking's screen.
 - Review accounts outstanding and GST-period activity.
 
 ### Demo distinction

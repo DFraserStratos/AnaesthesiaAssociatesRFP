@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { isMovableByOwner, movableListsFor, pushTargets, type ListMoveInput } from '../../domain/listMoves'
 import { addDaysISO } from '../../domain/clock'
-import { MOVED_TO_ME_DAYS } from '../../domain/notifications'
 import type { AssignedList, Notification, Session } from '../../domain/types'
-import { bookingMoveFor, bookingsMovedToMe, movedToMe, movedToMeForList, useAppStore, useToday, type BookingMove } from '../../store'
+import { useShallow } from 'zustand/react/shallow'
+import { bookingMovedToMe, bookingMoveEntries, bookingsMovedToMe, movedToMe, movedToMeForList, useAppStore, useToday, type AppState, type BookingMove } from '../../store'
 
 /** The slices a move reads, memoised on exactly those four (not every schedule edit). */
 export function useMoveInput(): ListMoveInput {
@@ -78,43 +78,49 @@ export function useMovedToMe(anaesthetistId: string): Notification[] {
 }
 
 /**
+ * The single-Booking move events from the audit (Phase 32a), subscribed so a
+ * component re-renders only when a move lands, not on every audited write.
+ */
+export function useBookingMoveEntries(): AppState['audit'] {
+  return useAppStore(useShallow(bookingMoveEntries))
+}
+
+/**
  * The notice for one List a colleague moved to her, inside the window (List
  * detail's "Moved to you by"), and who moved it. A List made for a single
  * Booking a colleague handed her (Phase 32a) reads the same, from the move's
  * audit event.
  */
-export function useMovedToMeNotice(listId: string, anaesthetistId: string | undefined): { notification: Pick<Notification, 'atISO'>; fromName: string | undefined } | undefined {
+export function useMovedToMeNotice(listId: string, anaesthetistId: string | undefined): { atISO: string; fromName: string | undefined } | undefined {
   const notifications = useAppStore((s) => s.notifications)
-  const audit = useAppStore((s) => s.audit)
+  const moves = useBookingMoveEntries()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const todayISO = useToday()
   return useMemo(() => {
     if (anaesthetistId === undefined) return undefined
     const n = movedToMeForList({ notifications }, anaesthetistId, listId, todayISO)
-    if (n !== undefined) return { notification: n, fromName: anaesthetists[n.fromAnaesthetistId]?.name }
-    const b = bookingsMovedToMe({ audit }, anaesthetistId, todayISO).find((m) => m.listId === listId)
-    return b === undefined ? undefined : { notification: { atISO: b.atISO }, fromName: anaesthetists[b.fromAnaesthetistId]?.name }
-  }, [notifications, audit, anaesthetists, anaesthetistId, listId, todayISO])
+    if (n !== undefined) return { atISO: n.atISO, fromName: anaesthetists[n.fromAnaesthetistId]?.name }
+    const b = bookingsMovedToMe({ audit: moves }, anaesthetistId, todayISO).find((m) => m.listId === listId)
+    return b === undefined ? undefined : { atISO: b.atISO, fromName: anaesthetists[b.fromAnaesthetistId]?.name }
+  }, [notifications, moves, anaesthetists, anaesthetistId, listId, todayISO])
 }
 
 /** Single Bookings colleagues handed her in the notice window, newest first (catch-up Phase 32a; US-01.4.7), from the moves' audit events. */
 export function useBookingsMovedToMe(anaesthetistId: string): BookingMove[] {
-  const audit = useAppStore((s) => s.audit)
+  const moves = useBookingMoveEntries()
   const todayISO = useToday()
-  return useMemo(() => bookingsMovedToMe({ audit }, anaesthetistId, todayISO), [audit, anaesthetistId, todayISO])
+  return useMemo(() => bookingsMovedToMe({ audit: moves }, anaesthetistId, todayISO), [moves, anaesthetistId, todayISO])
 }
 
 /** The received Booking's "Moved to you by" line (Phase 32a): the move that put it on her List, inside the window, and who made it. */
 export function useBookingMovedToMeNotice(bookingId: string, anaesthetistId: string | undefined): { atISO: string; fromName: string | undefined } | undefined {
-  const audit = useAppStore((s) => s.audit)
+  const moves = useBookingMoveEntries()
   const bookings = useAppStore((s) => s.schedule.bookings)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const todayISO = useToday()
   return useMemo(() => {
     if (anaesthetistId === undefined) return undefined
-    const move = bookingMoveFor({ audit, schedule: { bookings } }, bookingId)
-    if (move === undefined || move.toAnaesthetistId !== anaesthetistId) return undefined
-    if (move.atISO.slice(0, 10) < addDaysISO(todayISO, -(MOVED_TO_ME_DAYS - 1))) return undefined
-    return { atISO: move.atISO, fromName: anaesthetists[move.fromAnaesthetistId]?.name }
-  }, [audit, bookings, anaesthetists, anaesthetistId, bookingId, todayISO])
+    const move = bookingMovedToMe({ audit: moves, schedule: { bookings } }, bookingId, anaesthetistId, todayISO)
+    return move === undefined ? undefined : { atISO: move.atISO, fromName: anaesthetists[move.fromAnaesthetistId]?.name }
+  }, [moves, bookings, anaesthetists, anaesthetistId, bookingId, todayISO])
 }

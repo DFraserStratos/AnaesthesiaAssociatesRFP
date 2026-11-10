@@ -94,11 +94,17 @@ function sourceOf(input: BookingMoveInput, bookingId: string): { list: AssignedL
   return from === undefined ? undefined : { list, from }
 }
 
-function receiverRow(input: BookingMoveInput, source: { list: AssignedList; from: Slot }, anaesthetistId: string, name: string): BookingReceiver {
+function receiverRow(
+  input: BookingMoveInput,
+  source: { list: AssignedList; from: Slot },
+  anaesthetistId: string,
+  name: string,
+  occupied?: ReadonlySet<string>,
+): BookingReceiver {
   const slotId = slotIdFor(anaesthetistId, source.list.dateISO, source.list.session)
-  if (input.slots[slotId] === undefined) return { anaesthetistId, name, offer: null, block: 'noSlot', line: RECEIVER_LINES.noSlot }
-  const refusal = receiveRefusal(input, source.from, slotId, { requireOpen: true })
+  const refusal = receiveRefusal(input, source.from, slotId, { requireOpen: true, ...(occupied !== undefined ? { occupied } : {}) })
   if (refusal === null) return { anaesthetistId, name, offer: { slotId }, line: RECEIVER_LINES.offer }
+  if (refusal.code === 'notFound') return { anaesthetistId, name, offer: null, block: 'noSlot', line: RECEIVER_LINES.noSlot }
   if (refusal.code === 'slotOccupied') return { anaesthetistId, name, offer: null, block: 'hasList', line: RECEIVER_LINES.hasList }
   return { anaesthetistId, name, offer: null, block: 'notAvailable', line: RECEIVER_LINES.notAvailable }
 }
@@ -111,11 +117,14 @@ function receiverRow(input: BookingMoveInput, source: { list: AssignedList; from
 export function bookingMoveReceivers(input: BookingMoveInput, bookingId: string, moverId: AnaesthetistId, query: string): BookingReceiver[] {
   const source = sourceOf(input, bookingId)
   if (source === undefined) return []
+  // Which sessions hold a List, worked out once for every colleague (as Phase 32's pushTargets does).
+  const occupied = new Set<string>()
+  for (const list of Object.values(input.lists)) if (list.slotId !== undefined) occupied.add(list.slotId)
   const out: BookingReceiver[] = []
   for (const colleague of Object.values(input.anaesthetists)) {
     if (colleague.registrationNumber === moverId || !colleague.active) continue
     if (!matchesNameQuery(colleague.name, query)) continue
-    out.push(receiverRow(input, source, colleague.registrationNumber, colleague.name))
+    out.push(receiverRow(input, source, colleague.registrationNumber, colleague.name, occupied))
   }
   return out.sort(compareBySurname)
 }

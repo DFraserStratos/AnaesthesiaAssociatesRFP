@@ -117,6 +117,8 @@ export {
   movedToMe,
   movedToMeForList,
   bookingsMovedToMe,
+  bookingMovedToMe,
+  bookingMoveEntries,
   bookingMoveFor,
   bookingMovesOntoList,
   type BookingMove,

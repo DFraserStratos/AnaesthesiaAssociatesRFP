@@ -599,8 +599,10 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     // S5: Souter Tue 21 PM and Whitaker Fri 17.
     SEED_LIST_IDS.souterPm21,
     SEED_LIST_IDS.whitakerFri17,
-    // S2 Beat 3d (catch-up Phase 32a): the List Dr Souter hands one Booking from.
+    // S2 Beat 3d (catch-up Phase 32a): the List Dr Souter hands one Booking from,
+    // and Dr Fitzgerald's List, the beat's "Already has a List this session" row.
     projectedListId(ANAE.souter, '2026-07-22', 'AM'),
+    projectedListId(ANAE.fitzgerald, '2026-07-22', 'AM'),
   ],
   slotIds: [
     // S2: Beat 1b assigns the St George's Draft List into Fitzgerald's Tue 21
@@ -614,8 +616,11 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     slotIdFor(ANAE.souter, '2026-08-14', 'PM'),
     slotIdFor(ANAE.souter, '2026-08-28', 'PM'),
     slotIdFor(ANAE.souter, '2026-09-11', 'PM'),
-    // S2 Beat 3d (catch-up Phase 32a): Dr Whitaker's Wed 22 AM, where the Booking lands as a new List.
+    // S2 Beat 3d (catch-up Phase 32a): Dr Whitaker's Wed 22 AM, where the Booking lands as a new List;
+    // Dr Ropata's (the second, unticked move) and Dr Chen's (the "Not available" row).
     slotIdFor(ANAE.whitaker, '2026-07-22', 'AM'),
+    slotIdFor(ANAE.ropata, '2026-07-22', 'AM'),
+    slotIdFor(ANAE.chen, '2026-07-22', 'AM'),
   ],
 } as const
 
