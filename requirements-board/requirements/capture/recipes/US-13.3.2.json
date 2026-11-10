@@ -29,11 +29,36 @@
           ]
         },
         {
+          "state": "choose",
+          "caption": "Resolve & retry asks the office to choose the Booking's Contract",
+          "steps": [
+            {
+              "click": "role=button[name=\"Resolve & retry\"]"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[data-shot=choose-contract-sheet]"
+          ]
+        },
+        {
           "state": "retried",
           "caption": "After Resolve & retry the Booking invoices and hands off",
           "steps": [
             {
               "click": "role=button[name=\"Resolve & retry\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "select": "[data-shot=choose-contract-sheet] select",
+              "value": "CT-COS-ACC"
+            },
+            {
+              "click": "role=button[name=\"Choose and retry\"]"
             },
             {
               "wait": 1200

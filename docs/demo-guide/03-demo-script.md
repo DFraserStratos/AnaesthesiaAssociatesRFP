@@ -653,11 +653,14 @@ actions** on the screen named in its beat.
 
 - **Click:**
   - Go to **Admin billing monitor → Demo actions → Trigger billing failure → Run**.
-  - On the same screen, **Losa Tuilagi → Resolve & retry**.
-- **Say:** "A Booking can fail rating after the List is authorised, here because a group-held contract with
-  no default fallback was dated out. The prototype isolates that Booking, still invoices its clean sibling,
-  then lets the office correct and retry."
-- **Expected:** the failed Booking shows the rating failure while its sibling is billed; retry clears it.
+  - On the same screen, **Losa Tuilagi → Resolve & retry**, choose **COS-001 · ACC orthopaedic
+    services, Canterbury Orthopaedic Surgeons**, then **Choose and retry**.
+- **Say:** "A Booking can fail after the List is authorised, here because the Booking was pointed at a
+  fixed-price COS Contract with no price for the procedure. The prototype isolates that Booking, still
+  invoices its clean sibling, then lets the office choose the right Contract and retry. No Contract is
+  edited."
+- **Expected:** the failed Booking shows "No price in force for this procedure under COS ACC fixed
+  fees" while its sibling is billed; choosing the Contract and retrying bills COS.
 
 ### Beat 4: integration dead-letter and manual fix
 
@@ -693,12 +696,12 @@ are parked for manual intervention.
 
 ## S5 · Compliance tour
 
-**Serves:** audit, identity, data minimisation and contract effective-dating, the governance the
+**Serves:** audit, identity, data minimisation and audited Contract edits, the governance the
 evaluators will probe. **Time:** 5 to 6 minutes.
 
 **Stage it:** control panel, Scenario jumps, **S5 · Compliance tour → Jump → Confirm jump**. This
 resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's
-trail, and authorises Dr Whitaker's Fri 17 Jul List to raise the Health NZ contract snapshot
+trail, and authorises Dr Whitaker's Fri 17 Jul List to raise its Health NZ agreed rate
 invoices. Use **Go to Admin app** and **Go to Xero sim**.
 
 ### Beat 1: the audit trail of a much-edited Booking
@@ -737,16 +740,16 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist
   payees keep their names.
 
-### Beat 4: contract effective-dating
+### Beat 4: Contract edits are audited
 
 - **Click:**
-  - Go to **Admin → Master data → Contracts → Health NZ agreed rate (Type 2)**.
-  - Set **Effective to** to **16 Jul 2026**, then save.
-  - Open the **Hemi Walker** Health NZ invoice from Dr Whitaker's Fri 17 Jul List.
-  - Pause on the unchanged invoice.
-- **Say:** "Contracts are effective-dated. Changing a contract does not rewrite invoices already raised
-  under the old terms; the invoice reproduces against what was true when it billed."
-- **Expected:** the contract change is recorded; the earlier invoice is unchanged.
+  - Go to **Admin → Master data → Contracts**, type **Unisports** in the search, and open
+    **UNI-001 · Unisports Ortho**.
+  - Change its rate from **$93.47** to **$95.00**, then **Save contract**.
+  - Open **Admin → Audit**, set **Entity type** to **contract**, and pause on the entry.
+- **Say:** "A Contract is edited in place, and every change is recorded with before and after. A change
+  that must start on a date is a new Contract, and the old one is disabled, never deleted."
+- **Expected:** the audit entry shows the pricing before and after; no invoice changes.
 
 **Discovery points:** the demo-plausible modifier values (not an
 authoritative NZSA schedule); and the concurrency model (single-user by design, audited

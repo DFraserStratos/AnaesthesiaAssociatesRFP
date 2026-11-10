@@ -86,33 +86,33 @@ describe('feeFor — contract types', () => {
     expect(fee.chargeBasis).toBe('rvg')
   })
 
-  it('Type 1: units x the anaesthetist unit value', () => {
-    const contract = mkContract({ type: 1 })
+  it("RVG at the anaesthetist's rate: units x the anaesthetist unit value", () => {
+    const contract = mkContract({ pricing: { kind: 'rvgAnaesthetistRate' } })
     const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, baseCode: BASE_SINGLE_10 })
     expect(fee.total).toBe(24 * 30)
   })
 
-  it('Type 2 (agreed unit rate): units x the agreed rate', () => {
-    const contract = mkContract({ type: 2, type2Detail: { basis: 'agreedUnitRate', unitRate: 25 } })
+  it("RVG at the Contract's rate: units x the Contract's rate", () => {
+    const contract = mkContract({ pricing: { kind: 'rvgContractRate', unitRate: 25 } })
     const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, baseCode: BASE_SINGLE_10 })
     expect(fee.unitRate).toBe(25)
     expect(fee.total).toBe(24 * 25)
   })
 
-  it('Type 2 (percent discount): units x the discounted unit value', () => {
-    const contract = mkContract({ type: 2, type2Detail: { basis: 'percentDiscount', percent: 10 } })
+  it('RVG less a discount: units x the discounted unit value', () => {
+    const contract = mkContract({ pricing: { kind: 'rvgDiscount', discountPct: 10 } })
     const fee = feeFor(spotCheckProcedure, { anaesthetist, contract, baseCode: BASE_SINGLE_10 })
     expect(fee.unitRate).toBe(27)
     expect(fee.total).toBe(24 * 27)
   })
 
-  const type3 = mkContract({ id: 'con-3', type: 3 })
+  const type3 = mkContract({ id: 'con-3', pricing: { kind: 'fixed' } })
   const prices: ContractPrice[] = [
     { id: 'p-1', contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 1, price: 650 },
     { id: 'p-2', contractId: 'con-3', rvgBaseCode: 'GA10', procedureOrdinal: 2, price: 275 },
   ]
 
-  it('Type 3: fixed price from the matching ContractPrice row', () => {
+  it('Fixed price: fixed price from the matching ContractPrice row', () => {
     const fee = feeFor(spotCheckProcedure, {
       anaesthetist,
       contract: type3,
@@ -125,7 +125,7 @@ describe('feeFor — contract types', () => {
     expect(fee.total).toBe(650)
   })
 
-  it('Type 3: a 2nd procedure matches its ordinal row', () => {
+  it('Fixed price: a 2nd procedure matches its ordinal row', () => {
     const fee = feeFor(spotCheckProcedure, {
       anaesthetist,
       contract: type3,
@@ -136,7 +136,7 @@ describe('feeFor — contract types', () => {
     expect(fee.total).toBe(275)
   })
 
-  it('Type 3: no matching row falls back to the BTM path (demo reading)', () => {
+  it('Fixed price: no matching row falls back to the BTM path (demo reading)', () => {
     const fee = feeFor(spotCheckProcedure, {
       anaesthetist,
       contract: type3,
@@ -148,7 +148,7 @@ describe('feeFor — contract types', () => {
     expect(fee.total).toBe(24 * 30)
   })
 
-  it('Type 3 fallback on an additional procedure charges time units only', () => {
+  it('Fixed price fallback on an additional procedure charges time units only', () => {
     const p = mkProcedure({ ...spotCheckProcedure, isAdditional: true })
     const fee = feeFor(p, {
       anaesthetist,

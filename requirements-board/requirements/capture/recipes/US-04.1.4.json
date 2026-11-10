@@ -1,6 +1,48 @@
 {
   "id": "US-04.1.4",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 18 builds this.",
-  "shots": []
+  "status": "partial",
+  "absentReason": "Found by typing on the step rail from Phase 20; holder reference codes are seeded in 19a.",
+  "shots": [
+    {
+      "name": "aa-code",
+      "app": "admin",
+      "caption": "Every Contract has AA's own unique code, searchable with its name",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-catalogue] tr[data-contract] td:first-child"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "app": "admin",
+      "caption": "Finding a Contract by typing its AA code",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "COS-001"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-search]",
+            "[data-shot=contract-catalogue] tr[data-contract]"
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -8,11 +8,13 @@ import {
   mkBillableParty,
   mkBooking,
   mkContract,
-  mkInsurer,
+  mkParty,
   mkProcedure,
   START_0800,
 } from './fixtures'
 import type { BillingLine, Procedure } from '../types'
+import { INSURER_PARTY_MISSING_MESSAGE, noRouteCounterpartyMessage } from './parties'
+import { noRouteContractMessage } from './contracts'
 
 function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingContext {
   return {
@@ -20,9 +22,10 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
     rvgCodes: { GA10: BASE_SINGLE_10, NR59: BASE_RANGE_5_9 },
     contracts: {},
     contractPrices: [],
-    insurers: {
-      'ins-direct': mkInsurer({ id: 'ins-direct' }),
-      'ins-nodirect': mkInsurer({ id: 'ins-nodirect', name: 'ClaimsBack Health', acceptsDirectClaims: false }),
+    // An insurer with an insurer Party ('ins-direct'); 'ins-noparty' has none (catch-up Phase 18, RV-39).
+    parties: {
+      'party-hosp-1': mkParty(),
+      'party-ins': mkParty({ id: 'party-ins', kind: 'insurer', name: 'Southern Health', codePrefix: 'SHI', hospitalId: undefined, legacyCounterparty: { kind: 'insurer', id: 'ins-direct' } }),
     },
     billableParties: { 'bp-1': mkBillableParty() },
     billingLines: [],
@@ -133,19 +136,21 @@ describe('validateBookingForBilling — routes', () => {
     expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('insurerId')
   })
 
-  it('rejects an insurer that does not accept direct claims', () => {
-    const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-nodirect' })
+  it('an insurer with no insurer Party is refused', () => {
+    const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-noparty' })
     const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(failures.some((f) => f.field === 'insurerId' && /direct claims/.test(f.message))).toBe(true)
+    expect(failures).toContainEqual({ procedureId: p.id, field: 'insurerId', message: INSURER_PARTY_MISSING_MESSAGE })
   })
 
-  it('passes the Insurer route with a direct-claims insurer', () => {
+  it('passes the Insurer route with an insurer that has an insurer Party', () => {
+    // With nothing stored, it bills under the insurer Party's plain RVG Contract.
     const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-direct' })
-    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
+    const ctx = mkCtx({ contracts: { 'con-ins': mkContract({ id: 'con-ins', holderId: 'party-ins' }) } })
+    expect(validateBookingForBilling(booking, [p], ctx)).toEqual([])
   })
 
-  it('an informational insurer on the Hospital route passes clean, even without direct claims (03.4)', () => {
-    const p = validProcedure({ insurerId: 'ins-nodirect' })
+  it('an informational insurer on the Hospital route passes clean, even without an insurer Party (03.4)', () => {
+    const p = validProcedure({ insurerId: 'ins-noparty' })
     expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
@@ -200,7 +205,7 @@ describe('validateBookingForBilling — rate x time gate (Method 3)', () => {
   }
 
   it('passes under a contract that permits an individual arrangement', () => {
-    const permitting = mkContract({ id: 'con-ia', permitsIndividualArrangement: true })
+    const permitting = mkContract({ id: 'con-ia', permitsRateTime: true })
     const p = mkProcedure({ governingContractId: 'con-ia' })
     const ctx = mkCtx({ contracts: { 'con-ia': permitting }, billingLines: [rateTimeLine] })
     expect(validateBookingForBilling(booking, [p], ctx)).toEqual([])
@@ -273,5 +278,29 @@ describe('validateBookingForBilling — two-funder conservation', () => {
     expect(failures[0]?.field).toBe('billingLines')
     expect(failures[0]?.message).toContain('$720.00')
     expect(failures[0]?.message).toContain('$700.00')
+  })
+})
+
+describe("today's route needs (catch-up Phase 18 review pass)", () => {
+  const hospitalParty = mkParty()
+  const aaParty = mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined })
+  const plainRvg = mkContract({ id: 'con-plain' })
+  const aaHeld = mkContract({ id: 'con-aa', name: 'No contract · RVG', holderId: 'party-aa', billsTo: 'payer' })
+  const ctxWith = (contracts: Record<string, ReturnType<typeof mkContract>>) =>
+    mkCtx({ contracts, parties: { [hospitalParty.id]: hospitalParty, [aaParty.id]: aaParty }, listHospitalId: 'hosp-1' })
+
+  it('a hospital-route Contract whose holder has no billing record fails with the resolver sentence', () => {
+    const p = validProcedure({ governingContractId: 'con-aa' })
+    expect(validateBookingForBilling(booking, [p], ctxWith({ 'con-aa': aaHeld })).find((f) => f.field === 'governingContractId')?.message).toBe(
+      noRouteCounterpartyMessage('No contract · RVG'),
+    )
+  })
+
+  it("nothing stored on the hospital route needs the hospital Party's plain RVG Contract", () => {
+    const p = validProcedure()
+    expect(validateBookingForBilling(booking, [p], ctxWith({ 'con-plain': plainRvg }))).toEqual([])
+    expect(validateBookingForBilling(booking, [p], ctxWith({})).find((f) => f.field === 'governingContractId')?.message).toBe(
+      noRouteContractMessage('Test hospital'),
+    )
   })
 })

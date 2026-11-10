@@ -283,7 +283,7 @@ Generator and pure rules first, then model, store and seed, then UI. Every new w
 test.
 
 1. **Baseline and explain every moved figure.** Before any edit, add a `phase-19b-baseline.json`
-   fixture beside the parity fixtures Phases 18 to 19a left (`src/domain/billing/__parity__/`),
+   fixture beside the parity fixtures Phases 18 to 19a left (`src/store/__parity__/`),
    generated from the untouched code: every seeded Procedure's `feeFor` total and units (B, T, M),
    and every seeded invoice total from `buildSeed()`. Unlike earlier phases, figures are expected to
    move, but only for two reasons, and a test proves it:

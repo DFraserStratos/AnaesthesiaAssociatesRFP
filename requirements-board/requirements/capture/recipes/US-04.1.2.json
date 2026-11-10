@@ -1,51 +1,95 @@
 {
   "id": "US-04.1.2",
   "status": "partial",
-  "absentReason": "Contracts can be created, edited, end-dated and deleted with effective from and to dates. There is no review date, and editing changes the contract in place rather than creating a new version.",
+  "absentReason": "A fixed price changes by a price range from Phase 19a.",
   "shots": [
     {
       "name": "contracts",
       "app": "admin",
-      "caption": "Contracts list with effective from and to dates",
-      "start": "/admin/masters",
+      "caption": "Contracts filtered by status and holder; Active by default",
+      "start": "/admin/masters?view=contracts",
       "states": [
         {
+          "state": "active",
           "steps": [
-            {
-              "click": "role=button[name=\"Contracts\"]"
-            },
             {
               "wait": 300
             }
           ],
-          "highlight": []
+          "highlight": [
+            "[data-shot=contract-status-filter]",
+            "[data-shot=contract-holder-filter]"
+          ]
+        },
+        {
+          "state": "disabled",
+          "caption": "A Disabled Contract shows only when asked for, under Disabled",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Health NZ"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Health NZ\") >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=contract-disable]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-detail] >> role=button[name=\"Cancel\"]"
+            },
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": ""
+            },
+            {
+              "click": "[data-shot=contract-status-filter] >> role=button[name=\"Disabled\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-status-filter]",
+            "[data-shot=contract-catalogue]"
+          ]
         }
       ]
     },
     {
       "name": "edit-contract",
       "app": "admin",
-      "caption": "Edit contract, effective dates and delete",
-      "start": "/admin/masters",
+      "caption": "A Contract is edited in place and disabled, never deleted",
+      "start": "/admin/masters?view=contracts",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "Health NZ"
             },
             {
               "wait": 300
             },
             {
-              "click": "tr:has-text(\"Health NZ agreed rate\") >> role=button[name=\"Edit\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Health NZ\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[role=dialog] label:has(input[type=date])",
-            "[role=dialog] >> role=button[name=\"Delete contract\"]"
+            "[data-shot=contract-disable]",
+            "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
           ]
         }
       ]

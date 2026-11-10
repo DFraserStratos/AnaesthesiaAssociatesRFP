@@ -1,190 +1,175 @@
 /**
- * Contract & ContractPrice master mutations (Phase 07). Split from
- * `mastersActions.ts` so the contract surface (create / edit / delete + the
- * Type 3 price rows) stays self-contained. All office-only, all through
- * `mutate()` (audit + `Outcome` refusals as data), `stampBookingId: null`.
+ * Contract master mutations (catch-up Phase 18; US-04.1.2, US-04.1.4,
+ * DM-07). Office only, each one audited `mutate()` commit with the values
+ * before and after, refusals as data from the one rule source,
+ * `contractRefusal` in `domain/billing/contracts.ts`, applied on every path so
+ * no raw patch can change a Contract's holder, prepaid setting or pricing kind
+ * after creation.
  *
- * THE default-Type-1 invariant, second half (3rd review #9 / 7th review B14;
- * the creation half lives in `mastersActions.ts`): a hospital's or a
- * direct-billing insurer's protected default Type 1 (`isDefault && type === 1`)
- * MUST always exist as the fallback, so `deleteContract` and an end-dating
- * `editContract` both refuse it. Non-essential edits (e.g. its name) are fine.
+ * A Contract is edited in place and never deleted (D77): it is disabled
+ * instead (`contract.disable`, `contract.enable`). A setting that must change
+ * from a date is a new Contract, the old one disabled (D79: no list of the
+ * Procedures affected). No contract · RVG changes only its name and AA code
+ * and is never disabled. The AA code is stamped on create from the holder
+ * Party's code prefix by `nextAaCode`.
  */
 
-import type {
-  Contract,
-  ContractHolderType,
-  ContractPrice,
-  ContractScope,
-  ContractType2Detail,
-} from '../domain/types'
+import type { Contract, ContractPrice } from '../domain/types'
+import { contractRefusal, nextAaCode, normaliseAaCode, type ContractRefusalContext } from '../domain/billing/contracts'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppStoreApi } from './appStore'
+import type { AppState, AppStoreApi } from './appStore'
 
-const DEFAULT_PROTECTED_MESSAGE =
-  'This is a hospital or direct-billing insurer default Type 1 contract. It must always exist as the fallback when no other contract applies, so it cannot be deleted or end-dated.'
+function refusalContext(state: AppState, prev?: Contract): ContractRefusalContext {
+  return {
+    ...(prev !== undefined ? { prev } : {}),
+    parties: state.masters.parties,
+    contracts: state.masters.contracts,
+    surgeonIds: new Set(Object.keys(state.masters.surgeons)),
+    anaesthetistIds: new Set(Object.keys(state.masters.anaesthetists)),
+  }
+}
 
-/** The protected default: a hospital/direct-insurer fallback that must persist. */
-function isProtectedDefault(contract: Contract): boolean {
-  return contract.isDefault && contract.type === 1
+/** The changed fields of a Contract, before and after, for its audit entry. */
+function diff(prev: Contract, next: Contract): { before: Record<string, unknown>; after: Record<string, unknown> } {
+  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]) as Set<keyof Contract>
+  const before: Record<string, unknown> = {}
+  const after: Record<string, unknown> = {}
+  for (const k of keys) {
+    if (JSON.stringify(prev[k]) === JSON.stringify(next[k])) continue
+    before[k] = prev[k] ?? ''
+    after[k] = next[k] ?? ''
+  }
+  return { before, after }
 }
 
 // ---------------------------------------------------------------------------
 // Contracts
 // ---------------------------------------------------------------------------
 
+/** What the office sets on a new Contract. The AA code is assigned on save. */
 export interface ContractInput {
   name: string
-  type: 1 | 2 | 3
-  holderType: ContractHolderType
   holderId: string
-  scope: ContractScope
-  permitsIndividualArrangement: boolean
-  effectiveFromISO: string
-  effectiveToISO?: string
-  type2Detail?: ContractType2Detail
+  billsTo: Contract['billsTo']
+  pricing: Contract['pricing']
+  prepaid: boolean
+  anaesthetistMayOverridePrice: boolean
+  linkedSurgeonIds: string[]
+  linkedAnaesthetistId?: string
+  holderReference?: string
+  /** INTERIM until Phase 24: the Method 3 (rate x time) gate. */
+  permitsRateTime?: boolean
 }
 
-/**
- * Create a contract (any type, any holder). Runtime-created contracts are never
- * the protected default (only `createHospital` / `setInsurerDirectClaims` mint
- * those), so `isDefault` is always false here. Audited `contract.create`.
- */
+/** Create a Contract, Active, with the next AA code for its holder. Audited `contract.create`. */
 export function createContract(api: AppStoreApi, actor: Actor, input: ContractInput): Outcome<{ contract: Contract }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can create a contract.')
-  const name = input.name.trim()
-  if (name === '') return refuse('nameRequired', 'A contract name is required.')
-  if (input.holderId.trim() === '') return refuse('holderRequired', 'A contract holder is required.')
-  if (input.type === 2 && input.type2Detail === undefined) {
-    return refuse('type2DetailRequired', 'A Type 2 contract needs an agreed unit rate or a percentage discount.')
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can create a Contract.')
+  const state = api.getState()
+  const holder = state.masters.parties[input.holderId]
+  if (holder === undefined) return refuse('holderMissing', 'Choose the Party that holds this Contract.')
+  const reference = input.holderReference?.trim() ?? ''
+  const draft: Contract = {
+    id: '',
+    aaCode: nextAaCode(holder.codePrefix, Object.values(state.masters.contracts).map((c) => c.aaCode)),
+    name: input.name.trim(),
+    holderId: input.holderId,
+    billsTo: input.billsTo,
+    linkedSurgeonIds: [...input.linkedSurgeonIds],
+    ...(input.linkedAnaesthetistId !== undefined && input.linkedAnaesthetistId !== '' ? { linkedAnaesthetistId: input.linkedAnaesthetistId } : {}),
+    prepaid: input.prepaid,
+    anaesthetistMayOverridePrice: input.anaesthetistMayOverridePrice,
+    pricing: input.pricing,
+    status: 'active',
+    ...(reference !== '' ? { holderReference: reference } : {}),
+    permitsRateTime: input.permitsRateTime ?? false,
   }
+  const refused = contractRefusal(draft, refusalContext(state))
+  if (refused !== null) return refuse(refused.code, refused.message)
 
   let created: Contract | undefined
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'contract')
-    const contract: Contract = {
-      id: alloc.id,
-      name,
-      type: input.type,
-      holderType: input.holderType,
-      holderId: input.holderId.trim(),
-      scope: input.scope,
-      permitsIndividualArrangement: input.permitsIndividualArrangement,
-      isDefault: false,
-      effectiveFromISO: input.effectiveFromISO,
-      ...(input.effectiveToISO !== undefined && input.effectiveToISO !== '' ? { effectiveToISO: input.effectiveToISO } : {}),
-      ...(input.type === 2 && input.type2Detail !== undefined ? { type2Detail: input.type2Detail } : {}),
-    }
+    const contract: Contract = { ...draft, id: alloc.id }
     created = contract
-    metas.push({
-      entityType: 'contract',
-      entityId: contract.id,
-      action: 'contract.create',
-      after: { name, type: contract.type, holderType: contract.holderType, holderId: contract.holderId },
-      stampBookingId: null,
-    })
+    const { id: _id, ...after } = contract
+    metas.push({ entityType: 'contract', entityId: contract.id, action: 'contract.create', after, stampBookingId: null })
     return { masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: contract } }, counters: alloc.counters }
   })
-  if (created === undefined) return refuse('createFailed', 'The contract could not be created.')
+  if (created === undefined) return refuse('createFailed', 'The Contract could not be created.')
   return ok({ contract: created })
 }
 
-/** Editable Contract fields (id and the protected `isDefault` flag are immutable). */
-export type ContractEditPatch = Partial<Omit<Contract, 'id' | 'isDefault'>>
-
 /**
- * Edit a contract. The default-Type-1 invariant refuses any edit of the
- * protected default that would remove the fallback: END-DATING it (a non-empty
- * `effectiveToISO`), FORWARD-DATING it (`effectiveFromISO` — since Phase 08's
- * billing fallback date-filters on the service date, moving the start is
- * effective-dating it away, exactly what B2 forbids; 8th review), changing its
- * `type` away from 1, or moving its holder (`holderType`/`holderId`). Cosmetic
- * edits (its name) stay allowed. Guarded in the STORE independently of the UI
- * (convention 6). Audited `contract.update`.
+ * A patch to a Contract. Any field may be named, but `contractRefusal` refuses
+ * a change to the holder, prepaid or the pricing kind, and anything but the
+ * name and AA code on No contract · RVG. The status changes only through
+ * `disableContract` and `enableContract`. A blank `holderReference`, or
+ * `linkedAnaesthetistId` set to undefined, clears it.
  */
-export function editContract(api: AppStoreApi, actor: Actor, contractId: string, patch: ContractEditPatch): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a contract.')
-  const state = api.getState()
-  const existing = state.masters.contracts[contractId]
-  if (existing === undefined) return refuse('notFound', 'Contract not found.')
-  if (isProtectedDefault(existing)) {
-    const endDated = 'effectiveToISO' in patch && patch.effectiveToISO !== undefined && patch.effectiveToISO !== ''
-    const reFromDated = patch.effectiveFromISO !== undefined && patch.effectiveFromISO !== existing.effectiveFromISO
-    const reTyped = patch.type !== undefined && patch.type !== 1
-    const reHeld =
-      (patch.holderType !== undefined && patch.holderType !== existing.holderType) ||
-      (patch.holderId !== undefined && patch.holderId !== existing.holderId)
-    if (endDated || reFromDated || reTyped || reHeld) {
-      return refuse('defaultContractProtected', DEFAULT_PROTECTED_MESSAGE)
-    }
-  }
+export type ContractEditPatch = Partial<Omit<Contract, 'id' | 'status'>>
 
-  const next: Contract = { ...existing, ...patch }
-  if ('effectiveToISO' in patch && (patch.effectiveToISO === undefined || patch.effectiveToISO === '')) {
-    delete next.effectiveToISO
-  }
-  // A contract no longer of Type 2 keeps no stale agreed-rate/discount detail.
-  if (next.type !== 2) delete next.type2Detail
+type ContractAction = 'contract.update' | 'contract.disable' | 'contract.enable'
+
+function save(api: AppStoreApi, actor: Actor, contractId: string, apply: (prev: Contract) => Contract, audit: { action: ContractAction }): Outcome {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change a Contract.')
+  const state = api.getState()
+  const prev = state.masters.contracts[contractId]
+  if (prev === undefined) return refuse('notFound', 'Contract not found.')
+  const next = apply(prev)
+  const refused = contractRefusal(next, refusalContext(state, prev))
+  if (refused !== null) return refuse(refused.code, refused.message)
+  const { before, after } = diff(prev, next)
+  if (Object.keys(after).length === 0) return ok(undefined)
   mutate(
     api,
     actor,
-    {
-      entityType: 'contract',
-      entityId: contractId,
-      action: 'contract.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof Contract]])),
-      after: patch,
-      stampBookingId: null,
-    },
+    { entityType: 'contract', entityId: contractId, action: audit.action, before, after, stampBookingId: null },
     (s) => ({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contractId]: next } } }),
   )
   return ok(undefined)
 }
 
-/**
- * Delete a contract and its price rows. The default-Type-1 invariant refuses the
- * protected default, and a contract still governing booked procedures cannot be
- * deleted — a dangling `governingContractId` would blur a missing surgeon-held
- * arrangement into the hospital fallback at billing time (8th review); end-date
- * it instead. Audited `contract.delete`.
- */
-export function deleteContract(api: AppStoreApi, actor: Actor, contractId: string): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can delete a contract.')
-  const state = api.getState()
-  const existing = state.masters.contracts[contractId]
-  if (existing === undefined) return refuse('notFound', 'Contract not found.')
-  if (isProtectedDefault(existing)) return refuse('defaultContractProtected', DEFAULT_PROTECTED_MESSAGE)
-  if (Object.values(state.schedule.procedures).some((p) => p.governingContractId === contractId)) {
-    return refuse(
-      'contractInUse',
-      'This contract governs booked procedures and cannot be deleted. End date it instead.',
-    )
-  }
-
-  mutate(
+/** Edit a Contract in place. Audited `contract.update` with the changed fields before and after. */
+export function editContract(api: AppStoreApi, actor: Actor, contractId: string, patch: ContractEditPatch): Outcome {
+  return save(
     api,
     actor,
-    {
-      entityType: 'contract',
-      entityId: contractId,
-      action: 'contract.delete',
-      before: { name: existing.name, type: existing.type },
-      stampBookingId: null,
+    contractId,
+    (prev) => {
+      // A key passed as undefined keeps the stored value, except the two
+      // optional fields an empty value clears; so a raw patch is refused as
+      // data, never thrown on.
+      const defined = Object.fromEntries(
+        Object.entries(patch).filter(([k, v]) => v !== undefined || k === 'linkedAnaesthetistId' || k === 'holderReference'),
+      ) as ContractEditPatch
+      const next: Contract = { ...prev, ...defined, id: prev.id, status: prev.status }
+      if (next.holderReference === undefined) delete next.holderReference
+      next.name = next.name.trim()
+      next.aaCode = normaliseAaCode(next.aaCode)
+      if (next.holderReference !== undefined && next.holderReference.trim() === '') delete next.holderReference
+      else if (next.holderReference !== undefined) next.holderReference = next.holderReference.trim()
+      if ('linkedAnaesthetistId' in patch && (patch.linkedAnaesthetistId === undefined || patch.linkedAnaesthetistId === '')) {
+        delete next.linkedAnaesthetistId
+      }
+      return next
     },
-    (s) => {
-      const contracts = { ...s.masters.contracts }
-      delete contracts[contractId]
-      const contractPrices = { ...s.masters.contractPrices }
-      for (const [id, p] of Object.entries(contractPrices)) if (p.contractId === contractId) delete contractPrices[id]
-      return { masters: { ...s.masters, contracts, contractPrices } }
-    },
+    { action: 'contract.update' },
   )
-  return ok(undefined)
+}
+
+/** Disable a Contract: it leaves the default list; a Procedure already on it keeps it and bills as normal (D81). */
+export function disableContract(api: AppStoreApi, actor: Actor, contractId: string): Outcome {
+  return save(api, actor, contractId, (prev) => ({ ...prev, status: 'disabled' }), { action: 'contract.disable' })
+}
+
+/** Make a Disabled Contract active again. */
+export function enableContract(api: AppStoreApi, actor: Actor, contractId: string): Outcome {
+  return save(api, actor, contractId, (prev) => ({ ...prev, status: 'active' }), { action: 'contract.enable' })
 }
 
 // ---------------------------------------------------------------------------
-// Contract prices (Type 3 fixed-price rows)
+// Contract prices (the fixed kind's interim rows, until Phase 19a's price ranges)
 // ---------------------------------------------------------------------------
 
 export interface ContractPriceInput {
@@ -200,7 +185,9 @@ export interface ContractPriceInput {
 export function addContractPrice(api: AppStoreApi, actor: Actor, input: ContractPriceInput): Outcome<{ id: string }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a contract price.')
   const state = api.getState()
-  if (state.masters.contracts[input.contractId] === undefined) return refuse('notFound', 'Contract not found.')
+  const contract = state.masters.contracts[input.contractId]
+  if (contract === undefined) return refuse('notFound', 'Contract not found.')
+  if (contract.pricing.kind !== 'fixed') return refuse('notFixedPrice', 'Only a fixed-price Contract has prices.')
   if (!(input.price > 0)) return refuse('invalidPrice', 'The price must be greater than zero.')
 
   const metas: MutationMeta[] = []

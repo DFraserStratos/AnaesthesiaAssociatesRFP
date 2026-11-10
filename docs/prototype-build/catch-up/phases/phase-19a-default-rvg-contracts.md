@@ -190,7 +190,7 @@ Every rule a pure function in `src/domain/billing/` with a Vitest test. No new R
 
 **Session 1: ranges, the two fields, the seed as priced items, the fee path.**
 
-1. **Parity first (before any edit).** Add `phase-19a-baseline.json` to `domain/billing/__parity__/`
+1. **Parity first (before any edit).** Add `phase-19a-baseline.json` to `store/__parity__/`
    from the untouched code: every seeded Procedure's fee total, B, T and M, charge lines, and every
    seeded invoice total. Named cases: each scripted Booking S1 to S5; a Southern Cross Booking at
    $26.50 a unit and a Health NZ one at $23 (US-05.2.6); the bariatric primary at $2,800 and GST on it

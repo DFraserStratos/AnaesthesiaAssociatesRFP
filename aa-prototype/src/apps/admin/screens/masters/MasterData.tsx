@@ -6,10 +6,7 @@ import { AnaesthetistsView } from './AnaesthetistsView'
 import { HospitalsView } from './HospitalsView'
 import { SurgeonGroupsView, SurgeonRoomsView, SurgeonsView } from './SurgeonsView'
 import {
-  ContractsMaster,
-  InsurersView,
   ModifierCodesView,
-  OrganisationsView,
   RecurringBookingsMaster,
   RvgCodesView,
   XeroArchivingView,
@@ -17,6 +14,8 @@ import {
 import { MASTERS_NAV, parseMastersView, type MastersView } from './view'
 import { ScheduleSettingsView } from './ScheduleSettingsView'
 import { AvailabilityStatusesView } from './AvailabilityStatusesView'
+import { PartiesView } from './PartiesView'
+import { ContractsView } from './ContractsView'
 
 interface MasterDataProps {
   actor: Actor
@@ -63,14 +62,13 @@ export function MasterData({ actor }: MasterDataProps) {
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
-        {view === 'contracts' && <ContractsMaster actor={actor} />}
+        {view === 'contracts' && <ContractsView actor={actor} />}
+        {view === 'parties' && <PartiesView actor={actor} />}
         {view === 'recurringBookings' && <RecurringBookingsMaster actor={actor} />}
         {view === 'hospitals' && <HospitalsView actor={actor} />}
         {view === 'surgeons' && <SurgeonsView actor={actor} />}
         {view === 'surgeonRooms' && <SurgeonRoomsView actor={actor} />}
         {view === 'surgeonGroups' && <SurgeonGroupsView actor={actor} />}
-        {view === 'insurers' && <InsurersView actor={actor} />}
-        {view === 'organisations' && <OrganisationsView />}
         {view === 'rvgCodes' && <RvgCodesView />}
         {view === 'modifierCodes' && <ModifierCodesView />}
         {view === 'scheduleSettings' && <ScheduleSettingsView actor={actor} />}

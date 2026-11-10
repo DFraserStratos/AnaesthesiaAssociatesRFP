@@ -222,7 +222,7 @@ export function DemoData() {
   const guardTargets = useMemo(() => {
     // Lists holding a seeded scenario booking (SEED_MARKERS) are always offered,
     // whatever their date — Phase 08's billing exemplars (split pair, two
-    // funders, bariatric Type 3, rate x time, insured reimbursement, COS) sit
+    // funders, bariatric fixed price, rate x time, insured reimbursement, COS) sit
     // on past ACTIVE lists and must be stageable from here (P7: jump to seeded
     // scenario states) for the submit → authorise → billing-run demo.
     const markerListIds = new Set(

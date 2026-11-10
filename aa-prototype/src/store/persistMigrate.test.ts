@@ -284,7 +284,7 @@ describe('the out-of-hours session (catch-up Phase 32c)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v29 store (its schedule settings have no out-of-hours default) and reseeds with one', () => {
-    expect(PERSIST_VERSION).toBe(30)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(30)
     const fresh = freshAppState()
     const { OOH: _ooh, ...twoSessions } = fresh.appSettings.schedule.defaultTimes
     const stale = { ...fresh, appSettings: { ...fresh.appSettings, schedule: { ...fresh.appSettings.schedule, defaultTimes: twoSessions } } }
@@ -301,5 +301,25 @@ describe('the out-of-hours session (catch-up Phase 32c)', () => {
     if (!out.ok) return
     flushPersist()
     expect(createAppStore({ persisted: true }).getState().schedule.slots[out.value.slotId]).toEqual(api.getState().schedule.slots[out.value.slotId])
+  })
+})
+
+describe('Parties and flat Contracts (catch-up Phase 18)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v31 store whose Contracts carry no AA code or pricing kind, and reseeds the flat Contracts', () => {
+    expect(PERSIST_VERSION).toBe(32)
+    const fresh = freshAppState()
+    const { aaCode: _code, pricing: _pricing, ...oldShape } = fresh.masters.contracts['CT-HNZ']!
+    const stale = { ...fresh, masters: { ...fresh.masters, contracts: { 'CT-HNZ': { ...oldShape, type: 2 } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 31 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contracts['CT-HNZ']).toMatchObject({ aaCode: 'CPH-002', pricing: { kind: 'rvgContractRate', unitRate: 23 } })
+    expect(s.masters.contracts['CT-NO-CONTRACT']?.systemRole).toBe('noContractRvg')
+    expect(Object.keys(s.masters.parties).length).toBeGreaterThan(10)
   })
 })

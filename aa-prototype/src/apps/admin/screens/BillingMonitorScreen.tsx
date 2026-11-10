@@ -5,7 +5,7 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
   billingMonitor,
-  editContract,
+  chooseContractForFailedBooking,
   handoffCase,
   allAaFeeInvoices,
   payablesDue,
@@ -19,20 +19,27 @@ import {
 import { dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { sessionText } from '../../../domain/outOfHours'
+import { Button, FormError, useSurface } from '../../../shared'
+import { ContractSelect } from '../../../shared/contracts'
+import { selectControlStyle } from '../flows/fieldChrome'
 
 interface BillingMonitorScreenProps {
   actor: Actor
 }
 
 const cellStyle = adminCell()
+
+/** The billing failures the office resolves by choosing the Booking's Contract. */
+const CONTRACT_FAILURES = new Set(['contractIneffective', 'contractMissing', 'noContract', 'noCounterparty'])
 const headCellStyle = adminHead()
 
 /**
  * The billing-flow monitor (Phase 09; A5). One pipeline per authorised List:
  * List authorised -> Billing run -> Invoices generated -> Emailed -> Xero
  * (Phase 10 stub), with a per-Booking row underneath. Failed rows carry the case's
- * readable failure and a Resolve & retry action (re-effects a dated-out
- * contract, then re-bills only that Booking).
+ * readable failure and a Resolve & retry action: for a Contract failure it asks
+ * the office to choose the Booking's Contract (catch-up Phase 18; no Contract is
+ * ever edited from here), then re-bills only that Booking.
  *
  * Two RFP-open readings are stated in the copy here: this surface lives in the
  * Admin Web App (vs a separate Billing Engine screen), and a failed Booking blocks
@@ -47,6 +54,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   const xero = useAppStore((s) => s.xero)
   const [error, setError] = useState<string | null>(null)
   const [payRunMsg, setPayRunMsg] = useState<string | null>(null)
+  const [choosing, setChoosing] = useState<{ row: MonitorBookingRow; procedureId: string } | null>(null)
 
   const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
   const failedTotal = rows.reduce((n, r) => n + r.failedCount + r.handoffFailedCount, 0)
@@ -76,20 +84,20 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       setError(outcome.ok ? null : outcome.message)
       return
     }
-    // Re-effect a dated-out / removed contract before re-billing (the common
-    // failure the demo triggers). Other failure codes just re-bill, assuming
-    // the office fixed the data through Master Data.
+    // A Contract failure (no price in force, a Contract that cannot be found,
+    // no Contract to bill under, or a holder with no billing record): the
+    // office chooses the Booking's Contract first (keeping it is allowed, say
+    // after adding its price), then retries.
     const failure = row.failure
-    if (failure?.procedureId !== undefined && (failure.code === 'contractIneffective' || failure.code === 'contractMissing')) {
-      const contractId = schedule.procedures[failure.procedureId]?.governingContractId
-      if (contractId !== undefined && masters.contracts[contractId] !== undefined) {
-        const restored = editContract(useAppStore, actor, contractId, { effectiveToISO: undefined })
-        if (!restored.ok) {
-          setError(restored.message)
-          return
-        }
-      }
+    if (failure?.procedureId !== undefined && failure.procedureId !== '' && CONTRACT_FAILURES.has(failure.code)) {
+      setChoosing({ row, procedureId: failure.procedureId })
+      return
     }
+    retry(row)
+  }
+
+  function retry(row: MonitorBookingRow) {
+    if (row.caseId === undefined) return
     const outcome = retryBillingCase(useAppStore, actor, row.caseId)
     if (!outcome.ok) {
       setError(outcome.message)
@@ -102,6 +110,22 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   }
 
   return (
+    <>
+    {choosing !== null && (
+      <ChooseContractSheet
+        actor={actor}
+        caseId={choosing.row.caseId ?? ''}
+        procedureId={choosing.procedureId}
+        patientName={choosing.row.patientName}
+        reason={choosing.row.failure?.message ?? ''}
+        onDone={() => {
+          const row = choosing.row
+          setChoosing(null)
+          retry(row)
+        }}
+        onClose={() => setChoosing(null)}
+      />
+    )}
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Billing monitor</h1>
@@ -161,6 +185,61 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         rows.map((row) => <PipelineCard key={row.listId} row={row} onResolveRetry={resolveAndRetry} />)
       )}
     </div>
+    </>
+  )
+}
+
+/**
+ * "Choose a Contract" for a Booking whose billing failed on its Contract
+ * (catch-up Phase 18; RV-32): the office picks the right Contract, then the
+ * Booking re-bills. Only the Procedure's Contract changes; no Contract is edited.
+ */
+function ChooseContractSheet({
+  actor,
+  caseId,
+  procedureId,
+  patientName,
+  reason,
+  onDone,
+  onClose,
+}: {
+  actor: Actor
+  caseId: string
+  procedureId: string
+  patientName: string
+  reason: string
+  onDone: () => void
+  onClose: () => void
+}) {
+  const { Overlay } = useSurface()
+  const current = useAppStore((s) => s.schedule.procedures[procedureId]?.governingContractId ?? '')
+  const [contractId, setContractId] = useState(current)
+  const [error, setError] = useState<string | null>(null)
+
+  function choose() {
+    const outcome = chooseContractForFailedBooking(useAppStore, actor, caseId, procedureId, contractId)
+    if (!outcome.ok) {
+      setError(outcome.message)
+      return
+    }
+    onDone()
+  }
+
+  return (
+    <Overlay open onClose={onClose}>
+      <div data-shot="choose-contract-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Choose a Contract</div>
+        <div style={{ fontSize: 13.5, color: neutral.slate }}>
+          {patientName}'s Booking could not be billed. {reason} Choose the Contract it should bill under, or keep it once its price is added, then it is billed again.
+        </div>
+        <ContractSelect value={contractId} onChange={setContractId} selectStyle={selectControlStyle} label="Contract" />
+        <FormError message={error} />
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={choose} disabled={contractId === ''}>Choose and retry</Button>
+        </div>
+      </div>
+    </Overlay>
   )
 }
 

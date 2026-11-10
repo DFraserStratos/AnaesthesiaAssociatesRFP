@@ -1,7 +1,7 @@
 {
   "id": "US-13.4.1",
   "status": "partial",
-  "absentReason": "Anaesthetists, Contracts, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). Insurers, organisations, RVG codes and modifier codes are view only. There are no RVG groups, and public holidays are held per hospital with no separate master calendar.",
+  "absentReason": "Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). RVG codes and modifier codes are view only. There are no RVG groups, and public holidays are held per hospital with no separate master calendar.",
   "shots": [
     {
       "name": "master-data",
@@ -20,13 +20,26 @@
           "caption": "Master data, Contracts",
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "click": "[data-masters-view=contracts]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": []
+        },
+        {
+          "state": "parties",
+          "steps": [
+            {
+              "click": "[data-masters-view=parties]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [],
+          "caption": "Master data, Parties with their kind, billing name and delivery"
         },
         {
           "state": "permanent-lists",

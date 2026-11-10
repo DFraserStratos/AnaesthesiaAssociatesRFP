@@ -119,7 +119,7 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
   })
 })
 
-describe('per-anaesthetist rates (Type 1 default path)', () => {
+describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
   it('an identical capture prices at $212.00 under Souter and $336.00 under Strand', () => {
     const api = store()
     const masters = api.getState().masters

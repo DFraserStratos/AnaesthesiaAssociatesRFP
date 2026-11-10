@@ -1,5 +1,12 @@
 # Phase 18 · Parties and flat Contracts
 
+> **Built 2026-11-10 to 11, with four name changes** (see PROGRESS.md, catch-up Phase 18). The parity
+> harness is `src/store/feeParity.test.ts` with its fixtures in `src/store/__parity__/` (the domain
+> purity test forbids `src/domain` importing the store). The filler-Booking map is
+> `FILLER_CONTRACT_BY_HOSPITAL`, not `PLAIN_RVG_CONTRACT_BY_HOSPITAL` (two hospitals point at rate
+> Contracts). Allocated Party ids are `PYN001`, not `PYN-nnn`. Southern Cross Health Society has the
+> interim insurer id `I-SCHS`. Where this plan names the old paths, the built names replace them.
+
 **Requirements covered** (status and grade at catalogue `efe123c`):
 [US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) Typical Contract arrangements (Verify; **Contradicts**: Type 1/2/3, holder types, scope and a protected default Type 1 per hospital and insurer, where the catalogue has one flat Contract shape),
 [US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) Create, edit and disable Contracts (Verify; **Contradicts**: effective dates, hard delete, the type editable after creation, no Active or holder filter),

@@ -129,7 +129,7 @@ export function SurgeonGroupsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Surgeon groups"
-        sub="Surgeons who work as a group. A group can hold a contract once contract holders are reworked."
+        sub="Surgeons who work as a group. A group that holds Contracts is a Party; its Contracts link the surgeons they are offered for."
         action={<Button variant="secondary" onClick={() => setSheet({})}>Add group</Button>}
       />
       <Table heads={['Name', 'Members', 'Description', '']} rightAlign={[3]} shot="masters-surgeon-groups">

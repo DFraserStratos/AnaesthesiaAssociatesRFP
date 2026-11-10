@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test'
 /**
  * Phase 07 admin walkthrough — the authorisation review queue + sanity-check
  * review screen (real calculator figures, RFP-grounded flags), the authorise
- * choreography, master-data editing (anaesthetist unit value, add hospital with
- * its auto default Type 1, the protected default-contract lock), and the audit
- * viewer. A working artifact for eyeballing plus light assertions.
+ * choreography, master-data editing (anaesthetist unit value; catch-up Phase 18's
+ * Parties, the Contracts search and editor with a save-guard refusal, and adding
+ * a hospital, which adds its Party and no Contract), and the audit viewer. A working artifact for eyeballing plus light assertions.
  */
 
 test('admin phase 07 review + authorise', async ({ page }) => {
@@ -87,16 +87,35 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.waitForTimeout(300)
   await expect(page.getByText('55.00').first()).toBeVisible()
 
-  // Contracts — the protected default lock.
-  await page.getByRole('button', { name: 'Contracts', exact: true }).click()
-  await page.waitForTimeout(200)
-  await expect(page.getByText(/default Type 1 contracts are protected/)).toBeVisible()
-  await page.getByRole('button', { name: 'Edit' }).first().click()
-  await page.waitForTimeout(200)
-  await page.screenshot({ path: 'visual/shots/a7-05-contract.png', fullPage: true })
-  await page.keyboard.press('Escape')
+  // Parties (catch-up Phase 18): kinds, billing names and delivery; no Insurers tab.
+  await page.getByRole('button', { name: 'Parties', exact: true }).click()
+  const parties = page.locator('[data-shot="parties"]')
+  await expect(parties.locator('tr', { hasText: 'nib' }).getByText('Email')).toBeVisible()
+  await expect(parties.locator('tr', { hasText: 'ACC' }).first().getByText('Funder')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Insurers', exact: true })).toHaveCount(0)
+  await page.screenshot({ path: 'visual/shots/a7-05a-parties.png', fullPage: true })
 
-  // Hospitals — add one, its default Type 1 is created.
+  // Contracts: No contract · RVG first, a search by AA code, and the editor.
+  await page.getByRole('button', { name: 'Contracts', exact: true }).click()
+  const catalogue = page.locator('[data-shot="contract-catalogue"]')
+  await expect(catalogue.locator('tr[data-contract]').first()).toContainText('AA-RVG')
+  await page.getByLabel('Search by name, code or AA code').fill('COS-001')
+  await expect(catalogue.locator('tr[data-contract]')).toHaveCount(1)
+  await page.screenshot({ path: 'visual/shots/a7-05b-contract-search.png', fullPage: true })
+  await page.getByLabel('Search by name, code or AA code').fill('')
+  await page.getByRole('button', { name: 'New contract' }).click()
+  const panel = page.locator('[data-shot="contract-detail"]')
+  await expect(panel.getByText('Assigned on save')).toBeVisible()
+  await panel.getByLabel('Name', { exact: true }).fill('Prepaid RVG test')
+  await panel.locator('select').first().selectOption({ label: 'Christchurch Eye Surgery' })
+  await panel.locator('[data-shot="contract-settings"]').getByRole('button', { name: 'Yes', exact: true }).first().click()
+  await panel.getByRole('button', { name: 'Create contract' }).click()
+  await expect(panel.getByRole('alert')).toContainText('A prepaid Contract cannot be priced from RVG units')
+  await panel.getByRole('alert').scrollIntoViewIfNeeded()
+  await page.screenshot({ path: 'visual/shots/a7-05c-contract-refusal.png', fullPage: true })
+  await panel.getByRole('button', { name: 'Cancel' }).click()
+
+  // Hospitals: adding one adds its Party, and no Contract.
   await page.getByRole('button', { name: 'Hospitals & holidays' }).click()
   await page.waitForTimeout(200)
   await page.getByRole('button', { name: 'Add hospital' }).click()
@@ -104,7 +123,7 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.getByLabel('Hospital name').fill('Rangiora Day Surgery')
   await page.getByRole('button', { name: 'Add hospital' }).last().click()
   await page.waitForTimeout(300)
-  await expect(page.getByText(/default Type 1 contract .* now appears in Contracts/)).toBeVisible()
+  await expect(page.getByText(/Its Party now appears in Parties/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-06-add-hospital.png', fullPage: true })
 })
 

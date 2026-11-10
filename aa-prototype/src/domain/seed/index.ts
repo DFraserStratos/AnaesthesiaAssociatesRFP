@@ -35,6 +35,7 @@ import type {
   RvgCode,
   Notification,
   OfficePrivateSlice,
+  Party,
   Slot,
   Surgeon,
   SurgeonGroup,
@@ -64,6 +65,7 @@ import {
 import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
+import { PARTIES } from './parties'
 import { RECURRING_BOOKINGS } from './recurringBookings'
 import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
@@ -101,6 +103,7 @@ export function seedSlotStatusRecords(): Record<string, SlotStatus> {
   return Object.fromEntries(SEED_SLOT_STATUSES.map((s) => [s.key, s]))
 }
 export { CONTRACT } from './contracts'
+export { PARTY, PARTIES } from './parties'
 export { BP, PAT } from './patients'
 export {
   ANAESTHETIST_DASHBOARD,
@@ -127,7 +130,11 @@ export interface SeedMasters {
   /** Surgeon groups (catch-up Phase 17, US-13.4.1), beside `organisations`. */
   surgeonGroups: Record<string, SurgeonGroup>
   hospitals: Record<string, Hospital>
+  /** The Party master (catch-up Phase 18; US-04.1.5): everyone who holds Contracts. */
+  parties: Record<string, Party>
+  /** INTERIM identities behind insurer Parties and `Procedure.insurerId` (no view, no flag; Phases 20 and 21 retire them). */
   insurers: Record<string, Insurer>
+  /** INTERIM identity behind the COS surgeon-group Party (Phase 21 retires it). */
   organisations: Record<string, ContractHolderOrganisation>
   contracts: Record<string, Contract>
   contractPrices: Record<string, ContractPrice>
@@ -518,6 +525,7 @@ function buildSeedInternal(): SeedBuild {
       surgeonRooms: byId([...SURGEON_ROOMS, ...DIRECTORY_ROOMS], (r) => r.id),
       surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
+      parties: byId(PARTIES, (p) => p.id),
       insurers: byId(INSURERS, (i) => i.id),
       organisations: organisationsRec,
       contracts: byId(CONTRACTS, (c) => c.id),
@@ -877,7 +885,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: 'Not yet captured; the hours x rate line is added live in the mobile app under the Aria contract.',
     },
     bariatricType3Booking: {
-      label: 'Type 3 fixed price booking (bariatric)',
+      label: 'Fixed price booking (bariatric)',
       entityType: 'booking',
       entityId: scenario.bariatric,
       detail: 'Mr Doyle price list; second procedure priced by the ordinal rule.',
@@ -886,13 +894,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Externally held ACC contract booking (COS)',
       entityType: 'booking',
       entityId: scenario.cosAcc,
-      detail: 'Billed under the Canterbury Orthopaedic Surgeons ACC Type 2.',
+      detail: 'Billed under ACC orthopaedic services, the Canterbury Orthopaedic Surgeons rate Contract.',
     },
     accRelatedBooking: {
       label: 'ACC related procedure (hospital route)',
       entityType: 'booking',
       entityId: scenario.accRelated,
-      detail: "Billed under St George's ACC Type 2; sources W4's ACC column.",
+      detail: "Billed under ACC elective services via St George's; sources W4's ACC column.",
     },
     guardianMinorBooking: {
       label: 'Guardian pays for a minor',
@@ -916,13 +924,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Billing failure booking (COS ACC)',
       entityType: 'booking',
       entityId: scenario.billingFailure,
-      detail: 'Ropata Thu 16, SUBMITTED. Fails when the COS ACC contract is dated out (no default fallback); its sibling still invoices.',
+      detail: 'Ropata Thu 16, SUBMITTED. Fails when it is pointed at COS ACC fixed fees, which has no price for its procedure; its sibling still invoices.',
     },
     insuredReimbursementBooking: {
       label: 'Insured reimbursement booking',
       entityType: 'booking',
       entityId: scenario.insuredReimbursement,
-      detail: 'Patient pays and claims from AIA Health; NOT the direct claim Insurer route.',
+      detail: 'Patient pays and claims from AIA Health; AA does not invoice AIA.',
     },
     provisionalNoNhiPatient: {
       label: 'Provisional patient (NHI pending)',
@@ -964,7 +972,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Individual arrangement contract',
       entityType: 'contract',
       entityId: CONTRACT.ariaHourly,
-      detail: 'Billable-party held; permitsIndividualArrangement gates rate x time capture.',
+      detail: 'Held by the Aria clinic; it allows hourly rate and time billing lines.',
     },
     integrationS13Time: {
       label: 'Integration booking · S13 reschedule target (same list)',

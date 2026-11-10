@@ -21,13 +21,13 @@ interface AddBillingLineSheetProps {
  * The "add billing line" capture sheet (5th review #1 — the RFP's parallel
  * billing methods reach mobile here). An ancillary fixed amount is always
  * offered; rate x time (Method 3) only under a governing contract carrying
- * `permitsIndividualArrangement` — otherwise the option renders disabled with
+ * `permitsRateTime` — otherwise the option renders disabled with
  * the validator's exact sentence (the store guard repeats it: defence in
  * depth). The computed hours x rate amount previews live.
  */
 export function AddBillingLineSheet({ open, procedure, contract, actor, onClose }: AddBillingLineSheetProps) {
   const { Overlay } = useSurface()
-  const rateTimePermitted = contract?.permitsIndividualArrangement === true
+  const rateTimePermitted = contract?.permitsRateTime === true
 
   const [basis, setBasis] = useState<Basis>('fixed')
   const [description, setDescription] = useState('')

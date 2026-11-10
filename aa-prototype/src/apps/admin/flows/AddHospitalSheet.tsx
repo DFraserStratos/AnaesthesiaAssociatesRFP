@@ -20,7 +20,7 @@ export function AddHospitalSheet({ actor, onClose }: { actor: Actor; onClose: ()
     const outcome = createHospital(useAppStore, actor, name, email !== '' ? email : undefined)
     if (!outcome.ok) { setError(outcome.message); return }
     setError(null)
-    setResult(`Added ${outcome.value.hospital.name}. Its default Type 1 contract "${outcome.value.defaultContract.name}" now appears in Contracts.`)
+    setResult(`Added ${outcome.value.hospital.name}. Its Party now appears in Parties; add its Contracts in Contracts.`)
   }
 
   return (

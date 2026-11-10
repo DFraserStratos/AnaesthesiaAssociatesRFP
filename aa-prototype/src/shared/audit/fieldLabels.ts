@@ -126,20 +126,29 @@ export const FIELD_LABELS: Record<string, string> = {
   kind: 'Kind',
   targetAnaesthetistId: 'Asked of',
 
-  // --- Contract & fixed prices --------------------------------------------
+  // --- Contract & fixed prices (the flat Contract, catch-up Phase 18) ----
   contractId: 'Contract',
   name: 'Name',
-  type: 'Contract type',
-  holderType: 'Holder type',
+  aaCode: 'AA code',
+  holderReference: 'Holder reference code',
   holderId: 'Holder',
-  scope: 'Scope',
-  permitsIndividualArrangement: 'Permits individual arrangement',
-  isDefault: 'Default contract',
-  effectiveFromISO: 'Effective from',
-  effectiveToISO: 'Effective to',
-  type2Detail: 'Type 2 pricing',
+  billsTo: 'Bills',
+  linkedSurgeonIds: 'Linked surgeons',
+  linkedAnaesthetistId: 'Linked anaesthetist',
+  prepaid: 'Prepaid',
+  anaesthetistMayOverridePrice: 'Anaesthetist may override the price',
+  pricing: 'Pricing',
+  systemRole: 'System Contract',
+  permitsRateTime: 'Allows rate and time lines',
   procedureOrdinal: 'Procedure position',
   price: 'Price',
+
+  // --- Party (catch-up Phase 18) -------------------------------------------
+  codePrefix: 'Code prefix',
+  billingName: 'Billing name',
+  postalAddress: 'Postal address',
+  deliveryMethod: 'Delivery',
+  legacyCounterparty: 'Billing record',
 
   // --- Patient & billable party -------------------------------------------
   nhi: 'NHI',
@@ -161,7 +170,6 @@ export const FIELD_LABELS: Record<string, string> = {
   // OQ-52: one identifier for surgeons and anaesthetists alike (catch-up Phase 17).
   hpiId: 'HPI CPN',
   active: 'Active',
-  acceptsDirectClaims: 'Accepts direct claims',
 
   // --- Surgeons, rooms, groups, hospitals (catch-up Phase 17) ---------------
   contactEmail: 'Contact email',

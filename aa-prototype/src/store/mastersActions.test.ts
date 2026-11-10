@@ -1,9 +1,8 @@
 /**
  * Master-data mutation guards (Phase 07): anaesthetist edit/add (+ canvas
- * forward), hospital-holiday add + live reconcile, recurring-booking add/edit, and
- * the contract surface including BOTH halves of the default-Type-1 invariant
- * (delete blocked AND end-date blocked). The creation half (createHospital /
- * setInsurerDirectClaims) stays tested in intake.test.ts.
+ * forward), hospital-holiday add + live reconcile and recurring-booking
+ * add/edit. The Contract surface is tested in contractActions.test.ts, the
+ * Party surface in partyActions.test.ts (catch-up Phase 18).
  */
 
 import { assigned } from '../test/lists'
@@ -18,11 +17,10 @@ import {
   editAnaesthetist,
   editRecurringBooking,
 } from './mastersActions'
-import { addContractPrice, createContract, deleteContract, editContract, editContractPrice } from './contractActions'
 import type { Actor } from './mutate'
 import { procedureFee } from '../shared/capture/feeContext'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
-import { ANAE, CONTRACT, HOSP, SEED_LEAVE, SEED_MARKERS, SURG, generateCanvasForDates } from '../domain/seed'
+import { ANAE, HOSP, SEED_LEAVE, SEED_MARKERS, SURG, generateCanvasForDates } from '../domain/seed'
 import { slotIdFor } from '../domain/slots'
 import { assignListToSlot, reassignList } from './slotActions'
 import { advanceClockDays } from './clockActions'
@@ -61,13 +59,13 @@ describe('editAnaesthetist', () => {
     expect(api.getState().masters.anaesthetists[ANAE.souter]?.active).toBe(true)
   })
 
-  it('re-prices a Type 1 fee that reads the anaesthetist unit value', () => {
+  it("re-prices an RVG fee that reads the anaesthetist's unit value", () => {
     const api = createAppStore()
     const booking = bookingsForList(api.getState(), MORRISON_LIST)[0]
     if (booking === undefined) throw new Error('no booking')
     const proc = proceduresForBooking(api.getState(), booking.id)[0]
     if (proc === undefined) throw new Error('no procedure')
-    // Force plain Type 1 (units x own unit value): no contract, no override.
+    // Force RVG at the anaesthetist's rate (units x own unit value): no Contract, no override.
     expect(editProcedure(api, OFFICE, proc.id, { governingContractId: undefined, priceOverride: undefined }).ok).toBe(true)
 
     const feeArgs = () => {
@@ -298,122 +296,5 @@ describe('recurring bookings', () => {
     expect(ok.ok).toBe(true)
     if (ok.ok) expect(api.getState().masters.recurringBookings[ok.value.id]).toMatchObject({ kind: 'preop', startTime: '13:30' })
     if (ok.ok) expect(api.getState().masters.recurringBookings[ok.value.id]?.endTime).toBeUndefined()
-  })
-})
-
-describe('contracts + the default-Type-1 invariant (second half)', () => {
-  it('creates, edits and deletes a non-default contract', () => {
-    const api = createAppStore()
-    const created = createContract(api, OFFICE, {
-      name: 'Test agreed rate',
-      type: 2,
-      holderType: 'hospital',
-      holderId: HOSP.sx,
-      scope: { kind: 'organisation' },
-      permitsIndividualArrangement: false,
-      effectiveFromISO: '2026-01-01',
-      type2Detail: { basis: 'agreedUnitRate', unitRate: 30 },
-    })
-    expect(created.ok).toBe(true)
-    if (!created.ok) return
-    expect(created.value.contract.id.startsWith('CTN')).toBe(true)
-    expect(created.value.contract.isDefault).toBe(false)
-    const id = created.value.contract.id
-
-    expect(editContract(api, OFFICE, id, { name: 'Renamed rate' }).ok).toBe(true)
-    expect(api.getState().masters.contracts[id]?.name).toBe('Renamed rate')
-
-    expect(deleteContract(api, OFFICE, id).ok).toBe(true)
-    expect(api.getState().masters.contracts[id]).toBeUndefined()
-  })
-
-  it('rejects a Type 2 contract with no agreed rate / discount', () => {
-    const api = createAppStore()
-    const outcome = createContract(api, OFFICE, {
-      name: 'Bad type 2',
-      type: 2,
-      holderType: 'hospital',
-      holderId: HOSP.sx,
-      scope: { kind: 'organisation' },
-      permitsIndividualArrangement: false,
-      effectiveFromISO: '2026-01-01',
-    })
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('type2DetailRequired')
-  })
-
-  it('BLOCKS deleting a default Type 1 contract', () => {
-    const api = createAppStore()
-    const outcome = deleteContract(api, OFFICE, CONTRACT.stgDefault)
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('defaultContractProtected')
-    expect(api.getState().masters.contracts[CONTRACT.stgDefault]).toBeDefined()
-  })
-
-  it('BLOCKS end-dating a default Type 1 contract', () => {
-    const api = createAppStore()
-    const outcome = editContract(api, OFFICE, CONTRACT.stgDefault, { effectiveToISO: '2027-01-01' })
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('defaultContractProtected')
-    expect(api.getState().masters.contracts[CONTRACT.stgDefault]?.effectiveToISO).toBeUndefined()
-  })
-
-  it('ALLOWS a non-essential edit of a default Type 1 (its name)', () => {
-    const api = createAppStore()
-    const outcome = editContract(api, OFFICE, CONTRACT.stgDefault, { name: "St George's standard units (reviewed)" })
-    expect(outcome.ok).toBe(true)
-    expect(api.getState().masters.contracts[CONTRACT.stgDefault]?.name).toContain('reviewed')
-  })
-
-  it('BLOCKS changing a default Type 1 away from Type 1, or moving its holder (invariant kept in the store)', () => {
-    const api = createAppStore()
-    const retyped = editContract(api, OFFICE, CONTRACT.stgDefault, { type: 2, type2Detail: { basis: 'agreedUnitRate', unitRate: 30 } })
-    expect(retyped.ok).toBe(false)
-    if (!retyped.ok) expect(retyped.code).toBe('defaultContractProtected')
-
-    const reheld = editContract(api, OFFICE, CONTRACT.stgDefault, { holderId: HOSP.sx })
-    expect(reheld.ok).toBe(false)
-    if (!reheld.ok) expect(reheld.code).toBe('defaultContractProtected')
-
-    // The protected default is untouched: still isDefault Type 1 at its own holder.
-    const c = api.getState().masters.contracts[CONTRACT.stgDefault]
-    expect(c?.type).toBe(1)
-    expect(c?.isDefault).toBe(true)
-    expect(c?.holderId).toBe(HOSP.stg)
-    // St George's still has exactly one protected default (the invariant holds).
-    const defaults = Object.values(api.getState().masters.contracts).filter(
-      (x) => x.isDefault && x.type === 1 && x.holderType === 'hospital' && x.holderId === HOSP.stg,
-    )
-    expect(defaults.length).toBe(1)
-  })
-
-  it('clears a stale type2Detail when a contract is changed off Type 2', () => {
-    const api = createAppStore()
-    const created = createContract(api, OFFICE, {
-      name: 'Temp type 2', type: 2, holderType: 'hospital', holderId: HOSP.sx,
-      scope: { kind: 'organisation' }, permitsIndividualArrangement: false, effectiveFromISO: '2026-01-01',
-      type2Detail: { basis: 'agreedUnitRate', unitRate: 30 },
-    })
-    expect(created.ok).toBe(true)
-    if (!created.ok) return
-    expect(editContract(api, OFFICE, created.value.contract.id, { type: 1 }).ok).toBe(true)
-    expect(api.getState().masters.contracts[created.value.contract.id]?.type2Detail).toBeUndefined()
-  })
-
-  it('adds and edits a Type 3 price row', () => {
-    const api = createAppStore()
-    const add = addContractPrice(api, OFFICE, { contractId: CONTRACT.doyleBariatric, rvgBaseCode: '20884', price: 3100 })
-    expect(add.ok).toBe(true)
-    if (!add.ok) return
-    expect(add.value.id.startsWith('CPN')).toBe(true)
-    expect(api.getState().masters.contractPrices[add.value.id]?.price).toBe(3100)
-    expect(editContractPrice(api, OFFICE, add.value.id, { price: 3200 }).ok).toBe(true)
-    expect(api.getState().masters.contractPrices[add.value.id]?.price).toBe(3200)
-  })
-
-  it('is office-only across the contract surface', () => {
-    const api = createAppStore()
-    expect(createContract(api, SOUTER, { name: 'x', type: 1, holderType: 'hospital', holderId: HOSP.sx, scope: { kind: 'organisation' }, permitsIndividualArrangement: false, effectiveFromISO: '2026-01-01' }).ok).toBe(false)
-    expect(deleteContract(api, SOUTER, CONTRACT.sxap).ok).toBe(false)
   })
 })

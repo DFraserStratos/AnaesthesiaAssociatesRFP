@@ -190,7 +190,7 @@ Model, domain and seed first, then store, then UI. Every write goes through `mut
 meta. Every rule is a pure function with a Vitest test.
 
 1. **Baseline the figures (before any edit).** Add `phase-19-baseline.json` beside 18's in
-   `domain/billing/__parity__/`: every seeded Procedure's `feeFor` total and B, T and M, and every
+   `store/__parity__/`: every seeded Procedure's `feeFor` total and B, T and M, and every
    seeded invoice total from `buildSeed()`; if 18's harness is missing, create it and say so. Never
    regenerate with `-u`: a mismatch is a failure to explain. Also record each seeded Procedure's B and
    its source, for item 5's remap.

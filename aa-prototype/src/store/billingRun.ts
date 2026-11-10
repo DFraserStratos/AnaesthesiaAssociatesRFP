@@ -23,6 +23,7 @@
  * directly or wire explicitly and unsubscribe.
  */
 
+import { noRouteCounterpartyMessage, routeCounterpartyForParty } from '../domain/billing/parties'
 import { listHospitalFor } from '../domain/listPairing'
 import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine } from '../domain/types'
 import {
@@ -270,6 +271,63 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
 }
 
 const BILLING_RETRY_ACTOR: Actor = { who: 'Billing run (retry)', role: 'system', source: 'system' }
+
+/**
+ * The billing monitor's "Choose a Contract" (catch-up Phase 18; RV-32): the
+ * one office edit allowed on an AUTHORISED List, and only on a Booking whose
+ * billing case FAILED and that has no invoice. It sets the Procedure's
+ * Contract (any Active Contract, or the one it already has) and nothing else,
+ * audited as `procedure.update`; `retryBillingCase` then rebuilds it. No
+ * Contract is edited.
+ */
+export function chooseContractForFailedBooking(
+  api: AppStoreApi,
+  actor: Actor,
+  caseId: string,
+  procedureId: string,
+  contractId: string,
+): Outcome {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can choose a Contract for a failed Booking.')
+  const state = api.getState()
+  const failed = state.billing.cases[caseId]
+  if (failed === undefined) return refuse('notFound', 'Billing case not found.')
+  if (failed.status !== 'failed' || failed.invoiceId !== undefined) {
+    return refuse('caseNotFailed', 'Only a failed Booking with no invoice can have its Contract changed here.')
+  }
+  const procedure = state.schedule.procedures[procedureId]
+  if (procedure === undefined || procedure.bookingId !== failed.bookingId) {
+    return refuse('notFound', 'That procedure is not on the failed Booking.')
+  }
+  const contract = state.masters.contracts[contractId]
+  if (contract === undefined) return refuse('notFound', 'Contract not found.')
+  if (contract.status !== 'active' && procedure.governingContractId !== contractId) {
+    return refuse('contractDisabled', 'Choose an Active Contract.')
+  }
+  // INTERIM until Phase 21: on the hospital route the Contract's holder must
+  // have a billing record, or the retry would fail again.
+  if (procedure.billingRoute === 'hospital' && routeCounterpartyForParty(state.masters.parties[contract.holderId]) === undefined) {
+    return refuse('noRouteCounterparty', noRouteCounterpartyMessage(contract.name))
+  }
+  if (procedure.governingContractId === contractId) return ok(undefined)
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'procedure',
+      entityId: procedureId,
+      action: 'procedure.update',
+      before: { governingContractId: procedure.governingContractId ?? '' },
+      after: { governingContractId: contractId },
+    },
+    (s) => ({
+      schedule: {
+        ...s.schedule,
+        procedures: { ...s.schedule.procedures, [procedureId]: { ...procedure, governingContractId: contractId } },
+      },
+    }),
+  )
+  return ok(undefined)
+}
 
 /**
  * Resolve-and-retry a single failed BillingCase (Phase 09 monitor). Rebuilds

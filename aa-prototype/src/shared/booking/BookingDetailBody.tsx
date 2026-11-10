@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
+import { listHospitalFor } from '../../domain/listPairing'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
 import {
   validateBookingForBilling,
@@ -197,11 +198,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       rvgCodes: masters.rvgCodes,
       contracts: masters.contracts,
       contractPrices: Object.values(masters.contractPrices),
-      insurers: masters.insurers,
+      parties: masters.parties,
       billableParties: masters.billableParties,
       billingLines: Object.values(billingLinesRecord),
     }
     ctx.surgeonId = list.surgeonId
+    const hospital = listHospitalFor(list, masters.hospitals)
+    if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
     return validateBookingForBilling(booking, procedures, ctx)
   }, [booking, list, cancelled, masters, billingLinesRecord, procedures])
 
@@ -216,7 +219,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
    * one (a rate-by-time line beside the RVG fee).
    *
    * The rate label is shown only where every procedure agrees on it: a Booking
-   * mixing a Type 3 fixed price with a units-by-rate procedure has no single
+   * mixing a fixed price with a units-by-rate procedure has no single
    * rate to state, and inventing one would be worse than omitting it.
    */
   const bookingBreakdown = useMemo(() => {
@@ -614,7 +617,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const capture = (
     <>
       {/* Outcome / BTM capture — one block per procedure, in Booking order
-          (the ordinal feeds Type 3 second-procedure pricing). */}
+          (the ordinal feeds fixed-price second-procedure pricing). */}
       {/* A Booking on a Draft List has no anaesthetist yet, so no fee or capture: its
           procedures are listed and priced once the office assigns the List (catch-up Phase 31). */}
       {!cancelled && list.state === 'DRAFT' && procedures.length > 0 && (

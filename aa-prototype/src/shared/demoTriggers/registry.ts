@@ -48,7 +48,7 @@ import {
   STAND_IN_ASSIGN_CHOICES,
   officeStandInRefusal,
   authoriseList,
-  editContract,
+  editProcedure,
   ingestPdfRow,
   openAccRecs,
   processMessage,
@@ -400,16 +400,17 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      'Dates out the externally held COS ACC contract and authorises Dr Ropata\'s Thu 16 Jul List. One Booking fails to rate; its clean sibling still invoices.',
+      "Points Losa Tuilagi's Procedure at the COS ACC fixed fees Contract, which has no price for it, and authorises Dr Ropata's Thu 16 Jul List. Her Booking fails with No price in force; its clean sibling still invoices.",
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
     when: (state) => state.schedule.lists[SEED_LIST_IDS.billingFailure] !== undefined,
     disabledReason: (state) =>
       state.schedule.lists[SEED_LIST_IDS.billingFailure]?.billedAtISO !== undefined ? 'Already triggered' : null,
-    // Phase 09 demo trigger: date out the COS ACC contract (no default fallback)
-    // and authorise the seeded failure list; the wired billing run raises the
-    // sibling's invoice and fails the COS booking, which surfaces in the monitor.
+    // Re-based in catch-up Phase 18 (RV-32: no dates, and no Contract is
+    // edited): as the office, point Losa Tuilagi's Procedure at COS ACC fixed
+    // fees (no price for her procedure) through the ordinary office action,
+    // then authorise; the billing run fails her Booking and bills its sibling.
     run: (api) => {
       const listId = SEED_LIST_IDS.billingFailure
       const list = api.getState().schedule.lists[listId]
@@ -417,13 +418,20 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       if (list.billedAtISO !== undefined) {
         return { ok: false, message: 'Already triggered. Use Resolve & retry on the failed booking in the billing monitor.' }
       }
-      editContract(api, OFFICE_ACTOR, CONTRACT.cosAcc, { effectiveToISO: '2026-07-15' })
       if (list.state === 'ACTIVE') submitList(api, OFFICE_ACTOR, listId)
+      const { procedures, bookings } = api.getState().schedule
+      const losa = Object.values(procedures).find(
+        (p) => p.governingContractId === CONTRACT.cosAcc && bookings[p.bookingId]?.listId === listId,
+      )
+      if (losa !== undefined) {
+        const pointed = editProcedure(api, OFFICE_ACTOR, losa.id, { governingContractId: CONTRACT.cosFixed })
+        if (!pointed.ok) return { ok: false, message: `Refused: ${pointed.message}` }
+      }
       const outcome = authoriseList(api, OFFICE_ACTOR, listId)
       return {
         ok: outcome.ok,
         message: outcome.ok
-          ? 'Done. In the Admin app billing monitor the COS booking shows a rating failure while its clean sibling billed. Use Resolve & retry.'
+          ? 'Done. In the billing monitor Losa Tuilagi shows No price in force while her clean sibling billed. Use Resolve & retry to choose her Contract.'
           : `Refused: ${outcome.message}`,
       }
     },

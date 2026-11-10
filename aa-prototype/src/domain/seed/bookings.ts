@@ -116,11 +116,12 @@ const REF_PREFIX: Record<string, string> = {
   [HOSP.cph]: 'HNZ',
 }
 
-const DEFAULT_CONTRACT_BY_HOSPITAL: Record<string, string> = {
-  [HOSP.stg]: CONTRACT.stgDefault,
+/** The Contract the generic filler Bookings at each hospital are on (catch-up Phase 18 renamed it from the default map: SXAP and Health NZ are rate Contracts, not plain RVG). */
+const FILLER_CONTRACT_BY_HOSPITAL: Record<string, string> = {
+  [HOSP.stg]: CONTRACT.stgRvg,
   [HOSP.sx]: CONTRACT.sxap,
-  [HOSP.forte]: CONTRACT.forteDefault,
-  [HOSP.ces]: CONTRACT.cesDefault,
+  [HOSP.forte]: CONTRACT.forteRvg,
+  [HOSP.ces]: CONTRACT.cesRvg,
   [HOSP.cph]: CONTRACT.healthNz,
 }
 
@@ -346,7 +347,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       handoverISO: iso(TUE21, s.end),
       asaClass: s.asa,
       billingRoute: 'hospital',
-      governingContractId: CONTRACT.stgDefault,
+      governingContractId: CONTRACT.stgRvg,
       billingReference: `SG-2026-08${21 + i}`,
     })
     amBookings.push(booking)
@@ -391,7 +392,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     asaClass: 'AS1',
     billingRoute: 'insurer',
     insurerId: INS.nib,
-    governingContractId: CONTRACT.nibDefault,
+    governingContractId: CONTRACT.nibRvg,
   })
 
   const chenBooking = addBooking({
@@ -466,7 +467,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       handoverISO: iso(MON20, s.end),
       asaClass: s.asa,
       billingRoute: 'hospital',
-      governingContractId: s.acc === true ? CONTRACT.stgAcc : CONTRACT.stgDefault,
+      governingContractId: s.acc === true ? CONTRACT.stgAcc : CONTRACT.stgRvg,
       ...(s.ref !== undefined ? { billingReference: s.ref } : {}),
       ...(s.acc === true ? { accRelated: true } : {}),
     })
@@ -490,7 +491,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     description: 'Cystoscopy',
     rvgBaseCode: '36561',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.stgDefault,
+    governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0777',
   })
 
@@ -554,7 +555,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '09:15'),
     asaClass: 'AS2',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.forteDefault,
+    governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2101',
   })
   addProcedure(splitBooking, {
@@ -564,7 +565,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '09:45'),
     asaClass: 'AS2',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.forteDefault,
+    governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2101',
     isAdditional: true,
   })
@@ -584,7 +585,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '11:00'),
     asaClass: 'AS1',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.forteDefault,
+    governingContractId: CONTRACT.forteRvg,
   })
 
   const monAmFiller = addBooking({
@@ -601,7 +602,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '12:05'),
     asaClass: 'AS2',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.forteDefault,
+    governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2103',
   })
   addListAudit(souterMon20Am, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '12:20'))
@@ -629,7 +630,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '15:00'),
     asaClass: 'AS1',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.stgDefault,
+    governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0791',
   })
   addLine(twoFunderProc, {
@@ -659,7 +660,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '16:20'),
     asaClass: 'AS2',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.stgDefault,
+    governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0792',
   })
 
@@ -677,7 +678,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(MON20, '17:25'),
     asaClass: 'AS1',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.stgDefault,
+    governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0793',
   })
   addListAudit(souterMon20Pm, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '17:40'))
@@ -686,7 +687,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // Scenario bookings on past lists
   // -------------------------------------------------------------------------
 
-  // Bariatric Type 3 with the second-procedure ordinal rule (Fitzgerald,
+  // Bariatric fixed price with the second-procedure ordinal rule (Fitzgerald,
   // Tue 14 Jul, Southern Cross / Mr Doyle).
   const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
   const bariatricBooking = addBooking({
@@ -868,7 +869,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     description: 'Laparoscopic cholecystectomy',
     rvgBaseCode: '20941',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.forteDefault,
+    governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2140',
   })
 
@@ -910,7 +911,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(FRI24, '14:00'),
     asaClass: 'AS1',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.forteDefault,
+    governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2150',
   })
   addProcedure(prepaidBooking, {
@@ -926,9 +927,9 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   // Billing FAILURE exemplar (Phase 09; A5) — a dedicated SUBMITTED, complete,
   // MULTI-booking list (Ropata, Thu 16 Jul, St George's / Mr Hale). The failing
-  // booking is on the COS externally held ACC Type 2 (an organisation holder with
-  // NO default fallback), effective when seeded; the billing-failure demo trigger dates
-  // it out then authorises this list, so the booking is a genuine rating failure
+  // booking is on the COS ACC rate Contract; the billing-failure demo trigger
+  // points it at COS ACC fixed fees (no price for its procedure, catch-up Phase
+  // 18) then authorises this list, so the booking is a genuine rating failure
   // (contractIneffective). The clean hospital-route sibling still invoices,
   // demonstrating per-booking failure isolation.
   const ropataThu16 = projectedListId(ANAE.ropata, THU16, 'AM')
@@ -964,7 +965,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(THU16, '10:35'),
     asaClass: 'AS1',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.stgDefault,
+    governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0810',
   })
   addListAudit(ropataThu16, 'list.submit', NAME_BY_ID.get(ANAE.ropata) ?? 'Dr Hannah Ropata', iso(THU16, '11:00'))
@@ -990,16 +991,16 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
 
   const s13TimeBooking = addBooking({ listId: souterTue04AugAm, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
-  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0901' })
+  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0901' })
 
   const s13MoveBooking = addBooking({ listId: souterMon03AugPm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
-  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0902' })
+  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0902' })
 
   const s14Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
-  addProcedure(s14Booking, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0903' })
+  addProcedure(s14Booking, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0903' })
 
   const s15Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
-  addProcedure(s15Booking, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0904' })
+  addProcedure(s15Booking, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0904' })
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
   // completed + valid, so index.ts marks the List SUBMITTED. The S14
@@ -1019,7 +1020,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(FRI17, '11:00'),
     asaClass: 'AS2',
     billingRoute: 'hospital',
-    governingContractId: CONTRACT.stgDefault,
+    governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0905',
   })
 
@@ -1042,7 +1043,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       description: rvg?.description ?? 'Eye procedure',
       rvgBaseCode: code,
       billingRoute: 'hospital',
-      governingContractId: CONTRACT.cesDefault,
+      governingContractId: CONTRACT.cesRvg,
       billingReference: `CE-2026-05${41 + i}`,
     })
   })
@@ -1106,7 +1107,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       description: RVG_BY_CODE.get(s.code)?.description ?? 'Orthopaedic procedure',
       rvgBaseCode: s.code,
       billingRoute: 'hospital',
-      governingContractId: CONTRACT.stgDefault,
+      governingContractId: CONTRACT.stgRvg,
       billingReference: s.ref,
     })
   })
@@ -1174,7 +1175,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       if (routeDraw < 0.12) {
         spec.billingRoute = 'insurer'
         spec.insurerId = INS.nib
-        spec.governingContractId = CONTRACT.nibDefault
+        spec.governingContractId = CONTRACT.nibRvg
       } else if (routeDraw < 0.2) {
         spec.billingRoute = 'billableParty'
         spec.patientPaymentCategory = 'selfFundedPostProcedure'
@@ -1182,7 +1183,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
         spec.billingRoute = 'hospital'
         // AA rooms is never a Contract holder (catch-up Phase 31): it falls back as no hospital did.
         const hospitalId = list.hospitalId === HOSP.aaRooms ? HOSP.stg : list.hospitalId
-        spec.governingContractId = DEFAULT_CONTRACT_BY_HOSPITAL[hospitalId] ?? CONTRACT.stgDefault
+        spec.governingContractId = FILLER_CONTRACT_BY_HOSPITAL[hospitalId] ?? CONTRACT.stgRvg
         spec.billingReference = `${REF_PREFIX[hospitalId] ?? 'SG'}-2026-${4000 + procN}`
       }
       addProcedure(booking, spec)

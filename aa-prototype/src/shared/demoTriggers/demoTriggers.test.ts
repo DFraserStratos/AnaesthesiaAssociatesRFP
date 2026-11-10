@@ -198,7 +198,7 @@ describe('route scoping', () => {
 })
 
 describe('re-homed bodies match the Control Panel', () => {
-  it('billing failure fails the COS Booking, bills its sibling, then reads Already triggered', () => {
+  it('billing failure points Losa Tuilagi at COS ACC fixed fees, fails her Booking with No price in force, bills its sibling, edits no Contract, then reads Already triggered', () => {
     const api = createAppStore()
     wireBillingRun(api)
     const t = byId('billing-failure')
@@ -206,7 +206,12 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     expect(t.run(api, ctx).ok).toBe(true)
     const state = api.getState()
-    expect(state.masters.contracts[CONTRACT.cosAcc]?.effectiveToISO).toBe('2026-07-15')
+    // No Contract is edited: the masters are as seeded.
+    expect(state.masters.contracts).toEqual(createAppStore().getState().masters.contracts)
+    expect(state.audit.some((a) => a.action.startsWith('contract.'))).toBe(false)
+    const failed = Object.values(state.billing.cases).find((c) => c.status === 'failed')
+    expect(failed?.failure?.message).toBe('No price in force for this procedure under COS ACC fixed fees.')
+    expect(state.schedule.procedures[failed!.failure!.procedureId!]?.governingContractId).toBe(CONTRACT.cosFixed)
     const cases = Object.values(state.billing.cases).filter((c) => bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === c.bookingId))
     expect(cases.some((c) => c.status === 'failed')).toBe(true)
     expect(cases.some((c) => c.status !== 'failed' && c.invoiceId !== undefined)).toBe(true)

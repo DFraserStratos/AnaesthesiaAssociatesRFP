@@ -3,14 +3,17 @@
  * Phase 01 calculator (convention 9). The store's `billingRun.ts` orchestrates
  * (reads state, allocates ids, commits, audits); this module decides:
  *
- *  - which contract governs each Procedure on the List (service) date, with
- *    the RFP's exactly-scoped fallback: an expired/absent negotiated contract
- *    HELD BY a hospital or direct-billing insurer falls back to that
- *    counterparty's protected default Type 1 at standard rates, while surgeon,
- *    group or organisation holders carry NO mandated default — a genuine
- *    billing exception (Phase 09's failure demo; 3rd review #9);
+ *  - which Contract governs each Procedure (catch-up Phase 18): the stored
+ *    Contract, whatever its status (a Disabled Contract still prices and bills
+ *    a Procedure already on it, D81); a dangling id, or a primary Procedure on
+ *    a fixed-price Contract with no price for it, is a billing exception the
+ *    office resolves in the billing monitor; with nothing stored, the hospital
+ *    and insurer routes bill under that Party's plain RVG Contract (INTERIM
+ *    until Phase 20's step rail);
  *  - who each Procedure (and each funder-overridden BillingLine) bills to —
- *    resolution is BY CONTRACT HOLDER on the contract-holder route;
+ *    on the contract-holder route, the resolved Contract's holder Party,
+ *    through its interim counterparty (INTERIM until Phase 21, which bills by
+ *    the Contract's `billsTo`);
  *  - how lines group into invoices: one invoice per Booking per distinct
  *    counterparty (§11 labelled reading — the RFP's "two separate invoices"
  *    split outcome arises when funders differ).
@@ -19,7 +22,6 @@
 import type {
   Booking,
   Contract,
-  ContractHolderType,
   CounterpartyRef,
   IsoDate,
   Procedure,
@@ -27,7 +29,8 @@ import type {
 } from '../types'
 import { feeFor, type FeeLine } from './fee'
 import { roundToCents, toCents } from './money'
-import { isEffectiveOn, selectContract } from './contracts'
+import { interimRouteContract, noPriceInForce, noPriceInForceMessage, noRouteContractMessage } from './contracts'
+import { hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty, type Party } from './parties'
 import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
 
 /**
@@ -39,10 +42,8 @@ import { feeContextFor, type BookingBillingContext } from './validateBookingForB
 export const GST_RATE = 0.15
 
 export interface InvoiceBuildContext extends BookingBillingContext {
-  /** Contract effectiveness is judged on the List (service) date. */
+  /** The List (service) date. */
   listDateISO: IsoDate
-  /** The List's hospital — resolves the hospital route's default when no contract is stored. */
-  listHospitalId?: string
   /** The Booking's patient — the Billable Party route's default payer (7th review A1). */
   patientId: string
   /**
@@ -69,106 +70,85 @@ export type ContractResolution =
   | { kind: 'resolved'; contract?: Contract }
   | { kind: 'exception'; code: ContractResolutionExceptionCode; message: string }
 
-const HOLDER_LABEL: Record<ContractHolderType, string> = {
-  hospital: 'hospital',
-  insurer: 'insurer',
-  surgeon: 'surgeon',
-  organisation: 'group or organisation',
-  billableParty: 'billable party',
-}
-
 /**
- * The fallback target is the protected DEFAULT Type 1 specifically — never
- * some other surviving negotiated contract (that would silently re-negotiate
- * the arrangement). Candidates are pre-filtered to defaults; `selectContract`
- * then applies the holder match and the effective-date predicate.
+ * Nothing stored on the hospital or insurer route (INTERIM until Phase 20):
+ * the Party's plain RVG Contract.
  */
-function defaultContractFor(
-  holderType: ContractHolderType,
-  holderId: string,
-  ctx: InvoiceBuildContext,
-): ContractResolution {
-  const fallback = selectContract(
-    Object.values(ctx.contracts).filter((c) => c.isDefault),
-    {
-      holder: { holderType, holderId },
-      anaesthetistId: ctx.anaesthetist.registrationNumber,
-      dateISO: ctx.listDateISO,
-    },
-  )
-  if (fallback === undefined) {
+function routeContractFor(holder: Party | undefined, ctx: InvoiceBuildContext): ContractResolution {
+  const contract = interimRouteContract(ctx.contracts, holder?.id)
+  if (contract === undefined) {
     return {
       kind: 'exception',
       code: 'noContract',
-      message: `No default contract found for the ${HOLDER_LABEL[holderType]} counterparty. Every hospital and direct billing insurer holds a protected default Type 1, so this state needs manual review.`,
+      message: noRouteContractMessage(holder?.name ?? 'the counterparty'),
     }
   }
-  return { kind: 'resolved', contract: fallback }
+  return { kind: 'resolved', contract }
 }
 
 /**
- * Which contract governs this Procedure for billing. The stored
- * `governingContractId` is authoritative while it is in effect on the List
- * date; after that the RFP's scoped guarantee decides (see module header).
+ * Which Contract governs this Procedure for billing (see the module header).
+ * `procedureOrdinal` is its 1-based position on the Booking (fixed-price rows
+ * key on it).
  */
 export function resolveContractForProcedure(
   procedure: Procedure,
   ctx: InvoiceBuildContext,
+  procedureOrdinal = 1,
 ): ContractResolution {
   const stored =
     procedure.governingContractId !== undefined
       ? ctx.contracts[procedure.governingContractId]
       : undefined
 
-  // A stored reference to a contract that no longer exists is an exception,
-  // never "nothing stored" — a deleted surgeon-held arrangement must not blur
-  // into the hospital fallback and bill the wrong counterparty (8th review).
+  // A stored reference to a Contract that is not there is an exception, never
+  // "nothing stored": it must not blur into the route's Contract and bill the
+  // wrong counterparty (8th review).
   if (procedure.governingContractId !== undefined && stored === undefined) {
     return {
       kind: 'exception',
       code: 'contractMissing',
-      message: `The governing contract ${procedure.governingContractId} no longer exists. This Booking needs manual review.`,
+      message: `The Contract ${procedure.governingContractId} on this procedure could not be found. Choose a Contract and retry.`,
     }
-  }
-
-  if (stored !== undefined && isEffectiveOn(stored, ctx.listDateISO)) {
-    return { kind: 'resolved', contract: stored }
   }
 
   if (stored !== undefined) {
-    if (stored.holderType === 'hospital' || stored.holderType === 'insurer') {
-      return defaultContractFor(stored.holderType, stored.holderId, ctx)
+    // The interim of Phase 19a's "no range in force": a primary Procedure on a
+    // fixed-price Contract with no price for it cannot be invoiced.
+    if (
+      noPriceInForce(stored, procedure, {
+        procedureOrdinal,
+        prices: ctx.contractPrices,
+        ...(ctx.surgeonId !== undefined ? { surgeonId: ctx.surgeonId } : {}),
+      })
+    ) {
+      return { kind: 'exception', code: 'contractIneffective', message: noPriceInForceMessage(stored.name) }
     }
-    return {
-      kind: 'exception',
-      code: 'contractIneffective',
-      message: `No contract in effect on ${ctx.listDateISO}. ${stored.name} is held by a ${HOLDER_LABEL[stored.holderType]}, which carries no default fallback. This Booking needs manual review in the billing monitor.`,
-    }
+    return { kind: 'resolved', contract: stored }
   }
 
-  // Nothing stored: the hospital and insurer routes always resolve to the
-  // counterparty's default Type 1 (the RFP's "no contract found branch does
-  // not exist" guarantee); the Billable Party route needs no contract at all
-  // (standard rates; an individual-arrangement contract is optional).
+  // Nothing stored: the hospital and insurer routes bill under that Party's
+  // plain RVG Contract (INTERIM until Phase 20); the Billable Party route needs
+  // no Contract at all (standard rates).
   if (procedure.billingRoute === 'hospital') {
     if (ctx.listHospitalId === undefined) {
       return {
         kind: 'exception',
         code: 'noContract',
-        message: 'No governing contract is stored and the List names no hospital to resolve a default from.',
+        message: 'No Contract is chosen and the List names no hospital to bill under.',
       }
     }
-    return defaultContractFor('hospital', ctx.listHospitalId, ctx)
+    return routeContractFor(hospitalPartyFor(ctx.parties, ctx.listHospitalId), ctx)
   }
   if (procedure.billingRoute === 'insurer') {
     if (procedure.insurerId === undefined) {
       return {
         kind: 'exception',
         code: 'noContract',
-        message: 'No governing contract is stored and the procedure names no insurer to resolve a default from.',
+        message: 'No Contract is chosen and the procedure names no insurer to bill under.',
       }
     }
-    return defaultContractFor('insurer', procedure.insurerId, ctx)
+    return routeContractFor(insurerPartyFor(ctx.parties, procedure.insurerId), ctx)
   }
   if (procedure.billingRoute === 'billableParty') return { kind: 'resolved' }
 
@@ -193,7 +173,8 @@ export function counterpartyForProcedure(
   procedure: Procedure,
   resolvedContract: Contract | undefined,
   patientId: string,
-): CounterpartyRef {
+  parties: Readonly<Record<string, Party>>,
+): CounterpartyRef | undefined {
   if (procedure.billingRoute === 'insurer' && procedure.insurerId !== undefined) {
     return { kind: 'insurer', id: procedure.insurerId }
   }
@@ -202,14 +183,10 @@ export function counterpartyForProcedure(
       ? { kind: 'billableParty', id: procedure.billablePartyId }
       : { kind: 'patient', id: patientId }
   }
-  if (resolvedContract !== undefined) {
-    return { kind: resolvedContract.holderType, id: resolvedContract.holderId }
-  }
-  // Truly unreachable: `resolveContractForProcedure` returns a contract-less
-  // resolution only for the billableParty route (handled above) and fails a
-  // route-less procedure as an exception before this is called. Kept as a hard
-  // error so a future resolution change can never mis-bill silently.
-  throw new Error(`counterpartyForProcedure: no counterparty resolvable for procedure ${procedure.id}`)
+  // INTERIM until Phase 21: the route bills the resolved Contract's holder
+  // Party through its interim counterparty; never reads `billsTo`.
+  if (resolvedContract !== undefined) return routeCounterpartyForParty(parties[resolvedContract.holderId])
+  return undefined
 }
 
 /** Recipient class drives the document layout (RFP: two invoice layouts). */
@@ -272,7 +249,7 @@ export function buildInvoicesForBooking(
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
 
   for (const [index, procedure] of procedures.entries()) {
-    const resolution = resolveContractForProcedure(procedure, ctx)
+    const resolution = resolveContractForProcedure(procedure, ctx, index + 1)
     if (resolution.kind === 'exception') {
       return {
         kind: 'exception',
@@ -282,10 +259,18 @@ export function buildInvoicesForBooking(
       }
     }
     const contract = resolution.contract
-    const procedureCounterparty = counterpartyForProcedure(procedure, contract, ctx.patientId)
+    const procedureCounterparty = counterpartyForProcedure(procedure, contract, ctx.patientId, ctx.parties)
+    if (procedureCounterparty === undefined) {
+      return {
+        kind: 'exception',
+        procedureId: procedure.id,
+        code: 'noCounterparty',
+        message: noRouteCounterpartyMessage(contract?.name ?? 'This Contract'),
+      }
+    }
 
     // Price with the RESOLVED contract — `feeContextFor` injects the STORED
-    // one, which may be the very contract that is effective-dated out.
+    // one; with nothing stored, the resolved one is the route's plain RVG Contract.
     const feeCtx = feeContextFor(procedure, index + 1, ctx)
     if (contract !== undefined) feeCtx.contract = contract
     else delete feeCtx.contract
@@ -334,7 +319,7 @@ export function buildInvoicesForBooking(
       //
       // Conservation is RE-CHECKED here against the fee under the RESOLVED
       // contract: masters can change between completion and billing (a rate
-      // edit, or the fallback substituting the default), and a stale split
+      // edit in place, or a different Contract chosen), and a stale split
       // must fail the Booking for review, never bill silently short (8th review).
       const allocated = storedLines.reduce((sum, l) => sum + l.amount, 0)
       if (toCents(allocated) !== toCents(fee.total)) {
@@ -468,7 +453,8 @@ export function buildPrePaymentInvoiceForBooking(
     ) {
       continue
     }
-    const counterparty = counterpartyForProcedure(procedure, undefined, ctx.patientId)
+    const counterparty = counterpartyForProcedure(procedure, undefined, ctx.patientId, ctx.parties)
+    if (counterparty === undefined) continue
     const detail = procedure.prepaymentDetail
     if (detail?.type === 'split') {
       // The validator guarantees a positive depositAmount on a split.

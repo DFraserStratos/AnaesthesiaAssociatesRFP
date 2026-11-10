@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingRoute, PatientPaymentCategory, Procedure } from '../../domain/types'
+import { insurerPartyOptions } from '../../domain/billing/parties'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
 import { FieldLabel, Button, Segmented, TextField } from '../ui'
 import { useSurface } from '../surface'
@@ -27,7 +28,8 @@ const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
 /** Edit the primary procedure's operation + billing route via `editProcedure`. */
 export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProcedureSheetProps) {
   const { Overlay } = useSurface()
-  const insurers = useAppStore((s) => s.masters.insurers)
+  const parties = useAppStore((s) => s.masters.parties)
+  const insurerOptions = useMemo(() => insurerPartyOptions(parties), [parties])
   const [description, setDescription] = useState(procedure.description)
   const [route, setRoute] = useState<BillingRoute>(procedure.billingRoute ?? 'hospital')
   const [insurerId, setInsurerId] = useState(procedure.insurerId ?? '')
@@ -76,10 +78,9 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
               style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
             >
               <option value="">Select an insurer</option>
-              {Object.values(insurers).map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                  {i.acceptsDirectClaims ? ' (direct claims)' : ''}
+              {insurerOptions.map(({ insurerId: id, party }) => (
+                <option key={id} value={id}>
+                  {party.name}
                 </option>
               ))}
             </select>

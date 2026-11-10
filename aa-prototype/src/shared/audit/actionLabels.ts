@@ -128,12 +128,15 @@ export const ACTION_LABELS: Record<string, string> = {
   'pairing.add': `${PAIRING_LABELS.entry} added`,
   'pairing.end': `${PAIRING_LABELS.entry} ended`,
   'anaesthetist.tierSet': 'Priority tier changed',
-  'insurer.update': 'Insurer updated',
+  // Catch-up Phase 18 (US-04.1.5).
+  'party.create': 'Party added',
+  'party.update': 'Party updated',
 
   // --- Contracts -----------------------------------------------------------
   'contract.create': 'Contract created',
   'contract.update': 'Contract updated',
-  'contract.delete': 'Contract deleted',
+  'contract.disable': 'Contract disabled',
+  'contract.enable': 'Contract made active',
   'contractPrice.create': 'Fixed price added',
   'contractPrice.update': 'Fixed price updated',
 

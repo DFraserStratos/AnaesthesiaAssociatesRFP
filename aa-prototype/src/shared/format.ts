@@ -50,7 +50,7 @@ export function dateTimeMicroCap(iso: string | undefined): string {
  * context (`BtmCaptureBlock`) keeps its own richer wording for the anaesthetist.
  */
 export const ROUTE_LABELS: Record<BillingRoute, string> = {
-  hospital: 'Contract holder',
+  hospital: "Contract's Party",
   billableParty: 'Billable party',
   insurer: 'Insurer',
 }

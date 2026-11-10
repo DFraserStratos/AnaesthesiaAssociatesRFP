@@ -30,13 +30,23 @@
         },
         {
           "state": "retried",
-          "caption": "After resolve and retry, the failed Booking bills on its own",
+          "caption": "After choosing the right Contract and retrying, the failed Booking bills on its own",
           "steps": [
             {
               "click": "role=button[name=\"Resolve & retry\"] >> nth=0"
             },
             {
-              "wait": 800
+              "wait": 600
+            },
+            {
+              "select": "[data-shot=choose-contract-sheet] select",
+              "value": "CT-COS-ACC"
+            },
+            {
+              "click": "role=button[name=\"Choose and retry\"]"
+            },
+            {
+              "wait": 1200
             }
           ],
           "highlight": [

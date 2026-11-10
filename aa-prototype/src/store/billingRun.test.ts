@@ -1,8 +1,8 @@
 /**
  * Billing-run orchestration tests (Phase 08): wiring + idempotence, guards,
- * grouping, every seeded charge-basis exemplar (Type 1/2/3, rate x time,
- * two-funder, split pair, insured reimbursement, COS organisation holder),
- * the scoped default-Type-1 fallback vs the surgeon/organisation exception,
+ * grouping, every seeded charge-basis exemplar (each pricing kind, rate x time,
+ * two-funder, split pair, insured reimbursement, the COS surgeon-group holder),
+ * a Disabled Contract still billing and the "No price in force" exception,
  * override + snapshot immunity, unique invoice numbers, the design-day live
  * path, system-sourced audit, the billedAt view effect and identity
  * separation (no NHI in billing data).
@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
 import { authoriseList, completeBooking, editProcedure, reassignBooking, submitList } from './lifecycle'
-import { deleteContract, editContract, editContractPrice } from './contractActions'
+import { disableContract, editContract, editContractPrice } from './contractActions'
 import { editAnaesthetist } from './mastersActions'
 import { setBillingLineAllocation } from './billingLineActions'
 import { advanceClockMinutes } from './clockActions'
@@ -121,7 +121,7 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     expect(invoicesForBooking(api, marker('cancelledBooking'))).toHaveLength(0)
   })
 
-  it('Type 2 rates on the ACC booking ($25/unit via stgAcc), Type 1 standard elsewhere ($35/unit)', () => {
+  it("the ACC booking at its Contract's rate ($25/unit via stgAcc), the anaesthetist's rate elsewhere ($35/unit)", () => {
     const api = store()
     billMorrison(api)
     const accInvoice = invoicesForBooking(api, marker('accRelatedBooking'))[0]
@@ -174,7 +174,7 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
 })
 
 describe('charge bases and holders', () => {
-  it('Whitaker bills entirely at the Health NZ Type 2 agreed rate ($23/unit)', () => {
+  it('Whitaker bills entirely at the Health NZ agreed rate ($23/unit)', () => {
     const api = store()
     const result = stageAndBill(api, WHITAKER_LIST)
     expect(result.exceptions).toEqual([])
@@ -186,7 +186,7 @@ describe('charge bases and holders', () => {
     }
   })
 
-  it('the surgeon-held bariatric Type 3 resolves BY HOLDER and bills its fixed prices on one invoice', () => {
+  it("the surgeon-held bariatric fixed price bills its holder's interim counterparty, its fixed prices on one invoice", () => {
     const api = store()
     const bookingId = marker('bariatricType3Booking')
     stageAndBill(api, listOf(api, bookingId))
@@ -196,7 +196,7 @@ describe('charge bases and holders', () => {
     expect(invoice.counterparty).toEqual({ kind: 'surgeon', id: SURG.doyle })
     expect(invoice.layout).toBe('contractHolder')
     // The ordinal-2 hernia is isAdditional AND matches the CP-BAR-3 fixed price:
-    // the Type 3 branch precedes the time-only rule, so the FULL $950 bills.
+    // the fixed-price branch precedes the time-only rule, so the FULL $950 bills.
     expect(linesOf(api, invoice.id).map((l) => l.amount)).toEqual([2800, 950])
     expect(invoice.subtotal).toBe(3750)
     expect(invoice.gst).toBe(562.5)
@@ -229,7 +229,7 @@ describe('charge bases and holders', () => {
     expect(linesOf(api, invoice!.id)[0]!.description).toContain('at $32.00 per unit')
   })
 
-  it('the COS booking bills the ORGANISATION holder at its Type 2 rate ($24/unit)', () => {
+  it("the COS booking bills the surgeon group's organisation counterparty at its Contract's rate ($24/unit)", () => {
     const api = store()
     const bookingId = marker('cosAccContractBooking')
     stageAndBill(api, listOf(api, bookingId))
@@ -314,28 +314,28 @@ describe('split billing', () => {
 })
 
 describe('contract lifecycle at billing time', () => {
-  it('a hospital Type 2 effective-dated out falls back to the default Type 1 at standard rates, no failure', () => {
+  it('a Disabled Contract still prices and bills a Procedure already on it (D81)', () => {
     const api = store()
-    // Whitaker's list is 2026-07-17; date the Health NZ Type 2 out before it.
-    expect(editContract(api, OFFICE, CONTRACT.healthNz, { effectiveToISO: '2026-07-16' }).ok).toBe(true)
+    expect(disableContract(api, OFFICE, CONTRACT.healthNz).ok).toBe(true)
     const result = stageAndBill(api, WHITAKER_LIST)
     expect(result.exceptions).toEqual([])
     const invoices = invoicesForList(api.getState(), WHITAKER_LIST)
     expect(invoices).toHaveLength(5)
     for (const inv of invoices) {
-      // Whitaker's own unit value, NOT the dated-out $23 agreed rate.
-      expect(linesOf(api, inv.id)[0]!.description).toContain('at $28.50 per unit')
+      // Still the Health NZ $23 rate, billed to Christchurch Public.
+      expect(linesOf(api, inv.id)[0]!.description).toContain('at $23.00 per unit')
+      expect(inv.counterparty).toEqual({ kind: 'hospital', id: HOSP.cph })
     }
   })
 
-  it('an organisation-held contract dated out is a per-booking exception; the list still completes its run', () => {
+  it('a fixed-price Contract with no price for the procedure is a per-booking exception; the list still completes its run', () => {
     const api = store()
     const bookingId = marker('cosAccContractBooking')
-    // The COS list is 2026-07-09; date the organisation-held ACC contract out.
-    expect(editContract(api, OFFICE, CONTRACT.cosAcc, { effectiveToISO: '2026-07-08' }).ok).toBe(true)
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
+    expect(editProcedure(api, OFFICE, proc.id, { governingContractId: CONTRACT.cosFixed }).ok).toBe(true)
     const result = stageAndBill(api, listOf(api, bookingId))
     expect(result.exceptions).toHaveLength(1)
-    expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective' })
+    expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective', message: 'No price in force for this procedure under COS ACC fixed fees.' })
     expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
     const state = api.getState()
     const failed = Object.values(state.billing.cases).filter((c) => c.status === 'failed')
@@ -364,13 +364,16 @@ describe('contract lifecycle at billing time', () => {
     expect(overrideLine!.amount).toBe(-50)
   })
 
-  it('snapshot immunity: mutating the contract or its price list after billing leaves the invoice unchanged', () => {
+  it('snapshot immunity: editing a Contract in place, its prices, or disabling it after billing leaves the invoice unchanged', () => {
     const api = store()
     const bookingId = marker('bariatricType3Booking')
     stageAndBill(api, listOf(api, bookingId))
+    stageAndBill(api, WHITAKER_LIST)
     const before = JSON.parse(JSON.stringify(api.getState().billing)) as unknown
+    // Health NZ's rate edited in place after its invoices were issued.
+    expect(editContract(api, OFFICE, CONTRACT.healthNz, { pricing: { kind: 'rvgContractRate', unitRate: 30 } }).ok).toBe(true)
     expect(editContractPrice(api, OFFICE, 'CP-BAR-1', { price: 9999 }).ok).toBe(true)
-    expect(editContract(api, OFFICE, CONTRACT.doyleBariatric, { effectiveToISO: '2026-07-31' }).ok).toBe(true)
+    expect(disableContract(api, OFFICE, CONTRACT.doyleBariatric).ok).toBe(true)
     expect(api.getState().billing).toEqual(before)
   })
 })
@@ -452,16 +455,6 @@ describe('review-pass hardening (8th review)', () => {
     }
   })
 
-  it('a protected default cannot be forward-dated away (the fallback date-filters on it)', () => {
-    const api = store()
-    const defaults = Object.values(api.getState().masters.contracts).filter(
-      (c) => c.isDefault && c.holderType === 'hospital' && c.holderId === HOSP.stg,
-    )
-    expect(defaults).toHaveLength(1)
-    const outcome = editContract(api, OFFICE, defaults[0]!.id, { effectiveFromISO: '2027-01-01' })
-    expect(outcome).toMatchObject({ ok: false, code: 'defaultContractProtected' })
-  })
-
   it('a stale funder allocation fails the booking for review instead of billing silently short', () => {
     const api = store()
     const bookingId = marker('twoFunderBooking')
@@ -476,9 +469,10 @@ describe('review-pass hardening (8th review)', () => {
     expect(failed?.failure?.message).toContain('$212.00')
   })
 
-  it('a contract governing booked procedures cannot be deleted (no dangling references at billing time)', () => {
+  it('a Contract governing booked procedures is never deleted: it is disabled and still there at billing time', () => {
     const api = store()
-    expect(deleteContract(api, OFFICE, CONTRACT.doyleBariatric)).toMatchObject({ ok: false, code: 'contractInUse' })
+    expect(disableContract(api, OFFICE, CONTRACT.doyleBariatric).ok).toBe(true)
+    expect(api.getState().masters.contracts[CONTRACT.doyleBariatric]?.status).toBe('disabled')
   })
 
   it('a negative override total fails the booking as an exception, never a negative invoice', () => {

@@ -13,6 +13,7 @@
 import type { Booking, Procedure } from '../types'
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
+import { CONTRACT } from './contracts'
 
 export const ACCEPTANCE_BEAT_LIST_ID = projectedListId(ANAE.beaumont, '2026-07-31', 'AM')
 export const ACCEPTANCE_BEAT_PATIENT_ID = 'PT0120'
@@ -45,7 +46,7 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     isAdditional: false,
     selectedModifierCodes: [],
     billingRoute: 'hospital',
-    governingContractId: 'CT-CES-D1',
+    governingContractId: CONTRACT.cesRvg,
     billingReference: 'CE-2026-0731',
   }
   return { bookings: [booking], procedures: [procedure], next: { booking: next.booking + 1, procedure: next.procedure + 1 } }

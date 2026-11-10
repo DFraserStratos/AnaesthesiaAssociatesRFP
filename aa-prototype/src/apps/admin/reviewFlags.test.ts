@@ -53,9 +53,9 @@ describe('reviewFlags (pure)', () => {
     expect(insurerRoute.some((f) => f.text === 'No billing reference')).toBe(false)
   })
 
-  it('(c) raises an amber ACC advisory only on the billable-party route', () => {
+  it('(c) raises no ACC flag on any route (catch-up Phase 18, RV-37)', () => {
     const bp = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'billableParty' }), fee: stubFee() }] })
-    expect(bp.find((f) => f.text === 'ACC should not bill the patient directly')?.tone).toBe('warn')
+    expect(bp.some((f) => f.text.startsWith('ACC'))).toBe(false)
 
     const hospitalAcc = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
     expect(hospitalAcc.some((f) => f.text.startsWith('ACC'))).toBe(false)

@@ -95,7 +95,7 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     rvgCodes: seed.masters.rvgCodes,
     contracts: seed.masters.contracts,
     contractPrices: Object.values(seed.masters.contractPrices),
-    insurers: seed.masters.insurers,
+    parties: seed.masters.parties,
     billableParties: seed.masters.billableParties,
     billingLines: Object.values(seed.schedule.billingLines),
     listDateISO: list.dateISO,

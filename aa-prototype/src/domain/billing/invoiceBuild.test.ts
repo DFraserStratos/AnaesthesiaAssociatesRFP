@@ -1,7 +1,8 @@
 /**
- * Pure invoice-building tests (Phase 08): the contract-resolution truth table
- * (stored-effective wins; the RFP's exactly-scoped default-Type-1 fallback;
- * surgeon/organisation holders yield exceptions), counterparty-by-holder,
+ * Pure invoice-building tests (Phase 08; flat Contracts since catch-up Phase
+ * 18): the Contract-resolution truth table (the stored Contract governs,
+ * Disabled included; "No price in force"; the route's plain RVG Contract when
+ * nothing is stored), counterparty-by-holder Party,
  * layout mapping, line building (override adjustment, stored funder
  * allocation, time-only additional procedures), same-counterparty grouping
  * and the GST demo assumption's maths.
@@ -23,19 +24,26 @@ import {
   mkAnaesthetist,
   mkBooking,
   mkContract,
+  mkParty,
   mkProcedure,
 } from './fixtures'
-import type { BillingLine, Contract } from '../types'
+import type { BillingLine, Contract, Party } from '../types'
+
+/** The holder Parties these tests use (catch-up Phase 18): each bills today's counterparty. */
+const PARTIES: Record<string, Party> = Object.fromEntries(
+  [
+    mkParty(),
+    mkParty({ id: 'party-ins-1', kind: 'insurer', name: 'Insurer', codePrefix: 'INS', hospitalId: undefined, legacyCounterparty: { kind: 'insurer', id: 'ins-1' } }),
+    mkParty({ id: 'party-surgeon', kind: 'surgeon', name: 'Surgeon', codePrefix: 'SUR', hospitalId: undefined, legacyCounterparty: { kind: 'surgeon', id: 'surg-9' } }),
+    mkParty({ id: 'party-org', kind: 'surgeonGroup', name: 'Group', codePrefix: 'ORG', hospitalId: undefined, legacyCounterparty: { kind: 'organisation', id: 'org-cos' } }),
+    mkParty({ id: 'party-bp', kind: 'surgeonGroup', name: 'Clinic', codePrefix: 'CLN', hospitalId: undefined, legacyCounterparty: { kind: 'billableParty', id: 'bp-1' } }),
+  ].map((p) => [p.id, p]),
+)
 
 const LIST_DATE = '2026-07-21'
 
-const HOSPITAL_DEFAULT = mkContract({
-  id: 'con-def',
-  name: 'Default',
-  type: 1,
-  isDefault: true,
-  effectiveFromISO: '2020-01-01',
-})
+/** The hospital Party's plain RVG Contract. */
+const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: 'Test hospital RVG' })
 
 function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContext {
   return {
@@ -43,7 +51,7 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     rvgCodes: { [BASE_SINGLE_10.code]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
     contractPrices: [],
-    insurers: {},
+    parties: PARTIES,
     billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,
@@ -60,85 +68,46 @@ function withContracts(...contracts: Contract[]): InvoiceBuildContext {
 }
 
 describe('resolveContractForProcedure', () => {
-  const type2 = mkContract({
+  const rateContract = mkContract({
     id: 'con-t2',
-    name: 'Negotiated Type 2',
-    type: 2,
-    type2Detail: { basis: 'agreedUnitRate', unitRate: 25 },
+    aaCode: 'TST-002',
+    name: 'Negotiated rate',
+    pricing: { kind: 'rvgContractRate', unitRate: 25 },
   })
 
-  it('the stored contract governs while it is effective on the list date', () => {
-    const ctx = withContracts(HOSPITAL_DEFAULT, type2)
+  it('the stored Contract governs', () => {
+    const ctx = withContracts(HOSPITAL_DEFAULT, rateContract)
     const result = resolveContractForProcedure(mkProcedure({ governingContractId: 'con-t2' }), ctx)
-    expect(result).toEqual({ kind: 'resolved', contract: type2 })
+    expect(result).toEqual({ kind: 'resolved', contract: rateContract })
   })
 
-  it('a hospital-held stored contract dated out falls back to that hospital default Type 1', () => {
-    const dated = { ...type2, effectiveToISO: '2026-06-30' }
-    const ctx = withContracts(HOSPITAL_DEFAULT, dated)
-    const result = resolveContractForProcedure(mkProcedure({ governingContractId: 'con-t2' }), ctx)
-    expect(result.kind).toBe('resolved')
-    if (result.kind === 'resolved') expect(result.contract?.id).toBe('con-def')
+  it('a Disabled stored Contract still resolves: a Procedure already on it bills as normal (D81)', () => {
+    const disabled = { ...rateContract, status: 'disabled' as const }
+    const result = resolveContractForProcedure(mkProcedure({ governingContractId: 'con-t2' }), withContracts(HOSPITAL_DEFAULT, disabled))
+    expect(result).toEqual({ kind: 'resolved', contract: disabled })
   })
 
-  it('the fallback target is the DEFAULT, never another surviving negotiated contract', () => {
-    const dated = { ...type2, effectiveToISO: '2026-06-30' }
-    const other = mkContract({
-      id: 'con-other',
-      name: 'Other negotiated',
-      type: 2,
-      type2Detail: { basis: 'percentDiscount', percent: 10 },
+  it('a primary procedure on a fixed-price Contract with no price for it is "No price in force"', () => {
+    const fixed = mkContract({ id: 'con-fix', name: 'COS ACC fixed fees', holderId: 'party-org', linkedSurgeonIds: ['surg-9'], pricing: { kind: 'fixed' } })
+    const ctx = withContracts(HOSPITAL_DEFAULT, fixed)
+    const primary = mkProcedure({ rvgBaseCode: 'GA10', governingContractId: 'con-fix' })
+    expect(resolveContractForProcedure(primary, ctx)).toEqual({
+      kind: 'exception',
+      code: 'contractIneffective',
+      message: 'No price in force for this procedure under COS ACC fixed fees.',
     })
-    const ctx = withContracts(HOSPITAL_DEFAULT, dated, other)
-    const result = resolveContractForProcedure(mkProcedure({ governingContractId: 'con-t2' }), ctx)
-    expect(result.kind).toBe('resolved')
-    if (result.kind === 'resolved') expect(result.contract?.id).toBe('con-def')
+    // A row for it resolves; an additional procedure keeps the time-only fallback.
+    const priced = { ...ctx, contractPrices: [{ id: 'p', contractId: 'con-fix', rvgBaseCode: 'GA10', price: 500 }] }
+    expect(resolveContractForProcedure(primary, priced).kind).toBe('resolved')
+    expect(resolveContractForProcedure({ ...primary, isAdditional: true }, ctx, 2).kind).toBe('resolved')
   })
 
-  it('an insurer-held stored contract dated out falls back to that insurer default', () => {
-    const insurerDefault = mkContract({ id: 'con-ins-def', holderType: 'insurer', holderId: 'ins-1', isDefault: true })
-    const dated = mkContract({
-      id: 'con-ins-t2',
-      holderType: 'insurer',
-      holderId: 'ins-1',
-      type: 2,
-      type2Detail: { basis: 'agreedUnitRate', unitRate: 24 },
-      effectiveToISO: '2026-06-30',
-    })
-    const ctx = withContracts(insurerDefault, dated)
-    const procedure = mkProcedure({ billingRoute: 'insurer', insurerId: 'ins-1', governingContractId: 'con-ins-t2' })
-    const result = resolveContractForProcedure(procedure, ctx)
-    expect(result.kind).toBe('resolved')
-    if (result.kind === 'resolved') expect(result.contract?.id).toBe('con-ins-def')
-  })
-
-  it.each(['surgeon', 'organisation', 'billableParty'] as const)(
-    'a %s-held stored contract dated out is a billing exception (no mandated default)',
-    (holderType) => {
-      const dated = mkContract({
-        id: 'con-held',
-        holderType,
-        holderId: 'holder-1',
-        type: 2,
-        type2Detail: { basis: 'agreedUnitRate', unitRate: 24 },
-        effectiveToISO: '2026-06-30',
-      })
-      const ctx = withContracts(HOSPITAL_DEFAULT, dated)
-      const result = resolveContractForProcedure(mkProcedure({ governingContractId: 'con-held' }), ctx)
-      expect(result.kind).toBe('exception')
-      if (result.kind === 'exception') {
-        expect(result.code).toBe('contractIneffective')
-        expect(result.message).toContain('no default fallback')
-      }
-    },
-  )
-
-  it('nothing stored on the hospital route resolves the LIST hospital default', () => {
-    const result = resolveContractForProcedure(mkProcedure(), mkCtx())
+  it("nothing stored on the hospital route bills under the LIST hospital's plain RVG Contract, never a rate Contract", () => {
+    const result = resolveContractForProcedure(mkProcedure(), withContracts(rateContract, HOSPITAL_DEFAULT))
     expect(result).toEqual({ kind: 'resolved', contract: HOSPITAL_DEFAULT })
   })
 
-  it('an informational insurer on the hospital route still resolves the hospital default (03.4)', () => {
+  it('an informational insurer on the hospital route still bills the hospital (03.4)', () => {
     const result = resolveContractForProcedure(mkProcedure({ insurerId: 'ins-1' }), mkCtx())
     expect(result).toEqual({ kind: 'resolved', contract: HOSPITAL_DEFAULT })
   })
@@ -150,11 +119,17 @@ describe('resolveContractForProcedure', () => {
     expect(result.kind).toBe('exception')
   })
 
-  it('nothing stored on the insurer route resolves the insurer default', () => {
-    const insurerDefault = mkContract({ id: 'con-ins-def', holderType: 'insurer', holderId: 'ins-1', isDefault: true })
-    const ctx = withContracts(insurerDefault)
+  it("nothing stored on the insurer route bills under the insurer Party's plain RVG Contract", () => {
+    const insurerRvg = mkContract({ id: 'con-ins', aaCode: 'INS-001', holderId: 'party-ins-1' })
+    const ctx = withContracts(insurerRvg)
     const procedure = mkProcedure({ billingRoute: 'insurer', insurerId: 'ins-1' })
-    expect(resolveContractForProcedure(procedure, ctx)).toEqual({ kind: 'resolved', contract: insurerDefault })
+    expect(resolveContractForProcedure(procedure, ctx)).toEqual({ kind: 'resolved', contract: insurerRvg })
+  })
+
+  it('a Party with no plain RVG Contract is a plain billing exception, never a throw', () => {
+    const result = resolveContractForProcedure(mkProcedure(), withContracts(rateContract))
+    expect(result.kind).toBe('exception')
+    if (result.kind === 'exception') expect(result.code).toBe('noContract')
   })
 
   it('the billable party route needs no contract at all (standard rates)', () => {
@@ -179,28 +154,28 @@ describe('resolveContractForProcedure', () => {
 
 describe('counterpartyForProcedure + layoutFor', () => {
   it('the contract-holder route bills the HOLDER: hospital, surgeon or organisation', () => {
-    const surgeonHeld = mkContract({ id: 'c', holderType: 'surgeon', holderId: 'surg-9' })
-    const orgHeld = mkContract({ id: 'c', holderType: 'organisation', holderId: 'org-cos' })
-    expect(counterpartyForProcedure(mkProcedure(), HOSPITAL_DEFAULT, 'pat-1')).toEqual({ kind: 'hospital', id: 'hosp-1' })
-    expect(counterpartyForProcedure(mkProcedure(), surgeonHeld, 'pat-1')).toEqual({ kind: 'surgeon', id: 'surg-9' })
-    expect(counterpartyForProcedure(mkProcedure(), orgHeld, 'pat-1')).toEqual({ kind: 'organisation', id: 'org-cos' })
+    const surgeonHeld = mkContract({ id: 'c', holderId: 'party-surgeon' })
+    const orgHeld = mkContract({ id: 'c', holderId: 'party-org' })
+    expect(counterpartyForProcedure(mkProcedure(), HOSPITAL_DEFAULT, 'pat-1', PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
+    expect(counterpartyForProcedure(mkProcedure(), surgeonHeld, 'pat-1', PARTIES)).toEqual({ kind: 'surgeon', id: 'surg-9' })
+    expect(counterpartyForProcedure(mkProcedure(), orgHeld, 'pat-1', PARTIES)).toEqual({ kind: 'organisation', id: 'org-cos' })
   })
 
   it('the insurer route bills the insurer; billable party defaults to the patient', () => {
     expect(
-      counterpartyForProcedure(mkProcedure({ billingRoute: 'insurer', insurerId: 'ins-1' }), HOSPITAL_DEFAULT, 'pat-1'),
+      counterpartyForProcedure(mkProcedure({ billingRoute: 'insurer', insurerId: 'ins-1' }), HOSPITAL_DEFAULT, 'pat-1', PARTIES),
     ).toEqual({ kind: 'insurer', id: 'ins-1' })
     expect(
-      counterpartyForProcedure(mkProcedure({ billingRoute: 'billableParty' }), undefined, 'pat-1'),
+      counterpartyForProcedure(mkProcedure({ billingRoute: 'billableParty' }), undefined, 'pat-1', PARTIES),
     ).toEqual({ kind: 'patient', id: 'pat-1' })
     expect(
-      counterpartyForProcedure(mkProcedure({ billingRoute: 'billableParty', billablePartyId: 'bp-7' }), undefined, 'pat-1'),
+      counterpartyForProcedure(mkProcedure({ billingRoute: 'billableParty', billablePartyId: 'bp-7' }), undefined, 'pat-1', PARTIES),
     ).toEqual({ kind: 'billableParty', id: 'bp-7' })
   })
 
   it('an informational insurer on the hospital route never becomes the counterparty (03.4)', () => {
     expect(
-      counterpartyForProcedure(mkProcedure({ insurerId: 'ins-1' }), HOSPITAL_DEFAULT, 'pat-1'),
+      counterpartyForProcedure(mkProcedure({ insurerId: 'ins-1' }), HOSPITAL_DEFAULT, 'pat-1', PARTIES),
     ).toEqual({ kind: 'hospital', id: 'hosp-1' })
   })
 
@@ -305,16 +280,9 @@ describe('buildInvoicesForBooking', () => {
   })
 
   it('a resolution exception on any procedure fails the whole Booking with its procedure id', () => {
-    const dated = mkContract({
-      id: 'con-surg',
-      holderType: 'surgeon',
-      holderId: 'surg-1',
-      type: 2,
-      type2Detail: { basis: 'agreedUnitRate', unitRate: 20 },
-      effectiveToISO: '2026-06-30',
-    })
-    const broken = { ...additional, governingContractId: 'con-surg' }
-    const result = buildInvoicesForBooking(mkBooking(), [primary, broken], withContracts(HOSPITAL_DEFAULT, dated))
+    // A Contract that cannot be found on the second procedure fails the Booking.
+    const broken = { ...additional, governingContractId: 'con-gone' }
+    const result = buildInvoicesForBooking(mkBooking(), [primary, broken], withContracts(HOSPITAL_DEFAULT))
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.procedureId).toBe('proc-2')
   })
@@ -327,11 +295,10 @@ describe('buildInvoicesForBooking', () => {
     expect(result).toEqual({ kind: 'invoices', invoices: [] })
   })
 
-  it('a Type 2 percent discount rounds the derived rate to cents, so amount and description agree (8th review)', () => {
+  it('RVG less a discount rounds the derived rate to cents, so amount and description agree (8th review)', () => {
     const discounted = mkContract({
       id: 'con-disc',
-      type: 2,
-      type2Detail: { basis: 'percentDiscount', percent: 7 },
+      pricing: { kind: 'rvgDiscount', discountPct: 7 },
     })
     const ctx = withContracts(HOSPITAL_DEFAULT, discounted)
     ctx.anaesthetist = mkAnaesthetist({ unitValue: 27.5 })
@@ -343,8 +310,8 @@ describe('buildInvoicesForBooking', () => {
     expect(line.amount).toBe(537.18)
   })
 
-  it('an additional procedure takes a Type 3 fixed price only from an ordinal-keyed row (8th review)', () => {
-    const type3 = mkContract({ id: 'con-t3', type: 3 })
+  it('an additional procedure takes a fixed price only from an ordinal-keyed row (8th review)', () => {
+    const type3 = mkContract({ id: 'con-t3', pricing: { kind: 'fixed' } })
     const ctx = withContracts(HOSPITAL_DEFAULT, type3)
     const addOn = { ...additional, governingContractId: 'con-t3' }
     // A row with NO ordinal priced the code as a primary: the add-on must not

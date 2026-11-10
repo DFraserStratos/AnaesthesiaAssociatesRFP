@@ -109,7 +109,15 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v29: catch-up Phase 32b: unavailability is never a conflict. Dr Rutherford's
+/** v32: catch-up Phase 18 session 2, the flat Contract (AA code, pricing
+ *  kind, links, prepaid, override, Active or Disabled; no type, dates or
+ *  default), No contract · RVG, Unisports Ortho and COS ACC fixed fees.
+ *  Reseeds on load.
+ * v31: catch-up Phase 18 session 1, the Party master (`masters.parties`, 19
+ *  seeded Parties), Contracts held by a Party (`holderId`, `billsTo`, `status`;
+ *  no `holderType` or scope), insurers without the direct-claims flag and a
+ *  new interim insurer id (I-SCHS). Reseeds on load.
+ * v29: catch-up Phase 32b: unavailability is never a conflict. Dr Rutherford's
  *  Wed 22 Jul AM List is seeded as a returned Draft List (origin
  *  `unavailableReturn`, a `draftList.detach` audit row), and the `availability`
  *  conflict kind is gone, so a v28 store's stale availability conflicts must not
@@ -203,7 +211,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 30
+export const PERSIST_VERSION = 32
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

@@ -1,12 +1,12 @@
 {
   "id": "US-04.3.2",
   "status": "partial",
-  "absentReason": "The office picks the governing contract from every contract in master data; the list is not filtered by the hospital, surgeon, insurer, funding or RVG code. The anaesthetist apps show the contract read-only and have no contract picker.",
+  "absentReason": "The office picks the Contract from No contract · RVG and every Active Contract, shown as its AA code and name under its holder; the list is not yet narrowed by the Booking (the step rail, Phase 20). The anaesthetist apps show the Contract read-only and have no Contract picker.",
   "shots": [
     {
       "name": "contract-picker",
       "app": "admin",
-      "caption": "Governing contract picker in the office billing setup",
+      "caption": "Contract picker in the office billing setup: No contract · RVG first, then each Contract by AA code and name",
       "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {

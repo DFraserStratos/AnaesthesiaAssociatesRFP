@@ -211,7 +211,7 @@ export interface BillableParty {
 /**
  * Anaesthetist master (RFP: "basic contact information plus registration
  * number (ID)"; 2nd review #2, 6th review #5). `unitValue` is the
- * anaesthetist-specific $ per unit the Type 1 path multiplies by.
+ * anaesthetist-specific $ per unit RVG at the anaesthetist's rate multiplies by.
  */
 export interface Anaesthetist {
   registrationNumber: AnaesthetistId
@@ -342,19 +342,21 @@ export interface OfficePrivateSlice {
   priorityTiers: Record<AnaesthetistId, PriorityTier>
 }
 
+/**
+ * INTERIM identity (catch-up Phase 18, RV-39): there is no Insurer master any
+ * more. An insurer is a Party; this bare record stays only as the id a
+ * Party's `legacyCounterparty` and `Procedure.insurerId` point at, so no
+ * counterparty or Xero contact moves (Phases 20 and 21 retire it).
+ */
 export interface Insurer {
   id: InsurerId
   name: string
-  /**
-   * The Insurer billing route is "only available where that Insurer accepts
-   * direct claims from AA" (RFP; 6th review #2) — validator-enforced.
-   */
-  acceptsDirectClaims: boolean
 }
 
 /**
- * An external group that holds contracts, e.g. Canterbury Orthopaedic Surgeons
- * — the RFP's ACC contracts "held externally instead" (3rd review #8).
+ * INTERIM identity (catch-up Phase 18): the old contract-holder organisation,
+ * kept only as the counterparty a surgeon-group Party's `legacyCounterparty`
+ * points at (Canterbury Orthopaedic Surgeons). Phase 21 retires it.
  */
 export interface ContractHolderOrganisation {
   id: OrganisationId
@@ -363,64 +365,21 @@ export interface ContractHolderOrganisation {
 }
 
 // ---------------------------------------------------------------------------
+// Parties (catch-up Phase 18; the model module is domain/billing/parties.ts)
+// ---------------------------------------------------------------------------
+
+export type { DeliveryMethod, Party, PartyId, PartyKind } from './billing/parties'
+
+// ---------------------------------------------------------------------------
 // Contracts
 // ---------------------------------------------------------------------------
 
-/**
- * `billableParty` holders exist ONLY for individual-arrangement contracts
- * (RFP: "a Billable Party, Hospital, or Insurer must hold a Contract that
- * explicitly permits an individually-arranged structure"; 5th review #2).
- */
-export type ContractHolderType =
-  | 'hospital'
-  | 'insurer'
-  | 'surgeon'
-  | 'organisation'
-  | 'billableParty'
+/** The flat Contract (catch-up Phase 18; the model module is domain/billing/contracts.ts). */
+export type { BillsTo, Contract, ContractPricing, ContractStatus, PricingKind } from './billing/contracts'
 
 /**
- * Contract scope with selection precedence: when both match, an
- * individual-anaesthetist-scoped contract beats an organisational one
- * (RFP hierarchy; 5th review #3). All seeds today are organisational.
- */
-export type ContractScope =
-  | { kind: 'organisation' }
-  | { kind: 'individualAnaesthetist'; anaesthetistId: AnaesthetistId }
-
-/** Type 2 pricing detail: an agreed unit rate, or a % discount off the anaesthetist's own unit value. */
-export type ContractType2Detail =
-  | { basis: 'agreedUnitRate'; unitRate: number }
-  | { basis: 'percentDiscount'; percent: number }
-
-export interface Contract {
-  id: ContractId
-  name: string
-  /** RFP contract types: 1 = standard units, 2 = agreed rate/discount, 3 = fixed price list. */
-  type: 1 | 2 | 3
-  holderType: ContractHolderType
-  holderId: string
-  scope: ContractScope
-  /**
-   * The Method 3 gate (5th review #1): rate x time capture is offered only
-   * under a contract carrying this flag; validator-enforced on billing lines.
-   */
-  permitsIndividualArrangement: boolean
-  /**
-   * The protected default Type 1 (hospitals + direct-billing insurers only;
-   * 3rd review #9): cannot be deleted or end-dated; expired/absent Type 2/3
-   * falls back to it. Store invariant from Phase 02; 7th review B14 adds the
-   * creation half.
-   */
-  isDefault: boolean
-  effectiveFromISO: IsoDate
-  /** Absent = open-ended. */
-  effectiveToISO?: IsoDate
-  /** Required when `type === 2`. */
-  type2Detail?: ContractType2Detail
-}
-
-/**
- * A Type 3 fixed-price row. Matching keys are explicit (2nd review #4): the
+ * A fixed-price row: INTERIM, the `fixed` pricing kind's prices until Phase
+ * 19a replaces them with price ranges. Matching keys are explicit (2nd review #4): the
  * RFP's "keyed by some combination of contract holder, surgeon, and/or
  * procedure type". In the prototype's curated set the RVG base code stands in
  * for "procedure type" — a labelled DEMO SIMPLIFICATION (5th review #3): a real

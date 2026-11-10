@@ -15,12 +15,14 @@ import type {
   Booking,
   Contract,
   ContractPrice,
-  Insurer,
+  Party,
   Procedure,
   RvgCode,
 } from '../types'
 import { feeFor } from './fee'
 import { toCents } from './money'
+import { INSURER_PARTY_MISSING_MESSAGE, hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty } from './parties'
+import { interimRouteContract, noPriceInForce, noPriceInForceMessage, noRouteContractMessage } from './contracts'
 
 export interface BillingValidationFailure {
   /** Absent for Booking-level failures. */
@@ -60,11 +62,17 @@ export interface BookingBillingContext {
   /** Contract master, keyed by id (for `governingContractId`). */
   contracts: Readonly<Record<string, Contract>>
   contractPrices: readonly ContractPrice[]
-  insurers: Readonly<Record<string, Insurer>>
+  /** The Party master (catch-up Phase 18): holders, and the insurer Parties the Insurer route needs. */
+  parties: Readonly<Record<string, Party>>
   billableParties: Readonly<Record<string, BillableParty>>
   /** ALL stored billing lines; filtered per procedure by `procedureId`. */
   billingLines: readonly BillingLine[]
-  /** The List's surgeon (Type 3 price matching). */
+  /**
+   * The List's hospital (absent at AA's rooms): the hospital route's Party
+   * when no Contract is stored (INTERIM until Phase 20).
+   */
+  listHospitalId?: string
+  /** The List's surgeon (fixed-price row matching). */
   surgeonId?: string
 }
 
@@ -163,21 +171,13 @@ export function validateBookingForBilling(
       }
     }
 
-    // Insurer route: insurer present and accepting direct claims (6th review #2).
+    // Insurer route: the insurer is named and has an insurer Party (RV-39: no
+    // insurer master and no direct-claims flag, catch-up Phase 18).
     if (procedure.billingRoute === 'insurer') {
       if (procedure.insurerId === undefined) {
         fail(id, 'insurerId', 'Select the insurer for the Insurer route.')
-      } else {
-        const insurer = ctx.insurers[procedure.insurerId]
-        if (insurer === undefined) {
-          fail(id, 'insurerId', 'The selected insurer could not be found.')
-        } else if (!insurer.acceptsDirectClaims) {
-          fail(
-            id,
-            'insurerId',
-            `${insurer.name} does not accept direct claims from AA. Use the Billable Party route with the insured reimbursement category instead.`,
-          )
-        }
+      } else if (insurerPartyFor(ctx.parties, procedure.insurerId) === undefined) {
+        fail(id, 'insurerId', INSURER_PARTY_MISSING_MESSAGE)
       }
     }
 
@@ -217,16 +217,47 @@ export function validateBookingForBilling(
       }
     }
 
+    const contract =
+      procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
+
     // Method 3 gate (5th review #1): a rate x time line needs a governing
-    // contract that permits an individually arranged structure.
+    // Contract that permits it (`permitsRateTime`, INTERIM until Phase 24).
     if (storedLines.some((l) => l.chargeBasis === 'rateTime')) {
-      const contract =
-        procedure.governingContractId !== undefined
-          ? ctx.contracts[procedure.governingContractId]
-          : undefined
-      if (contract === undefined || !contract.permitsIndividualArrangement) {
+      if (contract === undefined || !contract.permitsRateTime) {
         fail(id, 'billingLines', INDIVIDUAL_ARRANGEMENT_MESSAGE)
       }
+    }
+
+    // What today's route needs to invoice (INTERIM until Phases 20 and 21), the
+    // billing resolver's own sentences: on the hospital route a stored
+    // Contract's holder needs a billing record; with nothing stored, the
+    // hospital's or insurer's Party needs a plain RVG Contract.
+    if (procedure.billingRoute === 'hospital' && contract !== undefined) {
+      if (routeCounterpartyForParty(ctx.parties[contract.holderId]) === undefined) {
+        fail(id, 'governingContractId', noRouteCounterpartyMessage(contract.name))
+      }
+    }
+    if ((procedure.billingRoute === 'hospital' || procedure.billingRoute === 'insurer') && procedure.governingContractId === undefined) {
+      const party =
+        procedure.billingRoute === 'hospital'
+          ? ctx.listHospitalId !== undefined ? hospitalPartyFor(ctx.parties, ctx.listHospitalId) : undefined
+          : procedure.insurerId !== undefined ? insurerPartyFor(ctx.parties, procedure.insurerId) : undefined
+      if (party !== undefined && interimRouteContract(ctx.contracts, party.id) === undefined) {
+        fail(id, 'governingContractId', noRouteContractMessage(party.name))
+      }
+    }
+
+    // A primary procedure on a fixed-price Contract with no price for it: the
+    // billing resolver's sentence (catch-up Phase 18; Phase 19a's "no range in force").
+    if (
+      contract !== undefined &&
+      noPriceInForce(contract, procedure, {
+        procedureOrdinal: index + 1,
+        prices: ctx.contractPrices,
+        ...(ctx.surgeonId !== undefined ? { surgeonId: ctx.surgeonId } : {}),
+      })
+    ) {
+      fail(id, 'governingContractId', noPriceInForceMessage(contract.name))
     }
 
     // Price override always carries a reason (7th review A6/B5), and may not

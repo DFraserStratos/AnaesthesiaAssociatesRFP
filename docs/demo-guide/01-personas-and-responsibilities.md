@@ -232,7 +232,7 @@ allowing billing to proceed.
 
 1. Open the Review queue of `SUBMITTED` Lists.
 2. Review every active Booking and its calculated fee.
-3. Inspect flags such as missing references, ACC route warnings or manual BTM overrides.
+3. Inspect flags such as missing references or manual BTM overrides.
 4. Correct billing setup in the office when required.
 5. Log a phone note if clarification was needed.
 6. Authorise the List.
@@ -311,8 +311,8 @@ the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch
 | Surgeon or surgeon-room coordinator | Requests a Free List, phones changes and emails PDF Lists/Bookings |
 | Hospital/PAS | Sends new, changed, rescheduled and cancelled appointments |
 | Patient or guardian | Supplies billing details and may receive the invoice |
-| Hospital/contract holder | May receive and pay the invoice |
-| Direct-claim insurer | May receive an invoice through its upload workflow |
+| Hospital or other Party | May receive and pay the invoice where a Contract bills it |
+| Insurer | A Party; invoiced only where a Contract bills it |
 | Patient's reimbursement insurer | Reimburses the patient; AA does not invoice it directly |
 | Billing Engine | Calculates, groups and issues invoices |
 | Xero | Provides accounts receivable and banking functions |

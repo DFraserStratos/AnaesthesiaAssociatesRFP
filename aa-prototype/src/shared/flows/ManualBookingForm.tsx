@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingRoute, BookingSource, PatientPaymentCategory } from '../../domain/types'
+import { insurerPartyOptions } from '../../domain/billing/parties'
 import { lookupNhi } from '../../domain/nzhis'
 import { createBooking, useAppStore, type Actor } from '../../store'
 import { DemoBadge } from '../DemoBadge'
@@ -53,7 +54,8 @@ const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
 
 export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, attachment, source, onSaved }: ManualBookingFormProps) {
   const rvgCodes = useAppStore((s) => s.masters.rvgCodes)
-  const insurers = useAppStore((s) => s.masters.insurers)
+  const parties = useAppStore((s) => s.masters.parties)
+  const insurerOptions = useMemo(() => insurerPartyOptions(parties), [parties])
   const billableParties = useAppStore((s) => s.masters.billableParties)
 
   const [nhi, setNhi] = useState(initial?.nhi ?? '')
@@ -217,10 +219,9 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
             style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
           >
             <option value="">Select an insurer</option>
-            {Object.values(insurers).map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-                {i.acceptsDirectClaims ? ' (direct claims)' : ''}
+            {insurerOptions.map(({ insurerId: id, party }) => (
+              <option key={id} value={id}>
+                {party.name}
               </option>
             ))}
           </select>

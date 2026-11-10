@@ -49,7 +49,7 @@ export function HospitalsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Hospitals & holidays"
-        sub="Each hospital keeps its own closure calendar. A closure flags every List at that hospital on that date; editing or deleting it clears the flags. Adding a hospital creates its protected default Type 1 contract (visible in Contracts)."
+        sub="Each hospital keeps its own closure calendar. A closure flags every List at that hospital on that date; editing or deleting it clears the flags. Adding a hospital also adds its Party."
         action={<Button variant="secondary" onClick={() => setSheet({ kind: 'add' })}>Add hospital</Button>}
       />
       <div style={{ width: 240 }} data-shot="hospitals-mode">

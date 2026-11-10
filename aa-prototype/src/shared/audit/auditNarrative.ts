@@ -26,6 +26,8 @@
  * log still holds all four.
  */
 
+import type { ContractPricing, ContractStatus, DeliveryMethod, PartyKind } from '../../domain/types'
+import { DELIVERY_LABEL, PARTY_KIND_LABEL, PRICING_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../contracts/labels'
 import { format, parseISO } from 'date-fns'
 import type { AuditEntry, BookingSource, DraftOrigin, ListState, RequestSource } from '../../domain/types'
 import { BOOKING_SOURCE_LABELS, LIST_STATE_LABELS, formatCurrency } from '../format'
@@ -152,18 +154,6 @@ function formatShape(value: Record<string, unknown>): string | null {
   if (typeof value.kind === 'string' && typeof value.id === 'string' && Object.keys(value).length === 2) {
     return `${COUNTERPARTY_KINDS[value.kind] ?? titleCase(value.kind)} ${value.id}`
   }
-  // ContractScope
-  if (value.kind === 'organisation') return 'Organisation wide'
-  if (value.kind === 'individualAnaesthetist' && typeof value.anaesthetistId === 'string') {
-    return `Individual anaesthetist ${value.anaesthetistId}`
-  }
-  // ContractType2Detail
-  if (value.basis === 'agreedUnitRate' && typeof value.unitRate === 'number') {
-    return `Agreed unit rate ${formatCurrency(value.unitRate)}`
-  }
-  if (value.basis === 'percentDiscount' && typeof value.percent === 'number') {
-    return `${value.percent}% discount`
-  }
   // IntegrationCorrelationRef
   if (typeof value.sourceFeedId === 'string' && typeof value.externalAppointmentId === 'string') {
     return `${value.sourceFeedId} · ${value.externalAppointmentId}`
@@ -214,6 +204,13 @@ export function formatAuditValue(key: string, value: unknown): string {
     // Pairing words from the one label set (catch-up Phase 17).
     if (key === 'kind' && Object.hasOwn(PAIRING_LABELS.kind, value)) return PAIRING_LABELS.kind[value as keyof typeof PAIRING_LABELS.kind]
     if (key === 'raisedBy' && Object.hasOwn(PAIRING_LABELS.side, value)) return PAIRING_LABELS.side[value as keyof typeof PAIRING_LABELS.side]
+    // Party and Contract words from their one label set (catch-up Phase 18).
+    if (key === 'kind' && Object.hasOwn(PARTY_KIND_LABEL, value)) return PARTY_KIND_LABEL[value as PartyKind]
+    if (key === 'deliveryMethod' && Object.hasOwn(DELIVERY_LABEL, value)) return DELIVERY_LABEL[value as DeliveryMethod]
+    if (key === 'billsTo' && value === 'holder') return 'The holder'
+    if (key === 'billsTo' && value === 'payer') return 'The payer'
+    if (key === 'status' && Object.hasOwn(STATUS_LABEL, value)) return STATUS_LABEL[value as ContractStatus]
+    if (key === 'systemRole' && value === 'noContractRvg') return 'No contract · RVG'
     return value
   }
   if (Array.isArray(value)) {
@@ -222,6 +219,10 @@ export function formatAuditValue(key: string, value: unknown): string {
     return value.length === 1 ? '1 item' : `${value.length} items`
   }
   if (isRecord(value)) {
+    // A Contract's pricing (catch-up Phase 18): "RVG at $95.00 per unit".
+    if (key === 'pricing' && typeof value.kind === 'string' && Object.hasOwn(PRICING_KIND_LABEL, value.kind)) {
+      return pricingLabel(value as unknown as ContractPricing)
+    }
     const shape = formatShape(value)
     if (shape !== null) return shape
     const parts = Object.entries(value)

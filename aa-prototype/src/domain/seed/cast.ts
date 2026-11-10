@@ -122,8 +122,8 @@ export const SURGEONS: readonly Surgeon[] = [
 ] as const
 
 /**
- * Surgeon groups (US-13.4.1), a master beside `ORGANISATIONS` (left untouched
- * for Phase 18, whose COS rooms holder links to `SG-COS`).
+ * Surgeon groups (US-13.4.1). Catch-up Phase 18's COS surgeon-group Party
+ * links `SG-COS`'s members on its Contracts; a Party has no group link.
  */
 export const SURGEON_GROUPS: readonly SurgeonGroup[] = [
   {
@@ -168,22 +168,27 @@ export const HOSPITALS: readonly Hospital[] = [
 export const INS = {
   nib: 'I-NIB',
   aia: 'I-AIA',
+  schs: 'I-SCHS',
 } as const
 
 /**
- * nib accepts direct claims (the Insurer billing route); AIA Health does not —
- * it exists as the informational insurer behind the insured reimbursement
- * scenario and the validator's direct-claims rejection tests.
+ * INTERIM identities only (catch-up Phase 18, RV-39): every insurer is a Party
+ * (`seed/parties.ts`). These bare records remain as the ids an insurer
+ * Party's `legacyCounterparty` and `Procedure.insurerId` point at, so no
+ * counterparty moves. There is no direct-claims flag. Southern Cross Health
+ * Society's id is new with its Party, so the insurer selects can name it.
  */
 export const INSURERS: readonly Insurer[] = [
-  { id: INS.nib, name: 'nib', acceptsDirectClaims: true },
-  { id: INS.aia, name: 'AIA Health', acceptsDirectClaims: false },
+  { id: INS.nib, name: 'nib' },
+  { id: INS.aia, name: 'AIA Health' },
+  { id: INS.schs, name: 'Southern Cross Health Society' },
 ] as const
 
 export const ORG = {
   cos: 'O-COS',
 } as const
 
+/** INTERIM identity (catch-up Phase 18): the counterparty behind the COS surgeon-group Party. */
 export const ORGANISATIONS: readonly ContractHolderOrganisation[] = [
   {
     id: ORG.cos,

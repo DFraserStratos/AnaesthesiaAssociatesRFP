@@ -1,32 +1,32 @@
 {
   "id": "US-04.2.1",
   "status": "partial",
-  "absentReason": "A contract records its holder (hospital, insurer, surgeon, organisation or billable party) and an organisational or individual scope. Applicability by hospitals, surgeons, insurers, RVG codes or groups and funding source cannot be set.",
+  "absentReason": "Who is billed acts in Phase 21; where a Contract is offered narrows the step rail in Phase 20; specialties arrive in 18a.",
   "shots": [
     {
       "name": "contract-holder",
       "app": "admin",
-      "caption": "Contract holder type, holder and scope",
-      "start": "/admin/masters",
+      "caption": "A Contract names its holder Party, whether it bills the holder or the payer, and the surgeons it is offered for",
+      "start": "/admin/masters?view=contracts",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "COS-001"
             },
             {
               "wait": 300
             },
             {
-              "click": "tr:has-text(\"ACC orthopaedic services\") >> role=button[name=\"Edit\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"ACC orthopaedic services\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[role=dialog] label:has(select)",
-            "[role=dialog] div:has(> div:text-is(\"Scope\"))"
+            "[data-shot=contract-links]"
           ]
         }
       ]

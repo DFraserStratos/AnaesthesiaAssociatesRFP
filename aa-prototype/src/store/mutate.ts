@@ -79,6 +79,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   slotStatus: { prefix: 'ST', pad: 4 },
   availabilitySeries: { prefix: 'AS', pad: 4 },
   hospital: { prefix: 'HN', pad: 3 },
+  // Catch-up Phase 18: runtime Parties (seeded ones are PY-<NAME>; PT is the patient prefix).
+  party: { prefix: 'PYN', pad: 3 },
   contract: { prefix: 'CTN', pad: 3 },
   // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an
   // allocation can never collide with a seeded master row (Phase 07).

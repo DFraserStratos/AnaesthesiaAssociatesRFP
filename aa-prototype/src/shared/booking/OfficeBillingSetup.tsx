@@ -1,3 +1,4 @@
+import { contractLabel } from '../contracts/labels'
 import { useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
@@ -71,7 +72,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
           <Row label="Payer">{payer !== undefined ? `${payer.name} (${payer.relationshipToPatient})` : 'Patient (default)'}</Row>
         </>
       )}
-      <Row label="Contract">{contract?.name ?? 'None'}</Row>
+      <Row label="Contract">{contract !== undefined ? contractLabel(contract, { withStatus: true }) : 'Not chosen yet'}</Row>
       <Row label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</Row>
       <Row label="Override">{overrideLabel}</Row>
       <Row label="Funders">

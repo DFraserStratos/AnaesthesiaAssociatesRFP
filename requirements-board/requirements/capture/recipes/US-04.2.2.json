@@ -6,93 +6,97 @@
     {
       "name": "pricing-basis",
       "app": "admin",
-      "caption": "Contract pricing basis",
-      "start": "/admin/masters",
+      "caption": "Contract pricing kind",
+      "start": "/admin/masters?view=contracts",
       "states": [
         {
           "state": "type-1",
-          "caption": "Type 1 contract priced at RVG units times the anaesthetist's unit value",
+          "caption": "RVG at the anaesthetist's rate: units times the anaesthetist's unit value",
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "St George's RVG"
             },
             {
               "wait": 300
             },
             {
-              "click": "tr:has-text(\"St George's standard units\") >> role=button[name=\"Edit\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"St George's RVG\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[role=dialog] div:has(> div:text-is(\"Type\"))"
+            "[data-shot=contract-settings] label:has-text(\"Pricing kind\")"
           ]
         },
         {
           "state": "type-2",
-          "caption": "Type 2 contract priced at an agreed rate per unit, or a percentage discount",
+          "caption": "RVG at the Contract's rate: units times the Contract's rate per unit",
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "Southern Cross Affiliated Provider"
             },
             {
               "wait": 300
             },
             {
-              "click": "tr:has-text(\"Southern Cross Affiliated Provider\") >> role=button[name=\"Edit\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Southern Cross Affiliated Provider\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[role=dialog] div:has(> div:text-is(\"Type 2 basis\"))",
-            "[role=dialog] label:has-text(\"Agreed unit rate\")",
-            "[role=dialog] div:has(> div:text-is(\"Permits individual arrangement (Method 3)\"))"
+            "[data-shot=contract-settings] label:has-text(\"Pricing kind\")",
+            "[data-shot=contract-settings] label:has-text(\"Rate\")"
           ]
         },
         {
           "state": "type-3",
-          "caption": "Type 3 contract priced from a fixed fee schedule",
+          "caption": "Fixed price: the Contract's price for the procedure",
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "Bariatric fixed prices"
             },
             {
               "wait": 300
             },
             {
-              "click": "tr:has-text(\"Bariatric fixed prices\") >> role=button[name=\"Edit\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Bariatric fixed prices\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
+            "[data-shot=contract-settings] label:has-text(\"Pricing kind\")",
             "[data-shot=contract-price-rows]"
           ]
         },
         {
           "state": "rate-time",
-          "caption": "Contract permitting an individually arranged rate times time",
+          "caption": "A Contract that allows an hourly rate and time billing line",
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "Aria Skin and Laser Clinic"
             },
             {
               "wait": 300
             },
             {
-              "click": "tr:has-text(\"Aria Skin and Laser Clinic\") >> role=button[name=\"Edit\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Aria Skin and Laser Clinic\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[role=dialog] div:has(> div:text-is(\"Permits individual arrangement (Method 3)\"))"
+            "[data-shot=contract-settings] div:text-is(\"Allows hourly rate and time billing lines on its Procedures.\")"
           ]
         }
       ]

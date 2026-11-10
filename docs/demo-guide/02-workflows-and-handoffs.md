@@ -364,11 +364,11 @@ Every active Booking in the List has been marked complete.
 7. Kirsty opens the Review queue.
 8. She checks the full set of Bookings, including:
    - billing route;
-   - governing Contract;
+   - Contract;
    - Insurer;
    - billing reference;
    - calculated BTM and fee;
-   - manual adjustment or ACC advisory flags.
+   - manual adjustment flags.
 9. If something is wrong, Kirsty phones for clarification and corrects it in the office.
 10. She may log a phone note.
 11. She selects **Authorise for billing**.
@@ -412,16 +412,16 @@ The List reaches `AUTHORISED`.
 
 1. The Billing Engine iterates each active Booking and its Procedures.
 2. It resolves the explicit billing route per Procedure:
-   - Hospital/contract holder;
+   - the Contract's Party (a hospital or other Party);
    - Billable Party, usually the patient;
-   - direct-claim Insurer.
-3. It selects the governing Contract and rating method.
+   - an insurer Party.
+3. It selects the Contract.
 4. It calculates the fee from the captured snapshot.
 5. It enforces time-only additional Procedures and conserved two-funder allocations.
 6. It groups lines by counterparty per Booking.
 7. It creates one or more invoice documents.
-8. It displays the contract-holder or patient layout as appropriate.
-9. Office can simulate email or print. A direct-claim insurer uses the upload-portal state.
+8. It displays the Party or patient layout as appropriate.
+9. Office can simulate email or print. An insurer's invoice still uses the upload-portal state until delivery reads the Party's setting.
 10. Completion of the billing run stamps `billedAt` and removes the List from the anaesthetist's List
     views.
 

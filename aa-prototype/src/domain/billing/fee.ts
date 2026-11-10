@@ -1,5 +1,5 @@
 /**
- * The fee calculator — the BTM path, contract pricing (Types 1/2/3), non-RVG
+ * The fee calculator — the BTM path, contract pricing (by pricing kind), non-RVG
  * billing lines (fixed + rate x time) and typed price overrides, composed into
  * a structured `FeeResult` the UI only formats (PROGRESS convention 9).
  */
@@ -114,13 +114,13 @@ export function splitBillingUnits(procedure: Procedure, btm: BtmBreakdown): numb
 
 export interface FeeContext {
   anaesthetist: Anaesthetist
-  /** The governing contract (resolved by the caller, e.g. via `selectContract`). */
+  /** The governing Contract (the stored one, or the one the billing resolver chose). */
   contract?: Contract
-  /** Type 3 price list rows (any contract's — filtered by `matchContractPrice`). */
+  /** Fixed-price rows (any contract's — filtered by `matchContractPrice`). */
   contractPrices?: readonly ContractPrice[]
   /** The resolved RVG master row for `procedure.rvgBaseCode`. */
   baseCode?: RvgCode
-  /** For Type 3 price matching. */
+  /** For fixed-price row matching. */
   surgeonId?: string
   /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
   procedureOrdinal?: number
@@ -157,7 +157,7 @@ export interface FeeResult {
   billableUnits: number
   /** Basis of the primary component; 'mixed' when lines span bases. */
   chargeBasis: ChargeBasis | 'mixed'
-  /** $ per unit applied on the RVG path (null when a Type 3 fixed price applied). */
+  /** $ per unit applied on the RVG path (null when a fixed price applied). */
   unitRate: number | null
   lines: FeeLine[]
   /** Sum of all lines, before any price override. */
@@ -169,13 +169,15 @@ export interface FeeResult {
 /**
  * Compute a procedure's fee.
  *
- * Contract pricing: Type 1 charges units x the anaesthetist's own unit value;
- * Type 2 charges units x an agreed unit rate, or applies a % discount to the
- * anaesthetist's unit value; Type 3 looks up a fixed price (most-specific
- * ContractPrice match, including 2nd-procedure ordinals) and FALLS BACK to the
- * BTM path when no row matches (Decisions log 2026-07-22 — a demo reading of
- * the RFP's "various rules apply"; time-only still applies if `isAdditional`).
- * No contract behaves as Type 1 (the validator owns route/contract complaints).
+ * Contract pricing by pricing kind (catch-up Phase 18; AR-58 2.3): RVG at the
+ * anaesthetist's rate charges units x their own unit value; RVG at the
+ * Contract's rate charges units x its rate; RVG less a discount charges units
+ * x the anaesthetist's unit value less the discount; a fixed price looks up the
+ * interim ContractPrice rows (most-specific match, including 2nd-procedure
+ * ordinals) and FALLS BACK to the BTM path when no row matches (Decisions log
+ * 2026-07-22; time-only still applies if `isAdditional`). Open price, and no
+ * Contract, price as RVG at the anaesthetist's rate (the amount is typed as
+ * an override). The resolver and validator own "No price in force".
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const btm = resolveBtm(procedure, ctx.baseCode)
@@ -185,18 +187,18 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   // --- the RVG / fixed-price component ---
   const contract = ctx.contract
   let unitRate: number | null = ctx.anaesthetist.unitValue
-  if (contract?.type === 2 && contract.type2Detail !== undefined) {
+  const pricing = contract?.pricing
+  if (pricing?.kind === 'rvgContractRate') {
+    unitRate = pricing.unitRate
+  } else if (pricing?.kind === 'rvgDiscount') {
     // A per-unit dollar rate is money: the derived discount rate rounds to
     // cents HERE so the charged amount and any displayed/snapshotted "$x.xx
     // per unit" can never disagree (8th review; reproducibility principle 10).
-    unitRate =
-      contract.type2Detail.basis === 'agreedUnitRate'
-        ? contract.type2Detail.unitRate
-        : roundToCents(ctx.anaesthetist.unitValue * (1 - contract.type2Detail.percent / 100))
+    unitRate = roundToCents(ctx.anaesthetist.unitValue * (1 - pricing.discountPct / 100))
   }
 
   let fixedPrice: ContractPrice | undefined
-  if (contract?.type === 3) {
+  if (contract !== undefined && pricing?.kind === 'fixed') {
     fixedPrice = matchContractPrice(ctx.contractPrices ?? [], {
       contractId: contract.id,
       rvgBaseCode: procedure.rvgBaseCode,

@@ -1,219 +1,383 @@
-import { useEffect, useMemo, useState } from 'react'
-import { neutral, radius, semantic } from '../../../theme/tokens'
-import type { Contract, ContractHolderType, ContractType2Detail } from '../../../domain/types'
+/**
+ * The Contract editor (catch-up Phase 18; US-04.1.1, US-04.1.2, US-04.1.4,
+ * US-04.2.1) in Master data's wide side panel. A Contract is one priced item:
+ * its AA code (assigned on save, editable after), name and holder reference
+ * code; its holder Party (fixed after save) and whether it bills the holder or
+ * the payer; the surgeons and anaesthetist it is offered for; prepaid and the
+ * pricing kind (both fixed after save); and the anaesthetist's override on RVG
+ * kinds. It is edited in place, disabled rather than deleted. Every rule and
+ * refusal sentence is the store's (`contractRefusal`); the panel only shows
+ * the settings a rule makes fixed as read-only.
+ */
+
+import { useMemo, useState } from 'react'
+import { X } from 'lucide-react'
+import type { Contract, ContractPricing, PricingKind } from '../../../domain/types'
+import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
 import {
   addContractPrice,
   createContract,
-  deleteContract,
+  disableContract,
   editContract,
   editContractPrice,
+  enableContract,
   useAppStore,
   type Actor,
 } from '../../../store'
-import { Button, FieldLabel, Segmented, TextField } from '../../../shared'
-import { useSurface } from '../../../shared'
+import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
+import {
+  BILLS_LABEL,
+  PARTY_KIND_LABEL,
+  PRICING_KIND_LABEL,
+  STATUS_LABEL,
+} from '../../../shared/contracts'
+import { compareBySurname } from '../../../domain/surgeons'
+import { neutral, radius, semantic } from '../../../theme/tokens'
+import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
+import { Pill } from '../components/MasterPills'
 import { selectControlStyle as selectStyle } from './fieldChrome'
 
 interface Props {
   open: boolean
   actor: Actor
-  /** Present = edit; absent = create. */
+  /** Present: edit; absent: create. */
   contract?: Contract
+  /** A new Contract's holder, when opened from a filtered list. */
+  initialHolderId?: string
   onClose: () => void
 }
 
-const HOLDER_TYPES: { value: ContractHolderType; label: string }[] = [
-  { value: 'hospital', label: 'Hospital' },
-  { value: 'insurer', label: 'Insurer' },
-  { value: 'surgeon', label: 'Surgeon' },
-  { value: 'organisation', label: 'Organisation' },
-  { value: 'billableParty', label: 'Billable party' },
-]
+type YesNo = 'yes' | 'no'
 
-export function ContractEditSheet({ open, actor, contract, onClose }: Props) {
-  const { Overlay } = useSurface()
+/** D23 (OQ-73, at Confirm): the one place the reading is labelled. */
+const PREPAID_BILLS_PAYER_HELPER = "A prepaid Contract always bills the payer, awaiting AA's confirmation."
+
+export function ContractPanel({ open, actor, contract, initialHolderId, onClose }: Props) {
   const masters = useAppStore((s) => s.masters)
-  const contractPricesRecord = useAppStore((s) => s.masters.contractPrices)
-
   const editing = contract !== undefined
-  const protectedDefault = contract?.isDefault === true && contract.type === 1
+  const system = contract?.systemRole !== undefined
 
-  const [name, setName] = useState('')
-  const [type, setType] = useState<'1' | '2' | '3'>('1')
-  const [holderType, setHolderType] = useState<ContractHolderType>('hospital')
-  const [holderId, setHolderId] = useState('')
-  const [scopeKind, setScopeKind] = useState<'organisation' | 'individualAnaesthetist'>('organisation')
-  const [scopeAnaesthetistId, setScopeAnaesthetistId] = useState('')
-  const [permits, setPermits] = useState<'yes' | 'no'>('no')
-  const [effectiveFromISO, setEffectiveFromISO] = useState('')
-  const [effectiveToISO, setEffectiveToISO] = useState('')
-  const [type2Basis, setType2Basis] = useState<'agreedUnitRate' | 'percentDiscount'>('agreedUnitRate')
-  const [type2Value, setType2Value] = useState('')
+  // The panel mounts afresh for each Contract it opens, so its fields start from it.
+  const [aaCode, setAaCode] = useState(contract?.aaCode ?? '')
+  const [name, setName] = useState(contract?.name ?? '')
+  const [holderReference, setHolderReference] = useState(contract?.holderReference ?? '')
+  const [holderId, setHolderId] = useState(contract?.holderId ?? initialHolderId ?? '')
+  const [billsTo, setBillsTo] = useState<Contract['billsTo']>(contract?.billsTo ?? 'holder')
+  const [surgeonIds, setSurgeonIds] = useState<string[]>(contract?.linkedSurgeonIds ?? [])
+  const [anaesthetistId, setAnaesthetistId] = useState(contract?.linkedAnaesthetistId ?? '')
+  const [prepaid, setPrepaid] = useState<YesNo>(contract?.prepaid === true ? 'yes' : 'no')
+  const [kind, setKind] = useState<PricingKind>(contract?.pricing.kind ?? 'rvgAnaesthetistRate')
+  const [rate, setRate] = useState(contract?.pricing.kind === 'rvgContractRate' ? String(contract.pricing.unitRate) : '')
+  const [discount, setDiscount] = useState(contract?.pricing.kind === 'rvgDiscount' ? String(contract.pricing.discountPct) : '')
+  const [override, setOverride] = useState<YesNo>(contract?.anaesthetistMayOverridePrice === true ? 'yes' : 'no')
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!open) return
-    setName(contract?.name ?? '')
-    setType(String(contract?.type ?? 1) as '1' | '2' | '3')
-    setHolderType(contract?.holderType ?? 'hospital')
-    setHolderId(contract?.holderId ?? '')
-    setScopeKind(contract?.scope.kind ?? 'organisation')
-    setScopeAnaesthetistId(contract?.scope.kind === 'individualAnaesthetist' ? contract.scope.anaesthetistId : '')
-    setPermits(contract?.permitsIndividualArrangement ? 'yes' : 'no')
-    setEffectiveFromISO(contract?.effectiveFromISO ?? '')
-    setEffectiveToISO(contract?.effectiveToISO ?? '')
-    setType2Basis(contract?.type2Detail?.basis ?? 'agreedUnitRate')
-    setType2Value(
-      contract?.type2Detail === undefined
-        ? ''
-        : String(contract.type2Detail.basis === 'agreedUnitRate' ? contract.type2Detail.unitRate : contract.type2Detail.percent),
-    )
-    setError(null)
-  }, [open, contract])
+  const holder = masters.parties[holderId]
+  // The rules come from the model module; the panel only shows them.
+  const holderForcesPayer = billsPayerOnly(holder?.kind, false)
+  const forcedPayer = billsPayerOnly(holder?.kind, prepaid === 'yes')
+  const shownBillsTo = forcedPayer ? 'payer' : billsTo
+  const showLinks = takesLinks(holder?.kind)
+  const rvg = isRvgKind(kind)
 
-  const holderOptions = useMemo(() => {
-    switch (holderType) {
-      case 'hospital': return Object.values(masters.hospitals).map((h) => ({ id: h.id, name: h.name }))
-      case 'insurer': return Object.values(masters.insurers).map((i) => ({ id: i.id, name: i.name }))
-      case 'surgeon': return Object.values(masters.surgeons).map((s) => ({ id: s.id, name: s.name }))
-      case 'organisation': return Object.values(masters.organisations).map((o) => ({ id: o.id, name: o.name }))
-      case 'billableParty': return Object.values(masters.billableParties).map((b) => ({ id: b.hiddenInternalId, name: b.name }))
+  const partyGroups = useMemo(() => {
+    const groups = new Map<string, { id: string; name: string }[]>()
+    for (const p of Object.values(masters.parties).sort((a, b) => a.name.localeCompare(b.name))) {
+      const label = PARTY_KIND_LABEL[p.kind]
+      groups.set(label, [...(groups.get(label) ?? []), { id: p.id, name: p.name }])
     }
-  }, [holderType, masters])
-
+    return [...groups.entries()]
+  }, [masters.parties])
+  const surgeons = useMemo(() => Object.values(masters.surgeons).sort(compareBySurname), [masters.surgeons])
+  const anaesthetists = useMemo(
+    () => Object.values(masters.anaesthetists).sort((a, b) => a.name.localeCompare(b.name)),
+    [masters.anaesthetists],
+  )
   const priceRows = useMemo(
-    () => (contract !== undefined ? Object.values(contractPricesRecord).filter((p) => p.contractId === contract.id) : []),
-    [contract, contractPricesRecord],
+    () => (contract !== undefined ? Object.values(masters.contractPrices).filter((p) => p.contractId === contract.id) : []),
+    [contract, masters.contractPrices],
   )
 
-  function save() {
-    const numType = Number(type) as 1 | 2 | 3
-    let type2Detail: ContractType2Detail | undefined
-    if (numType === 2) {
-      const v = Number(type2Value)
-      if (!Number.isFinite(v) || v <= 0) {
-        setError('Enter the agreed rate or discount for the Type 2 contract.')
-        return
-      }
-      type2Detail = type2Basis === 'agreedUnitRate' ? { basis: 'agreedUnitRate', unitRate: v } : { basis: 'percentDiscount', percent: v }
-    }
-    const scope = scopeKind === 'individualAnaesthetist' && scopeAnaesthetistId !== ''
-      ? { kind: 'individualAnaesthetist' as const, anaesthetistId: scopeAnaesthetistId }
-      : { kind: 'organisation' as const }
-
-    if (editing) {
-      const patch = {
-        name,
-        type: numType,
-        holderType,
-        holderId,
-        scope,
-        permitsIndividualArrangement: permits === 'yes',
-        effectiveFromISO,
-        effectiveToISO: effectiveToISO === '' ? undefined : effectiveToISO,
-        ...(numType === 2 ? { type2Detail } : {}),
-      }
-      const outcome = editContract(useAppStore, actor, contract!.id, patch)
-      if (!outcome.ok) { setError(outcome.message); return }
-      onClose()
-    } else {
-      const outcome = createContract(useAppStore, actor, {
-        name,
-        type: numType,
-        holderType,
-        holderId,
-        scope,
-        permitsIndividualArrangement: permits === 'yes',
-        effectiveFromISO,
-        ...(effectiveToISO !== '' ? { effectiveToISO } : {}),
-        ...(numType === 2 && type2Detail !== undefined ? { type2Detail } : {}),
-      })
-      if (!outcome.ok) { setError(outcome.message); return }
-      onClose()
+  function pricing(): ContractPricing {
+    switch (kind) {
+      case 'rvgContractRate':
+        return { kind, unitRate: Number(rate) }
+      case 'rvgDiscount':
+        return { kind, discountPct: Number(discount) }
+      case 'fixed':
+        return { kind: 'fixed' }
+      case 'open':
+        return { kind: 'open' }
+      default:
+        return { kind: 'rvgAnaesthetistRate' }
     }
   }
 
-  function remove() {
-    if (contract === undefined) return
-    const outcome = deleteContract(useAppStore, actor, contract.id)
-    if (!outcome.ok) { setError(outcome.message); return }
+  function save() {
+    const settings = {
+      name,
+      billsTo: shownBillsTo,
+      linkedSurgeonIds: showLinks ? surgeonIds : [],
+      anaesthetistMayOverridePrice: rvg && override === 'yes',
+      holderReference,
+    }
+    const outcome = editing
+      ? editContract(
+          useAppStore,
+          actor,
+          contract.id,
+          system
+            ? { name, aaCode }
+            : {
+                ...settings,
+                aaCode,
+                pricing: pricing(),
+                linkedAnaesthetistId: showLinks && anaesthetistId !== '' ? anaesthetistId : undefined,
+              },
+        )
+      : createContract(useAppStore, actor, {
+          ...settings,
+          holderId,
+          pricing: pricing(),
+          prepaid: prepaid === 'yes',
+          ...(showLinks && anaesthetistId !== '' ? { linkedAnaesthetistId: anaesthetistId } : {}),
+        })
+    if (!outcome.ok) {
+      setError(outcome.message)
+      return
+    }
     onClose()
   }
 
+  function toggleStatus() {
+    if (contract === undefined) return
+    const outcome = contract.status === 'active' ? disableContract(useAppStore, actor, contract.id) : enableContract(useAppStore, actor, contract.id)
+    setError(outcome.ok ? null : outcome.message)
+  }
+
+  const meta = editing ? (
+    <>
+      <span className="mono" style={{ fontWeight: 600, color: neutral.ink }}>{contract.aaCode}</span>
+      <Pill tone={contract.status === 'active' ? 'success' : 'neutral'}>{STATUS_LABEL[contract.status]}</Pill>
+      <span>{masters.parties[contract.holderId]?.name ?? contract.holderId}</span>
+    </>
+  ) : undefined
+
+  const fixedAfterSave = 'Set when the Contract is created.'
+
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{editing ? 'Edit contract' : 'New contract'}</div>
+    <MasterPanel
+      open={open}
+      onClose={onClose}
+      title={editing ? contract.name : 'New contract'}
+      meta={meta}
+      shot="contract-detail"
+      footer={
+        <>
+          {editing && !system && (
+            <div style={{ marginRight: 'auto' }}>
+              {contract.status === 'active' ? (
+                <button
+                  type="button"
+                  data-shot="contract-disable"
+                  onClick={toggleStatus}
+                  style={{ minHeight: 48, padding: '0 18px', borderRadius: radius.ctl, border: `1px solid ${semantic.error.solid}55`, background: neutral.surface, color: semantic.error.onTint, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Disable
+                </button>
+              ) : (
+                <Button variant="secondary" onClick={toggleStatus}>Make active</Button>
+              )}
+            </div>
+          )}
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={save}>{editing ? 'Save contract' : 'Create contract'}</Button>
+        </>
+      }
+    >
+      {system && (
+        <div style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+          No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name and AA code can change.
+        </div>
+      )}
+      {editing && contract.status === 'disabled' && (
+        <div style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+          Disabled: hidden from the Contract list unless asked for. Procedures already on it keep it and bill as normal.
+        </div>
+      )}
 
-        {protectedDefault && (
-          <div style={{ background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 12.5 }}>
-            Protected default Type 1. It must always exist as the fallback, so it cannot be deleted or end-dated. Its name can still be edited.
-          </div>
-        )}
-
+      <PanelSection title="Contract">
+        <PanelGrid>
+          {editing ? (
+            <TextField label="AA code" value={aaCode} onChange={(v) => setAaCode(v.toUpperCase())} mono hint="AA's own unique code." />
+          ) : (
+            <ReadOnlyField label="AA code" mono>Assigned on save</ReadOnlyField>
+          )}
+          <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code, if it has one." />
+        </PanelGrid>
         <TextField label="Name" value={name} onChange={setName} />
-        <Segmented label="Type" value={type} options={[{ value: '1', label: 'Type 1 units' }, { value: '2', label: 'Type 2 rate' }, { value: '3', label: 'Type 3 fixed' }]} onChange={setType} disabled={protectedDefault} />
+      </PanelSection>
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Holder type</FieldLabel>
-          <select value={holderType} onChange={(e) => { setHolderType(e.target.value as ContractHolderType); setHolderId('') }} style={selectStyle} disabled={protectedDefault}>
-            {HOLDER_TYPES.map((h) => (<option key={h.value} value={h.value}>{h.label}</option>))}
-          </select>
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Holder</FieldLabel>
-          <select value={holderId} onChange={(e) => setHolderId(e.target.value)} style={selectStyle} disabled={protectedDefault}>
-            <option value="">Select a holder</option>
-            {holderOptions.map((o) => (<option key={o.id} value={o.id}>{o.name}</option>))}
-          </select>
-        </label>
-
-        <Segmented label="Scope" value={scopeKind} options={[{ value: 'organisation', label: 'Organisational' }, { value: 'individualAnaesthetist', label: 'Individual' }]} onChange={setScopeKind} />
-        {scopeKind === 'individualAnaesthetist' && (
+      <PanelSection title="Holder and who it bills" shot="contract-links">
+        {editing ? (
+          <ReadOnlyField label="Holder" hint="Fixed once the Contract is saved.">{holder?.name ?? holderId}</ReadOnlyField>
+        ) : (
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Anaesthetist</FieldLabel>
-            <select value={scopeAnaesthetistId} onChange={(e) => setScopeAnaesthetistId(e.target.value)} style={selectStyle}>
-              <option value="">Select an anaesthetist</option>
-              {Object.values(masters.anaesthetists).map((a) => (<option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>))}
+            <FieldLabel>Holder</FieldLabel>
+            <select value={holderId} onChange={(e) => setHolderId(e.target.value)} style={selectStyle}>
+              <option value="">Choose the Party that holds it</option>
+              {partyGroups.map(([group, list]) => (
+                <optgroup key={group} label={group}>
+                  {list.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </label>
         )}
-
-        {type === '2' && (
-          <>
-            <Segmented label="Type 2 basis" value={type2Basis} options={[{ value: 'agreedUnitRate', label: 'Agreed $/unit' }, { value: 'percentDiscount', label: '% discount' }]} onChange={setType2Basis} />
-            <TextField label={type2Basis === 'agreedUnitRate' ? 'Agreed unit rate ($)' : 'Discount (%)'} value={type2Value} onChange={setType2Value} mono />
-          </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <Segmented
+            label="Bills"
+            value={shownBillsTo}
+            options={[
+              { value: 'holder', label: BILLS_LABEL.holder },
+              { value: 'payer', label: `${BILLS_LABEL.payer} on the Booking` },
+            ]}
+            onChange={setBillsTo}
+            disabled={forcedPayer || system}
+          />
+          {prepaid === 'yes' ? (
+            <Helper>{PREPAID_BILLS_PAYER_HELPER}</Helper>
+          ) : holderForcesPayer && !system ? (
+            <Helper>{CONTRACT_REFUSAL_MESSAGES.holderBillsPayer}</Helper>
+          ) : null}
+        </div>
+        {showLinks && !system && (
+          <PanelGrid>
+            <SurgeonPicker surgeons={surgeons} value={surgeonIds} onChange={setSurgeonIds} />
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Linked anaesthetist</FieldLabel>
+              <select value={anaesthetistId} onChange={(e) => setAnaesthetistId(e.target.value)} style={selectStyle}>
+                <option value="">None</option>
+                {anaesthetists.map((a) => (
+                  <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
+                ))}
+              </select>
+            </label>
+          </PanelGrid>
         )}
+        {holder?.kind === 'hospital' && <Helper>{CONTRACT_REFUSAL_MESSAGES.noLinksOnHospital}</Helper>}
+      </PanelSection>
 
-        <Segmented label="Permits individual arrangement (Method 3)" value={permits} options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} onChange={setPermits} />
-        <TextField label="Effective from" value={effectiveFromISO} onChange={setEffectiveFromISO} type="date" />
-        {!protectedDefault && <TextField label="Effective to (optional)" value={effectiveToISO} onChange={setEffectiveToISO} type="date" />}
-
-        {editing && type === '3' && (
-          <PriceRows contractId={contract!.id} rows={priceRows} actor={actor} rvgCodes={masters.rvgCodes} onError={setError} />
+      <PanelSection title="Pricing" shot="contract-settings">
+        <PanelGrid>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Segmented label="Prepaid" value={prepaid} options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} onChange={setPrepaid} disabled={editing} />
+            {editing && <Helper>{fixedAfterSave}</Helper>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Pricing kind</FieldLabel>
+              <select value={kind} onChange={(e) => setKind(e.target.value as PricingKind)} disabled={editing} style={selectStyle}>
+                {(editing && kind === 'open' ? [...CHOOSABLE_PRICING_KINDS, 'open' as const] : CHOOSABLE_PRICING_KINDS).map((k) => (
+                  <option key={k} value={k}>{PRICING_KIND_LABEL[k]}</option>
+                ))}
+              </select>
+            </label>
+            {editing && <Helper>{fixedAfterSave}</Helper>}
+          </div>
+        </PanelGrid>
+        {kind === 'rvgContractRate' && !system && (
+          <TextField label="Rate ($ per unit)" value={rate} onChange={setRate} mono />
         )}
-
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
+        {kind === 'rvgDiscount' && !system && <TextField label="Discount (%)" value={discount} onChange={setDiscount} mono />}
+        {rvg && (
+          <Segmented
+            label="Anaesthetist may override the price"
+            value={override}
+            options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
+            onChange={setOverride}
+            disabled={system}
+          />
         )}
-
-        <Button variant="primary" block onClick={save}>{editing ? 'Save contract' : 'Create contract'}</Button>
-        {editing && (
-          <button
-            type="button"
-            onClick={protectedDefault ? undefined : remove}
-            disabled={protectedDefault}
-            style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${semantic.error.solid}55`, background: neutral.surface, color: protectedDefault ? neutral.mist : semantic.error.onTint, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: protectedDefault ? 'default' : 'pointer' }}
-          >
-            {protectedDefault ? 'Delete (protected default)' : 'Delete contract'}
-          </button>
+        {editing && contract.permitsRateTime && <Helper>Allows hourly rate and time billing lines on its Procedures.</Helper>}
+        {editing && kind === 'fixed' && (
+          <PriceRows contractId={contract.id} rows={priceRows} actor={actor} rvgCodes={masters.rvgCodes} onError={setError} />
         )}
-      </div>
-    </Overlay>
+      </PanelSection>
+
+      <FormError message={error} />
+    </MasterPanel>
   )
 }
 
+function Helper({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: 12.5, color: neutral.mist }}>{children}</div>
+}
+
+function ReadOnlyField({ label, children, hint, mono }: { label: string; children: React.ReactNode; hint?: string; mono?: boolean }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <FieldLabel>{label}</FieldLabel>
+      <div className={mono === true ? 'mono' : undefined} style={{ minHeight: 48, display: 'flex', alignItems: 'center', padding: '0 14px', borderRadius: radius.ctl, background: neutral.sunken, color: neutral.slate, fontSize: 15 }}>
+        {children}
+      </div>
+      {hint !== undefined && <Helper>{hint}</Helper>}
+    </div>
+  )
+}
+
+/** Any number of linked surgeons (OQ-105): chips for the chosen, a select to add one. */
+function SurgeonPicker({
+  surgeons,
+  value,
+  onChange,
+}: {
+  surgeons: { id: string; name: string }[]
+  value: string[]
+  onChange: (ids: string[]) => void
+}) {
+  const byId = new Map(surgeons.map((s) => [s.id, s.name]))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <FieldLabel>Linked surgeons</FieldLabel>
+      <select
+        value=""
+        onChange={(e) => {
+          if (e.target.value !== '' && !value.includes(e.target.value)) onChange([...value, e.target.value])
+        }}
+        style={selectStyle}
+      >
+        <option value="">Add a surgeon</option>
+        {surgeons
+          .filter((s) => !value.includes(s.id))
+          .map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+      </select>
+      {value.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {value.map((id) => (
+            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 10px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.ink, fontSize: 12.5, fontWeight: 500 }}>
+              {byId.get(id) ?? id}
+              <button
+                type="button"
+                aria-label={`Remove ${byId.get(id) ?? id}`}
+                onClick={() => onChange(value.filter((v) => v !== id))}
+                style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 2, display: 'inline-flex' }}
+              >
+                <X size={14} aria-hidden />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** The fixed kind's interim price rows (until Phase 19a's price ranges). */
 function PriceRows({
   contractId,
   rows,
@@ -251,34 +415,40 @@ function PriceRows({
 
   return (
     <div data-shot="contract-price-rows" style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <FieldLabel>Fixed price rows</FieldLabel>
-      {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No price rows yet.</div>}
+      <FieldLabel>Fixed prices</FieldLabel>
+      {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No prices yet: a primary procedure on this Contract cannot be billed until it has one.</div>}
       {rows.map((r) => (
         <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
-          <span className="mono" style={{ flex: 1 }}>{r.rvgBaseCode ?? 'any'}{r.procedureOrdinal !== undefined ? ` · ordinal ${r.procedureOrdinal}` : ''}</span>
+          <span className="mono" style={{ flex: 1 }}>{r.rvgBaseCode ?? 'Any code'}{r.procedureOrdinal !== undefined ? ` · procedure ${r.procedureOrdinal}` : ''}</span>
           <span className="mono">$</span>
           <input
+            aria-label={`Price for ${r.rvgBaseCode ?? 'any code'}${r.procedureOrdinal !== undefined ? `, procedure ${r.procedureOrdinal}` : ''}`}
             defaultValue={String(r.price)}
             onBlur={(e) => {
               const p = Number(e.target.value)
-              if (Number.isFinite(p) && p > 0 && p !== r.price) {
+              if (!Number.isFinite(p) || p <= 0) {
+                onError('Enter a price greater than zero.')
+                e.target.value = String(r.price)
+                return
+              }
+              if (p !== r.price) {
                 const outcome = editContractPrice(useAppStore, actor, r.id, { price: p })
                 if (!outcome.ok) onError(outcome.message)
               }
             }}
-            style={{ ...selectStyle, width: 90, minHeight: 34, padding: '0 8px' }}
+            style={{ ...selectStyle, width: 100, minHeight: 34, padding: '0 8px' }}
             className="mono"
           />
         </div>
       ))}
       <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <select value={code} onChange={(e) => setCode(e.target.value)} style={{ ...selectStyle, minHeight: 34, flex: 1 }}>
+        <select aria-label="RVG code" value={code} onChange={(e) => setCode(e.target.value)} style={{ ...selectStyle, minHeight: 34, flex: 1 }}>
           <option value="">Any code</option>
           {Object.values(rvgCodes).map((c) => (<option key={c.code} value={c.code}>{c.code}</option>))}
         </select>
-        <input value={ordinal} onChange={(e) => setOrdinal(e.target.value)} placeholder="ord" style={{ ...selectStyle, width: 56, minHeight: 34, padding: '0 8px' }} className="mono" />
-        <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="price" style={{ ...selectStyle, width: 80, minHeight: 34, padding: '0 8px' }} className="mono" />
-        <Button variant="secondary" onClick={add}>Add row</Button>
+        <input aria-label="Procedure position" value={ordinal} onChange={(e) => setOrdinal(e.target.value)} placeholder="Position" style={{ ...selectStyle, width: 80, minHeight: 34, padding: '0 8px' }} className="mono" />
+        <input aria-label="Price" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" style={{ ...selectStyle, width: 90, minHeight: 34, padding: '0 8px' }} className="mono" />
+        <Button variant="secondary" onClick={add}>Add price</Button>
       </div>
     </div>
   )

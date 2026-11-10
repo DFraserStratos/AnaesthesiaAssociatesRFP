@@ -15,9 +15,9 @@ import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
 
 const ROUTE_LABEL: Record<string, string> = {
-  hospital: 'Hospital / contract holder',
+  hospital: "Hospital or the Contract's Party",
   billableParty: 'Billable party',
-  insurer: 'Insurer (direct claim)',
+  insurer: 'Insurer',
 }
 
 /** Fields the read-only context line anchors (EditProcedureSheet owns them). */
@@ -33,7 +33,7 @@ interface BtmCaptureBlockProps {
   procedure: Procedure
   list: AssignedList
   actor: Actor
-  /** 1-based position on the Booking — feeds Type 3 second-procedure pricing. */
+  /** 1-based position on the Booking — feeds fixed-price second-procedure pricing. */
   ordinal: number
   /** True count of procedures (header shows PROCEDURE n only when > 1). */
   procedureCount: number

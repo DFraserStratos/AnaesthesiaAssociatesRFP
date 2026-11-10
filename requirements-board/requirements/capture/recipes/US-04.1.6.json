@@ -1,0 +1,6 @@
+{
+  "id": "US-04.1.6",
+  "status": "absent",
+  "absentReason": "Retired: the flat Contract model has no lines, versions or defaults",
+  "shots": []
+}

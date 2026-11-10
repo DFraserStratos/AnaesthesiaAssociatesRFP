@@ -37,6 +37,7 @@ import type {
   SlotStatusKey,
 } from '../domain/types'
 import type { BookingBillingContext } from '../domain/billing/validateBookingForBilling'
+import { listHospitalFor } from '../domain/listPairing'
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
@@ -1146,11 +1147,13 @@ export function billingContextForBooking(state: AppState, booking: Booking): Boo
     rvgCodes: state.masters.rvgCodes,
     contracts: state.masters.contracts,
     contractPrices: Object.values(state.masters.contractPrices),
-    insurers: state.masters.insurers,
+    parties: state.masters.parties,
     billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
   }
   ctx.surgeonId = list.surgeonId
+  const hospital = listHospitalFor(list, state.masters.hospitals)
+  if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
   return ctx
 }
 
@@ -1158,7 +1161,7 @@ export interface EntityCounts {
   anaesthetists: number
   surgeons: number
   hospitals: number
-  insurers: number
+  parties: number
   contracts: number
   rvgCodes: number
   modifierCodes: number
@@ -1180,7 +1183,7 @@ export function entityCounts(state: AppState): EntityCounts {
     anaesthetists: Object.keys(state.masters.anaesthetists).length,
     surgeons: Object.keys(state.masters.surgeons).length,
     hospitals: Object.keys(state.masters.hospitals).length,
-    insurers: Object.keys(state.masters.insurers).length,
+    parties: Object.keys(state.masters.parties).length,
     contracts: Object.keys(state.masters.contracts).length,
     rvgCodes: Object.keys(state.masters.rvgCodes).length,
     modifierCodes: Object.keys(state.masters.modifierCodes).length,

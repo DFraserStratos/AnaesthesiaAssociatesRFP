@@ -287,7 +287,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `insurers`, `organisations`, `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
@@ -326,6 +326,24 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
 ## Seed data worth shooting
+
+**Parties and Contracts** (catch-up Phase 18; Admin, Master data, Parties and Contracts)
+
+- Parties (`PY-<NAME>`; runtime `PYN001`): `PY-AA` Anaesthesia Associates (read-only); hospitals
+  `PY-STG`, `PY-SX`, `PY-FORTE`, `PY-CES`, `PY-CPH`; insurers `PY-NIB` (billed, email), `PY-SCHS`,
+  `PY-AIA`; funders `PY-ACC`, `PY-HNZ`, `PY-NZDF`, `PY-VA`; surgeon groups `PY-COS`, `PY-ARIA`,
+  `PY-UNI` (delivery post), `PY-MER`; surgeon `PY-DOYLE`; anaesthetist `PY-SOUTER`. Rows are
+  `[data-shot=parties] tr[data-party=<id>]`.
+- Contracts by AA code (rows `[data-shot=contract-catalogue] tr[data-contract=<id>]`, under holder
+  heading rows `tr[data-contract-holder]`): `AA-RVG` No contract · RVG (`CT-NO-CONTRACT`, first,
+  no Disable); `STG-001` St George's RVG, `STG-002` ACC elective services via St George's ($25);
+  `SX-001` Southern Cross RVG, `SX-002` Southern Cross Affiliated Provider ($26.50); `FORTE-001`;
+  `CES-001`; `CPH-001`, `CPH-002` Health NZ agreed rate ($23); `NIB-001`; `DOYLE-001` Bariatric fixed
+  prices (fixed, bills the payer); `COS-001` ACC orthopaedic services ($24), `COS-002` COS ACC fixed
+  fees (fixed, no prices); `ARIA-001` (rate and time); `UNI-001` Unisports Ortho ($93.47). All Active.
+- The row's Edit button's accessible name is "Edit <name>": click `button:text-is("Edit")` inside the
+  row, not `role=button[name="Edit"]`. The search input is `[data-shot=contract-search] input`.
+
 
 **Sessions and Lists** (catch-up Phase 28)
 
@@ -504,6 +522,11 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `/web/availability` (an Out-of-hours column on a day that has one).
 
 ## Overlays that need clicks
+
+- **Party and Contract panels** (Master data, catch-up Phase 18): a row click or its Edit opens a
+  600px right-docked panel (`[data-shot=party-panel]`, `[data-shot=contract-detail]`), not a centred
+  Dialog. "New contract" and "Add Party" open it empty; the Contract panel shows "Assigned on save"
+  for the AA code and its refusals as `[data-shot=contract-detail] [role=alert]` (scroll it into view).
 
 - **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
   pick `[data-shot="office-status-choices"] [data-status-choice="unavailable"]`; on a session holding a
@@ -770,6 +793,15 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 **`data-shot` hooks for surgeons, pairings and tiers** (catch-up Phase 17; Admin only)
 
+- Parties and Contracts (catch-up Phase 18): `parties` (table), `party-panel` (the wide side panel,
+  `role=dialog`; close with Escape or Cancel), `contract-catalogue` (the Contracts table, or its empty
+  state), `contract-search` (search field and result count), `contract-result-count`,
+  `contract-status-filter` (Active, Disabled, All buttons), `contract-holder-filter` (select),
+  `contract-detail` (the Contract side panel), `contract-settings` (Pricing section: prepaid, pricing
+  kind, rate or discount, override), `contract-links` (Holder and who it bills: holder, Bills, linked
+  surgeons and anaesthetist), `contract-disable` (Disable, error treatment), `contract-price-rows` (the
+  fixed kind's prices), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
+  failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first.
 - Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
   `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-rooms`
   (`tr[data-room=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
@@ -829,7 +861,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 
 | Screen (`goto`) | ids | Notes |
 |---|---|---|
-| `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | Billing failure dates out the COS ACC contract and authorises Ropata Thu 16. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
+| `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | Billing failure points Losa Tuilagi's Procedure (BK0039) at COS ACC fixed fees (`CT-COS-FIXED`, no price for it) and authorises Ropata Thu 16: she fails with "No price in force for this procedure under COS ACC fixed fees.", Hemi Walker's sibling bills. Resolve & retry opens `[data-shot=choose-contract-sheet]` (a `select` of Contracts; pick `CT-COS-ACC`, then "Choose and retry"); no Contract is edited. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
 | `/demo/xero`, `/demo/xero/invoices[/<accRecId>]` | `run-reconciliation-poll`, `run-archive-job` | |
 | `/demo/xero/invoices/<accRecId>` of an AA fee pair | `record-fee-payment` | Only on a fee pair; the payment triggers below are hidden there |
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |

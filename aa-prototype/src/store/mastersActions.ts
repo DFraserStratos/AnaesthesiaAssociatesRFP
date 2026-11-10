@@ -1,15 +1,13 @@
 /**
- * Master-data invariants (7th review B14 + 3rd review #9): every hospital and
- * every direct-billing insurer ALWAYS holds a protected default Type 1
- * contract — so creating a hospital, or flipping an insurer to direct claims,
- * atomically creates that contract in the same commit. (Phase 07's
- * delete/end-date protection is the other half of the guarantee.)
+ * Master-data actions. Creating a hospital also creates its hospital Party
+ * (catch-up Phase 18; US-04.1.5), in the same commit, and no Contract (RV-06:
+ * there is no protected default per hospital).
  */
 
 import type {
   Anaesthetist,
-  Contract,
   GstPeriod,
+  Party,
   HospitalId,
   Hospital,
   HospitalHoliday,
@@ -31,35 +29,16 @@ import { normaliseClash } from '../domain/draftLists'
 import { emptyPlan, firstAffectedDate, type PlanKept, type PlanSkipped, type ProjectedFields, type ProjectionPlan } from '../domain/recurringBookingProjection'
 import { hpiCpnHolder, isPlausibleEmail, normaliseHpiCpn } from '../domain/surgeons'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
+import { partyRefusal, suggestCodePrefix } from '../domain/billing/parties'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-
-function defaultType1(
-  id: string,
-  name: string,
-  holderType: Contract['holderType'],
-  holderId: string,
-  effectiveFromISO: string,
-): Contract {
-  return {
-    id,
-    name,
-    type: 1,
-    holderType,
-    holderId,
-    scope: { kind: 'organisation' },
-    permitsIndividualArrangement: false,
-    isDefault: true,
-    effectiveFromISO,
-  }
-}
 
 export function createHospital(
   api: AppStoreApi,
   actor: Actor,
   name: string,
   contactEmail?: string,
-): Outcome<{ hospital: Hospital; defaultContract: Contract }> {
+): Outcome<{ hospital: Hospital; party: Party }> {
   if (actor.role !== 'office') {
     return refuse('officeOnly', 'Only the office can add a hospital.')
   }
@@ -74,46 +53,50 @@ export function createHospital(
     return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
   }
 
+  // Its hospital Party, bare until a Contract bills it (A43), through the one Party rule source.
+  const hospitalAlloc = allocateId(state.counters, 'hospital')
+  const partyAlloc = allocateId(hospitalAlloc.counters, 'party')
+  const draftHospital: Hospital = { id: hospitalAlloc.id, name: trimmed, locationType: 'hospital', ...(email !== '' ? { contactEmail: email } : {}) }
+  const draftParty: Party = {
+    id: partyAlloc.id,
+    kind: 'hospital',
+    name: trimmed,
+    codePrefix: suggestCodePrefix(trimmed, new Set(Object.values(state.masters.parties).map((p) => p.codePrefix))),
+    hospitalId: draftHospital.id,
+    ...(email !== '' ? { email } : {}),
+  }
+  const refused = partyRefusal(draftParty, {
+    parties: state.masters.parties,
+    hospitals: { ...state.masters.hospitals, [draftHospital.id]: draftHospital },
+    holdsContracts: false,
+    billedByAContract: false,
+  })
+  if (refused !== null) return refuse(refused.code, refused.message)
+
   let hospital: Hospital | undefined
-  let contract: Contract | undefined
+  let party: Party | undefined
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    const hospitalAlloc = allocateId(s.counters, 'hospital')
-    const contractAlloc = allocateId(hospitalAlloc.counters, 'contract')
-    hospital = { id: hospitalAlloc.id, name: trimmed, locationType: 'hospital', ...(email !== '' ? { contactEmail: email } : {}) }
-    // Effective from the seed epoch, not today: the protected default is the
-    // guaranteed billing fallback and must cover PAST service dates too — a
-    // list dated before the hospital's creation still bills (8th review).
-    contract = defaultType1(
-      contractAlloc.id,
-      `${trimmed} standard units (default Type 1)`,
-      'hospital',
-      hospitalAlloc.id,
-      '2020-01-01',
-    )
+    hospital = draftHospital
+    party = draftParty
     metas.push(
       { entityType: 'hospital', entityId: hospital.id, action: 'hospital.create', after: { name: trimmed, ...(email !== '' ? { contactEmail: email } : {}) } },
-      {
-        entityType: 'contract',
-        entityId: contract.id,
-        action: 'contract.create',
-        after: { holderType: 'hospital', holderId: hospital.id, isDefault: true },
-      },
+      { entityType: 'party', entityId: party.id, action: 'party.create', after: { ...party } },
     )
     return {
       masters: {
         ...s.masters,
         hospitals: { ...s.masters.hospitals, [hospital.id]: hospital },
-        contracts: { ...s.masters.contracts, [contract.id]: contract },
+        parties: { ...s.masters.parties, [party.id]: party },
       },
-      counters: contractAlloc.counters,
+      counters: partyAlloc.counters,
     }
   })
 
-  if (hospital === undefined || contract === undefined) {
+  if (hospital === undefined || party === undefined) {
     return refuse('createFailed', 'The hospital could not be created.')
   }
-  return ok({ hospital, defaultContract: contract })
+  return ok({ hospital, party })
 }
 
 /** Editable hospital fields (catch-up Phase 17). Blank `contactEmail` clears it. */
@@ -174,70 +157,6 @@ export function editHospital(api: AppStoreApi, actor: Actor, hospitalId: Hospita
   return ok(undefined)
 }
 
-export function setInsurerDirectClaims(
-  api: AppStoreApi,
-  actor: Actor,
-  insurerId: string,
-  acceptsDirectClaims: boolean,
-): Outcome<{ createdDefaultContract: Contract | null }> {
-  if (actor.role !== 'office') {
-    return refuse('officeOnly', 'Only the office can change insurer settings.')
-  }
-  const state = api.getState()
-  const insurer = state.masters.insurers[insurerId]
-  if (insurer === undefined) return refuse('notFound', 'Insurer not found.')
-  if (insurer.acceptsDirectClaims === acceptsDirectClaims) {
-    return ok({ createdDefaultContract: null })
-  }
-
-  const hasDefault = Object.values(state.masters.contracts).some(
-    (c) => c.isDefault && c.holderType === 'insurer' && c.holderId === insurerId,
-  )
-  const needsDefault = acceptsDirectClaims && !hasDefault
-
-  let contract: Contract | null = null
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    metas.push({
-      entityType: 'insurer',
-      entityId: insurerId,
-      action: 'insurer.update',
-      before: { acceptsDirectClaims: insurer.acceptsDirectClaims },
-      after: { acceptsDirectClaims },
-    })
-    let counters = s.counters
-    let contracts = s.masters.contracts
-    if (needsDefault) {
-      const alloc = allocateId(counters, 'contract')
-      counters = alloc.counters
-      contract = defaultType1(
-        alloc.id,
-        `${insurer.name} standard units (default Type 1)`,
-        'insurer',
-        insurerId,
-        s.clock.todayISO,
-      )
-      contracts = { ...contracts, [alloc.id]: contract }
-      metas.push({
-        entityType: 'contract',
-        entityId: alloc.id,
-        action: 'contract.create',
-        after: { holderType: 'insurer', holderId: insurerId, isDefault: true },
-      })
-    }
-    return {
-      masters: {
-        ...s.masters,
-        insurers: { ...s.masters.insurers, [insurerId]: { ...insurer, acceptsDirectClaims } },
-        contracts,
-      },
-      counters,
-    }
-  })
-
-  return ok({ createdDefaultContract: contract })
-}
-
 // ---------------------------------------------------------------------------
 // Anaesthetist master (edit + add-with-canvas-forward)
 // ---------------------------------------------------------------------------
@@ -270,7 +189,7 @@ function hpiCpnClash(state: ReturnType<AppStoreApi['getState']>, hpiId: string, 
 /**
  * Edit an anaesthetist's contact / unit value / GST period / active flag /
  * start date. Office-only; audited `anaesthetist.update` (before to after).
- * Changing the unit value re-prices every Type 1 / % Type 2 fee that reads it.
+ * Changing the unit value re-prices every fee priced at the anaesthetist's rate, or less a discount, that reads it.
  *
  * Start date and active (catch-up Phase 28; US-01.1.3 "Once created, the Slots
  * can be edited freely"; FT-01.1 "every active anaesthetist") add or remove

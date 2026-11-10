@@ -208,7 +208,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{list !== undefined ? dayMicroCap(list.dateISO) : '·'}</td>
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dateTimeMicroCap(invoice.raisedAtISO)}</td>
                   <td style={cellStyle}>{counterpartyName({ masters }, invoice.counterparty)}</td>
-                  <td style={cellStyle}>{invoice.layout === 'patient' ? 'Patient' : 'Contract holder'}</td>
+                  <td style={cellStyle}>{invoice.layout === 'patient' ? 'Patient' : 'Party'}</td>
                   <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatCurrency(invoice.total)}</td>
                   <td style={cellStyle}>
                     {invoice.counterparty.kind === 'insurer' ? (

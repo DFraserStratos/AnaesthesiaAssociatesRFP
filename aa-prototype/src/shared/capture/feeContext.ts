@@ -5,9 +5,9 @@
  * snapshot). All maths comes from the Phase 01 calculator; this module only
  * gathers its inputs:
  *   - the governing contract is the procedure's STORED-EXPLICIT
- *     `governingContractId` (never `selectContract` — that is the office's
- *     auto-suggest path, not the pricing path),
- *   - the procedure ordinal is its 1-based position in Booking order (Type 3
+ *     `governingContractId`, whatever its status (a Disabled Contract still
+ *     prices a Procedure already on it),
+ *   - the procedure ordinal is its 1-based position in Booking order (fixed-price
  *     second-procedure pricing depends on it),
  *   - nonRvgLines are this procedure's stored non-rvg lines (rvg-basis stored
  *     lines are never fee inputs).

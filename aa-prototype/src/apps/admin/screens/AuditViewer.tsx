@@ -1,3 +1,4 @@
+import { contractLabel } from '../../../shared/contracts'
 import { useMemo, useState, type CSSProperties } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { useAppStore } from '../../../store'
@@ -39,7 +40,19 @@ const CAP = 500
  */
 export function AuditViewer() {
   const audit = useAppStore((s) => s.audit)
+  const contracts = useAppStore((s) => s.masters.contracts)
+  const parties = useAppStore((s) => s.masters.parties)
   const [entityType, setEntityType] = useState('all')
+
+  // A Contract reads by its AA code and name, a Party by its name (catch-up Phase 18).
+  function entityName(type: string, id: string): string {
+    if (type === 'contract') {
+      const c = contracts[id]
+      return c !== undefined ? contractLabel(c) : id
+    }
+    if (type === 'party') return parties[id]?.name ?? id
+    return id
+  }
   const [source, setSource] = useState('all')
   const [fromISO, setFromISO] = useState('')
   const [toISO, setToISO] = useState('')
@@ -123,7 +136,7 @@ export function AuditViewer() {
                   <td style={cellStyle}>{entry.role} · {entry.source}</td>
                   <td style={cellStyle}>
                     <div style={{ fontSize: 12 }}>{entry.entityType}</div>
-                    <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entry.entityId}</div>
+                    <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entityName(entry.entityType, entry.entityId)}</div>
                   </td>
                   <td className="mono" style={{ ...cellStyle, fontSize: 11.5, maxWidth: 300, color: neutral.slate }}>{change}</td>
                 </tr>

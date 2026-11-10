@@ -6,7 +6,7 @@
     {
       "name": "acc-contract",
       "app": "admin",
-      "caption": "ACC procedure billed under the contract holder's ACC contract",
+      "caption": "ACC procedure billed under an ACC Contract",
       "start": "/admin/day/2026-07-09/bookings/BK0031",
       "states": [
         {

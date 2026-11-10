@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingRoute, PatientPaymentCategory, Procedure } from '../../domain/types'
+import { ContractSelect } from '../contracts/ContractSelect'
+import { insurerPartyOptions } from '../../domain/billing/parties'
 import {
   createBillableParty,
   editProcedure,
@@ -19,7 +21,7 @@ interface EditBillingSetupSheetProps {
 }
 
 const ROUTE_OPTIONS: { value: BillingRoute; label: string }[] = [
-  { value: 'hospital', label: 'Contract holder' },
+  { value: 'hospital', label: "Contract's Party" },
   { value: 'billableParty', label: 'Billable party' },
   { value: 'insurer', label: 'Insurer' },
 ]
@@ -43,15 +45,15 @@ const selectStyle = {
 /**
  * The office's full billing-setup editor for a Procedure (3rd review #1): the
  * RFP billing route (contract-holder / billable-party / insurer), the insurer,
- * the patient payment category, the governing contract, the hospital's
+ * the patient payment category, the Contract (`ContractSelect`), the hospital's
  * `billingReference`, and the billable-party (guardian) payer — including a
  * "New guardian" path that creates a BillableParty then points the procedure at
  * it. Mobile shows this context read-only; the office holds the full editor.
  */
 export function EditBillingSetupSheet({ open, procedure, actor, onClose }: EditBillingSetupSheetProps) {
   const { Overlay } = useSurface()
-  const insurers = useAppStore((s) => s.masters.insurers)
-  const contracts = useAppStore((s) => s.masters.contracts)
+  const parties = useAppStore((s) => s.masters.parties)
+  const insurerOptions = useMemo(() => insurerPartyOptions(parties), [parties])
   const billableParties = useAppStore((s) => s.masters.billableParties)
 
   const [route, setRoute] = useState<BillingRoute>(procedure.billingRoute ?? 'hospital')
@@ -131,16 +133,15 @@ export function EditBillingSetupSheet({ open, procedure, actor, onClose }: EditB
             <FieldLabel>{route === 'insurer' ? 'Insurer' : 'Insurer (optional)'}</FieldLabel>
             <select value={insurerId} onChange={(e) => setInsurerId(e.target.value)} style={selectStyle}>
               <option value="">Select an insurer</option>
-              {Object.values(insurers).map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                  {i.acceptsDirectClaims ? ' (direct claims)' : ''}
+              {insurerOptions.map(({ insurerId: id, party }) => (
+                <option key={id} value={id}>
+                  {party.name}
                 </option>
               ))}
             </select>
             {route === 'hospital' && (
               <span style={{ fontSize: 13, color: neutral.slate }}>
-                Informational only: records the patient's insurer for office reference. The contract holder is still invoiced.
+                Informational only: records the patient's insurer for office reference. The Contract's Party is still invoiced.
               </span>
             )}
           </label>
@@ -171,17 +172,7 @@ export function EditBillingSetupSheet({ open, procedure, actor, onClose }: EditB
           </>
         )}
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Governing contract</FieldLabel>
-          <select value={contractId} onChange={(e) => setContractId(e.target.value)} style={selectStyle}>
-            <option value="">None (default pricing)</option>
-            {Object.values(contracts).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} (Type {c.type})
-              </option>
-            ))}
-          </select>
-        </label>
+        <ContractSelect value={contractId} onChange={setContractId} selectStyle={selectStyle} emptyLabel="Not chosen yet" />
 
         <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract / approval ref" />
 

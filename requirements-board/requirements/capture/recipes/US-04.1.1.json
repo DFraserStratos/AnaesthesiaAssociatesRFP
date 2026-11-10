@@ -1,32 +1,70 @@
 {
   "id": "US-04.1.1",
   "status": "partial",
-  "absentReason": "Contracts are typed by the RFP pricing types (Type 1 units, Type 2 rate, Type 3 fixed) plus a holder type (hospital, insurer, surgeon, organisation, billable party). The seven named categories (RVG Default Post-paid, Pre-paid, Hospital, Surgeon Solo, Surgeon Group, Insurance) are not offered as categories.",
+  "absentReason": "Funding tags arrive in Phase 18a, price ranges in 19a and the invoice destination on the step rail in 20.",
   "shots": [
     {
-      "name": "contract-types",
+      "name": "contract-settings",
       "app": "admin",
-      "caption": "New contract, choosing the contract type and holder type",
-      "start": "/admin/masters",
+      "caption": "Every arrangement is a Contract with the same settings: who it bills, its pricing kind, prepaid, and whether the anaesthetist may override",
+      "start": "/admin/masters?view=contracts",
       "states": [
         {
+          "state": "settings",
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "fill": "[data-shot=contract-search] input",
+              "value": "Unisports"
             },
             {
               "wait": 300
             },
             {
-              "click": "role=button[name=\"New contract\"]"
+              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Unisports\") >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[role=dialog] div:has(> div:text-is(\"Type\"))",
-            "[role=dialog] label:has(select)"
+            "[data-shot=contract-settings]",
+            "[data-shot=contract-links] div:has(> div:text-is(\"Bills\"))"
+          ]
+        },
+        {
+          "state": "prepaid-refusal",
+          "caption": "A prepaid Contract priced from RVG units is refused with the store's sentence",
+          "steps": [
+            {
+              "click": "role=button[name=\"New contract\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=contract-detail] >> role=textbox[name=\"Name\"]",
+              "value": "Cataract prepay"
+            },
+            {
+              "select": "[data-shot=contract-links] select",
+              "value": "PY-CES"
+            },
+            {
+              "click": "[data-shot=contract-settings] >> role=button[name=\"Yes\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Create contract\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-detail] [role=alert]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-settings]",
+            "[data-shot=contract-detail] [role=alert]"
           ]
         }
       ]

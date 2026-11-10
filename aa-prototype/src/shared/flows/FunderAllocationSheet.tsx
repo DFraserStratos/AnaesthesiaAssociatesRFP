@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { AssignedList, CounterpartyRef, Procedure } from '../../domain/types'
+import { insurerPartyOptions } from '../../domain/billing/parties'
 import { billingHospitalId } from '../../domain/listPairing'
 import { setProcedureFunderAllocation, useAppStore, type Actor, type FunderAllocationEntry } from '../../store'
 import { procedureFee } from '../capture'
@@ -72,8 +73,9 @@ export function FunderAllocationSheet({ open, procedure, list, ordinal, actor, o
       const p = masters.patients[patientId]
       opts.push({ key: `patient:${patientId}`, label: `Patient · ${p?.name ?? patientId}`, ref: { kind: 'patient', id: patientId } })
     }
-    for (const insurer of Object.values(masters.insurers)) {
-      opts.push({ key: `insurer:${insurer.id}`, label: `Insurer · ${insurer.name}`, ref: { kind: 'insurer', id: insurer.id } })
+    // Insurer Parties, through their interim insurer identity (catch-up Phase 18).
+    for (const { insurerId, party } of insurerPartyOptions(masters.parties)) {
+      opts.push({ key: `insurer:${insurerId}`, label: `Insurer · ${party.name}`, ref: { kind: 'insurer', id: insurerId } })
     }
     // AA rooms is a location, never a funder (catch-up Phase 31).
     if (billingHospitalId(list.hospitalId, masters.hospitals) !== undefined) {

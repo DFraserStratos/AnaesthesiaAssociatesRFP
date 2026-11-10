@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Lock } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
-import type { Contract, RecurringBooking } from '../../../../domain/types'
+import { accent, neutral, radius } from '../../../../theme/tokens'
+import type { RecurringBooking } from '../../../../domain/types'
 import { modifierBandOf } from '../../../../domain/billing'
 import {
   applyRecurringBookingsToCanvas,
   eligibleArchiveContactIds,
   runArchiveJob,
   setArchiveWindowDays,
-  setInsurerDirectClaims,
   useAppStore,
   type Actor,
 } from '../../../../store'
@@ -16,7 +14,6 @@ import { Button, StatusChip, TextField } from '../../../../shared'
 import { shortDay, locationName } from '../../../../shared/format'
 import { applyAllLine } from '../../recurringBookingCopy'
 import { useNavigate } from 'react-router-dom'
-import { ContractEditSheet } from '../../flows/ContractEditSheet'
 import { RecurringBookingSheet } from '../../flows/RecurringBookingSheet'
 import { EditCell, Header, Table } from './chrome'
 import { cellStyle, textActionStyle } from './tableStyles'
@@ -24,70 +21,12 @@ import { sessionText } from '../../../../domain/outOfHours'
 
 /**
  * The Master data views catch-up Phase 17 did not change, moved out of the
- * old single file as they were: contracts, recurring bookings, insurers,
- * organisations, the code tables, list statuses, and Xero & archiving.
+ * old single file as they were: recurring bookings, the code tables, list
+ * statuses, and Xero & archiving. (Contracts and Parties have their own files
+ * since catch-up Phase 18.)
  */
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-// ---------------------------------------------------------------------------
-// Contracts
-// ---------------------------------------------------------------------------
-
-export function ContractsMaster({ actor }: { actor: Actor }) {
-  const contracts = useAppStore((s) => s.masters.contracts)
-  const [sheet, setSheet] = useState<{ id?: string } | null>(null)
-  return (
-    <>
-      <ContractsView onEdit={(id) => setSheet({ id })} onNew={() => setSheet({})} />
-      {sheet !== null && (
-        <ContractEditSheet open actor={actor} contract={sheet.id !== undefined ? contracts[sheet.id] : undefined} onClose={() => setSheet(null)} />
-      )}
-    </>
-  )
-}
-
-function ContractsView({ onEdit, onNew }: { onEdit: (id: string) => void; onNew: () => void }) {
-  const masters = useAppStore((s) => s.masters)
-  const rows = Object.values(masters.contracts).sort((a, b) => a.name.localeCompare(b.name))
-
-  function holderName(c: Contract): string {
-    switch (c.holderType) {
-      case 'hospital': return masters.hospitals[c.holderId]?.name ?? c.holderId
-      case 'insurer': return masters.insurers[c.holderId]?.name ?? c.holderId
-      case 'surgeon': return masters.surgeons[c.holderId]?.name ?? c.holderId
-      case 'organisation': return masters.organisations[c.holderId]?.name ?? c.holderId
-      case 'billableParty': return masters.billableParties[c.holderId]?.name ?? c.holderId
-    }
-  }
-
-  return (
-    <>
-      <Header title="Contracts" sub="Hospital and direct-insurer default Type 1 contracts are protected (locked): they cannot be deleted or end-dated." action={<Button variant="secondary" onClick={onNew}>New contract</Button>} />
-      <Table heads={['Name', 'Type', 'Holder', 'Scope', 'From', 'To', '']} rightAlign={[6]}>
-        {rows.map((c) => {
-          const protectedDefault = c.isDefault && c.type === 1
-          return (
-            <tr key={c.id}>
-              <td style={cellStyle}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {protectedDefault && <Lock size={12} aria-hidden style={{ color: neutral.mist }} />}
-                  {c.name}
-                </div>
-              </td>
-              <td style={cellStyle}>{c.type}</td>
-              <td style={cellStyle}>{holderName(c)} <span style={{ color: neutral.mist }}>({c.holderType})</span></td>
-              <td style={cellStyle}>{c.scope.kind === 'individualAnaesthetist' ? 'Individual' : 'Org'}</td>
-              <td className="mono" style={cellStyle}>{c.effectiveFromISO}</td>
-              <td className="mono" style={cellStyle}>{c.effectiveToISO ?? '·'}</td>
-              <EditCell onClick={() => onEdit(c.id)} />
-            </tr>
-          )
-        })}
-      </Table>
-    </>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Recurring bookings
@@ -180,53 +119,6 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
             </tr>
           )
         })}
-      </Table>
-    </>
-  )
-}
-
-export function InsurersView({ actor }: { actor: Actor }) {
-  const insurers = useAppStore((s) => s.masters.insurers)
-  const [error, setError] = useState<string | null>(null)
-  const rows = Object.values(insurers).sort((a, b) => a.name.localeCompare(b.name))
-
-  function flip(id: string, next: boolean) {
-    const outcome = setInsurerDirectClaims(useAppStore, actor, id, next)
-    if (!outcome.ok) setError(outcome.message)
-    else setError(null)
-  }
-
-  return (
-    <>
-      <Header title="Insurers" sub="Flipping an insurer to direct claims atomically creates its default Type 1 contract (visible in Contracts)." />
-      {error !== null && <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>}
-      <Table heads={['Name', 'Accepts direct claims', '']} rightAlign={[2]}>
-        {rows.map((i) => (
-          <tr key={i.id}>
-            <td style={cellStyle}>{i.name}</td>
-            <td style={cellStyle}>{i.acceptsDirectClaims ? 'Yes' : 'No'}</td>
-            <td style={{ ...cellStyle, textAlign: 'right' }}>
-              <button onClick={() => flip(i.id, !i.acceptsDirectClaims)} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
-                {i.acceptsDirectClaims ? 'Turn off' : 'Turn on'}
-              </button>
-            </td>
-          </tr>
-        ))}
-      </Table>
-    </>
-  )
-}
-
-export function OrganisationsView() {
-  const organisations = useAppStore((s) => s.masters.organisations)
-  const rows = Object.values(organisations).sort((a, b) => a.name.localeCompare(b.name))
-  return (
-    <>
-      <Header title="Contract-holder organisations" sub="External groups that hold contracts (view only)." />
-      <Table heads={['Name', 'Description']}>
-        {rows.map((o) => (
-          <tr key={o.id}><td style={cellStyle}>{o.name}</td><td style={cellStyle}>{o.description ?? '·'}</td></tr>
-        ))}
       </Table>
     </>
   )

@@ -34,7 +34,7 @@
 | Open or DRAFT for an assigned List | Active | DRAFT is only for a Draft List |
 | A List being prepared (for a Draft List) | Draft List | One name for it |
 | Xero calculates the invoice | Billing Engine calculates/issues; Xero provides AR/banking | The RFP explicitly puts the Billing Engine at the centre |
-| ACC route | Contract-holder route with ACC-related context | ACC is not a separate billing route |
+| ACC route | An ordinary Contract, such as ACC orthopaedic services | ACC is not a separate billing route |
 
 ## The lifecycle
 
@@ -91,15 +91,15 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 
 ### Three billing routes
 
-1. Hospital or other contract holder
+1. The Contract's Party (a hospital, or the Party that holds the Contract)
 2. Billable Party, usually the patient
-3. Direct-claim Insurer
+3. Insurer (nib, an insurer Party)
 
 The route is explicit per Procedure. It is not inferred from flags.
 
 ### Patient insurance distinction
 
-- **Direct Insurer route:** AA invoices the one insurer that accepts direct claims.
+- **Insurer route:** nib is an insurer Party; there is no insurer master or direct-claims flag.
 - **Insured reimbursement:** AA invoices the patient; the patient seeks reimbursement from their
   insurer.
 
@@ -115,11 +115,18 @@ Do not treat these as the same workflow.
 
 ### Contracts
 
-- Type 1: reference only; standard anaesthetist rate.
-- Type 2: agreed rate or discount.
-- Type 3: fixed price.
-- Every hospital and direct-billing insurer must have a protected default Type 1.
-- Surgeon/group/organisation-held contracts do not have that guaranteed fallback in the prototype.
+- Every Contract is one priced item held by a **Party**: a hospital, insurer, funder, surgeon or
+  surgeon group, an anaesthetist, or AA. Parties live in Master data, Parties, with their billing
+  name and how their invoices are delivered (email or post).
+- It bills its holder or the payer on the Booking (a prepaid Contract always the payer).
+- It has a pricing kind (RVG at the anaesthetist's rate, RVG at the Contract's rate, RVG less a
+  discount, or a fixed price), an optional override on RVG kinds, prepaid or not, and is Active or
+  Disabled.
+- It is edited in place with an audit, never deleted; a change that must start on a date is a new
+  Contract, and the old one is disabled.
+- **No contract · RVG**, held by AA, is always there.
+- Every Contract has AA's own code (for example `COS-001`).
+- Tip: find a Contract by typing its name or AA code in the Contracts search.
 
 ## The money model
 
@@ -418,7 +425,7 @@ Say:
 
 ### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
 
-- ACC is not a billing route: ACC-related work bills through the normal contract-holder routes.
+- ACC is not a billing route: ACC-related work bills through an ordinary Contract, such as ACC orthopaedic services.
 - ACC pre-operative assessment has its own flat-fee code set (CS250, CS260, CS70); the prototype
   captures these as ancillary fixed-amount billing lines with the code named in the description.
 - The RFP flags the code set as a special pre-assessment case to confirm with AA billing.

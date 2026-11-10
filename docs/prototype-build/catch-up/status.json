@@ -2,19 +2,20 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "18"
+      "18a"
     ],
-    "note": "32a, 38a, 32b and 32c are done (2026-11-10): the Schedule track is complete. The Contracts track (18 to 25) runs next, in the ROADMAP's run order."
+    "note": "32a, 38a, 32b, 32c and 18 are done (2026-11-11). The Contracts track continues with 18a, then 19, 19a, 19b and 20 to 25 with 21a, in the ROADMAP's run order."
   },
   "guidance": {
-    "as_of": "2026-11-10",
-    "headline": "Start 18 now. The Schedule track is done.",
-    "headline_sub": "32c (out-of-hours sessions: a third session the office opens after PM, and any List goes in it) is done, after 32a, 32b and 38a. The Contracts track resumes with 18 (Parties and flat Contracts), then 18a to 25, in the ROADMAP's run order.",
-    "parallel": "Only 18 is next in the run order. 26 has its dependency met but runs after the Contracts track (18 to 25), so run 18 on its own.",
+    "as_of": "2026-11-11",
+    "headline": "Start 18a now. Parties and flat Contracts are built.",
+    "headline_sub": "18 (Parties and flat Contracts: one Party master, each Contract one priced item with an AA code, No contract · RVG, edited in place and disabled, never deleted) is done. The Contracts track continues with 18a (specialties, funding tags and the open-price fallbacks), then 19 to 25, in the ROADMAP's run order.",
+    "parallel": "Only 18a is next in the run order. 19 and 26 have their dependencies met but come later in the run order (19 after 18a, 26 after the Contracts track), so run 18a on its own.",
     "safe": {
-      "18": "Its dependency (17) is done. Its open questions are built on their defaults (OQ-114, OQ-133, OQ-135) and OQ-73 as its reading at Confirm, so a later answer is a contained change."
+      "18a": "Its dependency (18) is done and no open question gates it. Its Verify readings (the starting specialties list, several specialties per surgeon, any overlap matching, a tag naming its funder) are built as our reading and logged for the owner."
     },
     "wait": {
+      "19": "Its dependencies (15a and 18) are done, but the run order puts it after 18a.",
       "26": "Its dependency (17) is done, but the run order puts it after the Contracts track (18 to 25)."
     }
   }

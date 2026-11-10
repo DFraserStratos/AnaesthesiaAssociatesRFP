@@ -250,7 +250,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
      billed List's Booking detail renders read only;
    - from **18** and **18a**: the holder master (`CH-STG`, `billsHolder`, `billablePartyRef`), `CT-STG-ACC`, the
      Contract's `pricing` kind and `fundingTagId` (ACC), the aaCode allocator and the id-to-code table pinned in `seed.test.ts`,
-     the parity fixture `domain/billing/__parity__/phase-18-baseline.json`;
+     the parity fixture `store/__parity__/phase-18-baseline.json`;
    - from **19**: `ProcedureType` and the ACL reconstruction procedure's id; from **20**: the holder-fit
      rule and the picker's candidate list (event fees never change it);
      from **21**: `billablePartyForProcedure`, the payer on the Booking, holder references and the

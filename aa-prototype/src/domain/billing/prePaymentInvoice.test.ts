@@ -22,19 +22,16 @@ import {
   mkAnaesthetist,
   mkBooking,
   mkContract,
+  mkParty,
   mkProcedure,
 } from './fixtures'
 
+const PARTY = mkParty()
+
 const LIST_DATE = '2026-07-21'
 
-/** A hospital default so the mixed booking's contract-holder procedure resolves. */
-const HOSPITAL_DEFAULT = mkContract({
-  id: 'con-def',
-  name: 'Default',
-  type: 1,
-  isDefault: true,
-  effectiveFromISO: '2020-01-01',
-})
+/** The hospital's plain RVG Contract, so the mixed booking's hospital-route procedure resolves. */
+const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: "Test hospital RVG" })
 
 function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContext {
   return {
@@ -42,7 +39,7 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     rvgCodes: { [BASE_SINGLE_10.code]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
     contractPrices: [],
-    insurers: {},
+    parties: { [PARTY.id]: PARTY },
     billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,

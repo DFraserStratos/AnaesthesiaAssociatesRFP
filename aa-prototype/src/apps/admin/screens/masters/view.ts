@@ -12,8 +12,7 @@ export type MastersView =
   | 'surgeons'
   | 'surgeonRooms'
   | 'surgeonGroups'
-  | 'insurers'
-  | 'organisations'
+  | 'parties'
   | 'rvgCodes'
   | 'modifierCodes'
   | 'scheduleSettings'
@@ -24,13 +23,13 @@ export type MastersView =
 export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'anaesthetists', label: 'Anaesthetists' },
   { view: 'contracts', label: 'Contracts' },
+  // Catch-up Phase 18 (US-04.1.5): everyone who holds Contracts; replaces Insurers and Organisations (RV-39).
+  { view: 'parties', label: 'Parties' },
   { view: 'recurringBookings', label: 'Recurring bookings' },
   { view: 'hospitals', label: 'Hospitals & holidays' },
   { view: 'surgeons', label: 'Surgeons' },
   { view: 'surgeonRooms', label: "Surgeons' rooms" },
   { view: 'surgeonGroups', label: 'Surgeon groups' },
-  { view: 'insurers', label: 'Insurers' },
-  { view: 'organisations', label: 'Organisations' },
   { view: 'rvgCodes', label: 'RVG codes' },
   { view: 'modifierCodes', label: 'Modifier codes' },
   { view: 'scheduleSettings', label: 'Schedule settings' },
@@ -45,5 +44,7 @@ export const DEFAULT_MASTERS_VIEW: MastersView = 'anaesthetists'
 export function parseMastersView(param: string | null): MastersView {
   // The pre-Phase 29 view id still opens the same page.
   if (param === 'listStatuses') return 'availability-statuses'
+  // The Insurer master and the holder organisations folded into Parties (catch-up Phase 18).
+  if (param === 'insurers' || param === 'organisations') return 'parties'
   return MASTERS_NAV.find((n) => n.view === param)?.view ?? DEFAULT_MASTERS_VIEW
 }

@@ -1,0 +1,48 @@
+{
+  "id": "US-04.1.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "parties",
+      "app": "admin",
+      "caption": "Each Party holds its billing name, contact and how its invoices are delivered",
+      "start": "/admin/masters?view=parties",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=parties] tr[data-party] td:nth-child(2)",
+            "[data-shot=parties] tr[data-party] td:nth-child(3)",
+            "[data-shot=parties] tr[data-party] td:nth-child(4)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "party-panel",
+      "app": "admin",
+      "caption": "A hospital Party: its hospital, billing name, email and delivery",
+      "start": "/admin/masters?view=parties",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-party=PY-STG]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=party-panel]"
+          ]
+        }
+      ]
+    }
+  ]
+}

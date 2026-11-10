@@ -9,7 +9,8 @@
  * office's burden — so we build only the RFP-grounded flags:
  *   (a) a Booking not marked completed          (neutral — a moved-in incomplete Booking is visible)
  *   (b) a missing billing reference on the hospital (contract-holder) route (neutral)
- *   (c) an ACC-related procedure billed to the Billable Party route (amber advisory)
+ *   (c) removed in catch-up Phase 18 (RV-37): no ACC advisory; ACC is priced
+ *       as an ordinary Contract, and the ACC chip and column stay
  *   (d) any manually-overridden B/T/M unit, with the delta vs the natural
  *       computation ("T adjusted +1 manually") (neutral, informational)
  *
@@ -71,15 +72,6 @@ export function reviewFlagsForBooking({ booking, procedures }: ReviewBookingInpu
     // (b) missing billing reference on the contract-holder route.
     if (billingReferenceMissing(procedure)) {
       flags.push({ tone: 'neutral', text: 'No billing reference', bookingId: booking.id, procedureId: procedure.id })
-    }
-    // (c) ACC procedure on the Billable Party route (RFP: ACC should not bill the patient directly).
-    if (procedure.accRelated && procedure.billingRoute === 'billableParty') {
-      flags.push({
-        tone: 'warn',
-        text: 'ACC should not bill the patient directly',
-        bookingId: booking.id,
-        procedureId: procedure.id,
-      })
     }
     // (d) manual B/T/M override provenance, with the delta vs the natural value.
     const nat = naturalBtm(procedure, baseCode)

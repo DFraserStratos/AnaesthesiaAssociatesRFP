@@ -664,8 +664,8 @@
 
   <h2>External actors (not login personas)</h2>
   <p style="font-size:14px;color:var(--slate)">Surgeon rooms and hospital/PAS supply booking information;
-  patients or guardians supply billing details and may receive an invoice; a direct-claim insurer may
-  receive an invoice through its upload workflow; the Billing Engine calculates and issues; Xero provides
+  patients or guardians supply billing details and may receive an invoice; an insurer is a Party,
+  invoiced only where a Contract bills it; the Billing Engine calculates and issues; Xero provides
   AR and banking. There is no patient, hospital or surgeon portal in the RFP.</p>
 </section>
 
@@ -800,10 +800,10 @@
   </div></details>
 
   <details><summary>6 · Calculate and issue invoices</summary><div class="details-body">
-    <p>The Billing Engine resolves the explicit route per Procedure (hospital/contract holder, billable
-    party, direct-claim insurer), selects the governing Contract and rating method, calculates from the
+    <p>The Billing Engine resolves the explicit route per Procedure (the Contract's Party, billable
+    party, or an insurer Party), selects the Contract, calculates from the
     captured snapshot, enforces time-only additional Procedures and conserved two-funder allocations,
-    groups by counterparty, and produces contract-holder or patient invoice layouts. The List left the
+    groups by counterparty, and produces Party or patient invoice layouts. The List left the
     anaesthetist's main view at authorise; its invoices show in her balances at once, and search finds it
     afterwards. <span class="chip ready">Ready</span></p>
   </div></details>
@@ -1116,9 +1116,9 @@
       <div class="row"><span class="k">Expect</span><span>A new addendum Booking; the original stays locked. The addendum sits on a List created in Dr Sharma's free Tue 21 PM session (interim until additional invoices replace the addendum).</span></div>
     </div>
     <div class="beat"><h4>Beat 3 · billing failure and retry</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Billing monitor &#8594; Demo actions &#8594; Trigger billing failure &#8594; Run.</li><li>Same screen &#8594; Losa Tuilagi &#8594; Resolve &amp; retry.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A group-held contract with no default fallback was dated out. The prototype isolates the failed Booking, still invoices its clean sibling, then corrects and retries."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The failed Booking shows the rating failure while the sibling bills; retry clears it.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Billing monitor &#8594; Demo actions &#8594; Trigger billing failure &#8594; Run.</li><li>Same screen &#8594; Losa Tuilagi &#8594; Resolve &amp; retry.</li><li>Choose COS-001 · ACC orthopaedic services, Canterbury Orthopaedic Surgeons &#8594; Choose and retry.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The Booking was pointed at a fixed-price COS Contract with no price for the procedure. The prototype isolates the failed Booking, still invoices its clean sibling, then lets the office choose the right Contract and retry. No Contract is edited."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The failed Booking shows "No price in force for this procedure under COS ACC fixed fees" while the sibling bills; choosing the Contract and retrying bills COS.</span></div>
     </div>
     <div class="beat"><h4>Beat 4 · integration dead-letter and fix</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Integrations &#8594; Demo actions &#8594; Fire hospital message &#8594; MSG-CPH-2001 &#8594; Run.</li><li>Feed config &#8594; Christchurch Public (say the tab is badged Future scope).</li><li>Change patientNhi from PID-2 to PID-3 &#8594; Save.</li><li>Message log &#8594; Reprocess MSG-CPH-2001.</li></ul></div>
@@ -1135,9 +1135,9 @@
 
   <details class="demo-scenario"><summary>S5 · Compliance tour</summary><div class="details-body">
     <div class="scenario-head">
-      <span style="font-size:14px;color:var(--slate)">Serves audit, identity, data minimisation and contract
-      effective-dating. 5 to 6 minutes.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S5 &#8594; Jump &#8594; Confirm jump (resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's trail and raises Health NZ contract snapshot invoices from Whitaker's Fri 17 List). Go to Admin app / Xero sim.</span>
+      <span style="font-size:14px;color:var(--slate)">Serves audit, identity, data minimisation and audited
+      Contract edits. 5 to 6 minutes.</span>
+      <span class="stage">Stage it: Scenario jumps &#8594; S5 &#8594; Jump &#8594; Confirm jump (resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's trail and raises the Health NZ agreed rate invoices from Whitaker's Fri 17 List). Go to Admin app / Xero sim.</span>
     </div>
     <div class="beat"><h4>Beat 1 · audit trail of a much-edited Booking</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 21 Jul &#8594; Dr Souter PM.</li><li>David Chen &#8594; History.</li><li>Pause on the audit trail.</li></ul></div>
@@ -1154,10 +1154,10 @@
       <div class="row"><span class="k">Say</span><span class="say">"No personal information goes into Xero: no NHI and no patient name, only a hidden internal ID that links each transaction back to the billing system. AA confirmed this rule."</span></div>
       <div class="row"><span class="k">Expect</span><span>The callout states the confirmed rule (no RFP-contradiction callout), and no patient or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist payees keep their names.</span></div>
     </div>
-    <div class="beat"><h4>Beat 4 · contract effective-dating</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Master data &#8594; Contracts &#8594; Health NZ agreed rate (Type 2).</li><li>Set Effective to: 16 Jul 2026 &#8594; Save.</li><li>Invoices &#8594; open Hemi Walker's Health NZ invoice from Dr Whitaker's Fri 17 Jul List.</li><li>Pause on the unchanged invoice.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"Contracts are effective-dated. Changing one does not rewrite invoices already raised under the old terms; the invoice reproduces against what was true when it billed."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The contract change is recorded; the earlier invoice is unchanged.</span></div>
+    <div class="beat"><h4>Beat 4 · Contract edits are audited</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Master data &#8594; Contracts &#8594; search Unisports &#8594; open UNI-001 · Unisports Ortho.</li><li>Change the rate from $93.47 to $95.00 &#8594; Save contract.</li><li>Admin Audit &#8594; Entity type: contract &#8594; pause on the entry.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"A Contract is edited in place, and every change is recorded with before and after. A change that must start on a date is a new Contract, and the old one is disabled, never deleted."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The audit entry shows the pricing before and after; no invoice changes.</span></div>
     </div>
     <div class="callout warn">Discovery: demo-plausible modifier values (not an authoritative NZSA schedule); the concurrency model (single-user, audited last-write-wins, shown via audit + live integration updates).</div>
   </div></details>
@@ -1209,13 +1209,13 @@
   <div class="grid2">
     <div class="card">
       <h3>Three billing routes</h3>
-      <ol class="tight"><li>Hospital or other contract holder</li><li>Billable Party, usually the patient</li><li>Direct-claim Insurer</li></ol>
+      <ol class="tight"><li>The Contract's Party (a hospital, or the Party that holds the Contract)</li><li>Billable Party, usually the patient</li><li>Insurer (nib, an insurer Party)</li></ol>
       <p style="font-size:13px;color:var(--slate)">Explicit per Procedure, not inferred from flags.</p>
     </div>
     <div class="card">
       <h3>Patient insurance distinction</h3>
-      <p style="font-size:13px"><strong>Direct Insurer route:</strong> AA invoices the one insurer that
-      accepts direct claims. <strong>Insured reimbursement:</strong> AA invoices the patient, who claims
+      <p style="font-size:13px"><strong>Insurer route:</strong> nib is an insurer Party; there is no
+      insurer master or direct-claims flag. <strong>Insured reimbursement:</strong> AA invoices the patient, who claims
       from their insurer. Not the same workflow.</p>
     </div>
     <div class="card">
@@ -1226,9 +1226,13 @@
     </div>
     <div class="card">
       <h3>Contracts</h3>
-      <p style="font-size:13px">Type 1 reference only (standard rate); Type 2 agreed rate/discount; Type 3
-      fixed price. Every hospital and direct-billing insurer has a protected default Type 1. Surgeon,
-      group and organisation holders do not have that guaranteed fallback in the prototype.</p>
+      <p style="font-size:13px">Every Contract is one priced item held by a Party (a hospital, insurer,
+      funder, surgeon or surgeon group, an anaesthetist, or AA). It bills its holder or the payer on the
+      Booking (a prepaid Contract always the payer); it has a pricing kind, an optional override on RVG
+      kinds, prepaid or not, and is Active or Disabled. It is edited in place with an audit, never
+      deleted; a change from a date is a new Contract. No contract · RVG, held by AA, is always there;
+      every Contract has AA's own code. Tip: find a Contract by typing its name or AA code in the
+      Contracts search.</p>
     </div>
   </div>
 

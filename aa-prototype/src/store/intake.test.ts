@@ -6,10 +6,10 @@ import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { editPatient, upsertPatient } from './intake'
-import { createHospital, setInsurerDirectClaims } from './mastersActions'
+import { createHospital } from './mastersActions'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, INS, PAT, SEED_MARKERS } from '../domain/seed'
+import { ANAE, PAT, SEED_MARKERS } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -166,46 +166,18 @@ describe('editPatient', () => {
 })
 
 describe('master-data invariants', () => {
-  it('creating a hospital atomically creates its protected default Type 1 contract', () => {
+  it('creating a hospital also creates its hospital Party (catch-up Phase 18)', () => {
     const api = createAppStore()
     const outcome = createHospital(api, OFFICE, 'Rangiora Day Surgery')
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
-    const { hospital, defaultContract } = outcome.value
+    const { hospital, party } = outcome.value
     const state = api.getState()
     expect(state.masters.hospitals[hospital.id]?.name).toBe('Rangiora Day Surgery')
-    const contract = state.masters.contracts[defaultContract.id]
-    expect(contract?.isDefault).toBe(true)
-    expect(contract?.type).toBe(1)
-    expect(contract?.holderType).toBe('hospital')
-    expect(contract?.holderId).toBe(hospital.id)
-    const actions = state.audit.slice(-2).map((a) => a.action)
-    expect(actions).toEqual(['hospital.create', 'contract.create'])
-  })
-
-  it('flipping an insurer to direct claims atomically creates its default Type 1', () => {
-    const api = createAppStore()
-    const before = Object.values(api.getState().masters.contracts).filter(
-      (c) => c.holderType === 'insurer' && c.holderId === INS.aia,
-    )
-    expect(before.length).toBe(0)
-
-    const outcome = setInsurerDirectClaims(api, OFFICE, INS.aia, true)
-    expect(outcome.ok).toBe(true)
-    const state = api.getState()
-    expect(state.masters.insurers[INS.aia]?.acceptsDirectClaims).toBe(true)
-    const created = Object.values(state.masters.contracts).filter(
-      (c) => c.holderType === 'insurer' && c.holderId === INS.aia && c.isDefault,
-    )
-    expect(created.length).toBe(1)
-
-    // Flipping back never deletes the default (Phase 07 owns protection).
-    expect(setInsurerDirectClaims(api, OFFICE, INS.aia, false).ok).toBe(true)
-    expect(
-      Object.values(api.getState().masters.contracts).filter(
-        (c) => c.holderType === 'insurer' && c.holderId === INS.aia,
-      ).length,
-    ).toBe(1)
+    expect(state.masters.parties[party.id]).toMatchObject({ kind: 'hospital', hospitalId: hospital.id, name: 'Rangiora Day Surgery', codePrefix: 'RDS' })
+    expect(state.audit.slice(-2).map((a) => a.action)).toEqual(['hospital.create', 'party.create'])
+    // RV-06: no Contract is created with a hospital.
+    expect(Object.values(state.masters.contracts).some((c) => c.holderId === party.id)).toBe(false)
   })
 
   it('is office-only', () => {
@@ -217,6 +189,5 @@ describe('master-data invariants', () => {
       anaesthetistId: '34821',
     }
     expect(createHospital(api, anaesthetist, 'Nope').ok).toBe(false)
-    expect(setInsurerDirectClaims(api, anaesthetist, INS.aia, true).ok).toBe(false)
   })
 })

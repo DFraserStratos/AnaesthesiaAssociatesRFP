@@ -39,7 +39,7 @@ export interface AddBillingLineInput {
 /**
  * Add a captured non-RVG billing line to a Procedure. The rate x time basis is
  * refused unless the procedure's governing contract carries
- * `permitsIndividualArrangement` — the same sentence the validator and the UI
+ * `permitsRateTime` — the same sentence the validator and the UI
  * show. Amounts land rounded to cents (hours x rate for rateTime). Audited
  * `billingLine.add`; the parent Booking is stamped by the wrapper.
  */
@@ -77,7 +77,7 @@ export function addBillingLine(
       procedure.governingContractId !== undefined
         ? state.masters.contracts[procedure.governingContractId]
         : undefined
-    if (contract === undefined || !contract.permitsIndividualArrangement) {
+    if (contract === undefined || !contract.permitsRateTime) {
       return refuse('individualArrangementNotPermitted', INDIVIDUAL_ARRANGEMENT_MESSAGE)
     }
   }

@@ -15,6 +15,7 @@ import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
 import { feeFor } from '../billing/fee'
+import { contractRefusal, noContractRvg } from '../billing/contracts'
 import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
 import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
@@ -41,7 +42,7 @@ function billingContextFor(state: SeedState, booking: Booking): BookingBillingCo
     rvgCodes: state.masters.rvgCodes,
     contracts: state.masters.contracts,
     contractPrices: Object.values(state.masters.contractPrices),
-    insurers: state.masters.insurers,
+    parties: state.masters.parties,
     billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
   }
@@ -483,7 +484,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     expect(all.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(954, 2)
   })
 
-  it('bariatric Type 3: $2,800 first procedure, $950 by the second-procedure ordinal rule', () => {
+  it('bariatric fixed price: $2,800 first procedure, $950 by the second-procedure ordinal rule', () => {
     const marker = SEED_MARKERS['bariatricType3Booking']
     expect(marker).toBeDefined()
     if (marker === undefined) return
@@ -736,5 +737,64 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
       expect(seed.masters.hospitals[rb.hospitalId], rb.id).toBeDefined()
       expect(seed.masters.surgeons[rb.surgeonId], rb.id).toBeDefined()
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Catch-up Phase 18: Parties and flat Contracts
+// ---------------------------------------------------------------------------
+
+describe('seeded flat Contracts (catch-up Phase 18)', () => {
+  const contracts = seed.masters.contracts
+  const ctx = {
+    parties: seed.masters.parties,
+    contracts,
+    surgeonIds: new Set(Object.keys(seed.masters.surgeons)),
+    anaesthetistIds: new Set(Object.keys(seed.masters.anaesthetists)),
+  }
+
+  it('pins the AA code table, every code unique', () => {
+    const table = Object.fromEntries(Object.values(contracts).map((c) => [c.id, c.aaCode]))
+    expect(table).toEqual({
+      'CT-NO-CONTRACT': 'AA-RVG',
+      'CT-STG-D1': 'STG-001',
+      'CT-SX-D1': 'SX-001',
+      'CT-FORTE-D1': 'FORTE-001',
+      'CT-CES-D1': 'CES-001',
+      'CT-CPH-D1': 'CPH-001',
+      'CT-NIB-D1': 'NIB-001',
+      'CT-SXAP': 'SX-002',
+      'CT-HNZ': 'CPH-002',
+      'CT-STG-ACC': 'STG-002',
+      'CT-DOYLE-BAR': 'DOYLE-001',
+      'CT-COS-ACC': 'COS-001',
+      'CT-ARIA-HOURLY': 'ARIA-001',
+      'CT-UNISPORTS': 'UNI-001',
+      'CT-COS-FIXED': 'COS-002',
+    })
+    const codes = Object.values(table)
+    expect(new Set(codes).size).toBe(codes.length)
+  })
+
+  it('no seeded Contract breaks a save guard, and exactly one is No contract · RVG', () => {
+    for (const c of Object.values(contracts)) {
+      expect(contractRefusal(c, { ...ctx, prev: c }), c.id).toBeNull()
+    }
+    expect(noContractRvg(contracts)).toMatchObject({ id: 'CT-NO-CONTRACT', holderId: 'PY-AA', billsTo: 'payer', anaesthetistMayOverridePrice: true })
+    // The override is seeded on No contract · RVG only (A18); nothing is prepaid; every Contract is Active.
+    expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id)).toEqual(['CT-NO-CONTRACT'])
+    expect(Object.values(contracts).some((c) => c.prepaid || c.status !== 'active')).toBe(false)
+  })
+
+  it('keeps the named rates and fixed prices (SXAP $26.50, Health NZ $23, ACC $25 and $24, Unisports $93.47)', () => {
+    const rate = (id: string) => {
+      const p = contracts[id]?.pricing
+      return p?.kind === 'rvgContractRate' ? p.unitRate : undefined
+    }
+    expect([rate('CT-SXAP'), rate('CT-HNZ'), rate('CT-STG-ACC'), rate('CT-COS-ACC'), rate('CT-UNISPORTS')]).toEqual([26.5, 23, 25, 24, 93.47])
+    expect(contracts['CT-DOYLE-BAR']).toMatchObject({ pricing: { kind: 'fixed' }, billsTo: 'payer', linkedSurgeonIds: ['S-DOYLE'] })
+    expect(contracts['CT-COS-FIXED']?.pricing.kind).toBe('fixed')
+    expect(Object.values(seed.masters.contractPrices).filter((p) => p.contractId === 'CT-COS-FIXED')).toEqual([])
+    expect(Object.values(contracts).filter((c) => c.permitsRateTime).map((c) => c.id)).toEqual(['CT-ARIA-HOURLY'])
   })
 })

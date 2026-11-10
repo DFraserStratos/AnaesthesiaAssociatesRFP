@@ -10,6 +10,7 @@ import type {
   Booking,
   Contract,
   Insurer,
+  Party,
   Procedure,
   RvgCode,
 } from '../types'
@@ -55,17 +56,20 @@ export function mkBooking(overrides: Partial<Booking> = {}): Booking {
   }
 }
 
+/** A hospital-held, holder-billed plain RVG Contract (catch-up Phase 18's flat shape). */
 export function mkContract(overrides: Partial<Contract> = {}): Contract {
   return {
     id: 'con-1',
+    aaCode: 'TST-001',
     name: 'Test contract',
-    type: 1,
-    holderType: 'hospital',
-    holderId: 'hosp-1',
-    scope: { kind: 'organisation' },
-    permitsIndividualArrangement: false,
-    isDefault: false,
-    effectiveFromISO: '2026-01-01',
+    holderId: 'party-hosp-1',
+    billsTo: 'holder',
+    linkedSurgeonIds: [],
+    prepaid: false,
+    anaesthetistMayOverridePrice: false,
+    pricing: { kind: 'rvgAnaesthetistRate' },
+    status: 'active',
+    permitsRateTime: false,
     ...overrides,
   }
 }
@@ -74,7 +78,21 @@ export function mkInsurer(overrides: Partial<Insurer> = {}): Insurer {
   return {
     id: 'ins-1',
     name: 'Southern Health Insurance',
-    acceptsDirectClaims: true,
+    ...overrides,
+  }
+}
+
+/** A hospital Party for `hosp-1`, billed by its Contracts (billing details filled). */
+export function mkParty(overrides: Partial<Party> = {}): Party {
+  return {
+    id: 'party-hosp-1',
+    kind: 'hospital',
+    name: 'Test hospital',
+    codePrefix: 'TST',
+    hospitalId: 'hosp-1',
+    billingName: 'Test Hospital Limited',
+    email: 'accounts@test-hospital.example',
+    deliveryMethod: 'email',
     ...overrides,
   }
 }
