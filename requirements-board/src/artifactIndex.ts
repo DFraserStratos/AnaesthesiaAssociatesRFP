@@ -6,7 +6,8 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { isArtifactId, itemTexts, mentions } from '../shared/links.ts'
-import { ARTIFACT_KINDS, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region } from '../shared/types.ts'
+import { stepOf } from '../shared/steps.ts'
+import { ARTIFACT_KINDS, ARTIFACT_STATUSES, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region, type Step } from '../shared/types.ts'
 import { useCatalogue, useIndex, type Index } from './store.ts'
 
 export interface ArtifactLink {
@@ -66,18 +67,25 @@ export function useArtifactIndex(): ArtifactIndex {
 /** How many items point at an artifact, each counted once. */
 export const linkCount = (ix: ArtifactIndex, id: string) => new Set((ix.links.get(id) ?? []).map((l) => l.item.id)).size
 
-/** A spot an item can link to: a named region, or one the document has of itself (a page, a heading). */
+/** A spot an item can link to: a named region, a step, or one the document has of itself (a page, a heading). */
 export interface Spot {
   id: string
   name: string
-  /** Named in the sidecar (red box), or the document's own (a page or a section). */
+  /** Named in the sidecar (a region's red box, or a step), or the document's own (a page or a section). */
   auto: boolean
   region?: Region
+  step?: Step
   depth?: number
 }
 
+/** The sidecar's named regions (the panel's Highlights list). Steps are `stepSpots`. */
 export function namedSpots(rec: ArtifactRec): Spot[] {
   return rec.data.regions.map((r) => ({ id: r.id, name: r.name || r.id, auto: false, region: r }))
+}
+
+/** A stepped diagram's steps as spots, in order. */
+export function stepSpots(rec: ArtifactRec): Spot[] {
+  return (rec.data.steps ?? []).map((s) => ({ id: s.id, name: s.name || s.id, auto: false, step: s }))
 }
 
 export function autoSpots(rec: ArtifactRec): Spot[] {
@@ -90,6 +98,8 @@ export function autoSpots(rec: ArtifactRec): Spot[] {
 export function spotName(rec: ArtifactRec, region: string): string | null {
   const named = rec.data.regions.find((r) => r.id === region)
   if (named) return named.name || named.id
+  const step = stepOf(rec.data, region)
+  if (step) return step.name || step.id
   const page = pageOfRegionId(region)
   if (page !== null && rec.meta.pages) return page >= 1 && page <= rec.meta.pages.length ? `Page ${page}` : null
   const lines = linesOfRegionId(region)
@@ -120,7 +130,10 @@ const DEFAULTS: ArtifactPrefs = { layout: 'grid', kinds: [], statuses: [], compo
 function readPrefs(): ArtifactPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY)
-    return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<ArtifactPrefs>) } : DEFAULTS
+    if (!raw) return DEFAULTS
+    const prefs = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<ArtifactPrefs>) }
+    // A status filter saved before a status went away (Superseded, now Retired) would match nothing.
+    return { ...prefs, statuses: prefs.statuses.filter((s) => (ARTIFACT_STATUSES as readonly string[]).includes(s)) }
   } catch {
     return DEFAULTS
   }
@@ -155,6 +168,6 @@ export function artifactMatches(rec: ArtifactRec, p: Pick<ArtifactPrefs, 'kinds'
   if (p.components.length && !a.components.some((c) => p.components.includes(c))) return false
   const q = query.trim().toLowerCase()
   if (!q) return true
-  const hay = `${a.id} ${a.title} ${a.description} ${a.author} ${a.sources.join(' ')} ${a.regions.map((r) => `${r.name} ${r.note}`).join(' ')} ${rec.meta.path ?? ''}`.toLowerCase()
+  const hay = `${a.id} ${a.title} ${a.description} ${a.author} ${a.sources.join(' ')} ${a.regions.map((r) => `${r.name} ${r.note}`).join(' ')} ${(a.steps ?? []).map((s) => `${s.name} ${s.caption}`).join(' ')} ${rec.meta.path ?? ''}`.toLowerCase()
   return q.split(/\s+/).every((w) => hay.includes(w))
 }

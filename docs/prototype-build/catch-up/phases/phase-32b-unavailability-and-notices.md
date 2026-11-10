@@ -17,7 +17,7 @@ Also reworks, without closing them (each stays with its own phase):
 [DM-41](../analysis/domain-model-delta.md#dm-41) (the Notification record, now with a resolved state).
 **Answered and built as answered (no provisional label):** [OQ-81](../../../../requirements-board/requirements/questions/OQ-81.md) part 3 (**D59**), [OQ-84](../../../../requirements-board/requirements/questions/OQ-84.md) (**D60**), [OQ-79](../../../../requirements-board/requirements/questions/OQ-79.md) (**D58**), [OQ-113](../../../../requirements-board/requirements/questions/OQ-113.md) (**D54**: tiers and pairings order the office's finders only; the anaesthetist apps are availability-only).
 **Open, built as the default:** [OQ-102](../../../../requirements-board/requirements/questions/OQ-102.md) (**D36**: the tier and pairing names stay the plain labels).
-**Depends on:** Phase 32a (the `'bookingMoved'` notice kind and the pool row it posts; the single-Booking move). Through it: 32 (`listMoveActions.ts`, `MoveListSheet`, `notifications.ts` and the Admin pool card and page), 31 (Draft Lists, `detachListToDraft`, `assignDraftList`, `shared/scheduleTerms.ts`), 30 (conflicts), 29 (the Slot status master, `isOpenForBooking`), 28 (`moveListToSlotCore`, `reassignList`), 17 (`rankAnaesthetistCandidates`, the privacy boundary), 15a (`ClearWarningButton`, the To-do card), 14 (the trigger registry, stand-in badges). Phase 21 follows and shows the alerts at review.
+**Depends on:** Phase 32a (the `'bookingMoved'` notice kind and the pool row it posts; the single-Booking move). Through it: 32 (`listMoveActions.ts`, `MoveListSheet`, `notifications.ts` and the Admin pool card and page), 31 (Draft Lists, `detachListToDraft`, `assignDraftList`, `shared/scheduleTerms.ts`), 30 (conflicts), 29 (the Slot status master, `isOpenForBooking`), 28 (`moveListToSlotCore`, `reassignList`), 17 (`rankAnaesthetistCandidates`, the privacy boundary), 15a (`ClearWarningButton`, the To-do card), 14 (the trigger registry, stand-in badges). Phase 21a follows and shows the alerts at review.
 **Estimated:** 2 sessions. **Session 1** ends green at work item 6: unavailability never a conflict, the office's forced return or hand-on, no assign onto an unavailable session, the vacated-session choice on every path, the seed and the sickness trigger. **Session 2** builds items 7 to 11: resolvable notices, "Alert the office", the office's order, the triggers. Then the demo guide, the screenshots, the review pass and the PROGRESS entry. If session 2 runs long, cut the optional Admin side-nav count badge (item 8) first.
 
 ## Goal
@@ -32,7 +32,7 @@ Follow up the built Schedule track (28 to 32) for the 19 October answers (D58, D
 
 ## Before you start: drift check
 
-Baseline `a68f09b`.
+Baseline `efe123c`.
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.8.3,US-03.6.3,US-01.5.2,US-01.5.4,US-01.5.5,US-01.6.3,US-01.4.1,US-01.4.3,US-13.6.4,US-13.8.1,US-13.8.2,US-13.7.2,OQ-79,OQ-81,OQ-84,OQ-102`, re-read what changed, adjust the work items, and drop and log anything now Retired or Future (if US-13.8.3 or US-03.6.3 went, stop and tell the owner).
 2. Confirm Phases 14 to 32a are DONE; read what 32 and 32a delivered, because this doc names some planned code: the `Notification` kind union and `postNotification` (32a adds `'bookingMoved'`), `notificationText`, `NOTIFICATION_POOL_RULE`, `moveListToOffice`, `pushListToSlot`, `markUnavailableAndMoveList`, `MoveListSheet`, `anaesthetistActor`, and 32a's pinned Souter Booking (reuse it for the alert shots).
@@ -88,7 +88,7 @@ Baseline `a68f09b`.
    - Types: `NotificationKind` gains `'officeAlert'`; the record carries `bookingId?`, the required `message` (the note), `fromAnaesthetistId`, and the snapshot fields; `route` and `cause` become optional (move records keep them). `notificationText` reads "Dr Hughes asked the office to check Thu 23 Jul AM (St George's, Ms A. Reid)" with the note beneath, or "... a Booking for Hemi Walker on ..." for a Booking.
    - Store: `alertOffice(api, actor, { listId, bookingId?, note })` in a new `store/officeAlertActions.ts`: anaesthetist only; the actor's own ACTIVE or SUBMITTED List (or a Booking on it); a non-blank note of 1 to 300 characters; refuses a second alert while one for the same List or Booking is still active ("The office already has an alert on this."). One commit through `mutate()` posting through `postNotification`, audit `notification.alert` on the List or Booking. It touches no Booking state, warning or submit rule.
    - UI (frontend-design applies): "Alert the office" in `BookingDetailBody`'s action stack and on `ListDetailScreen`/`ListDetailView`, mobile and web, for the owner only; a bottom sheet on mobile and a dialog on web (`useSurface().Overlay`) with a required note field and "Send to the office"; once sent, the entry shows "The office has been alerted" with the note and, when it is ticked, "The office has dealt with this". Words: "alert the office", never "flag" or "slot"; never "Draft List" to the anaesthetist.
-   - Admin: an active alert shows on the Admin List drawer and Booking detail as "Alert from Dr X: note" with the tick, so the office sees it where it works; Phase 21 adds it to review.
+   - Admin: an active alert shows on the Admin List drawer and Booking detail as "Alert from Dr X: note" with the tick, so the office sees it where it works; Phase 21a adds it to review.
 10. **The office's order: tier, then preferred pairing (US-13.6.4, US-01.4.2, D36, D54).**
    - `domain/pairingPreferences.ts` `rankAnaesthetistCandidates`: sort by tier, then preferred before not-marked within a tier, then the seeded shuffle; update its doc ("preferred pairings are marked, not lifted" goes) and tests. Consumers keep the Not-preferred group apart and the tier filter: `AssignDraftListSheet`, `AvailabilityFinderSheet`, `ReassignListFlow`, item 3's office picker, and `simulateSickness`'s colleague choice.
    - The anaesthetist apps (`pushTargets`, `MoveListSheet`, 32a's move sheet) stay availability-only, name order, no tier or preference (D54); `apps/officePrivacy.test.ts` passes with no new allowlist entry. Name-ordered office surfaces (the Day grid's "Who's free") stay so.
@@ -107,7 +107,7 @@ Registry entries only, never on the Control Panel page; "Alert the office", the 
 
 - A hospital closure: still a conflict, still a soft warning, still reassigned from Conflicts (US-01.5.2).
 - Un-ticking, archiving, deleting or expiring a notice; a per-user read state.
-- Letting a Booking move post an optional notice (32a owns the single-Booking pool row); an alert's effect on submit; the alert at review (Phase 21).
+- Letting a Booking move post an optional notice (32a owns the single-Booking pool row); an alert's effect on submit; the alert at review (Phase 21a).
 - Tier or preference ordering in the anaesthetist apps (D54) and any tier or pairing renaming (D36).
 - Several Lists at once on an office range of days off beyond one List per prompt, as in 32.
 - Sending the update email from a pool row (Phase 35).
@@ -180,7 +180,7 @@ The standard pass (PROGRESS convention 18): three independent Opus reviewers (qu
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; each with route and persona): the defaults in "Before you start" item 4 (submit while alerted, no un-tick, the vacated control pre-selected, the office hand-on posting no notice, SUBMITTED and AUTHORISED Lists), the "Show resolved" proposal (Admin, Notifications), the panel's place and count (US-13.8.1, Verify), the seeded Rutherford change (Admin, Draft Lists), the alert limit (one active per target), and OQ-102 still open.
-- **Status row** for Phase 32b and a phase entry: the drift-check result against `a68f09b`; the names 32 and 32a delivered that this used; what was built; `PERSIST_VERSION` from and to; the seed pins; the checklist with evidence; tests added; the review pass; the catalogue screenshot result with REPORT.md counts before and after.
+- **Status row** for Phase 32b and a phase entry: the drift-check result against `efe123c`; the names 32 and 32a delivered that this used; what was built; `PERSIST_VERSION` from and to; the seed pins; the checklist with evidence; tests added; the review pass; the catalogue screenshot result with REPORT.md counts before and after.
 - **Decisions log:**
   1. **Unavailability is never a conflict (D59, OQ-81 part 3)**: supersedes Phase 30's office-recorded sickness keeping its conflict and Phase 31's reassign-from-a-closed-session; the office is forced to return or hand on.
   2. **No assign onto an unavailable session (D59, US-01.6.3)**: supersedes 31's accept-and-warn for a closed session.
@@ -188,4 +188,4 @@ The standard pass (PROGRESS convention 18): three independent Opus reviewers (qu
   4. **Notices are active or resolved (D58, OQ-79)**: supersedes 32's keep-every-notice pool and its "append-only, no actioned state" rule; one tick, audited, nothing expires.
   5. **Alert the office (US-03.6.3)**: a new notice kind; submit unaffected.
   6. **The office's order is tier, then preferred pairing (OQ-102's 19 October note)**: supersedes 17's "preferred marked, not lifted"; anaesthetist apps stay availability-only (D54).
-- **Handoff notes:** for **21**: show active alerts at review and add the alert tick there; for **35**: alert and resolved rows are further inputs to the update email; for **44**: S2 Beats 3, 3a and 3c are patched here, and the PWA parity audit walks the alert and its stand-in.
+- **Handoff notes:** for **21a**: show active alerts at review and add the alert tick there; for **35**: alert and resolved rows are further inputs to the update email; for **44**: S2 Beats 3, 3a and 3c are patched here, and the PWA parity audit walks the alert and its stand-in.

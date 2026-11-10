@@ -73,7 +73,7 @@ each block, and change nothing else unless it is plainly wrong:
   folders that are out of bounds (other apps, build plans), any follow-on skill that reads the change
   logs (or "none"), and the shape precedent for notes (the first note written sets it).
 - `add-artifact`: the board folder, the check command, the dev server's URL.
-- `svg-diagram`: the board folder and the check command. Its reference diagrams and `examples/` are
+- `svg-diagram`: the board folder, the check command and the dev server's URL. Its reference diagrams and `examples/` are
   another project's. Keep them as style references until this project has its own diagrams.
 - `transcript-reconciler`: the default output path.
 - `update-build-plan`: the plan folder (created on the first run when there is none), the app's

@@ -59,7 +59,9 @@ export function writeFixture(dir = FIXTURE_DIR) {
  * An SVG with an offset viewBox and things that must never run (a script, an onload, embedded
  * HTML); a PNG; a mermaid flowchart; a Markdown note (cited as "Notes 2026-01-02 · Fixture
  * meeting #n" by its file name); a two-page PDF (cited as "Test spec p.N", printed one page behind).
- * Each has a region.
+ * Each has a region. And a stepped drawing: three steps in two groups, each revealing its group of
+ * the drawing, with balances; the second and third each move an entry from the one before. And a
+ * wide strip whose view follows its steps (`step_view: follow`), each step's card far from the last.
  */
 export const FIXTURE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 800 400" width="800" height="400" onload="window.__pwned=1">
 <title>Fixture drawing</title>
@@ -71,6 +73,31 @@ export const FIXTURE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 5
 <rect x="420" y="90" width="300" height="200" rx="12" fill="#ffffff" stroke="#cccccc"/>
 <text x="440" y="130" font-size="24">Other panel</text>
 <foreignObject x="0" y="50" width="10" height="10"><div xmlns="http://www.w3.org/1999/xhtml" id="pwned-html">x</div></foreignObject>
+</svg>
+`
+
+export const FIXTURE_STEPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+<rect x="0" y="0" width="800" height="400" fill="#f3f6fa"/>
+<g id="trust">
+<rect x="40" y="40" width="340" height="320" rx="12" fill="#ffffff" stroke="#cccccc"/>
+<text x="60" y="80" font-size="24">Trust account</text>
+<g id="invoice-entries"><text x="60" y="140" font-size="18">Invoice raised entry</text></g>
+<g id="payment-entries"><text x="60" y="190" font-size="18">Patient payment entry</text></g>
+</g>
+<g id="ledger">
+<rect x="420" y="40" width="340" height="320" rx="12" fill="#2b3338"/>
+<text x="440" y="80" font-size="24" fill="#ffffff">Our ledger</text>
+<g id="payout-entries"><text x="440" y="140" font-size="18" fill="#ffffff">Doctor payout entry</text></g>
+</g>
+</svg>
+`
+
+/** A strip far wider than any screen: three cards a long way apart, each its own step. */
+export const FIXTURE_STRIP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 300" width="4000" height="300">
+<rect x="0" y="0" width="4000" height="300" fill="#f3f6fa"/>
+<g id="card-1"><rect x="80" y="60" width="320" height="180" rx="12" fill="#ffffff" stroke="#cccccc"/><text x="100" y="110" font-size="22">Order placed</text></g>
+<g id="card-2"><rect x="1840" y="60" width="320" height="180" rx="12" fill="#ffffff" stroke="#cccccc"/><text x="1860" y="110" font-size="22">Order paid</text></g>
+<g id="card-3"><rect x="3600" y="60" width="320" height="180" rx="12" fill="#ffffff" stroke="#cccccc"/><text x="3620" y="110" font-size="22">Order shipped</text></g>
 </svg>
 `
 
@@ -148,6 +175,8 @@ const artifact = (a: Partial<Artifact> & Pick<Artifact, 'id' | 'title' | 'kind'>
   sources: ['Fixture'],
   file: null,
   regions: [],
+  steps: [],
+  stepView: null,
   description: '',
   source: '',
   extra: {},
@@ -162,6 +191,32 @@ export function fixtureArtifacts(): Artifact[] {
     artifact({ id: 'AR-03', title: 'Fixture flow', kind: 'diagram', date: '2026-10', source: 'flowchart LR\n  A[Order] --> B[Pricing]\n  B --> C[Invoice]', regions: [region('pricing', 'The pricing step', ['node=B'])] }),
     artifact({ id: 'AR-04', title: 'Fixture note', kind: 'note', date: '2026-10-01', file: 'notes/2026-01-02-fixture-meeting.md', regions: [region('fox', 'The fox', ['quote=The quick brown fox jumps over the lazy dog.'])] }),
     artifact({ id: 'AR-05', title: 'Fixture document', kind: 'document', date: '2021', file: 'artifacts/files/AR-05.pdf', citedAs: [{ as: 'Test spec', pageOffset: 1, within: null, spot: null }], regions: [region('time-table', 'Time table', ['quote=Time units table'], { page: 2 })] }),
+    artifact({
+      id: 'AR-06',
+      title: 'Fixture steps',
+      kind: 'diagram',
+      date: '2026-09-01',
+      file: 'artifacts/files/AR-06.svg',
+      regions: [region('ledger', 'Our ledger', ['#ledger'])],
+      steps: [
+        { id: 'invoice', name: 'Invoice raised', group: 'Ordinary invoice', caption: 'The invoice is raised for US-01.1.1. Nothing has moved in the bank.', show: ['#invoice-entries'], highlight: ['#invoice-entries'], moves: [], balances: [{ account: 'Trust', amount: '$0' }, { account: 'Debtors', amount: '$100' }] },
+        { id: 'payment', name: 'Patient pays', group: 'Ordinary invoice', caption: 'The money lands in the trust account.', show: ['#payment-entries'], highlight: ['#payment-entries'], moves: [{ from: '#invoice-entries', to: '#payment-entries' }], balances: [{ account: 'Trust', amount: '$100' }, { account: 'Debtors', amount: '$0' }] },
+        { id: 'payout', name: 'Doctor paid', group: 'Payout', caption: 'The doctor is paid from trust.', show: ['#payout-entries'], highlight: ['#payout-entries'], moves: [{ from: '#payment-entries', to: '#payout-entries' }], balances: [{ account: 'Trust', amount: '$0' }, { account: 'Debtors', amount: '$0' }] },
+      ],
+    }),
+    artifact({
+      id: 'AR-07',
+      title: 'Fixture strip',
+      kind: 'diagram',
+      date: '2026-08-01',
+      file: 'artifacts/files/AR-07.svg',
+      stepView: 'follow',
+      steps: [
+        { id: 'placed', name: 'Order placed', group: '', caption: '', show: ['#card-1'], highlight: ['#card-1'], moves: [], balances: [] },
+        { id: 'paid', name: 'Order paid', group: '', caption: '', show: ['#card-2'], highlight: ['#card-2'], moves: [], balances: [] },
+        { id: 'shipped', name: 'Order shipped', group: '', caption: '', show: ['#card-3'], highlight: ['#card-3'], moves: [], balances: [] },
+      ],
+    }),
   ]
 }
 
@@ -171,6 +226,8 @@ export function writeFixtureArtifacts(dir = FIXTURE_DIR) {
   mkdirSync(join(dir, 'artifacts', 'files'), { recursive: true })
   mkdirSync(join(dir, 'notes'), { recursive: true })
   writeFileSync(join(dir, 'artifacts', 'files', 'AR-01.svg'), FIXTURE_SVG)
+  writeFileSync(join(dir, 'artifacts', 'files', 'AR-06.svg'), FIXTURE_STEPS_SVG)
+  writeFileSync(join(dir, 'artifacts', 'files', 'AR-07.svg'), FIXTURE_STRIP_SVG)
   writeFileSync(join(dir, 'artifacts', 'files', 'AR-02.png'), png(240, 160))
   writeFileSync(join(dir, 'notes', '2026-01-02-fixture-meeting.md'), FIXTURE_NOTE)
   writeFileSync(join(dir, 'artifacts', 'files', 'AR-05.pdf'), tinyPdf([['Fixture page one', 'Totals live here'], ['Second page heading', 'Time units table']]))

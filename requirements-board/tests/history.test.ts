@@ -1,6 +1,8 @@
-/** Card history: field diffs, line diffs, collapsing runs, and the journal + git timeline merge. */
+/** Card history: field diffs, line diffs, collapsing runs, the journal + git timeline merge, and an artifact's steps. */
 import { describe, expect, it } from 'vitest'
-import { buildTimeline, collapse, diffItems, lineDiff, type GitFileHistory, type JournalEntry } from '../shared/history.ts'
+import { buildTimeline, collapse, diffArtifacts, diffItems, isMinorChange, lineDiff, type GitFileHistory, type JournalEntry } from '../shared/history.ts'
+import { stepChanges } from '../shared/steps.ts'
+import type { Artifact, Step } from '../shared/types.ts'
 import { item } from './fixtures.ts'
 
 const at = (min: number) => new Date(Date.UTC(2026, 8, 28, 9, min)).toISOString()
@@ -122,5 +124,33 @@ describe('screenshots', () => {
     // Once the journal has taken over, the same commit is only a divider.
     const later = buildTimeline([{ at: at(5), source: 'board', kind: 'changed', changes: [{ field: 'notes', from: '', to: 'n' }] }], git)
     expect(later.find((e) => e.type === 'commit')).toMatchObject({ commit: { sha: 'c2' } })
+  })
+})
+
+describe('artifact steps', () => {
+  const step = (id: string, name: string, caption = ''): Step => ({ id, name, group: 'Ordinary invoice', caption, show: [], highlight: [], moves: [], balances: [] })
+  const art: Artifact = { id: 'AR-01', title: 'Trust', status: 'Current', supersededBy: null, date: null, kind: 'diagram', author: '', components: [], sources: [], citedAs: [], file: 'artifacts/files/AR-01.svg', regions: [], steps: [], stepView: null, description: '', source: '', extra: {} }
+  const before = { ...art, steps: [step('invoice', 'Invoice', 'Cr Sales'), step('gone', 'Old step'), step('bill', 'Bill to Nick'), step('pays', 'Patient pays'), step('pay-nick', 'Pay Nick')] }
+  // Invoice renamed and re-captioned, Old step removed, Bill to Nick moved after Pay Nick, Check added.
+  const after = { ...art, steps: [step('invoice', 'Raise the invoice', 'Cr Sales, Dr Debtors'), step('pays', 'Patient pays'), step('pay-nick', 'Pay Nick'), step('bill', 'Bill to Nick'), step('check', 'Check')] }
+
+  it('names the steps field as changed, and a reorder alone is never minor', () => {
+    expect(diffArtifacts(before, after).map((c) => c.field)).toEqual(['steps'])
+    const reordered = { ...before, steps: [...before.steps].reverse() }
+    const [c] = diffArtifacts(before, reordered)
+    expect(c?.field).toBe('steps')
+    expect(isMinorChange(c!)).toBe(false)
+  })
+
+  it("gives the history row the steps added, removed and changed, with why", () => {
+    const [change] = diffArtifacts(before, after)
+    expect(stepChanges(change!.from as Step[], change!.to as Step[])).toEqual({
+      added: [after.steps[4]],
+      removed: [before.steps[1]],
+      changed: [
+        { id: 'invoice', name: 'Raise the invoice', what: ['renamed', 'caption changed'] },
+        { id: 'bill', name: 'Bill to Nick', what: ['moved'] },
+      ],
+    })
   })
 })

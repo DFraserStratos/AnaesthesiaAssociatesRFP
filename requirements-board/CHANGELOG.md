@@ -2,6 +2,36 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.8.0 · 2026-11-10
+
+- Stepped diagrams can follow their steps: `step_view: follow` in the sidecar (beside `steps`) makes the view frame each step as the reader arrives at it, by the step bar, the arrow keys, the Steps tab or a link. `fixed`, the default and the same as leaving it out, keeps today's behaviour: the view stays where it is, right for a diagram that fits one screen. Follow is for a wide flow that does not.
+- The framing: a step's focus is what it highlights (else what it reveals) plus both ends of its moves. When the focus is already in view, clear of the find bar, step bar and view bar, nothing moves; otherwise the view centres it, at the zoom it has if the focus fits there, else the zoom that fits it, never closer in than the drawing's own size. Arriving from the whole drawing, a focus in view but too small to read (under three quarters of its framing size) is framed too, so a long strip fitted whole zooms in on its first step. The view eases there over 560ms and the step's moves fly once it settles; reduced motion jumps and flies nothing. A link or URL at a step opens framed. Whole drawing fits the whole again. Panning and zooming by hand still work at any time, and the next step moves the view only if its focus is out of view.
+- `check` errors on a `step_view` other than `fixed` or `follow`, and on `step_view` on an artifact with no steps. The board keeps the field when it rewrites a sidecar; History and the Diff review show a change to it. It is not in Edit details: agents set it.
+- `artifact:steps` shoots each step as a reader opening its link sees it: the whole drawing for a fixed diagram, each step framed for a following one. `00-whole` is always the whole drawing.
+- Full screen for an artifact: the last button of the view bar, bottom right of the artifact page (a Markdown document gets a one-button bar for it), hides the masthead and the panel and asks the browser to fill the screen (the window alone where it refuses). Esc, the browser's own exit or the button comes back, the panel's tab and any edit kept. Opening another artifact from a link stays in full screen. The artifact page has no new-card plus (nor its `n` key), so its view bar sits in the corner. DESIGN.md and the About page say so.
+- SCHEMA.md (a `step_view` row and a paragraph under Steps), DESIGN.md, the About page and the svg-diagram skill (when to choose follow; keep each step's highlight compact, since the view frames it) say so. The e2e fixture has a wide following strip.
+
+## 1.7.0 · 2026-11-10
+
+- One past status for artifacts: Superseded is folded into Retired. A retired artifact may name its replacement in `superseded_by` (Replaced by in Edit details, "Nothing replaces it" otherwise); with one, the panel shows "by" its title and sources citing it hand on to the replacement, as before. Show retired now hides every past artifact, replaced or not.
+- `check` errors on `status: Superseded` and says what to write instead, and warns on `superseded_by` on an artifact that is not Retired. SCHEMA.md, DESIGN.md, the About page and the add-artifact skill say Retired is the only past status.
+- A saved Artifacts status filter naming a status that no longer exists is dropped on load, so it cannot hide everything.
+
+## 1.6.0 · 2026-11-10
+
+- Stepped diagrams: an SVG drawing's sidecar can list `steps`, and the board plays them in order. Each step reveals more of the drawing (reveal is cumulative, nothing is hidden again), highlights what it is about while the rest dims, and shows a caption and a small balances table, the rows that changed since the step before marked. With no step chosen the board shows the whole drawing, nothing dimmed; thumbnails, the minimap, visual compare and the Diff review show that finished picture.
+- A slim step bar on the canvas, bottom left, level with the view bar: "3 of 8" with previous and next, the step's name, and Whole drawing; with no step chosen it offers Step through. It never covers the drawing: the step is read in the panel. The left and right arrow keys step while the drawing or the bar has focus. The fade between steps is skipped under reduced motion. What dims is washed half way to white and stays opaque, so nothing behind it shows through; on a dark panel it fades into the panel instead.
+- A Steps tab in the artifact panel, first when an artifact has steps: the steps under their groups, a click to go, a link to copy; the step shown opens in place to its caption and balances. The Artifacts tab counts an artifact's steps beside its highlights.
+- Moves: a step can list `moves`, each `from` and `to` anchors, for something that travels at that step. Stepping forward onto the step, each `to` element flies from the `from` element's place and size to its own (about 700ms each, a stagger apart), drawn above the rest of the drawing on the way, and lands exactly on the static drawing. Jumping to a step, stepping back, the whole drawing and reduced motion skip the flight; a Replay button in the step bar plays it again. The check errors on a move missing `from` or `to` or an anchor that matches nothing, and warns on a `from` matching several elements and on a `from` or `to` a later step reveals.
+- A step is a spot, like a region: `AR-nn#step-id` in an item's `artifacts` and in text links, `?region=step-id` in the board's address. Steps and regions share one set of ids.
+- Check rules: steps only on an SVG drawing; a step's id shaped like a region's, listed once, not a region's id, not shaped like a page or line spot; a name; an account on every balance row; every `show` and `highlight` anchor matching something in the drawing (errors); a highlight on something a later step reveals (a warning); links in captions checked as a description's are. SCHEMA.md has a Steps section.
+- History and the Diff review show a change to an artifact's steps as named steps added, removed, changed or moved, not raw data.
+- svgkit: `with d.group(id=..., cls=...)` wraps a part's primitives in one `<g>`, so a region or a step can name a whole card with its texts. Groups nest. Existing generators draw exactly as before.
+- `npm run artifact:steps -- AR-nn [--out <dir>] [--url <base>]` screenshots a stepped diagram in the running board, the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...), at a laptop size, to check every step by eye. It says so plainly when the board is not running.
+- The svg-diagram skill has a Stepped diagrams section (when one earns its place, draw the finished picture first, group each step's marks, write `steps`, check every step); the add-artifact skill covers steps beside regions.
+- The starter's loop diagram is the worked example: its cards are grouped and its sidecar steps through the loop in two groups, with running balances. `__pycache__` folders stay out of git and out of the exported kit.
+- The consistency review checks a stepped diagram's steps too (names, captions, running balances, their order), never edits an id or an anchor, and a redraw keeps the steps and their links.
+
 ## 1.5.1 · 2026-11-10
 
 - Diff review: each card's title row shows the record's ID, quiet beside the title; a click copies the ID.

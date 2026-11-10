@@ -114,6 +114,8 @@ const a: Artifact = {
   citedAs,
   file,
   regions: [],
+  steps: [],
+  stepView: null,
   description: '',
   source,
   extra: {},

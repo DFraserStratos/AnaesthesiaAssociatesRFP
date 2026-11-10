@@ -2,6 +2,7 @@ import { Camera, FileText, MessageCircleQuestion, MessagesSquare, Monitor, Noteb
 import { useEffect, useState, type ReactNode } from 'react'
 import { componentCodeIn } from '../../shared/config.ts'
 import { statusClasses, statusLabel, type StatusKind } from '../../shared/statuses.ts'
+import { stepOf } from '../../shared/steps.ts'
 import { TYPE_LABEL, parseArtifactRef, type Artifact, type ArtifactKind, type ArtifactStatus, type Item, type ItemType, type Question } from '../../shared/types.ts'
 import { spotName } from '../artifactIndex.ts'
 import { recordUrl } from '../nav.ts'
@@ -180,6 +181,6 @@ export function ArtifactRefName({ refText, at }: { refText: string; at?: Artifac
   const rec = useCatalogue((s) => s.artifacts[id])
   const data = at ?? rec?.data
   if (!data) return <span className="mono">{refText}</span>
-  const spot = region ? ((rec ? spotName({ ...rec, data }, region) : null) ?? data.regions.find((r) => r.id === region)?.name ?? region) : null
+  const spot = region ? ((rec ? spotName({ ...rec, data }, region) : null) ?? data.regions.find((r) => r.id === region)?.name ?? stepOf(data, region)?.name ?? region) : null
   return <ArtifactName artifact={data} spot={spot} />
 }

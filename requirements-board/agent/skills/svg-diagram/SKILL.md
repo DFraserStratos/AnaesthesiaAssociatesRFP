@@ -1,6 +1,6 @@
 ---
 name: svg-diagram
-description: Make an explainer diagram as a hand-built SVG, saved as a requirements artifact with highlighted regions, in the board's house style (first drawn for a pair of pricing explainer diagrams) - soft rounded panels, pastel kind colours, a charcoal hero panel, nested trees, stacked cards with table columns, numbered steps, bracketed italic notes and a summary bar. Use when the user asks for a new diagram, infographic, explainer image or SVG "in the same look", or to revise one of the existing diagrams.
+description: Make an explainer diagram as a hand-built SVG, saved as a requirements artifact with highlighted regions, in the board's house style (first drawn for a pair of pricing explainer diagrams) - soft rounded panels, pastel kind colours, a charcoal hero panel, nested trees, stacked cards with table columns, numbered steps, bracketed italic notes and a summary bar - and stepped diagrams, whose sidecar lists steps the board plays one at a time (each reveals and highlights more of the drawing, with a caption and running balances). Use when the user asks for a new diagram, infographic, explainer image or SVG "in the same look", for a stepped, step-through or animated diagram of a flow that unfolds, or to revise one of the existing diagrams.
 argument-hint: "<what the diagram should explain, who it is for, where to save it>"
 ---
 
@@ -12,8 +12,9 @@ regions, so requirements can link to the diagram or to a spot in it (the Require
 Artifacts tab shows them, the spot in a red box). The reference diagrams for the style are listed
 under "This repo"; `examples/the-requirements-loop.py` is the kit's own, a project-neutral example
 (the starter catalogue's loop diagram): six numbered step cards in a ring round a charcoal hero
-panel, chevrons between them, dashed side-input cards, a bracketed note and a summary bar. The
-artifact format is under Artifact file in `REQ/SCHEMA.md`.
+panel, chevrons between them, dashed side-input cards, a bracketed note and a summary bar; its
+sidecar's `steps` make it the kit's stepped example too. The artifact format is under Artifact file
+in `REQ/SCHEMA.md`.
 
 ## This repo
 
@@ -22,6 +23,8 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
 - `BOARD` = `requirements-board` (the board's folder); `REQ` = `requirements-board/requirements`.
   Paths below are relative to the repo root.
 - Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
+- The board's dev server: `http://localhost:5180` (`npm run dev:board` from the repo root, or
+  `npm --prefix requirements-board run dev`).
 - Agent shells here may default to a Node older than 22.18, too old for the board's `.ts` scripts:
   put a newer one first on `PATH` (e.g. from `~/.nvm/versions/node/`).
 - Reference diagrams: two artifacts of this project, their files in `REQ/artifacts/files/`:
@@ -31,6 +34,9 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
     chevrons plus a worked-examples table. Generator: `examples/how-a-procedure-is-priced.py`.
 
   Their sidecars (`AR-01.md`, `AR-02.md`) show what regions look like.
+- Stepped example: the kit's starter loop diagram, its sidecar
+  `requirements-board/starter/requirements/artifacts/AR-01.md` (the steps) and its file beside it in
+  `files/AR-01.svg`, generator `examples/the-requirements-loop.py`.
 
 ## Files in this skill
 
@@ -39,8 +45,12 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
   `chevron`, `down_arrow`, `pill`, `aside`, `bottom_bar`; `note` is the legacy yellow callout).
   Start new diagrams from this. `rect`, `panel`, `card`, `stacked_group`, `step`, `aside` and `note`
   take an optional `id=`: give every part a
-  requirement might point at one (`id="stage-3"`), so its region's anchor is `#stage-3`.
+  requirement might point at one (`id="stage-3"`), so its region's anchor is `#stage-3`. That `id`
+  lands on the part's rectangle alone; to name a part with its texts (and what a step reveals),
+  draw it inside `with d.group(id="stage-3"):` (or `cls=` for a class; groups nest).
 - `render.mjs`: SVG to PNG at the SVG's own size. `node BOARD/agent/skills/svg-diagram/render.mjs <in.svg> [out.png]`
+- The board's `artifact:steps` script: screenshots a stepped diagram in the running board, the
+  whole drawing and then each step (see Stepped diagrams).
 - `examples/`: the generators of the reference diagrams. `the-requirements-loop.py` imports
   `svgkit`; older ones may carry their own copies of the helpers. Read them for layout patterns,
   coordinates and copy, and keep them runnable (`python3 examples/<name>.py <out.svg>`).
@@ -81,7 +91,8 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
 6. **Mark its regions** in the sidecar, one per part a requirement might point at (each stage,
    panel, group, note): `around: ["#stage-3"]` where you gave the part an `id`, else
    `text=<its exact heading text>` or a `rect[x="..."][y="..."]` selector; the box goes round
-   every anchor's match together. Add a one-line description of the diagram.
+   every anchor's match together. Add a one-line description of the diagram. A stepped diagram
+   gets its `steps` here too (Stepped diagrams, below).
 7. **Link requirements** to it, unless the user has named the items. Hand the search to a
    **Sonnet subagent** (Agent tool, `model: "sonnet"`) once the sidecar is written. Give it the
    artifact ID, the sidecar path and its region IDs, and tell it to:
@@ -100,6 +111,118 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
    any obvious one it missed. Run the check ("This repo"; it fails when an anchor matches nothing,
    and with `ERR_UNKNOWN_FILE_EXTENSION ".ts"` when the Node on `PATH` is too old). Report briefly: the artifact, the links, and anything you
    corrected or left out.
+
+## Stepped diagrams
+
+A stepped diagram is an ordinary SVG artifact whose sidecar lists `steps` (Steps, under Artifact
+file in `REQ/SCHEMA.md`). The board plays them one at a time: each step reveals more of the
+drawing, highlights what the step is about, and shows a caption and a small balances table beside
+it. A requirement can link to a step as it can to a region (`AR-nn#step-id`).
+
+**When it earns its place.** A flow that unfolds, where the reader needs to see what changed at
+each stage: an order moving through its states, entries building up in a ledger, money moving
+between accounts until they net to zero. When the reader needs the whole structure at a glance (a
+model, a hierarchy, a set of choices side by side), or the stages don't build on each other, a
+static diagram is better. Numbered parts alone are no reason to step a picture.
+
+1. **Draw the finished picture first**, as an ordinary diagram that passes the spacing checklist
+   with everything visible. It is what the thumbnail, the minimap and comparisons show, and what
+   the board shows when no step is chosen, so it has to read on its own.
+2. **Reveal is cumulative, and nothing is hidden again**: a step shows everything the steps up to
+   it reveal. So lay each step's marks out in space (ledger entries accumulating down an account,
+   cards in a row, a list that grows), never one mark replacing another in the same place. A value
+   that changes from step to step belongs in `balances`, not drawn twice on top of itself.
+3. **Wrap each step's marks in a group with an id**, so one anchor reveals the whole of them:
+   ```python
+   with d.group(id="s2-shipment"):
+       d.card(x, y, w, h, title="Shipment", number=2)
+       d.lines(x + 18, y + 76, ["Two boxes leave the warehouse."], fill=MUTED)
+   ```
+   Use `cls=` when one step reveals marks in several places (`.s2`, anchored as `.s2`). Anything no
+   step names stays visible throughout: the frame, the headings, the standing accounts.
+4. **Write `steps` in the sidecar**, after `regions`, in block style, one anchor per line (the board
+   rewrites a flow-style `[...]` list on its next save). Quote an anchor that starts with `#`, and
+   any amount YAML would read as a number (`"0"`).
+   ```yaml
+   steps:
+     - id: order-placed
+       name: Order placed
+       group: One order
+       caption: The customer orders two boxes. Nothing has left the warehouse yet.
+       show:
+         - "#s1-order"
+       highlight:
+         - "#s1-order"
+       balances:
+         - account: Ordered
+           amount: "2"
+         - account: Shipped
+           amount: "0"
+     - id: boxes-shipped
+       name: Boxes shipped
+       group: One order
+       caption: The warehouse ships both boxes, and the order is complete.
+       show:
+         - "#s2-shipment"
+       highlight:
+         - "#s2-shipment"
+         - "#warehouse"
+       balances:
+         - account: Ordered
+           amount: "2"
+         - account: Shipped
+           amount: "2"
+   ```
+   - `id`: lower-case words joined by hyphens, named for what happens (`boxes-shipped`, not
+     `step-2`), so a step put in later breaks no link. Never a region's id: steps and regions share
+     one set of spots.
+   - `name`: a few words, shown in the step list. `group`: optional; consecutive steps with the same
+     label sit under one heading (one worked example each).
+   - `caption`: one or two plain sentences, what happened at this step and what it means. Links
+     and record IDs work.
+   - `show`: the groups this step reveals.
+   - `highlight`: what the step is about, usually what it just revealed plus any standing part it
+     changed (the account the money went to). The rest dims. Leave it out where nothing should dim,
+     and never highlight what a later step reveals (the check warns: it is still hidden).
+   - `moves`: optional, what travels at this step (below).
+   - `balances`: running totals that change, as plain-text rows. The board draws them beside the
+     caption and marks the rows that changed, so they need not be in the picture. Keep the same rows
+     in the same order on every step.
+5. **Moves, for what genuinely travels.** When a step carries something from one place to another
+   (an amount leaving one account for another, a document sent from one system to the next, an
+   item shipped from a store to a customer), list it under the step's `moves`, and the board flies
+   it there as the reader steps forward onto the step:
+   ```yaml
+       moves:
+         - from: "#store-box"      # where it sets off: visible at this step
+           to: "#customer-box"     # what travels and where it lands: revealed by this step
+   ```
+   Draw both ends as real marks: the origin is already in the picture (the entry it leaves, the
+   account it comes from), and the destination is a mark of its own, revealed by this step. Give
+   the travelling mark its own id (a group holding the card or entry that arrives), not a whole
+   panel, so only it flies. `from` uses its first match, and every match of `to` flies from it;
+   several moves on one step fly in order, a moment apart. Use moves sparingly: one or two per step,
+   only for what really changes place. Something that merely appears, or a total that changes, is a
+   reveal or a balance, not a move. Jumping to a step, stepping back and reduced motion show the
+   step without the flight, so the finished picture must explain itself without it.
+6. **Choose the view: `fixed` or `follow`.** A diagram that fits on one screen stays `fixed` (the
+   default: leave `step_view` out), so the view never moves as it steps. A wide flow that does not
+   fit one screen (a long left-to-right strip) sets `step_view: follow` in the sidecar, beside
+   `steps`: the board then frames each step's focus as the reader arrives, when it is not already in
+   view. The focus is what the step highlights (else what it reveals) plus both ends of its moves,
+   so keep each step's highlight compact, and its moves short: the view frames all of it, and a
+   focus spread across the strip can only be framed small.
+7. **Regions still work**, and should mark the standing parts (each account, panel or ledger), so a
+   requirement can point at them whatever step is showing.
+8. **Check every step by eye.** With the board running ("This repo"),
+   `npm --prefix BOARD run artifact:steps -- AR-nn [--out <dir>]` writes `00-whole.png`, then
+   `01-<step-id>.png`, `02-<step-id>.png` and so on, at a laptop size (its out folder is printed at
+   the end). Read every one: the right things visible and highlighted at each step, nothing
+   appearing before its time, no caption that disagrees with the picture. Step forward through the
+   moves in the board too: each mark should set off from its origin and land without a jump. Then
+   run the check: it errors on a `show`, `highlight` or move anchor that matches nothing, a move
+   missing `from` or `to`, and a step id that clashes, and warns on a highlight not yet revealed, a
+   move's `from` or `to` not yet revealed, and a `from` that matches several marks.
 
 ## Visual language
 

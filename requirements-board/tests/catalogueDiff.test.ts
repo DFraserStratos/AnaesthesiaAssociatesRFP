@@ -32,6 +32,8 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   citedAs: [],
   file: `artifacts/files/${over.id}.svg`,
   regions: [],
+  steps: [],
+  stepView: null,
   description: '',
   source: '',
   extra: {},

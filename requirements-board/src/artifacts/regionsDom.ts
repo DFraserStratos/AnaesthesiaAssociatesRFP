@@ -9,8 +9,18 @@ import type { Rect, Region } from '../../shared/types.ts'
 
 const cssEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** The elements one anchor matches in a drawing. */
+/**
+ * The copy of a travelling element a stepped diagram flies while it moves (`stepMoves.ts`). It is
+ * never an anchor's match: anchors name the drawing's own elements.
+ */
+export const FLIGHT_CLASS = 'rb-step-flight'
+
+/** The elements one anchor matches in a drawing (never a flight's copy). */
 export function anchorElements(svg: SVGSVGElement, anchor: string): Element[] {
+  return matchAnchor(svg, anchor).filter((el) => !el.closest(`.${FLIGHT_CLASS}`))
+}
+
+function matchAnchor(svg: SVGSVGElement, anchor: string): Element[] {
   const { kind, value } = parseAnchor(anchor)
   if (kind === 'text') {
     const want = normText(value)
@@ -31,9 +41,12 @@ export function anchorElements(svg: SVGSVGElement, anchor: string): Element[] {
   return []
 }
 
+/** Something drawn, with a box and a place on screen (by what it can do, so a test's stand-in passes too). */
+export const isGraphic = (el: Element): el is SVGGraphicsElement => typeof (el as SVGGraphicsElement).getBBox === 'function' && typeof (el as SVGGraphicsElement).getScreenCTM === 'function'
+
 /** An element's box in the drawing's root units, through every transform between them. */
-function boxInRoot(svg: SVGSVGElement, el: Element): Rect | null {
-  if (!(el instanceof SVGGraphicsElement)) return null
+export function boxInRoot(svg: SVGSVGElement, el: Element): Rect | null {
+  if (!isGraphic(el)) return null
   const rootCtm = svg.getScreenCTM()
   const ctm = el.getScreenCTM()
   if (!rootCtm || !ctm) return null
@@ -53,6 +66,11 @@ function boxInRoot(svg: SVGSVGElement, el: Element): Rect | null {
   const xs = pts.map((p) => p.x)
   const ys = pts.map((p) => p.y)
   return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) }
+}
+
+/** The box round everything some anchors match in a drawing (unpadded), or null when they match nothing drawn. */
+export function anchorsRect(svg: SVGSVGElement, anchors: string[]): Rect | null {
+  return unionRects(anchors.flatMap((a) => anchorElements(svg, a)).filter((el) => el !== svg).map((el) => boxInRoot(svg, el)).filter((r): r is Rect => !!r && (r.w > 0 || r.h > 0)))
 }
 
 /** A region's box in a drawing (padded), or null when nothing it names is there. */

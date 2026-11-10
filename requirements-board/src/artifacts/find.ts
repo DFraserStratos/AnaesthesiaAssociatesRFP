@@ -34,8 +34,8 @@ export const countIn = (text: string, query: string) => occurrences(normText(tex
 /** A PDF page's text as its text layer reads: each item's text, a line end as a space. */
 export const pdfPageText = (items: { str?: string; hasEOL?: boolean }[]) => items.map((i) => (i.str ?? '') + (i.hasEOL ? ' ' : '')).join('')
 
-/** Every match in the text under `root`, as DOM ranges, in reading order. */
-export function findRanges(root: Node, query: string, joint: Joint): Range[] {
+/** Every match in the text under `root`, as DOM ranges, in reading order. `skip` leaves out text not shown (a step's hidden parts). */
+export function findRanges(root: Node, query: string, joint: Joint, skip?: (n: Text) => boolean): Range[] {
   const needle = normQuery(query)
   if (!needle) return []
   let text = ''
@@ -43,7 +43,7 @@ export function findRanges(root: Node, query: string, joint: Joint): Range[] {
   let prev: Text | null = null
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
-    if (n.parentElement?.closest('style, script, title')) continue
+    if (n.parentElement?.closest('style, script, title') || skip?.(n)) continue
     if (prev && text && !text.endsWith(' ') && joins(prev, n, joint)) {
       text += ' '
       at.push([n, 0])

@@ -8,14 +8,14 @@
     "note": "32a finishes the Schedule track (32b follows it). 38a needs only 31 and runs alongside it."
   },
   "guidance": {
-    "as_of": "2026-11-04",
+    "as_of": "2026-11-10",
     "headline": "Start 32a and 38a now. 32b follows 32a.",
-    "headline_sub": "Both are untouched by the 4 November answers and have no open questions of their own. 17a, 18 and 26 have now been re-planned on those answers (the 2026-11-04 update).",
+    "headline_sub": "All three are unchanged by the 5 November flat Contract model (the 2026-11-10 update moved only their drift baselines; 32b's mentions of office review now point to the new 21a). The new 32c (out-of-hours Lists) follows 32b and 38a.",
     "parallel": "They share little: 32a works on moving a Booking, 38a on the main view and search. Both may bump `PERSIST_VERSION` in `src/store/appStore.ts`, so if you run them in separate sessions, expect one small merge there.",
     "safe": {
-      "32a": "None of the 4 November answers touch it, and its question (OQ-113) is answered and built into the plan. It finishes the Schedule track.",
-      "38a": "Depends only on 31, which is done. It has no open questions, and nothing answered on 4 November changes it.",
-      "32b": "Its one question (OQ-102, the names for preference lists and tiers) is naming only, so a later answer is a text change."
+      "32a": "None of the 4 or 5 November answers change it, and its question (OQ-113) is answered and built into the plan. A moved Booking keeping its Contracts (US-04.3.11, new) is 21a's, not 32a's. 32b, then 32c, follow it on the Schedule track.",
+      "38a": "Depends only on 31, which is done. It has no open questions, and nothing answered on 4 or 5 November changes it.",
+      "32b": "Its one question (OQ-102, the names for preference lists and tiers) is naming only, so a later answer is a text change. The 5 November update only re-pointed its office-review mentions to 21a."
     },
     "wait": {}
   }

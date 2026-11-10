@@ -9,16 +9,18 @@
  * use; asked for, the view eases onto it and the box closes in.
  */
 import { Crosshair, Map as MapIcon, Minus, Plus, Scan } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { HIGHLIGHT } from '../../shared/highlight.ts'
-import type { Rect, Region } from '../../shared/types.ts'
+import type { Rect, Region, StepMove } from '../../shared/types.ts'
 import { GESTURE_GAP_MS, LINE_PX, PINCH_RATE, classifyWheel, type WheelKind } from '../board/trackpad.ts'
 import { useHoverPin } from '../board/useHoverPin.ts'
 import { unionRects } from '../../shared/artifacts.ts'
-import { REGION_MAX_ZOOM, centredAt, fitRect, lerpCamera, limit, minZoom, viewOf, viewBoxOf, zoomAbout, type Camera, type Pane } from './camera.ts'
+import { REGION_MAX_ZOOM, centredAt, fitRect, frameStep, lerpCamera, limit, minZoom, viewOf, viewBoxOf, zoomAbout, type Camera, type Pane } from './camera.ts'
 import type { CanvasContent } from './content.ts'
 import { findRanges, lineRects } from './find.ts'
-import { canvasRegionRect } from './regionsDom.ts'
+import { anchorsRect, canvasRegionRect } from './regionsDom.ts'
+import { playFlights, type Flight } from './stepMoves.ts'
+import { STEP_CSS, STEP_FADE, applyStepState, insideOff, type StepView } from './stepsDom.ts'
 import { linkFromEvent, linkRecordIds, type ResolveLink } from './svgLinks.ts'
 
 /** What to find in an artifact, which match is the current one, and where to report how many there are. */
@@ -46,10 +48,12 @@ a.record-id:hover, a.record-id:focus-visible { fill: var(--teal); text-decoratio
 a.record-id:focus { outline: none; }
 a.record-id:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 a.record-id.retired { text-decoration-style: dotted; }
-`
+${STEP_CSS}`
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const EASE_MS = 420
+/** Framing a followed step travels further than a nudge, so it takes a little longer; its moves fly once it settles. */
+const STEP_EASE_MS = 560
 const easeOut = (t: number) => 1 - (1 - t) ** 3
 
 export interface CanvasViewerProps {
@@ -64,6 +68,8 @@ export interface CanvasViewerProps {
   dragPans?: boolean
   /** View controls and minimap (off for a side-by-side comparison). */
   controls?: boolean
+  /** More buttons at the end of the view bar (the artifact page's full screen). */
+  viewExtra?: ReactNode
   label: string
   /** Told whether the region's anchors were found. */
   onRegionFound?: (found: boolean) => void
@@ -72,12 +78,27 @@ export interface CanvasViewerProps {
   resolveLink?: ResolveLink
   /** A linked ID was clicked (or Enter pressed on it). */
   onLink?: (id: string) => void
+  /** A stepped diagram's state (`stepState` from `shared/steps.ts`): what is hidden and what is lit. Null or absent is the whole drawing. */
+  stepState?: StepView | null
+  /**
+   * A stepped diagram's moves to fly, once per `key`: set when the reader steps forward onto a step
+   * with moves (or asks to replay it). `before`: the state to start from (a replay), else the
+   * drawing is already at the step. Present at the first paint, it never plays.
+   */
+  flight?: { key: string; moves: StepMove[]; before: StepView | null } | null
+  /**
+   * A stepped diagram whose view follows the steps (`step_view: follow`): the step's focus anchors
+   * (`stepFocusAnchors`) and a key naming the step, '' for the whole drawing. On arriving at a step
+   * the view frames its focus unless that is already in view (`frameStep`); back to the whole
+   * drawing, it fits the whole. Null or absent: stepping leaves the view where it is.
+   */
+  follow?: { key: string; anchors: string[] } | null
 }
 
 /** A press that moves further than this is a text selection, not a click on a link. */
 const CLICK_SLOP_PX = 4
 
-export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, label, onRegionFound, find, resolveLink, onLink }: CanvasViewerProps) {
+export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, viewExtra, label, onRegionFound, find, resolveLink, onLink, stepState = null, flight = null, follow = null }: CanvasViewerProps) {
   const frameRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -86,6 +107,8 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
   const [cam, setCam] = useState<Camera | null>(null)
   const camRef = useRef<Camera | null>(null)
   const anim = useRef<number>(0)
+  // When the view's current ease ends: a followed step's moves wait for it, so the reader sees them fly.
+  const settleAt = useRef(0)
   // Measured boxes, tagged with the region and drawing they were measured for, so a stale one is never used.
   const [measured, setMeasured] = useState<{ tag: string; box: Rect | null; preview: Rect | null } | null>(null)
   const [mounted, setMounted] = useState(0)
@@ -97,6 +120,21 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
   const hoverRef = useRef(false)
   const onLinkRef = useRef(onLink)
   onLinkRef.current = onLink
+  // The step's state, as a key that only changes when the state does (a fresh object every render would not do).
+  const stepKey = stepState && (stepState.hidden.length || stepState.highlight.length) ? JSON.stringify(stepState) : ''
+  const stepRef = useRef(stepState)
+  stepRef.current = stepState
+  // Moves in flight, and the flight asked for last (the one present at the first paint never plays).
+  const flightRef = useRef<Flight | null>(null)
+  const flownKey = useRef(flight?.key ?? null)
+  const flightProp = useRef(flight)
+  flightProp.current = flight
+  // Counts flights landed, so find and the region box measure again once nothing is in the air.
+  const [landed, setLanded] = useState(0)
+  const ground = () => {
+    flightRef.current?.cancel()
+    flightRef.current = null
+  }
 
   const apply = useCallback((c: Camera) => {
     camRef.current = c
@@ -106,7 +144,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
   const lowest = () => (bounds && paneRef.current ? minZoom(bounds, paneRef.current) : 0.1)
 
   const ease = useCallback(
-    (to: Camera, then?: () => void) => {
+    (to: Camera, then?: () => void, ms = EASE_MS) => {
       cancelAnimationFrame(anim.current)
       const from = camRef.current
       const p = paneRef.current
@@ -116,8 +154,9 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
         return
       }
       const t0 = performance.now()
+      settleAt.current = t0 + ms
       const step = (now: number) => {
-        const t = Math.min(1, (now - t0) / EASE_MS)
+        const t = Math.min(1, (now - t0) / ms)
         apply(lerpCamera(from, to, easeOut(t), p))
         if (t < 1) anim.current = requestAnimationFrame(step)
         else then?.()
@@ -171,6 +210,8 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     svg.addEventListener('pointerover', onOver)
     svg.addEventListener('pointerleave', onLeave)
     svg.addEventListener('focusin', onFocus)
+    // The step's state goes on before the copy is in, so a refresh never flashes the whole drawing.
+    applyStepState(svg, stepRef.current)
     root.replaceChildren(style, svg)
     svgRef.current = svg
     setMounted((n) => n + 1)
@@ -181,6 +222,8 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       svg.removeEventListener('pointerleave', onLeave)
       svg.removeEventListener('focusin', onFocus)
       host.title = ''
+      // A refresh mid-flight: the copy goes with the old drawing, and the new one is static.
+      ground()
       root.replaceChildren()
       svgRef.current = null
     }
@@ -210,6 +253,22 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     if (svgRef.current && cam && pane) svgRef.current.setAttribute('viewBox', viewBoxOf(cam, pane))
   }, [cam, pane, mounted])
 
+  // A stepped diagram's state, on every copy mounted and at every step.
+  useLayoutEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    ground()
+    applyStepState(svg, stepRef.current)
+  }, [mounted, stepKey])
+  useEffect(() => ground, [])
+  // The fade between steps starts only after the first paint, so a drawing opened at a step never fades in from the whole picture.
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => svg.classList.add(STEP_FADE))))
+    return () => cancelAnimationFrame(id)
+  }, [mounted])
+
   // The region's box, in the drawing's own units: measured once the drawing is in, and again once fonts load.
   useLayoutEffect(() => {
     const svg = svgRef.current
@@ -226,18 +285,24 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     return () => {
       live = false
     }
-  }, [region, preview, mounted])
+  }, [region, preview, mounted, stepKey, landed])
   const fresh = measured?.tag === `${region?.id ?? ''}|${mounted}` ? measured : null
   const box = fresh?.box ?? null
   const previewBox = fresh?.preview ?? null
 
-  // Where the view starts, and where it goes when a region is asked for: fitted to the box, or the whole drawing.
+  // Where the view starts, and where it goes when a region is asked for: fitted to the box, or the
+  // whole drawing. A followed step frames its focus. A layout effect, so a drawing opened at a step
+  // is framed before it is first seen, and so it runs before the flight below, which waits for it.
   const fitWhole = useCallback(() => (bounds && paneRef.current ? bounded(fitRect(bounds, paneRef.current, { minZoom: minZoom(bounds, paneRef.current) })) : null), [bounds, bounded])
   const fitBox = useCallback((r: Rect) => (paneRef.current ? bounded(fitRect(r, paneRef.current, { margin: 0.14, maxZoom: REGION_MAX_ZOOM })) : null), [bounded])
   const placed = useRef<string | null>(null)
-  useEffect(() => {
+  // '' when the view does not follow; 'f' the whole drawing and 'f<step>' a step when it does.
+  const followKey = follow ? `f${follow.key}` : ''
+  const followRef = useRef(follow)
+  followRef.current = follow
+  useLayoutEffect(() => {
     if (!pane || !mounted) return
-    const key = `${focusKey ?? ''}|${region?.id ?? ''}|${content.imageUrl}`
+    const key = `${focusKey ?? ''}|${region?.id ?? ''}|${content.imageUrl}|${followKey}`
     if (placed.current === key) return
     if (region && !box) {
       // The anchors are not measured yet (or were not found): show the whole drawing meanwhile.
@@ -247,16 +312,51 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       }
       return
     }
-    const first = !camRef.current || placed.current?.split('|')[2] !== content.imageUrl
+    const prev = placed.current?.split('|')
+    const first = !camRef.current || prev?.[2] !== content.imageUrl
     placed.current = key
-    const target = box ? fitBox(box) : fitWhole()
+    const whole = fitWhole()
+    let target = box ? fitBox(box) : whole
+    let ms = EASE_MS
+    const f = followRef.current
+    if (!box && f?.key) {
+      // A followed step: framed when its focus is off screen, or on arriving from the whole drawing too small to read.
+      const svg = svgRef.current
+      const focus = svg && f.anchors.length ? anchorsRect(svg, f.anchors) : null
+      const from = first ? whole : camRef.current
+      const framed = focus && from ? frameStep(focus, from, pane, { enter: first || !(prev?.[3] ?? '').slice(1), minZoom: lowest() }) : null
+      target = framed ? bounded(framed) : first ? whole : null
+      ms = STEP_EASE_MS
+    }
     if (!target) return
     if (first) {
       apply(target)
       setArrival((n) => n + 1)
-    } else ease(target, () => setArrival((n) => n + 1))
-  }, [pane, mounted, box, region, focusKey, content.imageUrl])
+    } else ease(target, () => setArrival((n) => n + 1), ms)
+  }, [pane, mounted, box, region, focusKey, content.imageUrl, followKey])
 
+  // A flight asked for: put the drawing at the step (from the step before, for a replay) and fly
+  // its moves. A new step, a jump or a refresh cancels it first; reduced motion never flies.
+  const flightKey = flight?.key ?? null
+  useLayoutEffect(() => {
+    if (flightKey === flownKey.current) return
+    flownKey.current = flightKey
+    ground()
+    const svg = svgRef.current
+    const f = flightProp.current
+    if (!svg || !f || !flightKey || reducedMotion()) return
+    if (f.before) {
+      applyStepState(svg, f.before)
+      svg.getBoundingClientRect() // the earlier state is drawn, so the step's reveal fades in again
+      applyStepState(svg, stepRef.current)
+    }
+    // A followed step's view is still easing onto it: the moves set off once it settles.
+    const wait = Math.max(0, settleAt.current - performance.now())
+    flightRef.current = playFlights(svg, f.moves, () => {
+      flightRef.current = null
+      setLanded((n) => n + 1)
+    }, wait)
+  }, [flightKey])
   // Wheel and pinch: a native listener, because React's is passive and could not stop the page from zooming.
   useEffect(() => {
     const el = frameRef.current!
@@ -387,12 +487,14 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       const b = new DOMPoint(r.right, r.bottom).matrixTransform(inv)
       return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) }
     }
-    const found = findRanges(svg, query, 'svg')
+    // Text a step has not revealed yet is not there to find.
+    const found = findRanges(svg, query, 'svg', insideOff)
       .map((r) => lineRects(r).map(toContent))
       .filter((rs) => rs.length)
-    setHits(found)
+    // Unchanged by a step: keep the same hits, so the view is not brought back to the current match.
+    setHits((was) => (JSON.stringify(was) === JSON.stringify(found) ? was : found))
     find?.onCount(found.length)
-  }, [query, mounted])
+  }, [query, mounted, stepKey, landed])
 
   // The current match: brought to the middle of the view, close enough in to read.
   const active = find?.active ?? 0
@@ -469,7 +571,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
           const next = bounded({ zoom: c.zoom, x: pane.w / 2 - p.x * c.zoom, y: pane.h / 2 - p.y * c.zoom })
           if (animate) ease(next)
           else apply(next)
-        }} onZoom={zoomBy} onFit={fit} onBox={box ? toBox : null} />
+        }} onZoom={zoomBy} onFit={fit} onBox={box ? toBox : null} extra={viewExtra} />
       )}
     </div>
   )
@@ -501,10 +603,11 @@ interface ControlsProps {
   onFit: () => void
   /** Back to the region's box, when there is one. */
   onBox: (() => void) | null
+  extra?: ReactNode
 }
 
-/** Bottom right, beside the new-card plus, as on the board: the minimap button, zoom out and in, fit, and back to the highlight. */
-function CanvasControls({ bounds, imageUrl, view, box, onCentre, onZoom, onFit, onBox }: ControlsProps) {
+/** Bottom right, as on the board: the minimap button, zoom out and in, fit, back to the highlight, and any extra (full screen). */
+function CanvasControls({ bounds, imageUrl, view, box, onCentre, onZoom, onFit, onBox, extra }: ControlsProps) {
   const { open, pinned, togglePin, enterButton, enterMap, leaveZone } = useHoverPin()
   const svgRef = useRef<SVGSVGElement>(null)
   const frame = useMemo(() => {
@@ -571,6 +674,12 @@ function CanvasControls({ bounds, imageUrl, view, box, onCentre, onZoom, onFit, 
             <button className="btn icon ghost sm region-go" onClick={onBox} aria-label="Back to the highlight" title="Back to the highlight">
               <Crosshair size={14} />
             </button>
+          </>
+        )}
+        {extra && (
+          <>
+            <span className="view-bar-rule" aria-hidden />
+            {extra}
           </>
         )}
       </div>

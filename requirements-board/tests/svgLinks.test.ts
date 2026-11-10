@@ -73,7 +73,7 @@ describe('the catalogue resolver', () => {
   const art = (id: string, title: string, status = 'Current') => ({ data: { id, title, status } }) as unknown as ArtifactRec
   const r = catalogueResolver(
     { byId: new Map([[item.id, item], [gone.id, gone]]), questions: [question], config: DEFAULT_CONFIG },
-    { 'AR-01': art('AR-01', 'Price rules'), 'AR-24': art('AR-24', 'Billing flow'), 'AR-30': art('AR-30', 'Old design', 'Retired'), 'AR-31': art('AR-31', 'Old flow', 'Superseded') },
+    { 'AR-01': art('AR-01', 'Price rules'), 'AR-24': art('AR-24', 'Billing flow'), 'AR-30': art('AR-30', 'Old design', 'Retired'), 'AR-31': art('AR-31', 'Old flow', 'Retired') },
     'AR-24',
   )
 
@@ -84,7 +84,7 @@ describe('the catalogue resolver', () => {
     expect(r('FT-06.2')).toMatchObject({ retired: true })
   })
 
-  it('mutes links to superseded and retired artifacts, which still open', () => {
+  it('mutes links to retired artifacts, replaced or not, which still open', () => {
     expect(r('AR-01')).toMatchObject({ retired: false })
     expect(r('AR-30')).toMatchObject({ href: '#/artifacts/AR-30', retired: true, tip: 'Old design · Retired' })
     expect(r('AR-31')).toMatchObject({ retired: true })

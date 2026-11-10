@@ -68,6 +68,8 @@ export function App() {
   }, [])
 
   const itemId = open.params.get('item')
+  // An artifact's page has no new-card plus: its corner is the artifact's view bar.
+  const onArtifact = useLocation().pathname.startsWith('/artifacts/')
   const questionId = open.params.get('question')
 
   return (
@@ -100,7 +102,7 @@ export function App() {
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
         )}
-        {status === 'ready' && <NewCardButton />}
+        {status === 'ready' && !onArtifact && <NewCardButton />}
       </main>
       {/* On the board the item docks beside the map (BoardView); elsewhere it is a modal. */}
       {status === 'ready' && itemId && !onBoard && <ItemModal key={itemId} id={itemId} />}

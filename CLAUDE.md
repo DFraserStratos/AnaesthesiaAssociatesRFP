@@ -21,7 +21,7 @@ integrations, a demo control panel).
 the Vitest + Playwright suites are green.
 
 **The requirements catch-up is next.** `docs/prototype-build/catch-up/` holds a verified gap analysis
-between the prototype and the catalogue (at commit `a68f09b`) and a build plan of phases 14 to 44 (47 phases, some lettered such as 15a) to
+between the prototype and the catalogue (at commit `efe123c`) and a build plan of phases 14 to 44 (50 phases, some lettered such as 15a) to
 close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). A catch-up phase
 session follows its phase doc and prompt; other work is still fixes, polish and demo preparation.
 When requirements change, the `/update-requirements` skill records the evidence and updates the
@@ -95,7 +95,8 @@ Not the place to edit requirements:
   as pills): read it before any visual change to the board.
   **Artifacts** (its Artifacts tab) are the diagrams, transcripts, notes and documents behind the
   requirements: a sidecar `REQ/artifacts/AR-nn.md` each (its file in `REQ/artifacts/files/`), with named highlight regions that
-  items link to (`artifacts: [AR-01#price-rules]`, or a `[words](AR-01#price-rules)` text link). The
+  items link to (`artifacts: [AR-01#price-rules]`, or a `[words](AR-01#price-rules)` text link); an SVG
+  diagram's sidecar can also list steps the board plays through (stepped diagrams), linkable like regions. The
   board edits only their details (name, kind, status, date, author, area, sources, description) and
   never makes or edits the artifact itself; agents add them, and write their files and regions, with the `add-artifact` skill
   (`npm --prefix requirements-board run artifact:new`), and the `svg-diagram` skill saves new

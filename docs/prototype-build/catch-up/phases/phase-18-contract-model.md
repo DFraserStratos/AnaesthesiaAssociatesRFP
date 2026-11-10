@@ -1,1173 +1,644 @@
-# Phase 18 · Contract holders, settings and dated Contracts
+# Phase 18 · Parties and flat Contracts
 
-**Requirements covered** (status and grade at catalogue `7cd7802`):
-[FT-04.1](../../../../requirements-board/requirements/stories/FT-04.1.md) Contract catalogue (Agreed; Contradicts: it hard-deletes, edits in place and has no holder records, filters or header-and-lines screen; its lines arrive in Phase 19a, its staged submit in 25),
-[US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) Typical Contract arrangements (Agreed; **Contradicts**: Type 1/2/3 and a protected default Type 1 per hospital and insurer, where the catalogue has no kinds, only settings),
-[US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) Create, edit, retire Contracts (Agreed; Contradicts: edits in place, hard delete, no review date, no filters; the office creates the anaesthetists' own Contracts too, OQ-91),
-[US-04.1.4](../../../../requirements-board/requirements/stories/US-04.1.4.md) AA identifier for every Contract (Agreed; Missing: a unique short AA code and a composite search),
-[US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md) Contract holders (Verify; **Contradicts**: no holder record, no "is billed", no billable-party link, no delivery setting, no practitioner link; insurers are holders, not a master),
-[US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) Contract holder, who is billed, and where it applies (Agreed; **Contradicts**: who is billed follows the billing route; this phase stores the holder, its "is billed" setting and its context, and Phases 20 and 21 make them decide the list and the invoice);
-[DM-48](../analysis/domain-model-delta.md#dm-48) (the contract holder becomes a master record),
-[DM-07](../analysis/domain-model-delta.md#dm-07) (the Contract becomes a dated, versioned record with an AA code and settings; Type 1/2/3 and scope go),
-[DM-49](../analysis/domain-model-delta.md#dm-49) (one stored No contract (RVG), held by AA, replaces the protected default Type 1s);
-[RV-06](../analysis/reverse-check.md#rv-06-protected-default-type-1-contract-per-hospital-and-direct-claim-insurer-auto-created-and-used-as-a-fallback) (the protected default Type 1, auto-created and used as a fallback; was RV-33),
-[RV-32](../analysis/reverse-check.md#rv-32-contracts-are-edited-in-place-deletable-and-the-billing-monitor-un-end-dates-one-to-retry) (Contracts edited in place and deletable, the monitor un-end-dating one, the S4 failure that ends a Contract in the past; **joins this phase**),
-[RV-37](../analysis/reverse-check.md#rv-37-review-flag-acc-should-not-bill-the-patient-directly) (the ACC review flag; was RV-20),
-[RV-39](../analysis/reverse-check.md#rv-39-insurer-master-with-an-accepts-direct-claims-flag-an-insurer-billing-route-gated-on-it-and-delivery-hard-wired-by-insurer) (the Insurer master, its accepts-direct-claims flag and the Insurers tab's "Turn on" go; insurers become contract holders; **joins this phase**; [FT-11.4](../../../../requirements-board/requirements/stories/FT-11.4.md), [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md) and [US-11.4.2](../../../../requirements-board/requirements/stories/US-11.4.2.md) are Retired).
+**Requirements covered** (status and grade at catalogue `efe123c`):
+[US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) Typical Contract arrangements (Verify; **Contradicts**: Type 1/2/3, holder types, scope and a protected default Type 1 per hospital and insurer, where the catalogue has one flat Contract shape),
+[US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) Create, edit and disable Contracts (Verify; **Contradicts**: effective dates, hard delete, the type editable after creation, no Active or holder filter),
+[US-04.1.4](../../../../requirements-board/requirements/stories/US-04.1.4.md) AA identifier for every Contract (Verify; Missing: a unique AA code and a holder reference code),
+[US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md) Parties (Verify; **Contradicts**: no Party record, no billing details or delivery, an Insurer master with the dropped direct-claims flag),
+[US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) Holder, who is billed, and where a Contract is offered (Verify; **Contradicts**: who is billed follows the billing route; no bills-holder-or-payer setting, no surgeon links);
+[DM-48](../analysis/domain-model-delta.md#dm-48) (the Party master),
+[DM-07](../analysis/domain-model-delta.md#dm-07) (the flat Contract);
+[RV-06](../analysis/reverse-check.md#rv-06-protected-default-type-1-contract-per-hospital-and-direct-claim-insurer-auto-created-and-used-as-a-fallback) (the protected default Type 1s),
+[RV-32](../analysis/reverse-check.md#rv-32-contracts-carry-effective-dates-and-can-be-deleted-an-expired-contract-falls-back-or-fails-billing-the-s4-beat-depends-on-it) (effective dates, delete, the S4 beat that ends a Contract),
+[RV-37](../analysis/reverse-check.md#rv-37-review-flag-acc-should-not-bill-the-patient-directly) (the ACC review flag),
+[RV-39](../analysis/reverse-check.md#rv-39-insurer-master-with-an-accepts-direct-claims-flag-an-insurer-billing-route-gated-on-it-and-delivery-hard-wired-by-insurer) (the Insurer master and its flag; FT-11.4, US-11.4.1 and US-11.4.2 Retired).
 
-**Left this phase:** on 2026-10-20 [US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md)
-(staged changes, the one-future-version check, the relink by line key, the prepaid exception) moves to
-Phase 25. This phase still builds its simple core under DM-07: dated version records, an office "New
-version" from a non-past date, the version in force on the procedure date. On 2026-10-08
-[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) (Contract lines) and
-[DM-09](../analysis/domain-model-delta.md#dm-09) moved to 19a, with OQ-89; the category table, the
-multi-dimension scope, the payment setting, required booking inputs and per-procedure default RVG
-Contracts are gone from the catalogue.
+**Left this phase on 2026-11-10:** [DM-49](../analysis/domain-model-delta.md#dm-49) goes to **18a**
+(the open-price fallbacks complete it; this phase still stores No contract · RVG under RV-06), and
+FT-04.1 is now a grouping (its substance is in the stories above). With the 5 November flat model
+(Donald's D1 to D11, built as decided, not yet confirmed by AA or Greg) the dated version records,
+"New version", Retire, the version module and OQ-131's provisional default are **not built**:
+US-04.2.10, US-04.1.6 and US-04.2.4 are Retired.
 
-**Carried across without regression** (they Match today only through the old model; parity tests
-prove each): [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) (a fixed
-rate prices the whole Procedure as BTM x the Contract's rate, today through Type 2's
-`agreedUnitRate`), [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) (a
-fixed price is the whole price, today through Type 3's price rows),
+**Carried across without regression** (they Match today only through the old model; parity proves
+each): [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) (a fixed rate:
+Type 2's `agreedUnitRate` becomes the RVG-at-the-Contract's-rate kind),
+[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) (a fixed price: today's
+`ContractPrice` rows stay as the fixed-price interim until 19a),
 [FT-05.5](../../../../requirements-board/requirements/stories/FT-05.5.md) and
 [US-05.5.1](../../../../requirements-board/requirements/stories/US-05.5.1.md) (ACC priced as an
-ordinary holder's Contract). This phase keeps the Type 2 and Type 3 **terms** exactly where they
-are (`type2Detail`, `permitsIndividualArrangement` and the `ContractPrice` rows) as labelled interim
-terms; Phase 19a moves them onto Contract lines.
+ordinary Contract; the ACC funding tag is 18a's).
 
-**Open in part, built as a default** (ROADMAP D55; keep it in one place and log it for the owner):
-[OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md) (how a holder's invoices are
-delivered: an emailed invoice or another output. Answered in part: delivery is a setting on the
-holder, no longer on the Contract. Open: what the other outputs are. Built default: two values,
-email, the default, and portal, one `delivery` field on the holder that 22 reads).
+**Questions** (ROADMAP owner decisions; keep each reading in one place and log it for the owner):
+- **Answered, built as answered:** [OQ-131](../../../../requirements-board/requirements/questions/OQ-131.md)
+  (D77: no versions and no lines; each priced item its own Contract, edited in place and audited; a
+  setting that must change from a date is a new Contract, the old one disabled),
+  [OQ-105](../../../../requirements-board/requirements/questions/OQ-105.md) (D48: one Contract linked to
+  any number of surgeons, never rooms), [OQ-96](../../../../requirements-board/requirements/questions/OQ-96.md)
+  and [OQ-117](../../../../requirements-board/requirements/questions/OQ-117.md) (D30, D65, D50 extended:
+  the override exists only on RVG kinds, so never on a fixed price or a prepaid Contract; refused here),
+  [OQ-107](../../../../requirements-board/requirements/questions/OQ-107.md) (D50: the override setting is
+  AA's, per Contract; 24 acts on it), [OQ-25](../../../../requirements-board/requirements/questions/OQ-25.md)
+  (D64: prepaid a setting, fixed for the Contract's life; 27 acts on it),
+  [OQ-66](../../../../requirements-board/requirements/questions/OQ-66.md) (D16: a unique AA code; the
+  step rail's typing search is 20's), [OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md)
+  (D17: each Contract bills its holder or the payer; stored here, acted on by 21),
+  [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (No contract · RVG the one
+  built-in; the fallbacks beside it are 18a's), [OQ-91](../../../../requirements-board/requirements/questions/OQ-91.md)
+  (D42: office only). Moot: OQ-98 (D32), OQ-48 (D45 superseded). Not built: OQ-100 (D34, no upload).
+- **At Confirm, built as its reading:** [OQ-73](../../../../requirements-board/requirements/questions/OQ-73.md)
+  (D23: a prepaid Contract always bills the payer; labelled once in the editor, see work item 13).
+- **Open, built as their defaults:** [OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md)
+  (D55's new default: delivery on the Party is email or post; no portal value, so nib's Party delivers by
+  email; one `PROVISIONAL (OQ-114, D55)` doc comment on the type, no UI note),
+  [OQ-133](../../../../requirements-board/requirements/questions/OQ-133.md) (D79: no list of affected
+  Procedures; Procedures stay on the old Contract until someone moves them; nothing to label),
+  [OQ-135](../../../../requirements-board/requirements/questions/OQ-135.md) (D81: no review flag; a
+  Procedure on a Disabled Contract keeps it and bills as normal; nothing to label).
+- **Our readings from the proposal** (AR-58 section 11.1; build them, one doc comment each in the model
+  module, log them): a funder is a kind apart from an insurer (A42); a Party's billing details are
+  required only once a Contract bills it (A43); AA- and anaesthetist-held Contracts bill the payer
+  (A40); unlinked AA, insurer and funder Contracts are offered on every List (A38, A39); the pricing
+  kind is fixed at creation (A36); the override seeded on No contract · RVG only (A18).
 
-**Open, built as its default** (ROADMAP D77, new 4 November; keep it in one place and log it for the owner):
-[OQ-131](../../../../requirements-board/requirements/questions/OQ-131.md) (how the office keeps a Contract's prices and dates current: whole-Contract dated versions,
-a date on each line, or an edit in place with an audit trail; DM-07 flags it). Built default: the whole-Contract dated
-versions below, with one `PROVISIONAL (OQ-131, D77)` doc comment in the version module (`contracts.ts`) and no UI
-label, so a date per line or an audited edit in place stays a contained change. No line dates (D40). 25 builds the staged
-change on the same default.
-
-**Answered and built as answered:**
-[OQ-105](../../../../requirements-board/requirements/questions/OQ-105.md) (D48: a surgeon's
-fixed-price arrangement is one Contract linked to every surgeon it covers by practitioner ID, offered
-on their Bookings whichever anaesthetist; a holder may be named for the rooms but there is no rooms
-filter; 19a seeds it, 20 filters on it),
-[OQ-96](../../../../requirements-board/requirements/questions/OQ-96.md) (D30: a prepaid Contract is
-never editable; saving one so is refused here),
-[OQ-117](../../../../requirements-board/requirements/questions/OQ-117.md) (D65: the editable flag
-never covers a fixed price; stored here, enforced by 24),
-[OQ-98](../../../../requirements-board/requirements/questions/OQ-98.md) (D32: a Contract may hold no
-lines; selection offers every Contract valid on the date that fits the Booking, with no test for a
-line; a holder's plain RVG Contract has no lines and prices at RVG),
-[OQ-48](../../../../requirements-board/requirements/questions/OQ-48.md) (D45: the procedure date
-decides the price; never backdated, never deleted),
-[OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (No contract (RVG) is the one
-default, held by AA, offered first, billing the payer on the Booking; no hospital, insurer or
-procedure defaults),
-[OQ-66](../../../../requirements-board/requirements/questions/OQ-66.md) (D16: a short AA code, format
-ours, made in one function),
-[OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) (D17: the holder's billable
-party when the holder is billed, else the payer on the Booking; stored here, decided by 21),
-[OQ-107](../../../../requirements-board/requirements/questions/OQ-107.md) (D50: an "editable" flag on
-each Contract; stored here, acted on by 24),
-[OQ-25](../../../../requirements-board/requirements/questions/OQ-25.md) (D64: prepaid is a Contract
-setting placed by the office; stored here, started by 27),
-[OQ-91](../../../../requirements-board/requirements/questions/OQ-91.md) (D42: the office creates the
-anaesthetists' own Contracts). Open and not built here: OQ-100 (a schedule upload). Answered and not built here: OQ-104 (D47, a
-prepaid Procedure keeps its price through a new version; 25 and 27).
-
-**Depends on:** Phase 17 (surgeons' rooms and surgeon groups, `SG-COS`, whose member surgeons the COS
-holder is linked to by ID). Phases 14, 15 and 15a session 1 are built; the plan runs 15a session 2, 15b, 16 and 17 before
-this phase, so take the Booking names, the ACTIVE List state, the warning routine and the
-`PERSIST_VERSION` you find.
-**Estimated:** 2 sessions. Session 1: work items 1 to 7 (parity baseline, types, pure helpers, the
-resolver and pricing on the new shape, seed, store, the trigger part of item 13, re-green). Session 2: work items 8 to 14 (the
-Admin holder master, the Contract catalogue with search and filters, the Contract detail with
-versions and settings, office billing setup, the ACC review flag, the billing-failure demo, copy and
-the demo guide), then shots, the review pass, the catalogue screenshots and PROGRESS. If session 1
-runs long, stop green after work item 5 (seed with the parity fixture matching) and start session 2
-with work item 6; do not start UI work before the store actions exist.
+**Depends on:** Phase 17 (built: surgeon groups, `SG-COS` and its member surgeons, rooms). Built
+before it: 14 to 17 and 28 to 32; the run order puts 32a, 32b, 38a and 32c before this phase, so take
+the `PERSIST_VERSION`, List states and names you find.
+**Estimated:** 2 sessions, with a cut line (see "Risks and the session cut line").
 
 ## Goal
 
-The Contract stops being "Type 1/2/3 plus a holder type and id" and becomes the catalogue's model
-(EP-04, FT-04.1, US-04.1.1): **contract holders**, each holding many **Contracts**, each Contract a
-series of **dated versions** that are never backdated or deleted, behaving through **settings**, plus
-one stored **No contract (RVG)** held by AA.
+Rebuild the Contract master to Donald's flat model of 5 November (D1 to D11 for the build;
+[AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) sections 2.1 to 2.3, 5.5, 5.8
+and 5.10; [AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) `#party`, `#contract`,
+`#pricing-kind`, `#linked-practitioners`, `#who-is-billed`). AR-28, AR-29 and AR-30 are Retired: never
+build from them. This phase changes the shape and keeps every fee and counterparty.
 
-- **A contract-holder master** (DM-48, US-04.1.5, [AR-44 · Contract holder](../../../../requirements-board/requirements/artifacts/AR-44.md#contract-holder),
-  [AR-44 · Holder setting](../../../../requirements-board/requirements/artifacts/AR-44.md#holder-setting),
-  [AR-44 · Billable party](../../../../requirements-board/requirements/artifacts/AR-44.md#billable-party),
-  [AR-29 · Contract holder fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-holder-fields),
-  [AR-30 · Contract holder](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-holder)):
-  a name; a kind (insurer, hospital, surgeon, anaesthetist; "first party" and "third party" are
-  dropped; a surgeon holder may be **named for the surgeon's rooms**, which is only its name);
-  **"is billed"** with a required billable-party link when set (else the payer on the Booking is
-  billed), set on each holder and never implied by its kind; **how its invoices are delivered**, email
-  or portal (OQ-114 in part, D55; one `delivery` field on the holder, default email, read by 22; no
-  longer a Contract setting); and an optional **practitioner link by practitioner ID**: one
-  anaesthetist, or **one or more surgeons**, so its Contracts are offered only on those people's
-  Bookings (D48, OQ-105: a surgeon's fixed-price arrangement is **one Contract linked to every
-  surgeon it covers**, offered on their Bookings whichever anaesthetist; **there is no rooms filter**
-  and no Contract held by rooms; Phase 20 filters on the link). AA itself is a system holder of No
-  contract (RVG) and is never billed. The office creates, edits and retires holders. Today's
-  `holderType` / `holderId` fold in: an `organisation` or Surgeon Group holder becomes a surgeon holder
-  named for its rooms and linked to its surgeons, a `billableParty` holder becomes the holder's
-  billable-party link.
-- **Insurers are contract holders like any other** (RV-39; FT-11.4, US-11.4.1 and US-11.4.2 Retired,
-  D55): the Insurer master, its `acceptsDirectClaims` flag, the Insurers tab and its "Turn on" (which
-  minted a default Contract) go. Each seeded insurer becomes an insurer holder with its own `delivery`
-  setting and "is billed" set on it, nothing pre-filled from a flag; creating an insurer holder makes
-  no Contract. The Procedure's `insurerId` and the Insurer route stay until Phase 20 removes them, so
-  an insurer's bare name and id survive only as the holder's interim counterparty identity (the
-  organisations pattern), with no flag and no editing view; the route's gate reads "the insurer has an
-  insurer holder" in place of the flag. Delivery by insurer kind in `markInvoiceEmailed` is left
-  untouched for 22, which reads the holder.
-- **Contract settings in place of kinds** (US-04.1.1, [AR-28 · Typical arrangements](../../../../requirements-board/requirements/artifacts/AR-28.md#typical-arrangements),
-  [AR-44 · Arrangements](../../../../requirements-board/requirements/artifacts/AR-44.md#arrangements),
-  [AR-29 · Contract behaviour](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-behaviour)):
-  **editable** (may the anaesthetist change its price, rate or discount; D50; never a fixed price,
-  OQ-117, D65, which 24 enforces), **prepaid** (D64) and **default** (No contract (RVG) only); whether
-  the holder is billed and how it is delivered sit on the holder; invoice layout and GST are 22's. A
-  prepaid Contract can **never be editable**: saving one so is refused, on create, edit and new
-  version (OQ-96, D30; US-06.4.1's criterion, which 41 confirms). The settings are stored, shown and
-  set by the office; **no other behaviour moves here** (24 reads `editable`, 27 reads `prepaid`). A
-  Contract may hold no lines (D32).
-- **Contracts as dated version records** (DM-07, OQ-48, D45, RV-32,
-  [AR-29 · Contract fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-fields),
-  [AR-29 · Contract versions](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-versions),
-  [AR-30 · Contract](../../../../requirements-board/requirements/artifacts/AR-30.md#contract),
-  [AR-28 · Price reviews and controls](../../../../requirements-board/requirements/artifacts/AR-28.md#price-reviews-and-controls)):
-  a start date, an optional end date, a review date and a forward link to the version that revised
-  it; the version in force on the procedure date (the List date) prices the Procedure. An office
-  **New version** from today or later copies the terms, ends the previous version the day before and
-  never overlaps; one entered ahead shows "Upcoming from <date>". **Nothing is backdated or
-  deleted:** a version's dates are never edited in place, **Retire replaces Delete** (ending the
-  latest version today or later), and a started version's terms and settings are frozen. Phase 25
-  replaces "New version" with staged changes, the one-future check and the relink. How the office keeps
-  a Contract current is open (OQ-131, D77): this is its default, kept in the one version module.
-- **A short AA code on every Contract** (US-04.1.4, OQ-66, D16), from one generator function, shared
-  by every version of the Contract, shown in mono and searchable.
-- **The Admin Contract catalogue** (FT-04.1, US-04.1.2): Contracts grouped under holder headings with
-  No contract (RVG) first, filters for active or all and by holder, and **one composite search** across
-  AA code, Contract name and holder name (19a adds line holder codes). The catalogue view keeps No
-  contract (RVG) first under AA; the office's picker on a Booking is Phase 20's step rail. Create, edit, New version and
-  retire are office-only (OQ-91, D42). Contracts number in the thousands: search, never a flat list.
-- **Type 1/2/3 go as kinds** (US-04.1.1): the pricing data they carry stays exactly where it is as
-  **interim terms** (`interimTerms`, `type2Detail`, `permitsIndividualArrangement`, the `ContractPrice`
-  rows) that Phase 19a moves onto Contract lines, so **no fee moves**: US-05.2.6's fixed rate, the
-  bariatric fixed prices and the ACC Contracts priced as ordinary holders keep working, proven by a
-  parity fixture over every seeded fee and invoice.
-- **One stored No contract (RVG), held by AA** (DM-49, RV-06, OQ-78,
-  [AR-28 · No contract (RVG)](../../../../requirements-board/requirements/artifacts/AR-28.md#no-contract-rvg),
-  [AR-29 · Integrity rules](../../../../requirements-board/requirements/artifacts/AR-29.md#integrity-rules)):
-  held by the AA system holder, no terms, never expires, found by its `isDefault` flag (exactly one),
-  priced at BTM x the anaesthetist's own unit value. It replaces the protected default Type 1 per
-  hospital and per insurer. The per-holder invariants, the delete and end-date
-  protection, the auto-create when a hospital is added, and the
-  default-Type-1 fallback in `invoiceBuild.ts` go; the fallback becomes No contract (RVG) at the same
-  price and counterparty. Each seeded default Type 1 stood for a holder that pays AA, so it is
-  re-expressed in place (same id) as **that holder's plain RVG Contract** (an ordinary Contract with
-  no lines, D32), which Phase 20 offers by context.
-- **Who is billed does not change here.** The holder's "is billed" setting, its billable party and
-  the context that will narrow the Contract list (the List's hospital, the surgeons and the
-  anaesthetist by practitioner ID, no rooms filter; US-04.2.1) are stored and shown, but the invoice
-  still follows today's billing route until Phase 20 removes the route and Phase 21 bills the holder or the payer. One interim function
-  gives the route its counterparty from a holder, so every seeded invoice keeps its counterparty.
-- **The ACC review flag goes** (RV-37). ACC stays an ordinary holder's Contract; the informational
-  ACC chip and column stay.
-- **The S4 billing-failure demo is re-based** (RV-32): ending a Contract in the past and un-ending it
-  from the monitor are no longer possible. See work item 13.
+- **The Party** (DM-48, US-04.1.5, [AR-44](../../../../requirements-board/requirements/artifacts/AR-44.md#contract-holder))
+  replaces the contract holder: one shared record for anyone who holds Contracts. Its kind is `aa`
+  (exactly one), `hospital` (pointing at the hospital master, required), `insurer`, `funder` (apart
+  from insurer, A42), `surgeon` or `surgeonGroup`, or `anaesthetist`. It holds a short name (what
+  lists show), a billing name, an email or postal address and how its invoices are delivered, email or
+  post (D55; other outputs wait on OQ-114). The billing name, delivery and the contact that delivery
+  needs are required only once a Contract bills it (A43). The Party is itself the billing record: no
+  "is billed" setting and no billable-party link on it, and no practitioner link (links are on the
+  Contract). AA's rooms are never a Party.
+- **The Insurer master folds in** (RV-39): its `acceptsDirectClaims` flag, the Insurers tab, its
+  "Turn on" and the default Contract it minted go. Each seeded insurer and funder becomes a Party;
+  Organisation and Surgeon Group holders become surgeon-group Parties. Creating a Party creates no
+  Contract.
+- **The Contract is one priced item** (DM-07, US-04.1.1, [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md)
+  2.2 and 2.3): a unique **AA code** from one generator (US-04.1.4) and an optional **holder reference
+  code** (searchable, not unique, A23); a name; its holder Party; **who it bills**, its holder or the
+  payer on the Booking (US-04.2.1; an AA- or anaesthetist-held Contract and every prepaid Contract
+  bill the payer, A40 and D23); **linked practitioners** (any number of surgeons, at most one
+  anaesthetist; required on a surgeon-, surgeon-group- or anaesthetist-held Contract; never on a
+  hospital-held one); **prepaid** (fixed for life); one of **five pricing kinds**, fixed after
+  creation (RVG at the anaesthetist's rate, RVG at the Contract's rate, RVG less a discount, fixed
+  price, open price; the rate and discount are undated settings; open price only on 18a's system
+  fallbacks, never chosen by the office, A3); the **override** setting, on RVG kinds only (D50
+  extended); a **status**, Active or Disabled; and a system role for No contract · RVG. 18a adds
+  specialties and the funding tag; 19a price ranges, the invoice description and the default RVG
+  code.
+- **Edited in place, audited, never deleted** (US-04.1.2, RV-32, D77): every create and edit of a
+  Party or Contract, a disable and a re-enable included, is audited with values before and after
+  (US-04.1.3's part; 25 shows the history). Disable replaces end dates, retire and delete: a Disabled
+  Contract leaves the default Active list (and 20's step rail); a Procedure already on it keeps it and
+  bills as normal (D81). A setting that must change from a date is a new Contract, the old one
+  disabled, with no list of affected Procedures (D79).
+- **Save guards in one place** (AR-58 5.10, items 1, 3 to 6 and 8 to 14 that this phase's fields
+  reach): unique AA code; the rate above zero and the discount between 0 and 100; prepaid refuses an
+  RVG kind, the override and billing the holder; the override only on an RVG kind (so never on a fixed
+  price); the office never creates an open-price Contract; AA- and anaesthetist-held Contracts bill
+  the payer; links where required, none on a hospital-held Contract, at most one anaesthetist; a Party
+  billed by a Contract has its billing details; the prepaid setting and pricing kind are fixed after
+  creation; a system Contract is never disabled and only its name and AA code change.
+- **The Admin Contracts screen**: search over name, holder reference code and AA code (19a adds the
+  invoice description and default RVG code), filters Active by default, by status and by holder
+  Party; office only (D42). Hundreds of Contracts after 19a: search, never a bare flat list.
+- **No contract · RVG** (RV-06, OQ-78), held by AA, system role, RVG at the anaesthetist's rate,
+  override allowed, bills the payer, never disabled, replaces the protected default Type 1 per
+  hospital and insurer: their auto-creation, protection and `invoiceBuild` fallback go. Each seeded
+  default becomes its holder's own hospital- or insurer-billed RVG Contract at the same price and
+  counterparty, so no fee moves.
+- **The ACC review flag goes** (RV-37); the ACC chip, column and `accRelated` stay.
+- **Interims, so no fee or counterparty moves:** today's `ContractPrice` rows price the fixed kind
+  until 19a; the billing route still decides the counterparty until 20 and 21, through one interim
+  helper from a Party to today's counterparty record; the Method 3 gate (`permitsIndividualArrangement`)
+  stays until 24.
 
-**The pricing model lives in one place.** The technical design v6
-([AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md)) and its ERD
-([AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md)) are the reference shape for
-contract holders and Contracts, but they are a **proposal** that a later version may change. Their
-field names are for orientation. Keep the holder, Contract and version types and every rule about
-them (integrity guards, version chain, version in force, the No contract (RVG) lookup, AA codes, the
-search matcher, the interim terms, the interim route counterparty) in **one place in
-`aa-prototype/src/domain/billing`** (`contracts.ts`, plus the seed), behind types the UI reads, so a
-later design change stays a contained edit. Where this plan adds a field the design lacks (the
-holder's kind, delivery and multi-surgeon link; the AA code, which the design omits and US-04.1.4 still requires), say
-so in a doc comment beside the design's field names.
+**One place.** The Party and Contract types and every rule about them (save guards, the AA code
+generator, the search matcher, the link rule, the No contract · RVG lookup, the pricing-kind reads,
+the interim counterparty helper) live in `aa-prototype/src/domain/billing/contracts.ts` (split into
+`parties.ts` beside it if it grows), behind types the UI reads; doc comments name AR-58's fields and
+mark ours (`codePrefix`, `legacyCounterparty`, `permitsRateTime`).
 
-This is the largest master change in the plan. Behaviour changes to pricing and billing are for
-Phases 19a to 25; this phase changes the shape and keeps the numbers.
+## Risks and the session cut line
+
+- **Rewrite, not trim.** The holder model ("is billed", billable-party link, practitioner link on
+  the holder), dated versions and Retire from the 2026-11-04 plan are superseded; build none of them.
+- **Breadth:** about 10 non-test files read `holderType` and 26 touch `governingContractId` or
+  `billingRoute` (the route stays until 20). The parity fixture on every S3 to S5 figure and
+  counterparty is the guard.
+- **Readings to label once:** D23 (prepaid bills the payer), A42 (funder a kind of its own), A43
+  (billing details once billed). Log each.
+- **Not here:** specialties, funding tags and the open-price fallbacks are 18a's, so until then a
+  hospital-billed Contract has no tag.
+- **Bump `PERSIST_VERSION`** in each session that changes the seed's shape.
+- **Cut line (2 sessions).** **Session 1:** the parity baseline; the Party type, guards and store;
+  the seeded holders, insurers and funders migrated into Parties (the Insurer master, its flag and
+  "Turn on" gone, RV-39); today's Contracts re-pointed at their holder Party (type 1/2/3 and dates
+  still in place); the Admin Parties tab and editor; green with the parity fixture matching unchanged.
+  **Session 2:** the flat Contract (AA code, holder reference code, who it bills, links, prepaid,
+  pricing kind, override, status), its save guards and audit, the fee and resolver on the new shape,
+  the Admin Contracts screen and editor with search and filters, No contract · RVG replacing the
+  default Type 1s (RV-06), the billing-failure demo re-based, the ACC flag gone (RV-37), copy and the
+  demo guide. If session 1 runs long, stop green after work item 5 and start session 2 at item 6.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-04.1,US-04.1.1,US-04.1.2,US-04.1.4,US-04.1.5,US-04.1.6,US-04.2.1,US-04.2.2,US-04.2.10,US-04.2.14,US-04.3.2,US-04.3.3,US-05.2.5,US-05.2.6,US-05.4.3,US-05.5.1,US-06.4.1,US-11.2.2,FT-11.4,US-11.4.1,US-11.4.2,OQ-25,OQ-48,OQ-66,OQ-67,OQ-78,OQ-91,OQ-96,OQ-98,OQ-100,OQ-104,OQ-107,OQ-114,OQ-117,OQ-131
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.1.1,US-04.1.2,US-04.1.3,US-04.1.4,US-04.1.5,US-04.2.1,US-04.2.2,US-04.2.14,US-04.2.18,US-04.3.2,US-04.3.3,US-04.3.8,US-04.3.9,US-05.2.5,US-05.2.6,US-05.4.2,US-05.4.3,US-05.5.1,US-06.4.1,US-11.2.2,OQ-25,OQ-66,OQ-67,OQ-73,OQ-78,OQ-91,OQ-96,OQ-105,OQ-107,OQ-114,OQ-117,OQ-131,OQ-133,OQ-135
    ```
 
-   Read the hunks (if any) for the covered items, US-04.1.6 and US-04.2.10 (25's), US-04.2.14 (the
-   anaesthetist's own Contract, 19a), US-04.3.2 and US-04.3.3 (the picker and No contract (RVG)
-   first, 20), US-05.2.5, US-05.2.6, US-05.4.3 and US-05.5.1 (the terms this phase carries across),
-   US-06.4.1 (a prepaid Contract is not editable), US-11.2.2 (the payer on the Booking, 21), FT-11.4, US-11.4.1 and US-11.4.2 (Retired: no insurer master), the questions, and the
-   "Contract holder", "Contract" and "No contract (RVG)" parts of `requirements-board/requirements/domain-model.md`.
-
-   At the 2026-11-02 plan update (`d4db277..7cd7802`) the changes touching this phase were the 28 and
-   29 October decisions (change log `requirements-board/requirements/changes/2026-10-28-aa-meetings-with-ben-vanessa-and-greg.md`):
-   US-04.1.5 and US-04.2.1 (holder kinds insurer, hospital, surgeon, anaesthetist; the practitioner link
-   by ID to one anaesthetist or one or more surgeons; no rooms filter; a holder's invoice delivery),
-   US-04.1.1 (never editable on a prepaid Contract, never on a fixed price), FT-11.4, US-11.4.1 and
-   US-11.4.2 Retired (no insurer master), and OQ-105, OQ-96 and OQ-117 answered, OQ-114 answered in part.
-
-   At the 2026-11-04 update (`d436947..a68f09b`) none of the covered items changed in substance; OQ-131
-   (D77) is new and DM-07 flags it: Contract upkeep is open, built here as the dated whole-Contract
-   versions below.
-
+   Read any hunks for the covered items, the context stories (pricing kinds US-04.2.2, price lists
+   US-04.2.14, holder reference code US-04.2.18, the step rail US-04.3.8 and US-04.3.9, No contract ·
+   RVG US-04.3.3, the office price change US-05.4.2, the payer US-11.2.2) and the questions, plus the
+   Party and Contract parts of `requirements-board/requirements/domain-model.md`. At the 2026-11-10
+   plan update (`a68f09b..efe123c`) the 5 November flat model rewrote every covered story (change log
+   `requirements-board/requirements/changes/2026-11-05-flat-contract-model-and-ben-vanessa-meeting.md`);
+   this doc is written from it.
    - If an item changed, re-read it and adjust the work items before building.
-   - If an item is now Retired or Future, drop it from this phase and say so in PROGRESS.
-   - A new item that touches the holder or Contract record goes into this phase only if it is
-     shape-only. Lines are 19a's, the picker 20's, who is billed 21's, prices 24's, staged changes 25's.
-2. **US-04.1.5 is Verify.** Build it as written (AR-44 `contract-holder` and `holder-setting`, AR-29
-   `contract-holder-fields`) and note the status in PROGRESS. No UI label for Verify.
-3. **OQ-114 (D55, answered in part).** If the other outputs are still open, build the two-value default
-   in the Goal and put it on "For the owner's review"; no UI note. If it names other outputs, extend
-   the one `delivery` type and its label map, and hand the new values to 22.
-4. **OQ-96, OQ-117, OQ-98, OQ-107, OQ-25, OQ-48, OQ-66, OQ-67, OQ-78, OQ-91 (answered).** Confirm they
-   still read as built; none has a provisional label. **OQ-131 (D77, open):** confirm it is still open;
-   if answered, build the answer in the same version module and drop the label. If OQ-66 shows a code format, implement it in
-   the same generator and update the pinned seed table.
-5. **The design.** If a technical design newer than AR-29 v6 is in the artifacts folder, follow its
-   shape inside the same one module and record the change in PROGRESS. AR-28 is true as written.
-6. **Read the PROGRESS entries of Phases 15b, 16 and 17.** From 17: the rooms and surgeon-group
-   entities it built (type names, master keys, `SG-COS` "Canterbury Orthopaedic Surgeons" and its
-   member surgeons by ID, id prefixes), whether `ContractHolderOrganisation` /
-   `masters.organisations` still exist (17 left them for this phase), and any copy that calls an
-   organisation a contract holder. From 16 and 15b: the `PERSIST_VERSION` you start from.
-7. **Capture the parity baseline before any model change** (work item 1), before any edit to
-   `types.ts`.
+   - If an item is now Retired or Future, drop it and say so in PROGRESS.
+   - A new item that touches the Party or Contract record joins only if it is shape-only:
+     specialties and tags are 18a's, ranges 19a's, the rail 20's, who is billed 21's, prices 24's.
+2. **OQ-73 (D23, at Confirm).** If confirmed, drop the editor's one "awaiting confirmation" helper; if
+   reopened for a holder-billed prepaid Contract, relax that one guard.
+3. **OQ-114, OQ-133, OQ-135 (open).** If OQ-114 names other outputs, extend the one `deliveryMethod`
+   type and hand the values to 22. If OQ-133 asks for a list, it is a read-only query (hand it to
+   19a). If OQ-135 asks for a flag, it is one entry in 21a's list (hand it on); nothing here changes.
+4. **AA and Greg's confirmation of D1 to D11.** If AA or Greg reverse a decision before you start,
+   stop and record it; do not build around it.
+5. **Read the PROGRESS entries of 17, 32a, 32b, 38a and 32c**: `SG-COS` and its member surgeon ids,
+   whether `ContractHolderOrganisation` and `masters.organisations` still exist, and the
+   `PERSIST_VERSION` you start from.
+6. **Capture the parity baseline** (work item 1) before any edit to `types.ts`.
 
 ## Reference
 
-**Design (convention 17):**
-- `docs/design/Design Language.dc.html` for tokens: status pills as tint and on-tint, mono
-  tabular-nums for codes and money, 4pt spacing, radii, teal as the only action colour, crimson for
-  identity only.
-- `docs/design/Admin Review.dc.html` for the admin table and detail-panel anatomy. Its CONTRACT field
-  is the model for how a Contract is named on a Booking.
-- `docs/design/Admin Day.dc.html` for admin chrome.
+**Design (convention 17):** `docs/design/Design Language.dc.html` (tokens, tint and on-tint pills, mono
+tabular-nums for codes and money, teal the only action colour, crimson identity only);
+`docs/design/Admin Review.dc.html` (admin table and side-panel anatomy; its CONTRACT field is how a
+Contract is named on a Booking); `docs/design/Admin Day.dc.html` (admin chrome). No mockup covers
+Master data: extend the admin's own table, panel and pill patterns, with a wide desktop side panel.
 
-No mockup covers Master data. Extend the admin's own table, panel and pill patterns; do not invent a
-new visual language. Admin is a desktop layout, so use a wide side panel, not a bottom sheet.
+**Catalogue:** the covered stories; `domain-model.md` (Party, Contract, No contract · RVG); OQ-73,
+OQ-114, OQ-131, OQ-133, OQ-135 and the answered questions above. Evidence:
+`npm --prefix requirements-board run source -- --item <ID> --text` (Node 22.18 or newer), chiefly the
+2026-11-05 notes (Donald's contract model decisions; the AA meeting with Ben and Vanessa).
 
-**Catalogue:** the covered files above; `domain-model.md` (contract holder, Contract, No contract
-(RVG), versions);
-[US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (the anaesthetist's own
-Contracts, Phase 19a);
-[US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) and
-[US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) (staged changes and the
-relink, Phase 25; this phase builds the simple core);
-[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md) and
-[US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md) (the picker, now
-Phase 20's step rail, with No contract (RVG) first in its Contract lists; 20 wraps this phase's search matcher);
-[US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on the
-Booking, Phase 21);
-[FT-11.4](../../../../requirements-board/requirements/stories/FT-11.4.md), [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md)
-and [US-11.4.2](../../../../requirements-board/requirements/stories/US-11.4.2.md) (Retired: no insurer
-master, no direct-claims flag; the flag needed is delivery on the holder);
-[US-06.4.1](../../../../requirements-board/requirements/stories/US-06.4.1.md) (a prepaid Contract is
-not editable);
-[US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) and
-[US-05.4.3](../../../../requirements-board/requirements/stories/US-05.4.3.md) (fixed rate and fixed
-discount, carried as interim terms); OQ-25, OQ-48, OQ-66, OQ-67, OQ-78, OQ-91, OQ-96, OQ-98, OQ-105 (answered, D48), OQ-107, OQ-114, OQ-117, OQ-131 (open, D77).
-Evidence (read the cited passages with `npm --prefix requirements-board run source -- --item <ID> --text`,
-Node 22.18 or newer; each covered item's own sources list the passages): the 2026-10-07 and
-2026-10-14 notes of the AA meetings with Greg (AA in the centre, everyone else a contract holder; the
-billable party a reference; "first party" and "third party" dropped; the surgeon fixed-price "lookup
-hole"), the 2026-10-16 pricing model documents v6 (#22 to #25 holders, Contract and behaviour, #40 to
-#47 versions), the 2026-10-19 typed decisions (OQ-107, prepaid keeps its price) and the 2026-10-28
-meetings and 29 October typed decisions (insurers are "just an instance of contract holders", OQ-105,
-OQ-96, OQ-114, OQ-117).
+**Artifacts:** [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) (the proposal
+snapshot: 2.1 Party, 2.2 Contract, 2.3 pricing kinds, 5.5 built-ins, 5.8 who may change what, 5.10
+validation, 8.2 naming and codes, 11.1 assumptions; the working copy
+`docs/prototype-build/contract-model-proposal.md` gives the reasoning);
+[AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) (the flat ERD: `#party`,
+`#contract`, `#pricing-kind`, `#linked-practitioners`, `#who-is-billed`);
+[AR-44](../../../../requirements-board/requirements/artifacts/AR-44.md) (`#contract-holder`,
+`#holder-setting`, `#arrangements`, `#billable-party`; read with AR-58 where they differ, AR-58 wins).
 
-**Artifacts** (draft reference shape; regions named where this phase builds them):
-- [AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md), the plain-language summary
-  (v6), true as written: `#typical-arrangements`, `#no-contract-rvg`, `#price-reviews-and-controls`,
-  `#who-gets-the-invoice` (stored here, acted on by 21).
-- [AR-44](../../../../requirements-board/requirements/artifacts/AR-44.md), the 28 October contract-holder
-  diagram: `#contract-holder`, `#holder-setting`, `#billable-party` (stored here, acted on by 21),
-  `#arrangements`, `#holder-question` (the surgeon arrangement, answered D48); `#bill-holder`,
-  `#bill-payer` and `#payer` for context only (21).
-- [AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md), the technical design v6, a
-  proposal: `#contract-holder-fields`, `#contract-fields`, `#contract-behaviour`, `#contract-versions`,
-  `#integrity-rules`; `#billable-party` and `#contract-selection` for context only (21 and 20).
-- [AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md), the ERD (v6): `#contract-holder`,
-  `#contract`.
+**Analysis:** `gaps.json` entries for DM-48, DM-07, RV-06, RV-32, RV-37, RV-39 and the five stories
+(evidence lines there); [domain-model-delta.md](../analysis/domain-model-delta.md) DM-48, DM-07 (DM-49
+for 18a's context); [reverse-check.md](../analysis/reverse-check.md) RV-06, RV-32, RV-37, RV-39;
+[epics/EP-04.md](../epics/EP-04.md).
 
-**Analysis:**
-- [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Theme 3 (Contract replaces the billing route) and the EP-04
-  table.
-- [epics/EP-04.md](../epics/EP-04.md) and [epics/EP-05.md](../epics/EP-05.md).
-- `gaps.json`: the entries for FT-04.1, US-04.1.1, US-04.1.2, US-04.1.4, US-04.1.5, US-04.2.1
-  (re-graded at `7cd7802`), RV-39, and US-05.2.6, FT-05.5, US-05.5.1 (Matches, carried across).
-- [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-48, DM-07, DM-49 (DM-09 for
-  19a's context).
-- [analysis/reverse-check.md](../analysis/reverse-check.md) RV-06, RV-32, RV-37 and RV-39.
-- [analysis/prototype-map-domain.md](../analysis/prototype-map-domain.md) §2 and §5,
-  [prototype-map-store-seed.md](../analysis/prototype-map-store-seed.md),
-  [prototype-map-admin.md](../analysis/prototype-map-admin.md).
-
-**Code entry points** (names and lines as at `60e2d1e`; Phases 15a session 2 to 17 run first, so
-check the lines you find):
-- `aa-prototype/src/domain/types.ts`: `ContractHolderOrganisation` (about line 177),
-  `ContractHolderType`, `ContractScope`, `ContractType2Detail`, `Contract`, `ContractPrice` (about
-  lines 186 to 262), `CounterpartyRef`.
-- `aa-prototype/src/domain/billing/contracts.ts`: `isEffectiveOn`, `rank`, `selectContract` (only
-  `defaultContractFor` calls it), `matchContractPrice`.
-- `aa-prototype/src/domain/billing/fee.ts` (about lines 168 to 225): the `type === 2` and `type === 3`
-  branches.
-- `aa-prototype/src/domain/billing/invoiceBuild.ts`: `HOLDER_LABEL` (about line 72),
-  `defaultContractFor` (about line 86, with the "protected default Type 1" message),
-  `resolveContractForProcedure` (about line 114), `counterpartyForProcedure` (about line 187, the
-  "unreachable" throw).
-- `aa-prototype/src/domain/billing/validateBookingForBilling.ts`: `feeContextFor`,
-  `INDIVIDUAL_ARRANGEMENT_MESSAGE`, the rate x time gate.
-- `aa-prototype/src/domain/billing/fixtures.ts`: `mkContract`.
-- `aa-prototype/src/domain/seed/contracts.ts`: `CONTRACT`, `defaultType1`, `CONTRACTS`,
-  `CONTRACT_PRICES`.
-- `aa-prototype/src/domain/seed/cast.ts`: `HOSPITALS`, `INSURERS` (`acceptsDirectClaims`), `ORG`, `ORGANISATIONS`.
-- `aa-prototype/src/domain/seed/bookings.ts`: the seeded `governingContractId`s (about 20
-  procedures point at `CONTRACT.stgDefault`, `forteDefault` or `nibDefault`; `DEFAULT_CONTRACT_BY_HOSPITAL`
-  at about line 119).
-- `aa-prototype/src/domain/seed/index.ts`: `masters.contracts` / `contractPrices`, the counters, and
-  the scenario markers `cosAccContractBooking` and the bariatric marker (with "Type 2" and "Type 3"
-  in their labels and details).
-- `aa-prototype/src/store/contractActions.ts`: `isProtectedDefault`, `DEFAULT_PROTECTED_MESSAGE`,
-  `createContract`, `editContract` (dates in place go), `deleteContract` (goes, replaced by a retire),
-  `addContractPrice`, `editContractPrice`.
-- `aa-prototype/src/store/mastersActions.ts`: `createHospital` (about line 45) and
-  `setInsurerDirectClaims` (about line 102) mint the protected default.
-- `aa-prototype/src/store/mutate.ts`: the id specs `contract: { prefix: 'CTN', pad: 3 }` and
-  `contractPrice: { prefix: 'CPN', pad: 3 }` (about lines 73 and 76).
-- `aa-prototype/src/store/selectors.ts`: the billing context (`contractPrices`), `counterpartyName`
-  (the `organisation` case).
-- **The Insurer master (RV-39), the ten files that read `acceptsDirectClaims`:** `domain/types.ts`
-  (`Insurer`, about line 338), `domain/seed/cast.ts` (`INSURERS`), `domain/billing/validateBookingForBilling.ts`
-  (the Insurer route gate, about lines 164 to 180), `store/mastersActions.ts` (`setInsurerDirectClaims`,
-  about lines 177 to 235), `apps/admin/screens/masters/ReferenceViews.tsx` and `MasterData.tsx` (the
-  tab), `shared/flows/{EditBillingSetupSheet,ManualBookingForm,EditProcedureSheet}.tsx` (the insurer
-  select's refusal text), `shared/audit/fieldLabels.ts`, `domain/billing/fixtures.ts`; and
-  `store/billingRun.ts` (about line 403, delivery by insurer kind: left for 22).
-- `aa-prototype/src/store/index.ts`: the contract action exports.
-- `aa-prototype/src/store/appStore.ts`: `PERSIST_VERSION` (16 at `60e2d1e`; 15b to 17 may bump it).
-- `aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx` (about line 82):
-  `editContract(..., { effectiveToISO: undefined })` restores a dated-out Contract; it goes (work
-  item 13).
-- `aa-prototype/src/shared/demoTriggers/registry.ts` (about line 198): Phase 14's "Trigger billing
-  failure" dates out `CONTRACT.cosAcc` to 2026-07-15; it is re-based (work item 13).
-- `aa-prototype/src/apps/admin/screens/masters/ReferenceViews.tsx`: `ContractsView` (about lines 49 to 89; columns Name,
-  Type, Holder, Scope, From, To, no code column, no search, no filters), the Hospitals header and
-  add-hospital result ("default Type 1", about lines 287 and 323), `InsurersView` (about lines 187 to
-  215, with its "Turn on"; it goes), `OrganisationsView`.
-- `aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx`: the Type segmented control and holder
-  select (about lines 76 to 182), `PriceRows` (hook `contract-price-rows`), the "Protected default
-  Type 1" notice.
-- `aa-prototype/src/shared/flows/EditBillingSetupSheet.tsx` (the governing-contract select, about line
-  175) and `shared/booking/OfficeBillingSetup.tsx`.
-- `aa-prototype/src/shared/capture/feeContext.ts`, `shared/booking/BookingDetailBody.tsx` (fee
-  context), `domain/seed/billing.ts`: where a stored `governingContractId` becomes the Contract that
-  prices.
-- `aa-prototype/src/shared/audit/fieldLabels.ts` and `shared/audit/auditNarrative.ts` (the
-  `ContractScope` and `ContractType2Detail` branches, about lines 148 to 163).
-- `aa-prototype/src/apps/admin/reviewFlags.ts` (flag (c), about line 82) and its test.
-- `aa-prototype/src/apps/demo/DemoControlPanel.tsx` (about line 340, "Health NZ agreed rate") and
-  `apps/demo/DemoData.tsx`: scenario text that names Contracts.
-- `visual/admin-phase07.spec.ts`: asserts "default Type 1" copy (about lines 93 and 107).
-- Tests that build Contracts or read the old fields: `domain/billing/{contracts,fee,invoiceBuild,
-  validateBookingForBilling,prePaymentInvoice}.test.ts`, `domain/seed/seed.test.ts`,
-  `store/{billingRun,billingRetry,mastersActions,btmCapture,intake,prepayment,bookingActions}.test.ts`
-  (`billingRetry.test.ts` dates out and restores the COS ACC Contract through `editContract`;
-  `mastersActions.test.ts` asserts the protected default at about lines 244 to 276 and the
-  direct-claims flag; `validateBookingForBilling.test.ts` and `intake.test.ts` read the flag),
+**Code entry points** (check the lines you find):
+- `domain/types.ts`: `Insurer` (`acceptsDirectClaims`), `ContractHolderOrganisation`,
+  `ContractHolderType`, `ContractScope`, `ContractType2Detail`, `Contract`, `ContractPrice`,
+  `CounterpartyRef`.
+- `domain/billing/contracts.ts` (`isEffectiveOn`, `rank`, `selectContract`, `matchContractPrice`),
+  `fee.ts` (the `type === 2` and `type === 3` branches), `invoiceBuild.ts` (`HOLDER_LABEL`,
+  `defaultContractFor`, `resolveContractForProcedure`, `counterpartyForProcedure`),
+  `validateBookingForBilling.ts` (the Insurer route gate, `feeContextFor`, the rate x time gate),
+  `fixtures.ts` (`mkContract`).
+- Seed: `seed/contracts.ts` (`CONTRACT`, `defaultType1`, `CONTRACTS`, `CONTRACT_PRICES`),
+  `seed/cast.ts` (`HOSPITALS`, `INSURERS`, `ORG`, `ORGANISATIONS`, `SURGEON_GROUPS`, `BP`),
+  `seed/bookings.ts` (`DEFAULT_CONTRACT_BY_HOSPITAL` and the stored `governingContractId`s),
+  `seed/index.ts` (masters, counters, scenario markers naming "Type 2" and "Type 3").
+- Store: `contractActions.ts` (`isProtectedDefault`, `createContract`, `editContract`,
+  `deleteContract`, the price-row actions), `mastersActions.ts` (`createHospital` minting a default,
+  `setInsurerDirectClaims`), `mutate.ts` (id formats; `PT` is the patient prefix, so Parties use `PY`),
+  `selectors.ts` (`counterpartyName`), `billingRun.ts` (`markInvoiceEmailed`, the insurer-kind
+  refusal: 22's), `appStore.ts` (`PERSIST_VERSION`).
+- Admin: `screens/masters/MasterData.tsx` and `ReferenceViews.tsx` (`ContractsView`, `InsurersView`,
+  `OrganisationsView`, the Hospitals "default Type 1" copy), `flows/ContractEditSheet.tsx`,
+  `screens/BillingMonitorScreen.tsx` (`resolveAndRetry` un-end-dating a Contract),
+  `reviewFlags.ts` (the ACC flag).
+- Shared: `flows/{EditBillingSetupSheet,ManualBookingForm,EditProcedureSheet}.tsx` (the
+  governing-contract and insurer selects), `booking/OfficeBillingSetup.tsx`, `capture/feeContext.ts`,
+  `audit/fieldLabels.ts`, `audit/auditNarrative.ts`, `demoTriggers/registry.ts` (`billing-failure`).
+- Demo: `apps/demo/DemoControlPanel.tsx`, `DemoData.tsx`; `visual/admin-phase07.spec.ts` ("default
+  Type 1").
+- Tests reading the old fields: `domain/billing/{contracts,fee,invoiceBuild,validateBookingForBilling,prePaymentInvoice}.test.ts`,
+  `domain/seed/seed.test.ts`, `store/{billingRun,billingRetry,mastersActions,intake,prepayment,bookingActions}.test.ts`,
   `shared/demoTriggers/demoTriggers.test.ts`, `apps/admin/reviewFlags.test.ts`. There is no
   `contractActions.test.ts` yet; create it.
 
 ## Work items
 
-Model, seed and pricing come first and are re-greened before any UI.
+### Session 1: Parties
 
-1. **Parity baseline first** (`domain/billing/feeParity.test.ts`, new). Write it **before** any model
-   change, run it green, and keep its output.
-   - For every seeded procedure it records `feeFor(...).total`, `lines` (basis and amount) and
-     `billableUnits`, using the same context the app builds (the List date and the stored governing
-     Contract).
-   - For every seeded Booking it records the `buildInvoicesForBooking` draft totals per counterparty
-     (kind and id), so a holder remapping that changes who is billed fails parity.
-   - It records amounts, units, bases and counterparties, not line descriptions.
-   - Keep the results in a checked-in fixture (`domain/billing/__parity__/phase-18-baseline.json`,
-     written with `toMatchFileSnapshot`). After the reshape only the test's context-building code
-     changes; the fixture never does. Never run it with `-u`: a fixture change is a parity failure to
-     explain, not to accept.
-   - Add explicit assertions for the pinned demo figures: the design-day fees under SXAP at $26.50,
-     Health NZ $23, St George's ACC $25, COS ACC $24, the S3 Holt and fee figures as they stand when
-     this phase starts, the $23 vs $28.50 fallback test (an expired Health NZ Contract priced at the
-     anaesthetist's rate), the bariatric $2,800 and second-procedure $950, and the Aria 3.0 h x $480
-     = $1,440 line. These are how US-05.2.6 (fixed rate), US-05.2.5 (fixed price) and FT-05.5 / US-05.5.1
-     (ACC as an ordinary holder) are proven to carry across.
-2. **Types** (`domain/types.ts`; doc comments cite AR-44 `contract-holder` and `holder-setting`, AR-29
-   `contract-holder-fields`, `contract-fields` and `integrity-rules`, and say the shapes are a proposal
-   kept behind `domain/billing/contracts.ts`).
-   - `ContractHolderId` (seed `CH-...`, allocated `CHN-nnn`).
-   - `ContractHolder` (DM-48, US-04.1.5):
-     - `id`, `name` (for example "Southern Cross", "Canterbury Orthopaedic Surgeons", "Dr Melanie
-       Souter, own price list");
-     - `kind: 'insurer' | 'hospital' | 'surgeon' | 'anaesthetist' | 'aa'` (`'aa'` is the one system
-       holder of No contract (RVG); it is never offered in the Add holder picker). A surgeon holder
-       may be named for the surgeon's rooms; that is its name only, with no room or group link and no
-       rooms filter (D48). The hospital and insurer kinds carry an identity link, `hospitalId` or
-       `insurerId`, which is ours (the design has none): it is the interim counterparty identity the
-       route still bills, read by Phase 20 and 21;
-     - `billed: boolean` (the design's "is the billable party": true when AA invoices the holder);
-     - `billablePartyRef?: CounterpartyRef`: the holder's billable-party record (the design's link). The
-       prototype has no single billable-party table, so it is today's counterparty reference into
-       hospitals, insurers, organisations, surgeons or billable parties;
-     - `delivery: 'email' | 'portal'` (OQ-114 in part, D55: how its invoices are delivered; default
-       `'email'`; ours until the other outputs are named; read by 22, not by any path here);
-     - `practitioner?: { kind: 'anaesthetist'; id } | { kind: 'surgeon'; ids: SurgeonId[] }` (by
-       practitioner ID; `ids` is never empty): the one anaesthetist, or the one or more surgeons, its
-       Contracts belong to, so they are offered only on those people's Bookings (the design holds one
-       practitioner; the catalogue wins);
-     - `retiredAtISO?`.
-     Integrity (AR-29 `integrity-rules`, US-04.1.5 AC): `billed` requires `billablePartyRef`; an
-     `anaesthetist` holder has an anaesthetist link and no other holder has an anaesthetist link;
-     a surgeon link, when present, names surgeons only; the `aa` holder is never billed. **No rule
-     ties billing to the kind** (Greg's "a hospital is always billed, an anaesthetist never" is not
-     kept; US-04.1.5 Notes): an anaesthetist holder may be set billed.
-   - `Insurer` shrinks to `{ id, name }`: `acceptsDirectClaims` goes (RV-39). It is no longer a master
-     with a view; it is the interim identity an insurer holder's `insurerId` and `Procedure.insurerId`
-     point at, until Phase 20 removes the route and Phase 21 points the Booking at the holder.
-   - `Contract` (DM-07):
-     - `id`, `aaCode`, `name`, `holderId: ContractHolderId` (always set; No contract (RVG) holds the
-       `aa` holder);
-     - **settings:** `isDefault` (exactly one true: No contract (RVG), found by this flag, never by its
-       name), `editable: boolean` (D50: may the anaesthetist change its price, rate or discount;
-       stored and shown, read by 24, which also never lets it cover a fixed price, OQ-117, D65),
-       `prepaid: boolean` (D64: stored and shown, read by 27). **`prepaid` and `editable` are never
-       both true** (OQ-96, D30; US-06.4.1);
-     - `effectiveFromISO`, `effectiveToISO?` (the design's valid-from and valid-to; keep the code
-       names, labelled "Valid from" and "Valid to" in the UI; absent means open-ended),
-       `reviewDateISO?` (optional in the type only because No contract (RVG) has none; every holder's
-       Contract has one, US-04.1.2 AC 3), `nextVersionId?: ContractId` (the forward link to the version
-       that revised it; the previous version is found by the chain, not stored), `retiredAtISO?`;
-     - **interim terms**, kept exactly as today until Phase 19a moves them onto lines:
-       `interimTerms: 'rvg' | 'rateOrDiscount' | 'fixedPrices'` (today's `type` 1, 2 and 3, renamed so
-       nothing reads it as a kind), `type2Detail?` (unchanged: an agreed unit rate is US-05.2.6's fixed
-       rate, a percent discount is US-05.4.3's fixed discount) and `permitsIndividualArrangement` (the
-       Method 3 gate, unchanged until Phase 24). A Contract with `'rvg'` terms and no rows is a
-       Contract with no lines (D32).
-     - Remove `type`, `holderType`, `holderId` (the old pair) and `scope`. `ContractScope` and
-       `ContractHolderType` go: every seeded scope is organisational, and the individual-anaesthetist
-       scope is replaced by an anaesthetist holder's practitioner link.
-   - `ContractPrice` is **unchanged** (interim; Phase 19a replaces it with the Contract line). Its rows
-     belong to one version (`contractId` is the version's id).
-   - `ContractHolderOrganisation` / `masters.organisations` stays as a billable-party and Xero-contact
-     source behind a holder (COS); it is no longer a Contract holder type. Do **not** rename
-     `CounterpartyKind`: it ripples into Xero contacts, invoices and history.
-3. **Pure Contract helpers** (`domain/billing/contracts.ts`, the one module; Vitest in
-   `contracts.test.ts`). Nothing in the apps re-implements any of these.
-   - **Holder rules:** `validateHolder(holder)` returns the integrity failures above as data (the
-     store refuses on them); `holderKindLabel` lives in the UI labels module (work item 14), not here.
-     `newHolderDefaults(kind)` gives a new holder `billed: false` and `delivery: 'email'`, nothing
-     taken from the kind (there is no direct-claims flag to pre-fill from). `practitionerLinkFits(holder,
-     { anaesthetistId, surgeonId })`: a holder with no link fits every Booking; an anaesthetist link
-     fits that anaesthetist's Bookings only; a surgeon link fits a Booking with any of its surgeons and
-     no other surgeon's (US-04.2.1 AC). Phase 20's list calls it; no rooms test exists.
-   - **Contract settings:** `validateContractSettings({ editable, prepaid })` refuses `prepaid` with
-     `editable`, with one single-sourced message ("A prepaid Contract cannot also let the anaesthetist
-     change the price."); the store applies it on create, edit and new version, so the office cannot
-     save the pair (OQ-96, D30).
-   - **No contract (RVG):** `noContractOf(contracts)` returns the one `isDefault` Contract and throws
-     in tests if there is not exactly one (`assertOneNoContract`); `isNoContract(c)`.
-   - **Versions** (AR-29 `contract-versions`; **this is the one version module and carries the single
-     `PROVISIONAL (OQ-131, D77)` doc comment**, so a date per line or an audited edit in place stays
-     contained): `versionChain(contracts, id)` (linked through
-     `nextVersionId`, oldest first), `latestVersion`, `versionInForce(contracts, id, dateISO)` and
-     `versionTimeline(chain, todayISO)` giving `{ current?, upcoming[], ended[] }` for "Current",
-     "Upcoming from <date>" and "Ended <date>". `isEffectiveOn` is unchanged. Tests: the 1 April /
-     1 July pair (a procedure on 15 June prices on the 1 April version), no overlap, a version entered
-     ahead, an ended middle version.
-   - **New version plan:** `planNewVersion(chain, { effectiveFromISO }, todayISO)` returns the new
-     version's dates and the previous version's new end (the day before), or a refusal: a start
-     **before today** (nothing is backdated), a start not after the latest version's start, a
-     predecessor that is not the latest version. Today or later is allowed. The one-future check,
-     staged submit and relink are 25's.
-   - **Started versions are frozen:** `termsLocked(version, todayISO)` is true once the start is on or
-     before demo-clock today; the store refuses a change to its terms and settings (interim terms,
-     `type2Detail`, `permitsIndividualArrangement`, `editable`, `prepaid`, its `ContractPrice` rows)
-     with one single-sourced message pointing at New version.
-   - **AA code** (US-04.1.4, D16): `nextAaCode(prefix, existingCodes)` is the **only** place a code is
-     made: `<prefix>-<nnnn>`, the next free number over every Contract that exists (nothing is ever
-     deleted, so no code is reused and no issued-codes list is kept). `aaCodePrefixFor(holder)`: `INS`
-     insurer, `HOS` hospital, `SUR` surgeon, `OWN` anaesthetist, `RVG` No contract (RVG). All
-     versions of a Contract share its code (logged for the owner); it is stamped at creation, never
-     edited, and distinct from the system id. Tests: deterministic, unique across prefixes, shared by
-     a chain, the seeded codes pinned.
-   - **Composite search** (US-04.1.4): `contractMatchesQuery(contract, holderName, query)` returns the
-     matched fields or undefined, matching case- and space-insensitively the AA code, Contract name
-     and holder name; `contractSearch(query, { contracts, holders })` runs it across the latest
-     version of every chain (an empty query returns everything). 19a adds line holder codes to the
-     matcher; 20's picker wraps it. Tests: an AA code, a partial name, a holder name, no match.
-   - **Catalogue filters:** `isActiveContract(chain, todayISO)` (not retired, and a version current or
-     upcoming) and `contractsOfHolder`.
-   - **Interim pricing terms:** `interimTermsOf(contract)` is what `fee.ts` reads instead of `type`
-     (work item 4). `permitsRateTime(contract)` = `contract.permitsIndividualArrangement`, the single
-     source of the Method 3 gate that `validateBookingForBilling`, `billingLineActions` and
-     `AddBillingLineSheet` read; `INDIVIDUAL_ARRANGEMENT_MESSAGE` stays single-sourced. Both go in
-     Phases 19a and 24.
-   - **Interim route counterparty:** `routeCounterpartyForHolder(holder)` returns the counterparty
-     today's contract-holder route bills for that holder: its `billablePartyRef` when set, otherwise
-     undefined. It reads **neither `billed` nor the payer**: who is billed is unchanged until Phase 21,
-     which replaces this function with the holder or the payer on the Booking. (Doyle's surgeon holder
-     is seeded not billed but keeps a `billablePartyRef` of Doyle only so the route still bills him;
-     21 clears it.) Test that COS yields exactly `{ kind: 'organisation', id: ORG.cos }` and Doyle
-     `{ kind: 'surgeon', id: SURG.doyle }`.
-   - `selectContract` and its `rank` go with `defaultContractFor` (no other caller); Phase 20 builds
-     the fitting list. `matchContractPrice` is unchanged.
-4. **The resolver and pricing on the new shape** (fees unchanged).
-   - **One way from a stored id to the pricing Contract:** `contractForPricing(contracts, storedId,
-     dateISO)` = the chain's version in force on the List date, else the stored record. Every path
-     that prices calls it: `shared/capture/feeContext.ts`, `validateBookingForBilling.feeContextFor`,
-     the Booking detail body's fee context, the billing context in `store/selectors.ts` and
-     `domain/seed/billing.ts`. Capture, validator and invoice build then never disagree on the version.
-   - `fee.ts`: the `contract?.type === 2` branch reads `interimTermsOf(contract) === 'rateOrDiscount'`
-     (with `type2Detail`), the `type === 3` branch reads `'fixedPrices'`; No contract (RVG) and a plain
-     RVG Contract price at the anaesthetist's unit value. Keep `FeeResult`, the ordinal rule and the
-     2026-07-22 fixed-price fallback exactly; only the discriminant changes. Every existing
-     `fee.test.ts` case is re-expressed with **the same expected numbers**, including the $720 paper
-     spot-check; add a case that a rate change across two versions prices each List date on its own
-     version.
-   - `invoiceBuild.ts` `resolveContractForProcedure`:
-     - stored Contract: the version in force on the List date (`versionInForce`); a successor version
-       takes over instead of a fallback;
-     - stored, but no version in force, and the holder is a hospital or an insurer: **No contract
-       (RVG)** (same price as the old default Type 1), with the counterparty kept as the stored
-       holder's route counterparty (an interim `billedAs` on the resolution, removed by Phase 21);
-     - stored, no version in force, any other holder (surgeon, anaesthetist): the
-       `contractIneffective` exception, as today (Phase 08 decision 1; work item 13's failure demo
-       relies on it);
-     - nothing stored on the hospital route: No contract (RVG), billed to the List's hospital
-       (interim); on the insurer route: No contract (RVG), billed to the insurer; on the billable-party
-       route: no Contract needed, as today;
-     - the "No default contract found" exception and its "protected default Type 1" message go (No
-       contract (RVG) always exists); `HOLDER_LABEL` reads the holder kind.
-   - `counterpartyForProcedure`: the insurer and billable-party routes are unchanged; the
-     contract-holder route bills `billedAs` when set, else `routeCounterpartyForHolder` of the
-     resolved Contract's holder, else (No contract (RVG) on the hospital route) the List's hospital.
-     An undefined result is a billing exception with a plain message (data, never a throw), which
-     replaces the "unreachable" throw.
-   - `validateBookingForBilling`: the rate x time gate reads `permitsRateTime`; a stored Contract with
-     no version in force on the List date and no fallback reports the same message the resolver
-     gives.
-   - `fixtures.ts`: `mkContract` defaults to a hospital holder's plain RVG Contract (`interimTerms:
-     'rvg'`, `editable: true`); add `mkHolder` and `mkNoContract`.
-5. **Seed** (`domain/seed/contracts.ts`, `seed/cast.ts`, `seed/index.ts`, `seed/bookings.ts`). Keep
-   every existing Contract id, so no seeded `governingContractId` moves.
-   - **Holders** (`CONTRACT_HOLDERS`, `masters.contractHolders`), thirteen. Delivery is `email` unless
-     stated:
-     - `CH-AA` "Anaesthesia Associates": kind `aa`, not billed, the holder of No contract (RVG);
-     - `CH-STG` St George's, `CH-SX` Southern Cross, `CH-FORTE` Forte Health, `CH-CES` Christchurch
-       Eye Surgery, `CH-CPH` Christchurch Public: hospital, billed, billable party the hospital;
-     - `CH-NIB` nib: insurer, billed, billable party the insurer, **delivery `portal`** (today's
-       hard-wired insurer upload portal, now a setting; 22 reads it);
-     - `CH-AIA` AIA Health: insurer, **not billed**, delivery `email`, no Contract (it had no default
-       Contract; with the flag gone nothing is created for it);
-     - `CH-DOYLE` Mr P. Doyle: **a surgeon holder linked to Doyle by ID** (D48), **not billed** (a
-       surgeon's fixed fee only sets the price, US-04.2.1). It keeps a `billablePartyRef` of Doyle only
-       for the interim route; a Phase 21 handoff;
-     - `CH-COS` Canterbury Orthopaedic Surgeons: a surgeon holder **named for the group and linked to
-       the surgeons of `SG-COS` by ID** (copied from `memberSurgeonIds`, no live link), billed, billable
-       party `{ kind: 'organisation', id: ORG.cos }` (same counterparty and Xero contact);
-     - `CH-MERI` Merivale Eye Rooms: a surgeon holder **linked to two surgeons, Whitford and Reid** (the
-       rooms' surgeons by ID), not billed, no Contract yet (19a seeds the Merivale arrangement; the
-       demo of one holder, many surgeons);
-     - `CH-ARIA` Aria Skin and Laser Clinic: a surgeon holder named for the clinic, no surgeon link
-       (log it), billed, billable party `{ kind: 'billableParty', id: BP.ariaClinic }`;
-     - `CH-SOUTER` "Dr Melanie Souter, own price list": anaesthetist, linked to Souter, not billed,
-       **no Contract yet** (19a gives it her fixed-price Contract, US-04.2.14, flagged prepaid where
-       wanted; Phases 26 and 27 use it for the prepaid demo).
-     `INSURERS` loses `acceptsDirectClaims` and `masters.insurers` keeps only the identities the
-     holders and `Procedure.insurerId` point at.
-   - **No contract (RVG)** (new, `CT-NO-CONTRACT`): "No contract (RVG)", holder `CH-AA`, `isDefault`,
-     `interimTerms: 'rvg'`, `editable: true`, `prepaid: false`, from 2020-01-01, no end, no review date
-     (the one Contract without one). It governs no seeded procedure; the resolver's fallback reaches it.
-   - **The six ex-defaults become plain RVG Contracts** (an ordinary Contract with no lines, D32), same
-     ids, `isDefault` false, `interimTerms: 'rvg'`, `editable: true`, `prepaid: false`, holder billed
-     through their holder: `CT-STG-D1` "St George's RVG", `CT-SX-D1` "Southern Cross RVG",
-     `CT-FORTE-D1` "Forte Health RVG", `CT-CES-D1` "Christchurch Eye Surgery RVG", `CT-CPH-D1`
-     "Christchurch Public RVG", `CT-NIB-D1` "nib RVG". The procedures that store them keep their price
-     (the anaesthetist's unit value) and counterparty. Rename the seed constants (`stgDefault` and so on
-     to `stgRvg`) and `DEFAULT_CONTRACT_BY_HOSPITAL` in `seed/bookings.ts` to
+1. **Parity baseline first** (`domain/billing/feeParity.test.ts`, new), written and green before any
+   model change. For every seeded procedure: `feeFor(...).total`, `lines` (basis, amount) and
+   `billableUnits`, built as the app builds them (List date, stored Contract); for every seeded Booking:
+   the `buildInvoicesForBooking` draft totals per counterparty (kind and id). Amounts, units, bases and
+   counterparties only. Fixture `domain/billing/__parity__/phase-18-baseline.json` via
+   `toMatchFileSnapshot`; only the context-building code may change after, never the fixture; never
+   `-u`. Pin explicitly: SXAP $26.50 per unit, Health NZ $23, St George's ACC $25, COS ACC $24, the S3
+   Holt and Prentice figures as they stand, the bariatric $2,800 and second-procedure $950, Aria
+   3.0 h x $480 = $1,440.
+2. **The Party** (`domain/types.ts` re-exporting from the model module; AR-58 2.1, AR-61 `#party`).
+   - `PartyId` (seed `PY-...`, allocated `PYN-nnn`). `Party`: `id`, `kind: 'aa' | 'hospital' |
+     'insurer' | 'funder' | 'surgeon' | 'surgeonGroup' | 'anaesthetist'`, `name`, `codePrefix` (ours:
+     the AA code prefix, 2 to 6 capitals, unique, for example `CES`, `NIB`), `billingName?`, `email?`,
+     `postalAddress?`, `deliveryMethod?: 'email' | 'post'` (`PROVISIONAL (OQ-114, D55)` doc comment),
+     `hospitalId?` (hospital kind only, required there), and `legacyCounterparty?: CounterpartyRef`
+     (ours, INTERIM until 21: the record today's invoices go to, so counterparties and Xero contacts do
+     not move).
+   - Pure guards `partyRefusal(party, { parties, billedByAContract })`: a hospital Party names a
+     hospital that is not AA's rooms; exactly one `aa` Party, never created or re-kinded; unique
+     `codePrefix`; once billed by a Contract, a billing name and a delivery method, with an email for
+     email and a postal address for post (A43); the kind fixed once the Party holds a Contract. One
+     sentence each, single-sourced.
+   - `routeCounterpartyForParty(party)`: `legacyCounterparty`, else a hospital Party's hospital, else
+     undefined (a plain billing exception at run time, never a throw). Reads no billing setting; 21
+     deletes it.
+   - Tests for each guard and the helper.
+3. **Seed the Parties** (`seed/parties.ts`, `masters.parties`; billing details and delivery email
+   where a Contract bills them):
+   - `PY-AA` Anaesthesia Associates (`aa`).
+   - Hospitals St George's, Southern Cross, Forte Health, Christchurch Eye Surgery, Christchurch
+     Public, each pointing at its hospital, billing name and email from the hospital record.
+   - Insurers: nib (legacy `{ insurer, I-NIB }`, delivery email, D55), Southern Cross Health Society
+     and AIA Health (legacy `I-AIA`), neither billed. Funders: ACC, Health NZ, NZDF, Veterans Affairs,
+     holding nothing (18a's tags point at them).
+   - Surgeon groups: Canterbury Orthopaedic Surgeons (legacy `{ organisation, O-COS }`), Aria Skin and
+     Laser Clinic (legacy `{ billableParty, BP.ariaClinic }`), Unisports Ortho (the S5 Beat 4 rate),
+     Merivale Plastic Surgery (no Contracts; 19a seeds them).
+   - Surgeon: Mr P. Doyle (legacy `{ surgeon, S-DOYLE }`). Anaesthetist: Dr Melanie Souter (no
+     Contracts; 19a's price list).
+   - `INSURERS` loses `acceptsDirectClaims`; `masters.insurers` and `masters.organisations` stay only as
+     the interim identities a Party's `legacyCounterparty` and `Procedure.insurerId` point at (no view,
+     no flag; 20 and 21 retire them).
+4. **Re-point today's Contracts and fold in the Insurer master** (shape only; types 1/2/3 and dates
+   stay until session 2).
+   - `Contract.holderType` and `holderId` become `holderId: PartyId`; `ContractHolderType` and
+     `ContractScope` go (every seeded scope is organisational). `HOLDER_LABEL` reads the Party's kind;
+     `defaultContractFor` finds a hospital's or insurer's default by its Party; the contract-holder
+     route bills `routeCounterpartyForParty` of the resolved Contract's holder.
+   - RV-39: `setInsurerDirectClaims`, the Insurers tab and its "Turn on" go; the Insurer route's gate
+     asks that the Procedure's insurer has an insurer Party (one sentence); the three insurer selects
+     list insurer Parties. `markInvoiceEmailed`'s insurer-kind refusal and the portal queue are 22's.
+   - `createHospital` also creates its hospital Party (it still mints the default until item 9).
+   - Re-express the tests that read the flag (`validateBookingForBilling.test.ts`, `intake.test.ts`:
+     "an insurer with no insurer Party is refused").
+5. **Store and Admin Parties** (`store/partyActions.ts`; `apps/admin/flows/PartyPanel.tsx`; a
+   "Parties" tab in Master data replacing Insurers and Organisations; run the frontend-design skill
+   first).
+   - `createParty`, `editParty`: office only, through `mutate()`, audited with before and after,
+     refusing every `partyRefusal`; the `aa` Party is read-only; no delete.
+   - Table: Name, Kind ("Hospital", "Insurer", "Funder", "Surgeon", "Surgeon group", "Anaesthetist"),
+     Billing name, Delivery ("Email" or "Post"), Contracts (active count, a link to the Contracts list
+     filtered to it). Panel: name, kind (with the hospital picker for a hospital), billing name, email,
+     postal address, delivery; the missing-details refusal shown with the store's sentence once a
+     Contract bills it. Hooks `data-shot="parties"`, `data-shot="party-panel"`.
+   - Bump `PERSIST_VERSION`. Re-green: `npx vitest run` (parity fixture unchanged), `npm run build`,
+     `npm run build:pwa`. End of session 1: PROGRESS IN PROGRESS with what remains.
+
+### Session 2: flat Contracts
+
+6. **The flat Contract** (AA code, holder reference code, who it bills, links, prepaid, pricing kind,
+   override, status; AA code from one generator).
+   - `Contract`: `id`, `aaCode`, `holderReference?`, `name`, `holderId`, `billsTo: 'holder' | 'payer'`,
+     `linkedSurgeonIds: SurgeonId[]`, `linkedAnaesthetistId?`, `prepaid`,
+     `anaesthetistMayOverridePrice`, `pricing: { kind: 'rvgAnaesthetistRate' } | { kind:
+     'rvgContractRate'; unitRate } | { kind: 'rvgDiscount'; discountPct } | { kind: 'fixed' } | { kind:
+     'open' }` (19a adds `ranges` to `fixed`), `status: 'active' | 'disabled'`,
+     `systemRole?: 'noContractRvg'`, and `permitsRateTime` (INTERIM: today's
+     `permitsIndividualArrangement`, the Method 3 gate, until 24). `type`, `isDefault`, the effective
+     dates and `type2Detail` go. `ContractPrice` stays unchanged as the fixed kind's interim rows
+     (19a replaces it).
+   - Pure helpers in the model module, Vitest-covered: `contractRefusal(next, { prev?, parties,
+     contracts, actor })` (the Goal's save guards, one sentence each, typed codes); `nextAaCode(prefix,
+     existingCodes)` = `<prefix>-<nnn>`, the next free number per prefix over every Contract (nothing
+     is deleted, so nothing is reused; 18a may add a tag segment); `contractMatchesQuery` and
+     `contractSearch(query, { contracts, parties, filters })` over name, holder reference code and AA
+     code, case- and space-insensitive, with the Active (default), Disabled or All and holder
+     filters; `noContractRvg(contracts)` by `systemRole`, asserting exactly one; `isRvgKind`;
+     `linkFits(contract, holder, { hospitalId, surgeonId, anaesthetistId })` (US-04.2.1: a
+     hospital-held Contract only on its hospital's Lists; a linked one on its surgeons' or
+     anaesthetist's; an unlinked AA, insurer or funder Contract everywhere; A38, A39), which 20's
+     candidates call and nothing here does.
+7. **Fee and resolver on the new shape** (fees unchanged).
+   - `fee.ts` branches on `pricing.kind`: `rvgContractRate` prices at `unitRate`, `rvgDiscount` at the
+     anaesthetist's unit value less `discountPct` (cents rounding as today), `fixed` through
+     `matchContractPrice` over the interim rows, the RVG kinds otherwise. Keep `FeeResult`, the
+     ordinal rule and the 2026-07-22 fixed-price fallback exactly; every `fee.test.ts` case keeps its
+     expected number.
+   - `resolveContractForProcedure`: the stored Contract resolves whatever its status (D81); a dangling
+     id stays `contractMissing`. Nothing stored on the hospital or insurer route resolves, INTERIM
+     until 20, to that Party's plain RVG Contract (one lookup, `interimRouteContract`), else
+     `noContract`. A primary Procedure on a `fixed` Contract with no interim row for it is
+     `contractIneffective` "No price in force for this procedure under <name>." (the interim of 19a's
+     "no range in force"; the parity fixture proves no seeded Procedure reaches it). The ended-Contract
+     fallback, `defaultContractFor` and the "protected default Type 1" message go.
+   - `validateBookingForBilling`: the rate x time gate reads `permitsRateTime`; the same
+     "No price in force" sentence.
+   - `fixtures.ts`: `mkContract` defaults to a hospital-held, holder-billed RVG Contract; add
+     `mkParty`.
+8. **Seed in the flat shape** (keep every Contract id, so no `governingContractId` moves):
+   - **No contract · RVG** (new `CT-NO-CONTRACT`, `AA-RVG`): AA, payer, RVG at the anaesthetist's
+     rate, override on (A18), system role. It governs no seeded procedure.
+   - **The six ex-defaults** become their holders' plain Contracts, `isDefault` gone: St George's RVG,
+     Southern Cross RVG, Forte Health RVG, Christchurch Eye Surgery RVG, Christchurch Public RVG, nib
+     RVG: RVG at the anaesthetist's rate, bills the holder, override off. Rename the seed constants
+     (`stgDefault` to `stgRvg`) and `DEFAULT_CONTRACT_BY_HOSPITAL` to
      `PLAIN_RVG_CONTRACT_BY_HOSPITAL`; delete `defaultType1`.
-   - **Negotiated Contracts**, names without "(Type n)", terms unchanged, `editable: false`,
-     `prepaid: false` (D50's reading: a negotiated price is not the anaesthetist's to change, and a
-     fixed price never is, OQ-117; nothing acts until 24; logged for the owner). No seeded Contract is
-     both editable and prepaid:
-     - `CT-SXAP` "Southern Cross Affiliated Provider": holder `CH-SX`, `rateOrDiscount`, $26.50 per
-       unit, from 2024-07-01 (Decisions log 2026-07-23 kept), review 2027-04-01;
-     - `CT-HNZ` "Health NZ agreed rate": holder `CH-CPH`, $23, from 2023-07-01, review 2026-07-01, so
-       "Review due" shows on day one;
-     - `CT-STG-ACC` "ACC elective services via St George's": holder `CH-STG`, $25, review 2027-04-01;
-     - `CT-COS-ACC` "ACC orthopaedic services, Canterbury Orthopaedic Surgeons": holder `CH-COS`, $24,
-       review 2027-04-01;
-     - `CT-COS-ACC-OLD` (new) "ACC orthopaedic services, 2024 schedule": holder `CH-COS`, $24, from
-       2024-04-01, **valid to 2025-03-31**, retired. It governs no seeded procedure; work item 13's
-       failure demo points one Procedure at it, and it shows what Retire leaves under "All";
-     - `CT-DOYLE-BAR` "Bariatric fixed prices, Mr P. Doyle": holder `CH-DOYLE`, `fixedPrices`, from
-       2025-01-01, **valid to 2026-07-27**, `nextVersionId: CT-DOYLE-BAR-2`, rows `CP-BAR-1` to
-       `CP-BAR-3` unchanged ($2,800, $2,400, ordinal-2 $950; `billingRun.test.ts` names `CP-BAR-1`);
-     - **new version** `CT-DOYLE-BAR-2`: same name and AA code, from **2026-07-28**, rows `CP-BAR-4` to
-       `CP-BAR-6` copied with the gastric bypass at **$2,950**: the demo's "Upcoming" version ("+7
-       days" or "Procedure day · 28 Jul" makes it current). No seeded Doyle procedure is on or after 28
-       Jul; the parity test proves it;
-     - `CT-ARIA-HOURLY` "Aria Skin and Laser Clinic, individually arranged hourly rate": holder
-       `CH-ARIA`, `rateOrDiscount` $26.50 and `permitsIndividualArrangement` as today.
-   - **AA codes:** stamped by `nextAaCode` in `CONTRACTS` order, so the seed is deterministic; versions
-     share their chain's code. The expected table, pinned in `seed.test.ts` (with a uniqueness
-     assertion across chains): `CT-NO-CONTRACT` `RVG-0001`; `CT-STG-D1`, `CT-SX-D1`, `CT-FORTE-D1`,
-     `CT-CES-D1`, `CT-CPH-D1`: `HOS-0001` to `HOS-0005`; `CT-NIB-D1` `INS-0001`; `CT-SXAP` `HOS-0006`;
-     `CT-HNZ` `HOS-0007`; `CT-STG-ACC` `HOS-0008`; `CT-DOYLE-BAR` and `CT-DOYLE-BAR-2` `SUR-0001`;
-     `CT-COS-ACC` `SUR-0002`; `CT-ARIA-HOURLY` `SUR-0003`; `CT-COS-ACC-OLD` `SUR-0004`.
-   - Review dates (US-04.1.2 AC 3: every Contract has one): 2027-04-01 on the negotiated Contracts and
-     the six plain RVG Contracts (the 1 April fee cycle), 2026-07-01 on Health NZ; none on No contract
-     (RVG), which never expires (logged for the owner).
-   - Reword the scenario markers: the bariatric marker's "Type 3 fixed price booking" becomes "Fixed
-     price booking (bariatric)", and `cosAccContractBooking`'s detail drops "Type 2".
-   - Id specs in `store/mutate.ts`: add `contractHolder: { prefix: 'CHN', pad: 3 }`; `contract`
-     (`CTN`) and `contractPrice` (`CPN`) stay.
-   - **Bump `PERSIST_VERSION` by one** from the value you find, with a comment line in the history
-     block.
-6. **Store** (`store/contractActions.ts`, a new `store/contractHolderActions.ts`,
-   `store/mastersActions.ts`). Every action is office-only and goes through `mutate()` with an audit
-   entry; refusals are data and read the pure helpers.
-   - **Holders:** `createContractHolder`, `editContractHolder` and `retireContractHolder` (audited
-     `contractHolder.create`, `.update`, `.retire`). They refuse every `validateHolder` failure ("A
-     holder that is billed needs a billable party"); changing the kind, or the anaesthetist, of a holder
-     that holds Contracts (a surgeon holder's surgeons may be added or removed, audited); any change
-     to or retire of the `aa` holder; and retiring a holder that still holds an active Contract
-     (retire the Contracts first). Creating an insurer holder also makes its bare `Insurer` identity
-     and **creates no Contract**.
-   - `createContract`: the input carries `holderId` (required, not retired), name, valid-from,
-     valid-to, review date (**required**: refused without one, US-04.1.2 AC 3), the settings
-     (`editable`, `prepaid`) and the interim terms, and **no** AA code: the store stamps `aaCode` from
-     `nextAaCode(aaCodePrefixFor(holder))`. A first version starting before today is **refused**
-     (nothing is backdated). It refuses `isDefault` (only the seed has No contract (RVG)), a
-     `rateOrDiscount` Contract without `type2Detail`, an anaesthetist holder's Contract with rate
-     x time permitted, and **a prepaid Contract that is also editable** (`validateContractSettings`).
-   - `editContract`: name and review date are editable on any version. **Dates are not edited in
-     place** (RV-32): `effectiveFromISO` and `effectiveToISO` leave the patch type, and a raw patch
-     carrying them, `aaCode`, `holderId`, `isDefault` or `nextVersionId` is refused. The terms and
-     settings are refused once `termsLocked` (work item 3), and a settings change that would make a
-     Contract both prepaid and editable is refused. Dates move only through New version and
-     Retire.
-   - `createContractVersion(api, actor, contractId, { effectiveFromISO, reviewDateISO })` (new, the
-     review date required as on create, audited `contract.newVersion`): applies `planNewVersion`
-     (refusing a past start), copies name, AA code, holder, settings, interim terms and the
-     `ContractPrice` rows (new `CPN` ids) to a new `CTN` version, sets the previous version's
-     `nextVersionId` and ends it the day before; it refuses the prepaid and editable pair as `editContract`
-     does. The new version's terms stay editable until it starts.
-   - `retireContract(api, actor, contractId, { effectiveToISO? })` (new, audited `contract.retire`,
-     **replacing `deleteContract`**): stamps `retiredAtISO` on every version of the chain and ends the
-     latest version on the given date or, by default, today, **never before today** (refused
-     otherwise); its Outcome reports how many unbilled procedures still reference the chain, so the UI
-     can warn. The retired Contract keeps its AA code. **`deleteContract` is removed**, with its
-     "never used" guard, its tests and the Delete button.
-   - **No contract (RVG)** refuses every edit, retire and new version, with one message: "No contract
-     (RVG) is always available and cannot be changed." `isProtectedDefault` and
-     `DEFAULT_PROTECTED_MESSAGE` go.
-   - `addContractPrice` and `editContractPrice` refuse a version whose terms are locked.
-   - `mastersActions.ts`: `createHospital` **no longer mints a Contract** (RV-06); its Outcome loses
-     `defaultContract`. **`setInsurerDirectClaims` goes with the flag** and its "Turn on" (RV-39);
-     `validateBookingForBilling`'s Insurer route gate asks that the Procedure's insurer has an insurer
-     holder, in place of the flag, with its message single-sourced (20 removes the route). The three
-     insurer selects (`EditBillingSetupSheet`, `ManualBookingForm`, `EditProcedureSheet`) stop reading
-     the flag and offer the insurer holders.
-   - Export every new action from `store/index.ts`; remove `deleteContract`'s export.
-   - Tests (`contractActions.test.ts`, new; `mastersActions.test.ts` re-expressed): holder integrity
-     refusals, AA code stamping and prefixes and immutability, a version chain with the day-before end,
-     the overlap and past-start refusals, dates not editable in place, locked terms and settings on a
-     started version, retire (today or later, never past; the unbilled count), No contract (RVG)
-     refusals, the prepaid and editable pair refused on create, edit and new version (and each alone saved),
-     and that adding a hospital or an insurer holder creates no Contract.
-   - **Existing tests that the new rules refuse** are re-expressed, never by loosening a rule: the
-     "insurer without direct claims is refused" cases (`validateBookingForBilling.test.ts`,
-     `intake.test.ts`) become "an insurer with no insurer holder is refused";
-     `billingRun.test.ts`'s "snapshot immunity" case (about line 367) edits `CP-BAR-1` and ends
-     `CT-DOYLE-BAR`, both now refused, so it proves immunity through a New version on a billed Contract
-     plus an edit to the upcoming version's rows; `mastersActions.test.ts`'s "adds and edits a Type 3
-     price row" (about line 300) targets the upcoming `CT-DOYLE-BAR-2` and gains the refusal on
-     `CT-DOYLE-BAR`; its re-type case, the protected-default cases (about lines 244 to 276, and
-     `billingRun.test.ts` about line 451) and every `deleteContract` case go; the Health NZ end-date
-     case (`billingRun.test.ts` about line 320) cannot end Health NZ in the past, so it runs on a
-     `mkContract` hospital-held Contract whose only version starts after the List date, with the same
-     figures ($23 against the $28.50 fallback, No contract (RVG) at the same counterparty);
-     `billingRetry.test.ts` moves to the failure demo of work item 13, whose trigger and store part
-     is done now so session 1 ends green (the monitor screen is session 2).
-7. **Re-green session 1.** `npx vitest run` with the parity fixture matching unchanged, `npm run build`
-   and `npm run build:pwa`. Stop here if this is the end of session 1, leaving PROGRESS as IN
-   PROGRESS with what remains.
-8. **Admin: Contract holders** (`apps/admin/screens/masters/MasterData.tsx`, a new "Contract holders" tab
-   before "Contracts"; a new `apps/admin/flows/ContractHolderPanel.tsx`; covers US-04.1.5, RV-39).
-   **The Insurers tab, `InsurersView` and its "Turn on" are removed**; insurers are edited as holders.
-   - Table: Name; Kind ("Insurer", "Hospital", "Surgeon", "Anaesthetist"); Invoiced ("Holder:
-     <billable party name>" when the holder is billed, "Payer on the Booking" when not); Delivery
-     ("Email" or "Portal"); Belongs to (the linked anaesthetist, or the surgeons, "Mr J. Whitford and
-     Ms A. Reid"); Contracts (count of active Contracts, a link that opens the Contracts tab filtered to
-     this holder); Status ("Retired" neutral pill). The `aa` holder shows as "Anaesthesia Associates",
-     read-only, with no actions.
-   - "Add holder" and a row "Edit" open the wide panel: name; kind and its link (hospitals pick from
-     the hospitals master; insurers need none; surgeon and anaesthetist holders take the practitioner
-     link below); **"Holder is billed"** with its billable-party picker shown and required when on,
-     off by default and never turned on or off by the kind; **"Invoice delivery"** (Email, the default,
-     or Portal; a one-line helper "How this holder's invoices are sent"); **"Belongs to"**, an
-     optional practitioner link by ID: one anaesthetist, or one or more surgeons (a multi-select over
-     surgeons, no rooms or groups); Save (teal); "Retire holder" (error treatment, refused with the
-     store's message while it holds an active Contract). A surgeon holder's name may be a rooms' name;
-     nothing filters by rooms.
-     Hooks: `data-shot="contract-holders"` on the table, `data-shot="holder-panel"`.
-9. **Admin: Contract catalogue rebuilt** (`ContractsView`; covers FT-04.1, US-04.1.1, US-04.1.2,
-   US-04.1.4).
-   - **Search** above the list: one field, "Search by AA code, Contract or holder", driven by
-     `contractSearch`, with a result count. `data-shot="contract-search"`.
-   - **Filters** beside it: "Active" / "All" (segmented, Active by default) and a holder filter (a
-     searchable select over holders, "All holders" by default). Search and filters combine.
-   - **Grouped by holder:** No contract (RVG) first under the AA heading, then one heading per holder
-     (name, kind and the Invoiced text), its Contracts beneath. One row per Contract (the chain), not
-     per version. A holder with no Contract still shows its heading with "No Contracts yet" (the
-     Souter holder until Phase 19a).
-   - Columns: AA code (mono), Name, Terms ("RVG at the anaesthetist's rate", "Fixed rate $26.50 per
-     unit", "Fixed discount 10%", "Fixed prices · 3", "Rate x time permitted" as a second tag; labels
-     from the UI labels module), Settings (small tags "Price editable" and "Prepaid" where set),
-     Valid from, Valid to, Review, Status. Status pills: "Current", "Upcoming from <date>" (neutral)
-     when a later version is entered ahead, "Ended", "Retired" (neutral), "Review due" (the
-     `semantic.warning` tint). `src/theme` has no info colour, so do not invent one.
-   - The header copy loses "default Type 1": "No contract (RVG) is always offered first and cannot be
-     changed." There is no provisional note.
-   - "New contract" (teal) opens the detail panel. `data-shot="contract-catalogue"`.
-10. **Contract detail** (`apps/admin/flows/ContractEditSheet.tsx`, rebuilt as a wide desktop panel with
-    sections; covers US-04.1.1, US-04.1.2, US-04.1.4, US-04.2.1).
-    - **Header:** the AA code in mono beside the name, read-only, "Assigned on save" on a new
-      Contract; the version's status pill.
-    - **Holder:** a holder picker ("Contract holder", searchable over non-retired holders) on a new
-      Contract; read-only afterwards, with the holder's kind, Invoiced text, delivery and "Belongs to"
-      (who the holder setting says is invoiced; a plain helper line says the holder decides who is
-      invoiced).
-      No contract (RVG) shows "Held by Anaesthesia Associates · offered for every procedure".
-    - **Settings** (`data-shot="contract-settings"`): "Anaesthetist can change price, rate or discount"
-      (`editable`), "Prepaid" (`prepaid`), each a switch with a one-line helper (the editable helper
-      says it never applies to a fixed price), and read-only lines for "Who is invoiced", "Delivery"
-      and "Belongs to" from the holder. **Turning on one switch while the other is on is refused** with
-      the store's message (the office must switch the first off; OQ-96), and Save is refused if both
-      are set. They are version settings: read-only once `termsLocked`, with the same New version hint.
-    - **Terms (interim):** a choice of "RVG at the anaesthetist's rate" (no lines), "Fixed rate or
-      discount" (agreed unit rate or percent discount, today's Type 2 inputs) and "Fixed prices"
-      (today's `PriceRows`, keeping the hook `contract-price-rows`), plus "Rate x time permitted".
-      Read-only with "This version has started. Use New version to change its terms." once
-      `termsLocked`.
-    - **Dates:** valid from, valid to and review date shown; only the review date is editable. A new
-      Contract's valid-from cannot be before today.
-    - **Versions:** the chain newest first, each with its dates and pill ("Upcoming from 28 Jul 2026",
-      "Current", "Ended 27 Jul 2026"), selectable to view that version; **"New version"** (teal
-      secondary) asks for the start date (today or later; a past date is refused with the store's
-      message) and the review date (with "The current version will end the day before" shown live)
-      and opens the new version with its terms ready to change. `data-shot="contract-versions"`.
-    - **Actions:** Save (teal primary); "Retire contract" (confirm with the unbilled-reference count
-      and the end date, today or later; error treatment, not crimson). **No Delete.** No contract (RVG)
-      shows its fixed notice and no actions.
-    - Hooks: `data-shot="contract-detail"`.
-11. **Office billing setup** (`shared/flows/EditBillingSetupSheet.tsx`, `shared/booking/OfficeBillingSetup.tsx`).
-    - The governing-contract select lists No contract (RVG) first, then one option per active chain
-      under holder `optgroup`s, each labelled "<AA code> · <name>", no "(Type n)". A retired Contract
-      shows only if already selected, as "(retired)". It still lists every holder's Contracts:
-      narrowing by the Booking's context is Phase 20. It stores the chain's id; pricing takes the
-      version in force through `contractForPricing`.
-    - The read view names the Contract as "<AA code> · <name>" and the version's dates.
-    - Mobile and web need no new control; their fee breakdowns are unchanged in value.
-12. **ACC review flag** (RV-37): delete flag (c) "ACC should not bill the patient directly" from
-    `apps/admin/reviewFlags.ts` and its test case. ACC stays an ordinary holder's Contract; the
-    informational ACC chip on mobile Balances, the ACC column on web Accounts and `accRelated` stay
-    (RV-37: "keep the chips"), as does the ACC pre-op flat-fee help text.
-13. **The billing-failure demo without backdating** (RV-32; built default, logged for the owner;
-    Phase 25 re-bases it again). Phase 14's "Trigger billing failure" ends `CT-COS-ACC` on 2026-07-15
-    and the Billing monitor's "Resolve & retry" clears that end date: both are refused now (no
-    backdating, no in-place date edits).
-    - **The trigger:** on `SEED_LIST_IDS.billingFailure` (Ropata Thu 16 Jul), submit if ACTIVE, then, as
-      `OFFICE_ACTOR`, point Losa Tuilagi's Procedure at `CT-COS-ACC-OLD` through the ordinary office
-      governing-Contract action (a Contract no version of which covers 16 Jul), then `authoriseList`.
-      A surgeon holder has no fallback, so her Booking fails with `contractIneffective` while Hemi
-      Walker's sibling invoices, exactly as before. Disabled "Already triggered" once the List is billed.
-      Update its description; the label and place are unchanged. No new button.
-    - **The monitor:** for a `contractIneffective` or `contractMissing` failure, "Resolve & retry" no
-      longer edits a Contract: it opens the Booking's office billing setup so the office **chooses a
-      Contract** (here `CT-COS-ACC`), then retries the case. Check the governing-Contract edit is
-      allowed on an authorised List's unbilled, failed Booking; if the lifecycle guard refuses it, add
-      that one narrow allowance to the failed-case path and test it. A handoff fault keeps its plain
-      retry.
-    - **Tests:** re-express `billingRetry.test.ts` and the `demoTriggers` test on this path (COS fails,
-      the sibling invoices, choose `CT-COS-ACC`, retry bills COS as the same organisation counterparty).
-14. **Copy, labels and tests sweep.**
-    - `src/shared/contracts/labels.ts` (new; imports nothing admin-only, so the PWA purity test holds):
-      `HOLDER_KIND_LABEL`, `DELIVERY_LABEL`, `INTERIM_TERMS_LABEL`, `SETTING_LABEL`,
-      `invoicedLabel(holder)`, `belongsToLabel(holder, names)` and `versionStatusLabel`. One home for
-      every app. There is **no provisional-notes module**: every reading this phase builds is answered,
-      or (OQ-114's two delivery values, OQ-131's dated versions) invisible on screen: OQ-131's label is one doc
-      comment in `contracts.ts`.
-    - `shared/audit/fieldLabels.ts`: labels for AA code, holder, holder is billed, billable party,
-      invoice delivery, practitioner (belongs to), valid from and to, review date, next version, retired, price editable, prepaid,
-      interim terms. Remove the Type, holder type and scope fields.
-    - `shared/audit/auditNarrative.ts`: replace the `ContractScope` and `ContractType2Detail` branches
-      with narration for holders ("Held by Southern Cross", "Invoices the payer on the Booking",
-      "Invoices delivered by portal"),
-      versions ("New version from 1 Aug 2026; the previous version ends 31 Jul 2026"), retire and terms,
-      so a History entry never shows raw JSON; a Contract's entries name it by AA code and name.
-    - `MasterData.tsx`: the Hospitals header and add-hospital result lose "default Type 1" ("Added
-      Ashburton Surgical."); the Insurers tab and its copy are removed (work item 8), and the
-      `acceptsDirectClaims` label goes from `fieldLabels.ts`.
-    - Grep `aa-prototype/src` for "Type 1", "Type 2", "Type 3", "default Type 1", "protected default",
-      "first party", "third party" and "standard units" in rendered strings and fix them; comments that
-      describe history may stay.
-    - `DemoControlPanel.tsx` and `DemoData.tsx` scenario text: new Contract names, no "Type n", S4
-      Beat 3's new cause and S5 Beat 4's new-version beat.
-    - `visual/admin-phase07.spec.ts`: update the "default Type 1" assertions and its screenshot. Add
-      Playwright shots for the holder master, the catalogue grouped by holder, a search, the settings,
-      and the Doyle detail with "Upcoming from 28 Jul 2026".
-    - No en or em dashes in any new copy; no build-phase references in app copy.
+   - **Rate Contracts** (RVG at the Contract's rate, bills the holder, override off): Southern Cross
+     Affiliated Provider $26.50 (Southern Cross), Health NZ agreed rate $23 (Christchurch Public),
+     ACC elective services via St George's $25, ACC orthopaedic services, Canterbury Orthopaedic
+     Surgeons $24 (linked to `SG-COS`'s member surgeons, copied), Aria Skin and Laser Clinic hourly
+     rate $26.50 with `permitsRateTime` (linked to the surgeon on its seeded Booking; log it),
+     Unisports Ortho $93.47 (AR-58 8.3; linked to a seeded orthopaedic surgeon, log it; no Procedure on
+     it).
+   - **Fixed** (interim rows unchanged): Bariatric fixed prices, Mr P. Doyle (Doyle's Party, linked to
+     Doyle, **bills the payer**, though the route still bills Doyle until 21; log it), rows `CP-BAR-1`
+     to `CP-BAR-3` ($2,800, $2,400, ordinal-2 $950). Plus **COS ACC fixed fees** (new, Canterbury
+     Orthopaedic Surgeons, linked as above, bills the holder, **no rows**): only the billing-failure
+     demo points a Procedure at it (item 12); 19a gives it a range starting after 16 Jul 2026 so 20's
+     "no range in force" holds (a 19a handoff).
+   - Names drop "(Type n)"; scenario markers drop "Type 2" and "Type 3". AA codes from `nextAaCode` in
+     seed order, `<codePrefix>-<nnn>` (for example `STG-001`, `COS-001`); pin the table in
+     `seed.test.ts` with a uniqueness assertion. Holder reference codes stay empty until 19a. Nothing is
+     prepaid; no seeded Contract breaks a guard (a seed test runs `contractRefusal` over all).
+   - Id formats: `party: PY`, `contract: CTN` and `contractPrice: CPN` as today. Bump
+     `PERSIST_VERSION`.
+9. **Store** (`store/contractActions.ts`; office only, `mutate()`, audited before and after, refusals
+   as data from `contractRefusal`).
+   - `createContract`: the store stamps `aaCode` from `nextAaCode(holder.codePrefix)`; the office may
+     not choose `open` or a system role.
+   - `editContract` in place: name, AA code (unique), holder reference code, who it bills, links,
+     the override and the rate or discount; `prepaid` and `pricing.kind` refused after creation;
+     `disableContract` and `enableContract` (audited `contract.disable`, `contract.enable`), refused on
+     a system Contract. **`deleteContract` is removed** with its tests and button.
+   - No contract · RVG: only its name and AA code change.
+   - `createHospital` no longer mints a Contract (RV-06); `isProtectedDefault` and its message go.
+   - Tests (`contractActions.test.ts`, new; `mastersActions.test.ts` re-expressed): each guard on create
+     and edit, the AA code stamped and unique, prepaid and kind fixed, disable and enable, no delete,
+     a new hospital or insurer Party creating no Contract. Tests the new rules refuse are re-expressed,
+     never loosened: `billingRun.test.ts`'s Health NZ end-date case and its protected-default case go
+     with the dates; its "snapshot immunity" case edits Health NZ's rate in place after billing and
+     proves the issued invoice unchanged; `billingRetry.test.ts` moves to item 12's path.
+10. **Admin Contracts screen and editor** (`ContractsView`; `ContractEditSheet` rebuilt as a wide side
+    panel; frontend-design skill first).
+    - **List:** one search field "Search by name, code or AA code" with a result count
+      (`data-shot="contract-search"`); filters Active (default), Disabled, All, and a holder Party
+      select. Results under holder headings, No contract · RVG first under Anaesthesia Associates.
+      Columns: AA code (mono), Name, Bills ("Holder" or "Payer"), Pricing ("RVG at the anaesthetist's
+      rate", "RVG at $26.50 per unit", "RVG less 10%", "Fixed price", "Open price"), Prepaid and
+      Override tags where set, Status pill (Disabled neutral). `data-shot="contract-catalogue"`.
+    - **Editor:** AA code (mono, "Assigned on save" when new, editable after), name, holder reference
+      code; Holder Party (searchable; fixed after save); "Bills" Holder or Payer (forced Payer and
+      read-only for an AA- or anaesthetist-held or prepaid Contract, with D23's helper "A prepaid
+      Contract always bills the payer, awaiting AA's confirmation."); Linked surgeons (multi-select)
+      and Linked anaesthetist (one), hidden for a hospital holder; Prepaid and Pricing kind (rate or
+      discount input beside it), both read-only after save with "Set when the Contract is created";
+      "Anaesthetist may override the price" shown only on an RVG kind; Save (teal); "Disable" (error
+      treatment) or "Make active". No Delete. No contract · RVG shows its fixed notice.
+      Hooks `data-shot="contract-detail"`, `contract-settings`, `contract-links`.
+11. **Office billing setup** (`EditBillingSetupSheet`, `OfficeBillingSetup`): the governing-contract
+    select lists No contract · RVG first, then Active Contracts as "<AA code> · <name>" under holder
+    groups; a Disabled one only when already selected, as "(disabled)". Narrowing by the Booking is
+    20's step rail. The read view names "<AA code> · <name>".
+12. **The billing-failure demo without dates** (RV-32; built default, logged; 25 re-bases it again).
+    "Trigger billing failure" on `SEED_LIST_IDS.billingFailure` (Ropata Thu 16 Jul): submit if
+    ACTIVE, then as the office point Losa Tuilagi's Procedure at COS ACC fixed fees through the
+    ordinary office action, then authorise: her Booking fails with "No price in force" while Hemi
+    Walker's sibling invoices. "Resolve & retry" no longer edits a Contract: for `contractIneffective`
+    or `contractMissing` it opens the office billing setup to choose a Contract (here ACC orthopaedic
+    services), then retries; check the edit is allowed on the failed, unbilled Booking of an authorised
+    List and add only that narrow allowance, tested. Same label and place; new description. Re-express
+    `billingRetry.test.ts` and the `demoTriggers` test on this path.
+13. **ACC flag, copy, labels, tests.**
+    - Delete review flag (c) "ACC should not bill the patient directly" and its test (RV-37); the ACC
+      chip, the web Accounts ACC column, `accRelated` and the ACC pre-op help text stay.
+    - `src/shared/contracts/labels.ts` (new, nothing admin-only, so the PWA purity test holds):
+      `PARTY_KIND_LABEL`, `DELIVERY_LABEL`, `PRICING_KIND_LABEL`, `BILLS_LABEL`, `STATUS_LABEL`.
+    - `fieldLabels.ts` and `auditNarrative.ts`: every new field narrated in English ("Rate changed from
+      $93.47 to $95.00", "Disabled", "Bills the payer"); the type, holder type, scope, effective-date
+      and `acceptsDirectClaims` labels go. A Contract's entries name it by AA code and name.
+    - Master data: the Hospitals copy loses "default Type 1"; the Insurers and Organisations tabs are
+      gone.
+    - Grep `aa-prototype/src` rendered strings for "Type 1", "Type 2", "Type 3", "default Type 1",
+      "protected default", "contract holder", "first party", "third party", "Effective to" and fix them
+      (app copy says "Party", never "contract holder").
+    - `DemoControlPanel.tsx`, `DemoData.tsx`: new names, S4 Beat 3's cause, S5 Beat 4's in-place edit.
+    - `visual/admin-phase07.spec.ts`: update its assertions and shot; add shots of Parties, the
+      Contracts list with a search, the editor's settings and the save-guard refusal.
+    - No en or em dashes in new copy; no build-phase references in the UI.
 
 ## Demo triggers
 
-This phase adds **no new button**. The new version is a product action, the Upcoming version flips
-with the existing demo clock (harness bar, and the PWA's More-tab clock), and "Trigger billing
-failure" is re-based without changing its label or place.
+This phase adds **no new button**: everything is a product action, and "Trigger billing failure" is
+re-based in place.
 
 | Trigger | Screen | Effect |
 |---|---|---|
-| "New version" (product) | Admin, Master data, Contracts, "Health NZ agreed rate" | A new version from the chosen date, today or later (for example 1 Aug 2026, rate $24.00); the current version ends the day before and both show under the Christchurch Public holder, the new one "Upcoming from 1 Aug 2026". A past date is refused |
-| Existing clock "+7 days" or "Procedure day · 28 Jul" | Admin, Master data, Contracts, "Bariatric fixed prices, Mr P. Doyle" | The seeded second version flips from "Upcoming from 28 Jul 2026" to "Current" (gastric bypass $2,950.00) and the first shows "Ended 27 Jul 2026". The Tue 14 Jul bariatric Booking still prices $2,800.00, because the procedure date picks the version |
-| Insurers as holders (product) | Admin, Master data, Contract holders | There is no Insurers tab. nib is an insurer holder, billed, delivery "Portal"; AIA Health is not billed, delivery "Email". "Add holder" for a new insurer creates no Contract (no new button) |
-| Merivale Eye Rooms holder (product) | Admin, Master data, Contract holders | The surgeon holder is linked to two surgeons (Whitford and Reid) by ID; no rooms filter anywhere (no new button) |
-| Prepaid with editable (product) | Admin, Master data, Contracts, "New contract" | Turning on "Prepaid" while "Anaesthetist can change price, rate or discount" is on is refused with the store's message; either alone saves (no new button) |
-| "Trigger billing failure" (existing, re-based) | Admin, Billing monitor | Points Losa Tuilagi's Procedure at the 2024-schedule COS ACC Contract, then authorises Ropata Thu 16: her Booking fails, Walker's sibling bills; "Resolve & retry" asks the office to choose a Contract |
+| Parties (product) | Admin, Master data, Parties | Create an insurer and a funder Party; it saves without billing details, and once a Contract bills it, saving it without a billing name or delivery is refused. No Insurers tab; creating a Party makes no Contract |
+| "Disable" (product) | Admin, Master data, Contracts, Health NZ agreed rate | It leaves the default Active list and shows under Disabled; the Procedure already on it (Hemi Walker, Dr Whitaker's Fri 17 Jul List) keeps it and its invoice is unchanged; "Make active" restores it |
+| Save guards (product) | Admin, Contracts, "New contract" | A prepaid Contract with an RVG pricing kind, or the override on a fixed price, is refused with the store's sentence; after save the pricing kind and prepaid are read-only |
+| In-place edit with audit (product) | Admin, Contracts, Unisports Ortho | Rate $93.47 to $95.00 saved in place; Admin Audit shows the entry with before and after (25 adds the History tab) |
+| "Trigger billing failure" (existing, re-based) | Admin, Billing monitor | Points Losa Tuilagi's Procedure at COS ACC fixed fees and authorises Ropata Thu 16: she fails with "No price in force", Walker's sibling bills; "Resolve & retry" asks the office to choose a Contract |
 
-- **PWA equivalent:** none needed. The effect is on the Admin Contract catalogue and Billing monitor,
-  and the PWA has no Admin; the mobile fee breakdown is unchanged in value.
-- **Phase 15a's shared "Raise sample warnings":** no change. This phase registers no warning rule.
+- **PWA:** none needed; the effects are Admin-only and mobile fees are unchanged.
+- **15a's "Raise sample warnings":** no change; no warning rule is registered.
 
 ## Out of scope
 
-Do not add fields for these here (convention 15):
-
-- RVG groups and the RVG code type-ahead: 19.
-- Contract lines (fixed price, fixed rate, fixed discount, base and modifier units, holder code and
-  description) replacing the interim terms and `ContractPrice`, the line-copy on a new version, the
-  holder codes in the search, the anaesthetists' own fixed-price Contracts (the seeded Souter
-  holder's Contract, flagged prepaid where wanted), and the resolver's line, procedure and group
-  layers: 19a.
-- The fitting Contract list inside 20's step rail (No contract (RVG) first, holder-fit candidates under holder headings,
-  the practitioner rule (calling `practitionerLinkFits`, no rooms filter), the composite
-  search inside it, a Contract with no lines offered by context), removing the route, the payment
-  category, the Insurer route and `Procedure.insurerId`: 20.
-- Who is billed decided by the holder's "is billed" or the payer on the Booking, the payer itself,
-  the insurance indication (OQ-93) and the guardian override's removal: 21. The interim `billedAs` and
-  `routeCounterpartyForHolder` go there.
-- Invoice layout and GST set on the Contract, sending by the holder's `delivery` (and replacing
-  `markInvoiceEmailed`'s insurer-kind refusal), and the Split action: 22.
-- The multi-procedure rule and combination Contracts: 23.
-- The price precedence, the editable flag acting on the anaesthetist's price changes and the Method 3
-  gate's removal: 24.
-- Staged changes, the review dashboard, one future version at a time, correcting or withdrawing a
-  future version, relinking un-invoiced Procedures by line key, the prepaid exception (OQ-104), the
-  pricing snapshot and versions listed with their invoices: 25. The schedule upload (OQ-100): not built.
-- Prepayment started from the prepaid setting: 27.
-- Spreadsheet loads of holders, Contracts and lines, and the organisations master's fate: 42. The
-  Booking's insurer pointing at a holder: 21.
-- Insurer and funding-source scope, the category table, required booking inputs and default RVG
-  Contracts per procedure: dropped by the catalogue, never built.
+Specialties, funding tags, surgeon specialties and the open-price fallbacks (18a). RVG groups (19).
+Price ranges replacing `ContractPrice`, the invoice description, the default RVG code, holder
+reference codes seeded, Merivale's and Souter's Contracts (19a). The step rail and its candidates
+(calling `linkFits`), removing the route, the payment category and `Procedure.insurerId` (20). Who is
+billed acting on `billsTo`, the payer on the Booking, the funder on the Booking (21). Delivery sent by
+the Party's setting, the portal queue and `markInvoiceEmailed`'s insurer-kind refusal removed (22).
+The override acting and the Method 3 gate's removal (24). The pricing snapshot and each Contract's
+history tab (25). Prepayment from the prepaid setting (27). Loads of Parties and Contracts (42). Never
+built: versions, Contract lines, staged changes, a schedule upload (D34).
 
 ## Manual test checklist
 
-The agent runs every item itself in the running app and reports it with evidence; none is handed
-to the owner (ROADMAP.md "Owner review: agents test themselves").
+The agent runs every item itself in the running app and reports it with evidence (ROADMAP.md "Owner
+review: agents test themselves").
 
-- [ ] Contract holders: the thirteen seeded holders show kind, Invoiced text, Delivery and Belongs to
-      (Doyle's holder, Merivale Eye Rooms and the Souter holder "Payer on the Booking"; nib "Portal",
-      AIA Health "Email"; COS "Holder: Canterbury Orthopaedic Surgeons"; Merivale Eye Rooms linked to
-      Whitford and Reid; Anaesthesia Associates read-only). There is no Insurers tab. A billed hospital
-      holder with no billable party is refused. A new insurer holder arrives not billed with delivery
-      Email, can be saved billed or on Portal, and creates no Contract; linking a holder to an
-      anaesthetist forces nothing; a surgeon holder takes one or more surgeons, an anaesthetist holder
-      one anaesthetist. Retiring Southern Cross is refused while it holds active Contracts.
-- [ ] Contracts: No contract (RVG) first under Anaesthesia Associates, then holder headings; every row
-      has a mono AA code (matching the seed test) and none shows "Type n", "first party" or
-      "default". "Active" hides ended and retired Contracts and "All" shows them (the 2024-schedule COS
-      ACC only there); the holder filter narrows; Health NZ shows "Review due".
-- [ ] Settings: a plain RVG Contract shows "Price editable", SXAP does not; the detail's switches are
-      read-only on a started version with the New version hint and editable on a new Contract. Turning
-      on "Prepaid" while the price is editable, or the reverse, is refused with one message, on a new
-      Contract, an edit of an unstarted version and a New version; either alone saves. No price
-      control on any booking screen changes.
-- [ ] Search: `SUR-0001` finds the Doyle Contract, "affiliated" SXAP, "Canterbury" the COS Contracts; no
-      match shows an empty state; search combines with both filters.
-- [ ] New contract: the header reads "Assigned on save"; no review date, or a valid-from before today,
-      is refused; after save it shows the next AA code for the holder's prefix; code, holder and dates
-      cannot be edited. There is no Delete; Retire ends it today or later (a past date refused) and it
-      stays under "All" with `contract.retire` in the audit. No contract (RVG) opens with its notice and
-      no actions, and the store refuses an edit, retire or new version.
-- [ ] OQ-131 default: the version rules sit in one module with its single `PROVISIONAL (OQ-131, D77)` comment;
-      no provisional text appears in the app.
-- [ ] Health NZ agreed rate: "New version" from 1 Aug 2026 at $24.00 ends the current version 31 Jul
-      2026; the new one shows "Upcoming from 1 Aug 2026", both under Christchurch Public with one AA
-      code; a start of 20 Jul 2026 is refused; the current terms are read-only. The Hemi Walker
-      invoice (Dr Whitaker, Fri 17 Jul) is unchanged.
-- [ ] Doyle bariatric, held by Doyle's surgeon holder: "Upcoming from 28 Jul 2026" with the gastric bypass at
-      $2,950.00. Harness clock "+7 days": the second version is Current, the first "Ended 27 Jul 2026".
-      The Tue 14 Jul bariatric Booking still shows $2,800.00 and $950.00.
-- [ ] Adding a hospital, or adding an insurer holder, creates no Contract.
-- [ ] Office billing setup: the governing-contract select lists No contract (RVG) first, then "<AA
-      code> · <name>" under holder groups.
-- [ ] Every seeded fee and counterparty is unchanged (the parity fixture matched): S3 figures, S5 Beat
-      4's invoice, mobile (framed and PWA) and web Booking detail. The Aria rate x time line still adds
-      on Souter's Mon 27 Booking, and a Contract without rate x time still refuses it with the
-      single-sourced message.
-- [ ] S4 Beat 3: Billing monitor, "Trigger billing failure" fails only Losa Tuilagi's COS Booking
-      (pointed at the 2024-schedule Contract) while Hemi Walker's sibling invoices; "Resolve & retry"
-      opens the billing setup, choosing "ACC orthopaedic services" and retrying bills COS as the same
-      organisation counterparty. No Contract is edited or backdated.
-- [ ] Admin Review shows no "ACC should not bill the patient directly" flag; the mobile Balances ACC
-      chip and web Accounts ACC column remain.
-- [ ] `npm run shots` green (Phase 07 spec updated, new shots captured); catalogue screenshots: the
-      recipes below done, a full `npm run capture` with no failed recipe and no story without a recipe,
-      shots checked by eye, `npm run verify:board` green.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` green, parity fixture matched.
+- [ ] Parties: every seeded Party shows its kind, billing name and delivery; nib "Email"; ACC, Health
+      NZ, NZDF and Veterans Affairs as funders; Anaesthesia Associates read-only. No Insurers or
+      Organisations tab. A new insurer and a new funder save with no billing details and create no
+      Contract; a billed Party saved without its billing name, or with email delivery and no email, is
+      refused; a hospital Party needs its hospital.
+- [ ] Contracts list: No contract · RVG first; every row has a mono AA code matching the seed test;
+      no "Type n", "default" or "contract holder" anywhere. Active by default; Disabled and All work;
+      the holder filter narrows; `COS-001`, "affiliated" and "Unisports" each find their Contract; no
+      match shows an empty state.
+- [ ] Editor: a new Contract reads "Assigned on save" and gets the next code for its holder; prepaid
+      with an RVG kind, the override on a fixed price, a surgeon-group Contract with no link, links on a
+      hospital-held one and a holder-billed prepaid are each refused with one sentence; prepaid and the
+      pricing kind are read-only after save; the D23 helper shows once on a prepaid Contract.
+- [ ] Unisports rate $93.47 to $95.00: saved in place; Admin Audit shows before and after.
+- [ ] Disable Health NZ agreed rate: gone from Active, shown under Disabled, Hemi Walker's invoice and
+      fee unchanged; Make active restores it; No contract · RVG offers no Disable and the store refuses
+      it.
+- [ ] Adding a hospital, or an insurer Party, creates no Contract.
+- [ ] Office billing setup: No contract · RVG first, then "<AA code> · <name>" under holder groups.
+- [ ] Every seeded fee and counterparty unchanged (parity fixture matched): S3 figures, S5's Health NZ
+      invoice, mobile (framed and PWA) and web Booking detail; the Aria rate x time line still adds on
+      Souter's Mon 27 Booking.
+- [ ] S4 Beat 3: "Trigger billing failure" fails only Losa Tuilagi's Booking; "Resolve & retry" opens
+      the billing setup, choosing ACC orthopaedic services and retrying bills COS as the same
+      organisation counterparty. No Contract is edited.
+- [ ] Admin Review shows no ACC flag; the mobile ACC chip and web ACC column remain.
+- [ ] `npm run shots` green; catalogue screenshots done (below), a full `npm run capture` with no failed
+      recipe and the covered items' shots checked by eye; `npm run build`, `npm run build:pwa`,
+      `npx vitest run` and `npm run verify:board` green.
 
 ## Demo guide updates
 
-Patch these in the same session and mirror each in the same section of
-`docs/demo-guide/master-demo-guide.html`:
+Patch these in the same session and mirror each in `docs/demo-guide/master-demo-guide.html`:
 
-- **`04-presenter-cheat-sheet.md`, "Contracts":** replace "Type 1: reference only... Type 2: agreed
-  rate or discount... Type 3: fixed price" and "Every hospital and direct-billing insurer must have a
-  protected default Type 1" with: every Contract belongs to a contract holder (an insurer, hospital,
-  surgeon, who may be named for their rooms, or an anaesthetist's own price list); there are no
-  Contract kinds, only settings (is the anaesthetist allowed to change the price, is it prepaid; a
-  prepaid Contract is never editable); the holder says whether it pays AA or the payer on the Booking
-  does, how its invoices are delivered (email or portal), and which anaesthetist or surgeons its
-  Contracts belong to (one Contract can serve many surgeons); No contract (RVG) is held by AA, the one default, always offered
-  first; a Contract may have no lines; Contracts are dated version records, never backdated or
-  deleted, and a price review is a new version from today or later, so old Bookings keep the old
-  price; every Contract has AA's own short code, searchable with names and holders. Replace
-  "Surgeon/group/organisation-held contracts do not have that guaranteed fallback" with "an ended
-  Contract held by a surgeon holder has no fallback (the S4 billing-failure beat)". Replace the
-  "Direct Insurer route" line (about line 99): "nib is an insurer holder, delivery by portal; there is
-  no insurer master or direct-claims flag". Add two tips:
-  "show an upcoming version": open the Doyle Contract, then press "+7 days"; "find a Contract": type
-  an AA code or holder name in the Contract search.
-- **`03-demo-script.md`:**
-  - **S5 Beat 4** ("contract effective-dating"): becomes "Contract versions". Click: Admin → Master
-    data → Contracts → **Health NZ agreed rate** → **New version** from **1 Aug 2026**, review date
-    **1 Apr 2027**, rate **$24.00**, Save; then open the **Hemi Walker** Health NZ invoice from Dr Whitaker's Fri 17 Jul List. Say: a
-    price review is a new dated version, never backdated or deleted; the old one ends the day before,
-    and work done before then keeps its price. Expected: both versions under the holder, the new one
-    "Upcoming from 1 Aug 2026", the invoice unchanged. Optional aside: the Doyle "Upcoming" version and
-    the Contract search. The S5 "Serves" line's "contract effective-dating" becomes "Contract versions".
-  - **S4 Beat 3**: "a group-held contract with no default fallback was dated out" becomes "the Booking
-    was pointed at an old ACC Contract held by a surgeon holder (Canterbury Orthopaedic Surgeons),
-    which has no fallback and was not valid on the date"; "Resolve & retry" becomes "choose the right
-    Contract and retry". Nothing is backdated.
-  - **S3**: unchanged in figures; check its wording for "Type".
-- **`01-personas-and-responsibilities.md`:** drop "ACC route warnings" from the office's review flags;
-  the "Direct-claim insurer" row (about line 295) becomes "Insurer: a contract holder; invoices may go
-  by its portal".
+- **`04-presenter-cheat-sheet.md`, "Contracts":** replace the Type 1/2/3 lines, "protected default
+  Type 1" and the surgeon-held fallback line with: every Contract is one priced item held by a Party (a
+  hospital, insurer, funder, surgeon or surgeon group, an anaesthetist, or AA); it bills its holder or
+  the payer on the Booking (a prepaid Contract always the payer); it has a pricing kind, an optional
+  override on RVG kinds, prepaid or not, and is Active or Disabled; it is edited in place with an
+  audit, never deleted, and a change from a date is a new Contract; No contract · RVG, held by AA, is
+  always there; every Contract has AA's own code. Replace the "Direct Insurer route" line: "nib is an
+  insurer Party; there is no insurer master or direct-claims flag." Tip: "find a Contract: type its
+  name or AA code in the Contracts search."
+- **`03-demo-script.md`:** **S5 Beat 4** becomes "Contract edits are audited": Admin, Master data,
+  Contracts, search "Unisports", rate $93.47 to $95.00, Save; open Admin Audit. Say: a Contract is
+  edited in place and every change is recorded with before and after; a change that must start on a
+  date is a new Contract, and the old one is disabled, never deleted. Expected: the audit entry; no
+  invoice changes. The S5 "Serves" line's "contract effective-dating" becomes "audited Contract
+  edits". **S4 Beat 3:** the cause becomes "the Booking was pointed at a fixed-price COS Contract with
+  no price for the procedure"; "Resolve & retry" becomes "choose the right Contract and retry". S3:
+  figures unchanged; check its wording for "Type".
+- **`01-personas-and-responsibilities.md`:** drop "ACC route warnings"; the "Direct-claim insurer" row
+  becomes "Insurer: a Party; invoiced only where a Contract bills it".
 - **`02-workflows-and-handoffs.md`:** drop "ACC advisory flags"; "Selects the governing Contract and
-  rating method" becomes "Selects the Contract"; "direct-claim Insurer" (about lines 377 and 384)
-  becomes "an insurer holder delivered by portal".
-- **Control Panel scenario text** (`DemoControlPanel.tsx`, `DemoData.tsx`) and the seed scenario
-  markers: new Contract names, no "Type n", S4 Beat 3's cause, S5 Beat 4's New version.
-- Not a milestone phase, but re-read `master-demo-guide.html` §S4 and §S5 after patching.
+  rating method" becomes "Selects the Contract"; "direct-claim Insurer" becomes "an insurer Party".
+- Control Panel scenario text and seed markers as in work item 13.
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
-after the review pass and before the PROGRESS entry. Re-run
-`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 18` first: earlier phases may have changed
-these recipes since this plan was written. All covered shots are Admin (Master data); the mobile and
-web apps get no new screen.
-
-**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
-matches what was built:
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), after
+the review pass. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 18`
+first. All shots are Admin, Master data.
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|
-| [FT-04.1](../../../../requirements-board/requirements/stories/FT-04.1.md) Contract catalogue | captured · contracts | `partial`, reason "Contract lines are built in Phase 19a; staged changes in Phase 25." Re-shoot `contracts` on `[data-shot=contract-catalogue]`: No contract (RVG) first, Contracts under holder headings with the AA code and settings tags, the Active / All and holder filters. Add a `holders` shot of the Contract holders tab. Caption "Contract holders and their dated Contracts, filtered by active or all and by holder" |
-| [US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) Typical Contract arrangements | partial · contract-types | `partial`, reason "Pricing from lines is Phase 19a; the picker's holder grouping is Phase 20; the editable flag acts in Phase 24 and prepaid in Phase 27." Rename the shot `contract-settings` (the old name describes retired types) on `[data-shot=contract-settings]`: the price-editable and prepaid switches (with the refusal when both are turned on shown as a second state), the holder's Invoiced, Delivery and Belongs to lines, no type labels. Caption "Contracts are set up from settings, not kinds: who is invoiced, whether the anaesthetist can change the price, prepaid (never both)" |
-| [US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) Create, edit, retire Contracts | partial · contracts, edit-contract | `captured`. Re-shoot `contracts` with Valid from, Valid to, Review and Status ("Review due" on Health NZ) and the Active / All filter highlighted; `edit-contract` opens "Health NZ agreed rate" (re-point the `tr:has-text(...) >> role=button[name="Edit"]` step to the new row or row click) on `[data-shot=contract-detail]` with the dates and actions highlighted. Add a `retire` state (the Retire confirm, with no Delete beside it). Drop the partial reason. Captions "Contracts with their valid from, valid to and review dates, filtered by active or all and by holder" and "A Contract's dates, versions, New version and Retire; nothing is deleted" |
-| [US-04.1.3](../../../../requirements-board/requirements/stories/US-04.1.3.md) Contract audit and versioning (Phase 25; under FT-04.1) | absent · no shots, reason "Contracts are edited in place; no version history is kept..." | That reason stops being true here. `partial`, reason "Each version is kept and can be viewed; the invoices raised under each version are listed beside it in Phase 25." One shot `versions` on Health NZ agreed rate's `[data-shot=contract-versions]` after a New version, caption "Every version of a Contract is kept and can be opened" |
-| [US-04.1.4](../../../../requirements-board/requirements/stories/US-04.1.4.md) AA identifier for every Contract | absent · placeholder | `partial`, reason "Holder codes on Contract lines join the search in Phase 19a." Shots: `aa-code` (the catalogue's mono AA code column highlighted), a `search` state typing `SUR-0001` (finds the Doyle Contract) on `[data-shot=contract-search]`, and a new Contract's header showing "Assigned on save". Caption "Every Contract has AA's own short code, searchable with names and holders" |
-| [US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md) Contract holders | none (create it) | Create the recipe, `partial`, reason "A holder's practitioner link narrows the Contract list in Phase 20; the holder decides who is invoiced from Phase 21; delivery is read in Phase 22." Shots: `holders` (`[data-shot=contract-holders]`, the Kind, Invoiced, Delivery and Belongs to columns highlighted, nib as an insurer holder and Merivale Eye Rooms linked to two surgeons), and a `holder-panel` state with a surgeon holder open showing "Holder is billed", Invoice delivery and its surgeons. Caption "Each contract holder records whether AA invoices it, its billable party, how its invoices are delivered and the people it belongs to" |
-| [US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) Stage and submit Contract changes | none (create it) | No change here (Phase 25 owns it). |
-| [US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) Contract holder, who is billed, and where it applies | partial · contract-holder | `partial`, reason "Who is invoiced follows the holder from Phase 21; the Contract list is narrowed by hospital and practitioner ID in Phase 20." Re-shoot `contract-holder` on the COS ACC Contract's detail (re-point `tr:has-text("ACC orthopaedic services")`) with the holder section highlighted (kind, Invoiced text, delivery, Belongs to); its scope states go. Remove the two `assets/US-04.2.9/admin-contract-scope-*.png` entries from its `images` list only (never its text or status), then `npm run check`. Caption "The holder decides who is invoiced: its billable party, or the payer on the Booking" |
-| [US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) Contract prices effective from a date | absent · placeholder | No change here (Phase 25 owns it; it needs staged submit and the relink). |
-| [FT-11.4](../../../../requirements-board/requirements/stories/FT-11.4.md), [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md), [US-11.4.2](../../../../requirements-board/requirements/stories/US-11.4.2.md) Insurers (Retired) | none (FT-11.4); captured · insurers (US-11.4.1); captured · insured-reimbursement (US-11.4.2) | `absent` on all three, reason "Retired: removed in Phase 18", no shots (create FT-11.4's recipe as absent). The Insurers tab they show is gone |
+| [US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) Typical Contract arrangements | partial · admin-contract-types | `partial`, reason "Funding tags arrive in Phase 18a, price ranges in 19a and the invoice destination on the step rail in 20." Rename the shot `contract-settings` on `[data-shot=contract-settings]`: who it bills, pricing kind, prepaid and override, plus a second state with the prepaid-with-RVG refusal. Caption "Every arrangement is a Contract with the same settings: who it bills, its pricing kind, prepaid, and whether the anaesthetist may override" |
+| [US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) Create, edit and disable Contracts | partial · admin-contracts, admin-edit-contract | `partial`, reason "A fixed price changes by a price range from Phase 19a." Re-shoot `admin-contracts` with the Active, Disabled, All and holder filters highlighted; `admin-edit-contract` on `[data-shot=contract-detail]` (Health NZ agreed rate) with Disable and no Delete highlighted; add a `disabled` state (the list under Disabled). Captions "Contracts filtered by status and holder; Active by default" and "A Contract is edited in place and disabled, never deleted" |
+| [US-04.1.4](../../../../requirements-board/requirements/stories/US-04.1.4.md) AA identifier for every Contract | absent | `partial`, reason "Found by typing on the step rail from Phase 20; holder reference codes are seeded in 19a." Shots `aa-code` (the mono AA code column) and `search` (typing `COS-001` on `[data-shot=contract-search]`). Caption "Every Contract has AA's own unique code, searchable with its name" |
+| [US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md) Parties | none (create it) | Create it, `captured`. Shots `parties` (`[data-shot=parties]`, Kind, Billing name and Delivery highlighted, nib and the funders visible) and `party-panel` (a hospital Party open: its hospital, billing name, email, delivery). Caption "Each Party holds its billing name, contact and how its invoices are delivered" |
+| [US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) Holder, who is billed, and where a Contract is offered | partial · admin-contract-holder | `partial`, reason "Who is billed acts in Phase 21; where a Contract is offered narrows the step rail in Phase 20; specialties arrive in 18a." Re-shoot `admin-contract-holder` on the COS ACC Contract's `[data-shot=contract-links]` (holder, Bills, linked surgeons highlighted); drop its scope states, and remove the two `assets/US-04.2.9/admin-contract-scope-*.png` entries from its `images` only, then `npm run check`. Caption "A Contract names its holder Party, whether it bills the holder or the payer, and the surgeons it is offered for" |
+| [US-04.1.3](../../../../requirements-board/requirements/stories/US-04.1.3.md) Contract audit | as found | No change here (Phase 25 owns it). |
+| [FT-11.4](../../../../requirements-board/requirements/stories/FT-11.4.md), [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md), [US-11.4.2](../../../../requirements-board/requirements/stories/US-11.4.2.md) Insurers (Retired) | none; captured · insurers; captured · insured-reimbursement | `absent` on all three, reason "Retired: removed in Phase 18", no shots (create FT-11.4's recipe as absent) |
 
-US-04.2.4 left this phase for 19a; its recipe stays apart from the breakage below.
+**Recipes this phase breaks:** `US-04.2.2` (24) and `US-04.2.5`: re-point row names and the "Agreed
+unit rate" label to the new editor, keep state names, caption by pricing kind. `US-04.2.4`,
+`US-04.1.6`, `US-04.2.10` (Retired 5 November), `US-04.4.1` and `US-04.2.9`: `absent`, reason
+"Retired: the flat Contract model has no lines, versions or defaults". `US-04.3.2`: options become
+"<AA code> · <name>"; the "Governing contract" highlight must still match. `US-04.3.3` (20): its
+`default-contract` shots now show "St George's RVG"; caption accordingly. `US-05.2.5`, `US-04.2.3`,
+`US-05.5.1`, `US-05.5.2`: "Type 3" becomes "fixed price". Recipes with a `billing-failure` setup step:
+re-check shots and captions for the new cause. `US-13.4.1` and recipes opening Master data: the
+Insurers and Organisations tabs are gone and a Parties tab exists; re-point whatever `--dry` fails on.
 
-**Recipes this phase breaks** (keep shot names unless the old name describes retired behaviour):
-- `US-04.2.2` (Phase 24) and `US-04.2.4` (19a): re-point the row names (`"St George's standard
-  units"`, `"Southern Cross Affiliated Provider"`, `"Aria Skin and Laser Clinic"`) and
-  `label:has-text("Agreed unit rate")`; keep the `contract-price-rows` hook and `US-04.2.2`'s `type-1`,
-  `type-2`, `type-3` and `rate-time` state names until 24, but caption them by the terms they show.
-- `US-04.3.2`: options become "<AA code> · <name>" under holder groups; the `[role=dialog]
-  label:has-text("Governing contract")` highlight must still match.
-- `US-04.4.1` and `US-04.2.9` (Retired): `status: absent`, reason "Retired: removed in Phase 18".
-  `US-04.2.7` (Retired): keep `absent`, reason "Retired: a Contract declares no required booking
-  inputs (2026-10-08)". `US-04.2.5` (Retired): re-point its `ordinal-rows` step to the new row open and
-  reword "Type 3 contract" to "fixed-price Contract".
-- `US-04.3.3` (20): its three `default-contract` shots now show "St George's RVG". Reword the captions
-  to "Procedure governed by St George's plain RVG Contract" and "The Procedure's Contract shown on the
-  Booking", keep names and status, and make its partial reason: "Seeded hospital Procedures carry
-  their hospital's plain RVG Contract; an ended hospital or insurer Contract falls back to No contract
-  (RVG), held by AA. The office's Contract picker, the step rail, is built in Phase 20."
-- `US-05.2.5` and `US-04.2.3`: "Type 3" in their reasons becomes "fixed prices", status unchanged.
-  `US-05.5.1`, `US-05.5.2`: re-check names and captions.
-- Recipes with a `{ "trigger": "billing-failure" }` setup step: the cause changed (work item 13);
-  re-check each failure shot and caption.
-- `US-13.4.1`'s reason ("Insurers ... are view only") loses the insurers: they are holders now. Recipes that open the Contracts tab (`US-04.3.1`, `US-04.3.4`, `US-13.4.1` and similar): the wide
-  panel replaces the old sheet and a "Contract holders" tab now sits before "Contracts"; re-point
-  whatever the `--dry` run fails on. The Phase 07 Playwright spec is separate (work item 14).
-
-**ATLAS.md.** Personas and IDs (holder ids, Contract names and AA codes, `CT-NO-CONTRACT`,
-`CT-DOYLE-BAR-2`, `CT-COS-ACC-OLD`), Seed data (the Doyle upcoming version, the Health NZ review date,
-the billing-failure cause), Overlays (the wide Contract and holder panels) and Existing hooks
-(`contract-holders`, `holder-panel`, `contract-catalogue`, `contract-search`, `contract-detail`,
-`contract-settings`, `contract-versions`; `contract-price-rows` kept). Routes are unchanged.
+**ATLAS.md:** Party ids and Contract names and AA codes (`CT-NO-CONTRACT`, the COS fixed fees, Unisports),
+seed notes (the billing-failure cause), overlays (the wide Party and Contract panels) and hooks
+(`parties`, `party-panel`, `contract-catalogue`, `contract-search`, `contract-detail`,
+`contract-settings`, `contract-links`; `contract-price-rows` kept).
 
 ## Adversarial review (after build)
 
-After the manual test checklist and the build and tests are green, and before the PROGRESS entry,
-run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: four Opus lenses
-(quality, fee-maths and parity, store and lifecycle, plan and catalogue adherence); verify every
-finding against the catalogue and the code, fix the confirmed ones, re-green, and record the pass. Do
-not re-raise anything settled in the Decisions log.
+After the checklist and a green build, before the PROGRESS entry: the standard review-and-fix pass
+(PROGRESS convention 18) with four Opus lenses (quality, fee-maths and parity, store and lifecycle,
+plan and catalogue adherence); verify each finding, fix the confirmed ones, re-green. Do not re-raise
+anything settled in the Decisions log.
 
 **Steer this phase's reviewers at:**
-- **Parity is real:** the fixture was captured before the reshape and matches unchanged; recompute by
-  hand SXAP $26.50, Health NZ $23, St George's ACC $25, COS $24, the bariatric rows, Aria $1,440. No
-  expected number was edited to pass.
-- **Who is billed did not move:** every seeded invoice goes to the same counterparty kind and id (COS
-  `{ kind: 'organisation', id: ORG.cos }`, Doyle the surgeon, Aria the clinic). No billing path reads
-  `billed`; `billedAs` and `routeCounterpartyForHolder` are the only bridges, labelled for Phase 21.
-- **Never backdated, never deleted (RV-32):** no action edits a version's dates in place or accepts a
-  past start; `deleteContract` is gone with its UI and tests; retire ends the latest version today or
-  later; one chain per Contract, the day-before end, no overlap; the version in force on the List date
-  prices everywhere through `contractForPricing`; a started version's terms and settings are frozen; no
-  pricing path reads the demo clock, the created date or `Date.now()`. Nothing of 25's is half-built.
-- **No kinds, settings only (US-04.1.1):** no rendered "Type 1/2/3", "first party" or "third party",
-  no `type` or party-type field, no branch on a category; `interimTerms` is read only through
-  `interimTermsOf`; `editable` and `prepaid` are stored and shown but read by no pricing or
-  prepayment path, and the pair is refused on every save path through one helper
-  (`validateContractSettings`), seeded nowhere.
-- **No contract (RVG) (DM-49, OQ-78):** exactly one, found by `isDefault`, held by the never-billed
-  `aa` holder, never expires, unchangeable through the store; the per-holder invariants, auto-create
-  paths and fallback are gone everywhere, copy included.
-- **OQ-131 default is contained:** the dated-version rules are only in the one version module, carrying one
-  provisional comment and no UI label; no line dates, no in-place edit path.
-- **Holders (US-04.1.5):** every integrity rule holds in the store, not just the UI (billed needs a
-  billable party; no rule ties billing to the kind; an anaesthetist holder has one anaesthetist, a
-  surgeon holder one or more surgeons by ID); retire refusals; `delivery` is stored and read by
-  nothing yet; no rooms or group link, test or filter exists (`practitionerLinkFits` is the one
-  rule).
-- **No Insurer master (RV-39):** no `acceptsDirectClaims`, `setInsurerDirectClaims`, Insurers tab,
-  insurer pre-fill or insurer-created Contract anywhere (code, copy, labels, tests); each insurer is
-  an insurer holder, and the `Insurer` identity left is only `{ id, name }`; `markInvoiceEmailed`'s
-  insurer-kind refusal is untouched for 22.
-- **The failure demo (work item 13):** the trigger backdates nothing, the monitor edits no Contract,
-  any lifecycle allowance is narrow and tested.
-- **AA code and search:** the code is made only by `nextAaCode`, stamped on every create path, shared
-  by a chain, immutable even with a raw patch, mono everywhere; `contractSearch` is pure, in
-  `src/domain/billing`, built on `contractMatchesQuery`, and is what the catalogue calls.
-- **One module:** the holder, Contract and version shapes and rules live only in
-  `domain/billing/contracts.ts` (plus the seed); the doc comments name the design's fields and mark ours.
-- **ACC and copy:** the review flag is gone, the chip, column and pre-op help text stay; teal the only
-  action colour; Retire in the error treatment; mono tabular-nums for codes and money; desktop
-  panels; no en or em dashes, build-phase references or provisional labels in app copy.
-- **Persistence and the PWA:** `PERSIST_VERSION` bumped and stale state reseeds; the PWA purity test
-  holds with the new shared modules.
+- **Parity is real:** the fixture predates the reshape and matches unchanged; recompute SXAP $26.50,
+  Health NZ $23, St George's ACC $25, COS $24, the bariatric rows, Aria $1,440 by hand.
+- **Who is billed did not move:** every seeded invoice keeps its counterparty kind and id; no billing
+  path reads `billsTo`; `routeCounterpartyForParty`, `legacyCounterparty` and `interimRouteContract`
+  are the only bridges, each labelled INTERIM.
+- **Flat, not versioned (D77, RV-32):** no dates, versions, Retire or delete anywhere (code, copy,
+  tests); edits in place, each audited with before and after; a Disabled Contract still prices and
+  bills; `prepaid` and `pricing.kind` immutable even through a raw patch.
+- **Guards in one place:** `contractRefusal` and `partyRefusal` are the only rule sources, applied by
+  the store on every path, never only in the UI; no seeded record breaks one; the override exists only
+  on RVG kinds; open price never chosen by the office.
+- **No contract · RVG:** exactly one, found by `systemRole`, never disabled; the default Type 1s,
+  their auto-create, protection and fallback gone, copy included.
+- **No Insurer master (RV-39):** no `acceptsDirectClaims`, `setInsurerDirectClaims`, Insurers tab or
+  insurer-created Contract; no portal value on the Party.
+- **Readings labelled once:** D23 in one helper line; OQ-114, A42, A43 in one doc comment each; no
+  other provisional text.
+- **Copy and design:** "Party" in app copy; teal the only action colour; Disable in the error
+  treatment; mono tabular-nums for codes and money; desktop panels; no en or em dashes; the PWA purity
+  test holds; `PERSIST_VERSION` bumped.
 
 ## PROGRESS.md updates
 
-- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): OQ-131 (D77, open): Contract upkeep built as whole-Contract dated versions, labelled
-  provisional once in the version module; the D55 default (OQ-114's two delivery values, email and portal, on the holder; nib
-  seeded portal, AIA Health email and not billed); the interim Insurer identity record behind the
-  insurer holders and the route gate that asks for an insurer holder; a new holder's defaults (not
-  billed, email); the surgeon link's rule (anaesthetist holders take one anaesthetist, surgeon links
-  surgeons only; any kind may carry none); the seeded Merivale Eye Rooms holder (Whitford and Reid),
-  Aria with no surgeon link and COS copied from `SG-COS`'s members; the AA code format
-  (`<holder prefix>-<nnnn>`, shared by a Contract's versions, `SUR` for surgeon); the hospital and
-  insurer identity links and the review date we added (required on every holder's Contract, none on
-  No contract (RVG)); `editable` seeded false on
-  negotiated Contracts and true on No contract (RVG) and the plain RVG Contracts, `prepaid` false
-  throughout, neither acting yet; a new Contract's first version also cannot start in the past; the
-  re-based billing-failure demo and the monitor's "choose a Contract and retry"; the seeded retired
-  2024-schedule COS ACC Contract; Doyle's holder not billed while the
-  route still bills him until 21; the Souter holder with no Contract until 19a; anything logged; and
-  the screens worth a look (Master data: Contract holders, no Insurers tab; Contracts with search and
-  settings, prepaid refused with editable; the Doyle versions; Health NZ New version; Billing monitor failure), each with route and persona.
-- **Catalogue screenshots result:** the recipes created (US-04.1.5) and filled in (US-04.1.4), the
-  others changed and the broken ones re-pointed, the `requirements-board/requirements/capture/REPORT.md`
-  counts (captured, partial, absent, failed) before and after, and the partial reasons handed on
-  (FT-04.1 and US-04.1.4 to 19a and 25; US-04.1.1 to 19a, 20, 24 and 27; US-04.1.5 to 20, 21 and 22;
-  US-04.2.1 to 20 and 21), and FT-11.4, US-11.4.1 and US-11.4.2 recipes marked absent (Retired).
-- **Status row:** Phase 18 (Contract holders, settings and dated Contracts) DONE with the date, or IN
-  PROGRESS after session 1 with what remains.
-- **Phase entry:** the drift-check result against `a68f09b` (US-04.1.5 Verify; OQ-114 and OQ-131 as built; the
-  answered questions as built); how Phase 17's `SG-COS` members map to COS's surgeon link, and
-  Doyle's, Merivale's and Aria's holders; the holder and AA code tables as seeded; the parity fixture path and result; the
-  `PERSIST_VERSION` bump; the review pass; the handoffs: **19a** (lines replace `interimTerms`,
-  `type2Detail` and `ContractPrice` with a parity test; New version copies lines; the Souter Contract,
-  flagged prepaid; holder codes join `contractMatchesQuery`; the Merivale arrangement on the surgeon
-  link), **20** (the fitting list calls `practitionerLinkFits` and wraps `contractMatchesQuery`,
-  sits inside the step rail with No contract (RVG) first in its lists and no-line Contracts by context; the route, the Insurer gate and
-  `Procedure.insurerId` go), **21** (`billed` and the payer decide who is billed; `billedAs`,
-  `routeCounterpartyForHolder` and Doyle's interim billable-party link go; the Booking's insurer points
-  at the insurer holder, retiring the `Insurer` identity), **22** (`delivery` is read by the run;
-  `markInvoiceEmailed`'s insurer-kind refusal goes), **41** (confirms US-06.4.1's prepaid-not-editable), **24** (`editable` acts; `permitsIndividualArrangement` and the Method 3
-  gate go), **25** (staged changes, the one-future check and the relink replace "New version"; the
-  failure demo is re-based again; its "No fallback" manual test must not end a Contract in the past),
-  **27** (`prepaid` starts prepayment) and **42** (spreadsheet loads of holders and Contracts; the
-  organisations master).
-- **Decisions log:**
+- **For the owner's review** (end of the phase entry): D23 built as its reading; D55's default (email
+  or post, no portal; nib by email); D79 and D81 defaults; A42 (funder apart from insurer), A43 (billing
+  details once billed), A40, A38 and A39, A36, A18 (override seeded on No contract · RVG only); the
+  AA code format (`<codePrefix>-<nnn>`) and the `codePrefix` field we added; Doyle's Contract set to
+  bill the payer while the route still bills Doyle until 21; the Aria and Unisports links; the COS ACC
+  fixed fees Contract and the re-based failure demo; the interim identities behind nib, AIA and COS;
+  screens worth a look (Parties; Contracts with search, filters and Disable; the editor's guards; the
+  Billing monitor failure), each with route and persona.
+- **Catalogue screenshots result:** recipes created (US-04.1.5), filled (US-04.1.4), changed and
+  re-pointed; `REPORT.md` counts before and after; the partial reasons handed on (US-04.1.1 to 18a,
+  19a and 20; US-04.1.2 to 19a; US-04.1.4 to 19a and 20; US-04.2.1 to 18a, 20 and 21).
+- **Status row:** Phase 18 (Parties and flat Contracts) DONE with the date, or IN PROGRESS after
+  session 1 with what remains.
+- **Phase entry:** the drift-check result against `efe123c`; the Party and AA code tables as seeded;
+  the parity fixture path and result; `PERSIST_VERSION` old to new; the review pass; handoffs: **18a**
+  (tags and specialties on the Contract; fallbacks by `ensureFallbacks`; any tag segment in
+  `nextAaCode`), **19a** (ranges replace `ContractPrice` and the `fixed` interim; a range after 16 Jul
+  2026 on COS ACC fixed fees; holder reference codes, invoice description and default RVG code join
+  the search; Souter's and Merivale's Contracts on their Parties), **20** (candidates call `linkFits`;
+  `interimRouteContract` and the route go), **21** (`billsTo` decides; `routeCounterpartyForParty`,
+  `legacyCounterparty` and the insurer and organisation identities go; Doyle billed to the payer),
+  **22** (delivery read from the Party; the portal queue and insurer-kind refusal go), **24** (the
+  override acts; `permitsRateTime` goes), **25** (the History tab; the failure demo re-based again),
+  **27** (prepaid acts), **42** (loads of Parties and Contracts).
+- **Decisions log** (each names what it supersedes):
   - (a) **Supersedes "protected default Type 1 per hospital and insurer"** (3rd review #9, 7th review
-    B14): one No contract (RVG), held by AA (OQ-78); the seeded defaults are their holders' plain RVG
-    Contracts with no lines (D32); nothing is created with a hospital or an insurer flag; an ended
-    hospital- or insurer-held Contract with no successor falls to No contract (RVG) at the same price
-    and counterparty (interim until 21).
-  - (b) **Amends "Contract-holder placements (seed)" (2026-07-23):** the holder master; COS a surgeon
-    holder named for the group, linked to `SG-COS`'s surgeons and billed through `ORG.cos`; Aria a
-    surgeon holder named for its clinic, billed through its clinic billable party; Doyle's fixed
-    prices held against Doyle by ID, not billed (D48 answered: no rooms-held Contract); the ACC
-    Contracts ordinary hospital and surgeon-holder Contracts.
-  - (c) **Type 1/2/3 are no longer kinds** (US-04.1.1): behaviour comes from settings; their terms stay
-    as interim terms until 19a; the SXAP $26.50 ruling and the 2026-07-22 fixed-price fallback are kept.
-  - (d) **Contracts are dated versions; the procedure date (the List date) picks the version** (OQ-48,
-    D45); never backdated, never deleted (retire replaces delete); a started version's terms and
-    settings are frozen. **Supersedes** the Phase 08 maintenance (in-place edits, hard delete, the
-    monitor un-end-dating a Contract) and the Phase 09 failure demo that ended COS ACC in the past.
-  - (e) **AA code** (US-04.1.4, D16): `<holder prefix>-<nnnn>` from one generator, shared by a
-    Contract's versions, immutable; ours until AA designs the Contract.
-  - (f) **The individual-anaesthetist scope becomes an anaesthetist holder's practitioner link**; the
-    scope field is gone, and "first party" and "third party" are gone with it.
-  - (g) **Supersedes the ACC review flag** (6th review #3, 7th review A5/B3 advisory): removed (RV-37);
-    the informational chip and column stay.
-  - (h) **Supersedes the insurer master and its direct-claims flag** (RV-39; FT-11.4, US-11.4.1 and
-    US-11.4.2 Retired; the 2026-07 insurer rulings, 6th review #2): insurers are contract holders; the
-    holder carries `delivery` (OQ-114's two-value default, D55's old pre-fill default superseded); the
-    route's gate asks for an insurer holder until 20.
-  - (j) **Contract upkeep as whole-Contract dated versions** (OQ-131, D77, open): built as D45 planned,
-    provisional, kept in the one version module.
-  - (i) **A prepaid Contract is never editable** (OQ-96, D30; OQ-117, D65): the pair is refused on save;
-    a fixed price's override is 24's.
+    B14): one No contract · RVG held by AA; the seeded defaults are their holders' plain RVG Contracts;
+    nothing is created with a hospital or an insurer.
+  - (b) **Supersedes Contract effective dates and deletion** (the Phase 08 maintenance, the Phase 08
+    build decision (1)'s ended-Contract fallback and its "$23 vs $28.50" test, the Phase 09 failure demo
+    that ended COS ACC): Active or Disabled, edited in place with audit, never deleted (D77, RV-32).
+  - (c) **Supersedes Contract types 1/2/3** (US-04.1.1): five pricing kinds fixed at creation; SXAP
+    $26.50 and the 2026-07-22 fixed-price fallback kept.
+  - (d) **Supersedes the holder's "is billed" and "Contract-holder placements (seed)" (2026-07-23):**
+    the Party master; each Contract bills its holder or the payer; COS, Aria and Unisports surgeon
+    groups, Doyle a surgeon, all linked on the Contract.
+  - (e) **Supersedes the insurer master and its direct-claims flag** (RV-39; the 2026-07 insurer
+    rulings, 6th review #2).
+  - (f) **Supersedes the ACC review flag** (6th review #3, 7th review A5/B3): removed (RV-37).
+  - (g) **The AA code** (US-04.1.4): `<codePrefix>-<nnn>` from one generator, editable by the office,
+    unique.

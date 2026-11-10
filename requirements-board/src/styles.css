@@ -3365,6 +3365,17 @@ mark {
 
 /* ------------------------------------------------------------ artifact page */
 
+/* Full screen (fullScreen.ts): the masthead and the panel go and the artifact fills the window. */
+.artifact-full .masthead {
+  display: none;
+}
+.artifact-full .shell {
+  grid-template-rows: 1fr;
+}
+.artifact-dock[hidden] {
+  display: none;
+}
+
 .artifact-stage {
   position: absolute;
   top: 0;
@@ -3677,10 +3688,11 @@ mark {
   pointer-events: none;
   z-index: 1;
 }
+/* Bottom right, where the board keeps its new-card plus: the artifact page has none, so the dock takes the corner. */
 .canvas-dock,
 .doc-dock {
   position: absolute;
-  right: 78px;
+  right: 16px;
   bottom: 23px;
   z-index: 6;
   display: flex;
@@ -3694,6 +3706,147 @@ mark {
 }
 .region-go {
   color: var(--highlight);
+}
+
+/* A stepped diagram's bar (StepBar.tsx), bottom left over the drawing: the view bar's style and
+   height, level with it, and stopping 16px short of the dock (its 16px from the left, the dock's
+   16px, the view bar's 190px with full screen, the gap). The hover minimap is transient: it opens over the bar's
+   right end, the dock (z-index 6) above the bar (5). The step is read in the panel; the bar only
+   steps. No red: the red box is a region's alone. */
+.step-bar {
+  position: absolute;
+  left: 16px;
+  bottom: 23px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 240px);
+  min-width: 0;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-tag);
+  outline: none;
+  overflow: hidden;
+}
+.step-bar:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal) 50%, transparent), var(--shadow-tag);
+}
+.step-bar .btn.icon {
+  flex: none;
+  width: 28px;
+  padding: 0;
+}
+.step-bar .view-bar-rule {
+  flex: none;
+}
+.step-start {
+  color: var(--teal);
+}
+.step-start:hover {
+  color: var(--teal-hover);
+  background: var(--teal-tint);
+}
+.step-count {
+  flex: none;
+  min-width: 44px;
+  text-align: center;
+  font: 12px var(--mono);
+  color: var(--ink-3);
+}
+.step-bar-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.step-whole {
+  flex: none;
+  padding: 0 8px;
+}
+/* The step shown, opened in place in the panel's Steps tab: its caption and balances. */
+.step-detail {
+  grid-column: 1 / -1;
+  padding: 0 14px 12px 40px; /* under the name, past the step's number */
+}
+.step-detail .prose.small {
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.step-detail .prose > :last-child {
+  margin-bottom: 0;
+}
+.step-balances {
+  width: 100%;
+  margin: 10px 0 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+.step-balances th,
+.step-balances td {
+  padding: 4px 8px;
+  border-top: 1px solid var(--rule);
+}
+.step-balances tr:first-child th,
+.step-balances tr:first-child td {
+  border-top: 0;
+}
+.step-balances th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+.step-balances td {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* A balance that changed at this step: a quiet teal tint and full weight, never red. */
+.step-balances tr.is-changed th,
+.step-balances tr.is-changed td {
+  background: var(--teal-tint);
+  font-weight: 600;
+  color: var(--ink);
+}
+/* A step's number, where a highlight has its tiny red box (the Steps tab, a linked spot). */
+.step-num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink-2);
+  font: 600 11px/1 var(--mono);
+}
+.step-num.sm {
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  font-size: 10px;
+}
+.spot-row.is-step.is-active {
+  background: color-mix(in srgb, var(--teal) 6%, var(--card));
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+.spot-row.is-step.is-active .step-num {
+  background: var(--teal);
+  color: #fff;
 }
 
 /* Documents: pages on the chart paper, scrolled. */

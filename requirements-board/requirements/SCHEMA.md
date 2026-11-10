@@ -80,7 +80,7 @@ About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
 | `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
 | `related` | Optional: items this one is related to, by ID (epics, features, stories; never an `OQ-nn`). A relation is **stored on one side only** and the board shows it on both cards, so list it on whichever card you are editing and never on both (`check` warns). Omitted when empty. For couplings the text doesn't name (a setting and the rule that reads it, a UI story and its engine story, the step before or after); a card the text already links to needs no entry. See Links below. |
-| `artifacts` | Optional: artifacts this item points at, as `AR-nn` (the whole artifact) or `AR-nn#spot` (a highlighted spot in it: a named region, a PDF page `p27`, a Markdown heading slug, or a line range `L27-33`). Shown on the item's sheet under Artifacts, and on the artifact's Linked tab. Each must exist (`check` errors otherwise); linking to a Superseded or Retired artifact warns. Agents add these; the board keeps them on every save. Omitted when empty. See Artifact file below. |
+| `artifacts` | Optional: artifacts this item points at, as `AR-nn` (the whole artifact) or `AR-nn#spot` (a highlighted spot in it: a named region, a step of a stepped diagram, a PDF page `p27`, a Markdown heading slug, or a line range `L27-33`). Shown on the item's sheet under Artifacts, and on the artifact's Linked tab. Each must exist (`check` errors otherwise); linking to a Retired artifact warns. Agents add these; the board keeps them on every save. Omitted when empty. See Artifact file below. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is one of the `screenshotApps` keys in `board.config.json` and groups the board's gallery; a shot's `viewport` should match its app's. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the board's capture runner (`scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
 Body: the description, written in the catalogue's voice (`VOICE.md`: who or what acts and what
@@ -113,8 +113,8 @@ another record:
   differ)`, is folded into it.
 
 An artifact links the same ways: `[the pricing steps](AR-01#price-rules)` opens the artifact at
-that spot in its red box, and a bare `AR-01` reads as the artifact's name. A link to a missing
-artifact or spot is an error, as for a card.
+that spot in its red box (or, for a step of a stepped diagram, at that step), and a bare `AR-01`
+reads as the artifact's name. A link to a missing artifact or spot is an error, as for a card.
 
 Neither counts inside code (backticks or a fenced block). The board lists, under **Related** on each
 card, the `related` entries from both sides and then the cards whose text mentions it ("Mentioned
@@ -156,8 +156,8 @@ reader** after ` · ` or in brackets:
 
 - **Which artifact.** A note answers to `Notes <date> · <words>` when the words slug to its file name
   (`notes/<date>-<slug>.md`), with no setup. Any other artifact lists the prefixes it answers to in
-  its `cited_as` (Artifact file below); the longest prefix that fits wins. A superseded artifact hands
-  on to its `superseded_by`; a retired one hands on to nothing, and a source citing it opens it as it is. A source on an artifact that names that same artifact (a transcript's own
+  its `cited_as` (Artifact file below); the longest prefix that fits wins. A retired artifact with a
+  `superseded_by` hands on to it; one without hands on to nothing, and a source citing it opens it as it is. A source on an artifact that names that same artifact (a transcript's own
   `Recording ...`) shows plain.
 - **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or `#2 #16`: numbered
   points. `L27-33`: lines. Nothing: the entry's `spot`, else its `within` section, else the whole artifact.
@@ -206,8 +206,8 @@ at. Its sidecar `artifacts/AR-nn.md` holds its name and facts; the file it shows
 `artifacts/files/` (a diagram drawn for the catalogue, `artifacts/files/AR-nn.svg`, or a transcript,
 document or PDF under its own name), or in `notes/` for a note. The board shows artifacts on its Artifacts tab, and its Edit details
 changes only the sidecar's `title`, `kind`, `status`, `superseded_by`, `date`, `author`,
-`components`, `sources` and description; agents write everything else (the file, `regions`, the
-mermaid source) and register new artifacts.
+`components`, `sources` and description; agents write everything else (the file, `regions`, `steps`,
+the mermaid source) and register new artifacts.
 
 ```md
 ---
@@ -237,6 +237,26 @@ regions:
       - text=Rejected, never guessed
       - text=• the price list is not valid on the order date
     pad: 10
+steps:
+  - id: line-priced
+    name: The order line is priced
+    group: One order
+    caption: The price comes from the price list; nothing is invoiced yet.
+    show:
+      - "#stage-1"
+    highlight:
+      - "#stage-1"
+    balances:
+      - account: Order total
+        amount: $40
+  - id: line-invoiced
+    name: The line goes on the invoice
+    group: One order
+    show:
+      - "#stage-2"
+    moves:
+      - from: "#priced-line"
+        to: "#invoice-line"
 ---
 
 The four steps from an Order line's inputs to a priced, invoiced line ...
@@ -247,8 +267,8 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `id` | `AR-nn`. Must match the file name. Never reused, never renumbered. |
 | `title` | The artifact's name, independent of its file's name. Sentence case. |
 | `kind` | `diagram`, `mockup`, `screenshot`, `photo`, `transcript`, `note` or `document`: what it is, for its icon and for filtering. |
-| `status` | `Current` (the baseline, unmarked on the board), `Draft`, `Superseded` (replaced: see `superseded_by`), or `Retired` (no longer reflects the design and nothing replaces it; kept for traceability, hidden on the Artifacts tab unless retired artifacts are shown, and still opened by a link or URL). A live item listing or linking a Superseded or Retired artifact warns; neither needs a source, and links in their own descriptions are not held to the live rules. |
-| `superseded_by` | Superseded only: the `AR-nn` that replaced it. |
+| `status` | `Current` (the baseline, unmarked on the board), `Draft`, or `Retired` (no longer the version to go by, whether a newer artifact replaced it or nothing does; kept for traceability, hidden on the Artifacts tab unless retired artifacts are shown, and still opened by a link or URL). Retired is the only past status: there is no `Superseded` (`check` errors on it), since `superseded_by` already says whether something replaced it. A live item listing or linking a Retired artifact warns; a retired one needs no source, and links in its own description are not held to the live rules. |
+| `superseded_by` | Retired only, and optional: the `AR-nn` that replaced it. Sources citing the retired artifact hand on to it, and the board shows "by" its title beside the status. |
 | `date` | When the artifact itself was made, not when it was filed: a meeting's date for its transcript and notes, a document's publication, a diagram's drawing. `YYYY-MM-DD`, or `YYYY-MM` or `YYYY` (quoted, `"2021"`) when that is all that is known. Shown on the Artifacts tab, which lists each kind newest first. `check` warns when it is missing. |
 | `author` | Optional: who made it. |
 | `components` | Optional: the same vocabulary as an item's. |
@@ -256,6 +276,8 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the region a source with no spot of its own opens). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already). See Sources above. |
 | `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-client-meeting.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
+| `steps` | Optional, an SVG drawing only: makes it a stepped diagram the board plays one step at a time. Each step is a spot too. See Steps below. |
+| `step_view` | Optional, a stepped diagram only: how the view behaves as it steps. `fixed` (the default, the same as leaving it out) leaves the view where it is; `follow` frames each step as the reader arrives at it. See Steps below. `check` errors on any other value, and on `step_view` on an artifact with no `steps`. Agents write it; the board keeps it. |
 
 Body: the description (Markdown, links work), then for a mermaid diagram a `## Source` section
 holding one fenced ` ```mermaid ` block, which the board draws.
@@ -282,6 +304,49 @@ Prefer anchors to boxes: they follow the drawing when it is redrawn, and `check`
 matching. Documents also have spots of their own, which need no region: each PDF page (`p27`), each
 Markdown heading (its GitHub slug, `prepayment-cancellation-and-order-reassignment`) and any
 range of lines (`L27-33`, or `L27` for one). A named region's id can't take one of those.
+
+**Steps.** A stepped diagram is an SVG drawing whose sidecar lists `steps`, in order. The board
+plays them: each step reveals more of the drawing, highlights what it is about, and shows a caption
+and a small balances table. The file with everything visible is the finished picture, which is what
+the thumbnail and the Diff review show. Each step has:
+
+- `id`: lower-case words joined by hyphens, as a region's. Steps and regions share one set of spots,
+  so a step's id can't be a region's, be listed twice, or look like a page or line spot (`p3`, `L27`).
+  A step opens like a region: `AR-01#line-priced` in `artifacts` and in text links, `?region=line-priced`
+  in the board's address. It shows no red box.
+- `name`: short, shown in the step list and as the spot's name.
+- `group`: optional, a section label; consecutive steps with the same label group together.
+- `caption`: optional Markdown (links work, and `check` treats them as a description's links).
+- `show`: anchors revealed at this step, in the same grammar as a region's `around` (`#id`, `.class`,
+  any CSS selector, `text=...`). Reveal is cumulative and nothing is hidden again: anything named in
+  any step's `show` starts hidden, and the drawing at a step is everything the steps up to it reveal.
+  Anything no step names is always visible. An anchor may match many elements.
+- `highlight`: anchors at full strength at this step only; the rest of what is visible dims. No
+  `highlight` means nothing dims. Highlighting something a later step reveals is a `check` warning,
+  since it is still hidden here.
+- `moves`: optional, what travels at this step, in order. Each is a mapping of two anchors (same
+  grammar as `show`): `from`, where it sets off (an element visible at this step; its first match is
+  used), and `to`, what travels and where it lands (what this step reveals, or something already
+  visible; every match travels). Arriving at the step by stepping forward from the step before, each
+  `to` element sets off from the `from` element's place and size and flies to its own, a moment after
+  the move before it; everything else the step reveals fades in as usual. Jumping to a step, stepping
+  back and reduced motion skip the flight, and the finished state is always the static drawing.
+  `check` errors on a move missing `from` or `to`, or an anchor that matches nothing, and warns on a
+  `from` matching several elements and on a `from` or `to` a later step reveals.
+- `balances`: optional rows of `account` and `amount`, both plain text (quote a number, `"0"`, to
+  keep it exactly as written). The board marks the rows whose amount changed since the step before.
+
+**The view while stepping** (`step_view`). By default (`fixed`) the view stays where it is as the
+reader steps: right for a drawing that fits one screen. A wide flow that does not fit one screen
+sets `step_view: follow`: arriving at a step, the view frames the step's focus (its `highlight`
+matches, or its `show` matches when it highlights nothing, plus both ends of its moves) unless that
+is already in view, never closer in than the drawing's own size; a step's moves fly once the view
+settles, and the whole drawing fits everything again. Keep each step's highlight compact, since the
+view frames all of it.
+
+With no step chosen the board shows the whole drawing, nothing dimmed. `check` errors on steps on
+anything but an SVG drawing, a step with no name, a balance row with no account, and an anchor that
+matches nothing in the drawing.
 
 ## Board layout file (`board-layout.json`)
 
@@ -385,9 +450,8 @@ over it.
 ## Conventions
 
 - **No deletes for items.** Retire an item by setting its status to the one with role `retired` (6 here); the ID stays taken.
-- **No deletes for artifacts.** Replace one by setting `status: Superseded` and `superseded_by`;
-  one that no longer reflects the design and has no replacement is set to `status: Retired`. Either
-  way the ID stays taken. The board never creates artifacts and never changes their files or
+- **No deletes for artifacts.** Set one that is no longer the version to go by to `status: Retired`,
+  adding `superseded_by` when a newer artifact replaced it. The ID stays taken. The board never creates artifacts and never changes their files or
   regions, only their details: add them and change those as files (the `add-artifact` skill, or
   the board's `npm run artifact:new`).
 - **Questions can be deleted** (the board's Delete, or remove the file): no other file changes. A

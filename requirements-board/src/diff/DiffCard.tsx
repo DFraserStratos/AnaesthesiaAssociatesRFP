@@ -25,6 +25,7 @@ import {
   RegionsCell,
   ShotsCell,
   SourceName,
+  StepsCell,
   TypeCell,
   markOf,
   type Side,
@@ -115,6 +116,12 @@ const ARTIFACT_FIELDS: FieldDef<Artifact, ArtifactEntry>[] = [
     label: 'Highlights',
     cell: (side, mine, other, expanded) => <RegionsCell side={side} before={(side === 'before' ? mine : other).regions} after={(side === 'before' ? other : mine).regions} expanded={expanded} />,
   },
+  {
+    field: 'steps',
+    label: 'Steps',
+    cell: (side, mine, other, expanded) => <StepsCell side={side} before={(side === 'before' ? mine : other).steps ?? []} after={(side === 'before' ? other : mine).steps ?? []} expanded={expanded} />,
+  },
+  { field: 'stepView', simple: true, label: 'Step view', cell: (_s, mine) => <PlainCell value={mine.stepView ?? null} /> },
   { field: 'source', label: 'Diagram source', text: { lines: true } },
   { field: 'sources', label: 'Sources', cell: sources() },
   {

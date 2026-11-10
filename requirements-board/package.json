@@ -1,7 +1,7 @@
 {
   "name": "requirements-board",
   "private": true,
-  "version": "1.5.1",
+  "version": "1.8.0",
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
@@ -19,6 +19,7 @@
     "links:index": "node scripts/link-index.ts",
     "links:apply": "node scripts/apply-links.ts",
     "artifact:new": "node scripts/new-artifact.ts",
+    "artifact:steps": "node scripts/shoot-steps.ts",
     "source": "node scripts/resolve-source.ts",
     "statuses:recode": "node scripts/recode-statuses.ts",
     "install-skills": "node scripts/install-skills.ts",
