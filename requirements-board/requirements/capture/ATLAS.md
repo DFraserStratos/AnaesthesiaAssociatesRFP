@@ -263,7 +263,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web` | Dashboard: "Kia ora, Dr Souter", week strip, receivables aging, productivity, leave, "Offer cover". Add `?week=YYYY-MM-DD` (a Monday) to show another week. |
 | `/web/lists` | Table of Souter's lists. |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. |
-| `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". |
+| `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
 | `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
@@ -301,7 +301,7 @@ badge carries `data-shot=nav-badge-<section>`.
 |---|---|
 | `/mobile/lists` | Forward lists. Segments Week, Month, To-Do, Done. Free rows read "Open for bookings or cover". |
 | `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
-| `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. |
+| `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. "Move to a colleague" (`move-booking-action`, scroll to it, above Cancel booking) opens the single-Booking move as a bottom sheet (catch-up Phase 32a). |
 | `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, a "Move" button on a movable List, `availability-move-am`/`-pm`; "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), and the everyone / free-only grid. The six-day strip's days are `button[data-date=YYYY-MM-DD]` (Tue 21 to Sun 26). A colleague's free cell is tappable only where Dr Souter has a movable List that session (`availability-move-to-<registration>-am`/`-pm`, "Tap to move your List here"). "Moved to you" (`moved-to-you`) tops the screen when a colleague moved a List to her (catch-up Phase 32; the cover request and "Tap to ask" are retired). |
 | `/mobile/availability/calendar` | My calendar (catch-up Phase 29): a month of Dr Souter's sessions, AM over PM, July to the horizon month; the tab bar is hidden; the sticky teal "Add days off" opens the sheet on the form. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
@@ -459,7 +459,28 @@ seven free colleagues, among them Dr Hannah Ropata (`39560`), who has a not-pref
 six-day strip). Colleagues' triggers never pick a List or session in `SCRIPTED_BEAT_SCHEDULE` or a List
 with a conflict. The notification pool seeds empty; ids are `NT0001` on.
 
+**Single-Booking move** (catch-up Phase 32a; `BOOKING_MOVE_DEMO` in the seed, pinned by
+`domain/seed/bookingMoveSeed.test.ts`). S2 Beat 3d: Dr Souter's Wed 22 Jul AM Christchurch Eye Surgery
+List `L-34821-2026-07-22-AM` (Mr J. Whitford, 6 Bookings), Booking `BK0046` (Lachlan Robinson). Free that
+session, in name order: Delaney, Morrison, Ngata, Ropata, Sharma, Whitaker (tiers mixed); Dr Whitaker
+(`36208`) is the scripted receiver, Dr Ropata (`39560`) the second (`BK0047`, office tick off). Dr Chen
+(`45178`) is not available (type "ch"), Dr Fitzgerald (`43015`) already holds a List (type "fitz").
+The not-preferred receiver: Mrs Riley's `BK0034` (Fri 24 AM, Ms Lim) to Dr Ropata (PP-005), Reset after.
+The prepaid honour line: the paid Nair Booking `BK0038` (Fri 24 PM). The stand-in's candidate, from a
+reset and before the other stand-ins that fill her Wed 22 PM: Dr Hughes's `BK0140` (Wed 22 PM,
+Christchurch Eye Surgery, Ms Reid). The acceptance beat: the appended `BK0162` on Dr Beaumont's Fri 31 Jul
+AM List, offered only after Souter sets her Fri 31 AM (`S-34821-2026-07-31-AM`, Unavailable) available.
+A moved Booking lands on a new List `LG0001` on.
+
 ## Overlays that need clicks
+
+- **Move to a colleague** (catch-up Phase 32a; one sheet: a bottom sheet on mobile, a dialog on web):
+  on a Booking, `[data-shot="move-booking-action"] button` (scroll to it first), then the free list
+  (`move-booking-receivers`); type into `[data-shot="move-booking-search"] input` to narrow every
+  colleague; pick `[data-shot="move-booking-receiver"][data-anaesthetist-id="<registration>"]` (blocked
+  rows are `move-booking-blocked`, not buttons); on the confirm step tick
+  `[data-shot="move-booking-tell-office"] input`, then `[data-shot="move-booking-submit"] button`; the
+  done state `move-booking-done` with "Back to your List".
 
 **Anaesthetist app** (web and mobile: a sheet on mobile, a dialog on web)
 
@@ -564,6 +585,16 @@ the exception: use the `trigger` step)
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
 
 ## Existing hooks
+
+- Single-Booking move (catch-up Phase 32a): `move-booking-action` (the entry point and its line),
+  `move-booking-sheet`, `move-booking-header`, `move-booking-search` (the shared type-ahead box; the
+  office's finders use `candidate-search`, web availability `availability-search`, the List move sheet
+  `move-search`), `move-booking-receivers`, `move-booking-receiver` and `move-booking-blocked` (each with
+  `data-anaesthetist-id`), `move-booking-confirm`, `move-booking-landing`, `move-booking-payable`,
+  `move-booking-honour` (prepaid only), `move-booking-tell-office`, `move-booking-submit`,
+  `move-booking-done`, `move-booking-office-told`. Notices: `moved-to-you-booking-row`,
+  `booking-moved-to-you`, the drawer's `drawer-booking-moved-here`. The submit sheet's doer sentence:
+  `submit-doer-note`.
 
 - Move sheet (catch-up Phase 32; one sheet: a bottom sheet on mobile, a dialog on web):
   `move-sheet`, `move-list-header` (with "1 of 2" in a range), `move-unavailable-line` (its unavailable
@@ -725,6 +756,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
 | `/admin/day/<date>`, `/admin/notifications` | `colleague-moves-list-to-office` (choice `one` or `busy`) | Catch-up Phase 32. A colleague returns one of their Lists to the office as themselves (the date in the URL, or the next with a candidate; vacated Unavailable): a Draft List and `NT0001`. `busy` stages eight moves from today, alternating returns and hand-ons, so the Notifications page has two pages (`NT0008` is a hand-on naming both). Bar only |
+| `/admin/day/<date>` | `colleague-hands-booking-to-souter` | Catch-up Phase 32a. A colleague hands one of their Bookings into Dr Souter's free, empty session as a new List, with the office notice ticked (from a reset: Dr Hughes's `BK0140` into her Wed 22 PM; the date in the URL or the next with a candidate). Nothing sets anyone available. Bar only |
+| `/mobile/lists`, `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet) | `colleague-moves-booking-to-me` (choice by its label, e.g. "Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery") | Catch-up Phase 32a, badged "Colleague stand-in". A colleague hands her one Booking as a new List in a session she is free in; a session she is not available in (Fri 31 Jul AM, `BK0162`) is offered once she sets it available. PWA only |
 | `/mobile/availability` (PWA Demo sheet) | `colleague-moves-list-to-me` | Catch-up Phase 32, badged "Colleague stand-in". A colleague hands a List into Dr Souter's free session (from the pristine seed, Morrison's Wed 22 PM Southern Cross into her Wed 22 PM); the Moved to you panel and Forward Lists' "New" follow. PWA only |
 | `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: a List id) | Catch-up Phase 30. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)"); the List keeps its Bookings and is flagged. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |

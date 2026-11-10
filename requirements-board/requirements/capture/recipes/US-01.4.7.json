@@ -1,6 +1,287 @@
 {
   "id": "US-01.4.7",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 32a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "move-booking",
+      "app": "web",
+      "caption": "Move a single Booking to a colleague who is free that session, found by typing a name or from the list; it becomes a new List for them, never added to an existing one",
+      "start": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "states": [
+        {
+          "state": "action",
+          "caption": "Move to a colleague on her own Booking, above Cancel booking",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"move-booking-action\"]"
+          ]
+        },
+        {
+          "state": "search",
+          "caption": "Names filter as each letter is typed: free colleagues to pick, a colleague away or already holding a List shown greyed and not pickable, in name order",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "fill": "[data-shot=\"move-booking-search\"] input",
+              "value": "h"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-blocked\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "confirm",
+          "caption": "A new List is created in the colleague's session and they are paid for it; Tell the office is optional, and there is no warning",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "fill": "[data-shot=\"move-booking-search\"] input",
+              "value": "whi"
+            },
+            {
+              "click": "[data-shot=\"move-booking-receiver\"][data-anaesthetist-id=\"36208\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-confirm\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "done",
+          "caption": "Moved at once; the office was told because she ticked it",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "fill": "[data-shot=\"move-booking-search\"] input",
+              "value": "whi"
+            },
+            {
+              "click": "[data-shot=\"move-booking-receiver\"][data-anaesthetist-id=\"36208\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-confirm\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=\"move-booking-tell-office\"] input"
+            },
+            {
+              "click": "[data-shot=\"move-booking-submit\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-done\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "move-booking",
+      "app": "mobile",
+      "caption": "Move a single Booking to a colleague who is free that session, found by typing a name or from the list; it becomes a new List for them, never added to an existing one",
+      "start": "/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "states": [
+        {
+          "state": "action",
+          "caption": "Move to a colleague on her own Booking, above Cancel booking",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"move-booking-action\"]"
+          ]
+        },
+        {
+          "state": "search",
+          "caption": "Names filter as each letter is typed: free colleagues to pick, a colleague away or already holding a List shown greyed and not pickable, in name order",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "fill": "[data-shot=\"move-booking-search\"] input",
+              "value": "h"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-blocked\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "confirm",
+          "caption": "A new List is created in the colleague's session and they are paid for it; Tell the office is optional, and there is no warning",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "fill": "[data-shot=\"move-booking-search\"] input",
+              "value": "whi"
+            },
+            {
+              "click": "[data-shot=\"move-booking-receiver\"][data-anaesthetist-id=\"36208\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-confirm\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "done",
+          "caption": "Moved at once; the office was told because she ticked it",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "fill": "[data-shot=\"move-booking-search\"] input",
+              "value": "whi"
+            },
+            {
+              "click": "[data-shot=\"move-booking-receiver\"][data-anaesthetist-id=\"36208\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-confirm\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=\"move-booking-tell-office\"] input"
+            },
+            {
+              "click": "[data-shot=\"move-booking-submit\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-done\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "move-booking",
+      "app": "admin",
+      "caption": "Move a single Booking to a colleague who is free that session, found by typing a name or from the list; it becomes a new List for them, never added to an existing one",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "after",
+          "caption": "The office's side: a colleague handed Dr Souter one Booking, a new List on her row, and the notice she chose to send",
+          "steps": [
+            {
+              "trigger": "colleague-hands-booking-to-souter"
+            },
+            {
+              "goto": "/admin/day/2026-07-22"
+            },
+            {
+              "wait": "[data-slot-id=\"S-34821-2026-07-22-PM\"][data-list-id]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-slot-id=\"S-34821-2026-07-22-PM\"]",
+            "[data-shot=\"admin-notifications-rail\"]"
+          ]
+        }
+      ]
+    }
+  ]
 }
