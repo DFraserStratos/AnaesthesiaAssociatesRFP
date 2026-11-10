@@ -14,7 +14,12 @@ idempotency, alerting, a void made directly in Xero),
 (processing monitor; **Confirmed** at `60e2d1e`, graded Partial: "This list will get quite large", so
 the monitor is restyled with standard sorting and filtering; its Notes say the view is grouped by
 anaesthetist and "is where authorised Lists are approved", and Greg asked for a problems-only filter and
-an all-or-one-anaesthetist filter, "Neither is settled; both come with the prototype's restyle").
+an all-or-one-anaesthetist filter, "Neither is settled; both come with the prototype's restyle"),
+[US-13.2.4](../../../../requirements-board/requirements/stories/US-13.2.4.md)
+(reconciliation status at a glance; new at `fbdd555f`, **Proposed**, graded Missing: one status on the
+admin dashboard saying whether every account that should balance does, with each unresolved item's
+amount and age. Which accounts it checks waits on Greg and Sam's process maps, so this phase builds the
+shape over the checks the prototype has; work item 12a).
 Context only, must stay green:
 [FT-09.2](../../../../requirements-board/requirements/stories/FT-09.2.md),
 [US-09.2.1](../../../../requirements-board/requirements/stories/US-09.2.1.md),
@@ -73,7 +78,7 @@ keeps the name "Billing monitor".
   placed on today's monitor layout, and the invoice rail (item 13). Stop green and demoable, with the
   PROGRESS entry marked part 1.
 - **Session 2, the surfaces:** the remittance (item 10), the processing monitor restyle (item 12, which
-  absorbs item 11's panels), the Xero simulation (item 14), the remaining triggers and tests (15, 16),
+  absorbs item 11's panels), the Reconciliation card (item 12a), the Xero simulation (item 14), the remaining triggers and tests (15, 16),
   the docs (17), the demo guide, the catalogue screenshots and the review pass.
 
 ## Goal
@@ -92,7 +97,7 @@ record.
   work item 8); 39a's weekly run records what it releases through the same function. A cancelled
   prepayment's refund paid in Xero too is a reading of "all payments" (US-06.5.1, US-06.5.2), logged for Greg.
   Payables on the AA Holding account (27a) are never paid by
-  the run: only 27a's journal transfer to the anaesthetist (at release) and Phase 41's refund move money out of the account, and
+  the run: only 27a's transfer to the anaesthetist (at release) and Phase 41's refund move money out of the account, and
   a bill is paid in Xero only once its payable leg has been transferred and released.
 - **Bulk remittance is left in Xero.** One hospital remittance pays several receivables in one action.
   Xero's (simulated) remittance add-on matches the lines by InvoiceNumber, and the engine learns each
@@ -122,16 +127,24 @@ record.
   so it keeps one path and all its guards (15a's warnings, the confirm, the billing run). The grouping
   and the filters are Greg's suggestions, "not settled", so they live in the screen's own URL state,
   not in the store, and go on the owner's review list with the approval reading.
+- **The books are square, at a glance** (US-13.2.4). The Admin Day dashboard's right rail gains a
+  **Reconciliation** card: "Books square" or "Out of balance", naming each failing check and its
+  difference, with the unresolved items listed by amount and age (days on the demo clock). It reads the
+  checks the prototype can compute: Phase 36's ledger equation, the ledger against the Xero mirror
+  (pairs not yet in Xero, voids and amendments flagged by the poll) and this phase's unmatched Xero
+  bank lines. The clearing account in Greg's proposal and the rest of the posting design are not
+  modelled: they wait on Greg and Sam's process maps (2026-11-10), so the checks live in one pure list
+  that a later update extends.
 
 ## Before you start: drift check
 
 1. Run:
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-09,FT-10.2,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,OQ-47,OQ-111,US-09.1.1,US-09.3.1
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-09,FT-10.2,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,US-13.2.4,OQ-47,OQ-111,US-09.1.1,US-09.3.1
    ```
 
-   (It diffs the plan baseline, catalogue commit `efe123c`, to the working tree.)
+   (It diffs the plan baseline, catalogue commit `fbdd555`, to the working tree.)
    Read the hunks for EP-09, FT-10.2, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
    US-10.2.1, US-10.2.3, US-10.2.4, US-08.3.2, FT-13.3, US-13.3.1, US-13.3.2, US-13.5.2, OQ-47 and the
    domain-model lines on Xero, the payables run and bank reconciliation. At `7cd7802` the Xero items
@@ -155,6 +168,11 @@ record.
      place; never a second implementation. If it settles the filters differently (drops problems-only
      or the anaesthetist filter, or names others), build what it says and update item 12's options.
      If it drops grouping by anaesthetist, keep the sortable table and filters ungrouped.
+   - **US-13.2.4** names the accounts it checks (for example after Greg and Sam's process maps add a
+     clearing account): build the checks it names that the prototype can compute, each as one entry in
+     `reconciliationChecks` (item 12a), and list any it cannot (a clearing account the ledger does not
+     model) on the owner's review list rather than faking it. If it moves the status off the
+     dashboard (onto the Billing monitor or the payment run), place the same card there.
    - A new small, Confirmed story on this surface (for example payment against a credited invoice)
      joins only if it fits the session; otherwise record it for Phase 44's handoff.
 3. **Open questions.** OQ-111 is answered (D53): build US-09.2.4 and FT-10.2 as answered (the ACCPAY
@@ -434,7 +452,7 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
 8. **Disbursement detected from Xero** (US-09.2.4, FT-10.2, RV-40; OQ-111 answered, D53):
    - One detection point: `recordDisbursement` (below) is the only code that records a disbursement,
      whoever paid (a Xero bill-paid webhook, the poll, and later 39a's weekly run). AA Holding account payables (27a) are never
-     paid by the run: a payable leg is payable only once 27a's journal transfer has released it, so `payBillsInXero` and the
+     paid by the run: a payable leg is payable only once 27a's transfer has released it, so `payBillsInXero` and the
      run skip an unreleased leg (the holding account itself is never a payee); add a test that a prepaid leg still in the holding account is not paid, and is
      paid once the release has transferred it.
    - New `src/store/xeroSimActions.ts` holds the Xero-side simulated actions, each audited with a Xero
@@ -661,6 +679,27 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
       `/admin/review/<id>` with the state, and Review's back link returns with the search; no "Authorise for
       billing" button on the monitor; expand and collapse; above the threshold (the constant mocked
       low) non-problem Lists start collapsed; `?list=` opens its List.
+12a. **Reconciliation status on the Admin Day dashboard** (US-13.2.4; session 2):
+    - Pure `reconciliationStatus(input)` in `src/domain/billing/reconciliation.ts`, with Vitest tests.
+      It takes a list of checks, each `{ id, label, difference, items[] }`, and returns `square`
+      (every difference 0 to the cent and no items) or `outOfBalance` with the failing checks. Items are
+      `{ id, label, amount, sinceISO }`; `ageDays` comes from the demo clock, never `Date.now()`.
+    - Selector `reconciliationChecksOf(state)` builds the checks the prototype has, each named in AA's
+      words: **Ledger** (Phase 36's `ledgerPositionOf(state).imbalance`, its unmatched receipts as
+      items, dated by their `atISO`); **Ledger against Xero** (pairs not yet in Xero and items still in
+      the queue, plus the poll's open divergences, each an item at its amount); **Xero bank lines**
+      (item 10's `unmatched` remittance lines, each an item dated at the remittance). AA fee money stays
+      outside, as in 36. No clearing account, no control-account check and no bank feed: a code comment
+      and the owner's review list say they wait on the posting design.
+    - `ReconciliationCard` in the Admin Day `RightRail` beside 15a's to-do list (desktop white card,
+      `data-shot="dashboard-reconciliation"`): a status line (a quiet success tone for "Books square",
+      the warning tone for "Out of balance", never crimson), each failing check with its difference in
+      mono, then up to five unresolved items oldest first (label, amount, "N days"), each linking to
+      where it is handled (the Ledger's unmatched receipts card, the Billing monitor with Problems only,
+      the Xero sim Bank reconciliation), and "View all" when there are more. A small "Proposed" caption
+      names the story's status; no Provisional pill.
+    - Component test: square from reset; out of balance after an injected receipt (one item, its age
+      growing when the clock moves a day); the remittance's unmatched line listed; links resolve.
 13. **Admin invoice rail** (`InvoiceDocument.tsx`): the "Xero handoff" card shows Waiting for Xero with
     attempt count and next try while queued; "Voided in Xero · flagged" or "Amended in Xero ·
     flagged" (danger) with a link to the Billing monitor (`/admin/billing?list=<listId>`) when a
@@ -754,6 +793,11 @@ Panel page, which lists them under their screens automatically.
 **Product actions, not demo triggers:** "Retry now" (queue row), "Resolve" (divergence), "Match in
 Xero" (inside the Xero simulator's own surface) and "Run payables in Xero" (badged Simulated Xero, like
 "Simulate payment and payout" on the pair).
+
+**The reconciliation card needs no new trigger.** Its out-of-balance states come from Phase 36's
+"Inject unmatched receipt" (Ledger), this phase's "Simulate Xero outage" and "Void this invoice in
+Xero", and "Simulate bulk hospital remittance". Add `/admin` (the Day dashboard) to the routes of
+Phase 36's inject entry so the presenter can stage it from the dashboard; no other entry changes.
 
 **The processing monitor needs no trigger.** Grouping by anaesthetist, the sort headers, the
 Anaesthetist, Hospital and date filters, Problems only and "Open in Review" on a SUBMITTED List are
@@ -874,12 +918,16 @@ item needs was authorised by an earlier one.
       paid via webhook receipts; Bank reconciliation lists the remittance and one unmatched $980.00 line
       "for office staff, handled in Xero" with the scope callout; Mitchell's $610.00 is untouched. Match
       in Xero to the right invoice: it is paid through the webhook once. A second remittance is refused.
+- [ ] Admin Day (reset): the Reconciliation card reads "Books square" with no items. Inject unmatched
+      receipt (from the dashboard): "Out of balance", the Ledger check with $120.00 and one item aged
+      0 days; Next day: 1 day. Allocate it on the Ledger: square again. Run the bulk remittance: the
+      $980.00 Xero bank line is listed and its link opens Bank reconciliation; Match in Xero clears it.
 - [ ] Admin Audit shows the new rows with the right who, role and source (Xero simulated actions as
       demo, engine detection and queue work as system, office resolutions as office).
 - [ ] The Admin Ledger screen (Phase 36) stays in balance through every path above; the PWA sheet lists
       none of the new triggers.
 - [ ] No new app copy contains an en or em dash; teal is the only action colour; crimson unchanged.
-- [ ] Catalogue screenshots: the recipes for US-09.2.4, US-10.2.4, US-13.3.1 and the other EP-09 items in the Catalogue screenshots section are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] Catalogue screenshots: the recipes for US-09.2.4, US-10.2.4, US-13.2.4, US-13.3.1 and the other EP-09 items in the Catalogue screenshots section are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
@@ -910,6 +958,10 @@ Patch in the same session, in `docs/demo-guide/` and the matching sections of
     Match in Xero). Each with Say and Expected lines. The remittance aside says to run it after the S3
     and S4 money beats (or reset afterwards), because it pays two of Dr Souter's seeded backdrop
     invoices and lowers the outstanding figures those beats quote.
+  - **S3, a closing line** (after Phase 36's "The ledger balances" beat): point at the Reconciliation
+    card on Admin Day; Say: "One status tells the office, and whoever approves the payment run, whether
+    everything that should balance does, and lists anything left to resolve with how long it has been
+    waiting." Expected: "Books square".
 - `04-presenter-cheat-sheet.md`: the money-flow lines say the payables run happens in Xero and the
   engine detects each disbursement by webhook or poll; "Present but honestly demo-only" gains the
   outage, void, bill-payment and remittance triggers and "Run payables in Xero"; add a talking point
@@ -968,6 +1020,7 @@ matches what was built:
 | [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent | no change here (Phase 39a owns it) |
 | [US-10.2.7](../../../../requirements-board/requirements/stories/US-10.2.7.md) Weekly payment cycle | absent | no change here (Phase 39a owns it) |
 | [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent | captured (simulator). New recipe shots: `bank-reconciliation` (`/demo/xero/bank`, `xero-bank-reconciliation` with the scope callout "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do...") with states `remittance` (after the `xero-bulk-remittance` trigger, run in `setup` after a `goto` to `/demo/xero/invoices`: the two matched St George's lines, learned by webhook) and `unmatched` (the unmatched $980.00 line "for office staff, handled in Xero", highlight the unmatched list). Remove the absent reason |
+| [US-13.2.4](../../../../requirements-board/requirements/stories/US-13.2.4.md) Reconciliation status at a glance | absent (new at `fbdd555f`) | create, captured (admin). Shots on `/admin`, highlight `[data-shot=dashboard-reconciliation]`: `square` (from reset) and `out-of-balance` (setup: `goto /admin/ledger`, `trigger` the inject entry with "Names Dr Souter", then `goto /admin`: the Ledger check and one item with its age). Caption in the catalogue's words: one status says whether the books are square; unresolved items with amount and age |
 | [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md) Processing monitor | captured · admin-billing-monitor | captured, re-shot on the restyle. Joined this phase at `60e2d1e`. `billing-monitor`: keep the shot `name` and setup (two Authorise clicks on `L-25490-2026-07-20-AM`), start at `/admin/billing?list=L-25490-2026-07-20-AM`, highlight `[data-shot=billing-pipeline-L-25490-2026-07-20-AM]` (the expanded List inside its anaesthetist's group: stage strip, invoiced, sent, Xero). Add `grouped` (from reset with one List authorised: the anaesthetist groups with their "Awaiting approval" rows and **Open in Review**, highlight one `[data-shot=billing-awaiting-<listId>]` and the summary tiles; caption: grouped by anaesthetist, Lists awaiting approval open in Review), `filtered` (`?anaesthetist=<the authorised List's anaesthetist id>`: highlight `[data-shot=billing-monitor-filters]` and the one group) and `problems-only` (staged in `setup` with the `billing-failure` trigger on `/admin/billing`, then `?problems=1`: only Ropata's List, expanded, with Losa Tuilagi's reason; highlight the filter bar and the List). Captions in the catalogue's words: why anything failed; standard sorting and filtering; grouped by anaesthetist |
 
 **Recipes this phase breaks.** Found at plan time:
@@ -994,7 +1047,7 @@ matches what was built:
   selectors should still resolve; add `?list=<listId>` to the `start` where the shot needs one List in
   view, re-shoot, check each highlight by eye, and fix any caption that says "card".
 
-**ATLAS.md.** Work item 16 already adds `billing-xero-queue`, `billing-xero-divergence`, `xero-bank-reconciliation`, `billing-monitor-filters`, `billing-group-<anaesthetistId>`, `billing-awaiting-<listId>` and the six `demo-action-<id>` hooks to Existing hooks and rewrites the Demo control panel wording (the queue and the Xero-side payables run). Also update Routes (`/demo/xero/bank`; the `/admin/billing` row gains its search params `anaesthetist`, `hospital`, `from`, `to`, `problems`, `sort` and `list`, and notes that Lists open expanded at seed scale), the "Demo actions by screen" table (the six new ids on their screens: `xero-outage-start` and `xero-outage-restore` on `/admin/billing` and the Xero tabs, `xero-void-invoice`, `xero-amend-invoice` and `xero-pay-bill` (choices) on `/demo/xero/invoices/<accRecId>`, `xero-bulk-remittance` on `/demo/xero/invoices` and `/demo/xero/bank`; `run-reconciliation-poll` gains `/demo/xero/bank`; the `/admin/billing` note's "Run payables" becomes "Run payables in Xero") and the Integration and Xero notes (an outage banner appears on every Xero tab while an outage is on).
+**ATLAS.md.** Add `dashboard-reconciliation` to Existing hooks and the inject entry's `/admin` route to "Demo actions by screen". Work item 16 already adds `billing-xero-queue`, `billing-xero-divergence`, `xero-bank-reconciliation`, `billing-monitor-filters`, `billing-group-<anaesthetistId>`, `billing-awaiting-<listId>` and the six `demo-action-<id>` hooks to Existing hooks and rewrites the Demo control panel wording (the queue and the Xero-side payables run). Also update Routes (`/demo/xero/bank`; the `/admin/billing` row gains its search params `anaesthetist`, `hospital`, `from`, `to`, `problems`, `sort` and `list`, and notes that Lists open expanded at seed scale), the "Demo actions by screen" table (the six new ids on their screens: `xero-outage-start` and `xero-outage-restore` on `/admin/billing` and the Xero tabs, `xero-void-invoice`, `xero-amend-invoice` and `xero-pay-bill` (choices) on `/demo/xero/invoices/<accRecId>`, `xero-bulk-remittance` on `/demo/xero/invoices` and `/demo/xero/bank`; `run-reconciliation-poll` gains `/demo/xero/bank`; the `/admin/billing` note's "Run payables" becomes "Run payables in Xero") and the Integration and Xero notes (an outage banner appears on every Xero tab while an outage is on).
 
 ## Adversarial review (after build)
 
@@ -1038,6 +1091,10 @@ amends (listed below).
   filter and sort state lives only in the URL (no store slice, no persisted field); every recipe and
   spec that highlights `billing-pipeline-<listId>` still resolves; Phase 22's, 25's, 36's (and 40's)
   monitor cells all survived the restyle.
+- Reconciliation honesty (US-13.2.4): "Books square" only when every check is zero to the cent and no
+  item is open; every number on the card is computed from the same selectors the Ledger, the Billing
+  monitor and Bank reconciliation show, so they never disagree; ages come from the demo clock; no check
+  pretends to model a clearing account or control account.
 - Design and copy: teal-only actions, semantic tokens for queue and void states, mono times and ids,
   no en or em dashes, badges on every simulated control and none on the monitor's own product UI; the
   awaiting pill is neutral, not the schedule SUBMITTED colour; sort headers are buttons with
@@ -1063,6 +1120,10 @@ amends (listed below).
     also paid in Xero, a reading of "all payments" that Donald's answer did not state separately. Ask Greg,
     who on 28 October wanted holding-account payments made from the system.
   - The divergence resolution's three outcomes and the provisional caption (EP-09: the policy is AA's).
+  - **The reconciliation status's checks** (Admin Day `/admin`, office persona; US-13.2.4, Proposed):
+    the three checks built (ledger, ledger against Xero, Xero bank lines) are our reading; the clearing
+    account, the sub-ledger against control account checks and the bank feed wait on Greg and Sam's
+    process maps (2026-11-10). Also which items count as unresolved and the five-item limit.
 - A catch-up status row for Phase 37 and an entry `### Catch-up Phase 37 · Xero mirror resilience and
   the processing monitor (date)`: the drift-check result, the Phase 36 names used, whether 39 had landed, the checklist item by
   item, test counts, the Catalogue screenshots result (recipes created or changed, the REPORT.md

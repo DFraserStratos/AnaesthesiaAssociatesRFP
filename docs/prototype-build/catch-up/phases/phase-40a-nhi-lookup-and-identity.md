@@ -767,7 +767,7 @@ re-raise anything settled in the Decisions log.
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
-  - the drift-check result against `efe123c` (items changed or not; the refresh cadence, HPI CPN and
+  - the drift-check result against `fbdd555` (items changed or not; the refresh cadence, HPI CPN and
     NHI-rule checks; the provisional reading built; the real form names from 15b, 19, 20a, 21 and 40);
   - what was built, with the name map for later phases: `nhiEntryFeedback`; `src/domain/nhiRegister/`
     (`NhiRegisterPerson`, `buildNhiRegister`, `lookupOnRegister`, `registerDifferences`);

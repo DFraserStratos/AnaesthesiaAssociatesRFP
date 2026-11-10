@@ -82,13 +82,13 @@ One seeded event, an additional invoice that Dr Souter raised on a billed Proced
 
 ## Before you start: drift check
 
-1. Run the catalogue diff since this plan's baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue folder):
+1. Run the catalogue diff since this plan's baseline, catalogue commit `fbdd555` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.1.10,US-05.4.2,US-03.7.3,US-08.6.1,US-08.6.3,FT-03.7,FT-08.6,US-03.7.1,US-03.7.2,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-07.3.2,US-06.4.1,US-08.2.3,US-03.1.9,US-07.4.1,US-03.1.6,US-03.1.7,OQ-63,OQ-45,OQ-72,OQ-61,OQ-76,OQ-77,OQ-96,OQ-60,OQ-29,OQ-96,OQ-115,OQ-121,US-06.5.2
    ```
 
-   Plan baseline `efe123c`: diff only for anything after it. If an item changed since, re-read it and adjust the work items; if a covered story is now Retired or Future, drop its work items and record that in the PROGRESS entry. US-08.6.1 and US-08.6.3 are Contradicts and US-03.7.3 Missing, all open for build; US-03.7.3 has two acceptance criteria and US-08.6.3 seven (Button, Linked, Own pair, Review step, Any billable party, After a fixed price, Not a correction): map each to a work item and a test. US-03.1.10 (Proposed, status 1) has two (Total: $1,200 and $400 give $1,600; Events shown): map them to work item 10a and its test. Entry point: 38a's search, not an archive (D9). Answered since the earlier plan: OQ-96 (D30) and OQ-121 (D69, 4 November: next run, bundled by billable party, never held; US-08.6.1 and US-08.6.3 reworded to match), both built as answered.
+   Plan baseline `fbdd555`: diff only for anything after it. If an item changed since, re-read it and adjust the work items; if a covered story is now Retired or Future, drop its work items and record that in the PROGRESS entry. US-08.6.1 and US-08.6.3 are Contradicts and US-03.7.3 Missing, all open for build; US-03.7.3 has two acceptance criteria and US-08.6.3 seven (Button, Linked, Own pair, Review step, Any billable party, After a fixed price, Not a correction): map each to a work item and a test. US-03.1.10 (Proposed, status 1) has two (Total: $1,200 and $400 give $1,600; Events shown): map them to work item 10a and its test. Entry point: 38a's search, not an archive (D9). Answered since the earlier plan: OQ-96 (D30) and OQ-121 (D69, 4 November: next run, bundled by billable party, never held; US-08.6.1 and US-08.6.3 reworded to match), both built as answered.
 2. **Stop conditions** (tell the owner before building; ROADMAP.md "Owner review: agents test themselves"):
    - OQ-63 reopened to "an event is a Procedure added to the Booking" (Greg's earlier lean): it would put events through 23's primary rule and 25's lock and change work items 1, 3 and 4;
    - US-08.6.3 reverted to "no review step": not a stop. Set `reviewed: false` on the `additionalInvoice` kind in `EVENT_KINDS` (work item 2), so `addProcedureEvent` approves it in the same commit, and keep everything else;
@@ -383,7 +383,7 @@ Once the manual test checklist and `npm run build`, `npm run build:pwa`, `npx vi
   - the additional invoice shows no invoice tick (always invoiced);
   - the anaesthetist has no pre-op or post-op event until 39b (the additional invoice covers money).
 - **Status row** for catch-up Phase 38b, and a phase entry with:
-  - the drift-check result (items changed or not since efe123c; US-03.7.3, US-08.6.1 and US-08.6.3 status; OQ-77, OQ-121, OQ-60 and OQ-29 state, OQ-96 answered; the seeded Procedures used);
+  - the drift-check result (items changed or not since fbdd555; US-03.7.3, US-08.6.1 and US-08.6.3 status; OQ-77, OQ-121, OQ-60 and OQ-29 state, OQ-96 answered; the seeded Procedures used);
   - what was built, with the name map for later phases: `ProcedureEvent`, `ProcedureEventKind`, `EventParty`, `ProcedureEventDetail`, `FreeFormLine`, `EventReview`, `EVENT_RULES`, `EVENT_KINDS`, `mayRaise`, `mayEditEvent`, `eventStatus`, `eventInvoicing`, `resolveEventParty`, `validateEventBase`, `priceFreeFormInvoice`, `addProcedureEvent`, `updateProcedureEvent`, `removeProcedureEvent`, `approveProcedureEvent`, `declineProcedureEvent`, `runEventInvoicing`, `procedureOwner` and the other selectors, `ProcedureEventsList`, `EventReviewSheet`, `AdditionalInvoiceForm` and its three wrappers, `procedureEventCopy.ts`, the `'additional'` kind, the `additionalTo` lineage role, `Invoice.eventId`, the `EV` id format, the audit actions, the route and the triggers; and the removed `addPostOpAddendum`, `bookingType`, `addendumOfBookingId`;
   - the `PERSIST_VERSION` bump or bumps (from and to);
   - the checklist item by item with evidence; the tests added and the before and after Vitest and Playwright counts;

@@ -203,7 +203,7 @@ here is mobile, so there is no PWA stand-in.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
@@ -1424,7 +1424,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   route and persona (Kirsty: Master data, Parties, Contracts with their price ranges, Public holidays,
   Seed load, Go-live load).
 - **Status row** for catch-up Phase 42, and a phase entry with:
-  - the drift-check result (items changed since `efe123c` or not; OQ-100, OQ-114, OQ-101 and
+  - the drift-check result (items changed since `fbdd555` or not; OQ-100, OQ-114, OQ-101 and
     OQ-129 as found; the calendar-schedule question; whether Vanessa's files landed; and the 17 to
     34 names used);
   - what was built, per work item;

@@ -29,7 +29,7 @@ invoice](../../../../requirements-board/requirements/stories/US-08.2.2.md) and d
 [US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md): a procedure invoice's pair is a receivable from the billable party and a
 payable to the anaesthetist, but a [prepayment invoice](../../../../requirements-board/requirements/stories/US-06.3.1.md)'s payable is to the
 [AA Holding account](../../../../requirements-board/requirements/stories/US-06.5.1.md), a creditor in the payables sub-ledger where AA holds the money until
-the procedure is done; its release to the anaesthetist who did the List is then a journal transfer
+the procedure is done; its release to the anaesthetist who did the List is then a transfer
 ([settlement](../../../../requirements-board/requirements/stories/US-06.4.1.md)), not a second pair of receivable and payable. The AA fee invoice has no
 payable. The other covered items are unchanged; their gap grades stand: EP-08, FT-08.3 and US-08.3.1
 Contradicts; US-08.3.2, US-08.3.4, US-08.3.5 and US-13.2.1 Partial. They cite the lifecycle diagram
@@ -81,7 +81,7 @@ superseding OQ-70's payable repoint: the prepayment's pair is created when an ad
 invoice, or at once when AA has switched the approval step off (Phase 27), a receivable from the payer and
 a payable to the AA Holding account, a creditor in the payables sub-ledger kept like an anaesthetist's
 account (Phase 27a); a move of the List or Booking changes nothing in the ledger, and no payee is ever
-repointed; at authorisation a journal transfer pays whoever did the List (27a), held as two payable legs,
+repointed; at authorisation a transfer pays whoever did the List (27a), held as two payable legs,
 never a receivable. This phase makes the pair and the transfer ledger records. There is no `repointPayable`
 and no held or awaiting-approval pair),
 [OQ-71](../../../../requirements-board/requirements/questions/OQ-71.md) (D21: a negative
@@ -134,7 +134,7 @@ held for anaesthetists).
   deducted (D57, US-06.4.1, US-08.2.2). 27 builds no estimate, balance invoice, deduction or excess record.
 - **Phase 27a:** the AA Holding account in `src/domain/billing` (`prepayHolding.ts`: `HOLDING_ACCOUNT`, a
   payee kept like an anaesthetist's account, with its balance and entries; payables due skip it; only the
-  money leaves it only by the transfer or a refund the system raises, and any payment itself is made in Xero, D53) and the **journal transfer** (`PrepayTransfer`), made when the office authorises a
+  money leaves it only by the transfer or a refund the system raises, and any payment itself is made in Xero, D53) and the **transfer** (`PrepayTransfer`), made when the office authorises a
   List: it moves each prepaid amount from the account to the anaesthetist who did the List (the payee in
   25's snapshot), mirrored in Xero as a journal (no ACCREC and ACCPAY pair), its anaesthetist leg released
   for the payables run like any payable. 27a keeps it out of 16's BCTI count by default. This phase promotes
@@ -172,7 +172,7 @@ and a payable can never be disbursed beyond what its receivable has received. A 
 created when an admin approves the invoice, or at once when AA has switched the approval step off, with
 its draft Xero pair) is a `prePayment` ledger pair whose payable leg is to the **AA Holding account**, a
 creditor in the payables sub-ledger kept like an anaesthetist's account and never paid itself, never to an
-anaesthetist. When the office authorises the List, 27a's **journal transfer** moves the amount from the
+anaesthetist. When the office authorises the List, 27a's **transfer** moves the amount from the
 account to the anaesthetist who did the List: a `LedgerTransfer` held as two payable legs (the account's
 reduced, the anaesthetist's created), never a receivable, invoice or payment. A moved prepaid Booking
 needs no change and no payee is ever repointed (D38). The ledger holds no prepayment deduction: prepaid
@@ -222,13 +222,13 @@ read the same after the change, and a parity test proves it.
 > `casesForBooking`, `handoffCasesForBooking`, `prePaymentInvoicesForBooking`,
 > `paidPrePaymentCaseForBooking`). Use what Phases 15a session 2 to 35 actually shipped (the AA fee
 > actions and `bctiRecords`, 22's invoice fields and split, 25's lock and stamped payee, 26's payables
-> destination, 27's prepayment approval with its pair, re-check and status, 27a's AA Holding account and journal transfer), as recorded in
+> destination, 27's prepayment approval with its pair, re-check and status, 27a's AA Holding account and transfer), as recorded in
 > their PROGRESS entries.
 
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the items it leans on against the plan's
-   baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `fbdd555` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -236,7 +236,7 @@ read the same after the change, and a parity test proves it.
    ```
 
    Look for changes to EP-08, FT-08.3, US-08.3.1, US-08.3.2, US-08.3.4, US-08.3.5 and US-13.2.1, and to the items
-   this phase leans on: FT-06.5, US-06.5.1 and FT-09.1 (the AA Holding account, the journal transfer), US-08.3.3 (history survives archiving),
+   this phase leans on: FT-06.5, US-06.5.1 and FT-09.1 (the AA Holding account, the transfer), US-08.3.3 (history survives archiving),
    US-08.4.3 (unique numbers, the `-P` payable), US-09.1.1, US-09.1.3 (the prepayment's draft Xero
    pair), US-09.1.4 (the BCTI note: "one per procedure" beside "the same value as its receivable"),
    US-09.2.1, US-10.1.2, US-10.2.1, US-10.2.5, US-10.2.6 and US-10.2.7 (negative invoices, period
@@ -247,7 +247,7 @@ read the same after the change, and a parity test proves it.
    it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
    that in the PROGRESS entry.
 
-   Already folded into this plan (the `3d3a18c` to `efe123c` changes, so not drift):
+   Already folded into this plan (the `3d3a18c` to `fbdd555` changes, so not drift):
    - the six covered items changed only in artifact links (AR-19, AR-25) and link markup, as did
      US-08.3.1, US-09.1.1, US-09.1.4, US-09.2.1, US-10.1.2, FT-06.3 and FT-10.2;
    - the prepayment rewrite: US-06.2.3 (an estimate) and US-06.4.2 (no automatic credit) Retired;
@@ -268,18 +268,18 @@ read the same after the change, and a parity test proves it.
      prototype), US-13.2.2's patient-centric balance, DM-23's two ledger scopes, US-10.2.5 with OQ-71
      (outside the system), Greg's view on OQ-60 (16 built it) and US-13.5.2's audit scope (DM-45,
      Phase 39).
-   Folded in at `efe123c` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
+   Folded in at `fbdd555` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
    final invoice with nothing deducted, D57; a prepayment's payable is to the AA Holding account, a creditor
-   in the payables sub-ledger, and its release at authorisation is a journal transfer, never a receivable);
+   in the payables sub-ledger, and its release at authorisation is a transfer, never a receivable);
    FT-06.5, US-06.5.1 and US-06.4.1 (the account, the transfer, system-only payouts); US-06.3.1 (the approval
    step AA can switch off: the pair is created at once when it is off); US-09.1.3 and FT-09.1; OQ-80 as
    extended 2026-10-28 (D38: the pair is created at generation, a move changes nothing, no payee repoint),
    OQ-116 (D57), OQ-125 (D72, the transfer's trigger, open) and OQ-115 (a cancellation refund is paid from
    the system, Phase 41's).
-   Folded in at `efe123c` (so not drift): none of the covered items changed; the 5 November contract
+   Folded in at `fbdd555` (so not drift): none of the covered items changed; the 5 November contract
    model decisions (D1 to D11, the flat model) reach this phase only through who is billed (the holder
    Party or the payer) and the snapshot (AR-58 2.8; AR-28, AR-29 and AR-30 are Retired, the flat ERD is AR-61).
-   Folded in at `efe123c` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
+   Folded in at `fbdd555` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
    anaesthetists are made in Xero's payables run and recorded here when detected (Phase 37 builds the
    detection); the ledger side of a disbursement is unchanged. The refund on a cancelled prepayment is
    raised by the system (Phase 41) and paid in Xero.
@@ -293,7 +293,7 @@ read the same after the change, and a parity test proves it.
      prepayments received, and the footnote says so), OQ-42 (credit note plus a negative invoice:
      Phases 39 and 39a; leave the leg entry arrays able to take a negative entry, but add no credit or
      netting path), OQ-70 and OQ-80 (D38: the prepayment pair is created at generation (admin approval,
-     or at once with the approval step off) with the AA Holding account as payee, a journal transfer pays
+     or at once with the approval step off) with the AA Holding account as payee, a transfer pays
      whoever did the List, a move changes nothing; build no payee repoint and no held pair),
      OQ-71 (D21: nothing is built for a negative with no later payment) and OQ-73 (D23: prepayment
      pairs exist only where the payer on the Booking is a person paying for the patient).
@@ -302,7 +302,7 @@ read the same after the change, and a parity test proves it.
      weekly ISO-week cycle, US-10.2.7, is Phase 39a's; here the payables run stays an on-demand
      office action, with no weekly close, no period approval and no "Tuesday", "Wednesday", "week" or
      "20th" in any copy) and OQ-60 (16's `bctisFor` rule and its `paidOnly` switch unchanged).
-   - **Built defaults, logged for the owner:** the journal transfer's `in` leg stays out of 16's BCTI count
+   - **Built defaults, logged for the owner:** the transfer's `in` leg stays out of 16's BCTI count
      (27a's default; one `prepaymentPairs: false` beside `paidOnly`), so a prepaid Procedure counts no BCTI
      for the fee unless the owner flips it. The transfer's trigger (the office authorises the List) is
      OQ-125 (D72), still open: built as 27a built it.
@@ -345,7 +345,7 @@ read the same after the change, and a parity test proves it.
      final invoice leaves prepaid Procedures off (a fully prepaid Booking gets none, D57). Confirm 27 left
      no excess field, no deduction line and no balance invoice path.
    - 27a: the AA Holding account's shape and where it lives in `domain/billing` (`prepayHolding.ts`: payee,
-     balance, entries), how payables due skip it and `canPayOutOfHolding`, the journal transfer
+     balance, entries), how payables due skip it and `canPayOutOfHolding`, the transfer
      (`PrepayTransfer`) and its Xero journal (where created at authorisation, in which `mutate`, its legs,
      and that it is not a BCTI), the reseeded Souter Fri 24 PM prepayment, and its Billing monitor panel.
      Adapt items 2 to 4 to its shape instead of adding a second copy.
@@ -378,7 +378,7 @@ read the same after the change, and a parity test proves it.
   US-09.1.4, US-09.2.1, US-10.1.2, US-10.2.1, US-10.2.5, US-10.2.6, US-10.2.7, FT-10.3, US-10.3.1,
   US-10.3.2, US-10.3.3, FT-13.2, US-13.2.2, US-11.3.1, US-11.3.2, US-11.3.3, US-05.3.5, US-06.2.2,
   US-06.3.1, US-06.4.1, US-06.5.1, US-06.5.4, US-08.2.2, FT-06.5, FT-09.1; OQ-02, OQ-03, OQ-05, OQ-29, OQ-30, OQ-40, OQ-42, OQ-47,
-  OQ-60, OQ-61, OQ-70, OQ-71, OQ-73, OQ-76 and OQ-80; the 2026-10-19 meeting with Greg (#4: the AA Holding account) and the 2026-10-28 meetings (the AA Holding account as a payables creditor, the journal transfer; AR-52 `#pp-pair` and `#pp-transfer`); the
+  OQ-60, OQ-61, OQ-70, OQ-71, OQ-73, OQ-76 and OQ-80; the 2026-10-19 meeting with Greg (#4: the AA Holding account) and the 2026-10-28 meetings (the AA Holding account as a payables creditor, the transfer; AR-52 `#pp-pair` and `#pp-transfer`); the
   2026-10-01 note (`requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md`, points #1, #18 and #41 on the
   fee and the BCTI); the 2026-10-02 notes (the requirements review with Greg, #38 and #70 on the
   ledger views, #5 and #85 on the patient-centric balance; the meeting with Greg, #1 and #36 on the
@@ -432,7 +432,7 @@ read the same after the change, and a parity test proves it.
       285, `handoffListCases` 444, `wireBillingRun` 457;
     - `prepaymentActions.ts` (27's `approvePrepaymentInvoice`, which writes the invoice, its case payable to
       the AA Holding account and the draft Xero pair; the withdrawal and re-check routine) and 27a's holding
-      account and journal transfer (shipped names);
+      account and transfer (shipped names);
     - 16's `aaFeeActions.ts` (`runMonthlyFeeInvoices`, `raiseAnaesthetistInvoiceInto`,
       `recordAaFeePayment`) and `domain/billing/bcti.ts` (`BctiRecord`, `bctisFor`);
     - 25's lock (`lock.payee`) and where it stamps `BillingCase.payeeAnaesthetistId`;
@@ -523,7 +523,7 @@ read the same after the change, and a parity test proves it.
      pending prepayment with no invoice and no pair; Approve and send (the invoice, its pair payable to the
      AA Holding account and the draft Xero pair appear; the account's balance is unchanged until paid; also
      pin it with the approval step switched off: the pair appears at once); a half payment (part paid, the
-     balance up by the half); the rest (paid); then authorise its List: 27a's journal transfer moves the
+     balance up by the half); the rest (paid); then authorise its List: 27a's transfer moves the
      amount to the anaesthetist who did the List, the balance falls, and the prepaid Procedure is left off
      the final invoice with nothing deducted (D57; pin that a fully prepaid Booking has no final invoice and
      no pair, and a mixed Booking's invoice carries only its not-prepaid Procedures, as 27 shipped it), and
@@ -552,7 +552,7 @@ read the same after the change, and a parity test proves it.
        AA Holding account, 27a's account promoted: a payables creditor kept like an anaesthetist's account,
        never paid by the payables run or by hand). It is stamped when the leg is created: from 25's lock
        (`lock.payee`, today `BillingCase.payeeAnaesthetistId`) on a procedure pair; the account on a
-       `prePayment` pair; the anaesthetist who did the List (25's lock payee) on a journal transfer's `in`
+       `prePayment` pair; the anaesthetist who did the List (25's lock payee) on a transfer's `in`
        leg. It is never re-derived from the List and **never changes**: no repoint exists (D38; a moved
        prepaid Booking changes nothing);
      - `amount` equals the receivable's amount (FT-10.3, Phase 16);
@@ -570,12 +570,11 @@ read the same after the change, and a parity test proves it.
        creation.
        - `anaesthetistId` is the payee anaesthetist, the same id as `payable.payee.anaesthetistId` (one
          field to read in filters; the seed test asserts they agree). It is **absent on a `prePayment`
-         pair**, whose payee is the AA Holding account: that pair is in no anaesthetist's scope until its journal
-         transfer exists.
+         pair**, whose payee is the AA Holding account: that pair is in no anaesthetist's scope until its transfer exists.
        - `prePayment`: a receivable from the payer on the Booking and a payable to the AA Holding account
          (27, at the admin's approval or at once with the approval step off, with its draft Xero pair). Its payable is released on receipt by
          16's rule, but `payablesDue` and the run skip a holding payee, so it sits in the AA Holding account
-         until the journal transfer.
+         until the transfer.
        - `patientId` is the hidden internal id, so patient history is ledger data, not a join through
          the Booking (FT-08.3, US-08.3.3). It is set on every Booking pair **whoever the receivable's
          counterparty is** (the patient, the payer on the Booking such as a guardian, an insurer, a
@@ -586,7 +585,7 @@ read the same after the change, and a parity test proves it.
          closes Phase 23's US-05.3.5 handoff. It is information about the one payable, not a split of
          it.
      - The **AA Holding account** is a payee, not a pair: `holdingPosition(pairs)` derives its balance (the
-       released payable on `prePayment` pairs less what journal transfers and refunds have taken) and
+       released payable on `prePayment` pairs less what transfers and refunds have taken) and
        its entries from those pairs' legs. 27a's shape in `domain/billing` is promoted, not duplicated;
        the Billing monitor's AA Holding account panel reads it.
      - `kind: 'aaFee'`: `{ id; kind; aaFeeInvoiceId; anaesthetistId; createdAtISO; receivable;
@@ -595,7 +594,7 @@ read the same after the change, and a parity test proves it.
        own, paid into a separate account and never netted against payables (16's rule, Greg's view on
        OQ-60), so it is never part of the money held for anaesthetists.
    - `LedgerTransfer` (`kind: 'prepayTransfer'`, 27a's `PrepayTransfer` promoted; US-06.4.1, US-06.5.1),
-     the journal transfer from the AA Holding account to the anaesthetist who did the List: `{ id; kind;
+     the transfer from the AA Holding account to the anaesthetist who did the List: `{ id; kind;
      collectPairId; bookingId; listId; patientId; createdAtISO; out; in; xeroJournalId? }`, kept in
      `billing.transfers`. It is held as **two payable legs and never a receivable**: `out` is a signed entry
      that reduces the account's payable, `in` is a `PayableLeg` to the anaesthetist (25's lock payee),
@@ -642,8 +641,7 @@ read the same after the change, and a parity test proves it.
        `procedureSharesFrom(lines)`: per Procedure, summed amounts ex-GST and units (a prepaid Procedure
        has no line, D57). It builds exactly one payable leg whatever the number of Procedures.
      - `newAaFeePair({ id, aaFeeInvoice, atISO })`.
-     - `newPrepayTransfer({ id, collectPair, listId, payeeAnaesthetistId, atISO })` (27a's journal
-       transfer, `transferFor` promoted): builds a `LedgerTransfer` of two payable legs and no receivable.
+     - `newPrepayTransfer({ id, collectPair, listId, payeeAnaesthetistId, atISO })` (27a's transfer, `transferFor` promoted): builds a `LedgerTransfer` of two payable legs and no receivable.
        `out` reduces the AA Holding account's payable by the amount (a signed entry on the account); `in` is
        a payable to the anaesthetist, equal to the amount and released by 16's rule as 27a built it. It is
        neither money in nor money out of AA. It refuses a `prePayment` pair already transferred. Pure only:
@@ -657,7 +655,7 @@ read the same after the change, and a parity test proves it.
        copy), and it stamps `paidInAtISO` at full.
      - `applyDisbursement(pair, amount)`: refused above `releasedAmount - disbursedAmount`, and it
        stamps `paidOutAtISO` when disbursed reaches the payable amount. It is refused on a holding payee
-       (27a's `canPayOutOfHolding`: the account is reduced only by a journal transfer or a refund).
+       (27a's `canPayOutOfHolding`: the account is reduced only by a transfer or a refund).
    - `pairStatusLabel(pair)`, the derived label the monitor showed before:
      - `invoiced`: no Xero ids yet;
      - `handedOff`: mirrored, nothing received;
@@ -668,13 +666,13 @@ read the same after the change, and a parity test proves it.
      target and the anaesthetist it belongs to, where it has one:
      - `unmatchedReceiptHeld` (the receipt's `anaesthetistId`, when attributed);
      - `pairAmountMismatch` (payable amount differs from receivable amount);
-     - `transferMismatch` (a journal transfer's `out` differs from its `in`);
+     - `transferMismatch` (a transfer's `out` differs from its `in`);
      - `releasedNotReceived` (released differs from `payableReleasedFor(received, amount)`);
      - `disbursedAboveReleased`;
      - `receivedAboveAmount`.
      A healthy ledger returns none.
    - `ledgerPosition(pairs, unmatched)`, over all Booking pairs (`procedure`, `prePayment`) and the
-     journal transfers' legs:
+     transfers' legs:
 
      ```
      receivablesOutstanding = sum(max(0, receivable.amount - receivable.receivedAmount))
@@ -703,7 +701,7 @@ read the same after the change, and a parity test proves it.
      - `unmatchedHeld` (held receipts attributed to them), `imbalance` (their receipts held, including
        `unmatchedHeld`, less their payables due) and the `checks` for their pairs and attributed
        receipts. An unattributed receipt belongs to no anaesthetist until allocated. A `prePayment` pair is in no
-       anaesthetist's scope; a journal transfer is in the scope of the anaesthetist its `in` leg is to.
+       anaesthetist's scope; a transfer is in the scope of the anaesthetist its `in` leg is to.
    - `anaesthetistsOutOfBalance(pairs, unmatched)`: one row per anaesthetist whose scoped `imbalance`
      is not zero to the cent or who has a check (`{ anaesthetistId, imbalance, checks }`), ordered by
      the size of the imbalance, largest first. This is Greg's list (US-13.2.1 note, "It's just a
@@ -723,7 +721,7 @@ read the same after the change, and a parity test proves it.
      payee, `issuedAtISO` the leg's, and `receivablePaidAtISO` the receivable leg's `paidInAtISO` (set
      once, by the receipt that completes it, never moved by a replay), which 16's `paidOnly` rule counts
      by. `aaFee` pairs have no payable and `prePayment` payables are to the AA Holding account, so neither
-     is counted; a journal transfer's `in` leg is excluded by 27a's default, held in one place
+     is counted; a transfer's `in` leg is excluded by 27a's default, held in one place
      beside `BCTI_COUNT_RULE` (`prepaymentPairs: false`; the owner may flip it). This is the only
      list `bctisFor` reads after this phase.
    - Tests:
@@ -740,7 +738,7 @@ read the same after the change, and a parity test proves it.
      - a patient with invoices under two anaesthetists gets both rows, and a patient whose invoices are
        paid by a person paying for them and by an insurer gets those rows too, each with its billable
        party;
-     - a journal transfer moves the held amount: the account's balance falls by it, `payablesDue` rises by
+     - a transfer moves the held amount: the account's balance falls by it, `payablesDue` rises by
        it, `received` and `disbursed` are unchanged and the ledger stays in balance; it has no receivable
        leg and no invoice; it refuses a prepayment already transferred;
      - a half receipt releases exactly half (16's rule);
@@ -749,7 +747,7 @@ read the same after the change, and a parity test proves it.
        leg;
      - a `prePayment` pair adds to receivables outstanding and, once paid, to `holdingBalance`, never to
        `payablesDue`, and gives no BCTI; `payablesDue` and the run skip a holding payee;
-     - `bctiRecordsOf` gives one record per `procedure` payable leg, none for a fee, prepayment pair or journal transfer, with
+     - `bctiRecordsOf` gives one record per `procedure` payable leg, none for a fee, prepayment pair or transfer, with
        `receivablePaidAtISO` only on a fully received leg, unchanged by a replayed receipt;
      - same input gives deep-equal output.
 4. **Pairs are created at invoice time** (store; FT-08.3, US-08.3.1: the pair is made with the invoice, never at
@@ -770,7 +768,7 @@ read the same after the change, and a parity test proves it.
      success it creates the pairs, stamps `resolvedAtISO` and `resolvedPairIds`, and audits
      `billing.exceptionResolved`. It still rebuilds only from 25's lock (payee included) and stays
      idempotent: a resolved exception refuses with `alreadyResolved`.
-   - **Prepayment pairs and the journal transfer** (27's `prepaymentActions.ts` and 27a's transfer; D38):
+   - **Prepayment pairs and the transfer** (27's `prepaymentActions.ts` and 27a's transfer; D38):
      - 27's generation function (`approvePrepaymentInvoice`: at admin approval, or at once when AA has
        switched the approval step off, US-06.3.1) creates the `prePayment` ledger pair in the same `mutate`
        that generates and sends the invoice, with the payable to the AA Holding account
@@ -781,7 +779,7 @@ read the same after the change, and a parity test proves it.
        an approved one;
      - 27a's authorise hook creates a `LedgerTransfer` through `newPrepayTransfer`, in the same `mutate`
        that authorises the List, for each prepayment 27a's rule transfers, its `in` leg to the anaesthetist
-       who did the List (25's lock payee), mirrored as 27a's Xero journal. It is a journal transfer, never
+       who did the List (25's lock payee), mirrored as 27a's Xero journal. It is a transfer, never
        an invoice, a payment or a receivable, and the one place the AA Holding account's money leaves it;
      - **no move changes any pair**, List or Booking, before or after authorise: the AA Holding account is the
        payee, so there is nothing to repoint, and no logic detects a move (D20 superseded by D38;
@@ -804,7 +802,7 @@ read the same after the change, and a parity test proves it.
      after authorise; a Split gives two pairs and two payable legs; a failed Booking gives no pairs
      while a sibling bills; approving a prepayment writes its invoice, its pair (payable to the AA Holding
      account) and its draft ACCREC and DRAFT ACCPAY in one `mutate`, and an unapproved prepayment has no
-     pair; authorising its List adds exactly one journal transfer (two payable legs, no receivable) to the anaesthetist who did the List and
+     pair; authorising its List adds exactly one transfer (two payable legs, no receivable) to the anaesthetist who did the List and
      the holding balance falls by the same amount; a List move and a single-Booking move, before and after
      authorise, change no pair, amount or payee (D38); a fully prepaid Procedure's final invoice leaves
      nothing to bill and creates no other
@@ -817,8 +815,7 @@ read the same after the change, and a parity test proves it.
      - it stamps `xeroAccRecId` and `xeroAccPayId` on the legs in the same `mutate`;
      - the ACCPAY contact is the pair's stamped payee (an anaesthetist as 25 left it, or the AA Holding account's Xero contact for a prepayment), never a List lookup;
      - a prepayment pair's draft ACCREC and DRAFT ACCPAY (to the account's contact) are written when the
-       invoice is generated (admin approval, or at once with approval off), as 27 built it, and a journal
-       transfer's Xero journal at authorisation, as 27a built it (US-09.1.3; it has no ACCREC);
+       invoice is generated (admin approval, or at once with approval off), as 27 built it, and a transfer's Xero journal at authorisation, as 27a built it (US-09.1.3; it has no ACCREC);
        `handoffPair` keeps those timings and only reads the legs;
      - an `aaFee` pair gets its 16-style `kind: 'aaFee'` ACCREC against the anaesthetist's existing
        contact, and no ACCPAY;
@@ -894,8 +891,7 @@ read the same after the change, and a parity test proves it.
      anaesthetist and for a chosen subset of legs (an `only?: pairId[]` filter is enough), so 39a can
      hold anomalies out of a cycle without a parallel selector.
   - A `prePayment` pair's payable (to the AA Holding account) releases on receipt by 16's rule but is never
-    due: `payablesDue` and the run read anaesthetist payees only, so it is held until 27a's journal
-    transfer, whose `in` leg (to the anaesthetist) is released at creation and paid as any payable.
+    due: `payablesDue` and the run read anaesthetist payees only, so it is held until 27a's transfer, whose `in` leg (to the anaesthetist) is released at creation and paid as any payable.
     `byAnaesthetist` never has a holding row.
    - `runPayables` and `disbursePayable(api, actor, pairId)` iterate the pairs and apply
      `applyDisbursement`. Each writes a `LedgerDisbursement` (with 26's destination) and mirrors a
@@ -961,7 +957,7 @@ read the same after the change, and a parity test proves it.
        now has a record (the BCTI was issued when the invoice was raised, not when Xero got it). Under
        16's built `paidOnly` rule it changes no count, because it cannot be paid (a receipt needs the
        ACCREC), so the pinned counts and the $700.00 hold exactly; it shows only with `paidOnly: false`,
-       where the test asserts it. Prepayment pairs and journal transfers are outside the count by 27a's default
+       where the test asserts it. Prepayment pairs and transfers are outside the count by 27a's default
        (`prepaymentPairs: false`, one place, on the owner's list); if 16 or 27a shipped them
        counted, only that flow step is re-pinned, with the reason.
    - `openAccRecs` excludes any ACCREC no pair links.
@@ -995,7 +991,7 @@ read the same after the change, and a parity test proves it.
    - Each seeded Xero `Disbursement` gets a matching `LedgerDisbursement` (`LD` ids in the `H`
      namespace for history, for example `LDH01`), with 26's destination.
    - Every seeded pair carries its payee (Dr Souter for the history; the AA Holding account for a seeded
-     `prePayment` pair such as `BC0001`, with 27a's seeded journal transfer, if it seeds one, to the
+     `prePayment` pair such as `BC0001`, with 27a's seeded transfer, if it seeds one, to the
      anaesthetist who did the List). A prepayment awaiting approval is a pending item with no pair. The
      paid prepayment 27a reseeded (Souter Fri 24 PM) is a paid `prePayment` pair held in the account and
      not yet transferred until its List is authorised, so the seed is in balance with a non-zero
@@ -1106,12 +1102,12 @@ read the same after the change, and a parity test proves it.
       These are product office actions, unbadged.
     - **Pairs table** (`data-shot="ledger-pairs"`, `tableChrome` cells):
       - columns: Receivable (mono number), Payable (mono, `-P`, "None" for an AA fee), Kind
-        (Procedure, Pre-payment, Journal transfer, AA fee), Patient (name only, never the NHI), Payer, Payee (surname, or "AA Holding account";
+        (Procedure, Pre-payment, Transfer, AA fee), Patient (name only, never the NHI), Payer, Payee (surname, or "AA Holding account";
         hidden in the anaesthetist scope), Amount, Received, Released, Paid out, Xero ("Mirrored", or
         a "Not yet in Xero" warning pill; a neutral "Contact archived in Xero" note when the payer's
         Xero contact is archived, because the pair does not depend on it, FT-08.3 and US-08.3.3);
-      - a Pre-payment pair's Payee reads "AA Holding account"; a journal transfer is its own row (Kind
-        "Journal transfer", Receivable "None", Payee the anaesthetist) with a neutral note naming the pair
+      - a Pre-payment pair's Payee reads "AA Holding account"; a transfer is its own row (Kind
+        "Transfer", Receivable "None", Payee the anaesthetist) with a neutral note naming the pair
         it transfers from;
       - filter chips: Open (default: anything outstanding or not fully paid out) and All;
       - a row opens `/admin/invoices/:invoiceId`, or `/admin/billing` for an AA fee;
@@ -1275,7 +1271,7 @@ PWA entry is needed. The office-only allocation and refund are product actions i
   strong unpaid-patient warning (OQ-41) counted from the invoice date and the mild credit-balance
   warning (OQ-74, D24): Phase 40. This phase supplies the patient link on every pair and
   `patientLedgerPosition` only.
-- The AA Holding account itself and the journal transfer's rules (27a builds them; this phase promotes
+- The AA Holding account itself and the transfer's rules (27a builds them; this phase promotes
   their legs into the ledger), refunds on cancellation from the account, and settlement by hand on a
   prepaid Procedure (additional invoices and credit notes, including a part credit of a prepayment, OQ-97's
   default): Phase 41. No payee is repointed on a move (D38): there is nothing to build.
@@ -1333,7 +1329,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       contact), and Receivables outstanding rises by its total. "Payment received · half" shows part paid on
       the Booking panel, its warning text and the Ledger; the account's figure rises by the half while
       Payables due does not, the Ledger stays in balance, and Run payables pays nothing to the account. Pay
-      the rest, then authorise its List: a journal transfer row appears (two payable legs, Receivable "None",
+      the rest, then authorise its List: a transfer row appears (two payable legs, Receivable "None",
       no invoice, Xero shows 27a's journal and no ACCREC), the account's figure falls, Payables due rises by
       the same amount to the anaesthetist who did the List, the prepaid Procedure is on no final invoice and
       nothing is deducted (a mixed Booking's invoice carries only its not-prepaid Procedures), no other
@@ -1392,8 +1388,7 @@ Patch these in the same session, in `docs/demo-guide/` and the matching sections
 - S4 Beat 1 (the prepayment, as Phases 27 and 27a left it: the anaesthetist's own fixed price, the invoice
   and its pair generated at Approve and send, payable to the AA Holding account, no estimate): no
   figure changes; add to Expected "the Ledger shows the Pre-payment pair with its payable to the AA
-  Holding account, the account's figure rising as it is paid, and authorising the List adding the journal
-  transfer (two payable legs, no receivable) to whoever did it". Add no excess, balance-invoice, deduction
+  Holding account, the account's figure rising as it is paid, and authorising the List adding the transfer (two payable legs, no receivable) to whoever did it". Add no excess, balance-invoice, deduction
   or deposit narration (none exists; Phase 41 owns the by-hand settlement beat).
 - S3 "Discovery points": add "how AA wants unmatched receipts handled (allocate, refund, or hold for
   investigation), whether the two scopes and the out-of-balance list are what the office needs
@@ -1435,7 +1430,7 @@ because the ledger changes what the monitor, invoice rail and balance screens re
 | [US-08.2.1](../../../../requirements-board/requirements/stories/US-08.2.1.md) Group by billable party | captured · admin-invoices-by-party, admin-grouped-invoice | unchanged here. Re-shoot only if the invoice document's money chips or rail changed what the highlight shows (the Xero card becomes a Ledger card); check `invoice-lines` still lands |
 | [US-08.2.2](../../../../requirements-board/requirements/stories/US-08.2.2.md) Net prepayments | captured · admin-deposit-invoice, admin-balance-invoice | no change here (Phase 27 owns it: prepaid Procedures left off the final invoice, nothing deducted). Check only that the invoice rail's new Ledger card leaves its highlight in place |
 | [US-08.2.3](../../../../requirements-board/requirements/stories/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | as Phase 22 left it: captured on the Booking's Split button (typed $ or % shares, an invoice each, no Contract setting), with its `admin-split-button` and `mobile-split-button` shots. This phase adds two pairs for a split in the ledger but changes nothing the shots show. Check only; if any caption still says "nib and St George's" or a covered portion on the Contract, replace it with 22's wording and log it |
-| [US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md) Linked receivable and payable pair | captured · simulator-xero-pair, admin-invoice-handoff | captured, re-shot (admin, simulator). `xero-pair` (`/demo/xero/invoices/XRB0`): the callout "Ledger pair (the system of record)" with the "Matches the ledger" chip, highlight `xero-ledger-pair` beside `xero-engine-link`. `invoice-handoff`: the rail's Ledger card (`data-shot="invoice-ledger-card"`, not the `h2:text-is("Xero handoff")` selector) with both numbers. Add two states: `pair-not-in-xero` (after "Arm handoff failure" staged in `setup` and an authorise: the Ledger card shows the pair with "Not yet in Xero") and `prepay-pair` (`/admin/ledger`, `ledger-pairs`: the Pre-payment pair with payee "AA Holding account") and `prepay-transfer` (after the List is authorised: the journal transfer row, Receivable "None", Payee the anaesthetist). Caption: "Receivable and payable created together with the invoice and linked in the ledger; a prepayment's payable goes to the AA Holding account and its release is a journal transfer" |
+| [US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md) Linked receivable and payable pair | captured · simulator-xero-pair, admin-invoice-handoff | captured, re-shot (admin, simulator). `xero-pair` (`/demo/xero/invoices/XRB0`): the callout "Ledger pair (the system of record)" with the "Matches the ledger" chip, highlight `xero-ledger-pair` beside `xero-engine-link`. `invoice-handoff`: the rail's Ledger card (`data-shot="invoice-ledger-card"`, not the `h2:text-is("Xero handoff")` selector) with both numbers. Add two states: `pair-not-in-xero` (after "Arm handoff failure" staged in `setup` and an authorise: the Ledger card shows the pair with "Not yet in Xero") and `prepay-pair` (`/admin/ledger`, `ledger-pairs`: the Pre-payment pair with payee "AA Holding account") and `prepay-transfer` (after the List is authorised: the transfer row, Receivable "None", Payee the anaesthetist). Caption: "Receivable and payable created together with the invoice and linked in the ledger; a prepayment's payable goes to the AA Holding account and its release is a transfer" |
 | [US-08.3.2](../../../../requirements-board/requirements/stories/US-08.3.2.md) Ledger is the system of record | captured · web-web-accounts, mobile-mobile-balances | captured, re-shot with highlights (both have none today): web `web-accounts` on `/web/accounts/overdue` with `web-accounts-position` boxed; mobile `mobile-balances` with the "Collected $X · Paid out $Y" line boxed (add a `data-shot` for it). Add an admin shot `ledger-system-of-record` (`/admin/ledger` header and `ledger-pairs`). Caption: "Balances come from the ledger, not from Xero" |
 | [US-08.3.3](../../../../requirements-board/requirements/stories/US-08.3.3.md) Patient-linked history survives Xero archiving | partial · simulator-archived-contacts, web-history-kept | stays partial. Add admin `ledger-archived-contact` (`/admin/ledger`, All filter: a pair whose payer's Xero contact is archived keeps its row, with the neutral "Contact archived in Xero" note). `absentReason` keeps only: "Purging a contact is not shown." Keep the two existing shots; re-shoot `web-history-kept` (web Accounts now has the "Your position" strip above the sub-tabs) and check its highlight still lands |
 | [US-08.3.4](../../../../requirements-board/requirements/stories/US-08.3.4.md) Money in and money out | partial · admin-money-in-out | captured for AA overall and per anaesthetist (admin): `ledger-balance` and `ledger-tiles` on `/admin/ledger` (In balance, receivables outstanding, receipts held, payables due, the AA Holding account, disbursed), `ledger-out-of-balance` (after Inject unmatched receipt, "Names Dr Souter", from the matching `/demo/control` entry: "Out of balance by $120.00" with `ledger-unmatched`) and `ledger-allocated` (back in balance after Allocate to invoice). Keep `money-in-out`. The per-patient position is Phase 40's patient screen (US-13.2.2): if the story's per-patient drill-down is still judged missing, leave `partial` with "Per-patient position arrives with the patient screen (Phase 40)" |
@@ -1490,13 +1485,13 @@ explicitly supersedes.
   is information, not a second payable. 22's Split gives two pairs, not one pair with two
   payables.
 - **The payee.** Every procedure pair's payee comes from 25's lock, every `prePayment` pair's is the AA
-  Holding account, and every journal transfer's `in` leg is to the anaesthetist who did the List (25's lock).
+  Holding account, and every transfer's `in` leg is to the anaesthetist who did the List (25's lock).
   Nothing re-derives it from the List (grep for the deleted `anaesthetistIdForCase`), a test proves a List
   change after authorise does not move it, and no payee ever changes: there is no repoint helper anywhere (D38).
-- **Prepayment pairs and the journal transfer.** A prepayment has no pair until it is generated (admin
+- **Prepayment pairs and the transfer.** A prepayment has no pair until it is generated (admin
   approval, or at once with the approval step switched off); the pair, its payable to the AA Holding account
   and its draft Xero pair are written in the one `mutate` that sends the invoice (OQ-80, D38; US-09.1.3 does
-  not regress). The account's payable is never due and the run never pays it. The journal transfer is created
+  not regress). The account's payable is never due and the run never pays it. The transfer is created
   once per prepayment at authorise as two payable legs, never a receivable, invoice or payment, its `in` leg
   to the anaesthetist who did the List, and the account's balance falls by the same amount. Neither is a
   BCTI by default. No pair is ever rewritten.
@@ -1520,7 +1515,7 @@ explicitly supersedes.
 - **The equation.**
   - The imbalance is `receiptsHeld - payablesDue - holdingBalance`, exact to the cent.
   - AA fee money is never counted in it, the AA Holding account's balance is subtracted so a paid prepayment keeps
-    the ledger in balance, and a journal transfer is no receipt and no disbursement.
+    the ledger in balance, and a transfer is no receipt and no disbursement.
   - The per-anaesthetist positions plus the unattributed held receipts partition the whole ledger.
   - The out-of-balance list holds exactly the anaesthetists whose scoped imbalance is non-zero or who
     have a check, is empty on the seed, and names who owes whom in words on the scoped view.
@@ -1563,21 +1558,21 @@ explicitly supersedes.
     "AA owes" and "owes AA" groups), for the owner to take to the catalogue;
   - the unmatched receipt's attribution to an anaesthetist from its bank reference (a reading of how
     a receipt can belong to one anaesthetist's ledger before it is matched);
-  - the journal transfer's `in` leg kept out of 16's BCTI count by default (`prepaymentPairs: false`,
+  - the transfer's `in` leg kept out of 16's BCTI count by default (`prepaymentPairs: false`,
     27a's default), so a prepaid Procedure counts no BCTI for the fee unless flipped; the transfer's trigger
     (the office authorises the List) is OQ-125 (D72), still open, built as 27a built it;
   - OQ-29 (one BCTI per receivable invoice) and OQ-60 (paid-only, never netted) for AA's accountant;
   - the screens: `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId` (office), web
     Accounts and mobile Balances (Dr Souter).
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result against `efe123c`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
+  - the drift-check result against `fbdd555`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
     OQ-61, OQ-70, OQ-71, OQ-73, OQ-76, OQ-80) and how the open questions were handled (OQ-29, OQ-47
     Proposed, OQ-60);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item
     8);
   - the session split and the adversarial pass;
   - the tests added (the ledger module, parity, the BCTI and fee-run parity, the stamped payee,
-    the AA Holding account's balance and the journal transfer, the equation with the account,
+    the AA Holding account's balance and the transfer, the equation with the account,
     prepayment generation with its pair and draft Xero pair (no pair before it; at once with approval
     off), the honour system on a move, prepaid Procedures left off with nothing deducted, the patient link
     across payers,
@@ -1606,7 +1601,7 @@ explicitly supersedes.
     - Phase 25's `BillingCase.payeeAnaesthetistId` and Phase 27's prepayment case. The payee lives on the
       pair and its payable leg, and the prepayment's case is a `prePayment` ledger pair, created at approval
       (or at once with the approval step off), payable to the AA Holding account, with its draft Xero pair,
-      followed by 27a's journal transfer (two payable legs, never a receivable, never a second pair). This
+      followed by 27a's transfer (two payable legs, never a receivable, never a second pair). This
       phase's earlier `repointPayable`, held pair, trust-account hold and `prepaySettlement` pair with a
       receivable (OQ-70's repoint, D38's earlier default) are superseded by D38 as answered and extended.
     - The Phase 10 phrasing "apps read the Billing Engine's mirror, never Xero". It becomes "apps read
@@ -1620,18 +1615,17 @@ explicitly supersedes.
       (US-13.2.1's note), and the scoped view says who owes whom in words.
     - Every Booking pair carries the patient whoever pays, so the patient balance is patient-centric
       (US-13.2.2, DM-23).
-    - The payee never changes: a prepayment's payable is to the AA Holding account and a journal transfer
+    - The payee never changes: a prepayment's payable is to the AA Holding account and a transfer
       pays whoever did the List, so a move changes nothing (D38; D20's repoint superseded).
     - A billing-run failure is a `BillingException`, not a ledger pair; one per Booking, which fails
       whole (OQ-05).
     - An invoice's visibility to the anaesthetist no longer depends on the Xero mirror.
     - A BCTI is issued when its invoice is raised (counted even before Xero has it); prepayment pairs and
-      journal transfers are outside the count by 27a's default, a switch in 16's one place.
+      transfers are outside the count by 27a's default, a switch in 16's one place.
     - A prepayment has no pair until it is generated (admin approval, or at once when AA has switched the
-      approval step off); the pair is then created, payable to the AA Holding account; the journal transfer
+      approval step off); the pair is then created, payable to the AA Holding account; the transfer
       is created at authorise, as two payable legs and never a receivable.
-    - The imbalance is receipts held less payables due less the AA Holding account's balance; a journal
-      transfer is neither money in nor money out.
+    - The imbalance is receipts held less payables due less the AA Holding account's balance; a transfer is neither money in nor money out.
     - Case references keep the `BC` prefix as pair ids.
     - "Receipts held" includes prepayments received, which sit in the AA Holding account until the List
       is authorised (OQ-40, 27a).

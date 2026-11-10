@@ -51,7 +51,7 @@ That is the invoice's recipe (US-08.4.4). **A Procedure that still shows "Needs 
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue folder), and read it for this phase's items:
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware; never a plain `git diff` of the catalogue folder), and read it for this phase's items:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.1.3,US-04.3.5,US-07.3.1,US-08.1.1,US-08.4.4,US-15.0.3,US-04.1.2,US-04.2.1,US-04.2.8,US-05.2.8,US-05.2.6,US-05.3.5,US-07.3.2,US-08.5.1,US-08.5.2,US-13.3.2,US-11.2.2,OQ-05,OQ-48,OQ-104,OQ-131
@@ -223,7 +223,7 @@ After the manual test checklist and `npm run build`, `npm run build:pwa`, `npx v
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test themselves"): the snapshot's field list (AR-58 2.8 plus the invoice and payee fields; the catalogue still says "to be determined in discovery"); "Needs a price" blocking AUTHORISED (our reading, A48); the re-based failure demo on a hand-off fault scoped to one Booking (and that no holder reference exists to fail on, D82); no relock built; what the History tab shows and that it is not OQ-133's before-the-change list; anything logged rather than fixed; and the screens worth a look, each with its route and persona.
-- Status row for catch-up Phase 25 and a phase entry: the drift-check result against `efe123c` (including what 18 to 24 were found to provide, every live payee join and every live invoice print replaced), the snapshot's field list, the tests added, `PERSIST_VERSION` old to new, and the adversarial pass.
+- Status row for catch-up Phase 25 and a phase entry: the drift-check result against `fbdd555` (including what 18 to 24 were found to provide, every live payee join and every live invoice print replaced), the snapshot's field list, the tests added, `PERSIST_VERSION` old to new, and the adversarial pass.
 - **Decisions log** (each names the ruling it supersedes where there is one): **Contract fallback at billing time is removed** (supersedes the 2026-07-23 Phase 08 build decision (1), its "$23 vs $28.50 fallback" test and any interim ended-Contract fallback); **the billing-failure demo is re-based** (supersedes the Phase 09 demo that end-dated COS ACC and restored it); **what is locked** (US-04.3.5, AR-58 2.8; per Procedure and per Booking; kept in `lock.ts`; a copy, no version); **the invoice keeps its recipe** (US-08.4.4); **the payee is fixed at authorise** (DM-42, DM-08); **"Needs a price" blocks AUTHORISED** (US-04.3.5; our reading; 15a's warnings still never block); **failure per Booking is confirmed** (OQ-05); **seeded history carries migrated locks**; **Contract history** reads the audit with before and after (US-04.1.3). Update the `editAnaesthetist` note: a unit-value change re-prices unlocked Bookings only.
 - **Handoff notes:**
   - 27: a prepaid Procedure's price goes into the snapshot through `buildBookingLock`, never a second builder; the lock's `prePaid` is replaced by that; pre-payment cases still find their payee by the live join and print from live masters; 27 stamps a payee when it builds the prepayment record.

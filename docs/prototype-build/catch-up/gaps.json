@@ -1,16 +1,16 @@
 {
  "generated": "2026-11-10",
- "catalogue_commit": "efe123c5c5e226b92d8a48471f4b74f659f40d62",
+ "catalogue_commit": "fbdd555f015c3b2c15f982749d0d7656204b1263",
  "method": "Per-epic Sonnet reviewers against six prototype maps, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check.",
  "counts": {
   "Contradicts": 115,
   "Partial": 73,
-  "Missing": 42,
+  "Missing": 43,
   "OutOfScope": 0,
   "Matches": 66,
   "Grouping": 14
  },
- "in_scope": 310,
+ "in_scope": 311,
  "themes": [
   {
    "title": "Contract-centred billing model",
@@ -357,7 +357,7 @@
    "id": "EP-06",
    "title": "Prepayment",
    "status": "Verify (3)",
-   "observations": "The prototype's whole prepayment design predates the flat Contract model: Procedure.patientPaymentCategory selfFundedPrepayment on the billableParty route, prepaymentDetail full (RVG estimate via feeFor) or split (deposit), a manual 'Raise pre-procedure invoice' button, an ACCPAY to the anaesthetist, and a balance invoice that nets a 'Less pre-payment deposit' line. No Contract carries a prepaid flag, and no holding account, credit note, refund, approval queue or letter template exists anywhere in src (verified by grep). Closing EP-06 means replacing this with a prepaid Contract flag (EP-04: step rail, Prepaid Fixed price fallback, price ranges), an AA Holding account as a creditor (DM-21) on the ledger, credit notes and refunds (DM-24, EP-08), an invoice approval queue with an optional gate, a letter template master, a transfer step at AUTHORISE, and manual additional invoices or credit notes. Dependencies: EP-04, EP-08 (credit notes, additional invoice, left off final invoice US-08.2.2), EP-09 (holding-account Xero contact and pair), EP-11 (payer on the Booking), EP-13/US-13.7 (warning scheduling by date). Keep the existing warning and To-do machinery (prepaymentUnpaid rule, derived status, no-block behaviour), which already matches US-06.3.2 apart from part-paid and date escalation. All 14 gradings were independently re-checked and upheld; unresolved OQ-120, OQ-125, OQ-97, OQ-134 and OQ-73 do not change any grading. Demo impact: S4 Beat 1 (Annette Riley's Fri 24 Jul prepayment warning cleared on To-do) depends on the seeded selfFundedPrepayment Booking and the 'Raise pre-procedure invoice' button, so it changes when the trigger becomes a prepaid Contract and the raise becomes an approval step; the own-move beat's 'nothing about the patient's prepayment is recalculated' stays true. Seed: SEED_PREPAID_BOOKING_ID (paid prepaid Booking via buildSeedBillingSlice) and the seedBilling and prepayment tests must be rebuilt, with PERSIST_VERSION bumped. S3 may also show prepaid netting if it uses that Booking.",
+   "observations": "placeholder",
    "counts": {
     "Contradicts": 11,
     "Partial": 2,
@@ -385,7 +385,7 @@
    "id": "EP-08",
    "title": "Billing/Invoice Engine and internal ledger",
    "status": "Agreed (4)",
-   "observations": "Structural: the biggest change is that the engine used to resolve contracts, routes and prepayment netting at billing time (Procedure.billingRoute, governingContractId plus default-Contract fallback, prePaidByProcedure), whereas EP-08 now expects a Contract locked at AUTHORISED, no engine route or payer logic, prepaid Procedures left off, free-form additional invoices, credit notes and an invoice description. The prototype has only the Invoice kinds 'standard' and 'prePayment'; no credit, additional or event kind. The interim post-op addendum Booking (bookingActions.addPostOpAddendum) is meant to be replaced by US-08.6.3 (catch-up Phase 38b per the code comment).\n\nVerification result: 8 of 9 grades upheld; US-08.4.2 corrected from Partial to Contradicts because insurer invoices are hard-wired to a portal and refused for email (the dropped 'accepts direct claims' reading, replaced by delivery on the Party). US-08.2.1 stays Matches for the grouping behaviour, with the route-derived party noted as an EP-04 dependency. The only Matches item is therefore a Verify-status story with no acceptance criteria.\n\nDependencies on other epics: EP-04 (locked Contract at AUTHORISED US-04.3.5, flat Contract billable-party model, Contract invoice description, holder reference code US-04.2.18, delivery on Party US-04.1.5/US-04.2.8, fixed-price combined Contract US-04.2.11, prepaid Contract US-04.2.14); EP-06 (prepayment invoice US-06.3.1, prepaid amount US-06.2.2, no automatic invoice or credit US-06.4.1, AA Holding account transfer US-06.5.1; this also removes split deposits); US-08.6.5 (credit note option) and US-08.3.1 (ledger pair and payable per invoice) are prerequisites for US-08.6.4 and the 'own pair' criterion of US-08.6.3; EP-03 (bill an event US-03.7.2, OQ-138 pre-op consults open); EP-11 (payer and invoice email on the Booking, US-11.2.2); EP-07 (immutable after AUTHORISED US-07.3.2); US-02.5.7 and the integration feeds (hospital description arrival for US-08.4.6). US-08.1.1, US-08.4.4 and US-08.4.1 all hinge on the same locked-Contract snapshot, so building US-04.3.5 first shrinks them.\n\nDemo script impact (docs/demo-guide/03-demo-script.md): S3 Beat 1 (authorise and generate invoices, grouping, Brian Holt and Alan Prentice two-funder) still works. S3's prepayment-paid scenario and S4 Beat 1 (prepayment warning, split $800 on $1,200, Souter Fri 24) change with US-08.2.2 (prepaid left off, no deduction line, all or nothing). S4 Beat 2 (post-op addendum, 'Stage post-op scenario', 'Add post-op event') is rewritten by US-08.6.3. The S5 contract-change beat ('Changing a contract does not rewrite invoices already raised') needs a regenerate step if US-08.4.4 is closed. Invoice document screenshots change with US-08.4.1 and US-08.4.6. A new split-and-credit beat is needed for US-08.6.4. Any seed change (prepaid mixed Booking, combined-Procedure Booking, invoice descriptions) needs a PERSIST_VERSION bump.",
+   "observations": "All three gradings upheld after re-opening the code. Shared structural gaps: the Invoice/ACCREC/ACCPAY model has no credit-note kind, no reversal link between invoices, no negative payable netted by the payables run, and the ACCPAY payee is always an anaesthetist (no AA Holding payee, shared with US-06.5.1 and the US-06.3.1 prepayment flow). The Xero simulator would gain a clearing-account view that nets to zero (accountant meeting, 10 Nov: 'an instant flag'). A PERSIST_VERSION bump is needed for any seed or shape change. Dependencies: US-09.1.1 and US-09.1.4 (Xero pair and agency fields), US-10.2.5 (netting and remittance), US-08.6.3 and US-08.6.5 (OQ-97), US-13.5.2 (audit), OQ-29 (still open). Demo-script impact: the S3 invoice and Xero pair beats and any prepayment beat that shows a paid prepayment disbursed to the anaesthetist would change, since a paid prepayment would be held until the procedure is done; the S3 agency-line caption changes if the invoice is re-presented in the anaesthetist's name with a GST number; a credit-and-rebill beat would be new.",
    "counts": {
     "Contradicts": 10,
     "Partial": 8,
@@ -399,7 +399,7 @@
    "id": "EP-09",
    "title": "Xero integration",
    "status": "Proposed (1)",
-   "observations": "\"\"",
+   "observations": "EP-09 items graded here are small. The one real gap is US-09.1.1's prepayment parenthetical, and it is the same gap as the Agreed US-09.1.3: the prototype has no AA Holding account, so a prepayment pair's ACCPAY pays the anaesthetist and is disbursed to them on receipt, with no settlement second pair on List authorisation. It should be closed once, with the EP-06 holding-account work (US-06.5.1, FT-06.3, FT-06.4, US-09.1.3): a Holding payee contact in place of anaesthetistContactSpec for prepayment cases in handoffCase, plus a settlement pair. Code comments in listMoveActions.ts and slotActions.ts already assume the holding account exists, so they run ahead of the code. Minor extra: the ACCPAY InvoiceNumber carries a '-P' suffix, where the story wording says each invoice carries the engine's number. US-09.1.4 depends on OQ-29 and US-08.4.5; it is S-sized (BCTI label and details on the ACCPAY card) once the accountant answers, and the per-procedure vs per-payment vs per-run grouping would feed bcti.ts and FT-10.3. US-09.4.1 matches; an optional one-line 'separate org, not the general ledger, trust money' callout in DemoXero would make it explicit. Demo script S3 (Beats 2 and 3) and S4/S5 pair views would change only if the prepayment pair moves to a holding account.",
    "counts": {
     "Contradicts": 5,
     "Partial": 2,
@@ -413,7 +413,7 @@
    "id": "EP-10",
    "title": "Payments, disbursement and AA fees",
    "status": "Agreed (4)",
-   "observations": "EP-10 and FT-10.1 match: the two-state model, release for exactly the amount received, separate AA fee invoice and the single payer-to-AA-to-anaesthetist path all exist, and no direct-payment pathway remains. The real gap in this slice is FT-10.2: the prototype's office 'Run payables' button and the Xero simulator 'settle' make the anaesthetist payment, where OQ-111 (answered 4 Nov, for the build, not yet seen by Greg) says the payment is made in Xero's payables run and the system only detects and records it. The fix overlaps US-09.2.4 (detect disbursement by webhook or daily poll), US-10.2.7 (weekly ISO-week cycle, Proposed, OQ-47 unresolved), US-10.2.6 (BCTI approval for payment) and US-10.2.5 (negative invoices netted in the run): plan them together so payablesActions is reworked once (keep the increment logic, move the trigger into the Xero simulator, add a poll catch-up for missed ACCPAY payments). The release rule (payableReleasedFor) and two-state chips need no change. The S3 money beat, the DemoControlPanel line 504 note, the DemoXero settle copy and the demo guide cheat sheet would change. PERSIST_VERSION bump only if the AccPay/Disbursement shape or seed changes (for example an ISO-week or Xero-run field). Unverified: this pass graded only EP-10, FT-10.1 and FT-10.2; the child stories (US-10.1.x, 10.2.x, 10.3.x) are graded elsewhere.\"",
+   "observations": "Structural: the main EP-10 issue is that the prototype treats paying the anaesthetist as an in-system action (admin 'Run payables', Xero-sim 'Pay now', actor 'Payables run'). FT-10.2, US-09.2.4 and OQ-111 (answered 4 Nov) say Xero's payables run makes the payment and the engine detects and records it. The fix is to move the payout into the Xero simulator as a badged demo action, add webhook and poll detection of an ACCPAY payment, and turn the Admin monitor card into read-only tracking. The disbursement actions (runPayables, disbursePayable) have exactly two callers (BillingMonitorScreen, DemoXero), so the change is contained. Closely tied to US-09.2.4 in EP-09.\n\nDependencies: US-10.2.7 (weekly payment cycle, Proposed, OQ-47 open; Greg now proposes Monday to Sunday week, Thursday payment) is not built (no ISO week, close or reconciliation step) and sits outside this item list; US-10.2.6 and the 'next payables run' wording of US-10.2.1 depend on it. Whether BCTI approval equals release is part of OQ-47. BCTI count and period (OQ-29, one per payment or per weekly run) would change the per-procedure ACCPAY model US-10.2.6 relies on. Prepayments and the AA Holding account are not modelled in UI at all (only comments), so prepaid money can currently be disbursed like any other; that belongs to the EP-06/08 prepayment work but bears on the one-path story. AA fee never netted (US-10.3) is unaffected.\n\nDemo-script impact: S3 Beat 3 (03-demo-script.md ~519-531) and S4 part-payment steps (~652-655: Run payables, Payment received full, Run payables again), 02-workflows Workflow 7 step 6, and 01-personas 'Run disbursements' use the in-app Run payables button; re-homing to a Xero simulator action changes those beats. A bulk-remittance tab (US-10.2.4) is additive to the Xero sim only. US-10.2.1 and US-10.1.1 need no code change. Any seed-shape change needs a PERSIST_VERSION bump (currently 26).",
    "counts": {
     "Contradicts": 2,
     "Partial": 1,
@@ -455,11 +455,11 @@
    "id": "EP-13",
    "title": "Admin oversight and master data",
    "status": "Agreed (4)",
-   "observations": "The EP-13 gaps in this batch cluster on one structural change: Surgeon.roomId (single, required) becomes a many-to-many surgeon-to-room link, and Surgeon.specialty (optional free text) becomes a required list of ids from a new Specialty master, with a parallel new FundingTag master (ordered, optional funder link). Both masters need domain types, store actions with audit labels, Master data views, seed and a PERSIST_VERSION bump (currently 26 in appStore.ts, though CLAUDE.md says 13). Room contact email must become optional (the seed uses reception@ placeholders for the directory, which also hides the real 'no email' and 'no HPI CPN' cases from OQ-127 and OQ-129). The specialist directory seed should carry the 4 two-practice surgeons and use broad specialties from the starting list (it currently has subspecialty strings 'Breast' and 'Fertility', and cast.ts has 'Plastics'). The separate Insurers and Organisations views conflict with Parties (US-04.1.5), the Contracts master still uses the old Type 1/2/3 model with delete, and there is no master public holiday calendar, so US-13.4.1 depends on the EP-04 rework and a Parties merge. US-13.6.6's Contract-offering criteria and US-13.4.5's step rail and Suggested criteria are only demonstrable once EP-04 (US-04.2.16, US-04.2.17, US-04.3.8, US-04.3.10) lands. Which room's contacts a multi-room surgeon uses (OQ-127) also affects the booking update email (US-02.3.3) and the missing-NHI email (US-11.1.5). The cutover load (US-13.4.3, Proposed, OQ-129 open) needs a presenter-facing simulated load with a validation report. Surgeon HPI CPN, registration number, unique-identifier rules, pairings and the profile page already match and are unaffected. The 13.6.x and 13.4.4 items should be planned as one phase, since they share the same type, store and edit-sheet changes.",
+   "observations": "US-13.2.4 is purely additive and has no home in the current code. The Admin app does have a Day dashboard (Day grid, DraftListBand, WarningsToDo list for warnings, US-13.7.2), so a reconciliation box and an unresolved-items list can sit there and reuse the to-do pattern, with no new page. The real work is a small posting model: clearing accounts, sub-ledger and control accounts, and Xero bank lines with an unplaced-receipt state. That model should be built once and shared with US-13.2.1 (ledger) and US-10.2.4 (bulk remittance, where an unplaceable receipt is parked); the catch-up plan's phase 36 ledger work is the natural place. The Xero simulator (apps/demo/DemoXero.tsx) needs a bank-line list. A PERSIST_VERSION bump is needed if the seed shape changes, and the demo guide should gain a square / not-square beat. S1 to S5 beats are unlikely to break.",
    "counts": {
     "Contradicts": 8,
     "Partial": 8,
-    "Missing": 7,
+    "Missing": 8,
     "OutOfScope": 0,
     "Matches": 9,
     "Grouping": 3
@@ -6366,41 +6366,44 @@
   {
    "id": "US-06.5.1",
    "verdict": "Contradicts",
-   "summary": "There is no AA Holding account: a prepayment is paid through to the anaesthetist's payable as soon as it is received, the opposite of the story. OQ-125 on the release trigger is open and OQ-111 says Xero makes payments.",
-   "requirement_says": "A prepayment is credited to the AA Holding account (a creditor in the payables sub-ledger beside each anaesthetist, never paid itself), not the anaesthetist. Its balance is all deposits for procedures not yet done. After the procedure and List authorisation a second pair transfers the money to the anaesthetist who did the List. Money leaves only by a system-raised transfer or refund; Xero makes the payments and the system tracks them.",
-   "prototype_does": "The prepayment pair is a receivable from the payer and a payable to the List's anaesthetist. Payment received releases the ACCPAY for the amount received (payableReleasedFor), so the anaesthetist can be paid before the procedure. The Fri 24 PM seed Booking is a paid prepayment (INV0001/BC0001). The balance run nets the deposit off the final invoice, so the anaesthetist's payable is split across two documents. No holding-account balance, view or transfer.",
+   "summary": "No AA Holding account exists; a prepayment's ACCPAY is paired to the anaesthetist and released to them as soon as the patient pays, the opposite of the story (Verify status; OQ-125 on the release trigger does not change the grade, since the story text uses the office authorising the List).",
+   "requirement_says": "A prepayment invoice's pair is a receivable from the Booking's payer and a payable to a single AA Holding account (an AP creditor, never paid itself); its balance is all deposits received for procedures not yet done; nothing goes to the anaesthetist until the List is authorised, when a second pair transfers it to whoever did the List; money leaves only by a system transfer or refund.",
+   "prototype_does": "Old July prepayment model: Procedure.patientPaymentCategory 'selfFundedPrepayment' (full or split deposit) on the billableParty route; a manual office 'Raise pre-procedure invoice' action builds an Invoice{kind:'prePayment'}; handoffCase then creates an ACCREC plus DRAFT ACCPAY whose payee is the List's anaesthetist. receivePayment authorises that ACCPAY for the amount received and the payables run disburses it, so the anaesthetist is paid when the money arrives, before the procedure. There is no holding-account creditor or Xero contact, no balance, no transfer pair at AUTHORISED, and no refund path. Only comments in slotActions/listMoveActions mention the AA Holding account (a move leaves the payable untouched), and a test comment says the account and 27a's transfer are later phases. Catch-up phases 27 and 27a plan it and are not started (status next is 32b).",
    "missing_or_wrong": [
-    "No holding-account entity, contact or ledger balance, and no Admin view of it",
-    "Prepayment payable credits the anaesthetist, so AC1 (nothing paid to the anaesthetist before the procedure) and AC2 (payable is to the holding account) both fail",
-    "No transfer pair from holding to anaesthetist when the office authorises the List (US-06.4.1; trigger per OQ-125 still open)",
-    "Holding balance (deposits for procedures not yet done) not computed",
-    "No rule that money leaves only by a system-raised transfer or refund",
-    "Refund-from-holding path absent (see US-06.5.2)",
-    "Payee-repoint seam on a move (slotActions/listMoveActions 'PHASE 41 SEAM') becomes unnecessary once the holding account exists"
+    "WRONG: prepayment ACCPAY payee is the anaesthetist, not the AA Holding account (store/xeroHandoff.ts uses anaesthetistContactSpec for every case including prePayment)",
+    "WRONG: a paid prepayment authorises and disburses the payable to the anaesthetist before the procedure (store/paymentActions.ts receivePayment, store/payablesActions.ts payablesDue/disbursePayables have no prepaid exception)",
+    "MISSING: AA Holding account as a single creditor/Xero contact in the payables sub-ledger, never paid, kept out of the payables run",
+    "MISSING: holding-account balance (total received for procedures not yet done) shown anywhere (admin, Xero simulator)",
+    "MISSING: second pair at List AUTHORISED transferring the money from the holding account to the anaesthetist who did the List (accounting move, not a payment)",
+    "MISSING: refund from the holding account on a cancelled paid prepayment, and the rule that money leaves only by a system transfer or refund (no credit note or refund concept in src)",
+    "MISSING: prepayment invoice generated on admin approval with pair created at that point (prototype uses a manual raise button and splits deposits)",
+    "Domain Invoice.kind has only standard|prePayment; BillingCase/XeroAccPay carry no holding or transfer notion"
    ],
    "evidence": [
-    "aa-prototype/src/store/xeroHandoff.ts:194,249-275",
-    "aa-prototype/src/store/paymentActions.ts:96-99",
-    "aa-prototype/src/domain/billing/payableRelease.ts",
-    "aa-prototype/src/store/billingRun.ts:99-105",
-    "aa-prototype/src/store/selectors.ts:612-628",
-    "aa-prototype/src/store/slotActions.ts:457-462",
-    "searched: holding|trust account in src -> only unrelated hits"
+    "aa-prototype/src/store/xeroHandoff.ts:179-300 (payeeSpec = anaesthetistContactSpec(anaesthetist); payee contactId on ACCPAY, anaesthetistId set)",
+    "aa-prototype/src/store/prepaymentActions.ts:52 (raisePreProcedureInvoice, manual, refuses once AUTHORISED)",
+    "aa-prototype/src/store/payablesActions.ts:36-60 (payablesDue and disbursePayables release authorised minus disbursed with no prepaid check)",
+    "aa-prototype/src/store/paymentActions.ts:69 (receivePayment authorises ACCPAY for cumulative received)",
+    "aa-prototype/src/domain/billing/payableRelease.ts (release equals amount received)",
+    "aa-prototype/src/domain/types.ts:1251 (XeroAccPay payee is the anaesthetist who did the procedure)",
+    "aa-prototype/src/store/slotActions.ts:461 and listMoveActions.ts:163,371,441 (comments only: prepaid payable is the AA Holding account, nothing moves on a move)",
+    "aa-prototype/src/store/bookingMoveActions.test.ts:270 (holding account and 27a transfer are later phases)",
+    "searched: AA_HOLDING|holdingAccount|Holding account|trust account|prepay account in aa-prototype/src and e2e -> only the comments above; docs/prototype-build/catch-up/gaps.json EP-06 observations agree"
    ],
-   "demo_trigger": "Admin 'AA Holding account' screen showing the balance and the deposits held. Its Demo actions entry, 'Authorise List (release prepayment)', on a prepaid List shows the transfer pair posting and the balance dropping. Existing 'office-authorises-list' and 'payment-full' demo triggers can be reused to stage it.",
+   "demo_trigger": "On the Xero simulator (DemoXero) and the Admin Invoices screen: show an 'AA Holding account' balance card listing prepayments received for procedures not yet done, with a 'Receive prepayment' action (existing payment-full control) raising the balance and nothing appearing in the Payables run. Add 'Authorise List' (existing office-authorises-list) showing the transfer pair moving the amount from the holding account to the anaesthetist, who then appears in the next payables run. A 'Cancel prepaid Booking' control should show the refund leaving the holding account.",
    "surfaces": [
     "domain",
     "store",
+    "seed",
     "admin",
     "simulator",
-    "seed",
     "demo-guide"
    ],
    "size": "L",
    "confidence": "high",
-   "verify_outcome": "upheld",
+   "verify_outcome": "unverified",
    "original_verdict": "Contradicts",
-   "verify_note": "Re-read xeroHandoff, paymentActions and the repo-wide search: confirmed there is no holding concept and the payable goes to the anaesthetist. Added payment-time release (paymentActions) as the mechanism behind AC1 failing. OQ-125 is open, so the transfer trigger (List authorisation) is the catalogue's working reading. Keep L (a counterparty type, a transfer pair and an Admin view, plus a seed bump), not XL.",
+   "verify_note": "Verifier did not return this item.",
    "epic": "EP-06",
    "title": "AA Holding account",
    "type": "story",
@@ -7377,35 +7380,37 @@
   {
    "id": "US-08.3.1",
    "verdict": "Contradicts",
-   "summary": "A pair is created per invoice, linked to each other and to the case and Booking, and handed off atomically, but it is Xero-only and a prepayment invoice's payable goes to the anaesthetist instead of the AA Holding account.",
-   "requirement_says": "For every procedure invoice the engine creates a receivable from the billable party and a matching payable to the anaesthetist; for a prepayment invoice the payable is to the AA Holding account. Both are linked to each other and to the Booking and Procedures, and are created, paid or reversed together.",
-   "prototype_does": "handoffCase creates ACCREC + draft ACCPAY in one mutate; the ACCPAY carries accRecId and the invoice number plus '-P'; the case holds both ids and the Booking id. Admin invoice rail and Xero simulator show the linked pair. Prepayment invoices use the same handoff so the payable is to the anaesthetist.",
+   "summary": "A procedure invoice gets a linked ACCREC and draft ACCPAY pair created together, but a prepayment invoice's payable goes to the anaesthetist (not the AA Holding account) and there is no clearing account or out-of-step indicator.",
+   "requirement_says": "Every procedure invoice yields a receivable from the billable party and a matching payable to the anaesthetist, linked to each other and to the Booking/Procedures; for a prepayment invoice the payable is to the AA Holding account until the procedure is done. Neither side can be created, paid or reversed without the other; Xero posts the pair through a clearing account that should net to zero.",
+   "prototype_does": "handoffCase creates the ACCREC and a draft ACCPAY in one mutate (idempotent; a failed handoff leaves no pair), with the case/booking links held on the BillingCase and invoice. The ACCPAY payee is always the List's anaesthetist and amountPayable = invoice.total, with no prepayment branch, so a prepayment invoice follows the same handoff. receivePayment authorises the ACCPAY up to the amount received (payableReleasedFor) and a payables run disburses it, so prepayment money reaches the anaesthetist as soon as it is paid. The Xero simulator shows the pair and its links. There is no Holding account, no clearing account, and no reversal path.",
    "missing_or_wrong": [
-    "WRONG: prepayment payable is to the List's anaesthetist, not the AA Holding account",
-    "Pair is a Xero simulation record, not an engine ledger record",
-    "Link is to the case, invoice and Booking, not to the individual Procedures",
-    "No reversal path: no credit or void action reverses the pair together (the 'voided' status is never set)"
+    "Prepayment invoice's payable goes to the anaesthetist and is released on payment; it should be to the AA Holding account (US-06.5.1) until the procedure is done (contradiction)",
+    "No Holding account (a creditor in the payables sub-ledger) and no transfer to the anaesthetist on completion",
+    "No clearing account in the simulated Xero posting and no zero-balance 'pair out of step' indicator",
+    "'Reversed together' is not representable: no reversal of either side exists (see US-08.6.2)",
+    "ACCPAY itself carries only accRecId and the case reference; the Booking/Procedure link is via the BillingCase and invoice lines (minor)"
    ],
    "evidence": [
-    "aa-prototype/src/store/xeroHandoff.ts:179-290,311-320",
-    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:316-330",
-    "aa-prototype/src/apps/demo/xeroPairView.ts:1-60",
-    "aa-prototype/src/domain/types.ts:1219-1262,1241",
-    "searched: voided in src -> type and DemoXero label only"
+    "aa-prototype/src/store/xeroHandoff.ts:179-285 (pair creation; payee = list anaesthetist at :196-200; accPays amountPayable = invoice.total, no prepayment branch)",
+    "aa-prototype/src/store/paymentActions.ts:~85-95 (authorisedCumulative = payableReleasedFor(newReceived, accPayTotal)); aa-prototype/src/domain/billing/payableRelease.ts (releases exactly amount received)",
+    "aa-prototype/src/store/prepaymentActions.ts:170 (prepayment invoice goes through the same handoff)",
+    "aa-prototype/src/domain/types.ts:1119-1135 (Invoice.kind standard|prePayment)",
+    "searched: holding|clearing|trust account in src (non-test) -> no Holding or clearing account entity; only unrelated 'holding a List' uses"
    ],
-   "demo_trigger": "Existing: Xero simulator pair view (DemoXero) and Billing Monitor handoff; arm-handoff-fault demo control shows the pair-atomic back out. Proposed: show the AA Holding payable on a prepayment pair.",
+   "demo_trigger": "Button 'Show clearing account' on /demo/xero/invoices (Xero simulator): shows the clearing balance per pair and a total that should be 0.00, plus 'Break the pair' to leave a non-zero balance and show the alert. A prepayment pair detail should show the payable held in AA Holding until the procedure is completed; existing payment-full/half triggers drive the receipt.",
    "surfaces": [
     "domain",
     "store",
     "simulator",
     "admin",
-    "seed"
+    "seed",
+    "demo-guide"
    ],
    "size": "M",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Contradicts",
-   "verify_note": "Confirmed pair creation and atomicity in xeroHandoff and that prepayment cases reuse it with the anaesthetist as payee. The size M is reasonable if the ledger slice is built under EP-08/FT-08.3; the AA Holding payee swap alone is smaller.",
+   "verify_note": "Re-opened xeroHandoff, paymentActions, payableRelease and types; confirmed the ACCPAY always pays the list anaesthetist with no prepayment/Holding branch, and money is released on receipt. US-06.5.1 (status 3) says the other side of the prepayment pair is the Holding account. Grep found no Holding/clearing/trust entity anywhere. Contradicts stands; the pair creation itself (atomic, linked) does match. Added minor correction that the booking link is via case and invoice, which the reviewer already noted.",
    "epic": "EP-08",
    "title": "Linked receivable and payable pair",
    "type": "story",
@@ -7683,31 +7688,31 @@
   {
    "id": "US-08.4.5",
    "verdict": "Partial",
-   "summary": "The invoice carries an 'agent for' line identifying AA as agent, but it is AA-branded with no anaesthetist GST number and is not presented in the anaesthetist's own name; the story is only Proposed and OQ-29 is unanswered.",
-   "requirement_says": "Each receivable invoice is presented in the anaesthetist's own name with their GST number, and AA is identified on it as agent, not supplier. Treatment to be confirmed with AA's accountant (OQ-29, unresolved).",
-   "prototype_does": "InvoiceDocument shows the AA logo and Christchurch masthead, 'TAX INVOICE', the anaesthetist's name in a meta cell, and an italic line 'Billed by Anaesthesia Associates as agent for {anaesthetist}.' The footer says GST at 15% is a demo assumption. The Anaesthetist type has no GST number field (only gstPeriod); AnaesthetistRecord.tsx lists GST number as a future profile field.",
+   "summary": "The invoice carries 'Billed by Anaesthesia Associates as agent for <anaesthetist>' but is issued under AA's letterhead and shows no anaesthetist GST number; the story is Proposed and tied to OQ-29, still unanswered by the accountant.",
+   "requirement_says": "Each receivable invoice is presented in the anaesthetist's own name with the anaesthetist's GST number, and AA is identified as agent rather than supplier, for correct GST agency treatment.",
+   "prototype_does": "InvoiceDocument prints AA's letterhead logo and an italic line 'Billed by Anaesthesia Associates as agent for {anaesthetist name}.' on every layout. The anaesthetist's name appears only in that line. No anaesthetist GST number is modelled or shown.",
    "missing_or_wrong": [
-    "Anaesthetist's GST number is not held or shown",
-    "Invoice masthead is AA's, not the anaesthetist's name as supplier",
-    "Agent line wording not confirmed (OQ-29 open)"
+    "Invoice is not presented in the anaesthetist's name (AA letterhead and AA as sender)",
+    "Anaesthetist's GST number is absent from the data model and the invoice",
+    "Accountant (OQ-29, 10 Nov) listed the anaesthetist's name and GST number and AA's bank account as what the patient's invoice carries; the full set of items is still open (part 4)"
    ],
    "evidence": [
-    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:98-145,214-217",
-    "aa-prototype/src/domain/types.ts:209-237",
-    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:22",
-    "searched: gstNumber|GST number|IRD in src -> none beyond that comment"
+    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:141-143 (agency line, data-shot invoice-agency-line)",
+    "aa-prototype/src/domain/types.ts:1119-1135 (Invoice has no supplier/GST field)",
+    "searched: gst ?(number|reg)|gstNo|supplier|agent for in src (non-test) -> only the agency line; AnaesthetistRecord.tsx:22 mentions GST number in a comment"
    ],
    "demo_trigger": "",
    "surfaces": [
-    "admin",
     "domain",
-    "seed"
+    "seed",
+    "admin",
+    "demo-guide"
    ],
    "size": "S",
    "confidence": "medium",
    "verify_outcome": "upheld",
    "original_verdict": "Partial",
-   "verify_note": "Re-read the invoice document and searched for GST number fields. The agent concept is present and not contradicted, gaps are only missing fields and presentation, so Partial stands. Dropped the reviewer's 'buyer-created tax invoice (ACCPAY) layout' point as it is not in this story's text.",
+   "verify_note": "Confirmed the agency line exists and nothing models a GST number. Partial is right (agent wording present, nothing implemented is wrong). Replaced the reviewer's speculative third point with the accountant's own list from OQ-29 (name, GST number, bank account). Status is Proposed so low priority; wait for OQ-29 before building.",
    "epic": "EP-08",
    "title": "Anaesthetist as supplier, AA as agent",
    "type": "story",
@@ -7858,36 +7863,39 @@
   {
    "id": "US-08.6.2",
    "verdict": "Missing",
-   "summary": "No credit note, payable reversal, negative invoice to the anaesthetist, or re-issue anywhere in the prototype.",
-   "requirement_says": "A wrong invoice is credited in full and rebilled: credit note for the whole amount, reversal of the linked payable as a negative invoice netted in the next payment run and shown on remittance, new corrected invoice with its own number, both linked to the original, ledger and Xero pairs moved together, audited, credit note reaches billable party.",
-   "prototype_does": "Nothing. A negative invoice is refused (negativeTotal exception) and invoices are never reversed or reissued. Retry only rebuilds a failed (never invoiced) Booking.",
+   "summary": "No credit note, payable reversal or re-issue exists; only an unused 'voided' ACCREC status, and negative invoices are refused.",
+   "requirement_says": "A wrong invoiced Booking is credited in full (credit note against the receivable) with a negative invoice reversing the linked payable (netted in the next payment run and shown on remittance), then rebilled with a new numbered invoice. Original never edited; all steps audited, linked to the original, both Xero sides reversed and recreated together, and the credit note must reach the billable party.",
+   "prototype_does": "Nothing. Invoices are built once by the billing run and never reversed or corrected. A negative-total invoice is refused. XeroAccRec.status includes 'voided' but no action sets it (read only by bcti.ts and a label in DemoXero). Invoice.kind is only standard|prePayment; no credit-note or negative-invoice records, no netting in payables runs, no remittance advice.",
    "missing_or_wrong": [
-    "Credit-in-full action and Credit entity",
-    "Negative payable netted in next payables run and on remittance",
-    "Re-issue as new invoice linked to the original",
-    "Credit note delivery to the billable party",
-    "Audit of credit/rebill steps",
-    "OQ-97 (partial credit) open"
+    "Credit note record and Admin action to credit an invoice in full",
+    "Reversal of ACCREC and ACCPAY in the simulated Xero (negative invoice to the anaesthetist) and recreation of the pair on rebill",
+    "New corrected invoice with its own number, linked to the original and to the credit note",
+    "Netting of the negative invoice in the anaesthetist's next payment run and its line on the remittance advice",
+    "Delivery of the credit note to the billable party (Xero does not send credit notes)",
+    "Audit trail entries across the credit, reverse and rebill steps",
+    "Role gating for who may action it (still to work through in the story)"
    ],
    "evidence": [
-    "searched: credit|reversal|rebill|reissue in src store/domain/admin/demo (non-test) -> only comments (invoiceBuild.ts:409-418, bcti.ts:121-122) and 'rebill' meaning retry of a failed Booking (billingRun.ts:280)",
-    "aa-prototype/src/domain/billing/invoiceBuild.ts:409-420 (negativeTotal)"
+    "searched: credit ?note|creditNote|reissue|re-issue|negative invoice|voided|reverse in src (non-test) -> only comments at aa-prototype/src/domain/billing/invoiceBuild.ts:409 and validateBookingForBilling.ts:233, 'voided' at domain/types.ts:1248, domain/billing/bcti.ts:41,104,140 and apps/demo/DemoXero.tsx:798",
+    "aa-prototype/src/domain/types.ts:1119-1135 (Invoice.kind only standard|prePayment)",
+    "aa-prototype/src/store/payablesActions.ts:147-161 (disburses authorised minus disbursed only, no netting)",
+    "aa-prototype/src/domain/billing/bcti.ts:122 (comment: re-issued invoices after a credit belong to catch-up phase 39)"
    ],
-   "demo_trigger": "Admin invoice page: 'Credit and rebill' button (shows credit note, negative payable netted in next Run payables, new corrected invoice); demo helper 'Stage double payment' to supply the typical cause.",
+   "demo_trigger": "Admin 'Credit and re-issue' action on /admin/invoices/:invoiceId, plus a demo-bar button there to simulate the Xero credit note raised but not sent: credits the invoice in full, reverses the ACCPAY via a negative invoice, then opens the rebill with a new invoice number. A payables-run preview on /admin/billing-monitor shows the negative netted against the next payment and a remittance line.",
    "surfaces": [
-    "admin",
     "domain",
     "store",
+    "admin",
     "simulator",
     "web",
     "seed",
     "demo-guide"
    ],
-   "size": "L",
+   "size": "XL",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Missing",
-   "verify_note": "Searched credit/reversal/rebill/reissue/negative across store, domain, admin, demo: no implementation. Missing upheld.",
+   "verify_note": "Searched broadly for credit/reissue/negative/reverse vocabulary and for any code that sets 'voided'; nothing implements the flow. Missing stands. OQ-97 (partial prepayment credit) is a separate story (US-08.6.5) and does not change the full-credit-and-rebill acceptance criteria here. Size XL stands (new invoice kind, reversal in store and simulator, netting in payables, remittance, audit), though a first slice (credit in full and rebill without netting) could be L.",
    "epic": "EP-08",
    "title": "Credit note and re-issue",
    "type": "story",
@@ -8218,31 +8226,36 @@
   {
    "id": "US-09.1.1",
    "verdict": "Contradicts",
-   "summary": "Pair creation, stored Xero IDs, InvoiceNumber and Reference are implemented, but the story body states prepayment ACCPAY goes to the AA Holding account (prototype pays the anaesthetist), and the ACCPAY InvoiceNumber carries a '-P' suffix rather than the engine's own number.",
-   "requirement_says": "Engine creates ACCREC to the billable party and a DRAFT ACCPAY to the anaesthetist (for a prepayment invoice, to the AA Holding account) in the same transaction and stores both Xero IDs; each invoice carries the engine's unique invoice number in InvoiceNumber and the case reference in Reference (InvoiceNumber is the remittance match key, Reference tracing only).",
-   "prototype_does": "One mutate writes accRecs/accPays and case.accRecId/accPayId. ACCREC.invoiceNumber is the engine number; ACCPAY.invoiceNumber is number + '-P'; both Reference = invoice.caseReference. The Xero sim pair detail shows InvoiceNumber and Reference with the remittance-key vs tracing-only explanation on the ACCREC card (the ACCPAY card shows the pair without explanation). Prepayment ACCPAY payee is the List's anaesthetist.",
+   "summary": "The ACCREC + DRAFT ACCPAY pair, ID storage, InvoiceNumber and Reference are implemented, but a prepayment invoice's ACCPAY is raised to the anaesthetist rather than the AA Holding account, which contradicts the story's parenthetical.",
+   "requirement_says": "Per ledger pair the engine creates an ACCREC to the billable party and a DRAFT ACCPAY to the anaesthetist (for a prepayment invoice, to the AA Holding account) in one transaction and stores both Xero IDs on the ledger record; each carries the engine's unique invoice number as InvoiceNumber and the case reference as Reference.",
+   "prototype_does": "handoffCase creates the ACCREC and a draft ACCPAY in one mutate, stores accRecId/accPayId on the BillingCase, puts the engine invoice number in InvoiceNumber and the case reference in Reference; the fault path creates no half pair. The ACCPAY's InvoiceNumber is the engine number with a '-P' suffix. Prepayment pre-invoices (raisePrePayment) call the same handoffCasesForBooking, so the ACCPAY payee is always the anaesthetist contact; there is no AA Holding account contact, payee or ledger anywhere in the code (only comments in listMoveActions.ts and slotActions.ts and a test comment assume one).",
    "missing_or_wrong": [
-    "WRONG: prepayment ACCPAY payee is the anaesthetist, not the AA Holding account (the parenthetical in the story body; resolved by the US-09.1.3 work)",
-    "Minor: ACCPAY InvoiceNumber is '<engine number>-P', whereas the text says each invoice in the pair carries the engine's own unique invoice number (arguably deliberate so remittance lookup hits only the ACCREC; low confidence)"
+    "Prepayment ACCPAY pays the anaesthetist (the List's anaesthetist) instead of the AA Holding account (WRONG behaviour: payee chosen by anaesthetistContactSpec regardless of prepayment).",
+    "No AA Holding account contact or payee in the Xero sim, so the prepayment pair cannot show the holding-account payable, and no later second (settlement) pair exists. Overlaps US-09.1.3 (Agreed) and EP-06 (US-06.5.1, US-06.4.1).",
+    "The ACCPAY's InvoiceNumber is '<engine number>-P', not the engine's own number as the story's wording says every invoice in the pair carries; reviewer missed this. Minor, and arguably a deliberate Xero-uniqueness workaround, but the ACCPAY should be checked against the wording or the story clarified.",
+    "Draft versus approved bill question (Greg 10 Nov) is not surfaced in the sim; it is an open design point, low weight."
    ],
    "evidence": [
-    "aa-prototype/src/store/xeroHandoff.ts:221-250 (identifiers; ACCPAY invoiceNumber `${invoice.invoiceNumber}-P`)",
-    "aa-prototype/src/store/xeroHandoff.ts:166-175 (payee always list anaesthetist)",
-    "aa-prototype/src/apps/demo/DemoXero.tsx:537-549 (ACCREC IdentifierPair with explanatory copy), :621 (ACCPAY IdentifierPair, no copy)",
-    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:250-256,304-328 (Xero handoff rail, per reviewer; not re-opened)",
-    "searched: holding|trust account in aa-prototype/src -> none"
+    "aa-prototype/src/store/xeroHandoff.ts:179-307 (pair creation in one mutate; payeeSpec = anaesthetistContactSpec(anaesthetist) at :221)",
+    "aa-prototype/src/store/xeroHandoff.ts:253-264 (ACCREC invoiceNumber/reference), :265-277 (draft ACCPAY, invoiceNumber `${invoice.invoiceNumber}-P`), :279 (IDs stored on case)",
+    "aa-prototype/src/store/prepaymentActions.ts:171-175 (pre-invoice handed off as the normal pair)",
+    "aa-prototype/src/apps/demo/DemoXero.tsx:601-633 (ACCPAY card shows billNumber, reference, payee)",
+    "searched: 'holding account|holdingAccount|AA Holding' in aa-prototype/src -> only comments (listMoveActions.ts:163,371,441; slotActions.ts:461; bookingMoveActions.test.ts:270 says the holding account is a later phase)"
    ],
-   "demo_trigger": "Existing: authorise a List in Admin Review, open the pair in Demo: Billing Monitor & Xero > Invoices (S3 Beat 2). Prepayment case: raise a pre-payment invoice (S4 Beat 1) and show the pair's payee as AA Holding account once built.",
+   "demo_trigger": "",
    "surfaces": [
     "domain",
     "store",
-    "simulator"
+    "seed",
+    "simulator",
+    "admin",
+    "demo-guide"
    ],
-   "size": "S",
+   "size": "M",
    "confidence": "medium",
-   "verify_outcome": "corrected",
-   "original_verdict": "Matches",
-   "verify_note": "The reviewer set the holding-account parenthetical aside as covered by US-09.1.3, but it is written in this story's own body and the prototype does the opposite for prepayment invoices, so a Matches hides work. Also found the ACCPAY InvoiceNumber is number + '-P' (reviewer noted it but did not flag it against 'each invoice carries the engine's own number'). The core of the story (atomic pair, ids stored, InvoiceNumber and Reference) is otherwise sound.",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-opened xeroHandoff.ts, prepaymentActions.ts and re-ran the holding-account search: the payee is always the anaesthetist, even for prepayment invoices, so Contradicts (wrong behaviour, not just missing) holds. Added the '-P' suffix on the ACCPAY InvoiceNumber as a possible wording deviation the reviewer only mentioned in passing. Size M is fine if the holding account is built here; it is better closed once with US-09.1.3 / EP-06 (then L overall).",
    "epic": "EP-09",
    "title": "Invoice pair creation and identification",
    "type": "story",
@@ -8293,25 +8306,24 @@
   {
    "id": "US-09.1.4",
    "verdict": "Partial",
-   "summary": "The ACCPAY exists and is the BCTI in AA's fee counting, but nothing presents it as a buyer-created tax invoice (no label, wording or details); the requirement is Proposed and its wording and grouping are pending OQ-29.",
-   "requirement_says": "The ACCPAY to the anaesthetist is expected to stand as the buyer-created tax invoice (renamed by IRD), carrying whatever wording and additional details that treatment requires; whether it is the same record, and the wording (and per procedure, per payment or per run grouping), is pending OQ-29.",
-   "prototype_does": "The Xero sim shows the ACCPAY as 'Simulated payable to the anaesthetist' with no tax-invoice labelling. BCTI exists only as a count (one per paid procedure ACCPAY) feeding AA's per-BCTI fee. The ACCREC document carries 'Billed by Anaesthesia Associates as agent' wording; nothing equivalent on the payable side.",
+   "summary": "The procedure ACCPAY exists, one per receivable at the same value, and the AA fee BCTI count already treats it as the BCTI, but nothing in the Xero sim or invoice views names or words it as a buyer-created tax invoice; the story is Proposed and its wording waits on OQ-29.",
+   "requirement_says": "The ACCPAY to the anaesthetist is expected to stand as the buyer-created tax invoice (renamed by IRD), carrying whatever wording and details that treatment requires; whether they are one record and the wording are pending OQ-29 (GST agency treatment).",
+   "prototype_does": "Every procedure pair has a draft-then-authorised ACCPAY to the anaesthetist at the same value as its receivable, created by the engine at handoff. domain/billing/bcti.ts defines a BCTI as the procedure ACCPAY and the AA fee screens count them. The Xero sim ACCPAY card shows only bill number, reference, payee, ids and amounts, with no BCTI label, wording or details. The receivable carries 'Billed by Anaesthesia Associates as agent for <anaesthetist>' (agency reading).",
    "missing_or_wrong": [
-    "ACCPAY not labelled or presented as a buyer-created tax invoice anywhere the anaesthetist or AA sees it",
-    "No tax-invoice wording or additional details on the payable record",
-    "No handling of per procedure vs per payment vs per run grouping (open in OQ-29)",
-    "Wording unknown until the accountant answers OQ-29, so only a labelled placeholder is possible"
+    "ACCPAY card in the Xero sim does not name the record as a buyer-created tax invoice nor show BCTI details (anaesthetist name, GST number, AA bank account per accountant 10 Nov); the story's own screenshot caption states this.",
+    "No representation of whether a BCTI is per procedure, per payment or per weekly run (OQ-29 open); the prototype is per receivable only.",
+    "No separate BCTI document view; only the Xero record card. Contents cannot be finalised until OQ-29 is answered."
    ],
    "evidence": [
-    "aa-prototype/src/apps/demo/DemoXero.tsx:388-393,600-640 (ACCPAY card, plain payable copy, no tax-invoice wording)",
-    "aa-prototype/src/domain/types.ts:1239,1257 and aa-prototype/src/domain/billing/bcti.ts (BCTI as a count only)",
-    "aa-prototype/src/shared/demoTriggers/registry.ts:627-641 ('Seed a month of BCTIs', AA fee count)",
-    "searched: buyer in src -> no matches outside BCTI-count code"
+    "aa-prototype/src/domain/billing/bcti.ts:1-40 (BCTI = procedure ACCPAY)",
+    "aa-prototype/src/apps/demo/DemoXero.tsx:601-633 (AccPayCard, no BCTI wording)",
+    "aa-prototype/src/store/xeroHandoff.ts:265-277 (ACCPAY at invoice.total, same as ACCREC)",
+    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:141-143 (agent line on the receivable only)",
+    "searched: 'buyer-created|BCTI' in aa-prototype/src/apps/demo -> none; BCTI appears only in fee-count code and demo triggers (shared/demoTriggers/registry.ts:655 'Seed a month of BCTIs')"
    ],
-   "demo_trigger": "Existing: S3 Beat 2 Xero pair. Add a labelled-placeholder 'Buyer-created tax invoice (wording pending accountant)' badge and short wording panel on the ACCPAY card in the Xero sim and on the anaesthetist's payment history.",
+   "demo_trigger": "",
    "surfaces": [
     "simulator",
-    "web",
     "domain",
     "demo-guide"
    ],
@@ -8319,7 +8331,7 @@
    "confidence": "medium",
    "verify_outcome": "upheld",
    "original_verdict": "Partial",
-   "verify_note": "Grep confirmed 'buyer' appears nowhere in prototype UI; BCTI is purely a counting concept. Nothing implemented is wrong, only absent, so Partial rather than Contradicts. Item is Proposed with open OQ-29, so a placeholder is the realistic scope (size S).",
+   "verify_note": "Confirmed the ACCPAY card has no BCTI wording, and nothing contradicts the story (same record, same value as receivable, per OQ-42 and Notes 2026-10-01 #18). Partial is right, not Missing, since the ACCPAY exists and is the counted BCTI. Size S is fine, since a label plus placeholder detail is cheap and the real wording awaits OQ-29.",
    "epic": "EP-09",
    "title": "ACCPAY as buyer-created tax invoice",
    "type": "story",
@@ -8555,22 +8567,26 @@
   {
    "id": "US-09.4.1",
    "verdict": "Matches",
-   "summary": "The Xero sim behaves as a separate organisation holding only contacts, invoice pairs and payments, with apps reading the engine mirror rather than Xero; this is exactly the catalogue's own screenshot caption. An explicit 'dedicated org, not general ledger' line would be polish.",
-   "requirement_says": "AA uses a separate Xero org solely for receivables, payables to anaesthetists and banking; never general accounting; the engine (not Xero) is system of record.",
-   "prototype_does": "DemoXero is 'the simulated Xero organisation the Billing Engine hands off to: contacts, ACCREC / ACCPAY pairs and payment state', separate from the apps, which 'never read this, only the Billing Engine's own mirror'. It holds only contacts, pairs and payments. No wording about general accounting or a bank account.",
+   "summary": "The Xero simulator is a single dedicated organisation holding only contacts, invoice pairs (including AA fee receivables) and payments, with the Billing Engine as system of record; only the explicit 'never general accounting' wording is left to the presenter.",
+   "requirement_says": "AA uses a separate Xero organisation solely for receivables, payables to anaesthetists and banking, never for general accounting, because the Billing/Invoice Engine is the system of record for what is owed.",
+   "prototype_does": "/demo/xero is titled and described as the simulated Xero organisation the Billing Engine hands off to: contacts, ACCREC/ACCPAY pairs and payment state; the apps never read it, only the engine's billing mirror. The xero slice has only contacts, accRecs, accPays, payments and disbursements: no ledger, journals or reporting. The demo script (Beat 1) says the Billing Engine, not Xero, produces the invoice and Xero follows as the receivables and banking service.",
    "missing_or_wrong": [],
    "evidence": [
-    "aa-prototype/src/apps/demo/DemoXero.tsx:47-53 (subtitle: separate org, apps read engine mirror)",
-    "aa-prototype/src/domain/types.ts:758-800 (Xero slice = contacts, accRecs, accPays, payments)",
-    "searched: 'general accounting|general ledger|dedicated' in apps/demo -> none (wording only)"
+    "aa-prototype/src/apps/demo/DemoXero.tsx:51-56 (subtitle: simulated Xero org, engine mirror only)",
+    "aa-prototype/src/apps/demo/DemoXero.tsx:65-68 (duplicate-number org setting callout)",
+    "aa-prototype/src/store/appStore.ts:92,237 (xero slice seeded from seedBilling)",
+    "docs/demo-guide/03-demo-script.md:494-496 (presenter line)",
+    "searched: 'general ledger|general accounting|trust|dedicated' in aa-prototype/src/apps/demo/*.tsx -> none"
    ],
    "demo_trigger": "",
-   "surfaces": [],
+   "surfaces": [
+    "simulator"
+   ],
    "size": "None",
-   "confidence": "low",
-   "verify_outcome": "corrected",
-   "original_verdict": "Partial",
-   "verify_note": "Reviewer wanted an explicit dedicated-org callout and a banking representation. The story has no acceptance criteria, and the catalogue screenshot (simulator-xero-organisation) captions the existing screen as showing only contacts, pairs and payments, i.e. the story's demo. Re-graded Matches, low confidence; a one-line subtitle tweak ('solely receivables, payables and banking, never general accounting') is an optional S polish.",
+   "confidence": "medium",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "The story states a principle and no acceptance criteria; the sim's content (contacts, pairs, payments only, engine as master) embodies it, and nothing contradicts it. The AA fee receivable in the Xero org is a receivable from an anaesthetist, so it is consistent with 'solely receivables, payables and banking'. Weakness: the 'separate org, not general accounting, trust money' point is not stated on screen, so a presenter says it. Kept Matches at medium confidence; an optional one-line callout would be an S polish item.",
    "epic": "EP-09",
    "title": "Dedicated Xero organisation",
    "type": "story",
@@ -8662,36 +8678,36 @@
   {
    "id": "FT-10.2",
    "verdict": "Contradicts",
-   "summary": "Release of the payable for exactly the amount received is correct, but the prototype makes the anaesthetist's payment itself (office 'Run payables' button and the Xero simulator 'settle' both call disbursePayables/disbursePayable) whereas the catalogue now says the payment is made in Xero's payables run and the system only detects and records it (OQ-111 answered 4 Nov; OQ-47 weekly cycle unresolved).",
-   "requirement_says": "Once a receivable is paid, its matching payable is authorised for inclusion in the next payables run so the anaesthetist is paid only what AA received. The payment to the anaesthetist is made in Xero's payables run; the system records and tracks it (US-09.2.4) and does not make the payment itself (OQ-111).",
-   "prototype_does": "receivePayment authorises the ACCPAY for exactly the received amount (full or part). The Billing monitor has an unbadged office 'Run payables' panel ('N payables authorised, $X to disburse to anaesthetists', button) that calls runPayables, which itself allocates a payablesRun id, writes Disbursement records, sets ACCPAY status paid and the case to disbursed, under a 'Payables run' system actor. DemoXero's 'settle' calls receivePayment then disbursePayable as OFFICE_ACTOR with copy 'has been paid to <anaesthetist>'. DemoControlPanel describes Run payables as product UI, not a demo action. There is no Xero-side payables run or ACCPAY-paid webhook/poll that the engine detects.",
+   "summary": "Payable release on receipt is built correctly, but the prototype makes the anaesthetist payment itself (office 'Run payables' button, Xero-sim 'Pay <anaesthetist> now'), whereas FT-10.2 and OQ-111 (answered 4 Nov) say Xero's payables run makes the payment and the system only detects and records it.",
+   "requirement_says": "Once a receivable is paid, its matching payable is authorised for the next payables run, so the anaesthetist is paid only what AA has received. The payment is made in Xero's payables run; the system records and tracks it (US-09.2.4) and does not make the payment itself (OQ-111).",
+   "prototype_does": "receivePayment authorises the DRAFT ACCPAY for exactly the cumulative amount received (DRAFT to AUTHORISED). The admin Billing monitor has an unbadged 'Run payables' card and button (runPayables) that disburses authorised minus disbursed, writes a Disbursement and marks the case Disbursed, as system actor 'Payables run'; the source comment calls it product UI, not a simulation. The Xero sim's PairDetail has 'Simulate payment and payout' / 'Pay <anaesthetist> now', which calls receivePayment then disbursePayable(OFFICE_ACTOR). Nothing detects a disbursement made in Xero (reconciliationPoll and the webhook path handle ACCREC receipts only; no ACCPAY-paid event). No weekly cycle, ISO week, close or payment day anywhere.",
    "missing_or_wrong": [
-    "The disbursement is performed by an AA office action ('Run payables', actor 'Payables run') in the product UI; the catalogue says the system must not make the payment but detect that Xero's payables run paid the ACCPAY (webhook or daily poll) and record it (US-09.2.4, OQ-111 answered)",
-    "No simulated Xero-side payables run or ACCPAY-paid event for the engine to detect; DemoXero settle calls the office disbursement action directly and presents it as AA paying",
-    "Admin panel wording ('to disburse to anaesthetists') and the DemoControlPanel note ('Run payables: product UI, not a demo action') frame it as AA's own run; no 'authorised, awaiting Xero payables run' framing",
-    "Authorised payables are not shown as 'included in the next payables run' with a week or ISO-week cycle (US-10.2.7, OQ-47); mainly belongs to child stories"
+    "WRONG: the payment to the anaesthetist is made by the system (Admin 'Run payables' and Xero-sim 'Pay now' both call store disbursement actions, audited as a system/office action); the requirement says Xero's payables run makes it and the engine detects and records it",
+    "The payables run is unbadged product UI in Admin, not a Xero action; no 'Xero payables run' simulation followed by webhook/poll detection of the ACCPAY payment (the US-09.2.4 side)",
+    "No payment-cycle notion (ISO week, Friday close, Monday reconciliation, payment day); the cycle is Proposed and OQ-47 is open (Greg's latest: Monday to Sunday week, Thursday payment), so this is a note to track rather than a hard gap",
+    "Release rule itself (authorise exactly the cumulative amount received, remainder stays on the receivable) is correct and matches"
    ],
    "evidence": [
-    "aa-prototype/src/store/payablesActions.ts:1-20,56-170 (runPayables/disbursePayable write Disbursement records; PAYABLES_ACTOR)",
-    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:125-148 (Payables run panel and button)",
-    "aa-prototype/src/apps/demo/DemoXero.tsx:231-262 (settleInvoice calls disbursePayable as OFFICE_ACTOR)",
-    "aa-prototype/src/apps/demo/DemoControlPanel.tsx:504 (Run payables described as product UI)",
-    "aa-prototype/src/domain/billing/payableRelease.ts (release rule correct)",
-    "searched: payables-run webhook or poll detection of ACCPAY paid -> none; reconciliation poll only covers ACCREC payments"
+    "aa-prototype/src/store/paymentActions.ts:96-100,143-165 (ACCPAY authorised for payableReleasedFor(newReceived))",
+    "aa-prototype/src/store/payablesActions.ts:1-10,19,56-140,147-169 (runPayables/disbursePayable disburse as 'Payables run' system actor; header says unbadged office action, not a simulation)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:54-64,125-146 ('Payables run' card and 'Run payables' button)",
+    "aa-prototype/src/apps/demo/DemoXero.tsx:228-262,286-303 (settleInvoice: receivePayment then disbursePayable; 'Pay <anaesthetist> now')",
+    "aa-prototype/src/store/index.ts:303-304 (only two callers of the disbursement actions: BillingMonitorScreen and DemoXero)",
+    "searched: ISO week|payment cycle|weekly|Friday in src -> none; reconciliationPoll.ts has no payable/disburs handling"
    ],
-   "demo_trigger": "Move the payment to the Xero simulator: a demo-bar button 'Run Xero payables run' on /demo/xero and the Billing monitor that marks every authorised ACCPAY paid in simulated Xero and fires a payment webhook (plus a 'missed webhook, daily poll catches it' variant) so the engine records the Disbursement and the Admin chips flip to Disbursed. The Admin 'Run payables' panel becomes a read-only 'Authorised, awaiting Xero payables run' list.",
+   "demo_trigger": "Re-home the payout as a Xero simulation: on /admin/billing and /demo/xero a badged (Demo simulation) button 'Run Xero payables run' that pays every authorised ACCPAY in the simulated Xero and then fires the payment webhook (plus the existing 'Run reconciliation poll' as catch-up for a missed one) so the engine records the Disbursement; the Billing monitor 'Run payables' card becomes read-only tracking ('Awaiting Xero payables run: n payables, $x'). Optionally show the current ISO payment week beside it once OQ-47 settles.",
    "surfaces": [
     "admin",
     "simulator",
     "store",
-    "shell",
+    "domain",
     "demo-guide"
    ],
    "size": "M",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Contradicts",
-   "verify_note": "Read FT-10.2, US-09.2.4 and OQ-111 (status 4, answered: 'Xero is assumed to handle all payments. Our system tracks them'; payment made in Xero's payables run, system detects and tracks, does not make it). Re-opened payablesActions.ts, BillingMonitorScreen and DemoXero: the implemented behaviour is the opposite reading (system/office disburses), so Contradicts rather than Partial is correct. Note the catalogue screenshots for US-09.2.4 show the Admin 'Payables run' panel, but those are captured from the old prototype and do not override the text. Raised confidence to high; size M is reasonable (reuse payablesActions' increment logic, add simulated Xero payables run plus a webhook/poll detection path).",
+   "verify_note": "Re-read FT-10.2, OQ-111 (answered 4 Nov: Xero makes the payment, system tracks it) and OQ-47, then the code. Confirmed runPayables and disbursePayable have only two callers (Billing monitor button and Xero-sim button), both making the payment in-system, and no ACCPAY-payment detection exists in reconciliationPoll or paymentActions. Contradicts is right (implemented behaviour is wrong, not merely absent). Release rule is correct. Demo-guide lines 03-demo-script.md ~528 and ~652-655, 02-workflows Workflow 7 step 6 would change.",
    "epic": "EP-10",
    "title": "Releasing payables",
    "type": "feature",
@@ -8736,22 +8752,24 @@
   {
    "id": "US-10.1.1",
    "verdict": "Matches",
-   "summary": "One payment path modelled and shown in the Xero simulator; nothing routes money elsewhere.",
-   "requirement_says": "Exactly one payment path per procedure: billable party pays AA, AA disburses to the anaesthetist; never two destinations.",
-   "prototype_does": "Xero pair page shows ACCREC 'MONEY INTO AA' and ACCPAY 'MONEY OUT OF AA' cards; only payment entry is against the ACCREC; disbursement only from the ACCPAY via payables run.",
+   "summary": "Every procedure follows one route: payer pays AA (ACCREC), AA disburses to the anaesthetist (ACCPAY); no direct pathway exists. The trust-account point from the 10 Nov accountant meeting is a Note (not a rule or AC) and is not labelled, which is a minor wording gap only.",
+   "requirement_says": "The system models exactly one payment path for every procedure: the billable party pays AA, and AA disburses to the anaesthetist. (Note: all receipts go through the one trust account.)",
+   "prototype_does": "Every invoiced Booking gets an ACCREC paired with a DRAFT ACCPAY; payments are applied only to the ACCREC and the anaesthetist is paid only via the ACCPAY. Xero sim cards read 'ACCREC · MONEY INTO AA' and 'ACCPAY · MONEY OUT OF AA'; the invoice document shows 'Paid into AA account' and 'Disbursed to anaesthetist'. No direct-pay or remittance-to-anaesthetist path. No prototype text anywhere names a trust account or a separate Holding account.",
    "missing_or_wrong": [],
    "evidence": [
-    "aa-prototype/src/apps/demo/DemoXero.tsx:370-390",
-    "aa-prototype/src/store/paymentActions.ts:78",
-    "aa-prototype/src/store/payablesActions.ts:96"
+    "aa-prototype/src/apps/demo/DemoXero.tsx:373-394 (money-flow cards)",
+    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:188-215 (two money state chips)",
+    "aa-prototype/src/store/paymentActions.ts:1-26,96-100 (payments land on the ACCREC, payable follows)",
+    "aa-prototype/src/store/xeroHandoff.ts (ACCREC + DRAFT ACCPAY pair per case)",
+    "searched: trust account|trust bank|one account|holding account|paid directly in src -> none in UI copy (only comments mentioning the AA Holding account in slotActions.ts:461 and listMoveActions.ts:163,371,441)"
    ],
-   "demo_trigger": "Existing: Xero simulator invoice pair page.",
+   "demo_trigger": "",
    "surfaces": [],
    "size": "None",
-   "confidence": "high",
+   "confidence": "medium",
    "verify_outcome": "upheld",
    "original_verdict": "Matches",
-   "verify_note": "Re-opened DemoXero money-flow cards and store entry points; no alternate destination. Card copy says ACCPAY is 'net amount AA will disburse' which will need rewording when the fee defect is fixed (covered by US-10.2.1).",
+   "verify_note": "Status is Proposed. The story body states only the one-route rule and has no acceptance criteria; the trust-account sentence sits under Notes. Checked for a second destination for procedure money: none (AA fee invoices are paid to AA's own account but are not procedure payments and are outside this rule). Prepayments are not modelled to a Holding account, but that is a US-08.3.x gap, not this story's. Low risk that a presenter would want a 'one trust account' label; optional wording, not a gap.",
    "epic": "EP-10",
    "title": "All payments into AA",
    "type": "story",
@@ -8790,24 +8808,25 @@
   {
    "id": "US-10.2.1",
    "verdict": "Matches",
-   "summary": "Full payment releases the whole payable; part payment releases exactly the amount received, with the remainder outstanding on the receivable; pure rule, cumulative, no double-pay.",
-   "requirement_says": "When a receivable is paid the system authorises the matching payable so it enters the next payables run; full payment releases all of it, part payment releases exactly the amount received, remainder stays outstanding.",
-   "prototype_does": "payableReleasedFor(received, payable) = min(received, payable), applied cumulatively on every payment (added is clamped to the ACCREC balance). The ACCPAY moves draft to authorised on first release; the BillingCase shows partPaid or paid. runPayables disburses only authorised minus disbursed, so there is no double payment. Web Accounts Payments table has Received by AA, Released to you, Paid to you columns. Part-payment demo trigger exists.",
+   "summary": "A payment authorises the matching ACCPAY for exactly the cumulative amount received; a part payment releases only that amount with the remainder outstanding on the receivable; authorised payables are what the (in-system) run picks up. OQ-47 (weekly cycle, BCTI approval) is open but does not change this story's rule.",
+   "requirement_says": "When a receivable is paid, the matching payable is authorised so it enters the next payables run. Paid in full releases the whole payable; a part payment releases a payable for exactly the amount received and the remainder stays outstanding on the receivable.",
+   "prototype_does": "receivePayment clamps to the balance, bumps ACCREC amountReceived and status, and sets ACCPAY amountAuthorised to payableReleasedFor(newReceived, payable) (min of cumulative received and payable), flipping DRAFT to AUTHORISED on first release; a second payment lifts the cumulative figure. Idempotent by key (webhook or poll). payablesDue counts authorised minus disbursed; the Billing monitor says 'A payable authorises for exactly what its ACCREC has received'. Demo triggers 'Payment received full/half/replay' on invoice and Xero pair pages cover it, and the S4 script proves it with two runs across a part-then-balance payment.",
    "missing_or_wrong": [],
    "evidence": [
-    "aa-prototype/src/domain/billing/payableRelease.ts",
-    "aa-prototype/src/store/paymentActions.ts:90-141",
-    "aa-prototype/src/store/payablesActions.ts:36-47,147-160",
-    "aa-prototype/src/apps/web/screens/AccountsScreen.tsx:214-215 (Received by AA, Released to you)",
-    "aa-prototype/src/shared/demoTriggers/registry.ts:563 (payment-half trigger)"
+    "aa-prototype/src/domain/billing/payableRelease.ts:1-30",
+    "aa-prototype/src/store/paymentActions.ts:96-100,143-165",
+    "aa-prototype/src/store/payablesActions.ts:36-47,147-158",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:130-135",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:548-578 (payment-full, payment-half, payment-replay)",
+    "docs/demo-guide/03-demo-script.md:652-655 (S4 part payment then balance)"
    ],
-   "demo_trigger": "Existing: 'Payment received · half' then 'Payment received · full' on the invoice page, then Billing monitor 'Run payables'.",
+   "demo_trigger": "Existing: Demo actions > 'Payment received · full' and 'Payment received · half' on /admin/invoices/:invoiceId and /demo/xero/invoices/:accRecId.",
    "surfaces": [],
    "size": "None",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Matches",
-   "verify_note": "Story has no formal acceptance criteria, only the three behaviour sentences. Verified in code that part payment authorises exactly amountReceived (cumulative) and the remainder stays on the ACCREC (status awaitingPayment). The OQ-47 'engine authorises exactly the amount received' question is answered in the same direction as the code. The 'next payables run' wording is met by the single Run payables action. Not claimed: weekly cycle (US-10.2.7).",
+   "verify_note": "Status Agreed, so re-checked closely. Story has no acceptance criteria beyond the two rule paragraphs; both hold in paymentActions.ts and payableRelease.ts (cumulative, exact to the cent, remainder left on ACCREC). The story links to the weekly 'payables run' (US-10.2.7), which is unbuilt, and the run itself is made in-system (the FT-10.2 contradiction); both are graded under FT-10.2 and US-10.2.7, not here, because this story's rule is only the authorisation. Kept Matches.",
    "epic": "EP-10",
    "title": "Payable released to match the amount received",
    "type": "story",
@@ -8849,19 +8868,20 @@
   {
    "id": "US-10.2.4",
    "verdict": "Missing",
-   "summary": "No bulk hospital remittance or Xero bank-reconciliation representation; only single-invoice payment simulation.",
-   "requirement_says": "Bulk hospital payments covering many invoices are matched by Xero's bank reconciliation and remittance add-on, not by the engine; items the add-on cannot match stay as unmatched items in Xero's bank reconciliation for office staff.",
-   "prototype_does": "Nothing functional. Payments are simulated one ACCREC at a time. DemoXero has only a warn Callout that unique InvoiceNumber can be the remittance matching key.",
+   "summary": "The prototype has no bulk-payment or bank-reconciliation representation: the Xero simulator pays one invoice at a time and has no reconciliation or unmatched-items view, so the boundary (Xero's add-on matches bulk remittances; leftovers stay in Xero for the office) is not shown. Not OutOfScope because a simulator view can make it presenter-explainable.",
+   "requirement_says": "Bulk hospital payments covering multiple invoices are matched by Xero's own bank reconciliation and remittance add-on, not the Billing/Invoice Engine; any item the add-on cannot match stays as an unmatched item in Xero's bank reconciliation for the office to handle there.",
+   "prototype_does": "Nothing that shows it. Payments reach the engine only as single-invoice webhook or poll events (full or half). The only related text is Xero-sim copy that the engine's InvoiceNumber is the key hospitals and insurers quote on remittances so remittance matching can key on it. Xero sim has Contacts and Invoices tabs only. The engine does no bulk matching (consistent with the requirement), but nothing shows Xero doing it or the unmatched leftovers.",
    "missing_or_wrong": [
-    "No bulk-payment simulation across several ACCRECs",
-    "No Xero-side 'unmatched item' list or bank-reconciliation view",
-    "No explicit statement that the engine does not do bulk matching (scope callout)"
+    "No simulated bank feed or Xero bank reconciliation view",
+    "No bulk payment covering several invoices (one bank line, several ACCRECs) that Xero's add-on matches by reference and amount before the engine sees it",
+    "No unmatched line left in Xero for the office, and no 'what to do' hint for a receipt with no reference"
    ],
    "evidence": [
-    "searched: 'remittance|bank reconc|unmatched|bulk' in src -> only DemoXero.tsx:63-68 callout text; other hits are unrelated (feeds.ts, integrationActions.ts appointment matching)",
-    "aa-prototype/src/store/paymentActions.ts:78 (single accRecId)"
+    "aa-prototype/src/apps/demo/DemoXero.tsx:66,548,718 (InvoiceNumber as remittance matching key; copy only)",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:548-578 (payment triggers are single-invoice only)",
+    "searched: remittance|bank reconcil|bank feed|unmatched in src -> only DemoXero copy; 'unmatched appointment' integration wording is unrelated"
    ],
-   "demo_trigger": "Proposed: on Xero simulator Invoices tab, button 'Simulate bulk hospital remittance' that pays several open ACCRECs of one hospital in one action (each through receivePayment, source 'webhook') and leaves one item in a 'Xero bank reconciliation: unmatched' list marked 'For office staff, handled in Xero'.",
+   "demo_trigger": "On /demo/xero add a 'Bank reconciliation' tab and a badged (Demo simulation) button 'Receive bulk hospital payment': one bank line covering three open ACCRECs from the same hospital, matched by the remittance add-on (reference and amount) so the engine then receives three normal payment events, plus one bank line with no reference left 'Unmatched in Xero' for the office. Optional second button 'Office matches line'.",
    "surfaces": [
     "simulator",
     "store",
@@ -8869,9 +8889,9 @@
    ],
    "size": "M",
    "confidence": "medium",
-   "verify_outcome": "corrected",
+   "verify_outcome": "upheld",
    "original_verdict": "Missing",
-   "verify_note": "Missing verdict upheld after grepping remittance/bank/unmatched/bulk. Size raised S to M: the unmatched item needs persisted state (store slice, possibly seed and PERSIST_VERSION bump), a simulator action and UI, plus tests. Added store surface.",
+   "verify_note": "Searched for remittance, reconciliation, bank feed and unmatched wording; only the DemoXero InvoiceNumber copy exists, which supports the key but not the story's behaviour, so Missing (not Partial) stands. Challenged OutOfScope: a simulator tab with a bulk line and an unmatched line is a concrete trigger, so not OutOfScope. Status Proposed; the Technical discussion says parking of unplaceable receipts is unsettled, so the unmatched line should stay 'left open in Xero' without a holding-account claim.",
    "epic": "EP-10",
    "title": "Bulk remittance stays in Xero",
    "type": "story",
@@ -8923,36 +8943,33 @@
   {
    "id": "US-10.2.6",
    "verdict": "Partial",
-   "summary": "No explicit approve-BCTIs-for-payment step or payment period exists; only payment-triggered authorisation gates the run. Unapproved (unpaid, draft) payables are never in the run, which meets the acceptance criterion only if approval is the same thing as authorisation, which OQ-47 leaves open.",
-   "requirement_says": "Once AA has generated the BCTIs for a payment period they are approved for payment before being paid out; BCTIs not yet approved are not in the payment run.",
-   "prototype_does": "Payables are draft until their receivable is paid, then authorised; runPayables disburses every authorised payable immediately with no further approval, period grouping or list of not-yet-approved items. BCTIs exist only as a count for the monthly AA fee.",
+   "summary": "The acceptance criterion holds in effect (a DRAFT, unauthorised payable is never in the run), but there is no explicit approval of a period's BCTIs: BCTIs are per-procedure ACCPAYs with no payment-period batch, approve step or 'approved for payment' wording. Status Verify; OQ-47 and the story note leave open whether this is the same step as US-10.2.1.",
+   "requirement_says": "Once AA has generated the BCTIs for a payment period, they are approved for payment before being paid out; BCTIs not yet approved are not in the payment run. Who approves and how is unknown and may simply be the US-10.2.1 release.",
+   "prototype_does": "Each ACCPAY (the BCTI, one per procedure) starts DRAFT and becomes AUTHORISED automatically when its receivable is paid; runPayables and payablesDue include only authorised minus disbursed amounts, so an unapproved (DRAFT) payable is never in the run. No approval list or approve action, no payment-period grouping, no 'approved for payment' wording; Xero sim shows Authorised/Disbursed amounts only.",
    "missing_or_wrong": [
-    "No explicit approved-for-payment state or approve action for a period's BCTIs (Greg: an approved-for-payment list the office ticks through)",
-    "No payment period or weekly cycle grouping (US-10.2.7), so no 'BCTIs for a payment period'",
-    "Run payables takes everything authorised, with no approved/not-approved split or visible list of not-yet-approved items",
-    "No pre-run check that the critical numbers balance (Greg, 2026-10-28, under OQ-47/OQ-111)"
+    "No explicit 'approved for payment' state or step distinct from authorisation, and no admin or system approve action for a period's BCTIs",
+    "No payment period (ISO week or month) batching BCTIs for approval (depends on the unbuilt weekly cycle, US-10.2.7)",
+    "Approval is purely a side effect of receipt; nothing tells a presenter 'not approved, so not in this run'",
+    "If approval is settled as the same step as US-10.2.1 authorisation, only labelling (BCTI approved for payment, excluded-from-run list) is missing"
    ],
    "evidence": [
-    "aa-prototype/src/store/payablesActions.ts:147-160 (runPayables: eligible = every ACCPAY with authorised minus disbursed > 0)",
-    "aa-prototype/src/store/paymentActions.ts:131-141 (authorisation only on payment)",
-    "aa-prototype/src/domain/billing/bcti.ts (BCTI count for the AA fee only)",
-    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:121-150 (single Run payables button)",
-    "searched: approved for payment|approveFor|paymentWeek|isoWeek|critical numbers|reconcil in aa-prototype/src (non-test) -> none relevant"
+    "aa-prototype/src/store/xeroHandoff.ts:276 (ACCPAY created status 'draft')",
+    "aa-prototype/src/store/paymentActions.ts:149-150 (draft to authorised on receipt)",
+    "aa-prototype/src/store/payablesActions.ts:36-47,147-158 (run takes only authorised minus disbursed)",
+    "aa-prototype/src/domain/billing/bcti.ts (BCTI = the procedure ACCPAY; no period approval)",
+    "searched: approv.*BCTI|approved for payment in src -> none"
    ],
-   "demo_trigger": "Proposed: on Billing monitor, an 'Approve for payment' list on the Payables run card (per payment week) with an 'Approve all' button, and a demo-bar action 'Add unapproved BCTIs' (Billing monitor only) so unapproved ones visibly stay out of Run payables.",
+   "demo_trigger": "Existing: Demo actions > 'Payment received · full' releases (approves) a payable. If a separate approval is kept after OQ-47: an 'Approve this week's BCTIs' control on the Billing monitor payables card that moves the period's released payables to Approved for payment, listing unapproved ones as excluded from the run.",
    "surfaces": [
     "admin",
-    "domain",
     "store",
-    "seed",
-    "shell",
-    "demo-guide"
+    "domain"
    ],
-   "size": "M",
-   "confidence": "low",
+   "size": "S",
+   "confidence": "medium",
    "verify_outcome": "upheld",
    "original_verdict": "Partial",
-   "verify_note": "Re-searched for approval, period, week and balance-check code: nothing. Considered Missing (no approval step at all) but the draft-until-paid gate does keep unauthorised payables out of the run, so Partial is defensible. Status is Verify (3) and OQ-47 asks whether this is the same step as US-10.2.1 authorisation, so confidence stays low. Added the shell surface for the demo-bar action. Should be designed with US-10.2.7.",
+   "verify_note": "Checked the single AC against payablesDue/runPayables: unapproved payables are excluded, so the AC is satisfied in effect, but the story is about an explicit approval of a period's BCTIs, which is not represented; and the story is Verify with the same-step question open. Considered Matches (Xero's AUTHORISED status is literally 'approved') but the missing period batching and wording keep Partial. Size S stays only if approval equals release; M if a separate approve step and period batch are wanted.",
    "epic": "EP-10",
    "title": "Approve the period's BCTIs for payment",
    "type": "story",
@@ -10409,6 +10426,48 @@
    "status": "Agreed (4)",
    "open_questions": [],
    "file": "stories/US-13.2.2.md"
+  },
+  {
+   "id": "US-13.2.4",
+   "verdict": "Missing",
+   "summary": "No reconciliation status, ledger, clearing account, bank-line or unresolved-items list exists in the prototype; the only 'reconciliation' is the Xero payment catch-up poll, a different concept.",
+   "requirement_says": "The admin dashboard shows one reconciliation status (books square, or out of balance naming the account and the difference) covering zero-balance accounts, sub-ledgers vs control accounts, internal ledger vs Xero and unmatched Xero bank lines. Beside it, it lists each unresolved item (e.g. an unplaced receipt) with its amount and how long it has been outstanding.",
+   "prototype_does": "Nothing. The admin 'Day dashboard' (Day grid, DraftListBand, WarningsToDo to-do list for warnings, US-13.7.2) has no books-balance box. Billing monitor shows per-List pipeline cards and payables due. There is no ledger, control or clearing account, or bank-line model; the Xero simulator holds ACCREC/ACCPAY/PaymentIn only. 'Run reconciliation poll' only re-applies missed Xero payments as receipts and neither reports balance nor lists unplaced receipts.",
+   "missing_or_wrong": [
+    "Reconciliation status box on the admin dashboard (Day view) saying the books are square, or out of balance",
+    "Balance checks: zero-balance clearing accounts, each sub-ledger vs its control account, internal ledger vs Xero, unmatched Xero bank lines",
+    "Out-of-balance state naming the account and the difference",
+    "Unresolved-items list (e.g. an unplaced receipt) with amount and days outstanding, raised as a dashboard alert (could reuse the WarningsToDo to-do pattern)",
+    "Domain model for posting/clearing accounts and Xero bank lines, and a way to create an unplaced receipt (bulk remittance, US-10.2.4)",
+    "Seed data for a square state plus one unresolved item aged about 3 weeks"
+   ],
+   "evidence": [
+    "searched: reconcil|ledger|clearing|unallocated|unapplied|unmatched|control account|bank line|out of balance|unplaced|suspense|books are in aa-prototype/src -> only store/reconciliationPoll.ts (payment catch-up poll), shared/demoTriggers/registry.ts:415-430 (Run reconciliation poll), integrationActions.ts and conflicts code (unrelated parked appointments / booking conflicts); domain/billing/bcti.ts:121 mentions 'the ledger's payable legs' only as a future phase 36 plan note",
+    "searched: dashboard in apps/admin and shell -> Day dashboard parts only (DraftListBand.tsx, WarningsToDo.tsx, DayGrid.tsx); no reconciliation panel",
+    "aa-prototype/src/store/reconciliationPoll.ts:17-40 (re-applies missed Xero payments only)",
+    "aa-prototype/src/domain/seed/billing.ts:55 (receipts ledger comment only, an append-only receipts list, not accounts)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx (no balance status)"
+   ],
+   "demo_trigger": "On the admin Day dashboard, a 'Books reconciliation' box with a Square / Out of balance pill and an unresolved-items list. Demo actions menu entries on that screen: 'Post an unplaced receipt' (adds a Xero bank line matching no invoice, so the status flips to Out of balance naming the account and difference, and an unresolved item appears with amount and days outstanding), 'Age unresolved items 3 weeks', and 'Place the receipt' to return to Square.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "seed",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Missing",
+   "verify_note": "Re-grepped aa-prototype/src for reconciliation, ledger, clearing, unallocated, unmatched, control account, bank line, out of balance, unplaced, suspense and dashboard terms; found nothing implementing the requirement (only the unrelated Xero payment poll and booking/appointment reconciliation). Corrected one detail: the admin does have a 'Day dashboard' (Day grid, draft-list band, warnings to-do), so the status box would go there rather than needing a new dashboard page. Size L kept: needs a minimal ledger/clearing/bank-line model, shared with US-13.2.1 and US-10.2.4.",
+   "epic": "EP-13",
+   "title": "Reconciliation status at a glance",
+   "type": "story",
+   "status": "Proposed (1)",
+   "open_questions": [],
+   "file": "stories/US-13.2.4.md"
   },
   {
    "id": "US-13.3.1",

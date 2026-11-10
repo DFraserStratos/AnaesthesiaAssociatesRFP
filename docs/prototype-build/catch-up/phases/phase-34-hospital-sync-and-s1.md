@@ -52,7 +52,7 @@ and selectors and the procedure text through 20a's types.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
    Node 22.18 or newer):
 
    ```
@@ -102,7 +102,7 @@ and selectors and the procedure text through 20a's types.
    - **Phase 17a:** the surgeon's rooms (the PDF's sending room).
 8. Note `PERSIST_VERSION` (`src/store/appStore.ts`): this phase bumps it once, for the seeded
    SurgeonPdfList records.
-9. Record the drift-check result (against `efe123c`) in the PROGRESS entry.
+9. Record the drift-check result (against `fbdd555`) in the PROGRESS entry.
 
 ## Reference
 
@@ -501,7 +501,7 @@ confirmed ones with tests, re-green, record it. Do not re-raise settled Decision
   whether the Intake home landed in full or as a plain grouping; the AR-35 wording on the deliveries and
   samples (AI-made, row 14 reused on the sync).
 - **Status row** and entry `### Catch-up Phase 34 · Hospital sync, the rooms' PDF lists and the S1
-  rebuild (date)`: the drift check against `efe123c`; the real 33, 33a, 20 and 20a names used; what was
+  rebuild (date)`: the drift check against `fbdd555`; the real 33, 33a, 20 and 20a names used; what was
   built, moved or badged; `PERSIST_VERSION` from and to; the pinned deliveries and PDF targets; tests and
   the review pass; where the session cut fell; the S1 consistency read; the screenshot result (REPORT.md
   counts before and after).

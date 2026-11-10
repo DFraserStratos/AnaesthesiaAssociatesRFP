@@ -602,7 +602,7 @@ anything settled in the Decisions log except the rulings this phase supersedes.
   the phone-advice row; a change after submit).
 - **Catalogue screenshots result:** the recipes changed and the `REPORT.md` counts before and after; the
   US-04.3.3 reason handed to 21.
-- Status row and a phase entry: the drift-check result against `efe123c`; D16, D64, D12, D3, D35, D33,
+- Status row and a phase entry: the drift-check result against `fbdd555`; D16, D64, D12, D3, D35, D33,
   D63, D48, D28, D2, D17, D23 and D42 built as decided, D32 and D49 moot, D81 as the default; what 15a,
   15b, 18, 18a, 19, 19a, 19b and 38a provided; the session split; the adversarial pass; the tests added;
   `PERSIST_VERSION` old to new; the broken recipes; the handoffs: 20a (the Contract row and

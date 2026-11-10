@@ -22,7 +22,7 @@ The office resolves it on Matching: **Add NHI** creates the Booking through 33's
 
 ## Before you start
 
-1. **Drift check** against the plan baseline `efe123c`:
+1. **Drift check** against the plan baseline `fbdd555`:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.6,US-02.6.1,US-02.6.2,US-02.6.3,US-02.1.4,US-11.1.4,US-11.1.5,US-13.7.3,US-02.1.2,OQ-118,OQ-49
@@ -127,5 +127,5 @@ Standard pass (convention 18), steered at:
 ## PROGRESS.md updates
 
 - **For the owner's review:** the readings in Before you start item 3 (labelled, one place each); Add NHI creates the Booking with no Contract, waiting on "Needs an invoice destination"; the seeded stub's List and row.
-- Status row and phase entry: drift check against `efe123c`, OQ-118 and OQ-49 as built, names 33 shipped, tests added, `PERSIST_VERSION` old to new, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 34 (stubs placed through `stageImportRows`), 40 (`resolveStub` for its waiting view), 40a (Add NHI's field), 43 (stubs through the same module), 44 (the beat and cheat-sheet line).
+- Status row and phase entry: drift check against `fbdd555`, OQ-118 and OQ-49 as built, names 33 shipped, tests added, `PERSIST_VERSION` old to new, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 34 (stubs placed through `stageImportRows`), 40 (`resolveStub` for its waiting view), 40a (Add NHI's field), 43 (stubs through the same module), 44 (the beat and cheat-sheet line).
 - Decisions log: D66 built (a stub, not a Booking, on its own record); the readings; superseded: 33's "no stub on the List" default.

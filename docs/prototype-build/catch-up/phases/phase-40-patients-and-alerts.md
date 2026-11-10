@@ -110,14 +110,14 @@ who was billed.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67,OQ-118,OQ-127,OQ-134,FT-02.6,US-06.3.2
    ```
 
-   Already folded into this plan (changes up to `efe123c`, so not drift):
+   Already folded into this plan (changes up to `fbdd555`, so not drift):
    - **D11 / OQ-49 answered (16 and 19 October):** the NHI is mandatory with no blank and no pending
      state; an incoming row without one waits on 33's queue; the earlier problem list of Bookings,
      the provisional patient and the authorise block are dropped. US-11.1.1 now makes the NHI the
@@ -982,7 +982,7 @@ anything settled in the Decisions log (as amended by this phase).
   List rather than the Booking; no standalone "New patient" form; the waiting view as a filtered office
   view over 33's queue (US-11.1.5 says it could be folded into the queue if it adds nothing); who is the
   credit patient in the seed.
-- **Status row** for catch-up Phase 40 and a phase entry with: the drift-check result against `efe123c`
+- **Status row** for catch-up Phase 40 and a phase entry with: the drift-check result against `fbdd555`
   (items changed or not; D11 answered and built; OQ-74 built as answered, D24); what was built with a name
   map for later phases:
   - the `patientBalance` rule, its `thresholdDays` param and `setPatientBalanceThreshold`;

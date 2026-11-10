@@ -14,7 +14,7 @@ D53: anaesthetists are paid in Xero's payables run; this cycle approves, records
 pays from the app (US-09.2.4)),
 [US-06.5.1](../../../../requirements-board/requirements/stories/US-06.5.1.md) (27a's AA Holding
 account: a run never pays it; its prepayments reach a run only as the anaesthetist's payable that
-27a's journal transfer creates, [AR-52](../../../../requirements-board/requirements/artifacts/AR-52.md)),
+27a's transfer creates, [AR-52](../../../../requirements-board/requirements/artifacts/AR-52.md)),
 [US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md)
 (a payable is released when its receivable is paid, for exactly the amount received, "so it enters
 the next payables run (US-10.2.7)"; Phases 16 and 36 built the release, and this phase's cycle sits
@@ -64,7 +64,7 @@ of [domain-model.md](../../../../requirements-board/requirements/domain-model.md
 Xero reports the bill paid, through `recordDisbursement`, the webhook, the poll and the outage queue)
 and 39 (credit in full and rebill and the credit note option, which raise the **negative invoice**
 to an anaesthetist already paid). By the roadmap order 27a (the AA Holding account, `isHeldPayable`
-and the journal transfer that makes a prepaid amount the payable of the anaesthetist who did the List), 14 (the registry, `useDemoTriggerContext`, the
+and the transfer that makes a prepaid amount the payable of the anaesthetist who did the List), 14 (the registry, `useDemoTriggerContext`, the
 office actors), 15a (the `appSettings` slice), 16 (the payable equals the receivable, the `-P`
 number, `bctisFor` and the generalised history account builder), 22 (supplier and agent on
 documents), 26 (the anaesthetist profile: bank details, display-only, with `destinationMasked`,
@@ -144,7 +144,7 @@ anaesthetist can owe money back. The catalogue asks for four things (DM-25):
   is still in 27a's AA Holding account and the anaesthetist has not been paid; Phase 41 refunds it).
 - **The AA Holding account is never paid by a run.** A prepaid Booking's collect payable is to
   27a's AA Holding account, not an anaesthetist: no run takes it (`runExclusionFor`, work item 3).
-  Its prepayment reaches a run only as the anaesthetist's payable that 27a's journal transfer creates
+  Its prepayment reaches a run only as the anaesthetist's payable that 27a's transfer creates
   for whoever did the List, an ordinary run line, once it
   is released like any payable.
 - **Where the payment is made** (OQ-111, answered, D53): Xero's payables run. The cycle approves,
@@ -159,8 +159,8 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot, commit efe123c (the tool diffs from
-   the baseline in plan.json to the working tree, so it shows only what changed after efe123c):
+1. Run the drift check against the plan's catalogue snapshot, commit fbdd555 (the tool diffs from
+   the baseline in plan.json to the working tree, so it shows only what changed after fbdd555):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3
@@ -184,7 +184,11 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
      review list. Greg's pre-run check ("all of these critical numbers balance. If they don't
      balance, stop") and his one-BCTI-per-weekly-run idea are points for the accountant: neither
      is built; the run stays as designed. (36's `ledgerChecks` already shows the ledger balanced at
-     the close snapshot.) If the accountant has since **changed the days or the identity**, set the setting and keep
+     the close snapshot, and 37's Reconciliation card (US-13.2.4) shows whether the books are square;
+     neither gates the run.) On 10 November, with AA's accountant, Greg's proposal moved to a Monday
+     to Sunday week, reconciled from Monday, paid Thursday, with nothing carried forward; it was not
+     agreed and US-10.2.7 still says Friday close and Tuesday payment with anomalies rolled forward, so
+     build US-10.2.7 as written and log the proposal on the owner's review list. If the accountant has since **changed the days or the identity**, set the setting and keep
      the code. If OQ-47 now says **the system approves on its own**, make approval a system action on
      the same store action (actor system, run at the close) and keep the button as its manual form.
      If it says **US-10.2.6 is the same step as US-10.2.1's release**, stop and tell the owner (it
@@ -232,7 +236,7 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
      (37's plan adds none and names this phase's `runExclusionFor` as the place for any exclusion;
      if a `heldForBank` refusal did ship, it becomes `runExclusionFor`'s first reason, work item 3);
    - from **27a**: `HOLDING_ACCOUNT`, `isHeldPayable(accPay)` (true for a `holdingAccount` payee) in
-     `domain/billing/prepayHolding.ts`, and the journal transfer's payable to the anaesthetist
+     `domain/billing/prepayHolding.ts`, and the transfer's payable to the anaesthetist
      (`PrepayTransfer`, the transfer pair `prepayLeg: 'transfer'`; use the names that shipped). 27a made `payablesDue`, `runPayables` and `disbursePayable` skip a held
      payable, and 36 promoted it to the ledger legs (note the tag 36 kept). 27a also removed the seeded
      prepayment's 16 Jul payout (it is held), so the seed has no payout for it;
@@ -468,7 +472,7 @@ check):
      `RunExclusionReason`. Its first reason is `'heldInHoldingAccount'`, from 27a's `isHeldPayable`
      (read through the ledger leg, as 36 carries it): a prepaid Booking's collect payable is to the
      AA Holding account and no run takes it, so the run, `payablesDue` and Xero agree; the payable
-     the journal transfer makes to the anaesthetist is an ordinary line once released. 26's bank details are display-only
+     the transfer makes to the anaesthetist is an ordinary line once released. 26's bank details are display-only
      (a missing account is a Monday anomaly the office decides, never an exclusion). If 37 shipped a
      `heldForBank` refusal, that refusal becomes a further reason, so the run and Xero agree. It is
      the **one standing exclusion point**: any later standing hold is added here, not elsewhere; a
@@ -869,8 +873,7 @@ The weekly cycle and the gate:
       "Waiting for this week's run" ("Nothing is waiting for this week's run."), Close disabled with
       that sentence, and Week 29 at the top of the previous runs, Paid and tagged Seeded.
 - [ ] AA Holding account (27a): a paid prepayment (Nair) is not in the waiting table or any run, and
-      Close with nothing else waiting refuses. After Admin authorises that List and the journal
-      transfer runs, the transferred payable to Dr Souter appears in the waiting table once released
+      Close with nothing else waiting refuses. After Admin authorises that List and the transfer runs, the transferred payable to Dr Souter appears in the waiting table once released
       and is paid by the next run; the account itself is never a line.
 - [ ] S4 Beat 5 path: Admin · Invoice for Hemi Walker's clean St George's sibling, **Payment
       received · half**: the waiting table shows one Dr Ropata BCTI at exactly half; on the Xero sim
@@ -1086,7 +1089,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   `Math.random()`; the clock is never advanced by the cycle.
 - **The holding-account hold-back.** `runExclusionFor` is the only standing exclusion point and its
   first reason is 27a's `isHeldPayable`: no run, schedule, Xero payment or staged payout ever takes
-  a collect payable to the AA Holding account, while the journal transfer's payable is an ordinary line;
+  a collect payable to the AA Holding account, while the transfer's payable is an ordinary line;
   netting reads every open negative whatever its credit note's cause; a missing bank account is a
   Monday anomaly, never an automatic exclusion. OQ-111: no path pays from the app; the engine only records what Xero reports.
 - **Seed and persistence.** Backdrop weekly runs reproduce the seeded disbursements exactly and move

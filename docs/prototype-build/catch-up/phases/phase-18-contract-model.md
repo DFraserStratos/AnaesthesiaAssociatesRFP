@@ -157,7 +157,7 @@ mark ours (`codePrefix`, `legacyCounterparty`, `permitsRateTime`).
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
@@ -614,7 +614,7 @@ anything settled in the Decisions log.
   19a and 20; US-04.1.2 to 19a; US-04.1.4 to 19a and 20; US-04.2.1 to 18a, 20 and 21).
 - **Status row:** Phase 18 (Parties and flat Contracts) DONE with the date, or IN PROGRESS after
   session 1 with what remains.
-- **Phase entry:** the drift-check result against `efe123c`; the Party and AA code tables as seeded;
+- **Phase entry:** the drift-check result against `fbdd555`; the Party and AA code tables as seeded;
   the parity fixture path and result; `PERSIST_VERSION` old to new; the review pass; handoffs: **18a**
   (tags and specialties on the Contract; fallbacks by `ensureFallbacks`; any tag segment in
   `nextAaCode`), **19a** (ranges replace `ContractPrice` and the `fixed` interim; a range after 16 Jul

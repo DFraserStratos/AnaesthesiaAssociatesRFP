@@ -213,7 +213,7 @@ presenter-narrated.
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,US-15.0.8,FT-13.5,OQ-83,OQ-137,OQ-117,US-15.0.2,US-03.1.2,US-03.1.9,US-03.1.8,FT-03.5,US-03.5.1,FT-03.4,US-03.4.1,FT-04.3,US-04.3.2,FT-03.3,US-03.3.4,US-03.3.8,US-11.2.2,US-04.2.2,US-08.2.3,US-13.6.3,US-01.3.6,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86,OQ-89,OQ-90,OQ-93,OQ-95,OQ-96,OQ-102,OQ-103
    ```
 
-   (it diffs from the baseline, `efe123c`, to the working tree; add `--to <ref>` to stop at a commit;
+   (it diffs from the baseline, `fbdd555`, to the working tree; add `--to <ref>` to stop at a commit;
    the tool is rename-aware, so never use a plain git diff of the catalogue folder.) Read the hunks for every item listed, any new note that cites
    US-15.0.1, US-13.5.3, US-03.1.2 or US-03.1.9, and the domain-model lines on what the anaesthetist
    sees of a Contract and its price. At efe123c US-15.0.1 is status 1 with Greg's 16 October note, no
@@ -1213,7 +1213,7 @@ Do not re-raise anything settled in the Decisions log.
   a fresh handset, More, mobile capture with the stack and a tip open, Admin Day and Review with a
   popover).
 - **Status row** for catch-up Phase 43a, and a phase entry with:
-  - the drift-check result against efe123c (US-15.0.1, US-13.5.3 and US-15.0.8 changed or not; OQ-83 and OQ-137 still open
+  - the drift-check result against fbdd555 (US-15.0.1, US-13.5.3 and US-15.0.8 changed or not; OQ-83 and OQ-137 still open
     or answered; any OQ answered that changed a tip; any change to what the anaesthetist sees);
   - the work item 5 inventory, what was fixed in each place and what was confirmed kept;
   - the name map: `anaesthetistSession.ts` (`useAnaesthetistSession`, `signInSession`,

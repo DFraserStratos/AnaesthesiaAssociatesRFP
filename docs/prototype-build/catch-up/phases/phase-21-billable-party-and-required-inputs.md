@@ -666,7 +666,7 @@ and records the pass in the phase entry. Do not re-raise anything settled in the
   route and persona (the payer sheet on mobile and web, the Payer and Funder rows, the step rail's
   "Suggested", the to-do list's two warnings).
 - **Status table:** a catch-up row for Phase 21.
-- **Phase entry:** the drift-check result (against `efe123c`; what was built as answered and as
+- **Phase entry:** the drift-check result (against `fbdd555`; what was built as answered and as
   defaults; what 15a, 18, 18a, 20 and 20a left that was reused); files and actions added and the
   guardian master's removal; the parity result and the Doyle change; the `PERSIST_VERSION` bumps; tests
   added; the review List and each sample's placement; the manual checklist item by item; the adversarial

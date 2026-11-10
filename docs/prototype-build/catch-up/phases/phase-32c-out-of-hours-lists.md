@@ -17,7 +17,7 @@ The office can add an **out-of-hours List** for an anaesthetist on any day from 
 
 ## Before you start
 
-1. **Drift check** against the plan baseline `efe123c`:
+1. **Drift check** against the plan baseline `fbdd555`:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-01.1.6,US-01.1.1,US-01.1.4,US-01.4.2,US-01.1.5,FT-01.3
@@ -114,5 +114,5 @@ Standard pass (convention 18); do not re-raise the Decisions log.
 ## PROGRESS.md updates
 
 - **For the owner's review** (route and persona each): the working design in Before you start item 3 (start 18:00 and its range, one an evening, office only, the finders and conflicts ignoring it, no moves, no notice, billed as usual), the provisional caption, and that nothing is seeded.
-- Status row and phase entry: drift check against `efe123c`, names 32b and 38a shipped, tests added, `PERSIST_VERSION` old to new, the checklist with evidence, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 33 and 34 (rows never land on it), 38b and 39b (events on a Procedure of an evening List), 44 (Beat 3d, the cheat-sheet line, the PWA parity audit).
+- Status row and phase entry: drift check against `fbdd555`, names 32b and 38a shipped, tests added, `PERSIST_VERSION` old to new, the checklist with evidence, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 33 and 34 (rows never land on it), 38b and 39b (events on a Procedure of an evening List), 44 (Beat 3d, the cheat-sheet line, the PWA parity audit).
 - Decisions log: D84 built as a working design, provisional; the session recorded as `'PM'` with an `outOfHours` marker (`Session` unchanged).

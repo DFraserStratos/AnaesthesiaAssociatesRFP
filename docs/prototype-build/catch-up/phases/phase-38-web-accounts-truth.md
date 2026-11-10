@@ -98,13 +98,13 @@ so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (efe123c):
+1. Run the drift check against the plan's catalogue snapshot (fbdd555):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
    ```
 
-   (It diffs the plan's baseline, efe123c, to the working tree; the tool is rename-aware, so never
+   (It diffs the plan's baseline, fbdd555, to the working tree; the tool is rename-aware, so never
    use a plain `git diff` of the catalogue folder.) Read the diff for US-12.2.3, FT-12.2,
    US-12.2.1, US-12.2.2, the context items US-08.3.5, US-08.3.1, US-10.1.2, US-05.2.7,
    US-07.4.1, US-10.2.7, US-11.3.2, and OQ-31, OQ-29, OQ-59 and OQ-60. If an item changed, re-read it and
@@ -112,7 +112,7 @@ so `PERSIST_VERSION` is bumped.
    the PROGRESS entry. At plan time (7cd7802) US-12.2.1 and US-05.2.7 were **Confirmed**, US-12.2.2
    (the monthly GST report, its release slot unconfirmed) and US-12.1.2 is **Retired**
    (it is in the diff list only to confirm it stayed so); OQ-59, OQ-33 and OQ-31 were answered and
-   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. FT-12.2's wording changed at efe123c (owed by payers and the Parties AA bills; no change of substance). Anything later than efe123c is the drift to absorb.
+   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. FT-12.2's wording changed at fbdd555 (owed by payers and the Parties AA bills; no change of substance). Anything later than fbdd555 is the drift to absorb.
 2. **Owner decisions** (the ROADMAP decisions table):
    - **D8 (ageing and an "Overdue" view): answered** at the 2026-10-01 meeting (OQ-59, "let's go with
      your recommendation for now"). Build the flat list, oldest first, no buckets, no age chips, no
@@ -761,7 +761,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
-  - the drift-check result against efe123c (items changed or not; D8 built as answered; OQ-29's and
+  - the drift-check result against fbdd555 (items changed or not; D8 built as answered; OQ-29's and
     OQ-60's status, with the fee-never-nets rule relied on; US-12.1.2 Retired and 26's removal of
     `gstPeriod` confirmed; D9 and US-07.2.1 confirmed as 38a's, nothing List-side built here);
   - what was built, with the name map for later phases: `receivablesAgingFor`, `overdueAccountsFor`,

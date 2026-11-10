@@ -106,7 +106,7 @@ in the header comments. AR-28, AR-29 and AR-30 are Retired: cite none of them.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
@@ -746,7 +746,7 @@ anything settled in the Decisions log except the rulings this phase explicitly s
     and A17 (only the office moves a Procedure onto or off prepaid), the readings in drift check 4, and
     the 7 and 2 day windows;
   - Souter's payables due fall by Nair's held prepayment until 27a.
-- Status row and a phase entry: the drift check against `efe123c`; the answers built (D64 extended,
+- Status row and a phase entry: the drift check against `fbdd555`; the answers built (D64 extended,
   D27, D6 extended, D38, D30 narrowed, D47 extended, D57, D67, D5, D42, D37, OQ-04, OQ-38, OQ-61, OQ-76,
   US-06.3.5 as written), the OQ-73 reading and the D68 and D80 defaults, and where each lives; what 15a
   to 25 provided; the sessions and the adversarial pass; the tests added; `PERSIST_VERSION` old to new

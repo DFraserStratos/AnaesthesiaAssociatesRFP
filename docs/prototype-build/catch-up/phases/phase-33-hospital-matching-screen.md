@@ -1416,7 +1416,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   Kirsty W.; the Booking History and stack of a row-created Booking; Mobile Lists Tue 28 Jul AM as Dr
   Souter; Diane Foster's Booking after the update).
 - **Status row** for catch-up Phase 33, and a phase entry with:
-  - the drift-check result against `efe123c` (items changed or not; OQ-13, OQ-108, OQ-118, OQ-130 and FT-02.1 status; OQ-103 and OQ-44, OQ-49, OQ-78, OQ-87 and OQ-99 built as answered, with how the Booking is put on the Draft List; D17 and D28 as
+  - the drift-check result against `fbdd555` (items changed or not; OQ-13, OQ-108, OQ-118, OQ-130 and FT-02.1 status; OQ-103 and OQ-44, OQ-49, OQ-78, OQ-87 and OQ-99 built as answered, with how the Booking is put on the Draft List; D17 and D28 as
     built; whether 21, 23, 25 and 27 were DONE and which fallbacks were used; US-02.5.1 to US-02.5.4
     still Future Work and not built);
   - what was built, and what was removed (`applyEffect` with 20a's feed wording appends, the park

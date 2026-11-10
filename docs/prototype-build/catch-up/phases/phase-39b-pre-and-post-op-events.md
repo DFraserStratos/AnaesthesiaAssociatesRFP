@@ -175,7 +175,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (catalogue commit efe123c):
+1. Run the drift check against the plan's catalogue snapshot (catalogue commit fbdd555):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.5,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-121,OQ-48,OQ-50,OQ-75,OQ-29,OQ-60,US-03.7.4,OQ-138

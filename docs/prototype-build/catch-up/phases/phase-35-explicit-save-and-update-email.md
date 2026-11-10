@@ -1233,7 +1233,7 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   left read-only, with why).
 - Status table: Phase 35 row DONE with the date.
 - Phase entry "Phase 35 · Explicit save and the update email (date)":
-  - the drift-check result against `efe123c`; OQ-69, OQ-82, OQ-65 and OQ-46 built as answered;
+  - the drift-check result against `fbdd555`; OQ-69, OQ-82, OQ-65 and OQ-46 built as answered;
     US-02.3.5 left as Future;
   - what 31, 32 (and 32a if DONE) delivered that this phase hooks into (the owner-change action codes,
     the Draft List assignment, the pool's notification record and row);

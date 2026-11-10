@@ -44,7 +44,7 @@
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue folder):
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.6,US-03.6.1,US-03.6.2,US-03.6.3,US-03.3.1,US-03.3.3,US-03.3.4,US-03.3.9,US-07.2.2,US-04.3.11,US-04.3.2,US-04.3.8,US-05.2.8,US-03.4.1,US-03.1.9,US-06.3.5,US-01.4.7,OQ-99,OQ-135
@@ -218,7 +218,7 @@ After the manual test checklist and `npm run build`, `npm run build:pwa`, `npx v
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test themselves"): the default built (D81: a Disabled Contract raises no flag), the readings built (the price condition on completion, A48; the review flags, A49; the moved-Booking flag, A41; the modifiers-step marker; the form with no Contract; the re-open on a Contract change that newly asks for RVG detail; "Needs an invoice destination" kept at review though likely unreachable; the "Not marked completed" and B/T/M override flags kept), an alert not letting a List submit with an incomplete Booking, anything logged rather than fixed, and the screens worth a look with route and persona (the capture form on a fixed price and an RVG price on mobile and web, Review's flags and Approve, Admin Day's Move then Review).
 - **Status table:** a catch-up row for Phase 21a.
-- **Phase entry:** the drift-check result (against `efe123c`; what was built as answered and as default; what 20, 19b, 20a, 21, 32b and 38a left that was reused); files and actions added; the validator's removed branches; the `PERSIST_VERSION` bumps; tests added; the seed markers; the manual checklist item by item; the adversarial pass; anything deferred.
+- **Phase entry:** the drift-check result (against `fbdd555`; what was built as answered and as default; what 20, 19b, 20a, 21, 32b and 38a left that was reused); files and actions added; the validator's removed branches; the `PERSIST_VERSION` bumps; tests added; the seed markers; the manual checklist item by item; the adversarial pass; anything deferred.
 - **Decisions log:** the entries from item 14.
 - **Handoff list:** "24 replaces the body of `priceStatusFor` and `computedPriceFor` and owns the 'no price' pre-flight and who may type the price; 25 snapshots from them, adds its 'Needs a price' blocker to `authoriseBlockersFor` and locks the Contract approval; 27 keeps a prepaid amount on a move; 33's created Bookings arrive without a Contract and wait on 'Needs an invoice destination'; 39b removes the validator's `BillingLine` branch; 40 adds the missing-NHI blocker; 43a keeps the stack, the price status and the RVG detail on the anaesthetist's screens; if OQ-135 is answered, `REVIEW_FLAG_RULES` is the place; if D9 reverses, `rvgDetail.ts` is".
 - **Catalogue screenshots:** recipes created (US-03.3.9, US-04.3.11) and changed (US-03.6.1, US-03.6.2, US-03.3.3, US-03.3.4, US-07.2.2, plus any the step broke), the `requirements-board/requirements/capture/REPORT.md` counts before and after.

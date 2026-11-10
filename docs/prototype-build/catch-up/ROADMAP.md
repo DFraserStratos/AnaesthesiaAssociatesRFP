@@ -3,7 +3,7 @@
 The prototype was built in July 2026 against the original RFP (phases 00 to 13, see
 [../ROADMAP.md](../ROADMAP.md)). The requirements catalogue is now the source of truth and has moved
 a long way from the RFP. This catch-up brings the prototype up to the catalogue as at commit
-**`efe123c`**. Future Work lane and retired items are out; retired behaviour the prototype still has is removed
+**`fbdd555`**. Future Work lane and retired items are out; retired behaviour the prototype still has is removed
 or reworked. The plan was updated on 2026-10-01 for the AA meeting with Greg
 ([change log](../../../requirements-board/requirements/changes/2026-10-01-requirements-update.md)),
 on 2026-10-03 for the three 2026-10-02 meetings with Greg (change logs:
@@ -142,7 +142,7 @@ completion and office review, split from 21) and **32c** (out-of-hours Lists). 1
 in AA's room (US-03.7.4, on OQ-138, which gives nothing to build a default from).
 
 The plan closes every verified gap in the [gap analysis](GAP-ANALYSIS.md) but the three parked
-units: 228 gap items, 45 data-model deltas (DM) and 37 reverse findings (RV). Per-gap detail is in
+units: 229 gap items, 45 data-model deltas (DM) and 37 reverse findings (RV). Per-gap detail is in
 [epics/](epics/), the machine-readable set in [gaps.json](gaps.json), and the code index in
 [analysis/](analysis/) (prototype maps, [data-model delta](analysis/domain-model-delta.md),
 [reverse check](analysis/reverse-check.md)).
@@ -168,6 +168,16 @@ US-13.6.2 now give each surgeon one or more specialties, required; they stay Con
 covers and 18a follows them up beside the new US-13.6.6) and built 28 (US-01.1.1 gains a notes
 paragraph only: one List per Slot stands; the out-of-hours List is 32c's and the A and B split is
 parked); built 16's EP-10 and FT-10.1 changed in wording only.
+
+The plan was updated again on 2026-11-10 for the meeting with AA's accountant
+([change log](../../../requirements-board/requirements/changes/2026-11-10-aa-meeting-with-accountant.md),
+catalogue `fbdd555f`). Little was decided: the posting design, the weekly cycle and the controls wait
+on Greg and Sam's process maps, so the plan builds nothing from the meeting's proposals and leaves
+those parts as open gaps for a later update. 13 items were re-graded with no verdict moving; the new
+US-13.2.4 (reconciliation status at a glance) joins 37, and 27a and its neighbours drop "journal
+transfer" (see "Placement notes for the 2026-11-10 accountant update" under Sequencing rules). Built
+16's US-09.1.1 and US-10.2.1 gained notes and technical discussion only and still Match or Contradict
+as before.
 
 ## Owner decisions
 
@@ -329,7 +339,7 @@ Contracts     17 surgeons, rooms, preferences & tiers (built) ─▶ 18 Parties 
 Profile       26 anaesthetist profile & bank details                     (needs nothing unbuilt)
 Rooms         17a rooms without an email, surgeons at more than one room, practice manager & PA contacts
                                           (after 17, built, and 18a; before 35, 40 and 42)
-Prepayment    27 prepayment lifecycle ─▶ 27a AA Holding account & journal transfer      (after 25)
+Prepayment    27 prepayment lifecycle ─▶ 27a AA Holding account & transfer      (after 25)
 Intake        33 matching screen ─▶ 33a stubs on a List ─▶ 34 sync, rooms' PDF lists & S1 rebuild
               ─▶ 35 explicit save & update email                  (33 after 20a; 35 after 32)
 Money         36 internal ledger ─▶ 37 Xero resilience & monitor │ 38 web accounts & monthly GST report
@@ -373,7 +383,7 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
 | 25 | [Contract history and the AUTHORISED lock](phases/phase-25-contract-lock-at-authorised.md) | No versions, staged changes or relink (D77 and D34 answered; US-04.1.6 and US-04.2.10 Retired). A pricing snapshot per Procedure at authorise (the Contract's settings as then, the price range in force, the Procedure's values, BTM, unit rate, price, billable party and payee) that the engine prices from, "Needs a price" blocking AUTHORISED. "Regenerate from locked data" reproducing an invoice exactly after a Contract edit, a backdated range or a unit-value edit. Each Contract's history of audited edits (settings, ranges, specialties, tag) with the Procedures locked against it | 19a, 22, 23, 24 | 6 / 1 / 1 |
 | 26 | [Anaesthetist profile and bank details](phases/phase-26-prepaid-settings-and-profile.md) | The anaesthetist profile as the catalogue holds it: contact details, registration, the HPI CPN and bank details (both mandatory) held in the system (master data; the payment is made in Xero, D53) and the unit value, visible to the anaesthetist on mobile and web and kept by the office. The GST period removed everywhere, the GST report left monthly. No prepaid settings (prepaid is a Contract setting) | 17 | 1 / 0 / 1 |
 | 27 | [Prepayment lifecycle](phases/phase-27-prepayment-lifecycle.md) | Prepayment started per Procedure by a Contract under Payment type: Prepaid on the step rail (an anaesthetist's price-list Contract, or Prepaid · Fixed price with a typed amount above zero), invoiced to the payer (D23 at Confirm). The amount is the Procedure's price when the invoice is raised, above zero, shown to the anaesthetist and read-only from then for everyone (D30); a new price range never moves it. The invoice generated when an admin approves it (a step AA can switch off), with its pair to the AA Holding account and the draft Xero pair, then sent. Prepaid Procedures left off the final invoice with nothing deducted (an all-prepaid Booking has no final invoice). Part-paid tracking, an escalating warning shown beside the balance alert (D80), and re-checks on a change of Procedures, Contract or payer, never on a move (moving off prepaid after sending: an office warning until 41 settles it as a cancellation, D67) | 15a, 21, 25 | 12 / 1 / 1 |
-| 27a | [AA Holding account and the journal transfer](phases/phase-27a-prepay-holding-account.md) | The AA Holding account, a payables creditor kept like an anaesthetist's account, with its balance and entries in Admin, never paid itself, money leaving it only by a transfer or refund the system raises (Xero makes the payment, D53). When the List is authorised (the trigger provisional, D72) a journal transfer, not a new invoice or payment, moves each prepaid amount to the anaesthetist who did the List, so a moved prepaid Booking needs no change | 27 | 4 / 1 / 1 |
+| 27a | [AA Holding account and the transfer to the anaesthetist](phases/phase-27a-prepay-holding-account.md) | The AA Holding account, a payables creditor kept like an anaesthetist's account, with its balance and entries in Admin, never paid itself, money leaving it only by a transfer or refund the system raises (Xero makes the payment, D53). When the List is authorised (the trigger provisional, D72) a transfer, not a new invoice or payment, moves each prepaid amount to the anaesthetist who did the List, so a moved prepaid Booking needs no change | 27 | 4 / 1 / 1 |
 | 28 | [Slot and List split](phases/phase-28-slot-list-split.md) | **Built.** A Slot record for every active anaesthetist's session across a configurable horizon, free by default, holding availability and default times (D14). A List with its own id, created on assignment and shown in place of the status. Status independent of bookings in all three apps and the finders, the admin finder ordered by tier with not-preferred pairings apart. Reassign moves a List between Slots. Follow-ups: the finder's type-ahead search (32a) and preferred-pairing order (32b) | 15b, 17 | 8 / 2 / 0 |
 | 29 | [Availability calendar and status master](phases/phase-29-availability-calendar.md) | **Built.** Availability kept from a calendar on mobile and web as the Slot's own status, with days off ahead, series and single-instance edits. Slot statuses a user-maintained master list with fixed IDs, editable labels and colours, separate from the List's state | 28 | 5 / 0 / 0 |
 | 30 | [Conflicts, holidays and the conflict dashboard](phases/phase-30-conflicts-and-holidays.md) | **Built.** Conflicts with a List colour change and clearing, holidays edited and deleted, a cross-date conflict dashboard, recurring bookings (DM-53). Its availability conflict and office-recorded sickness conflict are superseded (D59): 32b removes them | 29 | 5 / 1 / 0 |
@@ -386,8 +396,8 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
 | 33a | [Stubs on a List](phases/phase-33a-stubs-on-a-list.md) | A Stub record on the List for an incoming booking that could not be posted (no NHI; D66 answered), held outside the Bookings table on its own identifier and linked to its waiting intake row, drawn clearly marked in mobile, web and Admin List views and never counted as a Booking. A List holding one never reads all-complete, with no prompt or block at submit or authorise (no confirm step, US-13.7.3; our reading). Adding the NHI at intake turns the row into the Booking that takes the stub's place (our reading); rejecting it removes the stub; one audited resolve path that 40 reuses | 33 | 4 / 1 / 0 |
 | 34 | [Hospital sync, the rooms' PDF lists and the S1 rebuild](phases/phase-34-hospital-sync-and-s1.md) | Both first-release intake sources on the one matching screen (D51 answered): sync from the two integrated hospitals (St George's and Southern Cross until OQ-109 names them; D52 part 2 assumed), and the rooms' PDF lists as stored source documents, uploaded, corrected and sent to matching as rows, a re-sent List showing its differences (no more direct ingest). The third live feed stopped and the HL7/FHIR simulator and monitor demoted to a Future-scope surface. S1 rebuilt around sync, match, the wording as received, a waiting no-NHI stub and the office's Contract choice through the decided step rail | 33, 33a | 4 / 1 / 2 |
 | 35 | [Explicit save and the update email](phases/phase-35-explicit-save-and-update-email.md) | Admin draft-then-save with change sets and as-at history, and a change history screen opened from the Booking, each entry naming who changed it (an office user by name, or the hospital's list) and showing the procedure text a hospital list replaced (US-02.5.8). An on-demand mailto update email picked from the change history (D19), started from a per-kind template, to the rooms or the hospital, including from a List-move notification; manual only. Add a Booking to a booked List keeping the hand-entered text as source text; correct the RVG code, Contract or invoice description until AUTHORISED (an admin's edit always wins, D73 answered). The To empty where a room holds no email, the main room's for a surgeon at more than one room with the others offered (D74) | 17, 17a, 25, 32, 33 | 6 / 1 / 1 |
-| 36 | [Internal ledger and balance views](phases/phase-36-internal-ledger.md) | BillingCase promoted to linked receivable and payable legs as the system of record, created with the invoice, one payable leg per receivable, the AA Holding account's legs and journal transfers included. Phase 16's BCTI count re-reads from the ledger with a parity test. An Admin Ledger screen (whole ledger and per anaesthetist) with an imbalance indicator | 16, 22, 25, 27a | 7 / 2 / 0 |
-| 37 | [Xero mirror resilience and the processing monitor](phases/phase-37-xero-mirror-resilience.md) | Payments to anaesthetists made in Xero and detected by the engine (D53 answered): the in-app "Run payables" payout replaced by a list of payables awaiting Xero's payables run (FT-10.2, RV-40). Bulk hospital remittance left in Xero. An outage queue with backoff. A void made in Xero is flagged. The processing monitor grouped by anaesthetist, with sorting, filtering, a problems-only view and "Open in Review" on Lists awaiting approval | 36 | 5 / 0 / 1 |
+| 36 | [Internal ledger and balance views](phases/phase-36-internal-ledger.md) | BillingCase promoted to linked receivable and payable legs as the system of record, created with the invoice, one payable leg per receivable, the AA Holding account's legs and transfers included. Phase 16's BCTI count re-reads from the ledger with a parity test. An Admin Ledger screen (whole ledger and per anaesthetist) with an imbalance indicator | 16, 22, 25, 27a | 7 / 2 / 0 |
+| 37 | [Xero mirror resilience and the processing monitor](phases/phase-37-xero-mirror-resilience.md) | Payments to anaesthetists made in Xero and detected by the engine (D53 answered): the in-app "Run payables" payout replaced by a list of payables awaiting Xero's payables run (FT-10.2, RV-40). Bulk hospital remittance left in Xero. An outage queue with backoff. A void made in Xero is flagged. The processing monitor grouped by anaesthetist, with sorting, filtering, a problems-only view and "Open in Review" on Lists awaiting approval. A reconciliation status on the Admin Day dashboard, "Books square" or "Out of balance", with unresolved items by amount and age (US-13.2.4, over the checks the prototype has) | 36 | 6 / 0 / 1 |
 | 38 | [Web accounts, outstanding list and monthly GST report](phases/phase-38-web-accounts-truth.md) | A ledger-backed financial position (owed by payers and the Parties AA bills, collected, paid out) with the Productivity and Leave panels removed. A flat outstanding list with no ageing (D8), each line opening its Booking. A monthly GST report of the payments AA made to the anaesthetist, with each GST component, to download, email or print on web | 36 | 4 / 1 / 3 |
 | 38a | [Edit until AUTHORISED, the main view and search](phases/phase-38a-find-past-work.md) | The anaesthetist can still see and change a submitted List until it is authorised, the last change standing and the office seeing late edits at review. A List leaves the main view at AUTHORISED and its invoices show in balances straight away. The main view starts at today, with earlier Lists not yet authorised reached by scrolling back and submitted ones less prominent. Search by patient name, NHI or date reaches authorised and invoiced work | 31 | 8 / 1 / 1 |
 | 38b | [Events on a Procedure and the additional invoice](phases/phase-38b-events-and-additional-invoices.md) | The event element on a Procedure with one standard review step and next-run invoicing, never held for the Procedure's invoice and bundled with the same party's invoice where the run has one (D13; D69 answered), on no List or schedule, and the events list on every Procedure in all three apps. A free-form additional invoice to any party (D10, D22), raised by the office or by the anaesthetist on their own Procedure (reached through 38a's search), recorded as an event, replaces the addendum Booking. The office's Booking page shows the Booking total, each Procedure's price and its events, with any price changeable from there (US-03.1.10) | 36, 38a | 4 / 2 / 1 |
@@ -477,7 +487,7 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
   one place. On 2026-10-28 Greg called the prepayment's release the BCTI and floated one BCTI per
   payment or per weekly run (OQ-29, OQ-47, open; US-09.1.4 now says the granularity is not settled):
   a third candidate for the same one function, nothing more. A prepayment's pair goes to the AA Holding
-  account (27) and its release is a journal transfer (27a): keep them out of the count unless the
+  account (27) and its release is a transfer (27a): keep them out of the count unless the
   function's switch says otherwise.
 - **The pricing model lives in one place.** Since 2026-11-10 the model is Donald's flat Contract
   model of 5 November: the proposal snapshot
@@ -602,7 +612,7 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
   force, or the typed amount), read-only from then for everyone (D30 narrowed). It generates the prepayment invoice when an admin approves it (or at once when
   AA switches approval off), with a pair whose payable is the AA Holding account (US-06.3.1,
   US-09.1.3, FT-06.3; D38), never paid out by the payables run. 27a then builds the account itself
-  and the journal transfer at authorisation (the trigger provisional, D72), so prepaid money reaches
+  and the transfer at authorisation (the trigger provisional, D72), so prepaid money reaches
   the anaesthetist who did the List again. There is no estimate and no excess path: a prepaid
   Procedure is priced at the prepaid amount and left off the final invoice with nothing deducted
   (D57); the `negativeTotal` guard stays for every other negative.
@@ -629,7 +639,7 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
   the Booking's change history screen (US-02.5.8): named office users, the hospital's list as a
   source, and the procedure text it replaced.
 - **Money:** 36 runs after 16, 22, 25 and 27a (it promotes the AA Holding account's legs and the
-  journal transfers into the ledger). Then 37 and 38 can run in any order (both need only 36; 37
+  transfers into the ledger). Then 37 and 38 can run in any order (both need only 36; 37
   moves the payout to Xero's payables run, FT-10.2 and D53, so 38 uses whichever payout control
   exists when it runs); 38b after 36 and 38a;
   39 after 38b; 39a after 37 and 39 (it keeps the AA Holding account out of every run, its
@@ -695,7 +705,7 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
   session").
 - **Open questions with a recommendation are built as that recommendation** (the open D rows'
   defaults) and labelled provisional, each kept in one place so a different answer is a small change.
-- **Every phase opens with a drift check** against `efe123c` for its items and linked OQs (built
+- **Every phase opens with a drift check** against `fbdd555` for its items and linked OQs (built
   phases keep their own baselines), and confirms any owner decision it depends on.
 - **Every phase closes the same way:**
   - `npm run build`, `npm run build:pwa` and `npx vitest run` are green.
@@ -717,7 +727,7 @@ pre-op consult in AA's room (US-03.7.4); see Parked.
     the prepayment estimate and deposit, the overpaid prepayment's `negativeTotal` failure, the
     prepayment deduction line on the final invoice (D57), the Insurer master with its direct-claims
     flag and default-Contract flip (RV-39), the holding account's second pair as an invoice pair (now
-    a journal transfer), the prepayment refund as an office step (D56), the
+    a transfer), the prepayment refund as an office step (D56), the
     prepayment payable to the anaesthetist on receipt, binding convention 6's office-only edits after
     submit, the provisional patient without an NHI, Phase 15's List attachments, Phase 30's
     availability conflict and office-recorded sickness, Phase 28's and 32's provisional vacated-session
@@ -769,7 +779,25 @@ Contracts track rule). 24's cut puts the one typed-price field, `priceOverride` 
 session 1 rather than session 2, because the price function's typed-price rung reads that field. 26
 stays unchanged: its doc's mention of a Phase 20 interim flag is harmless (see "Unchanged" below).
 
-**Placement notes for the 2026-11-10 update** (catalogue `efe123c`).
+**Placement notes for the 2026-11-10 accountant update** (catalogue `fbdd555f`).
+
+- **No new phase; nothing re-planned from the meeting's proposals.** Greg's clearing account, the bill
+  posted with the invoice, the weekly cycle's new days (OQ-47) and the payment-run balance check are
+  proposals for Greg and Sam's process maps, not catalogue rules. They stay open gaps until a later
+  update records them.
+- **37** takes the new US-13.2.4 (Proposed): a Reconciliation card on the Admin Day dashboard over the
+  checks the prototype can compute (36's ledger equation and unmatched receipts, the ledger against
+  the Xero mirror, 37's unmatched Xero bank lines), the checks in one pure list a later update extends.
+  It sits in 37, not 36, because 37 builds the bank lines, so the story is built whole in one phase.
+- **27a** is renamed "AA Holding account and the transfer to the anaesthetist": US-06.5.1 no longer
+  calls the move "a journal transfer" and leaves open how Xero posts it. The Xero sim keeps its
+  journal mirror as a captioned default and the code names stay; app copy, demo guide and the plan
+  say "transfer" (27a, 36, 37, 39a, 43 and 44 swept).
+- **39a** keeps US-10.2.7's Friday close and Tuesday payment: OQ-47 moved but is not settled.
+- Every other unbuilt phase moves its drift baseline only, except 32b, which is being built in the
+  working tree and keeps `efe123c` (none of its items changed).
+
+**Placement notes for the 2026-11-10 update** (catalogue `efe123c`; historical, the accountant update's notes above win where they differ).
 
 - **Three new phases.**
   - **18a** (Specialties, funding tags and the open-price fallbacks; Contracts, 2 sessions, straight
@@ -1442,11 +1470,11 @@ the recommended reading and labels it provisional in the UI.
 | 32c | US-01.1.6 (Confirmed, design still to do): a List outside the Slots, one an evening, a 6:00pm default start, created by the office only, ignored by the finders (D84's working design) | none |
 | 33, 33a, 34 | FT-02.1, FT-02.2, FT-02.6 and US-02.6.1 to US-02.6.3 (Verify), US-02.1.5 (Proposed): the delivery format per hospital; which two hospitals sync (Ben named Forte; part 2 assumed); what a stub shows, how a List holding one reads and that the Booking takes its place (our reading, 33a); how a re-sent PDF list is matched to its List (our reading, 34) | OQ-13, OQ-109 |
 | 35 | US-02.3.3 (Verify): whether emailed Lists and update emails stay; whether the email goes to a surgeon's own PA, and which room's address for a surgeon at more than one room; US-02.5.8 (Verify): named office users (our reading) and whether the anaesthetist sees the history (OQ-130 answered) | OQ-124, OQ-127 |
-| 37 | US-09.2.4 and FT-10.2 (Verify), US-10.2.4 (Proposed): payment made in Xero (OQ-111 answered); a cancelled prepayment's refund paid in Xero too (a reading, for Greg); the grouping and filters are Greg's suggestions; approval kept on Review behind "Open in Review" (our reading) | none |
+| 37 | US-09.2.4 and FT-10.2 (Verify), US-10.2.4 (Proposed): payment made in Xero (OQ-111 answered); a cancelled prepayment's refund paid in Xero too (a reading, for Greg); the grouping and filters are Greg's suggestions; approval kept on Review behind "Open in Review" (our reading); US-13.2.4 (Proposed): which accounts the reconciliation status checks waits on Greg and Sam's process maps (the clearing account not modelled) | none |
 | 38 | US-12.2.2 (Verify), FT-12.2 (Proposed): payments made in the month, the GST agency treatment, the BCTI per weekly run floated | OQ-29, OQ-47 |
 | 38b | US-08.6.1 and US-08.6.3 (Verify); the user-facing name "event" (how and when an event is billed answered, OQ-121); US-03.1.10 (Proposed): whether events billed on an invoice of their own count in the Booking's total, and whether the total includes GST | none |
 | 39 | FT-08.6, US-08.6.2 and US-08.6.5 (Verify), US-08.6.6 (Proposed) | none |
-| 39a | US-10.2.6 (Verify), US-10.2.7 (Proposed): who approves, the 20th-of-the-month fit, a balance check and a BCTI per weekly run (where payments are made answered: in Xero) | OQ-47, OQ-29 |
+| 39a | US-10.2.6 (Verify), US-10.2.7 (Proposed): who approves, the 20th-of-the-month fit, a balance check and a BCTI per weekly run (where payments are made answered: in Xero); on 10 November Greg's proposal moved to a Monday to Sunday week paid Thursday with nothing carried forward, not agreed, so US-10.2.7's days stand | OQ-47, OQ-29 |
 | 39b | US-03.7.2 (Verify): the next-run rule as answered (OQ-121); US-05.5.2: the ACC codes (part 1) | OQ-12 |
 | 40 | US-11.3.2: the editable threshold beside US-13.7.4's "fixed until AA asks" (Future); US-11.1.4 and US-11.1.5 (Verify): the stub beside a waiting row (33a's); which contact the NHI request goes to, and which room's for a surgeon at more than one room; EP-11 (Verify): insurers and funders as Parties; the balance alert beside the prepayment warning | OQ-127, OQ-134 |
 | 41 | US-06.3.7 (Verify): a Contract changed off prepaid after sending, as answered (OQ-119); a part credit; whether the letter names the anaesthetist; the release trigger; the refund paid in Xero (a reading) | OQ-97, OQ-120, OQ-125 |
@@ -1529,7 +1557,7 @@ These are what you can show at each point.
   generated when an admin approves it (a step AA can switch
   off), its payable held in the AA Holding account; part-paid tracking and a warning in both apps
   that strengthens as the date nears; at authorisation the prepaid Procedure is priced at its amount
-  and left off the final invoice with nothing raised automatically, and a journal transfer moves the
+  and left off the final invoice with nothing raised automatically, and a transfer moves the
   money to whoever did the List. S4 Beat 1 is re-scripted.
 - **After 35:** S1 rebuilt: both first-release intake sources on one review-and-merge screen, one
   theatre list a day from the two integrated hospitals and the rooms' PDF lists uploaded, corrected
@@ -1546,7 +1574,7 @@ These are what you can show at each point.
   no email, surgeons at more than one room, and practice manager and PA contacts on the surgeon's
   profile (17a).
 - **After 39a:** the money story on the internal ledger: balances shown in or out of balance, the
-  AA Holding account's legs and journal transfers, payments to anaesthetists made in Xero's payables
+  AA Holding account's legs and transfers, payments to anaesthetists made in Xero's payables
   run and detected by the engine, Xero mirror resilience and a processing monitor grouped by
   anaesthetist with sorting and filters, ledger-backed web accounts with a flat outstanding list and a
   monthly GST report of payments passed, events on a Procedure with the events list, billed in the
@@ -1646,7 +1674,7 @@ US-02.5.5; DM-36 dropped.
 
 ## When the catalogue changes
 
-The catalogue keeps changing, and this plan is pinned to commit `efe123c` (built phases keep the
+The catalogue keeps changing, and this plan is pinned to commit `fbdd555` (built phases keep the
 baselines their docs name).
 
 1. **Every phase starts with a drift check.** Diff the catalogue files for the phase's covered IDs

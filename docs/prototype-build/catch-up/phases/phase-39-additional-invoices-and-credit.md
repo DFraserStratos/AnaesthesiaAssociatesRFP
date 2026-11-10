@@ -138,7 +138,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's baseline, catalogue commit `efe123c` (plan.json
+1. Run the drift check against the plan's baseline, catalogue commit `fbdd555` (plan.json
    `commit`; with no `--to` the tool diffs that baseline against the working tree, so it shows only
    what changed after `efe123c`):
 
@@ -1248,7 +1248,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   note, a credited original, the split sheet with Left to allocate, the review row, the
   anaesthetist's credit sheet on web and mobile, the Audit viewer filtered to credit notes).
 - **Status row** for catch-up Phase 39, and a phase entry with:
-  - the drift-check result (items changed or not since `efe123c`; FT-08.6, US-08.6.2, US-08.6.4,
+  - the drift-check result (items changed or not since `fbdd555`; FT-08.6, US-08.6.2, US-08.6.4,
     US-13.5.2 and the other covered items; OQ-60 and OQ-97 status; the
     List the combined-procedure trigger uses; the prepaid-combination split left refused, as a known
     gap against US-08.6.4 handed to 41; the prepaid half of US-08.6.5's "After a fixed price" handed

@@ -68,7 +68,7 @@ confirmed by AA or Greg: the flat model, never Contract lines, versions or stage
 decisions it follows, as the earlier phases built them: D1 (the monthly AA-FEE invoice, 16); D11 (NHI mandatory, 33, 40); D26 (one
 RVG multi-procedure rule, no switch, 23; D78, provisional: no base billed when the primary is on a fixed or open price); D33 (the RVG code
 optional, 20, 21); prepaid is a Contract under Payment type: Prepaid, never editable, the prepayment pair at admin approval payable to the AA
-Holding account, then a journal transfer to the anaesthetist at authorisation (27, 27a; D30, D38); D57 (prepaid Procedures are left off the final
+Holding account, then a transfer to the anaesthetist at authorisation (27, 27a; D30, D38); D57 (prepaid Procedures are left off the final
 invoice, nothing deducted; an all-prepaid Booking has no final invoice, 27); the RVG group holds a starting figure and the published range, any
 value allowed with an out-of-range warning for the office (19, 20); D39 (the RVG groups are the one master list, 19); D42 (the office keeps the
 anaesthetists' price lists, 19a); D43 (P1 included, pre-applied and removable, 19b); D44 (preferences admin-only, 17); D37 (the invoice description
@@ -143,7 +143,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware; never
+1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware; never
    a plain `git diff` of the catalogue folder):
 
    ```
@@ -163,7 +163,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
    following their Contract; surgeons at one or more rooms (17a); stubs outside the Bookings table (33a);
    rooms' PDF rows among the intake rows (34); events billed in the next run (38b); modifiers as records with age and P1 pre-applied and
    removable; a payer with an email or postal address and a mandatory NHI on every Booking (OQ-49); prepaid under Payment type: Prepaid, the AA
-   Holding account and its journal transfer, prepaid Procedures left off final invoices (D57). Work item 2 reflects all of this; diff only for
+   Holding account and its transfer, prepaid Procedures left off final invoices (D57). Work item 2 reflects all of this; diff only for
    anything after `efe123c`.
 2. If an item changed since `efe123c`, re-read it in full and adjust the work items before building. If
    an item is now Retired or Future, drop its work and say so in the PROGRESS entry:
@@ -203,7 +203,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
      function (21); RVG detail by pricing kind and completion (21a); the primary Procedure (23); the one price function, typed prices
      and held prices (24); the pricing snapshot at authorise and the builders that invoice from it
      (25); the anaesthetist profile (26); the prepayment lifecycle with prepaid Procedures left off the final
-     invoice (27); the AA Holding account and its journal transfer at authorise (27a).
+     invoice (27); the AA Holding account and its transfer at authorise (27a).
    - Phase 16 (monthly AA-FEE invoice, the one BCTI count function, the Xero contact label helper, the Xero
      privacy scan in `xeroNhi.test.ts`); Phase 36 (`billing.ledger`, `LedgerPair`, builders, the Ledger
      screen and its imbalance indicator); Phase 37 (`billing.xeroQueue`, the pure `billingMonitorView`, its
@@ -416,8 +416,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      - **Prepaid, a handful** (`prepaidShare`): a few of the 71 get price-list Contracts kept by the office (an anaesthetist holder, 19a, D42) under
        Payment type: Prepaid, every price range above zero, and a few Bookings use Prepaid · Fixed price with a typed amount. Their prepaid Bookings have a person as
        payer (a prepaid Contract always bills the payer), the Procedure held at its price when the prepayment invoice was raised (27), the prepayment
-       invoice approved with its pair to the AA Holding account and its draft Xero pair (D38), and, for AUTHORISED history, the journal
-       transfer (not a new invoice or payment) that moves the amount to the anaesthetist who did the List (Phase 27a). Forward prepaid Bookings leave
+       invoice approved with its pair to the AA Holding account and its draft Xero pair (D38), and, for AUTHORISED history, the transfer (not a new invoice or payment) that moves the amount to the anaesthetist who did the List (Phase 27a). Forward prepaid Bookings leave
        their amount in the AA Holding account. The prepaid Procedure is left off its final invoice with nothing deducted, and an
        all-prepaid Booking has no final invoice (D57). All through Phase 27 and 27a's pure builders, never store actions. Part-paid tracking,
        letters, refunds and credits (Phases 27 and 41) stay empty. Record the share in the Decisions log.
@@ -550,7 +549,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        force and a typed price is kept as typed; a prepaid Procedure is held at the price when its invoice was raised; every invoice links to a Booking and a snapshot; every ledger pair
        balanced (disbursed at most authorised, authorised at most received, received at most due, Phase
        36's invariants); a prepaid Procedure is absent from its final invoice with nothing deducted; the AA Holding
-       account balances (each prepayment pair in, each AUTHORISED List's journal transfer out) and nothing
+       account balances (each prepayment pair in, each AUTHORISED List's transfer out) and nothing
        leaves it before its List is AUTHORISED; every NHI valid and unique; no id collides with the seed; the next allocated
        id of each kind is unused;
      - stubs, surgeons and events: every stub sits outside the Bookings table, links to a waiting intake row and
@@ -1072,7 +1071,7 @@ anything settled in the Decisions log.
   fallbacks as 18 and 18a build them, never contract holders, Contract lines, versions or staged changes;
   no generated record carries a removed field (payment category, route, `funderOverride`, a Contract kind,
   an estimate or deposit); prepaid Bookings sit only on Contracts under Payment type: Prepaid with a person
-  as payer, the AA Holding account's pairs and journal transfers, and no prepaid Procedure on a final
+  as payer, the AA Holding account's pairs and transfers, and no prepaid Procedure on a final
   invoice; tiers and preferences stay office-private.
 - Stubs and the new shapes: a stub is never in the Bookings table or any Booking count and the integrity totals
   exclude it; surgeons at one or more rooms follow 17a; events are billed in the next run (38b).
@@ -1123,7 +1122,7 @@ anything settled in the Decisions log.
   (Admin Day, Invoices, Audit and Billing monitor at full scale; a generated Booking's stack; the
   Matching raw-row sheet; the Data Inspector's Privacy checks).
 - A catch-up status row for Phase 43 and an entry `### Catch-up Phase 43 · Scale and privacy (date)`
-  (one per session if it runs over two): the drift-check result against `efe123c` (OQ-30 and OQ-49 answered and
+  (one per session if it runs over two): the drift-check result against `fbdd555` (OQ-30 and OQ-49 answered and
   built as answered), the shipped names used from Phases 14 to 42 (the model names in
   `domain/billing` above all), the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in
@@ -1142,8 +1141,7 @@ anything settled in the Decisions log.
     hospital, insurer or procedure default; a payer and a valid NHI on every Booking with who is billed from
     21's function; descriptions as received and modifier records; typed prices where set, every other price
     following its Contract; the pricing snapshot at authorise; and a practice-sized handful of prepaid
-    Bookings on Contracts under Payment type: Prepaid with the AA Holding account's pairs and journal
-    transfers, their Procedures left off final invoices (`prepaidShare`). Supersedes this plan's earlier
+    Bookings on Contracts under Payment type: Prepaid with the AA Holding account's pairs and transfers, their Procedures left off final invoices (`prepaidShare`). Supersedes this plan's earlier
     readings (contract holders with settings, Contracts with or without lines, values held on the
     Procedure, Contract versions, curated and general procedures, price precedence, first-party prepaid
     sets, Permanent List templates).

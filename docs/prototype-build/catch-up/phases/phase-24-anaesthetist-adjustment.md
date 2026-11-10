@@ -102,7 +102,7 @@ Contract becomes RVG at the Contract's rate ($26.50). Other billing lines stay u
 
 ## Before you start: drift check
 
-1. **Diff the catalogue** against the plan's baseline, catalogue commit `efe123c` (rename-aware):
+1. **Diff the catalogue** against the plan's baseline, catalogue commit `fbdd555` (rename-aware):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.2.2,FT-05.2,US-05.2.8,US-05.2.5,US-05.2.6,US-05.4.3,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-03.3.10,US-05.2.1,US-05.2.7,US-04.3.9,US-04.2.15,OQ-96,OQ-117,OQ-133,OQ-136
@@ -555,7 +555,7 @@ Do not re-raise what the Decisions log settles. **Steer them at:**
     references (D82's default, OQ-136 open);
   - each seeded Contract's override setting, the demo discount Contract and the trigger's range figure;
   - Fitzgerald's new Aria figure.
-- **Status row and phase entry:** the drift check against `efe123c`; `PERSIST_VERSION` from and to;
+- **Status row and phase entry:** the drift check against `fbdd555`; `PERSIST_VERSION` from and to;
   the real names (`priceFor`, `anaesthetistMayTypePrice`, `officeMayChangePrice`, `setProcedurePrice`,
   `PriceCard`, `PricingSheet`, `BookingTotalStrip`); the Aria figures before and after; the parity
   result; tests added; the review pass; `REPORT.md` counts before and after.

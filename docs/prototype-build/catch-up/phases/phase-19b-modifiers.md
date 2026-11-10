@@ -134,7 +134,7 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
-   (the baseline is `efe123c`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+   (the baseline is `fbdd555`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks, plus the "Procedure" (Modifiers bullet) and "RVG groups, procedure
    list and modifier master" sections of `requirements-board/requirements/domain-model.md`. If an item
    changed, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work

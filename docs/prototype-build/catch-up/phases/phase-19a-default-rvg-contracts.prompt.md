@@ -18,7 +18,7 @@ Before doing anything else, read these in order:
 9. The phase docs of 19b, 20, 20a, 21a, 22, 23, 24, 25 and 27, only for what they take from this phase (rangeInForce, fillFromContract, invoiceDescription, defaultRvgGroupId, holderReference, Merivale, Souter and the hernia).
 
 Then do the drift check in the phase doc:
-- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> (baseline efe123c) for the IDs the doc lists, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> (baseline fbdd555) for the IDs the doc lists, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - Donald's 5 November contract model decisions (D1 to D11) are made for the build: build the flat model, never Contract lines, line keys, versions or staged changes, with no label. D77 and D45: a fixed price changes by adding a price range whose start may be in the past (Greg said on 23 October a Contract cannot be backdated: log that the sources differ, build D6). D79 (OQ-133, open): no list of affected Procedures; nothing to label; log it. Base units come from the RVG group alone; a Contract names only a default RVG code (D3, D12).
 - If the drift check brings back Contract lines or versions, stop and ask me. Anything smaller: build it, log it.
 

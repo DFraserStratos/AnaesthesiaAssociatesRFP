@@ -122,7 +122,7 @@ re-derives it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the ones it leans on against the plan's
-   baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `fbdd555` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -268,7 +268,7 @@ both superseded, Phase 08 work item 2's "Email invoice = mark emailed-at", **202
 preview centred with a sticky information rail** (kept; its Email control becomes Resend), and the
 handoff item **P3 GST per-invoice rounding on funder splits** (still true of split shares).
 
-**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, efe123c; use the shapes 16 and
+**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, fbdd555; use the shapes 16 and
 18 to 21 left).
 - Types, `domain/types.ts`: `Anaesthetist` (~141, no GST number), `Contract` (~216, reshaped by 18),
   `PrepaymentDetail` (~435, the prepayment's own `'full' | 'split'`, a different concept: do not reuse
@@ -929,7 +929,7 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   holder's party delivered by that Party's setting; Party delivery limited to email and post (D55's new default, our reading A32; OQ-114's other outputs open, nib by email for now); a postal-only payer marked To post with a print view (OQ-122/D70 default); layout for an added party by recipient class; the bare
   number read as dollars; the OQ-29 wording; the cross-match fields chosen (procedure date, surgeon, hospital reference); no Contract invoicing fields (layout derived from billsHolder, GST a constant); the GST number optional on the Admin record with "not held" printed when blank (DM-62, wording held on OQ-29).
 - **Status table:** a catch-up row for Phase 22.
-- **Phase entry:** the drift check result (catalogue diff from the efe123c baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
+- **Phase entry:** the drift check result (catalogue diff from the fbdd555 baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
   as the 2026-10-05 decision, BCTI granularity, what 16 and 18 to 21 left), files and actions added and
   removed, the `PERSIST_VERSION` bump, the tests added and rewritten, the manual checklist item by
   item, and the review pass.

@@ -125,7 +125,7 @@ with no scripted figure moving.
 ## Before you start: drift check
 
 1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs>`
-   (baseline `efe123c`) for FT-04.2, US-04.2.15, US-04.2.18, US-04.2.11, US-04.2.14, US-05.2.2,
+   (baseline `fbdd555`) for FT-04.2, US-04.2.15, US-04.2.18, US-04.2.11, US-04.2.14, US-05.2.2,
    US-04.2.1, US-04.2.2, US-04.3.2, US-03.3.1, US-03.3.9, US-05.1.1, US-05.2.1, US-05.2.5, US-05.2.6,
    US-05.2.7, US-05.2.8, US-08.4.6, FT-06.2, US-06.2.2, OQ-48, OQ-53, OQ-62, OQ-75, OQ-90, OQ-91,
    OQ-96, OQ-103, OQ-104, OQ-105, OQ-117, OQ-131 and OQ-133, plus AR-58 and AR-61. Re-read
