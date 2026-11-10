@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, Lock, Plus } from 'lucide-react'
+import { ArrowLeftRight, BellRing, ChevronLeft, Lock, MoreHorizontal, Plus } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
-import { editRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
+import { editRefusal, officeAlertRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
-import { TickBadge } from '../components'
+import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
-import { AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
+import { AlertOfficeEntry, AlertOfficeSheet, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 import { sessionText } from '../../../domain/outOfHours'
@@ -47,7 +47,9 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const movable = useIsMovable(listId, actor.anaesthetistId)
   const movePrompt = useMoveListPrompt()
   const moved = useMovedToMeNotice(listId, actor.anaesthetistId)
-  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm' | 'attachment'>('none')
+  // Alert the office (catch-up Phase 32b): a string, so the selector stays stable between renders.
+  const alertRefusal = useAppStore((s) => officeAlertRefusal(s, actor, { listId })?.code ?? null)
+  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm' | 'attachment' | 'options' | 'alert'>('none')
   const [showSubmitted, setShowSubmitted] = useState(false)
 
   useEffect(() => {
@@ -118,6 +120,34 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
     dayLabel,
     times !== undefined ? slotTimeRange(times) : undefined,
   ].filter((p): p is string => p !== undefined && p !== '')
+  // The ⋯ List options: the secondary things she can do with her own List, kept
+  // out of the header so it holds the List itself. New options join as rows.
+  const listOptions: ListOption[] = []
+  if (movable && movePrompt !== null) {
+    listOptions.push({
+      key: 'move',
+      shot: 'list-move',
+      icon: <ArrowLeftRight size={18} strokeWidth={2.2} />,
+      label: 'Move this List',
+      hint: 'Give it to a colleague or back to the office',
+      onSelect: () => {
+        setSheet('none')
+        movePrompt.openMove(listId)
+      },
+    })
+  }
+  if (alertRefusal === null || alertRefusal === 'alreadyAlerted') {
+    const already = alertRefusal === 'alreadyAlerted'
+    listOptions.push({
+      key: 'alert',
+      shot: 'list-alert-office',
+      icon: <BellRing size={18} strokeWidth={2.2} />,
+      label: already ? 'The office has been alerted' : 'Alert the office',
+      hint: already ? 'It stays with the office until someone there deals with it' : 'Ask the office to check this List, with a note',
+      disabled: already,
+      onSelect: () => setSheet('alert'),
+    })
+  }
   // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
   const canEdit = editRefusal(actor, list) === null
   const listAttachments = list.attachments ?? []
@@ -129,6 +159,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
       {/* Host inset + 6px: a drill-in screen leads with a 44px back button, so
           it needs less air than a tab screen's large title. */}
       <div data-testid="mobile-list-header" style={{ padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 14px', flex: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <button
           onClick={onBack}
           style={{
@@ -149,6 +180,31 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
           Lists
         </button>
+        {listOptions.length > 0 && (
+          <button
+            type="button"
+            data-shot="list-options"
+            aria-label="List options"
+            aria-haspopup="menu"
+            aria-expanded={sheet === 'options'}
+            onClick={() => setSheet('options')}
+            style={{
+              width: 44,
+              height: 44,
+              marginRight: -10,
+              display: 'grid',
+              placeItems: 'center',
+              border: 'none',
+              borderRadius: 999,
+              background: sheet === 'options' ? accent.tint : 'none',
+              color: accent.base,
+              cursor: 'pointer',
+            }}
+          >
+            <MoreHorizontal size={22} strokeWidth={2.4} aria-hidden />
+          </button>
+        )}
+        </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>
@@ -158,30 +214,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           </div>
           <StatusChip status={list.kind} style={{ marginTop: 4, flex: 'none' }} />
         </div>
-        {(moved !== undefined || (movable && movePrompt !== null)) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-            {moved !== undefined && (
-              <span data-shot="list-moved-to-you" style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: neutral.slate }}>
-                {movedToYouByLine(moved.atISO, moved.fromName)}
-              </span>
-            )}
-            {movable && movePrompt !== null && (
-              <button
-                type="button"
-                data-shot="list-move"
-                onClick={() => movePrompt.openMove(listId)}
-                style={{ marginLeft: 'auto', minHeight: 36, padding: '0 14px', borderRadius: 999, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-              >
-                Move this List
-              </button>
-            )}
+        {moved !== undefined && (
+          <div data-shot="list-moved-to-you" style={{ fontSize: 12.5, color: neutral.slate, marginTop: 8 }}>
+            {movedToYouByLine(moved.atISO, moved.fromName)}
           </div>
         )}
 
-        {/* Alert the office (catch-up Phase 32b, US-03.6.3): her own List only. */}
-        <div style={{ marginTop: 10 }}>
-          <AlertOfficeEntry actor={actor} target={{ listId }} compact />
-        </div>
+        {/* An open or dealt-with office alert is status, so it stays in view; the action is in List options. */}
+        <AlertOfficeEntry actor={actor} target={{ listId }} compact statusOnly style={{ marginTop: 10 }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
@@ -442,6 +482,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
         )}
       </div>
 
+      <ListOptionsSheet
+        open={sheet === 'options'}
+        title={`${title} ${sessionText(list.session)}`}
+        subtitle={sublineParts.slice(2).join(' · ')}
+        options={listOptions}
+        onClose={() => setSheet('none')}
+      />
+      {sheet === 'alert' && <AlertOfficeSheet open actor={actor} target={{ listId }} onClose={() => setSheet('none')} />}
       <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'list', id: listId }} actor={actor} onClose={() => setSheet('none')} />
       {(sheet === 'blockers' || sheet === 'confirm') && (
         <SubmitListSheet

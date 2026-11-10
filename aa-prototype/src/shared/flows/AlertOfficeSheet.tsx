@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { format, parseISO } from 'date-fns'
 import { BellRing, CheckCircle2 } from 'lucide-react'
 import { neutral, radius, semantic } from '../../theme/tokens'
@@ -26,7 +26,21 @@ const whenLabel = (iso: string) => format(parseISO(iso), 'EEE d MMM, HH:mm')
  * submitting: whether an alerted Booking may be submitted is undecided, so the
  * app says nothing about it.
  */
-export function AlertOfficeEntry({ actor, target, compact = false }: { actor: Actor; target: Target; compact?: boolean }) {
+export function AlertOfficeEntry({
+  actor,
+  target,
+  compact = false,
+  statusOnly = false,
+  style,
+}: {
+  actor: Actor
+  target: Target
+  compact?: boolean
+  /** Show the open or dealt-with status only; the caller offers the action elsewhere (the mobile List's options sheet). */
+  statusOnly?: boolean
+  /** Extra style on the entry's root (spacing from its neighbours; nothing renders when there is nothing to show). */
+  style?: CSSProperties
+}) {
   const [open, setOpen] = useState(false)
   const active = useAppStore((s) => activeAlertFor(s, target))
   const latest = useAppStore((s) => latestAlertFor(s, target))
@@ -35,10 +49,11 @@ export function AlertOfficeEntry({ actor, target, compact = false }: { actor: Ac
   const canAlert = refusal === null
   const isOwner = refusal === null || refusal === 'alreadyAlerted' || (refusal === 'listAuthorised' && latest !== undefined)
   if (!isOwner) return null
+  if (statusOnly && active === undefined && latest?.resolvedAt === undefined) return null
   const what = target.bookingId !== undefined ? 'Booking' : 'List'
 
   return (
-    <div data-shot={`alert-office-${target.bookingId !== undefined ? 'booking' : 'list'}`} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div data-shot={`alert-office-${target.bookingId !== undefined ? 'booking' : 'list'}`} style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
       {active !== undefined ? (
         <div data-shot="alert-office-sent" role="status" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px' }}>
           <BellRing size={16} aria-hidden style={{ color: neutral.slate, flex: 'none', marginTop: 2 }} />
@@ -60,7 +75,7 @@ export function AlertOfficeEntry({ actor, target, compact = false }: { actor: Ac
           </div>
         )
       )}
-      {canAlert && (
+      {canAlert && !statusOnly && (
         <div data-shot="alert-office-action" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <Button variant="secondary" block={!compact} onClick={() => setOpen(true)}>
             <BellRing size={16} aria-hidden /> Alert the office

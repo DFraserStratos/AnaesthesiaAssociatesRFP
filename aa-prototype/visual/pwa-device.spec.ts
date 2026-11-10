@@ -331,6 +331,7 @@ test('a colleague moves a List into my free session, then I return one of mine t
   // Return one of her own Lists to the office from List detail: it leaves Forward Lists.
   await page.goto('/mobile/lists/L-34821-2026-07-23-AM')
   await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="list-options"]').click()
   await page.locator('[data-shot="list-move"]').click()
   const sheet = page.locator('[data-shot="move-sheet"]')
   await sheet.locator('[data-shot="move-choice-office"]').click()

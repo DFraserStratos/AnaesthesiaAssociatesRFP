@@ -594,7 +594,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Alert the office** (catch-up Phase 32b; a bottom sheet on mobile, a dialog on web): on a Booking
   scroll to `[data-shot="alert-office-action"]`, click its button, fill
   `[data-shot="alert-office-sheet"] textarea`, then `[data-shot="alert-office-send"] button` and
-  `role=button[name="Done"]`; on a List the entry is `[data-shot="alert-office-list"]`.
+  `role=button[name="Done"]`; on a web List the entry is `[data-shot="alert-office-list"]`; on a mobile
+  List click `[data-shot="list-options"]` (the ⋯ in the nav bar), then `[data-shot="list-alert-office"]`.
 
 - **Move to a colleague** (catch-up Phase 32a; one sheet: a bottom sheet on mobile, a dialog on web):
   on a Booking, `[data-shot="move-booking-action"] button` (scroll to it first), then the free list
@@ -652,7 +653,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Move a List** (catch-up Phase 32; the cover request is retired):
   - Web availability: `/web/availability?date=2026-07-27`, then `[data-shot="availability-move-mine-pm"]`.
   - Mobile availability: `button[data-date="2026-07-23"]`, then `[data-shot="availability-move-am"]`.
-  - List detail (mobile or web): `[data-shot="list-move"]`. Web dashboard: "Move a List".
+  - List detail: web `[data-shot="list-move"]`; mobile `[data-shot="list-options"]` (the ⋯ in the nav
+    bar) first, then `[data-shot="list-move"]` in the List options sheet. Web dashboard: "Move a List".
   - Then `[data-shot="move-choice-office"]` or `[data-shot="move-choice-colleague"]` and a
     `[data-shot="move-colleague-<registration>"]`, then `button:has-text("Move List")`, then the done
     state `[data-shot="move-done"]` with "Done".
@@ -743,7 +745,7 @@ the exception: use the `trigger` step)
   `move-vacated-free`, `move-vacated-unavailable` or the status being set, `aria-checked`; asked on the
   unavailable prompt too, with no provisional text), `move-submit` (the "Move List" button), `move-done`;
   `move-lists-intro` before a range or series over several Lists ("Choose where they go"). Entry points:
-  `list-move` (List detail "Move this List", mobile and web), `availability-panel-move` (My calendar
+  `list-move` (List detail "Move this List": a button on web, a row of the mobile List options sheet), `availability-panel-move` (My calendar
   panel), `dashboard-move-list` and `dashboard-move-picker` (web dashboard "Move a List"),
   `dashboard-move-to-<registration>` (Who's free chips). Notices: `moved-to-you`, `moved-to-you-row`,
   `list-moved-to-you`, `list-row-badge` ("New" on Forward Lists). Admin: `admin-notifications-rail`
@@ -763,7 +765,8 @@ the exception: use the `trigger` step)
   `alert-office-list` / `alert-office-booking` (the entry), `alert-office-action` (the button),
   `alert-office-sheet`, `alert-office-note`, `alert-office-send`, `alert-office-done`,
   `alert-office-sent`, `alert-office-resolved`; Admin `office-alert-line` with `office-alert-tick`;
-  `nav-badge-notifications` (active notices).
+  `nav-badge-notifications` (active notices). Mobile List detail: `list-options` (the ⋯ in the nav bar),
+  `list-options-sheet`, its rows `list-move` and `list-alert-office`.
 
 These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 

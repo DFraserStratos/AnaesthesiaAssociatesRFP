@@ -61,6 +61,9 @@
           "caption": "The colleagues free that session, by availability alone",
           "steps": [
             {
+              "click": "[data-shot=\"list-options\"]"
+            },
+            {
               "click": "[data-shot=\"list-move\"]"
             },
             {
@@ -78,6 +81,9 @@
           "state": "confirm",
           "caption": "The confirm step: no warning, prompt or caution of any kind",
           "steps": [
+            {
+              "click": "[data-shot=\"list-options\"]"
+            },
             {
               "click": "[data-shot=\"list-move\"]"
             },
