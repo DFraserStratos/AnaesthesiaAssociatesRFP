@@ -166,8 +166,8 @@ test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {
   await expect(page.getByText(/Mon 20 Jul .* SUBMITTED/)).toBeVisible()
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
-  // The office can cancel a booking on a SUBMITTED list (checklist item 7); this
-  // affordance is hidden for the anaesthetist and was ACTIVE-only before the fix.
+  // The office can cancel a booking on a SUBMITTED list (checklist item 7); it was
+  // ACTIVE-only before the fix. Since catch-up Phase 38a the anaesthetist can too, on her own List.
   await expect(page.getByRole('button', { name: /Cancel booking/ })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-10-submitted-booking.png', fullPage: true })
 })

@@ -1,6 +1,6 @@
 /**
- * The anaesthetist's main view, the "Changed since submitted" cue, and (later in
- * catch-up Phase 38a) the look-back and search selectors. Pure reads over the
+ * The anaesthetist's main view, the "Changed since submitted" cue, and the
+ * look-back and search selectors (catch-up Phase 38a). Pure reads over the
  * store: no new stored entity, no mutation. PWA-safe (no app imports).
  *
  * Own work only: every selector here that serves an anaesthetist returns Lists
@@ -14,6 +14,7 @@ import { parseBookingQuery, patientMatches, type BookingQuery } from '../domain/
 import type { AssignedList, AuditEntry, Booking, Procedure } from '../domain/types'
 import type { AppState } from './appStore'
 import {
+  bookingCountsByList,
   counterpartyName,
   isBackdropList,
   scheduleHorizon,
@@ -40,16 +41,6 @@ export interface MainView {
 
 type MainViewState = SlotState & { schedule: Pick<AppState['schedule'], 'slots' | 'lists' | 'bookings'> }
 
-/** Non-cancelled Bookings per List id, one pass. */
-function activeBookingCounts(bookings: Record<string, Booking>): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const b of Object.values(bookings)) {
-    if (b.cancellation !== undefined) continue
-    counts.set(b.listId, (counts.get(b.listId) ?? 0) + 1)
-  }
-  return counts
-}
-
 /**
  * The main view: upcoming work from today, plus earlier Lists not yet
  * authorised reached by scrolling back. A List with no Booking is left off the
@@ -63,7 +54,7 @@ export function mainViewFor(
   todayISO: string,
   forwardToISO: string,
 ): MainView {
-  const counts = activeBookingCounts(state.schedule.bookings)
+  const counts = bookingCountsByList(state.schedule.bookings)
   const earlier = Object.values(state.schedule.lists)
     .filter(
       (l): l is AssignedList =>
@@ -105,16 +96,20 @@ function field(value: unknown, key: string): string | undefined {
  * read from the audit log: entries after the List's last `list.submit`, by
  * position (so two writes in the same demo minute still order), whose role is
  * the anaesthetist's and whose entity is the List, one of its Bookings, or a
- * Procedure, billing line or patient of one of them. An office correction never
- * counts. Null when the List is not SUBMITTED (the cue ends at authorise) or
+ * Procedure, billing line or patient of one of them. A patient edit counts only
+ * when the List's own anaesthetist made it (a patient's details are shared by
+ * all their Bookings, so her edit changes what the office sees here; a
+ * colleague's never counts). The conflict entries `mutate()` writes on the
+ * actor's behalf are not changes. An office correction never counts. Null when the List is not SUBMITTED (the cue ends at authorise) or
  * nothing has changed.
  */
 export function changedSinceSubmitted(
-  state: Pick<AppState, 'schedule' | 'audit'>,
+  state: Pick<AppState, 'schedule' | 'audit' | 'masters'>,
   listId: string,
 ): ChangedSinceSubmitted | null {
   const list = state.schedule.lists[listId]
   if (list === undefined || list.state !== 'SUBMITTED') return null
+  const ownerName = state.masters.anaesthetists[list.anaesthetistId]?.name
   const audit: readonly AuditEntry[] = state.audit
   let start = -1
   for (let i = audit.length - 1; i >= 0; i--) {
@@ -147,7 +142,7 @@ export function changedSinceSubmitted(
     }
     switch (e.entityType) {
       case 'list':
-        if (e.entityId === listId) hit = true
+        if (e.entityId === listId && !e.action.startsWith('list.conflict')) hit = true
         break
       case 'booking':
         mark(e.entityId)
@@ -164,6 +159,7 @@ export function changedSinceSubmitted(
         break
       }
       case 'patient':
+        if (e.who !== ownerName) break
         for (const b of Object.values(bookings)) if (b.patientId === e.entityId) mark(b.id)
         break
       default:
@@ -289,14 +285,13 @@ export function listDaysFor(
   state: Pick<AppState, 'schedule'>,
   anaesthetistId: string,
   monthISO: string,
-): { dateISO: string; lists: number; invoiced: boolean }[] {
-  const byDate = new Map<string, { lists: number; invoiced: boolean }>()
+): { dateISO: string; lists: number }[] {
+  const byDate = new Map<string, number>()
   for (const l of ownLists(state, anaesthetistId)) {
     if (!l.dateISO.startsWith(`${monthISO}-`)) continue
-    const prev = byDate.get(l.dateISO) ?? { lists: 0, invoiced: false }
-    byDate.set(l.dateISO, { lists: prev.lists + 1, invoiced: prev.invoiced || l.billedAtISO !== undefined })
+    byDate.set(l.dateISO, (byDate.get(l.dateISO) ?? 0) + 1)
   }
-  return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([dateISO, v]) => ({ dateISO, ...v }))
+  return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([dateISO, lists]) => ({ dateISO, lists }))
 }
 
 /** One search result: a Booking with where and when it was. */
@@ -374,6 +369,8 @@ export function searchBookingsFor(
 /** One invoice on a List's detail (read only). */
 export interface ListInvoiceRow {
   invoiceId: string
+  /** The Booking the invoice was raised for. */
+  bookingId: string
   invoiceNumber: string
   party: string
   issuedISO?: string
@@ -399,6 +396,7 @@ export function invoicesForListView(state: Pick<AppState, 'schedule' | 'billing'
         c?.paidInAtISO !== undefined ? 'paid' : (c?.receivedAmount ?? 0) > 0 ? 'partPaid' : 'outstanding'
       return {
         invoiceId: i.id,
+        bookingId: i.bookingId,
         invoiceNumber: i.invoiceNumber,
         party: counterpartyName(state, i.counterparty),
         ...(i.raisedAtISO !== undefined ? { issuedISO: i.raisedAtISO } : {}),

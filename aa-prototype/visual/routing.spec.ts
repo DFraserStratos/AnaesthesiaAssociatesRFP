@@ -329,6 +329,7 @@ test('web: /web/lists?day=2026-03-13 loads the day, and Back from List detail re
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="web-lookback-day"] tr[data-list-id="L-HIST-2026-03-13-AM"]').click()
   await expect(page).toHaveURL(/\/web\/lists\/L-HIST-2026-03-13-AM$/)
+  await expect(page.locator('[data-shot="list-invoices"]')).toBeVisible()
   // The page's own back button (the nav tab, also named Lists, comes first).
   await page.getByRole('button', { name: 'Lists', exact: true }).last().click()
   await expect(page).toHaveURL(/\/web\/lists\?day=2026-03-13$/)

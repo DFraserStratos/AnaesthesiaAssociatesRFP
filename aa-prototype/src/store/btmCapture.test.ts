@@ -1,8 +1,8 @@
 /**
  * Phase 04 end-to-end capture tests: the Ellison live-demo flow (Finish-now at
  * 17:20 → the relocated $344.50/13u and 41u/$1,086.50 mockup pins →
- * complete → submit → read-only), the two-anaesthetist rate comparison, the
- * billedAt disappearance selector, notes round-trip and the B/T/M provenance
+ * complete → submit → still editable until authorised), the two-anaesthetist
+ * rate comparison, the billing stamp the office reads, notes round-trip and the B/T/M provenance
  * semantics the "Use seeded value" reset link relies on.
  */
 

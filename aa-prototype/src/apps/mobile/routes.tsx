@@ -97,7 +97,13 @@ export function MobileListsRoute() {
     const l = s.schedule.lists[urlListId]
     return l === undefined || l.state === 'DRAFT' || l.anaesthetistId !== anaesthetistId
   })
-  const bookingMissing = useAppStore((s) => urlBookingId !== null && s.schedule.bookings[urlBookingId] === undefined)
+  // Her own Bookings only (catch-up Phase 38a, as on the web): a Booking on a
+  // colleague's List, or moved to one, falls back to the List like a stale id.
+  const bookingMissing = useAppStore((s) => {
+    if (urlBookingId === null) return false
+    const booking = s.schedule.bookings[urlBookingId]
+    return booking === undefined || s.schedule.lists[booking.listId]?.anaesthetistId !== anaesthetistId
+  })
   // A pre-Phase-15 `/cards/` link: hand it to the `/bookings/` URL first.
   if (legacyBookingPath(pathname) !== null) return <LegacyBookingRedirect />
   if (listMissing) return <Navigate to="/mobile/lists" replace />

@@ -65,7 +65,11 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   // An authorised List is read only: its invoices, and what each Booking was
   // invoiced at, not a fee recomputed from today's prices (catch-up Phase 38a).
   const invoices = useListInvoices(listId)
-  const invoicesRecord = useAppStore((s) => s.billing.invoices)
+  const invoicedByBooking = useMemo(() => {
+    const out = new Map<string, number>()
+    for (const r of invoices) out.set(r.bookingId, (out.get(r.bookingId) ?? 0) + r.total)
+    return out
+  }, [invoices])
 
   const model = useMemo(() => {
     // A Draft List never reaches an anaesthetist surface (OQ-86 answered no, D46).
@@ -84,9 +88,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .map((booking) => {
         const procs = procsByBooking.get(booking.id) ?? []
         const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0 }
-        const invoiced = Object.values(invoicesRecord)
-          .filter((i) => i.bookingId === booking.id && i.kind === 'standard')
-          .reduce((n, i) => n + i.total, 0)
+        // What it was invoiced at: the same invoices the Invoices panel lists.
+        const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {
           booking,
           time: booking.scheduledTime ?? '·',
@@ -109,7 +112,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       fee: active.reduce((n, r) => n + r.fee, 0),
       invoiced: active.reduce((n, r) => n + r.invoiced, 0),
     }
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicesRecord])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking])
 
   const warningsByBooking = useListWarnings(listId)
 

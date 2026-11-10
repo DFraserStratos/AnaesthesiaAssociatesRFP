@@ -58,11 +58,11 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
   const changedByList = useMemo(() => {
     const map = new Map<string, NonNullable<ReturnType<typeof changedSinceSubmitted>>>()
     for (const l of submitted) {
-      const cue = changedSinceSubmitted({ schedule, audit }, l.id)
+      const cue = changedSinceSubmitted({ schedule, audit, masters }, l.id)
       if (cue !== null) map.set(l.id, cue)
     }
     return map
-  }, [submitted, schedule, audit])
+  }, [submitted, schedule, audit, masters])
 
   const recentlyBilled = useMemo(() => billedLists({ schedule }).slice(0, 6), [schedule])
   const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])

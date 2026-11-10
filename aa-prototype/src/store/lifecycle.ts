@@ -223,7 +223,7 @@ const ASSIGN_FIRST = 'Assign an anaesthetist first.'
  * since catch-up Phase 38a, authorise (a Booking re-opened or added on a
  * SUBMITTED List must be completed again before the office can authorise it).
  */
-export function incompleteBookingsOn(state: AppState, listId: string): Booking[] {
+export function incompleteBookingsOn(state: Pick<AppState, 'schedule'>, listId: string): Booking[] {
   return bookingsForList(state, listId).filter((c) => c.cancellation === undefined && !c.completed)
 }
 

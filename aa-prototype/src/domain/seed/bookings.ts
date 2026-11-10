@@ -974,7 +974,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // S13/S14/S15 messages locate them by appointment id (never patient
   // guesswork). Their forward ACTIVE St George's Lists are deliberately separate
   // from Tue 28 AM, so a modify message can never be confused with S1's own
-  // create. The fifth is on a SUBMITTED (office-locked) List for manual
+  // create. The fifth is on a SUBMITTED List (closed to integrations) for manual
   // intervention.
   // -------------------------------------------------------------------------
 

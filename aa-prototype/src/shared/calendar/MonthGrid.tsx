@@ -62,6 +62,9 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
 
   function moveFocus(next: string) {
     const target = clamp(next, bounds)
+    // At a bound the key goes nowhere: leave the flag down, or a later month
+    // click would pull focus back into the grid.
+    if (target === focusInMonth) return
     restoreFocus.current = true
     setFocusISO(target)
     if (monthOf(target) !== monthISO) onMonthChange(monthOf(target))

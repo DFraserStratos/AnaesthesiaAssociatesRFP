@@ -539,7 +539,7 @@ export const SEED_LIST_IDS = {
   prepaymentUnpaidList: projectedListId(ANAE.souter, '2026-07-24', 'AM'),
   prepaymentPaidList: projectedListId(ANAE.souter, '2026-07-24', 'PM'),
   billingFailure: projectedListId(ANAE.ropata, '2026-07-16', 'AM'),
-  // Phase 11: the SUBMITTED (office-locked) List holding the locked-target
+  // Phase 11: the SUBMITTED List (closed to integrations) holding the locked-target
   // integration Booking, the clean S1 create destination, and separate modify
   // targets that keep S1's List uncluttered.
   integrationLocked: projectedListId(ANAE.delaney, '2026-07-17', 'AM'),

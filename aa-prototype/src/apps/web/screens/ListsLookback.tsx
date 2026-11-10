@@ -6,19 +6,12 @@
  */
 
 import { useMemo } from 'react'
-import { format, parseISO } from 'date-fns'
 import { Search, X } from 'lucide-react'
 import { accent, neutral, radius } from '../../../theme/tokens'
-import {
-  listsOnDayFor,
-  lookbackBoundsFor,
-  searchBookingsFor,
-  useAppStore,
-  type BookingSearchRow,
-} from '../../../store'
+import { listsOnDayFor, useAppStore, type BookingSearchRow } from '../../../store'
 import { ProgressPill, resolveDisplayStatus, StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
-import { locationName, nhiBadge } from '../../../shared/format'
-import { DAY_EMPTY, SEARCH_EMPTY } from '../../../shared/schedule'
+import { dayWithYear, locationName, longDay, nhiBadge } from '../../../shared/format'
+import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
 
 const pillInput = {
   height: 38,
@@ -30,7 +23,9 @@ const pillInput = {
   color: neutral.ink,
 } as const
 
+
 export function WebSearchField({ query, onQueryChange }: { query: string; onQueryChange: (q: string) => void }) {
+  const [text, setText] = useFieldText(query, onQueryChange)
   return (
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
       <Search size={15} aria-hidden style={{ position: 'absolute', left: 12, color: neutral.mist }} />
@@ -38,16 +33,16 @@ export function WebSearchField({ query, onQueryChange }: { query: string; onQuer
         type="search"
         aria-label="Search your Bookings"
         placeholder="Search patient name or NHI"
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
         data-testid="web-lists-search"
-        style={{ ...pillInput, width: 280, padding: query !== '' ? '0 36px 0 34px' : '0 14px 0 34px', appearance: 'none' }}
+        style={{ ...pillInput, width: 280, padding: text !== '' ? '0 36px 0 34px' : '0 14px 0 34px', appearance: 'none' }}
       />
-      {query !== '' && (
+      {text !== '' && (
         <button
           type="button"
           aria-label="Clear the search field"
-          onClick={() => onQueryChange('')}
+          onClick={() => setText('')}
           style={{ position: 'absolute', right: 4, width: 30, height: 30, border: 'none', background: 'none', color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: 999 }}
         >
           <X size={15} aria-hidden />
@@ -58,10 +53,7 @@ export function WebSearchField({ query, onQueryChange }: { query: string; onQuer
 }
 
 export function WebGoToDate({ anaesthetistId, dayISO, onDayChange }: { anaesthetistId: string; dayISO: string | null; onDayChange: (d: string | null) => void }) {
-  const schedule = useAppStore((s) => s.schedule)
-  const clock = useAppStore((s) => s.clock)
-  const appSettings = useAppStore((s) => s.appSettings)
-  const bounds = useMemo(() => lookbackBoundsFor({ schedule, clock, appSettings }, anaesthetistId), [schedule, clock, appSettings, anaesthetistId])
+  const bounds = useLookbackBounds(anaesthetistId)
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate }}>
       Go to date
@@ -71,7 +63,12 @@ export function WebGoToDate({ anaesthetistId, dayISO, onDayChange }: { anaesthet
         value={dayISO ?? ''}
         min={bounds.firstISO}
         max={bounds.lastISO}
-        onChange={(e) => onDayChange(e.target.value === '' ? null : e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value
+          if (v === '') onDayChange(null)
+          // Native date inputs emit partial years while typing (0002-03-13): only a day inside the bounds is taken.
+          else if (v >= bounds.firstISO && v <= bounds.lastISO) onDayChange(v)
+        }}
         style={{ height: 38, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, padding: '0 12px', fontFamily: 'inherit', fontSize: 14, color: neutral.ink }}
       />
     </label>
@@ -83,20 +80,14 @@ export function WebDayChip({ dateISO, onClose }: { dateISO: string; onClose: () 
   return (
     <button
       type="button"
-      aria-label={`${format(parseISO(dateISO), 'EEEE d MMMM yyyy')}. Close the day and go back to your Lists`}
+      aria-label={`${longDay(dateISO)}. Close the day and go back to your Lists`}
       onClick={onClose}
       style={{ height: 32, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 14px', borderRadius: 999, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
     >
-      <span className="mono">{format(parseISO(dateISO), 'EEE d MMM yyyy')}</span>
+      <span className="mono">{dayWithYear(dateISO)}</span>
       <X size={14} strokeWidth={2.4} aria-hidden />
     </button>
   )
-}
-
-export function useWebBookingSearch(anaesthetistId: string, rawQuery: string, todayISO: string) {
-  const schedule = useAppStore((s) => s.schedule)
-  const masters = useAppStore((s) => s.masters)
-  return useMemo(() => searchBookingsFor({ schedule, masters }, anaesthetistId, rawQuery, todayISO), [schedule, masters, anaesthetistId, rawQuery, todayISO])
 }
 
 const th = { textAlign: 'left', padding: '12px 20px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', whiteSpace: 'nowrap' } as const
@@ -139,7 +130,7 @@ export function WebResultsTable({ upcoming, past, onOpenBooking }: { upcoming: B
 
 function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: string, bookingId: string) => void }) {
   const warnings = useBookingWarnings(row.bookingId)
-  const date = format(parseISO(row.dateISO), 'EEE d MMM yyyy')
+  const date = dayWithYear(row.dateISO)
   return (
     <tr
       data-booking-id={row.bookingId}
@@ -205,7 +196,7 @@ export function WebDayTable({ anaesthetistId, dateISO, todayISO, onOpenList }: {
                   <span aria-hidden style={{ width: 3, height: 20, borderRadius: 99, background: c.solid }} />
                   <button
                     type="button"
-                    aria-label={`Open List ${format(parseISO(dateISO), 'EEE d MMM yyyy')} ${d.list.session}, ${location}`}
+                    aria-label={`Open List ${dayWithYear(dateISO)} ${d.list.session}, ${location}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       onOpenList(d.list.id)

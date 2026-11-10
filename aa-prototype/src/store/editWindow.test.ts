@@ -18,6 +18,7 @@ import {
   uncompleteBooking,
 } from './lifecycle'
 import { createBooking } from './bookingActions'
+import { editPatient } from './intake'
 import { changedSinceSubmitted } from './lookback'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
@@ -163,6 +164,25 @@ describe('changedSinceSubmitted', () => {
 
     expect(completeBooking(api, SOUTER, b!.id).ok).toBe(true)
     expect(authoriseList(api, OFFICE, MON_PM).ok).toBe(true)
+    expect(changedSinceSubmitted(api.getState(), MON_PM)).toBeNull()
+  })
+
+  it("a patient edit counts only on the editing anaesthetist's own Lists, never a colleague's", () => {
+    const api = store()
+    const bk1 = api.getState().schedule.bookings['BK0001']!
+    expect(editPatient(api, SOUTER, bk1.patientId, { phone: '021 000 1111' }, bk1.id).ok).toBe(true)
+    for (const l of Object.values(api.getState().schedule.lists)) {
+      if (l.state !== 'SUBMITTED' || l.anaesthetistId === ANAE.souter) continue
+      expect(changedSinceSubmitted(api.getState(), l.id), l.id).toBeNull()
+    }
+  })
+
+  it('the conflict entries mutate() adds are not changes', () => {
+    const api = store()
+    const before = api.getState().audit.length
+    // An office edit that touches conflicts writes list.conflict entries under the office; none is the anaesthetist's.
+    expect(editBooking(api, OFFICE, firstBooking(api, MON_PM), { notes: 'x' }).ok).toBe(true)
+    expect(api.getState().audit.length).toBeGreaterThan(before)
     expect(changedSinceSubmitted(api.getState(), MON_PM)).toBeNull()
   })
 

@@ -79,7 +79,8 @@ describe('the mobile main view (US-07.4.2)', () => {
   it('opens with Today at the top of the scroller and the hint scrolls back', () => {
     renderAt('/mobile/lists')
     const scroller = screen.getByTestId('mobile-lists-scroll')
-    expect(scroller.scrollTop).toBe(398)
+    // Scrolled down to the Today anchor (the exact position is Playwright's to check).
+    expect(scroller.scrollTop).toBeGreaterThan(0)
     const hint = screen.getByRole('button', { name: /2 earlier Lists not yet authorised/ })
     fireEvent.click(hint)
     expect(scroller.scrollTop).toBe(0)
@@ -95,6 +96,8 @@ describe('the mobile main view (US-07.4.2)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Done' }))
     expect(document.querySelector(`[data-list-id="${SEED_LIST_IDS.souterMon20Am}"]`)).not.toBeNull()
     expect(document.querySelector(`[data-list-id="${SEED_LIST_IDS.souterMon20Pm}"]`)).toBeNull()
+    // Done holds only earlier Lists here: no "nothing waiting" copy contradicts them.
+    expect(screen.queryByText('No submitted Lists waiting for the office.')).toBeNull()
     for (const chip of ['Week', 'Month', 'To-Do']) {
       fireEvent.click(screen.getByRole('button', { name: chip }))
       expect(document.querySelector(`[data-list-id="${SEED_LIST_IDS.souterMon20Pm}"]`), chip).toBeNull()
@@ -139,6 +142,17 @@ describe('mobile search and date lookup (US-03.1.6, US-03.1.7)', () => {
     expect(screen.getByRole('button', { name: 'Week' })).toHaveAttribute('aria-pressed', 'true')
   })
 
+  it('closing the day chip returns to the chip that was chosen before', () => {
+    renderAt('/mobile/lists')
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Go to a date' }))
+    const sheet = document.querySelector('[data-shot="mobile-lookback-calendar"]') as HTMLElement
+    fireEvent.click(within(sheet).getByRole('button', { name: /^Monday 20 July 2026/ }))
+    expect(where()).toBe('/mobile/lists?day=2026-07-20')
+    fireEvent.click(screen.getByTestId('mobile-lists-day-chip'))
+    expect(screen.getByRole('button', { name: 'Month' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('a junk ?day= is ignored', () => {
     renderAt('/mobile/lists?day=not-a-date')
     expect(screen.queryByTestId('mobile-lists-day-chip')).toBeNull()
@@ -166,6 +180,14 @@ describe("a submitted List's Booking stays editable (US-07.2.1)", () => {
     expect(screen.getAllByText('Add a booking').length).toBeGreaterThan(0)
     renderAt(`/mobile/lists/${SEED_LIST_IDS.souterMon20Pm}/bookings/${booking.id}`)
     expect(screen.getAllByRole('button', { name: /Amend/ }).length).toBeGreaterThan(0)
+  })
+
+  it("a colleague's Booking under her own List's URL falls back to her List", () => {
+    const sharma = Object.values(useAppStore.getState().schedule.bookings).find(
+      (b) => useAppStore.getState().schedule.lists[b.listId]?.anaesthetistId === ANAE.sharma,
+    )!
+    renderAt(`/mobile/lists/${SEED_LIST_IDS.souterMon20Pm}/bookings/${sharma.id}`)
+    expect(where()).toBe(`/mobile/lists/${SEED_LIST_IDS.souterMon20Pm}`)
   })
 
   it('an authorised List shows its Invoices and no Add a booking', () => {

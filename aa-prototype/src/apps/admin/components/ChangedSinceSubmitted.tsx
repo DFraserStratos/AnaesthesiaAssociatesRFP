@@ -10,15 +10,16 @@ import { useMemo } from 'react'
 import { PenLine } from 'lucide-react'
 import { neutral, semantic } from '../../../theme/tokens'
 import { changedSinceSubmitted, useAppStore, type ChangedSinceSubmitted } from '../../../store'
-import { hhmm } from '../../../shared/format'
+import { dayWithYear, hhmm } from '../../../shared/format'
 
 /** The cue for one List, memoised over the records it reads. */
 export function useChangedSinceSubmitted(listId: string | undefined): ChangedSinceSubmitted | null {
   const schedule = useAppStore((s) => s.schedule)
   const audit = useAppStore((s) => s.audit)
+  const masters = useAppStore((s) => s.masters)
   return useMemo(
-    () => (listId === undefined ? null : changedSinceSubmitted({ schedule, audit }, listId)),
-    [schedule, audit, listId],
+    () => (listId === undefined ? null : changedSinceSubmitted({ schedule, audit, masters }, listId)),
+    [schedule, audit, masters, listId],
   )
 }
 
@@ -27,7 +28,7 @@ export function ChangedSinceSubmittedPill({ cue }: { cue: ChangedSinceSubmitted 
   return (
     <span
       data-shot="review-changed-since-submitted"
-      title={`${changes} by the anaesthetist since the List was submitted, the last at ${hhmm(cue.lastAtISO)}`}
+      title={`${changes} by the anaesthetist since the List was submitted, the last on ${dayWithYear(cue.lastAtISO)} at ${hhmm(cue.lastAtISO)}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

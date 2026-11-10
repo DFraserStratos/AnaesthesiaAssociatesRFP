@@ -635,9 +635,10 @@ export interface ListBase {
   /** Office-logged phone-call notes (Phase 07 review); never a return channel. */
   phoneNotes?: ListPhoneNote[]
   /**
-   * Stamped at completion of the List's billing run (Phase 08; 3rd review
-   * #12). Lists vanish from the anaesthetist's forward views at invoice
-   * generation, NOT at AUTHORISED — an authorised list is still unbilled.
+   * Stamped at completion of the List's billing run (Phase 08). The office
+   * reads it (Billing monitor, Review's recently billed, the office stand-in).
+   * It no longer decides the anaesthetist's main view: a List leaves that at
+   * AUTHORISED (`hasLeftMainView`, catch-up Phase 38a, OQ-31).
    */
   billedAtISO?: IsoDateTime
   notes?: string

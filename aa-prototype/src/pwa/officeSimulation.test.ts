@@ -18,7 +18,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../store/appStore'
-import { authoriseList, completeBooking, editProcedure, submitList } from '../store/lifecycle'
+import { authoriseList, completeBooking, editProcedure, submitList, uncompleteBooking } from '../store/lifecycle'
 import { wireBillingRun } from '../store/billingRun'
 import { advanceClockMinutes, resetDemo } from '../store/clockActions'
 import { clockISO, type Actor } from '../store/mutate'
@@ -156,6 +156,25 @@ describe('the trigger', () => {
       expect(isListBilled(state.schedule.lists[SOUTER_PM]!)).toBe(true)
       expect(invoicesForList(state, SOUTER_PM)).toHaveLength(4)
       expect(casesForList(state, SOUTER_PM)).toHaveLength(4)
+    } finally {
+      unwire()
+      unwireBilling()
+    }
+  })
+
+  it('waits while a Booking reopened after submit is incomplete, then authorises once it is completed (catch-up Phase 38a)', () => {
+    const api = store()
+    const unwireBilling = wireBillingRun(api)
+    const unwire = wireOfficeSimulation(api)
+    try {
+      submitAsSouter(api)
+      const ellison = marker('pendingCaptureBooking')
+      expect(uncompleteBooking(api, SOUTER, ellison).ok).toBe(true)
+      vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
+      expect(listState(api, SOUTER_PM)).toBe('SUBMITTED')
+      expect(completeBooking(api, SOUTER, ellison).ok).toBe(true)
+      vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
+      expect(listState(api, SOUTER_PM)).toBe('AUTHORISED')
     } finally {
       unwire()
       unwireBilling()

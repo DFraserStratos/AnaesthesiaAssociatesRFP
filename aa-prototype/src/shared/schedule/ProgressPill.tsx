@@ -12,7 +12,7 @@ import { TickBadge } from '../ui/TickBadge'
 
 const TONE: Record<Exclude<ListProgress, 'upcoming'>, { bg: string; color: string }> = {
   toFinish: { bg: semantic.warning.tint, color: semantic.warning.onTint },
-  readyToSubmit: { bg: semantic.success.tint, color: semantic.success.onTint },
+  readyToSubmit: { bg: 'transparent', color: STATUS_PALETTE.free.onTint },
   submitted: { bg: 'transparent', color: STATUS_PALETTE.free.onTint },
   authorised: { bg: neutral.sunken, color: neutral.slate },
   invoiced: { bg: neutral.sunken, color: neutral.slate },
@@ -22,7 +22,8 @@ export function ProgressPill({ progress }: { progress: ListProgress }) {
   if (progress === 'upcoming') return null
   const tone = TONE[progress]
   const label = LIST_PROGRESS_LABEL[progress]
-  if (progress === 'submitted') {
+  // Submitted and ready to submit share the design's done tick, as the phone's List row draws them.
+  if (progress === 'submitted' || progress === 'readyToSubmit') {
     return (
       <span data-progress={progress} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: tone.color, whiteSpace: 'nowrap' }}>
         <TickBadge size={18} />

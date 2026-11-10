@@ -7,6 +7,7 @@ import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
+import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -16,7 +17,6 @@ interface AdminBookingDetailProps {
   backLabel?: string
 }
 
-import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 /**
  * Admin booking detail — desktop chrome around the shared `BookingDetailBody` with the
  * OFFICE actor, so it gains the office billing-setup section (Step 2), edit

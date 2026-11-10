@@ -13,6 +13,7 @@ import {
   completeBooking,
   editBooking,
   editRefusal,
+  isBackdropList,
   prepaymentStatusFor,
   raisePreProcedureInvoice,
   removeAttachment,
@@ -648,8 +649,10 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       )}
 
       {/* Post-op addendum (B8) — on a locked (authorised/billed) booking. The
-          original stays immutable; the addendum is a new linked booking. */}
-      {!cancelled && list.state === 'AUTHORISED' && booking.bookingType !== 'postOpAddendum' && (
+          original stays immutable; the addendum is a new linked booking. Not on
+          the seeded history reached by search or date (catch-up Phase 38a): it is
+          read only, and 38b's events replace this action. */}
+      {!cancelled && list.state === 'AUTHORISED' && !isBackdropList(list) && booking.bookingType !== 'postOpAddendum' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           {postOpMsg !== null && (
             <div style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>

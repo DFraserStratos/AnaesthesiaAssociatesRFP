@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { AssignedList, BillingRoute, Booking, Procedure } from '../../../domain/types'
-import { authoriseList, logListNote, useAppStore, useListTimes, type Actor } from '../../../store'
+import { authoriseList, incompleteBookingsOn, logListNote, useAppStore, useListTimes, type Actor } from '../../../store'
 import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
 import { bookingFee, procedureFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, locationName, routeLabel, slotTimeRange } from '../../../shared/format'
@@ -110,9 +110,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
 
   // A Booking the anaesthetist re-opened (or added) on this SUBMITTED List must be
   // completed again before it can be authorised (authoriseList refuses; catch-up Phase 38a).
-  const incompleteNames = rows
-    .filter((r) => r.booking.cancellation === undefined && !r.booking.completed)
-    .map((r) => masters.patients[r.booking.patientId]?.name ?? 'Unknown patient')
+  const incompleteNames = incompleteBookingsOn(useAppStore.getState(), listId).map(
+    (b) => masters.patients[b.patientId]?.name ?? 'Unknown patient',
+  )
   const listTotals = rows.reduce((acc, r) => ({ units: acc.units + r.totals.units, fee: acc.fee + r.totals.total }), { units: 0, fee: 0 })
   const allFlags: ReviewFlag[] = rows.flatMap((r) => r.flags)
   const unitRate = anaesthetist?.unitValue ?? 0
@@ -267,16 +267,15 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</span>
                       <WarningTriangle warnings={warningsByBooking.get(booking.id) ?? []} size="sm" />
+                      {/* A marker, not an action: the row's teal History link opens what changed. */}
                       {changedIds.has(booking.id) && (
-                        <button
-                          type="button"
+                        <span
                           data-shot="review-changed-booking"
-                          aria-label={`${patient?.name ?? 'Booking'} changed since submitted. Open its history`}
-                          onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })}
-                          style={{ border: `1px solid ${semantic.warning.solid}66`, background: neutral.surface, color: semantic.warning.onTint, borderRadius: 999, padding: '1px 8px', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          title="Changed by the anaesthetist since the List was submitted. History shows what changed."
+                          style={{ border: `1px solid ${semantic.warning.solid}66`, background: neutral.surface, color: semantic.warning.onTint, borderRadius: 999, padding: '1px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
                         >
                           Changed
-                        </button>
+                        </span>
                       )}
                       {!booking.completed && booking.cancellation === undefined && (
                         <span style={{ fontSize: 11, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>Not complete</span>

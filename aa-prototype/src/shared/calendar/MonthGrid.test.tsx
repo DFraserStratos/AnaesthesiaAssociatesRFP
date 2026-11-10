@@ -54,6 +54,18 @@ describe('MonthGrid', () => {
     expect(screen.getByRole('button', { name: 'Day 2026-03-13' })).toBeInTheDocument()
   })
 
+  it('an arrow key at a bound stays put and does not later pull focus into the grid', () => {
+    render(<Harness start="2026-01" />)
+    const first = screen.getByRole('button', { name: 'Day 2026-01-12' })
+    first.focus()
+    fireEvent.keyDown(first, { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(first)
+    const next = screen.getByRole('button', { name: 'Next month' })
+    next.focus()
+    fireEvent.click(next)
+    expect(document.activeElement).toBe(next)
+  })
+
   it('moves focus with the arrow keys, Home, End and PageUp, across months', () => {
     render(<Harness />)
     const today = screen.getByRole('button', { name: 'Day 2026-07-21' })

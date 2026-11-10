@@ -8,8 +8,8 @@ import { hasLeftMainView, listProgress, type ListProgress } from '../../../domai
 import { mainViewFor, timesForList, useAppStore, type SlotView } from '../../../store'
 import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, StatusLegend } from '../../../shared'
 import { Panel } from '../components'
-import { searchCountLine } from '../../../shared/schedule'
-import { useWebBookingSearch, WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from './ListsLookback'
+import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
+import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from './ListsLookback'
 
 interface ListsScreenProps {
   anaesthetistId: string
@@ -83,7 +83,7 @@ export function ListsScreen({
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
-  const results = useWebBookingSearch(anaesthetistId, query, todayISO)
+  const results = useBookingSearch(anaesthetistId, query, todayISO)
   const mode: 'main' | 'day' | 'search' =
     results.query.kind === 'nhi' || results.query.kind === 'name' ? 'search' : dayISO !== null ? 'day' : 'main'
   const shown = results.upcoming.length + results.past.length
@@ -212,9 +212,11 @@ export function ListsScreen({
         {mode === 'day' && dayISO !== null && <WebDayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
         {mode === 'search' && (
           <>
-            <span role="status" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>
-              {shown === 0 ? 'No matches' : searchCountLine(results.total, shown, query)}
-            </span>
+            {shown > 0 && (
+              <span role="status" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>
+                {searchCountLine(results.total, shown, query)}
+              </span>
+            )}
             <button
               type="button"
               onClick={() => onQueryChange('')}

@@ -33,8 +33,8 @@ export type BookingQuery =
 export function foldName(s: string): string {
   return s
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[ʻʼ‘’'`]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u02bb\u02bc\u2018\u2019'\u0060]/g, '')
     .toLowerCase()
     .replace(/[\s-]+/g, ' ')
     .trim()

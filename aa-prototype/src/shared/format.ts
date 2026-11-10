@@ -19,6 +19,16 @@ export function dayMicroCap(dateISO: string): string {
   return format(parseISO(dateISO), 'EEE d MMM').toUpperCase()
 }
 
+/** "Fri 13 Mar 2026": a day with its year, for past work (catch-up Phase 38a). */
+export function dayWithYear(dateISO: string): string {
+  return format(parseISO(dateISO.slice(0, 10)), 'EEE d MMM yyyy')
+}
+
+/** "Friday 13 March 2026": the spoken form, for accessible labels. */
+export function longDay(dateISO: string): string {
+  return format(parseISO(dateISO.slice(0, 10)), 'EEEE d MMMM yyyy')
+}
+
 /** "Tue 21 Jul": the short day used beside warnings, drawers and clearances. */
 export function shortDay(dateISO: string): string {
   return format(parseISO(dateISO.slice(0, 10)), 'EEE d MMM')

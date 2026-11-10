@@ -252,6 +252,7 @@ export {
   authoriseAsSimulatedOffice,
   nextOpenSlotFor,
   officeStandInRefusal,
+  STAND_IN_INCOMPLETE,
   STAND_IN_ASSIGN_CHOICES,
 } from './officeStandIn'
 export {

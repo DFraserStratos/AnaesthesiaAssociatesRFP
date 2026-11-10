@@ -21,6 +21,7 @@ import {
 import { advanceClockDays, advanceClockToNextMorning, resetDemo } from './clockActions'
 import { applyRecurringBookingsToCanvas, editRecurringBooking, addAnaesthetist, addHospitalHoliday } from './mastersActions'
 import { createAvailabilitySeries } from './availabilityActions'
+import { setHorizonMonths } from './slotActions'
 import { authoriseAsSimulatedOffice } from './officeStandIn'
 import type { Actor } from './mutate'
 import { listProgress } from '../domain/listProgress'
@@ -231,10 +232,10 @@ describe('the date lookup (US-03.1.6)', () => {
     ])
   })
 
-  it('listDaysFor marks March 2026 days with Lists, invoiced', () => {
+  it('listDaysFor marks the March 2026 days that hold one of her Lists', () => {
     const days = listDaysFor(store().getState(), ANAE.souter, '2026-03')
     expect(days.map((d) => d.dateISO)).toEqual(['2026-03-03', '2026-03-10', '2026-03-13', '2026-03-18', '2026-03-24', '2026-03-27'])
-    expect(days.every((d) => d.invoiced)).toBe(true)
+    expect(days.every((d) => d.lists === 1)).toBe(true)
   })
 
   it('invoicesForListView lists the pinned List\'s invoices, paid', () => {
@@ -255,7 +256,7 @@ describe('history survives the clock and the canvas', () => {
     return { lists, bookings, procedures }
   }
 
-  it('Next morning, a 30-day jump, a recurring-booking edit and apply, a series save, a holiday and Add anaesthetist leave every backdrop record as seeded', () => {
+  it('Next morning, a 30-day jump, a recurring-booking edit and apply, a series save, a holiday, Add anaesthetist and a horizon change leave every backdrop record as seeded', () => {
     const api = store()
     const before = snapshot(api)
     expect(before.lists.length).toBe(25)
@@ -279,6 +280,9 @@ describe('history survives the clock and the canvas', () => {
       addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, gstPeriod: 'monthly', hpiId: '99KERN', startDateISO: '2026-08-12' } as never).ok,
     ).toBe(true)
     advanceClockDays(api, 30)
+    // The horizon shortened and lengthened again.
+    expect(setHorizonMonths(api, OFFICE, 2).ok).toBe(true)
+    expect(setHorizonMonths(api, OFFICE, 6).ok).toBe(true)
     expect(snapshot(api)).toEqual(before)
   })
 

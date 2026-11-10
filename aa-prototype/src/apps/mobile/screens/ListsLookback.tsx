@@ -8,29 +8,22 @@
  */
 
 import { useMemo, useState } from 'react'
-import { format, parseISO } from 'date-fns'
 import { CalendarDays, ChevronRight, Search, X } from 'lucide-react'
 import { accent, elevation, neutral, radius } from '../../../theme/tokens'
 import { LIST_PROGRESS_LABEL } from '../../../domain/listProgress'
-import {
-  listDaysFor,
-  listsOnDayFor,
-  lookbackBoundsFor,
-  searchBookingsFor,
-  useAppStore,
-  type BookingSearchRow,
-  type LookbackList,
-} from '../../../store'
+import { listDaysFor, listsOnDayFor, useAppStore, type BookingSearchRow, type LookbackList } from '../../../store'
 import { MonthGrid } from '../../../shared/calendar'
 import { monthOf } from '../../../shared/availability/monthCells'
 import { ProgressPill, useBookingWarnings, useSurface, WarningTriangle } from '../../../shared'
-import { ListRow, type ListRowRight } from '../components'
-import { DAY_EMPTY, SEARCH_EMPTY } from '../../../shared/schedule'
-import { locationName, nhiBadge } from '../../../shared/format'
+import { ListRow } from '../components'
+import { listRowModel } from './listRowModel'
+import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
+import { dayWithYear, longDay, nhiBadge, shortDay } from '../../../shared/format'
 
 // ---------------------------------------------------------------------------
 // The header row: search field and calendar button
 // ---------------------------------------------------------------------------
+
 
 export function LookbackSearchRow({
   query,
@@ -41,6 +34,7 @@ export function LookbackSearchRow({
   onQueryChange: (q: string) => void
   onOpenCalendar: () => void
 }) {
+  const [text, setText] = useFieldText(query, onQueryChange)
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
@@ -50,8 +44,8 @@ export function LookbackSearchRow({
           inputMode="search"
           aria-label="Search your Bookings"
           placeholder="Search patient name or NHI"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           data-testid="mobile-lists-search"
           style={{
             width: '100%',
@@ -60,18 +54,18 @@ export function LookbackSearchRow({
             borderRadius: radius.ctl,
             border: `1px solid ${neutral.line}`,
             background: neutral.bg,
-            padding: query !== '' ? '0 44px 0 38px' : '0 14px 0 38px',
+            padding: text !== '' ? '0 44px 0 38px' : '0 14px 0 38px',
             fontFamily: 'inherit',
             fontSize: 15,
             color: neutral.ink,
             appearance: 'none',
           }}
         />
-        {query !== '' && (
+        {text !== '' && (
           <button
             type="button"
             aria-label="Clear search"
-            onClick={() => onQueryChange('')}
+            onClick={() => setText('')}
             style={{ position: 'absolute', right: 2, top: 2, width: 44, height: 44, border: 'none', background: 'none', color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
             <X size={18} aria-hidden />
@@ -121,10 +115,10 @@ export function LookbackDateSheet({
 
 function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anaesthetistId: string; todayISO: string; selectedISO: string | null; onPick: (d: string) => void }) {
   const schedule = useAppStore((s) => s.schedule)
-  const clock = useAppStore((s) => s.clock)
-  const appSettings = useAppStore((s) => s.appSettings)
-  const bounds = useMemo(() => lookbackBoundsFor({ schedule, clock, appSettings }, anaesthetistId), [schedule, clock, appSettings, anaesthetistId])
-  const start = selectedISO ?? todayISO
+  const bounds = useLookbackBounds(anaesthetistId)
+  // A `?day=` outside the bounds opens on the nearest month that has a tab stop.
+  const wanted = selectedISO ?? todayISO
+  const start = wanted < bounds.firstISO ? bounds.firstISO : wanted > bounds.lastISO ? bounds.lastISO : wanted
   const [monthISO, setMonthISO] = useState(monthOf(start))
   const days = useMemo(() => new Map(listDaysFor({ schedule }, anaesthetistId, monthISO).map((d) => [d.dateISO, d])), [schedule, anaesthetistId, monthISO])
 
@@ -143,7 +137,7 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
         onPickDay={onPick}
         dayLabel={(d) => {
           const n = days.get(d)?.lists ?? 0
-          return `${format(parseISO(d), 'EEEE d MMMM yyyy')}, ${n === 0 ? 'no Lists' : `${n} ${n === 1 ? 'List' : 'Lists'}`}`
+          return `${longDay(d)}, ${n === 0 ? 'no Lists' : `${n} ${n === 1 ? 'List' : 'Lists'}`}`
         }}
         renderDay={(d, { today }) => {
           const has = days.has(d)
@@ -168,26 +162,19 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
 
 /** "Fri 13 Mar 2026" with a close glyph: one teal chip that ends the day view. */
 export function DayChip({ dateISO, onClose }: { dateISO: string; onClose: () => void }) {
-  const label = format(parseISO(dateISO), 'EEE d MMM yyyy')
+  const label = dayWithYear(dateISO)
   return (
     <button
       type="button"
       data-testid="mobile-lists-day-chip"
-      aria-label={`${format(parseISO(dateISO), 'EEEE d MMMM yyyy')}. Close the day and go back to your Lists`}
+      aria-label={`${longDay(dateISO)}. Close the day and go back to your Lists`}
       onClick={onClose}
-      style={{ height: 38, minWidth: 44, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 16px', borderRadius: 999, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+      style={{ height: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 16px', borderRadius: 999, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
     >
       <span className="mono">{label}</span>
       <X size={16} strokeWidth={2.4} aria-hidden />
     </button>
   )
-}
-
-/** A day row's right-hand cluster: progress from the one label source, or the Booking count for upcoming work. */
-function dayRowRight(l: LookbackList, incomplete: number): ListRowRight {
-  if (l.progress === 'toFinish') return { kind: 'toFinish', count: incomplete }
-  if (l.progress === 'upcoming') return { kind: 'count', count: l.bookings.length, statusKey: l.list.kind }
-  return { kind: 'progress', progress: l.progress }
 }
 
 export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList }: { anaesthetistId: string; dateISO: string; todayISO: string; onOpenList: (listId: string) => void }) {
@@ -198,29 +185,22 @@ export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList 
     () => listsOnDayFor({ schedule, masters, appSettings }, anaesthetistId, dateISO, todayISO),
     [schedule, masters, appSettings, anaesthetistId, dateISO, todayISO],
   )
-  const incomplete = (l: LookbackList): number =>
-    Object.values(schedule.bookings).filter((b) => b.listId === l.list.id && b.cancellation === undefined && !b.completed).length
+  const active = (listId: string) => Object.values(schedule.bookings).filter((b) => b.listId === listId && b.cancellation === undefined)
   return (
-    <section aria-label={`Lists on ${format(parseISO(dateISO), 'EEEE d MMMM yyyy')}`} data-shot="mobile-lookback-day">
+    <section aria-label={`Lists on ${longDay(dateISO)}`} data-shot="mobile-lookback-day">
       {day.length === 0 && <div style={{ marginTop: 20, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>{DAY_EMPTY}</div>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-        {day.map((l) => {
-          const isPreop = l.list.kind === 'preop'
-          const hospital = locationName(l.list.hospitalId, masters.hospitals)
-          const surgeon = masters.surgeons[l.list.surgeonId]
-          const n = l.bookings.length
-          const right = dayRowRight(l, incomplete(l))
+        {day.map((l: LookbackList) => {
+          // The same row the main view draws for this List.
+          const model = listRowModel(l.list, active(l.list.id), l.progress, masters)
           return (
             <ListRow
               key={l.list.id}
               statusKey={l.list.kind}
               session={l.list.session}
               time={l.startTime}
-              title={isPreop ? 'Pre-op assessment' : hospital}
-              subtitle={[isPreop ? hospital : surgeon?.name, `${n} ${n === 1 ? 'booking' : 'bookings'}`].filter(Boolean).join(' · ')}
-              right={right}
+              {...model}
               listId={l.list.id}
-              quiet={l.progress === 'submitted'}
               onClick={() => onOpenList(l.list.id)}
             />
           )
@@ -228,12 +208,6 @@ export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList 
       </div>
     </section>
   )
-}
-
-export function useBookingSearch(anaesthetistId: string, rawQuery: string, todayISO: string) {
-  const schedule = useAppStore((s) => s.schedule)
-  const masters = useAppStore((s) => s.masters)
-  return useMemo(() => searchBookingsFor({ schedule, masters }, anaesthetistId, rawQuery, todayISO), [schedule, masters, anaesthetistId, rawQuery, todayISO])
 }
 
 export function LookbackResults({
@@ -277,7 +251,7 @@ function GroupHeading({ children }: { children: string }) {
 /** A Booking found by search, in the List row's anatomy (a button; the triangle is an image). */
 function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: string, bookingId: string) => void }) {
   const warnings = useBookingWarnings(row.bookingId)
-  const when = format(parseISO(row.dateISO), 'EEE d MMM')
+  const when = shortDay(row.dateISO)
   const subtitle = [when, row.session, row.hospitalName, row.procedureNames[0]].filter(Boolean).join(' · ')
   const nhi = nhiBadge(row.nhi).text
   const progress = row.progress === 'upcoming' ? '' : LIST_PROGRESS_LABEL[row.progress]

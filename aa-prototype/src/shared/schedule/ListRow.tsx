@@ -46,8 +46,6 @@ interface ListRowProps {
    * normal tap target and still editable; only the weight and lift drop.
    */
   quiet?: boolean
-  /** A capture hook on the row (`data-shot`). */
-  shot?: string
 }
 
 function Chevron() {
@@ -143,7 +141,6 @@ export function ListRow({
   listId,
   badge,
   quiet = false,
-  shot,
 }: ListRowProps) {
   const resolved = useDisplayStatus(statusKey)
   const c = resolved.visual
@@ -171,7 +168,6 @@ export function ListRow({
       data-slot-id={slotId}
       data-list-id={listId}
       data-quiet={quiet ? 'true' : undefined}
-      data-shot={shot}
       style={{
         display: 'flex',
         alignItems: 'center',

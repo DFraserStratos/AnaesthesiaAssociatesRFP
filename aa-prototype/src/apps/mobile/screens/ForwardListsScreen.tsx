@@ -25,11 +25,12 @@ import { hasLeftMainView, listProgress } from '../../../domain/listProgress'
 import { isAssignedList } from '../../../domain/draftLists'
 import { mainViewFor, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
-import { dayHeading, drSurname, locationName } from '../../../shared/format'
+import { listRowModel } from './listRowModel'
+import { dayHeading, drSurname } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { resolveDisplayStatus } from '../../../shared'
-import { DayChip, LookbackDayView, LookbackResults, LookbackSearchRow, useBookingSearch } from './ListsLookback'
-import { searchCountLine } from '../../../shared/schedule'
+import { DayChip, LookbackDayView, LookbackResults, LookbackSearchRow } from './ListsLookback'
+import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -149,19 +150,6 @@ export function ForwardListsScreen({
     const forwardTo = format(addDays(parseISO(todayISO), filter === 'month' ? 31 : 7), 'yyyy-MM-dd')
     const view = mainViewFor(slotState, anaesthetistId, todayISO, forwardTo)
 
-    function surgeonLine(l: AssignedList): string {
-      const parts: string[] = []
-      // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
-      const surgeon = l.kind !== 'private' && l.notes !== undefined ? undefined : surgeons[l.surgeonId]
-      if (surgeon !== undefined) {
-        parts.push(surgeon.name)
-        if (surgeon.specialty !== undefined) parts.push(surgeon.specialty)
-      } else if (l.notes !== undefined) {
-        parts.push(l.notes)
-      }
-      return parts.join(' · ')
-    }
-
     /**
      * A session's row, from the one Slot view every app reads (catch-up Phase
      * 28): a List shows as a booked row in place of the status, so an office
@@ -195,29 +183,7 @@ export function ForwardListsScreen({
     }
 
     function listRow(l: AssignedList): Row {
-      const active = activeBookings(l.id)
-      const total = active.length
-      const done = active.filter((c) => c.completed).length
-      const isPreop = l.kind === 'preop'
-      const hospitalName = locationName(l.hospitalId, hospitals)
-      const title = isPreop ? 'Pre-op assessment' : hospitalName
-      const progress = progressOf(l)
-
-      let right: ListRowRight
-      let countInSubtitle = true
-      if (progress === 'toFinish') right = { kind: 'toFinish', count: total - done }
-      else if (progress === 'upcoming') {
-        right = { kind: 'count', count: total, statusKey: l.kind }
-        countInSubtitle = false
-      } else right = { kind: 'progress', progress }
-
-      const base = isPreop ? hospitalName : surgeonLine(l)
-      const unit = isPreop ? 'appointments' : 'bookings'
-      const subtitle = countInSubtitle
-        ? [base, `${total} ${total === 1 ? unit.replace(/s$/, '') : unit}`].filter(Boolean).join(' · ')
-        : base || undefined
-
-      const time = timesForList(slotState, l).startTime
+      const model = listRowModel(l, activeBookings(l.id), progressOf(l), { hospitals, surgeons })
       return {
         key: l.id,
         slotId: l.slotId,
@@ -227,12 +193,9 @@ export function ForwardListsScreen({
         statusKey: l.kind,
         variant: 'default',
         session: l.session,
-        time,
-        title,
-        subtitle,
-        right,
+        time: timesForList(slotState, l).startTime,
+        ...model,
         onClick: () => onOpenList(l.id),
-        quiet: progress === 'submitted',
       }
     }
 
@@ -325,9 +288,9 @@ export function ForwardListsScreen({
       </div>
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', minHeight: 38, padding: '12px 20px 10px', flex: 'none' }}>
-        {mode === 'search' && (
+        {mode === 'search' && shown > 0 && (
           <div role="status" data-testid="mobile-lists-search-count" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>
-            {shown === 0 ? 'No matches' : searchCountLine(results.total, shown, query)}
+            {searchCountLine(results.total, shown, query)}
           </div>
         )}
         {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
@@ -421,7 +384,8 @@ export function ForwardListsScreen({
             </button>
           )}
           {todaySection !== undefined && renderRows(todaySection.rows)}
-          {forward.length === 0 && (
+          {/* To-Do and Done count earlier Lists too: empty only when both parts are. */}
+          {forward.length === 0 && (filter === 'week' || filter === 'month' || earlierCount === 0) && (
             <div style={{ marginTop: 20, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>{EMPTY_FORWARD[filter]}</div>
           )}
           {laterSections.map((section) => (
