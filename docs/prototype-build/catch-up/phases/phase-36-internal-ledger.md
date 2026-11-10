@@ -118,7 +118,7 @@ held for anaesthetists).
   link to, and the invoice numbering and presentation (the former DM-27, now DM-22). The split is a
   Booking action (the Split button on a Procedure's Contract line, D18, RV-37; no Contract setting):
   a split gives two invoices, so two pairs and two BCTIs.
-- **Phase 25:** invoices are built only from the AUTHORISED lock, the pricing snapshot per Procedure
+- **Phase 25:** invoices are built only from the AUTHORISED lock, the pricing snapshot per Procedure (AR-58 2.8)
   (`Invoice.lockedFrom`), and the payee anaesthetist is stamped at authorise
   (`BillingCase.payeeAnaesthetistId` from `lock.payee`), which becomes the pair's payee.
 - **Phase 27** (rebuilt for D38, 2026-10-19): the office starts a prepayment by picking a Contract
@@ -141,9 +141,9 @@ held for anaesthetists).
   the legs 27 and 27a wrote into ledger records, in the same places.
 - Through them: 14's trigger registry and actors, 15's Booking vocabulary (`casesForBooking`,
   `handoffCasesForBooking` and the other Card names are already renamed), 15a's warning routine (27's
-  prepayment warning reads the status re-pointed here), 21's who is billed (the Contract holder's
-  billable party when the holder pays, otherwise the payer on the Booking: the receivable's
-  counterparty), 23's per-Procedure units on invoice lines, 24's one price precedence with its recorded
+  prepayment warning reads the status re-pointed here), 21's who is billed (the holder Party of the
+  Contract when the holder pays, otherwise the payer on the Booking: the receivable's counterparty;
+  flat Contract model, D1 to D11, no Contract lines, versions or staged changes), 23's per-Procedure units on invoice lines, 24's one price precedence with its recorded
   price source, and 26's disbursement destination and `missingBank` flag (display only: 26 holds no
   payment back).
 
@@ -228,7 +228,7 @@ read the same after the change, and a parity test proves it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the items it leans on against the plan's
-   baseline, catalogue commit `a68f09b` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -247,7 +247,7 @@ read the same after the change, and a parity test proves it.
    it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
    that in the PROGRESS entry.
 
-   Already folded into this plan (the `3d3a18c` to `a68f09b` changes, so not drift):
+   Already folded into this plan (the `3d3a18c` to `efe123c` changes, so not drift):
    - the six covered items changed only in artifact links (AR-19, AR-25) and link markup, as did
      US-08.3.1, US-09.1.1, US-09.1.4, US-09.2.1, US-10.1.2, FT-06.3 and FT-10.2;
    - the prepayment rewrite: US-06.2.3 (an estimate) and US-06.4.2 (no automatic credit) Retired;
@@ -268,7 +268,7 @@ read the same after the change, and a parity test proves it.
      prototype), US-13.2.2's patient-centric balance, DM-23's two ledger scopes, US-10.2.5 with OQ-71
      (outside the system), Greg's view on OQ-60 (16 built it) and US-13.5.2's audit scope (DM-45,
      Phase 39).
-   Folded in at `a68f09b` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
+   Folded in at `efe123c` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
    final invoice with nothing deducted, D57; a prepayment's payable is to the AA Holding account, a creditor
    in the payables sub-ledger, and its release at authorisation is a journal transfer, never a receivable);
    FT-06.5, US-06.5.1 and US-06.4.1 (the account, the transfer, system-only payouts); US-06.3.1 (the approval
@@ -276,7 +276,10 @@ read the same after the change, and a parity test proves it.
    extended 2026-10-28 (D38: the pair is created at generation, a move changes nothing, no payee repoint),
    OQ-116 (D57), OQ-125 (D72, the transfer's trigger, open) and OQ-115 (a cancellation refund is paid from
    the system, Phase 41's).
-   Folded in at `a68f09b` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
+   Folded in at `efe123c` (so not drift): none of the covered items changed; the 5 November contract
+   model decisions (D1 to D11, the flat model) reach this phase only through who is billed (the holder
+   Party or the payer) and the snapshot (AR-58 2.8; AR-28, AR-29 and AR-30 are Retired, the flat ERD is AR-61).
+   Folded in at `efe123c` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
    anaesthetists are made in Xero's payables run and recorded here when detected (Phase 37 builds the
    detection); the ledger side of a disbursement is unchanged. The refund on a cancelled prepayment is
    raised by the system (Phase 41) and paid in Xero.
@@ -388,11 +391,11 @@ read the same after the change, and a parity test proves it.
   diagrams [AR-25](../../../../requirements-board/requirements/artifacts/AR-25.md) (regions
   `ledger-pair`, `ledger-views`, `accrec-accpay`, `payable-release`, `payables-run` and
   `payment-cycle`) and [AR-19](../../../../requirements-board/requirements/artifacts/AR-19.md)
-  `#ledger`; for context only, the draft technical design
-  [AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md) `#pricing-snapshot` and
-  `#prepayment` (where Phases 25 and 27 hold the payee and the prepayment link; a v5 may move them, so
-  this phase reads them only through 25's and 27's types in `src/domain/billing`, never the draft's
-  shapes, and builds no pricing structure of its own); and `domain-model.md` ("Internal ledger" and the glossary rows "Internal ledger",
+  `#ledger`; for context only, the contract model proposal
+  [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) 2.8 (the pricing snapshot) and
+  the flat ERD [AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) (where Phases 25
+  and 27 hold the payee and the prepayment link; this phase reads them only through 25's and 27's types in
+  `src/domain/billing` and builds no pricing structure of its own); and `domain-model.md` ("Internal ledger" and the glossary rows "Internal ledger",
   "ACCREC / ACCPAY", "AA fee", "Trust account" and "Negative invoice").
 - **Gap analysis:**
   - `GAP-ANALYSIS.md`: "At a glance" and the Summary, themes 7 (ledger payable, credit and
@@ -1567,7 +1570,7 @@ explicitly supersedes.
   - the screens: `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId` (office), web
     Accounts and mobile Balances (Dr Souter).
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result against `a68f09b`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
+  - the drift-check result against `efe123c`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
     OQ-61, OQ-70, OQ-71, OQ-73, OQ-76, OQ-80) and how the open questions were handled (OQ-29, OQ-47
     Proposed, OQ-60);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item

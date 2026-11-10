@@ -20,6 +20,7 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   sources: ['Fixture'],
   file: `artifacts/files/${over.id}.pdf`,
   regions: [],
+  steps: [],
   description: '',
   source: '',
   extra: {},
@@ -74,7 +75,7 @@ function catalogue() {
     artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-client-meeting-with-sam.md' }),
     artifact({ id: 'AR-09', kind: 'note', file: 'notes/2026-09-24-source-notes.md', citedAs: [cite('Q&A 2026-09-24', { within: 'qa-with-sam-2026-09-24' }), cite('Meeting notes 2026-09', { within: 'future-state-diagrams-supplied' })] }),
     artifact({ id: 'AR-04', kind: 'transcript', file: 'artifacts/files/t.md', sources: ['Recording 2026-10-01 · Client meeting with Sam (A)'], citedAs: [cite('Recording 2026-10-01 · Client meeting with Sam (A)'), cite('Transcript 2026-10-01 · Client meeting with Sam (A)')] }),
-    artifact({ id: 'AR-20', kind: 'diagram', file: 'artifacts/files/AR-20.svg', status: 'Superseded', supersededBy: 'AR-24', regions: [{ id: 'old-only', name: 'Old', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Billing route', { spot: 'old-only' })] }),
+    artifact({ id: 'AR-20', kind: 'diagram', file: 'artifacts/files/AR-20.svg', status: 'Retired', supersededBy: 'AR-24', regions: [{ id: 'old-only', name: 'Old', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Billing route', { spot: 'old-only' })] }),
     artifact({ id: 'AR-24', kind: 'diagram', file: 'artifacts/files/AR-24.svg', regions: [{ id: 'setup', name: 'Order setup', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Setup', { spot: 'setup' })] }),
     artifact({ id: 'AR-16', citedAs: [cite('Data files')] }),
     artifact({ id: 'AR-40', kind: 'document', file: 'artifacts/files/AR-40.pdf', status: 'Retired', citedAs: [cite('Technical design v6')] }),
@@ -137,7 +138,7 @@ describe('resolving a source', () => {
     expect(at('RFP responses are great').kind).toBe('unresolved')
   })
 
-  it('hands a superseded artifact on to its replacement, dropping a spot the replacement lacks', () => {
+  it('hands a retired artifact on to its replacement, dropping a spot the replacement lacks', () => {
     expect(at('Diagram: Billing route')).toMatchObject({ id: 'AR-24', spots: [{ region: null, label: null }] })
   })
 
@@ -192,6 +193,25 @@ describe('the check on sources', () => {
       'error AR-01: cited_as "Spec" is also claimed by AR-02',
       'error AR-02: cited_as "Spec" is also claimed by AR-01',
     ])
+  })
+})
+
+describe('a step as a cited spot', () => {
+  const steps = [{ id: 'paid-in', name: 'Paid in', group: '', caption: '', show: ['#paid'], highlight: [], moves: [], balances: [] }]
+  const old = artifact({ id: 'AR-30', kind: 'diagram', file: 'artifacts/files/AR-30.svg', status: 'Retired', supersededBy: 'AR-31', steps, citedAs: [cite('Diagram: Old flow', { spot: 'paid-in' })] })
+  const flow = artifact({ id: 'AR-31', kind: 'diagram', file: 'artifacts/files/AR-31.svg', steps, citedAs: [cite('Diagram: Order flow', { spot: 'paid-in' }), cite('Diagram: Wrong', { spot: 'nope' })] })
+  const index = buildSourceIndex([old, flow], () => ({ pages: null, headings: null, points: null, lines: null }))
+
+  it("opens a step that cited_as names, by the step's name, and keeps it across a supersede", () => {
+    expect(resolveSource(index, 'Diagram: Order flow')).toMatchObject({ id: 'AR-31', spots: [{ region: 'paid-in', label: 'Paid in', problem: null }] })
+    expect(resolveSource(index, 'Diagram: Old flow')).toMatchObject({ id: 'AR-31', spots: [{ region: 'paid-in', label: 'Paid in' }] })
+  })
+
+  it('takes a step as a cited_as spot in the check, and still flags a spot that is neither region nor step', () => {
+    const issues = checkCatalogue({ items: [], questions: [], artifacts: [old, flow], artifactFacts: () => ({ format: 'svg', ok: true, bounds: null }) })
+      .filter((i) => /cited_as/.test(i.message))
+      .map((i) => `${i.severity} ${i.id}: ${i.message}`)
+    expect(issues).toEqual(['error AR-31: cited_as "Diagram: Wrong": spot "nope" is not a region of AR-31'])
   })
 })
 

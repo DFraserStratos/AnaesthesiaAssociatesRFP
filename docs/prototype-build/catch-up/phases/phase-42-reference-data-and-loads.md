@@ -1,88 +1,97 @@
 # Phase 42 · Reference data and controlled loads
 
 **Requirements covered:**
-[US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) Maintain reference tables (status 4; closes the rows Phases 17, 18, 19, 19b, 29 and 30 did not: hospital retire, the master public-holiday calendar, and one consistent pattern across every master, which now lists contract holders, insurers among them (Greg 2026-10-28: insurers are "just an instance of contract holders"; no insurer master); its "recurring bookings" row is Phase 30's rename and editor, refitted here. A Contract change is a new dated version, never an edit in place (25's staged review). Greg would call these master data, not reference tables (2026-10-02 #39): the app says "Master data" only) ·
+[US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) Maintain reference tables (status 3, back to Verify 5 November; closes the rows Phases 17, 18, 18a, 19, 19b, 29 and 30 did not: hospital retire, the master public-holiday calendar, and one consistent pattern across every master. The list now names Parties (insurers and funders among them; Greg 2026-10-28: insurers are "just an instance of contract holders", so no insurer master), specialties and funding tags (18a), and Contracts with their price ranges (18, 19a). Its "recurring bookings" row is Phase 30's rename and editor, refitted here. A Contract change is an audited edit and a fixed price changes through a price range, never a new version. Greg would call these master data, not reference tables (2026-10-02 #39): the app says "Master data" only) ·
 [US-13.4.2](../../../../requirements-board/requirements/stories/US-13.4.2.md) Clean-cut start, not a full migration (status 4; unchanged in substance) ·
-[US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) Reference data loaded at cutover (status 1; retitled 2026-10-16 and 2026-10-20: a one-off data load, expected to cover hospitals, surgeons and rooms, RVG groups with base units, modifiers, contract holders, Contracts and their lines, and anaesthetists; exactly what is loaded, and from what source, is not yet clear; **no procedure list**; seeded once by a developer, then changed by hand; the Solutions Plus names paragraph is gone; repeatable so a test system can be wiped and reloaded; AR-29 `data-loading` has AA preparing every master in AA-defined templates; **Ben's specialist list arrived 3 November** and "may contain some inaccuracies": it has no HPI CPNs or registration numbers and some rows have no title or surname, so the surgeons and rooms sheets take its shape, OQ-129) ·
-[DM-38](../analysis/domain-model-delta.md#dm-38) Reference data: a master public-holiday calendar and spreadsheet-loaded masters, the Contract schedule upload Future Work (the statutory calendar and the seed loads; Phase 30 built the hospital-calendar half and the recurring-booking rename, Phase 31 the recurring clash that becomes a Draft List).
+[US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) Reference data loaded at cutover (status 1; changed 5 November: a developer loads the starting data once, repeatably, and it is then changed by hand on screen. It is expected to cover hospitals, surgeons with their specialties and rooms, RVG groups with base units, modifiers, Parties, specialties and funding tags, Contracts one per priced item with their price ranges, and anaesthetists; exactly what is loaded, and from what source, is not yet clear; **no procedure list**; the Contract export and re-import is Future Work. **Ben's specialist list arrived 3 November** and "may contain some inaccuracies": it has no HPI CPNs or registration numbers and some rows have no title or surname, so the surgeons and rooms sheets take its shape, OQ-129) ·
+[DM-38](../analysis/domain-model-delta.md#dm-38) Reference data: a master public-holiday calendar and spreadsheet-loaded masters, the Contract upload and export Future Work (the statutory calendar and the seed loads; Phase 30 built the hospital-calendar half and the recurring-booking rename, Phase 31 the recurring clash that becomes a Draft List).
 Also touches, without closing:
 [FT-13.4](../../../../requirements-board/requirements/stories/FT-13.4.md) (the feature; its RFP-response ETL migration is narrowed to the clean cut),
+[US-13.4.4](../../../../requirements-board/requirements/stories/US-13.4.4.md) (specialties) and [US-13.4.5](../../../../requirements-board/requirements/stories/US-13.4.5.md) (funding tags): 18a built their masters and editors; they are refitted to the one pattern and loaded here,
+[US-13.6.6](../../../../requirements-board/requirements/stories/US-13.6.6.md) (a surgeon's specialties, required; 18a),
 [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) (RVG groups, the one master list with a hidden key and no procedure list; a load target, Phase 19 built them),
 [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) (Verify; "Admins load the modifier list as master data": the RVG table from AR-34's files plus AA's own, Phase 19b built it; AA's rows become loadable, editable and retirable here),
-[US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md), [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) and [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (contract holders, insurers among them, each with a delivery setting and a practitioner link, Contract lines and the anaesthetists' own fixed-price Contracts become load targets; Phases 18 and 19a built them),
-[US-04.2.13](../../../../requirements-board/requirements/stories/US-04.2.13.md) (Future Work: the Contract schedule upload is **not** built; the seed load is separate from it, D34),
+[US-04.1.5](../../../../requirements-board/requirements/stories/US-04.1.5.md) (Parties, insurers and funders among them, each with a delivery setting; 18 built them), [US-04.2.15](../../../../requirements-board/requirements/stories/US-04.2.15.md) (price ranges), [US-04.2.16](../../../../requirements-board/requirements/stories/US-04.2.16.md) and [US-04.2.17](../../../../requirements-board/requirements/stories/US-04.2.17.md) (a Contract's specialties and funding tag), [US-04.2.18](../../../../requirements-board/requirements/stories/US-04.2.18.md) (holder reference code, invoice description, default RVG code) and [US-04.2.14](../../../../requirements-board/requirements/stories/US-04.2.14.md) (an anaesthetist's price list, one prepaid Contract per item): all load targets, built by 18 and 19a,
+[US-04.2.13](../../../../requirements-board/requirements/stories/US-04.2.13.md) (Future Work: the Contract upload and export is **not** built; the seed load is separate from it, D34),
 [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) (Confirmed; the RVG time tiers, held as data by 19a, become editable here; a part interval always rounds up),
 [US-01.5.1](../../../../requirements-board/requirements/stories/US-01.5.1.md) (Confirmed; each hospital keeps its own calendar, and public holidays move out of it),
 [US-01.3.2](../../../../requirements-board/requirements/stories/US-01.3.2.md) (Verify; recurring bookings, refitted to the one pattern and counted in retire blockers).
 **Left this phase on 2026-10-08:** [US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md) and
 [FT-04.4](../../../../requirements-board/requirements/stories/FT-04.4.md) (Retired: there are no default RVG Contracts) and
 [US-04.2.12](../../../../requirements-board/requirements/stories/US-04.2.12.md) (Retired: the Contract has no payment setting;
-the split is a Booking action). **Left this phase by 2026-10-20:** [US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md) (Retired: there is no procedure list, so nothing here loads or maintains procedures or general procedures). **Left this phase on 2026-10-28:** [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md) (Retired: there is no insurer master and no direct-claims flag; insurers are contract holders, edited in 18's holder panel and loaded by the holders sheet here). **Joined:** none; [US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) (Phase 25's staged Contract changes) is the review every Contract edit made on these screens goes through. No RV finding is closed here.
+the split is a Booking action). **Left by 2026-10-20:** [US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md) (Retired: there is no procedure list). **Left on 2026-10-28:** [US-11.4.1](../../../../requirements-board/requirements/stories/US-11.4.1.md) (Retired: no insurer master; insurers are Parties). **Left on 2026-11-10:** [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) (Contract lines, Retired: each priced item is its own Contract) and [US-04.1.6](../../../../requirements-board/requirements/stories/US-04.1.6.md) (staged Contract changes, Retired: Contracts are edited in place and audited, so there is no review dashboard to go through and no dependency on 25). **Joined:** none. No RV finding is closed here.
 
-**Decisions and questions** (ROADMAP.md owner decisions table, as re-read on 2026-10-20):
-- **D34** ([OQ-100](../../../../requirements-board/requirements/questions/OQ-100.md), still open; Greg's position moved to header and lines, a staged
-  review, Alter or Replace): built as its default. The first release is a **developer-run seed load
-  plus office screens**, and every Contract edit afterwards is staged and reviewed on 25's dashboard,
-  which is the second-person check on screen; **no in-app Contract schedule upload** (US-04.2.13 is
-  Future Work). This phase builds the loader as a demo stand-in for the developer's one-off seed (work
-  items 4 to 10 and 13) and the office maintains every master by hand. It builds no check of its own:
-  the earlier "Checked by" mark and its provisional note are gone. Logged on the owner's review list.
-- **D55** ([OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), answered in part 2026-10-28): built as
-  answered. Insurers are contract holders like any other: no insurer master, no direct-claims flag, no
-  pre-fill. Each holder carries how its invoices are delivered (18; 22 reads it), and the holders
-  sheet loads it. **Open:** what outputs exist beyond email and portal; built as those two (email the
-  default) and logged on the owner's review list.
+**Decisions and questions** (ROADMAP.md owner decisions table, as re-read on 2026-11-10; Donald's 5 November decisions D1 to D11 are made for the build, not yet confirmed by AA or Greg):
+- **D34** ([OQ-100](../../../../requirements-board/requirements/questions/OQ-100.md), **answered 2026-11-05**, Donald's D10): built as answered. The
+  first release is a **developer-run cutover load plus office screens**; there is **no in-app Contract
+  upload or export** (US-04.2.13 is Future Work) and **no staged review** (US-04.1.6 Retired). Contracts
+  are edited in place and audited (18), a fixed price changes by adding a price range (19a). This phase
+  builds the loader as a demo stand-in for the developer's one-off load (work items 4 to 10 and 13) and
+  the office maintains every master by hand. Ben and Vanessa's wish for a safe copy outside the system
+  is met by the system itself being the source of truth, backed up by its hosting (Donald): nothing to
+  build.
+- **D55** ([OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), open; **provisional**): delivery is held on the **Party** (18; 22 reads
+  it): email or post, no portal value until OQ-114 names one, so the Parties sheet loads those two; a blank
+  is not set, and 18's guard asks for it once a Contract bills the Party. Logged on the owner's review list.
 - **D75** ([OQ-128](../../../../requirements-board/requirements/questions/OQ-128.md), answered 2026-11-04, Donald for the build):
   a surgeon belongs to one or more rooms, built as answered (17a made `Surgeon.roomIds` a list, the first
-  the main room). The surgeons sheet loads a surgeon at **each room listed**; no note, no second-room
-  workaround.
-- **D76** ([OQ-129](../../../../requirements-board/requirements/questions/OQ-129.md), open; the list carries no HPI CPNs and some rows lack a title
+  the main room). The surgeons sheet loads a surgeon at **each room listed**.
+- **D76** ([OQ-129](../../../../requirements-board/requirements/questions/OQ-129.md), open; **provisional**; the list carries no HPI CPNs and some rows lack a title
   or surname): built as its default, the catalogue as written. A surgeon's HPI CPN stays required
   (US-13.6.2), so the surgeons sheet rejects a row with no HPI CPN, or with a first name only, and
   lists it with its reason. One validator (17's), so "load now, require it before the first Booking"
   stays a small change. Logged on the owner's review list.
 - **D74** (contacts, provisional, 17a): practice manager and PA contacts are entered by hand; **no
   contacts sheet**.
-- **Answered, and built as answered (no label):**
-  - **D12 superseded** ([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md), with [OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md)): base units live on the **RVG
-    group** and a **Contract line** may override them; there is no procedure list and no default RVG
-    Contract. So the RVG groups sheet loads group figures and the Contract lines sheet line figures.
-  - **D16**: a loaded Contract's code comes from 18's `nextAaCode`, never the sheet.
-  - **D17 superseded**: who is billed is the contract holder's setting, so the holders sheet loads
-    "Holder is billed" and its billable party; nothing on the hospital row decides it.
-  - **D18 superseded**: the split is a Booking action (Phase 22); no sheet
-    carries a split or share.
-  - **D2 superseded**: an insurer is a contract holder, and the **insurance indication** on the
-    Booking (OQ-93, Phase 21) never decides who is billed.
-  - **D32** ([OQ-98](../../../../requirements-board/requirements/questions/OQ-98.md), answered): a Contract row with no lines loads as a plain RVG
-    Contract of its holder, offered by the Booking's context with no test for a line.
-  - **D42** (OQ-91): the office keeps the anaesthetists' own fixed-price Contracts, so a first-party
-    holder, its Contract and its lines load through the same sheets as any other.
-  - **D45** (OQ-48): the procedure date decides the Contract version in force; a loaded Contract's
-    Valid from is the sheet's.
+- **Answered, built as answered (no label):**
+  - **Donald's D1 and the plan's D77, flat Contracts** ([OQ-131](../../../../requirements-board/requirements/questions/OQ-131.md)): one Contract per priced item, no lines, versions or staged
+    changes. So the Contracts sheet is one row per item and the price ranges sheet adds ranges to it;
+    the model is [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) with its ERD [AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) (AR-28, AR-29 and AR-30 are Retired: never cited).
+  - **D2, Party**: a Party holds the billing name, delivery and (for a hospital) its hospital; each
+    Contract says whether it bills its holder or the payer. The Parties sheet loads the first; the
+    Contracts sheet the second. Insurers and funders are Parties.
+  - **D3, specialties**: AA's broad specialty list and each surgeon's one or more specialties,
+    **required**; a surgeon row with none is rejected and listed. A Contract carries none or more.
+  - **D4, settings and funding tag**: a Contract's settings include one optional funding tag from AA's list.
+    ACC is a tag, never a kind of Contract.
+  - **D6, price ranges**: a fixed-price Contract has one or more ranges, each a start date (which may be
+    in the past) and a price ex GST; the procedure date picks the range in force. A blank price is not
+    set and 0 is a value, decided by 18's and 19a's validators.
+  - **D12 superseded, and the AA code**: base units live on the RVG group alone; a Contract states
+    none, only a default RVG code. A Contract's AA code is its unique key (US-04.1.4): the sheet may
+    carry it, and a blank takes 18's next code.
+  - **D23, D30 and D64, prepaid**: a prepaid Contract always bills the payer, is a fixed price (or
+    open-price fallback) with ranges above zero and never carries the override. 18's guards refuse
+    the rest, so the sheet shows their words.
+  - **D42 and D48, price lists**: an anaesthetist's price list is one prepaid Contract per item
+    (linked to its anaesthetist) and a surgeon's arrangement one Contract per item linked to its
+    surgeons; both load through the same Contracts sheet as any other.
+  - **D45 superseded** (OQ-48): no versions; a loaded range's start is the sheet's.
+  - **Open-price fallbacks** (18a): the system makes them (18a's `ensureFallbacks`); they are never
+    loaded and a sheet row of pricing kind Open price is rejected.
   - **D25 superseded**: the time rule applies to recorded time only; a part interval always rounds
     up, so the time-rule editor edits tiers only.
   - **D14**: "slot" never reaches app copy.
-  - **US-13.4.3's re-load question is answered by its text**: seeded once by a developer, then changed
-    by hand on screen, repeatable so a test system can be wiped and reloaded. So there is **no office
+  - **US-13.4.3's re-load question is answered by its text**: loaded once by a developer, then
+    changed by hand, repeatable so a test system can be wiped and reloaded. So there is **no office
     "Load from spreadsheet" action**; the loader lives only in a demo-badged **Seed load** view.
 - **Answered, followed as their owning phases built them (no label here):** D35 (OQ-101: an RVG
   group row carries a starting figure and an optional published range; 19) and D11 (OQ-49, NHI: not a
   master). "Whether calendar schedules join the list" is still unclear: the calendars (public and
   hospital holidays) load, and recurring bookings stay hand-made, logged for the owner. What the
   one-off load covers and from what source (US-13.4.3) is open: the loader follows its expected list
-  and AR-29 `data-loading`. OQ-51 (Solutions Plus identifiers) was deleted unanswered.
+  and AR-58 section 8. OQ-51 (Solutions Plus identifiers) was deleted unanswered.
 
 **Depends on:** Phase 17a (a surgeons' room may hold no email or phone, so the rooms sheet accepts a row without them; the room's email helper; `Surgeon.roomIds`, the ordered list the surgeons sheet fills, with `mainRoomOf`), Phase 17 (surgeon profile with its one HPI CPN rule (`normaliseHpiCpn`,
 `isPlausibleHpiCpn`, the duplicate check across surgeons and anaesthetists), surgeons' rooms, surgeon
 groups, hospital contact email, `editHospital`, `isPlausibleEmail`, the `apps/admin/screens/masters/`
-split and the `?view=` search param), Phase 18 (the contract-holder master `ContractHolder` with
-`createContractHolder`, `editContractHolder`, `retireContractHolder` and `validateHolder`; the Contract
-as dated versions with `createContract`, `createContractVersion`, `retireContract`, `termsLocked` and
-the AA code from `nextAaCode`; the one stored No contract (RVG); `createHospital` minting no Contract; insurers as holders with the delivery setting and the practitioner link to one anaesthetist or one or more surgeons, and no insurer master; the organisations master kept behind holders; the
-"Contract holders" tab and `ContractHolderPanel`), Phase 19 (`RvgGroup` with its hidden id, `createRvgGroup` and its refusal sentences, retire and restore, the "RVG groups" tab, `RvgGroupSheet` and the RVG code type-ahead; there is no procedure list), Phase 19a (`ContractLine` with `lineKey`, `referenceCode` and `defaultRvgKey`, `validateContractLine`, `addContractLine`,
-`editContractLine` and `removeContractLine`; plain RVG Contracts; the first-party Contracts with
-`ownFixedPriceFor`; `masters.rvgTimeRule` with `validateRvgTimeRule`, `describeTimeRule` and
+split and the `?view=` search param), Phase 18 (the Party master with its create, edit and save guards in one place and the delivery setting; the flat Contract
+with its AA code, holder reference code, bills holder or payer, links, prepaid, five pricing kinds,
+override setting, Active or Disabled, in-place audited edits and no delete; No contract · RVG held by AA;
+`createHospital` minting no Contract; the Admin Contracts screen), Phase 18a (the specialties list and funding tags masters and editors; `Surgeon` specialties, required, and the
+directory seed mapped to them; each Contract's specialties and tag; `ensureFallbacks`, the system-made
+open-price fallbacks kept in step), Phase 19 (`RvgGroup` with its hidden id, `createRvgGroup` and its refusal sentences, retire and restore, the "RVG groups" tab, `RvgGroupSheet` and the RVG code type-ahead; there is no procedure list), Phase 19a (price ranges: `validatePriceRanges`,
+`addPriceRange`, `editPriceRange`, `deletePriceRange` and `rangeInForce`; the Contract's holder reference code, invoice description and default RVG code; the anaesthetists' price lists as prepaid Contracts; `masters.rvgTimeRule` with `validateRvgTimeRule`, `describeTimeRule` and
 `timeUnitsFromMinutes`, and the read-only `masters-rvg-time-rule` panel it handed here), Phase 19b
 (the `Modifier` master generated from AR-34's files, `addAaModifier`, the band table, the locked age
 and included rules), Phase 29 (the availability status master, nav "Availability statuses",
@@ -90,210 +99,177 @@ and included rules), Phase 29 (the availability status master, nav "Availability
 `conflictFactsFor`, `describeConflict`, `HolidaySheet`, `addHospitalHoliday`,
 `editHospitalHoliday`, `deleteHospitalHoliday`, the hospital month calendar, and recurring bookings
 with their projection). Also relies on 14 (the demo-trigger registry, `useDemoTriggerContext`,
-`store/demoActors.ts`), 20 (the step rail, a working direction, which hides
-retired holders' Contracts), 21 (the payer on the Booking and the insurance indication
-`Booking.insuranceIndication`), 22 (`Contract.invoicing`), 23 (`Contract.isCombination`), 25 (staged Contract changes on its review dashboard, which is the second-person check, D34, and the pricing snapshot, so a master edit never moves an AUTHORISED price), 26 and 28 (`addAnaesthetist` with
+`store/demoActors.ts`), 20 (the step rail, which hides Disabled Contracts), 21 (the payer on the Booking and the Booking's insurer or funder Party), 22 (the layout and delivery read from the Party), 23, 26 and 28 (`addAnaesthetist` with
 its start date, HPI CPN and profile fields, and 28's one generation path), 31 (the Draft List holiday
 warning, the recurring clash that becomes a Draft List, and **AA rooms as a location row in the
 hospitals master**, `Hospital.locationType: 'hospital' | 'aaRooms'` with `HOSP.aaRooms`, never a
-Contract holder or a feed; its handoff asks 42's Hospitals editor to keep it non-deletable and out of
-the holder and feed pickers), 33 (the matching screen's create actions), 34 (the hospitals it appended
+Party or a feed; its handoff asks 42's Hospitals editor to keep it non-deletable and out of
+the Party and feed pickers), 33 (the matching screen's create actions), 34 (the hospitals it appended
 and `INTEGRATED_HOSPITALS`) and, by build order rather than as a formal dependency, **39b** (the
 Contract event fee, `ContractEventFee` in `masters.contractEventFees`, a fixed fee per event type on a
-Contract version; its handoff asks 42's loader to accept it beside Contract lines). Confirm 39b is
-DONE; if it is not, drop the event-fee sheet (work item 8) and log it for Phase 44.
+Contract; its handoff asks 42's loader to accept it beside Contracts). Confirm 39b is
+DONE; if it is not, drop the event-fee sheet (work item 8) and log it for Phase 44. There is no
+dependency on 25: with no versions or staging, 25 only snapshots a Procedure at AUTHORISED.
 **Estimated:** 2 sessions. Session 1 is the model, seed, pure rules and store (work items 1 to 10) and
 stops green with every existing screen still rendering. Session 2 is the screens, the Seed load and
 Go-live views, the triggers, the shots and the demo guide (items 11 to 19).
 **Size warning:** this is a roll-up and sits at the top of two sessions; session 1 in particular is
-heavy (twelve loader specs, the planner refactor and the holiday migration). If session 1 runs long,
+heavy (fourteen loader specs, the planner refactor and the holiday migration). If session 1 runs long,
 end it green after item 7 and start session 2 with items 8 to 10; do not drop a covered target.
 Within session 2, trim in this order if needed, and log each trim for Phase 44: the RVG time rule
 editor (19a's read-only panel stays), the
-collapsible `LoadResultBanner` (keep it static), the public-holiday "Lists affected" column, then
-Organisations retire.
+collapsible `LoadResultBanner` (keep it static), then the public-holiday "Lists affected" column.
 
 ## Goal
 
-Master data has grown one phase at a time. Surgeons, rooms and groups came in 17, contract holders and
-dated Contracts in 18, RVG groups in 19, Contract lines, the anaesthetists' own
-Contracts and the time tiers as data in 19a, modifiers in 19b, availability statuses in 29, holiday
+Master data has grown one phase at a time. Surgeons, rooms and groups came in 17, Parties and flat
+Contracts in 18, specialties and funding tags in 18a, RVG groups in 19, price ranges and the anaesthetists' own
+price lists in 19a, modifiers in 19b, availability statuses in 29, holiday
 editing and recurring bookings in 30. What is left is the part US-13.4.1 names and nobody owns yet,
-a single pattern that makes the whole area feel like one tool, the one-off developer-run seed
-US-13.4.3 now describes, and the clean cut:
+a single pattern that makes the whole area feel like one tool, the one-off developer-run load
+US-13.4.3 describes, and the clean cut:
 
 - **Hospitals** can be edited (17) and now **retired and reinstated**. A rename also renames the
-  hospital's linked contract holder while the holder's name still equals the old hospital name, so
+  hospital's Party while the Party's short name still equals the old hospital name, so
   "change once, reflected everywhere" holds. There is no hospital default Contract to rename (18
   removed them; OQ-78).
-- **Insurers are contract holders** (FT-11.4 and US-11.4.1 Retired 2026-10-28). There is no Insurers
-  view, flag or master list here, and nothing pre-fills "is billed". An insurer is kept in 18's holder
-  panel and loaded by the holders sheet.
+- **Insurers and funders are Parties** (US-11.4.1 Retired 2026-10-28). There is no Insurers
+  view, flag or master list here, and nothing pre-fills "bills its holder". An insurer is kept in 18's Party
+  editor and loaded by the Parties sheet.
 - A **master public-holiday calendar**. One row per statutory or regional holiday, applying to every
   hospital unless a hospital is listed as open that day. The seeded per-hospital Labour Day and
   Canterbury Anniversary rows migrate into it, so each hospital's own calendar holds only its own
   closures (US-13.4.1, US-01.5.1). Public holidays raise conflicts through 30's derived rule.
-- **Retire, never delete, anything referenced by identity.** Hospitals, surgeons, rooms, groups
-  and organisations retire with a stated reason when nothing upcoming depends on them
-  (18 already retires contract holders and Contracts, 19 RVG groups, 29 statuses, 30
-  recurring bookings). AA's own modifiers become editable and retirable here (19b's handoff); the RVG
-  table's rows stay as printed. Pickers stop offering retired records, and every existing reference
-  keeps resolving.
+- **Retire, never delete, anything referenced by identity.** Hospitals, surgeons, rooms and groups
+  retire with a stated reason when nothing upcoming depends on them
+  (18 already disables Contracts, 19 retires RVG groups, 29 statuses, 30 recurring bookings, and 18 and
+  18a keep their own rules for Parties, specialties and funding tags). AA's own modifiers become
+  editable and retirable here (19b's handoff); the RVG table's rows stay as printed. Pickers stop
+  offering retired records, and every existing reference keeps resolving.
 - **One consistent pattern across every view:** grouped sub-nav, the same header, "Show retired", edit
   sheet, retire and reinstate. It is driven by one registry of views, with a test that maps every
-  US-13.4.1 row to a view that can add and edit. The 19a time rule joins it as an editable panel
+  US-13.4.1 row to a view that can add and edit, **Parties, specialties, funding tags and Contracts
+  with their price ranges included** (18's, 18a's and 19a's screens are refitted, never rebuilt). The 19a time rule joins it as an editable panel
   (tiers only; a part interval always rounds up). There is **no "Load from spreadsheet" on the
-  office's views**: the office keeps master data by hand (US-13.4.3). A view whose master the seed
-  loads says so once in its subtitle ("Loaded once at go-live from AA's controlled spreadsheet, then
+  office's views**: the office keeps master data by hand (US-13.4.3). A view whose master the load
+  covers says so once in its subtitle ("Loaded once at go-live from AA's controlled spreadsheet, then
   kept here by hand.").
 - **A seed load, standing in for the developer's one-off import** (US-13.4.3, DM-38,
-  [AR-29 · Data loading](../../../../requirements-board/requirements/artifacts/AR-29.md#data-loading)). One
+  [AR-58 section 8](../../../../requirements-board/requirements/artifacts/AR-58.md) seed mapping). One
   loader with a spec per master: hospitals; hospital holidays and public holidays (the calendars, so a
-  test system loads the same way again); surgeons' rooms; surgeons; anaesthetists; **RVG groups with
-  their base units** (no procedure list, so no general procedures); AA's own modifiers; **contract
-  holders** (kind, "is billed", delivery setting, practitioner link to one anaesthetist or one or more surgeons); **Contracts** with their settings (editable,
-  prepaid; no kinds) and **standalone Contract lines** (line key, default RVG code, price, rate,
-  discount, units; a blank cell is not set and 0 is zero); and the Contract event fees 39b added. A
-  load is checked first: every row is validated with the same rules as the manual add, and a result
-  panel lists valid rows and rejected rows with reasons. Then it is loaded: one audited `mutate()`
-  loads exactly the valid rows, and rejected rows never touch master data (US-13.4.3 AC1). The same
-  sheets loaded after a Reset give identical records (AC2). It lives in a **Seed load** view,
-  demo-badged as the developer's step, never in an office screen. There is **no Contract schedule
-  upload** (D34, US-04.2.13 Future Work).
-- **Contract edits after the seed are staged and reviewed** (D34's default, 25). The seed creates
-  Contracts and lines directly, as the developer's one-off step. After it, every edit to a Contract's
-  header or lines, from any Master data screen, is a staged change on 25's review dashboard,
-  submitted as a new dated version: that review is the second-person check on screen. This phase
-  builds no check of its own.
+  test system loads the same way again); surgeons' rooms; surgeons **with their specialties**;
+  anaesthetists; **specialties and funding tags**; **RVG groups with their base units** (no procedure
+  list, so no general procedures); AA's own modifiers; **Parties** (kind, billing name, delivery, a
+  hospital Party's hospital); **Contracts, one per priced item** (AA code, name, holder, holder
+  reference code, invoice description, default RVG code, bills holder or payer, Payment type, pricing
+  kind, rate or discount, the override setting, funding tag, specialties, linked surgeons or
+  anaesthetist, and a fixed price's first range) with **price ranges** added beyond the first (a blank
+  cell is not set and 0 is a value, as 18's and 19a's validators decide); and the Contract event fees 39b
+  added. A load is checked first: every row is validated with the same rules as the manual add, and a
+  result panel lists valid rows and rejected rows with reasons. Then it is loaded: one audited
+  `mutate()` loads exactly the valid rows, and rejected rows never touch master data (US-13.4.3 AC1).
+  The same sheets loaded after a Reset give identical records (AC2). It lives in a **Seed load** view,
+  demo-badged as the developer's step, never in an office screen. There is **no Contract upload or
+  export** (D34, US-04.2.13 Future Work), and the system-made open-price fallbacks (18a) follow the load
+  automatically: they are never a sheet.
+- **Contract edits after the load are in place and audited** (D34 answered, 18). There is no staging, no
+  review dashboard and no "New version": the Contracts view saves an edit straight away, a fixed price
+  changes by adding a price range (19a), and 25 keeps each Contract's history. This phase builds no check of its own.
 - **A clean-cut go-live demo** (US-13.4.2). A Solutions Plus operation list, names only, sits beside
   AA's decisions and the controlled spreadsheets. US-13.4.3 no longer says the names seed a master
-  and there is no procedure list, so the demo matches each name to a Contract line's description
+  and there is no procedure list, so the demo matches each name to a Contract's invoice description
   (a built default, logged for the owner). Junk such as "10% discount" is excluded, names AA has not
-  approved are not loaded and nor are their lines, and Solutions Plus unit values are shown struck
+  approved are not loaded and nor are their Contracts, and Solutions Plus unit values are shown struck
   through and never used. "Load approved data" loads only approved, valid rows from the controlled
-  spreadsheets (US-13.4.2 AC1 and AC2), figures landing on RVG groups and Contract lines.
+  spreadsheets (US-13.4.2 AC1 and AC2), figures landing on RVG groups and each Contract's price ranges.
 
 **The pricing model stays in one place.** This phase builds no pricing structure of its own: it
-loads into the RVG group, procedure, contract-holder, Contract and Contract-line shapes that 18, 19,
-19a and 19b keep in `aa-prototype/src/domain/billing` (plus the seed), through their validators and
+loads into the RVG group, Party, Contract, price-range and modifier shapes that 18, 18a, 19, 19a
+and 19b keep in `aa-prototype/src/domain/billing` (plus the seed), through their validators and
 create actions, behind the types the UI reads. A loader spec maps spreadsheet columns onto those types
-and never declares a second shape or a second rule, so when the design moves to a later version the change
-stays a contained edit in that module and the specs follow it. The reference shape is the technical design v6: [AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md) regions
-[`data-loading`](../../../../requirements-board/requirements/artifacts/AR-29.md#data-loading) (the template list
-and the developer-run MVP baseline), [`data-model`](../../../../requirements-board/requirements/artifacts/AR-29.md#data-model),
-[`contract-holder-fields`](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-holder-fields),
-[`contract-fields`](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-fields),
-[`contract-line-fields`](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-line-fields),
-[`null-handling`](../../../../requirements-board/requirements/artifacts/AR-29.md#null-handling) and
-[`contract-versions`](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-versions) ("a row is
-the complete line, not a patch: a blank cell is not set and 0 means zero") and
-[`integrity-rules`](../../../../requirements-board/requirements/artifacts/AR-29.md#integrity-rules); its ERD
-[AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md) regions
-[`rvg-group`](../../../../requirements-board/requirements/artifacts/AR-30.md#rvg-group),
-[`contract-holder`](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-holder),
-[`contract`](../../../../requirements-board/requirements/artifacts/AR-30.md#contract) and
-[`contract-line`](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-line). The
-plain-language guide [AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md) regions
-[`how-a-procedure-is-priced`](../../../../requirements-board/requirements/artifacts/AR-28.md#how-a-procedure-is-priced),
-[`typical-arrangements`](../../../../requirements-board/requirements/artifacts/AR-28.md#typical-arrangements) and
-[`price-reviews-and-controls`](../../../../requirements-board/requirements/artifacts/AR-28.md#price-reviews-and-controls)
-is true as written. AR-29 and AR-30 are a **draft** that a later version may change before or during the build.
+and never declares a second shape or a second rule, so when the design moves the change
+stays a contained edit in that module and the specs follow it. The reference shape is the flat Contract model
+proposal [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md), cited by section: 2.1 (Party), 2.2
+(Contract), 2.3 (pricing kinds), 2.4 and 5.6 (price ranges), 2.5 and 2.6 (specialty, funding tag), 5.5 (built-ins and
+open-price fallbacks), 5.10 (validation) and 8 (seed mapping, AA codes and links), with its ERD
+[AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md). AR-28, AR-29 and AR-30 are Retired: never cite them.
 **Modifiers** come from the catalogue's files (artifact
 [AR-34](../../../../requirements-board/requirements/artifacts/AR-34.md): `NZSA RVG 2021 modifiers.md` and
 `NZSA RVG 2021 included modifiers.csv`) through 19b's generated table, never re-transcribed.
 
 Two harness-bar triggers make the loads demoable without files on the presenter's laptop: "Load
-sample spreadsheet" and "Go-live data load (demo)". The staged review has 25's own trigger. Nothing
+sample spreadsheet" and "Go-live data load (demo)". Nothing
 here is mobile, so there is no PWA stand-in.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.4.1,US-13.4.2,US-13.4.3,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.4,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,US-04.1.6,OQ-100,OQ-114,OQ-98,OQ-88,OQ-101,OQ-93,OQ-128,OQ-129,DM-38
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.4.1,US-13.4.2,US-13.4.3,US-13.4.4,US-13.4.5,US-13.6.6,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.15,US-04.2.16,US-04.2.17,US-04.2.18,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,OQ-100,OQ-114,OQ-101,OQ-128,OQ-129,OQ-131,DM-38
    ```
 
-   At the 2026-11-04 update (`d436947..a68f09b`) OQ-128 was answered (D75): a surgeon belongs to one or
-   more rooms and the surgeons sheet loads each; the plan reflects it.
-   At the 2026-11-04 update (`7cd7802..d436947`) US-13.4.3 gained the 3 November specialist list
-   note (OQ-129), DM-38 now names the specialist list, and OQ-128 and OQ-129 opened; the plan
-   reflects them (D75, D76). Never read the real `Christchurch_Specialists.xlsx`: the fictional copy
+   At the 2026-11-10 update (`a68f09b..efe123c`, Donald's 5 November decisions) US-13.4.1 and
+   US-13.4.3 changed: contract holders became Parties, specialties and funding tags and Contract price
+   ranges joined the list and the load, the staged review and the dependency on 25 went (OQ-100
+   answered, D34) and a Contract change became an audited edit; the plan reflects all of it. US-04.2.4 and
+   US-04.1.6 went Retired. Earlier updates, which the plan already reflects: OQ-128 answered (D75, 2026-11-04);
+   US-13.4.3's 3 November specialist list note (OQ-129, D76); US-11.4.1 Retired (2026-10-28); US-13.4.3
+   retitled and US-05.1.6 Retired (2026-10-20); US-13.4.3 rewritten as a one-off developer seed, then by hand
+   (2026-10-07). Never read the real `Christchurch_Specialists.xlsx`: the fictional copy
    in `docs/discovery-reference/Other docs/` (behind `seed/specialistDirectory.ts`) is the only
-   fixture source.
-   At the 2026-10-28 update (`d4db277..7cd7802`) US-11.4.1 went Retired (no insurer master, flag or pre-fill) and US-13.4.1 now lists contract holders, insurers among them; the plan already reflects both.
-   At the 2026-10-20 update (`60e2d1e..d4db277`) these moved, and the plan already reflects them:
-   US-13.4.1 (contract holders listed; a Contract change is a new dated version), US-11.4.1 (the
-   insurer is a holder AA invoices; a line-less Contract is offered by Booking context, OQ-98),
-   US-13.4.3 (retitled "Reference data loaded at cutover"; what is loaded and from what source is not
-   yet clear; no procedure list; the Solutions Plus names paragraph gone), US-05.1.6 Retired, OQ-114
-   (D55) and OQ-100 (D34) refreshed, US-04.1.6 (staged Contract changes) joined 25.
-   At plan time (2026-10-08, `3d3a18c..60e2d1e`) these moved, and the plan already reflects them:
-   US-13.4.3 rewritten ("RVG groups and procedures, with base units", no default Contracts; seeded once
-   by a developer, then changed by hand; separate from the Contract schedule upload; repeatable for
-   test systems; holders will not fill AA's template; the old "whether admins can re-load later"
-   point is gone); US-11.4.1 (insurer-held third-party Contracts; most insurer and hospital Contracts
-   are plain RVG Contracts billed to their holder, OQ-98; the insurance indication guides the choice
-   but the Contract decides who is billed, OQ-93); US-05.1.6 (a procedure may set its own base units;
-   every group has a general procedure); US-05.1.5 (Verify; "Admins load the modifier list as master
-   data": the RVG table plus Vanessa's list); US-05.2.2 (a part interval always rounds up); US-01.3.2
-   (recurring bookings; a clash becomes a Draft List); US-04.4.2, FT-04.4 and US-04.2.12 Retired;
-   US-04.2.13 added in the Future Work lane; OQ-100 added; OQ-62 and OQ-78 answered. Diff only for
-   anything after `a68f09b`. If a covered item is now Retired or Future, drop it from this phase and
+   fixture source. Diff only for anything after `efe123c`. If a covered item is now Retired or Future, drop it from this phase and
    say so in the PROGRESS entry. Watch in particular for:
-   - **OQ-100 (D34).** If the schedule upload is answered "in the first release", it is still not this
-     phase's: record it for the owner and Phase 44 (it needs its own phase: format, delta or full
-     overwrite, preview of new, changed and removed lines, control totals), and keep this phase's seed
-     load separate. If the second-person check is answered differently (for example a control total), nothing
-     here changes: 25's staged review is the check and this phase builds none.
+   - **OQ-100 (D34), answered.** If a later answer brings the Contract upload into the first release, it is
+     still not this phase's: record it for the owner and Phase 44 (it needs its own phase: format, delta or
+     full overwrite, preview), and keep this phase's seed load separate.
    - **Calendar schedules** (US-13.4.3's note: "Whether calendar schedules join the list above was
      left unclear"). If the list gains them explicitly and names recurring bookings, add a
      recurring-bookings sheet through 30's create planner (nothing is painted until the view's "Apply
      to canvas now"; a clash becomes 31's Draft List). If it rules calendars out, keep the calendar
      sheets and say so on the owner's review list.
-   - **The spreadsheet list** in US-13.4.3, AR-29 `data-loading` and the domain model's "Reference
+   - **The spreadsheet list** in US-13.4.3, AR-58 section 8 and the domain model's "Reference
      data and go-live" section. A new target joins the loader only if its master already exists;
      otherwise note it for Phase 44.
    - **The master calendar's scope** (national vs regional, or per-hospital opt-in rather than
      opt-out). This phase builds "applies to every hospital unless listed as open".
-   - **OQ-114 (D55).** Answered in part: delivery is a holder setting, email or portal. If the other
-     outputs get named, extend the holders sheet's Delivery column only.
+   - **OQ-114 (D55).** Open: delivery is a Party setting, email or post. If the other outputs get named,
+     extend the Parties sheet's Delivery column only.
    - **OQ-129 (D76).** If HPI CPNs are answered as loadable blank, change the surgeons sheet's one
      rule only (the sheet and sample follow it); the rejection reason is built as the default until
      then. OQ-128 is answered (D75): nothing to watch.
-   - **OQ-98 (answered), OQ-88 (answered), OQ-101.** The loader follows whatever 18, 19 and 19a built
-     for them; if one was re-built, re-shape the matching sheet's columns to it before building.
+   - **OQ-131 and the flat model.** If AA or Greg change a Contract field, re-shape the matching sheet's
+     columns to what 18 and 19a built before building.
 2. **Where loaded base units land (D12 superseded, answered).** Base units live on the RVG group
-   (above 0, with an optional published range, D35); there is no procedure list, and a Contract line
-   may override them (blank not set, 0 is zero). So the RVG groups sheet writes the group's base
-   units, range and modifier units, and the Contract lines sheet writes the line's base and modifier
-   units. A loaded value obeys exactly the manual rule of its target (19's `createRvgGroup`, 19a's
-   `validateContractLine`). AA's own figures are never refused for differing from the NZSA guide, and
-   loading raises no warning: the after-procedure warning is about a value recorded on a Procedure,
-   not master data. Nothing loads a default RVG Contract: none exist. No Solutions Plus identifier
+   (above 0, with an optional published range, D35); there is no procedure list and a Contract states none
+   (only a default RVG code). So the RVG groups sheet writes the group's base
+   units, range and modifier units, and no other sheet carries a unit. A loaded value obeys exactly the
+   manual rule of its target (19's `createRvgGroup`). AA's own figures are never refused for differing
+   from the NZSA guide, and loading raises no warning: the after-procedure warning is about a value
+   recorded on a Procedure, not master data. Nothing loads No contract · RVG or an open-price fallback:
+   18 and 18a make them. No Solutions Plus identifier
    is carried: the candidate list holds operation names plus the scan-row number ("Scan row 14").
 3. **Baseline.**
-   - Confirm Phases 17, 18, 19, 19a, 19b, 25, 29 and 30 are DONE in PROGRESS.md, and note whether 20 to
+   - Confirm Phases 17, 17a, 18, 18a, 19, 19a, 19b, 29 and 30 are DONE in PROGRESS.md, and note whether 20 to
      28, 31, 33, 34 and 39b are DONE.
    - From their entries and Decisions-log rows, note the names actually chosen:
-     - the view ids in `?view=` and the `NAV` shape (17, 18's "Contract holders", 19's "RVG groups", 19b's modifiers view, 29, 30);
-     - the `SurgeonRoom`, `SurgeonGroup` and `Surgeon` fields and the HPI CPN normaliser, shape check
-       and duplicate check (17);
-     - `ContractHolder` (`kind` and its link field, the practitioner link, the delivery setting, `billsHolder`, `billablePartyRef`,
-       `retiredAtISO`), `validateHolder`, `createContractHolder`, `retireContractHolder`; `Contract`
-       (`aaCode`, `holderId`, `editable`, `prepaid`, `effectiveFromISO`, `effectiveToISO`, `reviewDateISO`,
-       `previousVersionId`, `retiredAtISO`), `createContract` and its validator, `nextAaCode`,
-       `aaCodePrefixFor`, `termsLocked`, `noContractOf` (18);
+     - the view ids in `?view=` and the `NAV` shape (17, 18's Parties and Contracts, 18a's specialties and funding tags, 19's "RVG groups", 19b's modifiers view, 29, 30);
+     - the `SurgeonRoom`, `SurgeonGroup` and `Surgeon` fields (`roomIds`, the specialties field) and the HPI CPN normaliser, shape check
+       and duplicate check (17, 17a, 18a);
+     - `Party` (`kind`, `name`, `billingName`, `email`, `postalAddress`, `deliveryMethod`, `hospitalId`), its save guard and create action (18); `Contract`
+       (`aaCode`, `name`, `holderId`, `billsTo`, `fundingTagId`, `specialtyIds`, `linkedSurgeonIds`,
+       `linkedAnaesthetistId`, `prepaid`, `anaesthetistMayOverridePrice`, `pricing`, `holderReference`, `invoiceDescription`,
+       `defaultRvgCode`, `status`, `systemRole`), the Contract create and save guards (AR-58 5.10), the AA code generator (`nextAaCode` or
+       whatever 18 named it) and No contract · RVG (18);
+     - `Specialty` and `FundingTag` with their create actions and validators, `ensureFallbacks` (18a);
      - `RvgGroup` (hidden id, code, description, anatomy, base and modifier units, starting figure and
        range), `createRvgGroup` and its refusal sentences, `RvgGroupSheet` and the type-ahead (19);
-     - `ContractLine` (`lineKey`, `referenceCode`, `defaultRvgKey`), `validateContractLine` and its refusals, `addContractLine`, the plain RVG
-       predicate, `ownFixedPriceFor`, `masters.rvgTimeRule`, `validateRvgTimeRule`,
+     - the price range type, `validatePriceRanges`, `addPriceRange`, `rangeInForce`, `masters.rvgTimeRule`, `validateRvgTimeRule`,
        `describeTimeRule` and `data-shot="masters-rvg-time-rule"` (19a);
      - `Modifier`, the generated AR-34 table and its generator, `addAaModifier` and its refusals, the
        band table (19b);
-     - `Booking.insuranceIndication` and its picker (21); `Contract.invoicing` and
-       `defaultInvoicingFor` (22); `Contract.isCombination` (23); what 25's snapshot records and its `stageContractEdit`, `submitContractChange` and `masters.contractChanges`;
+     - `Booking.insurerOrFunder` (whatever 21 named it); what 22 reads from the Party; what 25's snapshot records;
      - `NewAnaesthetistFields` and `addAnaesthetist` with its start date (26, 28);
      - `masters.slotStatuses` and the "Availability statuses" view id (29);
      - `ListConflict.cause`, `conflictFactsFor`, `holidaysByDateHospital`, `reconcileAllConflicts`,
@@ -302,7 +278,7 @@ here is mobile, so there is no PWA stand-in.
        the projection, `applyRecurringBookingsToCanvas`, the view id) (30); 31's Draft List assignment
        warning, `Hospital.locationType`, `HOSP.aaRooms` and `locationName`;
      - `ContractEventFee`, `masters.contractEventFees`, its validator, create action and id kind
-       (`CEF`), and how 18's new-version action copies event fees (39b);
+       (`CEF`) (39b);
      - the hospitals 34 appended, their `HOSPITAL_HOLIDAYS` rows, and `INTEGRATED_HOSPITALS` (34's
        `domain/intake/syncDeliveries.ts`);
      - `validateSlotStatusDraft` (29), the precedent for item 4's pure validators.
@@ -310,10 +286,10 @@ here is mobile, so there is no PWA stand-in.
      last mapped at that commit), or as those phases planned them.
    - Record the seed's flagged-List set today (List ids with a `holiday` conflict, by cause), so the
      public-holiday migration can prove the set does not move (work item 3).
-   - Grep every picker that offers hospitals, surgeons, rooms, groups or contract holders
-     (`grep -rn "masters.hospitals\|masters.surgeons\|surgeonRooms\|surgeonGroups\|contractHolders" src --include=*.tsx`)
-     and list them, including 18's holder-link picker, 20's step rail (which must hide Contracts
-     whose holder is retired) and 21's insurance-indication picker. Work item 16 routes each one
+   - Grep every picker that offers hospitals, surgeons, rooms or groups
+     (`grep -rn "masters.hospitals\|masters.surgeons\|surgeonRooms\|surgeonGroups\|masters.parties" src --include=*.tsx`)
+     and list them, including 18's Party picker, 20's step rail (which hides Disabled Contracts)
+     and 21's insurer or funder picker. Work item 16 routes each one
      through the active-only selectors.
    - Grep every reader of hospital holidays
      (`grep -rn "masters.holidays\|holidaysByDateHospital\|HospitalHoliday" src --include=*.ts --include=*.tsx`).
@@ -323,16 +299,16 @@ here is mobile, so there is no PWA stand-in.
      the generation path, `conflictFactsFor`, the recurring-booking projection, the conflict preview
      and the Draft List assignment warning. List them; work item 2 routes each through
      `closuresIndex`, so no reader silently loses Labour Day when the per-hospital rows go.
-   - Grep for stored copies of a master's name (a contract holder named after its hospital, a `hospitalName` on a record). List them; work item 5 handles the linked holder, and
+   - Grep for stored copies of a master's name (a Party named after its hospital, a `hospitalName` on a record). List them; work item 5 handles the linked Party, and
      anything else is noted for the reviewers.
-   - Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 at plan time, after 15a's first
-     session; 15a to 41 will have bumped it) and bump it by one from whatever it is now.
+   - Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (18 to 41 will have bumped it) and bump it by one from whatever it is now.
    - Check `docs/discovery-reference/Data files/` (`git log` on it) for Vanessa's base units sheet,
-     fuller modifier list, contract overrides and surgeons' rooms list (US-13.4.3's note). If any has
+     fuller modifier list, contract schedules and surgeons' rooms list (US-13.4.3's note). If any has
      landed, model the matching sample's columns on its headers (still saved as CSV), but keep every
      fixture row demo-plausible: no real figure is loaded into the seed.
-4. **Owner decisions.** D34, D75 and D76 gate this phase (above). The rest shape it and are answered (D55 in part): D12,
-   D16, D17, D18, D2, D25 and D14, D32 (OQ-98), D42 (OQ-91) and D45 (OQ-48).
+4. **Owner decisions.** D34 and D75 are answered; D55, D76 and D74 are open and built as their
+   defaults (above). The rest shape it and are answered: Donald's D1 to D6 of 5 November, D12, D23, D30,
+   D64, D42, D48, D25 and D14.
 
 ## Reference
 
@@ -350,52 +326,51 @@ the admin's own patterns, and do not invent new chrome:
   Public holidays show in it as closures.
 
 **Catalogue:** the covered items above; `requirements-board/requirements/domain-model.md` sections
-"1. What changed since the RFP" (the clean-cut row: a one-off seed, then by hand; the schedule upload
-separate), "Contract (draft structure)" (the contract holder master data block), "RVG groups,
+"1. What changed since the RFP" (the clean-cut row: a one-off load, then by hand; the Contract upload
+separate and Future Work), the Party and Contract sections, "RVG groups,
 procedure list and modifier master", "Surgeon, surgeons' room, preferences and priority tiers" and
-"Reference data and go-live", and the glossary's "Contract holder", "No contract (RVG)" and
-"Recurring booking" entries. Evidence: `npm --prefix requirements-board run source -- --item US-13.4.3 --text`
+"Reference data and go-live". Evidence: `npm --prefix requirements-board run source -- --item US-13.4.3 --text`
 (the 2026-09-29 points 27, 28, 30 and 31; the 2026-10-02 review points 10, 40 and 77; the 2026-10-07
 meeting points 42 and 62, Greg: "They can just type it in by hand. It's such a rare event"; the
-Pricing model documents v6 points 9 and 48), and the same for US-13.4.1 (the 2026-10-28 note, points 3 and 40) and OQ-100. Change log
-`requirements-board/requirements/changes/2026-10-07-requirements-update.md` (the US-13.4.3, US-11.4.1,
-US-04.2.13 and OQ-100 rows) and `2026-10-16-requirements-update.md` (the US-11.4.1 and US-13.4.3 rows).
+5 November decisions points 3, 4, 10 and 16), and the same for US-13.4.1 (the 2026-10-28 note, points 3 and 40; the 5 November decisions points 2, 3, 4, 6 and 16) and OQ-100.
+Change log `requirements-board/requirements/changes/2026-11-05-flat-contract-model-and-ben-vanessa-meeting.md` (the US-13.4.1 and
+US-13.4.3 rows).
 
 **Analysis:**
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: the master data theme, the "Oversight/NFR"
   demo-trigger line, and the EP-13 table.
 - `docs/prototype-build/catch-up/epics/EP-13.md` (US-13.4.1, 13.4.2, 13.4.3).
-- `analysis/domain-model-delta.md` DM-38 (and DM-48, DM-49, DM-13, DM-09, DM-43 and DM-44 for the
-  load targets; DM-12 for the insurance indication).
+- `analysis/domain-model-delta.md` DM-38 (and DM-48 Parties, DM-13 RVG groups, DM-07 and DM-09 Contracts and ranges, DM-44 modifiers, DM-63 and DM-64 specialties and funding tags for the
+  load targets).
 - `analysis/prototype-map-admin.md` section 9 (Master data), `prototype-map-store-seed.md`
   (`mutate`, `allocateId`, masters actions, seed), `prototype-map-shell-demo-pwa.md` (the trigger
   registry and the PWA closure).
 
 **Code entry points (as at `60e2d1e`; use the names 17 to 34 chose where they differ):**
 - `aa-prototype/src/domain/types.ts`: `Hospital` (:155), `Surgeon` (:160),   `PermanentList` (:585, 30's `RecurringBooking`), `HospitalHoliday` (:612), and the types 17, 18,
-  19, 19a and 19b added (rooms, groups, holders, Contracts, RVG groups, lines, modifiers).
+  18a, 19, 19a and 19b added (rooms, groups, Parties, Contracts, specialties, funding tags, RVG groups, price ranges, modifiers).
 - `aa-prototype/src/domain/seed/cast.ts`: `HOSP`, `HOSPITALS`;
   `domain/seed/availabilityAndHolidays.ts`: `HOSPITAL_HOLIDAYS` (:58, a `flatMap` over `HOSPITALS`
   that writes Labour Day Mon 26 Oct and Canterbury Anniversary Day Fri 13 Nov per hospital, plus 30's
   `HH900` closure); `domain/seed/index.ts`: `SeedMasters` and `buildSeed` (holidays at :363 and
   :445); `domain/seed/canvas.ts`: `ADHOC_HOSPITALS` (:61) and the holiday map (:90-93).
-- `aa-prototype/src/domain/billing/`: the pricing-model module 18, 19, 19a and 19b built (holders,
-  Contracts, RVG groups, lines, modifiers, the resolver and their validators). The loader
+- `aa-prototype/src/domain/billing/`: the pricing-model module 18, 18a, 19, 19a and 19b built (Parties,
+  Contracts, RVG groups, price ranges, modifiers, the price function and their validators). The loader
   imports from it and never re-implements a rule.
 - `aa-prototype/src/domain/conflicts.ts` (30): `conflictFactsFor`, `expectedConflicts`,
   `describeConflict`, `reconcileAllConflicts`; `src/store/conflictReconcile.ts` (30), called only
   from `mutate.ts`.
 - `aa-prototype/src/store/mastersActions.ts`: `createHospital` (:45), `addAnaesthetist` (:241), `addHospitalHoliday` (:320), 17's
   `editHospital`, and 30's `editHospitalHoliday` and `deleteHospitalHoliday`.
-  `src/store/surgeonActions.ts` (17), `contractActions.ts` and `contractHolderActions.ts` (18, 19a),
-  `rvgMasterActions.ts` (19), 19b's modifier actions.
+  `src/store/surgeonActions.ts` (17, 17a, 18a), `contractActions.ts` and the Party actions (18, 19a),
+  18a's specialty, funding tag and fallback actions, `rvgMasterActions.ts` (19), 19b's modifier actions.
 - `aa-prototype/src/store/mutate.ts`: `ID_FORMATS` (:61), `allocateId` (:100), `MutationMeta`
-  (:116). `src/store/appStore.ts`: `AppState`, `PERSIST_VERSION` (:136, 16).
+  (:116). `src/store/appStore.ts`: `AppState`, `PERSIST_VERSION` (:136).
 - `aa-prototype/src/apps/admin/screens/MasterData.tsx` and 17's `apps/admin/screens/masters/`
   (`NAV` at :41, `HospitalsView` at :275, `PermanentListsView` at :244,
   `ListStatusesView` at :453 at `60e2d1e`); sheets in `apps/admin/flows/` (`HolidaySheet`,
   `EditHospitalSheet`, `SurgeonEditSheet`, `SurgeonRoomSheet`, `SurgeonGroupSheet`,
-  `ContractHolderPanel`, `ContractEditSheet`, `RvgGroupSheet`, 19b's modifier
+  the Party and Contract editors, `RvgGroupSheet`, 19b's modifier
   sheet); `apps/admin/tableChrome.ts`.
 - `aa-prototype/src/shared/demoTriggers/` (14): `types.ts` (`surfaces`, `indexPath`), `registry.ts`,
   `context.ts` (`DemoContextValues`); `src/store/demoActors.ts` (`OFFICE_ACTOR`,
@@ -413,13 +388,13 @@ US-04.2.13 and OQ-100 rows) and `2026-10-16-requirements-update.md` (the US-11.4
 Build in this order: types, pure rules, seed, store, then screens. **Session 1 ends after item 10,
 green.**
 
-1. **Types** (`src/domain/types.ts`; DM-38, US-13.4.1, US-11.4.1):
+1. **Types** (`src/domain/types.ts`; DM-38, US-13.4.1):
    - `Hospital`, `Surgeon`, `SurgeonRoom` and `SurgeonGroup` gain
      `retiredAtISO?: IsoDate` and `retiredReason?: string`. Anaesthetists keep their existing
-     `active` flag ("Inactive"); say so in the Decisions log rather than migrating it. The
-     organisations master 18 keeps behind holders (`masters.organisations`, whatever 18 named its
-     record type) gains the same two fields. AA's own `Modifier` rows gain them only if 19b gave
-     modifiers no retire field.
+     `active` flag ("Inactive"); say so in the Decisions log rather than migrating it. Parties and
+     Contracts (Active or Disabled), specialties and funding tags keep the lifecycle 18 and 18a gave
+     them; the old organisation records are Parties (18), so there is no organisation retire. AA's own
+     `Modifier` rows gain the two fields only if 19b gave modifiers no retire field.
    - New `PublicHoliday { id: PublicHolidayId; dateISO: IsoDate; name: string; kind: 'national' | 'regional'; region?: string; openHospitalIds: HospitalId[] }`.
      `openHospitalIds` lists hospitals that run as normal that day; every other hospital is closed.
      The `region` is a label ("Canterbury"), not a filter, because every AA hospital is in
@@ -432,8 +407,8 @@ green.**
      holiday is `publicHoliday:<id>`, alongside 30's `holiday:<holidayId>`.
    - `allocateId` kinds in `ID_FORMATS`: `publicHoliday` (`PHN`, pad 3; the seed uses `PH001`),
      `masterLoad` (`ML`, pad 3) and `goLiveBatch` (`GL`, pad 2). Room,
-     surgeon, surgeon group, holder, Contract, line, RVG group and modifier kinds exist
-     from 17 to 19b; add one only where a phase did not.
+     surgeon, surgeon group, Party, Contract, price range, specialty, funding tag, RVG group and
+     modifier kinds exist from 17 to 19b; add one only where a phase did not.
    - `store/demoActors.ts` gains `SEED_LOAD_ACTOR` (`{ who: 'Developer seed load (simulated)', role: 'office', source: 'office' }`,
      office-shaped so it passes the same guards, named so nobody reads it as a person), with a doc
      comment in the file's existing style.
@@ -444,23 +419,20 @@ green.**
      counts. The caller fills `facts` from the store (the domain does not import the store):
      - **hospital:** upcoming non-AUTHORISED Lists and Draft Lists on or after the demo clock's
        today; active recurring bookings; membership of the generator's ad hoc set
-       (`ADHOC_HOSPITALS`), worded as "New days are still scheduled here"; an active contract holder
-       linked to it ("Retire its contract holder first: St George's Hospital, 1 active Contract");
+       (`ADHOC_HOSPITALS`), worded as "New days are still scheduled here"; its hospital Party (18) while it
+       holds an Active Contract ("Disable its Contracts first: St George's Hospital, 1 Active Contract");
        membership of 34's `INTEGRATED_HOSPITALS`, worded as "Hospital sync is set up here".
-     - **surgeon:** upcoming Lists and Draft Lists; active recurring bookings; an active contract
-       holder linked to the surgeon.
-     - **room:** active surgeons linked to it (any surgeon whose `roomIds`, 17a, lists it); an active rooms holder
-       linked to it.
-     - **group:** an active rooms holder linked to it (18's COS mapping).
-     - **organisation:** active contract holders whose `billablePartyRef` names it (17's
-       `SurgeonGroup` has no organisation field; if 17 or 18 added a group-to-organisation link,
-       count it too).
+     - **surgeon:** upcoming Lists and Draft Lists; active recurring bookings; an Active Contract
+       whose only link is the surgeon (a Contract held by a surgeon needs one, AR-58 A39).
+     - **room:** active surgeons linked to it (any surgeon whose `roomIds`, 17a, lists it).
+     - **group:** surgeons still in it, if 17 gave groups members (a Party never links to the group
+       master, AR-58 2.1).
      - **AA rooms** (31's `locationType: 'aaRooms'` row): never retired ("AA rooms is built in and
        cannot be retired."), as 31's handoff asks.
      - **AA modifier:** none; a retired modifier stays on Procedures that claimed it and leaves the
        picker (19b's picker reads `activeOnly`).
-     There is no protected default Contract to except: No contract (RVG) has no holder and is never
-     retired (18).
+     No contract · RVG is held by AA and is never disabled (18); Parties, Contracts, specialties and
+     funding tags keep their own lifecycle rules (18, 18a).
    - `src/domain/holidays.ts`: `closuresFor(dateISO, hospitalId, { hospitalHolidays, publicHolidays })`
      returns `Closure[]`, where `Closure` is `{ source: 'hospital'; holidayId; name } | { source: 'public'; publicHolidayId; name }`.
      `closuresIndex(masters)` builds the date-and-hospital map 30's `conflictFactsFor` reads, with a
@@ -501,7 +473,7 @@ green.**
      public holiday after. Only the cause key changes (`holiday:HH001` to `publicHoliday:PH001`).
      Regenerate the golden canvas fixture's conflicts column only, and assert that the flagged-id set
      equals the baseline from the drift check.
-   - Insurers: 18 seeds them as contract holders of kind Insurer; this phase adds none.
+   - Insurers and funders: 18 seeds them as Parties; this phase adds none.
    - Seed tests: the public holidays are present and sorted; no hospital holiday is named Labour Day
      or Canterbury Anniversary Day; the flagged set is unchanged; two builds deep-equal.
    - Bump `PERSIST_VERSION` by one, with a comment line ("Phase 42: master public-holiday calendar
@@ -512,15 +484,14 @@ green.**
      It handles quoted cells, embedded commas and quotes, CRLF, a leading BOM, and blank trailing
      lines. `rowNumber` is the spreadsheet row, with the header as row 1. Tests for each case.
    - `types.ts`:
-     - `LoadEntity` = `'hospitals' | 'hospitalHolidays' | 'publicHolidays' | 'surgeonRooms' | 'surgeons' | 'anaesthetists' | 'rvgGroups' | 'modifiers' | 'contractHolders' | 'contracts' | 'contractLines' | 'contractEventFees'`:
-       US-13.4.3's list (hospitals; surgeons and rooms; RVG groups with base units;
-       modifiers; any Contracts, as holders, Contracts, lines and 39b's event fees), AR-29
-       `data-loading`'s additions (anaesthetists, contract holders) and the two calendars.
+     - `LoadEntity` = `'specialties' | 'fundingTags' | 'hospitals' | 'hospitalHolidays' | 'publicHolidays' | 'surgeonRooms' | 'surgeons' | 'anaesthetists' | 'rvgGroups' | 'modifiers' | 'parties' | 'contracts' | 'priceRanges' | 'contractEventFees'`:
+       US-13.4.3's list (hospitals; surgeons with their specialties, and rooms; RVG groups with base
+       units; modifiers; Parties; specialties and funding tags; Contracts one per priced item with their
+       price ranges, and 39b's event fees; anaesthetists) and the two calendars.
      - `RowResult` = `{ rowNumber; cells; status: 'valid' | 'rejected'; reasons: string[]; key: string; fields? }`.
      - `MasterLoad` = `{ id; entity; source: { kind: 'sample'; sampleId } | { kind: 'file'; fileName }; header; headerErrors: string[]; rows: RowResult[]; status: 'staged' | 'loaded' | 'discarded'; stagedAtISO; stagedBy; loadedAtISO?; loadedRecordIds?: string[]; goLiveBatchId? }`.
      - `LoaderSpec<F>` = `{ entity; label; columns: { key; header; required; hint }[]; parseRow(cells, ctx): { fields: F } | { reasons: string[] }; keyOf(fields): string; existing(fields, masters): string | null; references?(fields, ctx): string[] }`.
-       There are no row groups any more: one Contract line is one row (the 2026-10-03 plan's Simple and
-       Complex pairs belonged to the retired default RVG Contracts).
+       One Contract is one row and one price range is one row: there are no lines, versions or row groups.
    - `validate.ts`: `validateSheet(spec, parsed, masters, ctx)`:
      - A missing required column rejects the whole sheet ("Missing column: Contact email"), and no
        row is valid.
@@ -530,31 +501,33 @@ green.**
        - a key already in master data is rejected ("Already in master data: edit it there"), because
          a load adds and never overwrites;
        - an unresolved reference is rejected (for example "No surgeons' room named Riverside Rooms",
-         "No RVG group with code H3X", "No Contract with code or name SUR-0099").
+         "No RVG group with code H3X", "No Contract with AA code SUR-0099", "No specialty named Cardiac").
        `ctx.pendingKeys` lets a row reference a record loaded earlier in the same go-live batch (a
-       surgeon naming a room, a Contract naming a holder, a line naming a
+       surgeon naming a room or a specialty, a Contract naming its Party, a price range naming a
        Contract on the same batch's Contracts sheet).
      - Every reason for a row is collected, not only the first.
-   - **Blank and zero** (AR-29 `null-handling` and `contract-versions`): in an optional numeric cell a
-     blank means "not set" and `0` means zero. `parseOptionalNumber(cell)` is the one helper
-     every spec uses; a test pins "", " ", "0", "0.0" and "-1".
+   - **Blank and zero** (a row is the complete record, not a patch): in an optional numeric cell (a
+     Contract's unit rate or discount) a blank means "not set" and `0` means zero, which 18's validator then
+     accepts or refuses (a unit rate must be above 0; a fixed price may be 0 unless the Contract is
+     prepaid). `parseOptionalNumber(cell)` is the one helper every spec uses; a test pins "", " ", "0",
+     "0.0" and "-1".
    - **One set of rules.** Each spec's `parseRow` calls the same pure field validator the entity's
      manual create action uses. Extract those validators into `src/domain/masterValidation.ts` where
      they are not already pure (hospital name and email; hospital holiday; public holiday; room;
-     surgeon; anaesthetist (26 and 28's fields)); for the pricing masters, **call the module's own
-     validators** (19's RVG group rules, 19a's `validateContractLine`, 18's
-     `validateHolder` and Contract create validator, 19b's AA-modifier rules), never copy them. The
+     surgeon with its specialties (18a); anaesthetist (26 and 28's fields)); for the pricing masters, **call the module's own
+     validators** (19's RVG group rules, 19a's `validatePriceRanges`, 18's
+     Party guard and Contract create guard (AR-58 5.10), 18a's specialty and funding tag rules, 19b's AA-modifier rules), never copy them. The
      store actions call them too, so a rejected row's reason is word for word the refusal the Add sheet
      shows. A parity test drives both paths for each refusal.
 5. **Store: hospitals and retirement** (`src/store/mastersActions.ts`, 17's
    `surgeonActions.ts`; US-13.4.1). Every action is office only, goes through `mutate()`
    with before and after metas, and takes its timestamps from the demo clock.
    - **Renames follow through.** `editHospital` (17) and 17's surgeon, room and group
-     edits also rename the linked contract holder when its name still equals the old name, in the same
-     commit, audited `contractHolder.update`. A holder the office has renamed by hand is left alone.
+     edits also rename the linked Party (a hospital's or a surgeon's) when its short name still equals the old name, in the same
+     commit, audited as 18's Party update. A Party the office has renamed by hand is left alone.
      Raised invoices and 25's snapshots keep their names.
    - `retireMaster(api, actor, kind, id, reason)` and `reinstateMaster(api, actor, kind, id)` for
-     `hospital | surgeon | surgeonRoom | surgeonGroup | organisation | aaModifier`:
+     `hospital | surgeon | surgeonRoom | surgeonGroup | aaModifier`:
      - retire refuses `notFound`, `alreadyRetired`, `reasonRequired`, `inUse` with
        `retireBlockers`' sentences joined, and (for `aaModifier`) an RVG-table row ("RVG modifiers
        are as printed and cannot be retired.");
@@ -567,12 +540,12 @@ green.**
      snapshot locks them; an ACTIVE Procedure's M total follows the edit, as a group edit re-prices in
      19.
    - Every create and edit action for these masters, the List, Draft List and Booking write paths
-     that take a hospital or surgeon, 18's holder-link writes and 21's insurance indication refuse a
-     retired id ("St George's is retired"). The exception is when the value is unchanged, so editing
+     that take a hospital or surgeon, and 18's links (a hospital Party's hospital, a Contract's linked
+     surgeons) refuse a retired id ("St George's is retired"). The exception is when the value is unchanged, so editing
      an old List at a retired hospital still saves.
    - Tests (extend `mastersActions.test.ts`, `surgeonActions.test.ts` and 19b's modifier tests): the
      anaesthetist actor is refused everywhere; each refusal; the rename follow-through with a generated and a hand-edited
-     holder name; each kind's retire blockers and reinstate (a hospital linked to an active holder is
+     Party name; each kind's retire blockers and reinstate (a hospital whose Party holds an Active Contract is
      refused); a retired hospital
      refused by the List and Booking write paths but tolerated when unchanged; an RVG modifier refused
      by edit and retire.
@@ -601,22 +574,21 @@ green.**
      public-holiday conflict holds only while the cause stands. The time rule: a valid edit changes an
      ACTIVE Booking's T units and not an AUTHORISED one; a malformed rule and a part-interval change are
      refused.
-   **6a. Contract edits after the seed** (D34; no new store work). The loader's planners create
-   Contracts, lines and event fees directly (the developer's one-off seed, before any review
-   exists). Every later edit from Master data goes through 25's `stageContractEdit` and
-   `submitContractChange`; this phase adds no check state, check action or second actor. The
-   Contracts view's "Edit" and "New version" open 25's staged flow.
-   - Tests: editing a seed-loaded Contract's line from the view stages a change and applies nothing
-     until submit; a load never creates a staged change; No contract (RVG) has no lines and no staged
-     change.
+   **6a. Contract edits after the load** (D34 answered; no new store work). The loader's planners create
+   Parties, Contracts, price ranges and event fees directly (the developer's one-off load). Every later edit
+   from Master data goes through 18's in-place audited Contract actions and 19a's range actions: no
+   staging, no "New version", no review dashboard, no check state, check action or second actor.
+   - Tests: editing a loaded Contract's setting from the view saves at once and is audited; a fixed
+     price changes by adding a price range and the old range ends the day before; a load never creates
+     anything but Active Contracts; No contract · RVG and the fallbacks are untouched by any load.
 7. **Store: loads** (`src/store/masterLoadActions.ts`, exported from `src/store/index.ts`;
    US-13.4.3 AC1 and AC2):
    - `stageMasterLoad(api, actor, { entity, csvText, source })`:
      - it parses and validates against current masters and writes a `staged` `MasterLoad`;
      - it audits `masterLoad.stage` with `after: { entity, rows, valid, rejected, source }`;
      - it never writes `masters` or `contracts` (a test deep-equals them before and after);
-     - it refuses `officeOnly`, an unknown entity and an empty sheet. A line naming a missing,
-       retired or terms-locked Contract version is a rejected row, not a refused sheet;
+     - it refuses `officeOnly`, an unknown entity and an empty sheet. A price range naming a missing
+       Contract is a rejected row, not a refused sheet;
      - staging a new load for an entity discards any earlier staged load for that entity
        (`masterLoad.discard`), so the Seed load view shows one live result per sheet.
    - `commitMasterLoad(api, actor, loadId)`:
@@ -627,11 +599,12 @@ green.**
      - it then runs **one** `mutate()` whose recipe folds each valid row through the entity's create
        planner (item 9), in row order;
      - it writes one meta per created record, using the same action name as a manual create
-       (`hospital.create`, `rvgGroup.create`, `contractHolder.create`,
-       `contract.create`, `contractLine.create` and so on) with `after` carrying `{ loadId, rowNumber }`,
+       (`hospital.create`, `rvgGroup.create`, `party.create`, `specialty.create`,
+       `contract.create`, the price-range action and so on, as 18, 18a and 19a named them) with `after` carrying `{ loadId, rowNumber }`,
        plus one `masterLoad.commit` summary meta;
      - calendar loads reconcile conflicts through 30's `mutate()` hook once, and the summary returns
-       `{ flagged, resolved }`;
+       `{ flagged, resolved }`; loads of hospitals, funding tags or Parties let 18a's `ensureFallbacks`
+       make the open-price fallbacks in the same commit, and the summary counts them;
      - it marks the load `loaded` with `loadedRecordIds`;
      - if any planner refuses mid-fold (a bug, since the rows were just re-validated), the whole
        commit aborts and returns the refusal. It never partially loads.
@@ -655,20 +628,25 @@ green.**
      - surgeons' rooms, in the shape of AA's specialist list of 3 November (the fictional copy
        `seed/specialistDirectory.ts` comes from): Room name, Contact email, Phone. Email and phone
        are optional, so a room with neither loads and shows as having none (17a, D74);
-     - surgeons, in the same shape: Name, Specialty, Rooms, HPI CPN, NZ registration number (for
+     - **specialties** (US-13.4.4; AR-58 2.5): Name, keyed on the name, through 18a's specialty rules (a name,
+       no duplicate; broad only). The load adds to 18a's seeded list and never overwrites it;
+     - surgeons, in the shape of AA's specialist list: Name, Specialty, Rooms, HPI CPN, NZ registration number (for
        information), keyed on the HPI CPN, with 17's HPI CPN normaliser, shape check and duplicate
        check across surgeons and anaesthetists. **A row with no HPI CPN, or a first name only, is
        rejected with its reason** (D76, 17's required-HPI-CPN refusal word for word; one validator).
-       The **Rooms** cell names one or more rooms separated by ";" (the first the main room), so a
-       surgeon listed at two practices loads at **both** (D75, 17a's `roomIds`); each must resolve
-       ("No surgeons' room named Riverside Rooms") and a repeated room is dropped as in 17's action.
-       There is **no contacts sheet** (D74: practice manager and PA contacts are entered by
-       hand);
+       The **Specialty** cell names one or more of the specialties list separated by ";" and is
+       **required**: a row with none is rejected with 18a's required-specialties refusal word for word
+       (D3), and a name not on the list is rejected ("No specialty named Cardiac"). The sample uses the
+       broad names 18a's directory mapping gave. The **Rooms** cell names one or more rooms separated
+       by ";" (the first the main room), so a surgeon listed at two practices loads at **both** (D75,
+       17a's `roomIds`); each must resolve ("No surgeons' room named Riverside Rooms") and a repeated
+       room is dropped as in 17's action. There is **no contacts sheet** (D74: practice manager and PA
+       contacts are entered by hand);
      - anaesthetists: Name, HPI CPN, Unit value, Priority tier, Start date (the fields
        `NewAnaesthetistFields` takes as 26 and 28 left it, plus 17's admin-only priority tier; no GST
        period; keyed on the HPI CPN; 28's start-date rule; each loaded anaesthetist gets 28's Slots
        through the one generation path);
-     - **RVG groups** (US-05.1.1; [AR-30 · RVG group](../../../../requirements-board/requirements/artifacts/AR-30.md#rvg-group)):
+     - **RVG groups** (US-05.1.1):
        Code, Description, Anatomy heading, Base units, Range from, Range to, Modifier units, Starting
        figure (19's fields; the hidden id is allocated at load, never read from the sheet). The same
        code may sit on several rows (the guide prints two T2s), so a row is keyed on code and
@@ -683,51 +661,46 @@ green.**
        AR-34's files by 19b's generator, which is what the developer's seed would load. A test proves
        it: 19b's generated table, fed through the same `Modifier` shape into an empty masters state,
        deep-equals the seeded RVG rows, so nothing is ever re-transcribed;
-     - **contract holders** (US-04.1.5; [AR-29 · Contract holder fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-holder-fields),
-       [AR-30 · Contract holder](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-holder)):
-       Name, Kind (Insurer, Hospital, Surgeon, Anaesthetist; AR-44 relabelled 'Surgeon or rooms' to 'Surgeon' on 4 November; the built-in AA holder is never
-       loaded; an insurer is a holder like any other), Linked to (hospital, room or group by name; an insurer needs none), Practitioner (exactly one
-       anaesthetist by HPI CPN, required for an anaesthetist holder; or one or more surgeons by HPI CPN
-       separated by ";"), Delivery (Email or Portal; blank is Email, D55), Holder is billed
-       (Yes or No), Billable party (a name; required when billed). No rule ties billing to the kind,
-       except that an anaesthetist holder is never billed. 18's `validateHolder` sentences; AA rooms
-       is never a holder's hospital (31), so a row linked to it is rejected with the rule 18 and 31
-       left;
-     - **Contracts** ([AR-29 · Contract fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-fields),
-       [AR-30 · Contract](../../../../requirements-board/requirements/artifacts/AR-30.md#contract)): Name,
-       Holder (an existing holder's name, or one on the same batch's holders sheet), Valid from, Valid
-       to, Review date, Editable, Prepaid (the settings that replace kinds; Yes or No), Invoice
-       layout (22's field, optional where 22's `defaultInvoicingFor` gives a default; delivery is the
-       holder's setting, not a Contract column). 18's create validator with 22's field rules (any combination column follows
-       19a: combinations are lines of their own). The AA code is never read from the sheet: 18's
-       `nextAaCode` makes it at commit (D16). Refused: a row with no holder ("Every Contract needs a
-       holder. No contract (RVG) is built in and is never loaded."), an unknown or retired holder,
-       and a Contract whose name already exists for that holder ("Already in master data: stage a new
-       version there"). A Contract with no lines on the lines sheet loads as its holder's **plain RVG
-       Contract** (D32, offered by the Booking's context; 19a's predicate); the result panel says so
-       per row ("Plain RVG: no lines");
-     - **Contract lines** ([AR-29 · Contract line fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-line-fields),
-       [AR-30 · Contract line](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-line)):
-       Contract (an existing Contract's AA code or name, or the name of a Contract on the same
-       batch's Contracts sheet), Line key (optional: a new system key is allocated when blank and
-       never reused; a key already on that Contract is rejected as a duplicate), Reference code (the
-       holder's own), Description, Default RVG code (a group's code, with Default RVG description
-       where more than one row holds the code; an unresolved or ambiguous code is rejected), Fixed
-       price (ex GST), Fixed rate, Fixed discount (%), Base units, Modifier units. Every pricing cell
-       is optional: **a blank is not set and 0 means zero** (AR-29 `contract-versions`); a line that
-       sets nothing is rejected with 19a's sentence. 19a's `validateContractLine` decides everything
-       else, and 18's `termsLocked` refuses a version that has started ("Its terms are locked: stage
-       a new version"). No time band, quantity or line dates (19a removed them). Lines into a
-       first-party Contract are its fixed prices (US-04.2.14; D42: the office keeps them afterwards);
-     - **Contract event fees** (39b's handoff; US-13.4.3 "any Contracts"): Contract (as on the lines
-       sheet), Event type (39b's preset types), Holder code, Fixed price (ex GST), with 39b's
-       event-fee validator and create action and 18's `termsLocked`; keyed on Contract and event
-       type. A Contract with event fees and no lines follows 39b's rule (its picker never offers a
-       Contract on event fees alone), so the Contracts sheet's "Plain RVG: no lines" note uses 19a's
-       plain RVG predicate as 39b left it, never a count of lines alone. Built only if 39b is DONE.
+     - **Parties** (US-04.1.5; AR-58 2.1): Name (the short name, keyed), Kind (Hospital, Insurer, Funder,
+       Surgeon, Surgeon group or Anaesthetist; the one AA Party is built in and never loaded), Hospital
+       (required for a hospital Party: the hospital by name, one loaded earlier or on the same batch; AA
+       rooms is never a Party's hospital, 31), Billing name, Delivery (Email or Post, D55; blank is not
+       set), Email, Postal address. 18's Party guard decides: billing details are required only once a
+       Contract bills the Party, so a Party loads without them and a Contract row that bills such a
+       Party is rejected with 18's refusal. Insurers and funders are rows like any other;
+     - **funding tags** (US-13.4.5; AR-58 2.6): Code (keyed), Funder (optional: a Party's name, the
+       funder whose work arrives under the tag; it must resolve, so the Parties sheet loads first). 18a's
+       rules; a row's position is its place in the order the step rail shows, after the existing tags;
+     - **Contracts**, one per priced item ([US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md), US-04.2.18, AR-58 2.2 and 2.3):
+       AA code (the unique key, US-04.1.4; blank takes 18's next code), Name, Party (the holder, by short
+       name, an existing Party or one on the same batch), Holder reference code, Invoice description,
+       Default RVG code (an unresolved code is rejected), Bills (Holder or Payer), Payment type (Standard
+       or Prepaid), Pricing kind (RVG at the anaesthetist's rate, RVG at the Contract's rate, RVG less a
+       discount, or Fixed price), Unit rate, Discount (%), Fixed price and Price from (a fixed price's
+       first range, both cells), Anaesthetist may override (Yes or No), Funding tag, Specialties (names
+       separated by ";"; none means every specialty), Surgeons (HPI CPNs separated by ";") and Anaesthetist (one
+       HPI CPN). In the optional numeric cells **a blank is not set and 0 means zero**. 18's Contract create
+       guard (AR-58 5.10) decides everything else, so each refusal is its own sentence: a repeated AA code,
+       a fixed price with no range, a rate or discount out of bounds, a rate or discount or range on the
+       wrong kind, a prepaid Contract that bills its holder, is not a fixed price or has a price of 0
+       (D23, D64), an override on a fixed-price or prepaid Contract (D65), a billed Party with no
+       billing details, linked surgeons on a hospital Contract, and a Contract held by a surgeon, surgeon
+       group or anaesthetist with no link. **An anaesthetist's price list** loads as prepaid Contracts, one
+       per item, held by that anaesthetist's Party and linked to them (US-04.2.14, D42); a surgeon's
+       arrangement as one Contract per item linked to its surgeons (D48). A row of pricing kind **Open
+       price** is rejected ("Open-price Contracts are made by the system"); No contract · RVG and the
+       fallbacks are never loaded. Every loaded Contract is Active;
+     - **price ranges** (US-04.2.15, AR-58 2.4 and 5.6): AA code (an existing Contract or one on the same
+       batch), Start date, Price (ex GST), keyed on both. 19a's `validatePriceRanges` and `addPriceRange`
+       decide: only a fixed price has ranges, starts are unique, the price is 0 or more (a blank is
+       rejected as not set; above 0 when prepaid) and **a start may be in the past** (D6, a backdated
+       range). A range adds to its Contract and never replaces one;
+     - **Contract event fees** (39b's handoff): Contract (AA code), Event type (39b's preset types), Holder
+       code, Fixed price (ex GST), with 39b's event-fee validator and create action, keyed on Contract and
+       event type. Built only if 39b is DONE.
      Surgeon groups, recurring bookings, availability statuses, preferences and priority
-     tiers, body sections and the RVG modifier table have no sheet (not on US-13.4.3's or AR-29's
-     lists, or built from AR-34's files); they are maintained by hand or as printed. Dates are ISO `YYYY-MM-DD` or
+     tiers, body sections, the open-price fallbacks (18a makes them) and the RVG modifier table have no sheet
+     (not on US-13.4.3's or AR-58 section 8's lists, or built from AR-34's files); they are maintained by hand or as printed. Dates are ISO `YYYY-MM-DD` or
      `d/m/yyyy` (both parsed, and anything else rejected with "Date must be a real date, for example
      2026-12-25").
    - `samples.ts`: `SAMPLE_SHEETS`, one bundled CSV string per entity, each
@@ -746,11 +719,13 @@ green.**
        Christmas Day's date, "31/02/2027", an unknown open hospital, a blank name;
      - `hospital-holidays.csv`: two valid hospital closures; rejected, an unknown hospital, a second
        closure on 30's `HH900` hospital and date, a bad date;
+     - `specialties.csv`: two valid rows (for example Vascular surgery and Maxillofacial surgery); rejected,
+       a name already held, a blank name, a repeated row;
      - `surgeons-rooms.csv` and `surgeons.csv` (fictional, taken from `Christchurch_Specialists_fictional.xlsx`,
        never the real file): valid rooms include one with no email or phone; valid surgeons carry
-       invented CPNs, and one surgeon listed at two practices loads at both rooms; rejected,
-       a row with no HPI CPN, a first name only, a malformed HPI CPN, a duplicate HPI CPN and an
-       unknown room;
+       invented CPNs and one or more specialties, and one surgeon listed at two practices loads at both
+       rooms; rejected, a surgeon with no specialty, a specialty not on the list, a row with no HPI CPN,
+       a first name only, a malformed HPI CPN, a duplicate HPI CPN and an unknown room;
      - `anaesthetists.csv`: two valid rows; rejected, a duplicate HPI CPN, a start date in the past,
        a non-numeric unit value;
      - `rvg-groups.csv`: valid, two AA groups (one with a range "8 to 10" as Range from 8, Range to
@@ -760,23 +735,24 @@ green.**
      - `modifiers.csv`: two AA rows (for example a weekend loading and a sitting position loading, as
        Vanessa's list will hold, with demo units); rejected, a code clashing with an AA row, a
        non-numeric unit, a blank factor;
-     - `contract-holders.csv`: valid, a hospital holder billed to its hospital, a rooms holder not
-       billed, an insurer holder with delivery Portal, a surgeon holder linked to two surgeons, and Dr Ngata's first-party holder with her practitioner link (use a seeded anaesthetist
-       who has no own Contract yet); rejected, a billed holder with no billable party, an anaesthetist
-       holder marked billed, with no practitioner or with two, an unknown delivery value, an unknown
-       practitioner HPI CPN, an unknown linked record;
-     - `contracts.csv`: valid, a plain RVG Contract for the new hospital holder (no lines), a
-       fixed-price rooms Contract (not editable) and the first-party Contract (prepaid); rejected, a
-       blank holder, a retired holder, a Valid to before Valid from, a Contract name already held by
-       that holder;
-     - `contract-lines.csv`: lines into the batch's fixed-price Contract and the first-party
-       Contract, one with only Base units (blank price: not set), one with Fixed rate, one with a Fixed
-       discount, one with a Default RVG code and one with a price of 0; rejected, a repeated line key,
-       a line naming a started version of a seeded Contract (terms locked), an unresolved Default RVG
-       code, a line that sets nothing;
+     - `parties.csv`: valid, a hospital Party for the hospitals sample's new hospital (delivery Email), an
+       insurer Party with delivery Post, a surgeon group Party and an anaesthetist Party (a seeded
+       anaesthetist with no price list yet); rejected, a hospital Party naming no hospital or naming AA rooms,
+       the AA kind, an unknown delivery value, Email delivery with no email, a name already held;
+     - `funding-tags.csv`: valid, a tag naming a seeded funder Party and one naming none; rejected, a code
+       already held (SXAP), a blank code, an unknown funder Party;
+     - `contracts.csv`: valid, a fixed-price Contract for the new hospital Party under a funding tag with its
+       first range, an RVG-at-the-Contract's-rate Contract, an RVG-less-a-discount Contract and an
+       anaesthetist's prepaid fixed-price Contract (bills the Payer, linked to the anaesthetist, price above
+       zero); rejected, **a prepaid Contract with an RVG pricing kind**, a prepaid Contract that bills its
+       holder, a fixed price with no first range, a rate of 0, an Open price row, an unknown Party, an AA
+       code already held, an unknown specialty or funding tag, an override on a fixed price, linked
+       surgeons on a hospital Contract, and a Contract billing a Party with no billing details;
+     - `price-ranges.csv`: valid, a later range and a backdated range on the batch's fixed-price Contract;
+       rejected, a repeated start, a range on a rate Contract, an impossible date, an unknown AA code, a
+       blank price, a prepaid range of 0;
      - `contract-event-fees.csv` (if 39b is DONE): one valid fee into the batch's fixed-price
-       Contract; rejected, an unknown event type, a second fee for the same type on that version, a
-       fee on a started version (terms locked).
+       Contract; rejected, an unknown event type, a second fee for the same type on that Contract.
      Write the fixture rows against the masters as 17 to 39b left them, and pin each sample's valid
      and rejected counts in a test.
    - The samples live in `src/domain` so the trigger registry (inside the PWA import closure) can
@@ -784,17 +760,17 @@ green.**
 9. **Create planners, one path** (store; the refactor that keeps loads inside the guards):
    - Extract the body of each create action the loader targets into a pure planner:
      `planHospitalCreate(state, fields)`, `planHospitalHolidayCreate`, `planPublicHolidayCreate`,
-     `planSurgeonRoomCreate`, `planSurgeonCreate`, `planAnaesthetistCreate` (with 28's Slot
-     generation), `planRvgGroupCreate`, `planAaModifierCreate`, `planContractHolderCreate`,
-     `planContractCreate` (with 18's AA code and 22's invoicing default), `planContractLineCreate`
-     (allocating its line key) and `planContractEventFeeCreate` (39b's create).
+     `planSurgeonRoomCreate`, `planSpecialtyCreate`, `planSurgeonCreate` (with its specialties),
+     `planAnaesthetistCreate` (with 28's Slot generation), `planRvgGroupCreate`, `planAaModifierCreate`,
+     `planPartyCreate`, `planFundingTagCreate`, `planContractCreate` (with 18's AA code and a fixed
+     price's first range), `planPriceRangeCreate` and `planContractEventFeeCreate` (39b's create).
    - Each returns `{ state: nextSlices, metas }` or a refusal, and includes the id allocation. Where a
      phase already extracted a planner, reuse it.
    - The single-record actions become `validate, plan, mutate`, with behaviour and audit unchanged
      (their existing tests prove it). `commitMasterLoad` folds the same planners.
-   - A Contract loaded with lines in the same batch is created first and its lines fold after it, in
-     the same commit.
-   - No planner touches the price resolver or the fee path: loading changes masters only, and 19's,
+   - A Contract loaded with later ranges in the same batch is created first, with its first range, and
+     its further ranges fold after it, in the same commit; a Party before the Contracts it holds.
+   - No planner touches the price function or the fee path: loading changes masters only, and 19's,
      19a's and 24's pricing reads them as for a hand-made record.
 10. **Go-live batch, pure and store** (`src/domain/masterLoad/solutionsPlus.ts`,
     `src/domain/masterLoad/goLive.ts`, `src/store/goLiveActions.ts`; US-13.4.2, US-13.4.3 AC3):
@@ -807,21 +783,22 @@ green.**
         - "Test op";
         - "Misc";
         - an upper-case, trailing-space duplicate of "Laparoscopic cholecystectomy";
-        - one name already matching a seeded Contract line's description.
+        - one name already matching a seeded Contract's invoice description.
       - `junkReason(name)` returns "Looks like a pricing note, not an operation" for a percent sign or
         the word discount, and "Marked not for use" or "Not an operation" for the other patterns.
       - `normaliseOperationName(name)` folds case, whitespace and punctuation. A candidate whose
         normalised name repeats an earlier scan row is junk with the reason "Duplicate of scan row N".
       - Fixture counts, pinned in a test and quoted by the trigger message and the checklist: 14
         rows, 5 junk ("10% discount", "DO NOT USE - old code", "Test op", "Misc", the duplicate), 2
-        not approved, 1 already matching a seeded line, and the rest approved.
+        not approved, 1 already matching a seeded Contract, and the rest approved.
       - Tests for each pattern and for the duplicate.
     - `goLive.ts`:
       - `GO_LIVE_PACK` = the Solutions Plus list plus seven controlled sheets, in load order:
-        surgeons' rooms, surgeons (referencing those rooms), RVG groups (one AA group), contract
-        holders (one rooms holder), Contracts (one fixed-price Contract for that holder and one plain
-        RVG Contract), Contract lines (into the fixed-price Contract by name, each line's
-        description an operation name) and public holidays for 2027 (the calendar, Greg's point 40).
+        surgeons' rooms, surgeons (referencing those rooms and the seeded specialties), RVG groups (one
+        AA group), Parties (one surgeon-group Party), Contracts (one fixed-price Contract per approved
+        name, each with its first range and its invoice description an operation name, and one
+        RVG-priced Contract), price ranges (a later, backdated range on one of them) and public
+        holidays for 2027 (the calendar, Greg's point 40).
         A read-only card lists the RVG modifier table as "NZSA RVG 2021 modifier table · from AR-34's
         files · already seeded", so the pack names every master US-13.4.3 lists without
         re-transcribing one.
@@ -829,40 +806,40 @@ green.**
         The fixture carries AA's recorded decisions: most approved, two not approved ("No longer
         performed by AA members", "Replaced by a newer operation name"), and junk set by `junkReason`
         and by the duplicate rule.
-      - `evaluateGoLive(batch, masters)` joins each candidate to the lines sheet by normalised line
-        description (US-13.4.3 no longer says what the names seed and there is no procedure list: the
-        built default). One outcome per candidate: `loads`, `notApproved`, `junk`, `noControlledRow`
-        ("Needs a line in the controlled spreadsheet"), `alreadyInMaster`, or
+      - `evaluateGoLive(batch, masters)` joins each candidate to the Contracts sheet by normalised
+        invoice description (US-13.4.3 no longer says what the names seed and there is no procedure
+        list: the built default). One outcome per candidate: `loads`, `notApproved`, `junk`,
+        `noControlledRow` ("No Contract in the controlled spreadsheet"), `alreadyInMaster`, or
         `controlledRowRejected` (with the sheet's reasons).
-      - A lines-sheet row with no Solutions Plus candidate loads as an AA addition, because names can
+      - A Contracts-sheet row with no Solutions Plus candidate loads as an AA addition, because names can
         come from AA as well. A row whose candidate is not approved or junk is rejected ("Not
         approved for go-live").
       - **Solutions Plus units are never read** into anything that loads. A test gives the fixture
-        units that differ from the controlled sheet and asserts each loaded line's figures equal the
-        sheet's.
+        units that differ from the controlled sheet and asserts each loaded Contract's range prices equal
+        the sheet's.
     - `goLiveActions.ts`:
       - `stageGoLiveLoad(api, actor)` creates the `GoLiveBatch` (`{ id, candidates, loadIds, status, stagedAtISO, stagedBy, loadedAtISO? }`),
         stages each controlled sheet as a `MasterLoad` with `goLiveBatchId`, validating in pack order
         with `pendingKeys`, and audits `goLive.stage`. It refuses while a batch is already staged.
       - `setGoLiveApproval(api, actor, scanRow, approved, reason?)` refuses a junk row ("Junk is
         excluded and cannot be approved") and audits `goLive.approve` or `goLive.unapprove`. It
-        re-runs the lines sheet's validation, so the join outcomes follow at once.
+        re-runs the Contracts sheet's validation, so the join outcomes follow at once.
       - `commitGoLiveLoad(api, actor)` runs one `mutate()` that folds every sheet's valid rows in
-        pack order through the item 9 planners. Line rows are included only when `evaluateGoLive`
-        says `loads`. It marks every load and the batch `loaded`, and audits `goLive.commit` with the
+        pack order through the item 9 planners. A Contract row, and any price range naming it, is included
+        only when `evaluateGoLive` says `loads`. It marks every load and the batch `loaded`, and audits `goLive.commit` with the
         counts (loaded by sheet, Solutions Plus entries not loaded).
       - `discardGoLiveLoad(api, actor)`.
       - All four act as `SEED_LOAD_ACTOR`, except approvals, which are AA's decision: they act as the
         Admin app's actor (Kirsty).
     - Tests (`goLive.test.ts`, `goLiveActions.test.ts`):
       - each outcome;
-      - an unapproved candidate's line never loads (US-13.4.2 AC1);
+      - an unapproved candidate's Contract never loads (US-13.4.2 AC1);
       - loaded fields come only from the controlled sheets (US-13.4.2 AC2): none from Solutions
         Plus, and no Contract created other than the sheet's;
       - "10% discount" is excluded and cannot be approved;
-      - un-approving a row before commit removes its line from the load;
-      - rooms load before the surgeons that reference them, the holder before its Contracts and the
-        Contract before its lines;
+      - un-approving a row before commit removes its Contract and its price ranges from the load;
+      - rooms load before the surgeons that reference them, the Party before its Contracts and a
+        Contract before its further price ranges;
       - one commit, and nothing partial on a planner refusal;
       - Reset then stage and commit again gives identical records (US-13.4.3 AC2, the repeatable
         test load).
@@ -878,10 +855,12 @@ green.**
     - The groups:
       - People and places: Anaesthetists (seeded: anaesthetists), Hospitals & holidays (seeded:
         hospitals, hospital holidays), Surgeons (seeded: surgeons), Surgeons' rooms (seeded: rooms),
-        Surgeon groups and Organisations (18's surviving master);
+        Specialties (18a; seeded: specialties) and Surgeon groups;
       - Schedule: Recurring bookings (30's view and id), Availability statuses (29's), Public
         holidays (seeded: public holidays);
-      - Billing: Contract holders (18, insurers among them; seeded: contract holders), Contracts (seeded: Contracts, Contract lines, Contract event fees; edits open 25's staged flow), RVG groups (19, with 19a's time rule
+      - Billing: Parties (18, insurers and funders among them; seeded: Parties), Funding tags (18a;
+        seeded: funding tags), Contracts (18, with 19a's price ranges; seeded: Contracts, price ranges,
+        Contract event fees; edited in place), RVG groups (19, with 19a's time rule
         panel; seeded: RVG groups), Modifiers (19b; seeded: modifiers);
       - Settings: Xero & archiving;
       - Go-live: Seed load, Go-live load (both demo-badged).
@@ -898,18 +877,20 @@ green.**
         `retireBlockers` as a warning list when refused, or "Reinstate";
       - `LoadResultBanner`: on a seeded view, a one-line banner while a seed load for that entity is
         staged ("A seed load for this list is waiting: Open Seed load").
-    - Refit every view to it, including 17's, 18's, 19's, 19b's, 29's and 30's.
+    - Refit every view to it, including 17's, 18's, 18a's, 19's, 19a's, 19b's, 29's and 30's.
       - Drop any remaining "view only" or "read only" subtitle.
-      - Views with retire use `RetireSection` in their existing sheet (18, 19, 29 and 30 keep their
-        own retire actions, restyled to the same section).
+      - Views with retire use `RetireSection` in their existing sheet (18's Disable, 18a's, 19, 29 and
+        30 keep their own actions, restyled to the same section).
       - Rows referenced by nothing keep their delete: hospital holidays and public holidays.
     - Test (`masterViews.test.ts`): each row of US-13.4.1's list maps to a view with `add` and
       `edit`:
       - hospitals with contact email;
-      - surgeons;
+      - surgeons, with their specialties;
       - surgeon groups;
       - surgeons' rooms;
-      - contract holders, insurers among them;
+      - Parties, insurers and funders among them;
+      - specialties;
+      - funding tags;
       - anaesthetists;
       - availability statuses (the catalogue's "Slot availability statuses");
       - recurring bookings;
@@ -917,15 +898,15 @@ green.**
       - hospital calendars;
       - RVG codes and groups (the RVG groups view);
       - modifier codes;
-      - Contracts.
+      - Contracts, with their price ranges.
       Every masters view that retires declares `retire`. Every `LoadEntity` is named by at least one
       view's `seeded`. No office view renders a load action (asserted).
     - MasterData publishes the current view with `useDemoTriggerContext('masters.view', view)`; add the
       key to `DemoContextValues`.
-12. **Hospitals & holidays, Public holidays, Modifiers, the time rule and the Contract edit flow**
+12. **Hospitals & holidays, Public holidays, Modifiers, the time rule and Contract edits**
     (US-13.4.1, DM-38, US-05.1.5, US-05.2.2):
     - **Hospitals & holidays:**
-      - 17's `EditHospitalSheet` gains `RetireSection`, and a rename shows "Its contract holder is
+      - 17's `EditHospitalSheet` gains `RetireSection`, and a rename shows "Its Party is
         renamed too" when item 5's rule applies;
       - each hospital card gains a "Public holidays" line: "Closed on all public holidays", or "Open
         on Labour Day" when listed;
@@ -951,34 +932,33 @@ green.**
       "A part interval always rounds up." as a read-only line, a live preview of `describeTimeRule`
       and worked examples (95 and 125 minutes), and Save calling `editRvgTimeRule` with its refusal
       sentences inline. `data-shot="rvg-time-rule-sheet"`. First in the trim order.
-    - **Contract edits** (18's Contract detail and the Contracts view): "Edit" and "New version" open
-      25's staged flow, and the view shows 25's staged-changes pill where a Contract has one. There
-      is no check line, "Not checked" pill or "Mark lines checked" here: 25's review dashboard is the
-      second-person check.
+    - **Contract edits** (18's Contract screen and 19a's price ranges): refit to the one header and
+      pattern, nothing rebuilt. "Edit" saves in place and is audited; a fixed price changes by "Add price
+      range". There is no "New version", staged-changes pill or check line: no versions, no staging (D34).
 13. **Seed load view** (`apps/admin/screens/masters/SeedLoadView.tsx`, group Go-live,
     `apps/admin/screens/masters/LoadResultPanel.tsx`; US-13.4.3 AC1 and AC2):
     - Header: "Seed load". Subtitle: "AA's controlled spreadsheets, checked and loaded once before
       go-live. Every row is checked with the same rules as adding it by hand." A `DemoBadge` reads
       "Demo stand-in: in the real system a developer runs this load; the office never sees this
-      screen." One more line states D34: "There is no Contract schedule upload in the first release;
-      Contracts are kept by hand after the seed."
-    - A list of the twelve sheets in load order (rooms, surgeons, anaesthetists, hospitals, hospital
-      holidays, public holidays, RVG groups, modifiers, contract holders, Contracts, Contract lines,
-      Contract event fees; eleven if 39b's sheet was dropped), each row with its columns (required
+      screen." One more line states D34: "There is no Contract upload or export in the first release;
+      Contracts are kept by hand after the load."
+    - A list of the fourteen sheets in load order (rooms, specialties, surgeons, anaesthetists,
+      hospitals, hospital holidays, public holidays, RVG groups, modifiers, Parties, funding tags,
+      Contracts, price ranges, Contract event fees; thirteen if 39b's sheet was dropped), each row with its columns (required
       ones marked), "Download template" (a header-only CSV built client-side as a Blob, no fetch), a
       `.csv` file input (FileReader text passed to `stageMasterLoad` as `SEED_LOAD_ACTOR`, source
-      `file`) and its last result. The lines row carries the hint "A blank cell is not set; 0 means
-      zero."; the RVG groups row "A code may appear on more than one row."
+      `file`) and its last result. The Contracts and price ranges rows carry the hint "A blank cell is not set; 0 means
+      zero."; the surgeons row "A surgeon needs at least one specialty."; the RVG groups row "A code may appear on more than one row."
     - `LoadResultPanel`, shared with the go-live view:
       - a summary line (hospitals.csv: "6 rows · 2 valid · 4 rejected");
       - an Admin Review style table with columns Row (mono), the spec's key columns, Result (a
         success-tint "Valid" or error-tint "Rejected" pill, always with its word), and Reasons (one
-        per line); a Contract row with no lines shows a neutral "Plain RVG" note;
+        per line); a Contract row shows its pricing kind as a neutral pill (a fixed price adds "1 range");
       - "Only rejected" filter chips;
       - a teal "Load 2 valid rows" and a secondary "Discard".
       After a load, the summary reads "Loaded 2 rows on 21 Jul 2026 · 4 rejected rows were not
       loaded" (a calendar load adds "· 6 Lists flagged"; all counts are computed), and each row links
-      to its record in its office view (the surgeon profile, the holder panel, the Contract detail).
+      to its record in its office view (the surgeon profile, the Party editor, the Contract screen).
     - "Repeatable for a test system" footnote: "Reset the demo and load the same sheets again: the
       records come back identical."
     - Hooks: `data-shot="seed-load"`, `data-shot="master-load-result"`.
@@ -995,7 +975,7 @@ green.**
       - a table with columns Scan row (mono), Operation name, Solutions Plus units (struck through in
         mist, with the column caption "Not used"), AA decision, Controlled spreadsheet, and Result;
       - AA decision is a pill: Approved, Not approved with reason, or Excluded with the junk reason;
-        Controlled spreadsheet shows the matching line's Contract, holder and default RVG code (mono)
+        Controlled spreadsheet shows the matching Contract, its Party and default RVG code (mono)
         with its fixed price, or "No row";
       - Result is "Loads" or "Not loaded" with the reason;
       - non-junk rows have an Approve / Unapprove toggle (`setGoLiveApproval`). On junk rows the toggle
@@ -1004,8 +984,8 @@ green.**
     - **Controlled spreadsheets:** one collapsible card per sheet in pack order, each with its counts
       and a `LoadResultPanel` without its own Load button, plus the read-only RVG modifier table card.
     - Actions: a teal "Load approved data" (`commitGoLiveLoad`) and a secondary "Discard". The result
-      line reads, for example, "Loaded 3 rooms, 5 surgeons, 1 RVG group, 1 contract
-      holder, 2 Contracts with 4 lines and 4 public holidays. 9 Solutions Plus entries were not
+      line reads, for example, "Loaded 3 rooms, 5 surgeons, 1 RVG group, 1 Party,
+      5 Contracts with 6 price ranges and 4 public holidays. 9 Solutions Plus entries were not
       loaded.", with links to each view. The counts are computed, never typed in; the fixture's are
       pinned in `goLive.test.ts` (item 10).
     - A caption under the candidate table states the clean-cut rule (US-13.4.3): "Solutions Plus
@@ -1016,7 +996,7 @@ green.**
     - Hospitals:
       - `hospital.retire` "Hospital retired";
       - `hospital.reinstate` "Hospital reinstated";
-      - the same pair for surgeon, surgeon room, surgeon group, organisation and AA modifier;
+      - the same pair for surgeon, surgeon room, surgeon group and AA modifier;
       - `modifier.update` "Modifier changed".
     - Public holidays:
       - `publicHoliday.create` "Public holiday added";
@@ -1040,14 +1020,14 @@ green.**
     - Add `activeHospitals`, `activeSurgeons`, `activeRooms`, `activeGroups` and
       `activeAaModifiers` selectors in `store/selectors.ts`, built on `activeOnly(records, keepId)`.
     - Route every picker from the drift-check grep through them: `EditListSheet`, `PhoneAdviceBooking`,
-      30's recurring-booking sheet, the Draft List and assignment flows (31), 18's holder-link picker,
-      17's surgeon room select and `SurgeonSelect`, 21's insurance-indication picker, the
+      30's recurring-booking sheet, the Draft List and assignment flows (31), 18's Party-hospital and Contract surgeon-link pickers,
+      17's surgeon room select and `SurgeonSelect`, 21's insurer or funder picker, the
       matching-screen create actions (33), and 35's admin Booking editor if it picks a hospital or
       surgeon. `activeHospitals` filters retirement only; the pickers that 31 made exclude AA rooms
-      (18's holder link, the feed and sync pickers) keep that filter on top.
-    - Confirm 20's Contract picker hides a Contract whose holder is retired (keeping it, labelled,
-      when it is the Procedure's current Contract); add it here only if 20 did not. No contract
-      (RVG) is always offered first.
+      (18's Party hospital, the feed and sync pickers) keep that filter on top.
+    - Confirm 20's step rail hides a Disabled Contract and one whose linked surgeon is retired (keeping it, labelled,
+      when it is the Procedure's current Contract); add it here only if 20 did not. No contract · RVG
+      is always pinned first.
     - A retired current value shows as "St George's (retired)".
     - Display paths (grid, drawer, invoices, history, profile, 25's snapshots) keep resolving retired
       names unchanged.
@@ -1062,8 +1042,8 @@ green.**
     - Public holidays;
     - the hospital calendar with Labour Day;
     - the Seed load view, a staged hospitals load with its result panel, and the loaded state;
-    - a staged RVG groups load (a repeated code) and a staged Contract lines load (a blank is not
-      set, a 0 is zero);
+    - a staged RVG groups load (a repeated code), a staged surgeons load (a row with no specialty) and
+      a staged Contracts load with its price ranges (a prepaid RVG Contract rejected);
     - the time rule sheet;
     - the go-live view before and after "Load approved data".
     Keep the existing master-data shot green; move its hooks if 17 to 19b moved them.
@@ -1076,6 +1056,8 @@ green.**
         19a should have removed them; anything left is a bug to fix here);
       - "reference tables" or "reference data" anywhere in app copy (one label: "Master data");
       - "Load from spreadsheet" on any office view;
+      - "contract holder", "Contract lines", "New version", "Needs a Contract" or "staged" in Master data
+        copy (the Party, one Contract per item and an in-place edit replace them);
       - "slot" in any new or touched Master data string (D14);
       - any "Phase 42" string in rendered copy.
     - No en or em dash in any new string.
@@ -1085,17 +1067,16 @@ green.**
 
 | id | Label | Screen (routes) | Surfaces | Effect | Disabled when |
 |---|---|---|---|---|---|
-| `load-sample-spreadsheet` | Load sample spreadsheet | Admin · Master data (`/admin/masters`) | bar | `when`: the published `'masters.view'` is Seed load, or a view whose `seeded` is set in `masterViews.ts`. `choices`: on Seed load, every `SAMPLE_SHEETS` entry; on another view, that view's sheets, labelled by file name (Hospitals & holidays offers "hospitals.csv" and "hospital-holidays.csv"; Contracts offers "contracts.csv", "contract-lines.csv" and "contract-event-fees.csv"; RVG groups "rvg-groups.csv"; Contract holders "contract-holders.csv"; Public holidays "public-holidays-2027.csv"; Surgeons and rooms "surgeons-rooms.csv" and "surgeons.csv"). `run`: `stageMasterLoad` as `SEED_LOAD_ACTOR` (the developer's step), with source `{ kind: 'sample', sampleId }`. It stages and does not load, so the presenter shows the rejected rows on Seed load and then presses the product's own "Load N valid rows". Message: "hospitals.csv checked: 2 rows valid, 4 rejected. Open Master data, Seed load, and press Load." | a staged load for this sheet already exists ("A load is already waiting for this sheet; load or discard it first") |
+| `load-sample-spreadsheet` | Load sample spreadsheet | Admin · Master data (`/admin/masters`) | bar | `when`: the published `'masters.view'` is Seed load, or a view whose `seeded` is set in `masterViews.ts`. `choices`: on Seed load, every `SAMPLE_SHEETS` entry; on another view, that view's sheets, labelled by file name (Hospitals & holidays offers "hospitals.csv" and "hospital-holidays.csv"; Contracts offers "contracts.csv", "price-ranges.csv" and "contract-event-fees.csv"; RVG groups "rvg-groups.csv"; Parties "parties.csv"; Funding tags "funding-tags.csv"; Specialties "specialties.csv"; Public holidays "public-holidays-2027.csv"; Surgeons and rooms "surgeons-rooms.csv" and "surgeons.csv"). The samples carry invalid rows, among them a prepaid Contract with an RVG pricing kind and a surgeon with no specialty. `run`: `stageMasterLoad` as `SEED_LOAD_ACTOR` (the developer's step), with source `{ kind: 'sample', sampleId }`. It stages and does not load, so the presenter shows the rejected rows on Seed load and then presses the product's own "Load N valid rows". Message: "hospitals.csv checked: 2 rows valid, 4 rejected. Open Master data, Seed load, and press Load." | a staged load for this sheet already exists ("A load is already waiting for this sheet; load or discard it first") |
 | `go-live-data-load` | Go-live data load (demo) | Admin · Master data (`/admin/masters`, any view) | bar | `run`: `stageGoLiveLoad` as `SEED_LOAD_ACTOR`. The Master data sub-nav's Go-live load item gains a warn dot while a batch is staged, and every view shows a one-line banner, "A go-live load is ready to review", with an "Open" link that sets `?view=goLive`. The presenter approves or un-approves names and presses the product's "Load approved data". Message: "Go-live load prepared: 14 Solutions Plus names (5 excluded as junk, 2 not approved) and 7 controlled spreadsheets. Open Master data, Go-live load." | a batch is already staged ("A go-live load is already waiting; load or discard it first") |
 
 `indexPath`: `/admin/masters?view=seedLoad` for the sample loader and `/admin/masters?view=goLive` for
 go-live (use the real view ids). Both are bar only. Their bodies and fixtures live in `src/shared`
-and `src/domain`, so `pwaPurity.test.ts` still passes. There is **no lines-check trigger**: the
-second-person check is 25's staged review, with its own `stage-price-review` trigger.
+and `src/domain`, so `pwaPurity.test.ts` still passes. There is **no staged-review or lines-check
+trigger**: Contracts are edited in place and audited (D34).
 
 **Normal use, no button:** adding, editing, retiring and reinstating every master; the public-holiday
-calendar; editing AA's modifiers; editing the RVG time rule; staging and submitting a Contract change
-(25); loading a real CSV on Seed load; approving go-live names; "Load N valid rows"; and "Load
+calendar; editing AA's modifiers; editing the RVG time rule; editing a Contract and adding a price range (18, 19a); loading a real CSV on Seed load; approving go-live names; "Load N valid rows"; and "Load
 approved data".
 
 **PWA:** none. Master data and loads are Admin-only, the PWA has no Admin, and no mobile beat waits on
@@ -1104,36 +1085,38 @@ pickers through item 16.
 
 ## Out of scope
 
-- **A Contract schedule upload** (US-04.2.13, Future Work; D34): no in-app upload of a holder's
-  schedule, no delta or full overwrite, no preview of new, changed and removed lines, no control
-  totals. The seed load is separate from it (US-13.4.3). If OQ-100 brings it into the first release,
-  it needs its own phase.
+- **A Contract upload or export** (US-04.2.13, Future Work; OQ-100 answered, D34): no in-app upload of a
+  holder's schedule, no export and re-import, no delta or full overwrite, no preview, no control
+  totals. The seed load is separate from it (US-13.4.3). If a later answer brings it into the first
+  release, it needs its own phase.
 - **Any office "Load from spreadsheet" action.** The seed is a developer's one-off step (US-13.4.3);
   the office edits by hand. The Seed load view is a demo stand-in, badged as such.
 - **Excel (`.xlsx`) parsing.** Controlled spreadsheets are saved as CSV; record the reading.
   Mapping arbitrary column names is out too: the template's headers are the contract.
 - **Updating existing records from a load, or deleting by load.** A load only adds; a price review is
-  18's New version, by hand.
+  a new price range (19a), by hand.
 - **Loads for surgeon groups, recurring bookings, availability statuses, preferences and
-  priority tiers, body sections, and 31's request sources.** They are on neither US-13.4.3's nor
-  AR-29's list, and each is maintained by hand in its view (body sections stay as the guide prints
+  priority tiers, body sections, the open-price fallbacks (18a makes them) and 31's request sources.** They are on neither US-13.4.3's nor
+  AR-58 section 8's list, and each is maintained by hand in its view (body sections stay as the guide prints
   them; 31's request sources stay code-held, a candidate master noted for Phase 44). Recurring
   bookings are the "calendar schedules" the room left unclear: hand-made here, logged for the owner.
 - **Loading the RVG modifier table from a sheet, or transcribing the full NZSA RVG.** The modifier
   table is built from AR-34's files (19b); the RVG groups sheet's go-live rows are AA additions and a
   handful of demo rows, and the full NZSA group set is narrated ("the full set loads the same way"),
   not transcribed here. Note it for the owner.
-- **No contract (RVG) and default Contracts.** No contract (RVG) is the one built-in default (18) and
-  is never loaded; there are no hospital default Contracts to load (OQ-78).
+- **No contract · RVG and default Contracts.** No contract · RVG is the one built-in Contract (18),
+  held by AA, and is never loaded; there are no hospital default Contracts to load (OQ-78).
 - **Loading patients, Bookings, invoices, balances or anything transactional from Solutions Plus.**
   The clean cut excludes them; the go-live view says so in its subtitle.
 - **Any Solutions Plus identifier** (US-13.4.3 takes names only; OQ-51 was deleted unanswered).
 - **An insurer master, a direct-claims flag or any pre-fill from one** (FT-11.4 and US-11.4.1 Retired;
-  D55). Insurers are contract holders. The split is a Booking action (Phase 22); special rates are
-  Contract lines (19a).
+  D55). Insurers and funders are Parties. The split is a Booking action (Phase 22); a special rate is a
+  Contract of its own (18).
+- **Contract lines, versions, staged changes or a review dashboard** (US-04.2.4 and US-04.1.6 Retired; D1,
+  D34): one Contract per priced item, edited in place and audited.
 - **Changing the time rule's rounding.** A part interval always rounds up; the editor changes tiers
   only.
-- **Any second-person check of its own.** 25's staged review is the check (D34's default); this phase adds none.
+- **Any second-person check of its own.** Staged review is gone (D34 answered); this phase adds none.
 - **Editing the hospital sync set-up** (34's `INTEGRATED_HOSPITALS` and its fixture). It is
   integration configuration, not a US-13.4.1 table. It stays code-held; a hospital in it cannot be
   retired (item 2).
@@ -1152,17 +1135,18 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       Go-live), every view has the same header, no office view offers "Load from spreadsheet", seeded
       views say "Loaded once at go-live from AA's controlled spreadsheet, then kept here by hand.",
       and no Master data copy says "view only", "reference tables", "reference data", "default RVG
-      Contract", "protected default" or "slot".
-- [ ] Contract holders: Master data has no Insurers view and no "Accepts direct claims" anywhere. Add
-      an insurer by hand as a contract holder (kind Insurer, delivery Portal): it appears on Contract
-      holders and nowhere else, no Contract is created, and "Holder is billed" takes the panel's own
-      default, not a flag's. Add a surgeon holder linked to two surgeons, and an anaesthetist holder: it
-      takes one anaesthetist only.
+      Contract", "protected default", "contract holder", "New version" or "slot".
+- [ ] Parties: Master data has no Insurers view and no "Accepts direct claims" anywhere. Add
+      an insurer and a funder by hand as Parties (delivery Post for the insurer): each appears on Parties
+      and nowhere else, and no Contract is created. A Party that bills nobody saves without billing
+      details; add a Contract that bills this Party and it is refused until the Party has a
+      billing name and a delivery method. Specialties and Funding tags show in the same pattern (18a's
+      editors, refitted), a surgeon cannot be saved with no specialty, and no view says "contract holder".
 - [ ] Hospitals & holidays: rename a hospital, and the Day grid, List drawer, Booking detail and the
-      holder's name show the new name, while an already-raised invoice keeps the old addressee. Try to
-      retire St George's: refused, with upcoming List, recurring booking and contract holder counts.
-      Retire a hospital with no upcoming work and no active holder (add one by hand first: every
-      seeded hospital has a holder from 18): accepted, gone from Edit list and phone advice, and any
+      Party's name show the new name, while an already-raised invoice keeps the old addressee. Try to
+      retire St George's: refused, with upcoming List, recurring booking and Active Contract counts.
+      Retire a hospital with no upcoming work and no Active Contract on its Party (add a hospital
+      by hand first: every seeded hospital's Party holds Contracts): accepted, gone from Edit list and phone advice, and any
       List placed there before retiring still shows its name. Reinstate it. AA rooms refuses Retire
       ("AA rooms is built in and cannot be retired.").
 - [ ] Public holidays: seven rows from Labour Day to Waitangi Day (observed). Labour Day shows "Lists
@@ -1183,10 +1167,11 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       the preview gives 7 units for 95 minutes and 9 for 125. A tier with a zero interval is refused
       with 19a's sentence. Save a changed tier, and an ACTIVE Booking's T units follow while an
       AUTHORISED one does not. Put it back.
-- [ ] Contract edits after the seed: edit a loaded Contract's header and one line from Master data,
-      Contracts. The change is staged, not applied, and 25's review dashboard lists it; there is no
-      "Checked by" mark or "Not checked" pill anywhere. Submit it as a new dated version.
-- [ ] Seed load: the DemoBadge and the D34 line show; twelve sheets in load order (eleven without 39b's event fees), each with Download
+- [ ] Contract edits after the load: edit a loaded Contract's setting from Master data, Contracts: it saves
+      at once and the audit viewer shows the edit. Add a price range from a past date: the old range
+      ends the day before and a Procedure on an earlier date keeps its price. There is no "New
+      version", staged-changes pill, "Checked by" mark or review dashboard anywhere.
+- [ ] Seed load: the DemoBadge and the D34 line show; fourteen sheets in load order (thirteen without 39b's event fees), each with Download
       template. Demo actions, "Load sample spreadsheet", hospitals.csv: the result panel shows each
       rejected row with its reason (already in master data, name required, email, duplicate) and the
       valid rows. Nothing is added yet. Press "Load 2 valid rows": they appear in Hospitals &
@@ -1198,15 +1183,20 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] rvg-groups.csv: the ranged group and a second row sharing an existing code load; the zero
       figure, the range not holding its figure, the blank description and the held code and
       description are rejected with 19's wording. No procedure or Contract is created.
-- [ ] contract-holders.csv, contracts.csv, contract-lines.csv in that order: the holders appear on
-      Contract holders (an insurer with delivery Portal, a surgeon holder linked to two surgeons, the first-party one with its practitioner link, never billed); the unknown delivery value, unknown practitioner and two-practitioner anaesthetist holder are rejected with 18's wording; the plain RVG
-      Contract shows "Plain RVG: no lines" and is offered for every procedure in 20's picker for a
-      Booking at that hospital; the loaded Contracts got AA codes and their editable and prepaid
-      settings; the lines' blank cells show as not set and the 0 price as 0 in 19a's grid, each line
-      with a line key; the repeated line key, the locked version, the unresolved Default RVG code
-      and the empty line are rejected with 19a's and 18's wording.
+- [ ] specialties.csv, parties.csv, funding-tags.csv, contracts.csv, price-ranges.csv in that order: the
+      new specialties appear in Specialties, the Parties on Parties (the insurer with delivery Post, the
+      anaesthetist's own Party), the tag in Funding tags in the step rail's order, and open-price fallbacks
+      for the new hospital and tag appear without being a sheet. The loaded Contracts each got an AA
+      code (or kept the sheet's), their settings and one first range; the rate of 0 is refused (0 is a
+      value, not blank), the Open price row is refused ("made by the system"), and **the prepaid RVG
+      Contract is refused with 18's wording**. The anaesthetist's prepaid Contract is linked to them
+      with a price above zero. The backdated range on the fixed-price Contract ends the earlier one
+      the day before it starts and shows in 19a's range list; the repeated start, the range on a rate
+      Contract and the blank price are refused with 19a's wording. A Booking at the new hospital offers the
+      new Contracts on 20's step rail by typing.
 - [ ] Repeat on Surgeons' rooms (a room with no email or phone loads and shows none) and Surgeons
-      (a row with no HPI CPN and a first-name-only row are each rejected with their reason; a surgeon
+      (a row with no specialty, a row naming a specialty not on the list, a row with no HPI CPN and a
+      first-name-only row are each rejected with their reason; a loaded surgeon shows their specialties; a surgeon
       at two practices loads at both rooms (open the profile: a card per room); an unknown room, a malformed HPI CPN and a
       duplicate HPI CPN are each rejected with 17's wording; no contacts sheet is offered), Anaesthetists (a loaded anaesthetist has Slots from
       the start date on the Day grid) and Modifiers (AA rows only).
@@ -1220,15 +1210,15 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       reasons, and their toggles are disabled. Solutions Plus units are struck through and marked Not
       used. Two names show Not approved. Seven controlled spreadsheets are listed in pack order, with
       the RVG modifier table card read-only.
-- [ ] Un-approve one approved name: its Result turns "Not loaded: not approved for go-live", its line
-      leaves the lines sheet's valid rows, and the tiles update. Press "Load approved data": the
-      result line counts rooms, surgeons, the group, the holder, the Contracts with their
-      lines, and public holidays. The Contract lines show the sheet's figures (not Solutions Plus's), and the
+- [ ] Un-approve one approved name: its Result turns "Not loaded: not approved for go-live", its Contract
+      leaves the Contracts sheet's valid rows, and the tiles update. Press "Load approved data": the
+      result line counts rooms, surgeons, the group, the Party, the Contracts with their
+      price ranges, and public holidays. The Contracts show the sheet's prices (not Solutions Plus's), and the
       un-approved and junk names are absent.
 - [ ] Repeatable: Reset, then run the go-live load again and load it: the same records with the same
       ids and AA codes.
-- [ ] Audit viewer: filter to masterLoad, goLive and contract.submitChange. Stage, commit, approvals,
-      Contract submits and each created record are present, with who, role and before and after.
+- [ ] Audit viewer: filter to masterLoad, goLive and contract. Stage, commit, approvals,
+      Contract edits and each created record are present, with who, role and before and after.
 - [ ] The harness bar shows "Load sample spreadsheet" only on Seed load and seeded Master data views,
       "Go-live data load (demo)" only on Master data, . None shows on Day view or in the installed PWA. The Control Panel index lists both
       under Admin · Master data.
@@ -1251,44 +1241,43 @@ phase; it adds one optional beat and refreshes the master-data lines:
   - **S5, a new optional Beat 5 "Controlled master data and a clean-cut go-live"** (about 2
     minutes):
     - Click: Admin, Master data, Seed load. Demo actions, Load sample spreadsheet,
-      contract-lines.csv. Point at the rejected rows and the blank cells (not set, never zero), then
-      Load. Then Demo actions, Go-live data load (demo), and Master data, Go-live load. Point at "10%
-      discount" excluded, the struck-through Solutions Plus units and the matching Contract line
+      contracts.csv. Point at the rejected rows (the prepaid RVG Contract, the Open price row) and the
+      blank cells (not set, never zero), then Load. Then Demo actions, Go-live data load (demo), and Master data, Go-live load. Point at "10%
+      discount" excluded, the struck-through Solutions Plus units and the matching Contract
       beside each approved name. Un-approve one name, then Load approved data, then open Contracts and
-      the loaded Contract: any later edit is staged for review.
+      the loaded Contract: any later edit saves in place and is audited, and a new price is a new price range.
     - Say: "AA starts clean. A developer seeds the empty system once from AA's own controlled
-      spreadsheets: hospitals, surgeons and rooms, anaesthetists, RVG groups with their base units,
-      modifiers, contract holders, Contracts and their lines, and the calendars. Every row is checked
+      spreadsheets: hospitals, surgeons with their specialties and rooms, anaesthetists, RVG groups with their base units,
+      modifiers, Parties, Contracts one per priced item with their price ranges, and the calendars. Every row is checked
       with the same rules as adding it by hand, and anything that fails is listed and left out. After
-      that, the office keeps it all by hand on these screens, and every Contract change is staged and
-      reviewed before it takes effect. Solutions Plus gives us names, not numbers. And because it is a
+      that, the office keeps it all by hand on these screens, and every change is audited. Solutions Plus gives us names, not numbers. And because it is a
       spreadsheet, the same load runs again into a test system."
     - Expected: as in the manual checklist.
-  - **S5 Discovery points:** add "whether surgeons can load without an HPI CPN or a full name (OQ-129)",
-    "whether a Contract schedule upload is needed in the first release
-    (OQ-100)" and "whether recurring bookings join the seed spreadsheets (US-13.4.3's calendar
-    schedules)". Remove any "whether admins can re-load master data after go-live" point (answered by
-    US-13.4.3: seeded once, then by hand).
+  - **S5 Discovery points:** add "whether surgeons can load without an HPI CPN or a full name (OQ-129)"
+    and "whether recurring bookings join the seed spreadsheets (US-13.4.3's calendar schedules)".
+    Remove any "whether a Contract schedule upload is needed in the first release (OQ-100)" point
+    (answered 5 November: Future Work, so say so if asked) and any "whether admins can re-load master
+    data after go-live" point (answered by US-13.4.3: loaded once, then by hand).
   - **Direct URLs:** add `/admin/masters?view=publicHolidays`, `/admin/masters?view=seedLoad` and
     `/admin/masters?view=goLive` (use the real view ids).
   - **S2** only if it names a hospital holiday by its old per-hospital row. Labour Day is now a
     public holiday; check the wording.
 - `docs/demo-guide/04-presenter-cheat-sheet.md`:
   - the Admin Web list: "Master data and audit" becomes "Master data (every master in one place,
-    kept by hand after a one-off seed from AA's controlled spreadsheets, every Contract change reviewed on a
-    staged dashboard, go-live load) and audit";
+    kept by hand after a one-off load from AA's controlled spreadsheets, every change audited,
+    go-live load) and audit";
   - one line under availability and holiday conflicts: public holidays come from one master calendar;
   - one "strong phrase": "Nothing comes across because it exists in Solutions Plus."
 - `docs/demo-guide/01-personas-and-responsibilities.md`: Kirsty's duty 9 ("Maintain schedule-related
   master data ...") becomes "Maintain all master data (hospitals, surgeons and rooms,
-  recurring bookings, public holidays and hospital calendars, RVG groups, procedures and modifiers,
-  contract holders (insurers among them), Contracts and their lines), by hand after the one-off go-live seed, and review
-  staged Contract changes".
+  recurring bookings, public holidays and hospital calendars, RVG groups and modifiers,
+  specialties and funding tags, Parties (insurers and funders among them), Contracts and their price ranges), by
+  hand after the one-off go-live load".
 - `docs/demo-guide/02-workflows-and-handoffs.md`: in the canvas workflow's triggers, "A recurring
   booking or hospital holiday changes" (Phase 30's wording) becomes "A recurring booking, hospital
   holiday or public holiday changes". Add a short "Master data and go-live" note beside the Source
   list naming the clean cut, the one-off developer seed (repeatable into a test system) and no
-  Contract schedule upload in the first release.
+  Contract upload or export in the first release (Future Work).
 - `docs/demo-guide/master-demo-guide.html`: mirror the same S5 beat, discovery points, Direct URLs,
   cheat-sheet, persona and workflow lines, word for word.
 - **Control Panel scenario text** (`apps/demo/DemoControlPanel.tsx`, the S5 blurb): add "Optional:
@@ -1302,14 +1291,14 @@ The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS
 run after the review pass and before the PROGRESS.md entry. Re-run
 `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 42` first: earlier phases may have
 changed these recipes. The catalogue has already refreshed US-13.4.1's captions (priority tier,
-recurring bookings, contact email, availability statuses); its caption still calls insurers view only and says there is no master
-calendar. US-11.4.1 is Retired and has no row here (18 marks its recipe absent).
+recurring bookings, contact email, availability statuses); its caption still calls insurers, RVG codes and modifier codes view only and says there is no master
+calendar, no RVG groups, no Parties, specialties or funding tags. Rows are for the three covered items only: US-13.4.4 and US-13.4.5 are 18a's, and US-11.4.1 is Retired.
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) | partial · `admin-master-data` [anaesthetists, contracts, permanent-lists, hospitals-holidays, surgeons, surgeon-rooms, surgeon-groups, rvg-codes, modifier-codes, availability-statuses]; the caption names insurers, organisations, RVG codes and modifier codes as view only and no master calendar | `captured`. Re-shoot at `/admin/masters`, one state per view in the grouped sub-nav, keeping the slugs and re-pointing clicks to the current button names; add `contract-holders` (insurers listed among the holders; no Insurers view), `public-holidays` (`masters-public-holidays`), `hospitals-holidays` with Labour Day as a public-holiday closure plus a retire refusal, and `retired` (under "Show retired"). Captions say "Master data", no state shows a load button or an insurer master. Drop the partial reason |
+| [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) | partial · `admin-master-data` [anaesthetists, contracts, permanent-lists, hospitals-holidays, surgeons, surgeon-rooms, surgeon-groups, rvg-codes, modifier-codes, availability-statuses]; the caption names insurers, organisations, RVG codes and modifier codes as view only, no RVG groups and no master calendar | `captured`. Re-shoot at `/admin/masters`, one state per view in the grouped sub-nav, keeping the slugs and re-pointing clicks to the current button names; add `parties` (insurers and funders among the Parties; no Insurers view), `specialties`, `funding-tags` (18a's editors in the one pattern), `contracts` (one per item, with a fixed price's price ranges; no lines or versions), `public-holidays` (`masters-public-holidays`), `hospitals-holidays` with Labour Day as a public-holiday closure plus a retire refusal, and `retired` (under "Show retired"); the `anaesthetists` state shows no GST period. Captions say "Master data", no state shows a load button or an insurer master. Drop the partial reason |
 | [US-13.4.2](../../../../requirements-board/requirements/stories/US-13.4.2.md) | absent | `captured`. Admin shot `go-live-load` at `/admin/masters?view=goLive`: `staged` (after the `go-live-data-load` entry: "14 Solutions Plus names (5 excluded as junk, 2 not approved)", struck-through units, 7 controlled spreadsheets; highlight `go-live-candidates`) and `loaded` (one name un-approved, "Load approved data" pressed; result line). Caption: "Clean-cut start: only AA-approved data is loaded" |
-| [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) | absent | `captured`. Admin shot `seed-load` at `/admin/masters?view=seedLoad`: `sheets` (DemoBadge, the D34 line, twelve sheets, no contacts sheet; highlight `seed-load`), `result` (hospitals.csv staged: "6 rows · 2 valid · 4 rejected" with reasons; `master-load-result`), `loaded`, `rvg-groups` (a repeated code valid; caption "RVG groups load with their base units; there is no procedure list") and `contract-lines` (blank not set, 0 zero; repeated line key rejected) and `surgeons` (surgeons.csv staged from the fictional specialist list: a room with no email loads, a no-HPI-CPN row and a first-name-only row rejected with reasons, a two-practice surgeon valid with both rooms shown; highlight `master-load-result`; caption "Surgeons load from the specialist list; rows without an HPI CPN are rejected"). Caption: "A one-off data load from AA's controlled spreadsheets, rejected rows listed with reasons". No office "Load from spreadsheet", no schedule upload |
+| [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) | absent | `captured`. Admin shot `seed-load` at `/admin/masters?view=seedLoad`: `sheets` (DemoBadge, the D34 line, fourteen sheets, no contacts sheet; highlight `seed-load`), `result` (hospitals.csv staged: "6 rows · 2 valid · 4 rejected" with reasons; `master-load-result`), `loaded`, `rvg-groups` (a repeated code valid; caption "RVG groups load with their base units; there is no procedure list"), `contracts` (contracts.csv and price-ranges.csv staged: one Contract per item with its first range, a prepaid Contract with an RVG pricing kind rejected, an Open price row rejected; caption "Contracts load one per priced item with their price ranges; a blank is not set and 0 is a value") and `surgeons` (surgeons.csv staged from the fictional specialist list: a room with no email loads, a no-specialty row, a no-HPI-CPN row and a first-name-only row rejected with reasons, a two-practice surgeon valid with both rooms shown; highlight `master-load-result`; caption "Surgeons load from the specialist list with their specialties; rows without an HPI CPN or a specialty are rejected"). Caption: "A one-off data load from AA's controlled spreadsheets, rejected rows listed with reasons". No office "Load from spreadsheet", no Contract upload or export |
 
 **Recipes this phase breaks.**
 
@@ -1317,18 +1306,18 @@ calendar. US-11.4.1 is Retired and has no row here (18 marks its recipe absent).
   (item 11), so each needs its button names and highlights checked with `--dry`. Found by
   `grep -l 'admin/masters'` at the 2026-10-03 plan: `FT-04.1`, `FT-05.1`, `FT-13.4`, `US-01.1.2`,
   `US-01.1.3`, `US-01.2.2`, `US-01.3.2`, `US-01.5.1`, `US-01.5.2`, `US-04.1.1`, `US-04.1.2`,
-  `US-04.2.1`, `US-04.2.2`, `US-04.2.4`, `US-05.1.1`, `US-05.1.3`, `US-05.1.4`, `US-05.1.5`,
-  `US-05.2.1`, `US-09.3.3`, `US-12.1.1`, `US-12.1.2` and `US-12.1.4` (the Retired `US-04.2.5`,
+  `US-04.2.1`, `US-04.2.2`, `US-05.1.1`, `US-05.1.3`, `US-05.1.4`, `US-05.1.5`,
+  `US-05.2.1`, `US-09.3.3`, `US-12.1.1`, `US-12.1.2` and `US-12.1.4` (the Retired `US-04.2.4`, `US-04.2.5`,
   `US-04.2.9`, `US-04.4.1` recipes were set `absent` by 18 to 20), plus those 17 to 41 added
-  (re-grep: at least 18's `US-04.1.4` and `US-04.1.5` on Contract holders and the catalogue, 19a's `US-04.2.14` and the `US-05.2.2` time-rule panel, 19b's
-  `US-05.1.4` `rvg-included`, 29's and 30's views). The buttons they use include Contracts, Contract
-  holders, Hospitals & holidays, Recurring bookings, Availability statuses, RVG
+  (re-grep: at least 18's `US-04.1.4` and `US-04.1.5` on Parties and the catalogue, 18a's specialties and funding tags, 19a's `US-04.2.14`, price ranges and the `US-05.2.2` time-rule panel, 19b's
+  `US-05.1.4` `rvg-included`, 29's and 30's views). The buttons they use include Contracts, Parties,
+  Specialties, Funding tags, Hospitals & holidays, Recurring bookings, Availability statuses, RVG
   groups and Modifiers.
 - `US-01.5.1.json` and `US-01.5.2.json` (hospital holiday calendar and its conflicts): the seeded
   per-hospital Labour Day and Canterbury Anniversary rows migrate to the master public-holiday
   calendar, so re-point any hospital-holiday highlight to the new "Public holidays" line or view.
-- Any recipe on a Contract detail (18's `US-04.1.2`, `US-04.2.10`; 19a's `US-04.2.4`): 25's staged-change
-  bar sits there, not a lines-check line; re-check highlights with `--dry`.
+- Any recipe on a Contract screen (18's `US-04.1.2`; 19a's `US-04.2.15` price ranges): there is no
+  staged-change bar, lines grid or version history; re-check highlights with `--dry`.
 - Any recipe that lists hospitals or surgeons in a picker: retired masters leave the
   pickers (item 16); the seed has none retired, so no change expected.
 - Work item 18 lists the Playwright specs; the `--dry` run is the check for anything else.
@@ -1359,37 +1348,43 @@ review-and-fix pass (PROGRESS convention 18)**:
   that bypasses a planner, such as a spec building a record itself.
 - **One pricing model, one set of rules.** Every rejected-row reason equals the manual action's
   refusal text for the same input, and the parity test covers every refusal of every spec. No loader
-  file declares its own group, holder, Contract, line or modifier type or re-implements a rule from
-  `src/domain/billing` (`validateHolder`, the Contract create validator, 19's RVG group rules,
-  `validateContractLine`, 19b's AA-modifier rules); the specs only map columns. Surgeon and
+  file declares its own group, Party, Contract, price range, specialty, funding tag or modifier type or re-implements a rule from
+  `src/domain/billing` (18's Party guard, the Contract create guard of AR-58 5.10, 18a's rules, 19's RVG group rules,
+  `validatePriceRanges`, 19b's AA-modifier rules); the specs only map columns. Surgeon and
   anaesthetist rows use 17's one HPI CPN rule.
 - **Figures land where the catalogue puts them.** Group figures on `RvgGroup` (a repeated code is
-  allowed; the hidden id is allocated, never read), line figures on `ContractLine` (blank not set, 0
-  is zero; a line key allocated and never reused). There is no procedure list or general procedure.
-  Nothing creates a default RVG Contract, a hospital default, or a second No contract
-  (RVG). No load refuses a value for differing from the NZSA guide or raises a warning for it.
+  allowed; the hidden id is allocated, never read), a fixed price only in price ranges (the first
+  with its Contract, later ones from the price ranges sheet; a blank is not set, 0 is a value). A Contract
+  states no units. There is no procedure list or general procedure, no Contract line and no version.
+  Nothing creates a default RVG Contract, a hospital default, an Open price Contract, or a second No contract · RVG.
+  No load refuses a value for differing from the NZSA guide or raises a warning for it.
 - **No office upload.** No office view offers a load; the Seed load view is badged as a stand-in and
-  acts as `SEED_LOAD_ACTOR`; there is no Contract schedule upload anywhere (D34, US-04.2.13 Future).
-  Loaded Contracts and lines are maintained afterwards only through 18's and 19a's screens.
-- **Contract edits after the seed.** The seed creates Contracts and lines through the planners;
-  nothing here edits a Contract directly. Any later edit from a Master data screen goes through 25's
-  staged review, and no second "checked" state exists.
+  acts as `SEED_LOAD_ACTOR`; there is no Contract upload or export anywhere (D34, US-04.2.13 Future).
+  Loaded Contracts and price ranges are maintained afterwards only through 18's and 19a's screens.
+- **Contract edits after the load.** The load creates Parties, Contracts and ranges through the
+  planners; nothing here edits a Contract directly. Any later edit is 18's in place audited edit or 19a's
+  price range: no staging, no review dashboard, no "New version" and no "checked" state exists.
 - **Clean cut is honest.** Solutions Plus units never reach a loaded record. Junk cannot be approved.
-  A line whose name is not approved never loads, even when the controlled sheet has a row for it. The go-live view's wording does not claim the masters were emptied. A Reset and re-run gives
+  A Contract whose name is not approved never loads, even when the controlled sheet has a row for it. The go-live view's wording does not claim the masters were emptied. A Reset and re-run gives
   identical records.
-- **Specialist list loads (D75, D76).** One HPI CPN validator shared with 17's manual add. A room
-  with no email or phone loads; a surgeon with no HPI CPN or a first name only is rejected with the
-  reason; a two-practice surgeon loads at every room listed, the first the main room; no
-  contacts sheet exists; the holders sheet says 'Surgeon', never 'Surgeon or rooms'; no fixture
+- **Specialist list loads (D75, D76, D3).** One HPI CPN validator shared with 17's manual add. A room
+  with no email or phone loads; a surgeon with no HPI CPN, a first name only or no specialty is
+  rejected with the reason (18a's required-specialties refusal, word for word); a two-practice surgeon
+  loads at every room listed, the first the main room; no contacts sheet exists; no fixture
   derives from the real `Christchurch_Specialists.xlsx`.
-- **Insurers are holders.** There is no insurer master, no direct-claims flag and no pre-fill from
-  one; an insurer is edited and loaded as a contract holder. The holders sheet carries the delivery
-  setting (email or portal) and the practitioner link (one anaesthetist, or one or more surgeons)
-  through 18's `validateHolder`, never a second rule.
-- **Retire, never break a reference.** A retired hospital, surgeon, room, group, organisation
+- **Insurers and funders are Parties.** There is no insurer master, no direct-claims flag and no
+  pre-fill from one; an insurer is edited and loaded as a Party. The Parties sheet carries the
+  delivery setting (email or post) and billing details through 18's Party guard, and a Contract's
+  practitioner links sit on the Contract, never on the Party, never a second rule.
+- **The flat model holds.** One Contract per priced item with no lines, versions or staged changes;
+  every Contract row passes 18's guard (a prepaid RVG Contract, an Open price row, a rate of 0, an
+  override on a fixed price are each refused with its sentence); a fixed price is never loaded
+  without a range; the open-price fallbacks are made by 18a's `ensureFallbacks` after a load and are
+  never a sheet, so a load leaves exactly one per destination; the AA code is unique.
+- **Retire, never break a reference.** A retired hospital, surgeon, room, group
   or AA modifier still resolves everywhere it is displayed (grid, drawer, invoices, history,
   profile, snapshots). It disappears from every picker (check the drift-check grep list, including
-  18's holder link, 20's Contract picker by holder, 21's indication picker, 31's and 33's flows).
+  18's Party and Contract links, 20's step rail, 21's insurer or funder picker, 31's and 33's flows).
   Blockers are correct and counted from the demo clock's today. No contract (RVG) is never retired.
 - **Public holidays through the one conflict rule.** The flagged-List set did not move in the
   migration. Every public-holiday change, including a calendar load, reconciles through 30's
@@ -1401,7 +1396,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   everywhere (19a's `timeUnitsFromMinutes` with `masters.rvgTimeRule`); AUTHORISED Procedures and
   raised invoices keep their figures.
 - **Change once, reflected everywhere.** A hospital, surgeon, room or group rename shows in
-  every live surface and follows into the linked holder's generated name; a hand-edited holder name
+  every live surface and follows into the linked Party's generated name; a hand-edited Party name
   does not; raised invoices and snapshots keep theirs. List any other stored copy of a master name the
   grep found.
 - **Determinism and state.** Ids come from `allocateId`, AA codes from `nextAaCode`, timestamps from
@@ -1416,21 +1411,21 @@ review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): D75 (OQ-128, answered: a surgeon loads at each room listed) as built, and D76 (OQ-129, a surgeon with no HPI CPN or a first name only is rejected and listed) as built, with the validator shared with 17; D34 (OQ-100) as built (a developer-run seed, shown as a demo stand-in; no schedule
-  upload; every later Contract edit staged and reviewed on 25's dashboard as the second-person
-  check); D55 (OQ-114, answered in part: delivery is a holder setting; outputs beyond email and portal are open, built as those two);
-  US-13.4.3 no longer says what is loaded or from where (the loader follows its expected list and
-  AR-29's templates); Solutions Plus names, which US-13.4.3 no longer mentions, matched to Contract
-  line descriptions in the go-live demo (US-13.4.2 still says only approved data loads); calendar
+  themselves"): D75 (OQ-128, answered: a surgeon loads at each room listed) as built, and D76 (OQ-129, provisional: a surgeon with no HPI CPN or a first name only is rejected and listed) as built, with the validator shared with 17; a surgeon with no specialty rejected (D3, Donald's decisions, not yet confirmed by AA); D34 (OQ-100, answered) as built (a developer-run load, shown as a demo stand-in; no Contract upload or export;
+  Contracts edited in place and audited, no staged review); D55 (OQ-114, open, provisional: delivery is a Party setting, email or post, no portal);
+  US-13.4.3 still does not say what is loaded or from where (the loader follows its expected list and
+  AR-58 section 8); the Contracts sheet carrying a fixed price's first range with a separate price ranges
+  sheet for the rest, and the AA code optional on it (built defaults); Solutions Plus names, which US-13.4.3 no longer mentions, matched to a Contract's
+  invoice description in the go-live demo (US-13.4.2 still says only approved data loads); calendar
   schedules (public and hospital holidays loaded, recurring bookings hand-made); the sheets' column
-  sets (including the anaesthetists and contract holders sheets from AR-29's list); the RVG modifier
+  sets (including the anaesthetists and Parties sheets); the RVG modifier
   table left to AR-34's files and the full NZSA group set narrated, not transcribed; the time rule
   editable by tier; anything logged rather than fixed; and the screens worth a look, each with its
-  route and persona (Kirsty: Master data, Contract holders, Public holidays, a Contract's staged review,
+  route and persona (Kirsty: Master data, Parties, Contracts with their price ranges, Public holidays,
   Seed load, Go-live load).
 - **Status row** for catch-up Phase 42, and a phase entry with:
-  - the drift-check result (items changed since `a68f09b` or not; OQ-100, OQ-98, OQ-88, OQ-101 and
-    OQ-103 as found; the calendar-schedule question; whether Vanessa's files landed; and the 17 to
+  - the drift-check result (items changed since `efe123c` or not; OQ-100, OQ-114, OQ-101 and
+    OQ-129 as found; the calendar-schedule question; whether Vanessa's files landed; and the 17 to
     34 names used);
   - what was built, per work item;
   - the flagged-List set before and after the public-holiday migration;
@@ -1451,20 +1446,19 @@ review-and-fix pass (PROGRESS convention 18)**:
      holidays can be edited and deleted") and the original seed reading of `HOSPITAL_HOLIDAYS`
      (statutory days as per-hospital rows).
   2. **Masters referenced by identity retire, never delete.** Retire needs a reason, refuses while
-     upcoming work or an active contract holder depends on the record, hides the record from pickers,
+     upcoming work or an Active Contract depends on the record, hides the record from pickers,
      and keeps every reference resolving. Delete stays only for rows nothing references (hospital and
      public holidays). Anaesthetists keep their Active flag. AA's own modifiers are editable and
      retirable; RVG-table modifiers are as printed. This supersedes Phase 17's "no delete or
      deactivate; Phase 42 owns it" and the Phase 07 "view only" master readings.
-  3. **A rename follows through to the linked contract holder's name** while it is still the old
+  3. **A rename follows through to the linked Party's name** while it is still the old
      name. Raised invoices and pricing snapshots keep theirs. (Supersedes this plan's 2026-10-03
      reading, which renamed a protected default Contract; there are none, OQ-78.)
-  4. **Insurers are contract holders; there is no insurer master** (FT-11.4 and US-11.4.1 Retired
-     2026-10-28; Greg: "just an instance of contract holders"). No Insurers view, no accepts-direct-claims
-     flag, no pre-fill of "is billed" (D55's old default is gone). An insurer is a holder of kind
-     Insurer, edited in 18's holder panel and loaded by the holders sheet with the rest. Its Contracts
-     are mostly plain RVG Contracts with no lines (OQ-98); the split is a Booking action (22) and special
-     rates are Contract lines (19a).
+  4. **Insurers and funders are Parties; there is no insurer master** (FT-11.4 and US-11.4.1 Retired
+     2026-10-28; Greg: "just an instance of contract holders"; Donald's D2). No Insurers view, no accepts-direct-claims
+     flag, no pre-fill of "bills its holder". An insurer is a Party of kind Insurer, edited in 18's Party
+     editor and loaded by the Parties sheet with the rest. The split is a Booking action (22) and a
+     special rate is a Contract of its own (18).
   5. **The seed is checked, then loaded.** Stage validates and reports without touching masters.
      Commit re-validates and loads exactly the valid rows in one audited `mutate()`, through the same
      planners and validators as a manual add. Each loaded record's audit carries its load and row and
@@ -1477,31 +1471,32 @@ review-and-fix pass (PROGRESS convention 18)**:
      "Load from spreadsheet").
   7. **Solutions Plus supplies operation names only.** Its units are never read, junk is excluded and
      cannot be approved, AA's approval gates each name, and no identifier is carried. With no
-     procedure list (and US-13.4.3 no longer naming Solutions Plus), a name is matched to a Contract
-     line's description, the built default. The go-live demo loads into today's masters and says so.
+     procedure list (and US-13.4.3 no longer naming Solutions Plus), a name is matched to a Contract's
+     invoice description, the built default. The go-live demo loads into today's masters and says so.
   8. **The RVG modifier table comes from AR-34's files, not a sheet.** 19b's generated table is what
      the seed would load; AA's own modifiers load from a sheet. The band table stays code-held.
-  9. **Any Contract loads, as holders, Contracts and lines** (US-13.4.3 "Contracts and their lines";
-     AR-29 `data-loading`). A holders sheet carries 18's fields (kind, linked to, the practitioner link to one anaesthetist or
-     one or more surgeons, is billed, billable party, delivery setting), a Contracts sheet 18's fields,
-     22's invoice layout and the editable and prepaid settings, and a lines sheet 19a's line fields (line key, reference code, description, default
-     RVG code, price, rate, discount, units) with a blank cell not set and 0 zero. AA codes come from
-     `nextAaCode` (D16). A Contract with no lines loads as a plain RVG Contract (OQ-98). No contract
-     (RVG) and default Contracts are never loaded. The hospital sync set-up (34) stays code-held, and
-     an integrated hospital cannot be retired.
-  10. **Loaded base units land on RVG groups and Contract lines** (OQ-62; there is no procedure
-     list). Group figures above 0 with an optional range; line figures or blank. No NZSA guide range
+  9. **Contracts load one per priced item** (US-13.4.3 "Contracts one per priced item with their price
+     ranges"; AR-58 section 8). A Parties sheet carries 18's fields (kind, hospital, billing name, delivery
+     method, email, postal address); a Contracts sheet 18's Contract fields (AA code, name, Party, holder
+     reference code, invoice description, default RVG code, bills holder or payer, Payment type, pricing
+     kind, rate or discount, override, funding tag, specialties, linked surgeons or anaesthetist) with a
+     fixed price's first range and a blank cell not set, 0 a value; a price ranges sheet adds later ones.
+     A Contract's AA code is the sheet's or 18's next code. No Contract lines or versions exist (D1). No
+     contract · RVG, open-price fallbacks (18a makes them) and default Contracts are never loaded. The
+     hospital sync set-up (34) stays code-held, and an integrated hospital cannot be retired.
+  10. **Loaded base units land on RVG groups only** (OQ-62; there is no procedure
+     list and a Contract states none). Group figures above 0 with an optional range. No NZSA guide range
      check and no warning (the after-procedure warning stays with a value recorded on a Procedure).
-  11. **The seed covers US-13.4.3's expected list, AR-29's additions and the calendars** (hospitals,
-     hospital holidays, public holidays, surgeons' rooms, surgeons, anaesthetists, RVG groups, AA
-     modifiers, contract holders, Contracts, Contract lines and 39b's Contract event fees; insurers are holders among them). Surgeon groups,
-     recurring bookings, availability statuses, preferences and tiers, and body
-     sections are maintained by hand. Recurring bookings are the unclear "calendar schedules": left
+  11. **The load covers US-13.4.3's expected list and the calendars** (specialties, funding tags,
+     hospitals, hospital holidays, public holidays, surgeons' rooms, surgeons with their specialties,
+     anaesthetists, RVG groups, AA modifiers, Parties, Contracts, price ranges and 39b's Contract event
+     fees; insurers and funders are Parties among them). Surgeon groups, recurring bookings,
+     availability statuses, preferences and tiers, body sections and the open-price fallbacks are
+     maintained by hand or system-made. Recurring bookings are the unclear "calendar schedules": left
      hand-made, for the owner.
-  12. **Contract edits after the seed are staged and reviewed on 25's dashboard** (OQ-100's default,
-     D34), which is the second-person check on screen. This phase builds no check of its own.
-     Built as OQ-100's default until it is answered. There is no Contract schedule upload (US-04.2.13 Future
-     Work).
+  12. **Contract edits after the load are in place and audited** (OQ-100 answered, D34): no staged
+     review, no "New version", no Contract upload or export (US-04.2.13 Future Work). A price changes by a
+     price range (19a). This phase builds no check of its own.
   13. **The RVG time rule is editable by tier** (19a's handoff, US-05.2.2 "defined as data"). A part
      interval always rounds up and is not editable.
   14. **One label: "Master data".** Greg would call these master data, not reference tables

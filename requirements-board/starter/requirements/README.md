@@ -16,7 +16,7 @@ where the catalogue started (an RFP, a workshop, a set of notes).
 | `stories/`, `questions/` | The catalogue: one Markdown file per epic, feature, story (`stories/`) and outstanding item (`questions/`: open questions and missing sources). Format in `SCHEMA.md`. | Yes, this is the editing surface: in the board or directly in the files. |
 | `domain-model.md` | The narrative model: entities, rules, glossary. | Yes. |
 | `notes/` | Meeting notes and Q&A behind the catalogue, one dated file each. Conventions in `notes/README.md`. | Add new files; existing ones are append only. |
-| `artifacts/` | One sidecar per diagram, transcript, note or document (`AR-nn.md`: name, kind, highlighted regions). Requirements link to them, or to a region in one. Format in `SCHEMA.md`. | As files (agents, the `add-artifact` skill); the board edits only their details. |
+| `artifacts/` | One sidecar per diagram, transcript, note or document (`AR-nn.md`: name, kind, highlighted regions, and for a stepped diagram its steps). Requirements link to them, or to a region or step in one. Format in `SCHEMA.md`. | As files (agents, the `add-artifact` skill); the board edits only their details. |
 | `artifacts/files/` | The artifact files themselves. | Add new files with the artifact; transcripts and documents are never rewritten. |
 | `changes/` | One change log per requirements update; `/update-build-plan` reads them. | Add new files. |
 | `VOICE.md` | How requirements are written: the words, not the format. The skills follow it. | Yes: on the board's Settings page, or as a file. |

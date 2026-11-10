@@ -5,7 +5,7 @@
  * names, descriptions, highlights, sources and file paths. Retired artifacts stay off the tab (and
  * out of its counts) unless Show retired is on; a link or URL still opens one.
  */
-import { Crosshair, LayoutGrid, Link2, Rows3, Search } from 'lucide-react'
+import { Crosshair, LayoutGrid, Link2, ListOrdered, Rows3, Search } from 'lucide-react'
 import { useState } from 'react'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, isPastArtifact, type ArtifactKind, type ArtifactRec } from '../../shared/types.ts'
 import { artifactMatches, artifactShown, linkCount, useArtifactIndex, useArtifactView, type ArtifactIndex } from '../artifactIndex.ts'
@@ -190,10 +190,11 @@ function Row({ rec, ix, query }: { rec: ArtifactRec; ix: ArtifactIndex; query: s
   )
 }
 
-/** How many cards link here and how many highlights it has, each only when there are some. */
+/** How many cards link here, how many highlights it has and how many steps, each only when there are some. */
 function Counts({ rec, ix }: { rec: ArtifactRec; ix: ArtifactIndex }) {
   const n = linkCount(ix, rec.data.id)
   const spots = rec.data.regions.length
+  const steps = rec.data.steps?.length ?? 0
   return (
     <>
       {n > 0 && (
@@ -204,6 +205,11 @@ function Counts({ rec, ix }: { rec: ArtifactRec; ix: ArtifactIndex }) {
       {spots > 0 && (
         <span className="badge" title={`${spots} highlight${spots === 1 ? '' : 's'}`}>
           <Crosshair size={11} /> {spots}
+        </span>
+      )}
+      {steps > 0 && (
+        <span className="badge" title={`${steps} step${steps === 1 ? '' : 's'}`}>
+          <ListOrdered size={11} /> {steps}
         </span>
       )}
     </>

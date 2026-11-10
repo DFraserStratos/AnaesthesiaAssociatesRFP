@@ -1,181 +1,163 @@
 # Phase 23 · Primary Procedure and the multi-procedure rule
 
 **Requirements covered:**
-[US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure (Confirmed; graded Contradicts) ·
 [US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary (status 4; graded Partial; 16 October: Vanessa's "most expensive is the primary" and Greg's "just the first one in the list" read with US-03.2.3, no change to the rule) ·
-[FT-05.3](../../../../requirements-board/requirements/stories/FT-05.3.md) Multi-procedure rule, superseding the RFP split-billing rule (status 4, OQ-90 answered 2026-10-19; graded Contradicts) ·
-[US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule (status 4, OQ-90 answered; graded Contradicts; times are "start and finish", not "handover"; new criterion 29 Oct: a prepaid primary left off the final invoice still anchors the rule, D57) ·
-[DM-15](../analysis/domain-model-delta.md#dm-15) multi-procedure rule: one primary flag, time on every Procedure, modifier units split above four, no Contract-specific ordinals ·
+[FT-05.3](../../../../requirements-board/requirements/stories/FT-05.3.md) Multi-procedure rule, superseding the RFP split-billing rule (status 4, OQ-90 answered 2026-10-19; graded Contradicts; out of step with US-05.3.1 since 5 November, see Goal) ·
+[US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule (status 3 since 5 November: the rule adjusts only RVG-priced Procedures and OQ-132 is open; graded Contradicts; times are "start and finish"; 29 Oct: a prepaid primary left off the final invoice still anchors the rule, D57) ·
+[DM-15](../analysis/domain-model-delta.md#dm-15) multi-procedure rule: one primary flag, time on every Procedure, modifier units split above four, RVG-priced Procedures only, no Contract-specific ordinals ·
 [RV-08](../analysis/reverse-check.md#rv-08-additional-procedures-carry-no-modifier-share-the-above-four-split-is-missing) additional procedures carry no modifier share, the above-four split is missing (replaces RV-02, which left this phase).
 **Carried across without regression** (they Match today only through the old model, ROADMAP.md
 "Old-model matches are carried across"; each gets a test): [FT-03.2](../../../../requirements-board/requirements/stories/FT-03.2.md)
-Booking structure, one primary and zero or more additional Procedures (Matches today through
-`isAdditional` and `removeProcedure`'s refusal of the first Procedure by position; this phase
-replaces both mechanisms, so it re-proves the structure), and
-[US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) each Procedure's units
-and dollars recorded (Matches; OQ-90 now names it), which must still match once shares are allocated.
+Booking structure, one primary and zero or more additional Procedures, and
+[US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) one primary Procedure (now Matches, so no longer covered here: the
+exactly-one invariant and the primary shown first are built under US-03.2.2 and its tests, and US-03.2.1's two
+shots are only fixed under "Elsewhere" below). Both Match today through `isAdditional` and
+`removeProcedure`'s refusal of the first Procedure by position; this phase replaces both mechanisms, so it
+re-proves the structure. Also [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) each Procedure's units and dollars recorded
+(Matches; OQ-90 names it), which must still match once shares are allocated.
 **Answered and built as answered:**
 D57 (OQ-116, answered 2026-10-29: prepaid Procedures are left off the final invoice and nothing is deducted;
 the rule ranks every Procedure, so a not-prepaid additional keeps its reduction; 27 builds the left-off test),
-[OQ-90](../../../../requirements-board/requirements/questions/OQ-90.md) (D26, answered 2026-10-19: the RVG default is the one system-wide
-rule for calculated Procedures, so there is no switch, no provisional label and no "price each
-Procedure alone" branch; Greg: pricing each alone is "not correct"; which Procedure is primary was
-not discussed and is still not settled),
-[OQ-15](../../../../requirements-board/requirements/questions/OQ-15.md) (answered 2026-10-07: the equal split with the remainder to the
-primary, 7 over 3 = 3 / 2 / 2, agreed with Ben, Vanessa and Greg) and
-[OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md) (D12 and D3 as superseded 2026-10-08: base units on the RVG group, a
-procedure may set its own, a Contract line may override both; built in 19 and 19a, read here).
-**Left this phase:**
-[US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) (now "Combinations as Contract lines": a combination is a
-standalone line, no parent procedures, so the `isCombination` flag, the Southern Cross and Merivale
-seed, the editor switch, the picker rows and the "already covers" note are 19a's concern, not built
-here; OQ-53 and OQ-66 went with it); RV-02 (replaced by RV-08); US-04.2.5 and US-05.3.4 (Retired
-2026-10-05: Contracts do not define how additional procedures are priced, so no per-Contract rule);
-FT-03.2 (now Matches, carried across above); and RV-34 (the procedure-ordinal price key, removed by
-Phase 19a).
-**Reads, without building:** Phase 19a's Contract lines and the one starting-units resolver (the
-Contract's line for the procedure, then the procedure, then its RVG group, each value with its layer;
-fixed price, fixed rate and fixed discount from the line only), and its fee path (the line's fixed
-price as the whole price; else BTM x the fixed rate or the anaesthetist's unit value, less any fixed
-discount); Phase 19b's itemised modifiers (age and included P1 pre-applied but removable, claimed ones
-with explanations, `resolveModifiers` as the one M total); Phase 20's step rail (the one path function holding US-04.3.2's rules, for an added
-Procedure's starting Contract); Phase 20a's shared component and its "who is invoiced" and "pricing
-basis" selectors; Phase 21's payer on the Booking, Review and completeness; Phase 22's Split button
-and invoice layout.
+[OQ-90](../../../../requirements-board/requirements/questions/OQ-90.md) (D26, answered 2026-10-19: the RVG default is the one system-wide rule, extended 5 November to
+RVG-priced Procedures, so there is no switch, no provisional label for the rule and no "price each Procedure alone"
+branch; Greg: pricing each alone is "not correct"; which Procedure is primary is not settled),
+[OQ-15](../../../../requirements-board/requirements/questions/OQ-15.md) (answered 2026-10-07: the equal split with the remainder to the primary, 7 over 3 = 3 / 2 / 2) and
+[OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md) (flat model since 5 November: base units come from the RVG group alone, through 19's resolver; read here).
+**Open, built as its default:** [OQ-132](../../../../requirements-board/requirements/questions/OQ-132.md) (D78): where the marked primary is on a fixed or open price,
+base units stay on that primary, so none is billed; labelled provisional inside the one function and on the screens that show it.
+**Left this phase:** US-03.2.1 (above); US-04.2.11 (combinations are fixed-price Contracts of their own, 19a); RV-02 (replaced by
+RV-08); US-04.2.5 and US-05.3.4 (Retired 2026-10-05: no per-Contract rule); and RV-34 (the ordinal price key, removed by 19a).
+**Reads, without building:** 19's `resolveStartingUnits` (base units from the RVG group alone) and the RVG code;
+19a's fee path (a fixed price's range in force is the whole price; else units x the Contract's rate or the
+anaesthetist's unit value, less any discount; AR-58 5.7 steps 3 and 4) and combinations as fixed-price Contracts;
+19b's itemised modifiers (age and included P1 pre-applied but removable, claimed ones with explanations,
+`resolveModifiers` as the one M total); 20's step rail (the one path function holding US-04.3.2's rules, for an
+added Procedure's starting Contract); 20a's `ProcedureStack` and its selectors; 21's payer on the Booking, Review
+and completeness; 22's Split button and invoice layout.
 **Depends on:** Phase 19b (modifiers as itemised records, `resolveModifiers`, `reconcileClaims`, the
 pre-applied age and P1, the explanation asked on claiming) and Phase 22 (invoice presentation, the Split
-button on a Procedure's Contract line with typed $ or % shares that replaced `funderOverride`, one
+button on a Procedure with typed $ or % shares that replaced `funderOverride`, one
 BCTI per receivable invoice). Through them: 14 (the trigger registry), 15 (Booking vocabulary), 15a
 (the warning routine, the Booking warning surfaces, no submit confirm step), 15b (Copy a Booking
 removed, photo capture out of the chooser, the List state DRAFT renamed ACTIVE), 16 (`bctisFor`, the
-one BCTI count), 17 (surgeons' rooms), 18 (contract holders, dated Contract versions, the AA code
+one BCTI count), 17 (surgeons' rooms), 18 (contract holders as Parties, the Contract with no versions, the AA code
 generator, composite search, one stored No contract (RVG)), 19 (RVG groups as the one master list,
-the RVG code type-ahead), 19a, 19b, 20 (one Contract per
+the RVG code type-ahead, the resolver), 19a (price ranges, the fee path), 19b, 20 (one Contract per
 Procedure, mandatory at setup, the step rail: one path function with US-04.3.2's rules inside it,
-holder fit and date and no line test), 20a (the shared component), 21 and 22.
+holder fit and date and no line test), 20a (`ProcedureStack`), 21 and 22.
 **Estimated:** 2 sessions. Session 1: work items 1 to 8 (baseline, model, the pure allocation, the
-Booking-level engine reading 19a's resolver and 19b's modifiers, rewiring every fee caller, store
+Booking-level engine reading 19's resolver, 19a's fee path and 19b's modifiers, rewiring every fee caller, store
 actions, seed, tests), ending green. Session 2: work items 9 to 13 (capture with the primary first,
 the Booking total, Review and invoices, the two triggers, copy sweep, Playwright, demo guide) and the
 review pass. Session 1 is the heavy one: it changes the fee engine's shape under every caller. If it
 overruns, finish items 1 to 6 and 8 green and carry item 7's store guards into session 2 with item 9,
 rather than splitting the engine rewire.
 
-**Updated 2026-11-02 (catalogue `7cd7802`).** US-05.3.1 gained a criterion and D57 answered OQ-116: the
-rule ranks all Procedures, prepaid or not, so a prepaid primary left off the final invoice still anchors it
-and the not-prepaid additional keeps its reduction. "Prepayment netting per Procedure" is gone from this
-phase; 27 builds the left-off test and this phase only guarantees the ranking ignores prepayment.
+**Updated 2026-11-10 (catalogue `efe123c`).** Donald's 5 November flat contract model (D1 to D11) is built as decided:
+no Contract lines, versions or staged changes, and AR-28, AR-29 and AR-30 are Retired (cite AR-58 and AR-61).
+US-05.3.1 now says the rule adjusts only RVG-priced Procedures, which share the modifier split; a fixed or open price
+stays its price, and OQ-132 (D78, open) gates where base units go when the marked primary is on one: built as its default (none billed),
+labelled provisional in the one function. US-03.2.1 now Matches and left this phase's covers. FT-05.3 (Agreed, not edited)
+is out of step and logged. The earlier "combinations as lines", "calculated Procedures" and the AR-29 reading are gone.
 
-**Re-planned 2026-10-20 (catalogue `d4db277`).** Since the 2026-10-08 plan: OQ-90 is answered (D26,
-2026-10-19): the RVG default is the one system-wide rule, so the provisional pill,
-`MULTI_PROCEDURE_RULE_APPLIES` and the "price each Procedure alone" branch are gone and the rule is
-built unlabelled. A combination is now a line of its own with no parent procedures (US-04.2.11, 19a),
-so this phase's combination work left with it. RV-02 became RV-08. Which Procedure is primary is still
-not settled (Vanessa: the most expensive; Greg: "just the first one in the list?"), so the first stays
-primary until someone changes it. 19b now pre-applies the age and included modifiers without locking
-them (20 October), so Make primary moves the pre-applied removals as well as the claims. Earlier
-points stand: the per-Contract rule and ordinal pricing are Retired (US-04.2.5, US-05.3.4); base units
-resolve through 19a's resolver; the rule adjusts the units of CALCULATED Procedures only, so a
-fixed-price Procedure keeps its price; the editable assigned List state is ACTIVE (15b).
+**Earlier updates, still standing.** 2026-11-02: the rule ranks all Procedures, prepaid or not, so a prepaid primary left off the
+final invoice still anchors it (D57; 27 builds the left-off test). 2026-10-20: OQ-90 answered (D26), so no switch,
+no `MULTI_PROCEDURE_RULE_APPLIES`, no "price each Procedure alone" branch; the per-Contract rule and ordinal pricing are Retired;
+which Procedure is primary is not settled, so the first stays primary until someone changes it; 19b pre-applies the age and
+included modifiers without locking them, so Make primary moves the pre-applied removals as well as the claims; the editable
+assigned List state is ACTIVE (15b).
 
 ## Goal
 
-Give every Booking one explicit primary Procedure shown first, and price calculated Procedures under
-the RVG default multi-procedure rule, the one system-wide rule (D26, OQ-90 answered).
+Give every Booking one explicit primary Procedure shown first, and price RVG-priced Procedures under the
+RVG default multi-procedure rule, the one system-wide rule (D26, OQ-90 answered; AR-58 5.7 and 5.9).
 
-- **Exactly one primary, shown first** (US-03.2.1, US-03.2.2, FT-03.2 carried across).
+- **Exactly one primary, shown first** (US-03.2.2; US-03.2.1 and FT-03.2 carried across).
   `Procedure.isAdditional` becomes `Procedure.isPrimary`, with exactly one primary per Booking that
   has Procedures, guaranteed by the store and asserted by the seed test. The primary is always listed
-  first on every surface (US-03.2.2 note), in capture, in 20a's shared component, in Review and on invoice lines;
+  first on every surface (US-03.2.2 note), in capture, in 20a's `ProcedureStack`, in Review and on invoice lines;
   the others follow in Booking order. The primary is a choice, not a time order: the first procedure
   done may not be the primary, and an ACC pre-op assessment never is (it is a pre-op event, 39b).
 - **"Make primary".** Anyone with edit rights (the anaesthetist on mobile and web, the office in
   Admin, and an inbound hospital or surgeon feed) can make another Procedure primary while the Booking
   is editable. It re-anchors base and modifier units in one audited commit. AA staff normally set it
   at creation or import from the rooms' sheet order, so the first Procedure entered starts as the
-  primary.
-  Which Procedure is primary is not settled (Vanessa's practice takes the most expensive; Greg
+  primary. Which Procedure is primary is not settled (Vanessa's practice takes the most expensive; Greg
   expected the first in the list), so the primary is whichever is set, the first by default.
-- **The RVG default multi-procedure rule, for calculated Procedures** (FT-05.3, US-05.3.1, DM-15,
-  RV-08; D26). The draft technical design says the rule "adjusts the units of CALCULATED procedures"
-  before pricing
-  ([AR-29#price-precedence](../../../../requirements-board/requirements/artifacts/AR-29.md), its multi-procedure note), and the process
-  diagram is [AR-01#multi-procedure](../../../../requirements-board/requirements/artifacts/AR-01.md) and AR-24#multi-procedure-rule. So
-  pricing becomes Booking-level before Phase 24's price precedence:
-  - base units on the primary only, from 19a's resolver for the primary's own Contract (line, then
-    procedure, then RVG group) or the value recorded on it; structurally not editable on an
-    additional Procedure;
-  - time units on every Procedure, from its own recorded start and finish times and 19a's tier data;
-  - modifier units (19b's itemised records, recorded once for the Booking on the primary, the
-    pre-applied age modifier included) all on the primary while the Booking total is 4 or fewer;
-    above 4 split as evenly as possible with the remainder to the primary (7 over 3 = 3 / 2 / 2),
-    **whichever Contracts the Procedures are on**;
-  - a Procedure whose Contract line resolves a **fixed price** keeps that price (US-05.2.5): its BTM
-    is recorded for reference, it takes no modifier share and loses none. A fixed-price primary still
-    anchors the Booking's base and modifiers; its share sits inside its price. These participant
-    readings are picked and logged. FT-05.3 and US-05.3.1 literally say "split equally across every
-    Procedure in the Booking"; leaving a fixed-price additional Procedure out follows AR-29's
-    CALCULATED note (a share given to it would never be billed), and it goes on the owner's review
-    list as a departure from the literal wording, changed in `participantsOf` alone.
-  - There is **no per-Contract multi-procedure rule and no ordinal pricing** (US-04.2.5 and US-05.3.4
-    Retired), **no switch and no provisional label** (D26): the rule is the system's one rule.
-- **One place.** The rule lives in one pure module in `aa-prototype/src/domain/billing` beside 19a's
-  resolver and fee path. The structures it reads (Contract lines, the resolver, the booking
-  procedure's units) stay in 19a's one place behind the types the UI reads; this phase adds no second
-  copy of them, so a v5 of the draft design stays a contained edit. Reference shape:
-  [AR-29#booking-procedure-fields](../../../../requirements-board/requirements/artifacts/AR-29.md) and
-  [AR-30#booking-procedure](../../../../requirements-board/requirements/artifacts/AR-30.md) (the primary flag is the catalogue's addition
-  beside the draft's pricing fields: domain model, "`isPrimary` flag drives the multi-procedure
-  rule").
+- **The RVG default multi-procedure rule, for RVG-priced Procedures** (FT-05.3, US-05.3.1, DM-15, RV-08; D26;
+  AR-58 5.9; process diagrams [AR-01#multi-procedure](../../../../requirements-board/requirements/artifacts/AR-01.md) and AR-24#multi-procedure-rule). It applies to
+  Procedures priced from RVG units (No contract · RVG, or a Contract with a rate or discount). A Procedure on a fixed
+  or open price stays its price and is outside it. Pricing becomes Booking-level before Phase 24's pricing function:
+  - base units on the marked primary only, from 19's resolver (the RVG group) or the value recorded on it;
+    structurally not editable on an additional Procedure. **OQ-132 (open, D78), built as its default and
+    labelled provisional in the one function:** where the marked primary is on a fixed or open price, no base
+    units are billed on any Procedure, so "the first RVG-priced Procedure takes them" or "mark another primary"
+    stays a small change;
+  - time units on every RVG-priced Procedure, from its own recorded start and finish times and 19a's tier data;
+  - modifier units (19b's itemised records, recorded once for the Booking on the primary, the pre-applied age
+    modifier included) all on the primary while the Booking total is 4 or fewer; above 4, split as evenly as
+    possible across the RVG-priced Procedures with the remainder to the primary (7 over 3 = 3 / 2 / 2),
+    **whichever Contracts the Procedures are on**. When the marked primary is not RVG-priced the remainder goes to
+    the first participant in Booking order (our reading, one place);
+  - a Procedure on a fixed or open price keeps its price (US-05.2.5), takes no share and loses none; its BTM is
+    recorded for reference. The catalogue says this since 5 November (A19), no longer a picked reading;
+  - **out of step, built as US-05.3.1 and logged for the owner beside OQ-132:** FT-05.3 (Agreed, not edited) still
+    splits above four across every Procedure, and modifiers of four or fewer on a fixed-price primary are billed nowhere;
+  - **no per-Contract multi-procedure rule and no ordinal pricing** (US-04.2.5 and US-05.3.4 Retired), **no switch
+    and no provisional label for the rule itself** (D26).
+- **One place.** The rule lives in one pure module in `aa-prototype/src/domain/billing` beside 19's resolver
+  and 19a's fee path. The structures it reads stay in their own modules behind the types the UI reads; this phase
+  adds no second copy of them. Reference shape: [AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md)`#booking-procedure` (the primary flag is the
+  catalogue's addition: domain model, "`isPrimary` flag drives the multi-procedure rule").
 - **Prepayment never changes the ranking** (US-05.3.1's prepaid-primary criterion, D57). Roles,
   participants and shares come from all the Booking's Procedures; a prepaid Procedure is ranked like any
   other, and 27 later leaves it off the invoice without re-running the allocation. This phase's tests prove
   the not-prepaid additional's fee is the same whether or not the primary is later left off.
 - **Visible everywhere it counts.** A seeded three-procedure Souter Booking carrying the domain
   model's worked example (AS3 2 + OB3 2 + ASE 2 + the pre-applied A1 1 = 7 modifier units) shows
-  3 / 2 / 2 on the office Booking total, in Review and on invoice lines. Vitest worked examples cover
-  every case.
+  3 / 2 / 2 on the office Booking total, in Review and on invoice lines. The seeded bariatric Booking (a
+  fixed-price primary with an RVG-priced additional Procedure) is the mixed Booking: no base units billed, labelled
+  provisional. Vitest worked examples cover every case.
 
 **Old-model behaviour carried across.** FT-03.2's structure (one primary, additional Procedures in
-the same Booking, the primary not removable) and US-05.3.5's per-Procedure units and dollars on
-invoice lines both Match today through the mechanisms this phase replaces; tests prove each still
+the same Booking, the primary not removable), US-03.2.1 and US-05.3.5's per-Procedure units and dollars on
+invoice lines all Match today through the mechanisms this phase replaces; tests prove each still
 holds afterwards (work items 1, 7 and 8).
 
 The anaesthetist's capture shows units and shares only. The 2026-09-28 ruling (no calculated fee on
 the anaesthetist's Booking) stands wherever the catalogue gives no price: this phase adds no Booking
-total, dollar share or calculated fee to an anaesthetist surface, and 20a's shared component shows pricing
-basis as it does today. Invoices still group by
+total, dollar share or calculated fee to an anaesthetist surface. Invoices still group by
 billable party (21), so the BCTI count (16's `bctisFor`) does not move.
 
 ## Before you start: drift check
 
-1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,US-08.2.2,OQ-15,OQ-62,OQ-90,OQ-89,OQ-116`
-   (the drift-check baseline is `a68f09b`; the tool is rename-aware, so never a plain `git diff` of the catalogue
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,US-08.2.2,OQ-15,OQ-62,OQ-90,OQ-89,OQ-116,OQ-132`
+   (the drift-check baseline is `efe123c`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks. Re-read the domain model's "Booking" and "Procedure" sections (the
    `isPrimary` bullet and the Modifiers bullet) and "3. Calculation rules" ("Units within a Booking",
-   the 7 over 3 worked example, the CALCULATED note).
+   the 7 over 3 worked example, the RVG-priced note).
    - If an item changed, re-read it whole and adjust the work items.
    - If one is now Retired or Future, drop its work and say so in the PROGRESS entry.
    - Watch in particular for: a decision on which Procedure is primary; a change to the threshold (4)
-     or remainder rule; how a fixed-price Procedure takes part; any return of a per-Contract rule (the
+     or remainder rule; how a fixed or open price takes part; OQ-132's answer; any return of a per-Contract rule (the
      SXAP and CES "second code at 50%" point sits with OQ-89); and anything 19a or 19b changed under
      the modifier total.
-   - Check whether AR-29 has moved to a v5 (`requirements-board/requirements/artifacts/AR-29.md`); if
-     its price precedence or booking procedure fields changed, follow v5 inside the same one place and
-     log it.
+   - Read AR-58 5.7 and 5.9 and AR-61 (`#booking-procedure`); AR-28, AR-29 and AR-30 are Retired. If 5.7 or 5.9
+     changed, follow them inside the same one place and log it.
 2. Confirm the gate.
 
 | Gate | Status |
 |---|---|
-| **OQ-90** (D26, answered 2026-10-19: the RVG default applies as the one system-wide rule) | Build it unlabelled. The rule applies to every Booking with more than one Procedure, to calculated Procedures only, as the Goal says, in one pure module. No switch, no provisional pill, no "price each Procedure alone" branch. If AA later changes who takes part (for example fixed-price Procedures share too): change `participantsOf` and its tests only. Log the participant reading on the "For the owner's review" list |
+| **OQ-90** (D26, answered 2026-10-19: the RVG default applies as the one system-wide rule) | Build it unlabelled. The rule applies to every Booking with more than one Procedure, to RVG-priced Procedures only (a fixed or open price stays its price), as the Goal says, in one pure module. No switch, no provisional pill, no "price each Procedure alone" branch. If AA later changes who takes part (for example fixed-price Procedures share too): change `participantsOf` and its tests only. Log the participant reading on the "For the owner's review" list |
 | **D57** (OQ-116, answered 2026-10-29) | The allocation takes no input from prepayment: it ranks every Procedure. Do not build netting or a deduction line here; 27 removes them and leaves prepaid Procedures off the invoice |
 | **Which Procedure is primary** (not settled) | The first stays primary until someone changes it with Make primary. If AA rules (for example the most expensive, set at creation), only the creation default changes |
+| **OQ-132** (D78, open) | Build the default: base units stay on the marked primary, so none is billed when it is on a fixed or open price; labelled provisional in `baseOn` and on the screens that show it. An answer changes `baseOn` and its tests only. Log it, with FT-05.3's out-of-step wording, on the owner's list |
 
    Answered, so build the answer with no provisional label:
    - **OQ-15**: the equal integer split, `floor(total / n)` each, the remainder to the primary,
      whichever Contracts. OQ-90's answer makes it the one rule with no per-Contract override.
-   - **OQ-62** (D12, D3 as superseded): base units resolve from the line, the procedure, the RVG
-     group (19a); this phase reads the resolver's answer and never decides base units itself.
+   - **OQ-62** (D12, D3 as superseded): base units come from the RVG group alone
+     (19, 19a); this phase reads the resolver's answer and never decides base units itself.
 3. Read what Phases 14 to 22 actually built (their PROGRESS entries). File and symbol names below are
    as at `60e2d1e` (the code is as 15a session 1 left it at `b342a7d`: Booking vocabulary, the
    warning routine). Follow any rename a later phase made:
@@ -194,22 +176,18 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
      exists.
    - 16: `bctisFor`, the one BCTI count. This phase must not change what it counts.
    - 17: surgeons' rooms and how a surgeon belongs to them.
-   - 18: the contract holder (third or first party, holder is billed, billable party, anaesthetist,
-     its kind and context link), the Contract as a dated version with the new-version flow, the AA code
+   - 18: the Party master (holder Party, bills its holder or the payer, prepaid, the five pricing
+     kinds), the flat Contract edited in place with audit (no versions or lines), the AA code
      generator (`nextAaCode`), composite search, the active and holder filters, office-only editing,
-     the one stored No contract (RVG), the Contract editor and catalogue.
+     the one stored No contract · RVG, the Contract editor and catalogue.
    - 19: RVG groups under body sections (base and modifier units, a starting figure and range), the
      Procedure's optional RVG code, the RVG code type-ahead and its store pick action, the
      out-of-range warning (D3). Note which RVG rows exist for abdominoplasty, breast lift,
      liposuction and face lift, and in which groups.
-   - 19a: the Contract line type (fixed price, fixed rate, fixed discount, base and modifier units,
-     holder code), `lineFor`, `isPlainRvgContract`, `ownPriceListFor`, the one resolver's name,
-     signature and layer names (`'line'`, `'procedure'`, `'group'`), `BtmBreakdown`'s layer fields,
-     `FeeResult`'s resolved terms, the fee path (fixed price on any Procedure; else BTM x rate less
-     discount), the line actions and their guards, the lines grid in the Contract editor, the time
-     tiers as data, and that the ordinal key is gone (the bariatric 49120 at $950 is a plain line).
-     19a left the time-only rule for an additional Procedure (`splitBillingUnits`) in place for this
-     phase.
+   - 19a: price ranges on fixed prices and `rangeInForce`, the Contract's own fields, the fee path (the range in force
+     is the whole price; else units x the Contract's rate or the anaesthetist's unit value, less any discount), the time
+     tiers as data, and where the bariatric 49120 Procedure landed (No contract · RVG under today's time-only rule, which
+     19a left in place for this phase). There are no Contract lines, versions or ordinal key.
    - 19b: the `Modifier` master generated from AR-34, the Procedure's `modifierClaims` and
      `removedModifierIds`, `preAppliedModifiersFor` (age and included P1, pre-applied but not locked),
      `resolveModifiers` (the one M total: 19a's starting modifier units plus the pre-applied and
@@ -226,7 +204,7 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
      and "pricing basis with figure" selectors.
    - 21: the payer on the Booking, who is billed (the holder's billable party or the payer), invoice
      grouping by billable party (US-08.2.1), Review showing the stack, and the completion rules.
-   - 22: the invoice line format, the Split button on a Procedure's Contract line and its shares
+   - 22: the invoice line format, the Split button on a Procedure and its shares
      (keyed by Procedure; 22's handoff may ask this phase to re-key them if Booking-level pricing moves
      the priced line), and one BCTI per receivable invoice.
 4. Record the current `PERSIST_VERSION` (16 after 15a session 1; 15b to 22 will have bumped it).
@@ -244,17 +222,11 @@ pill (`r-pill`), as Phases 19, 19a and 22 do (not `DemoBadge`, which means demo 
 the only action colour: "Make primary" is a teal text action beside Edit, and the "Primary" pill is
 never crimson and never a status colour. No mockup covers 20a's shared component; extend it.
 
-**Pricing model (draft, one place).** [AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md)
-(the plain-language guide, true as written except that OQ-90 answered 2026-10-19 that base and time
-units are not priced per Procedure alone): `#booking-to-invoice` and `#contracts-two-kinds`.
-[AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md) (the draft technical design
-v4): `#price-precedence` (the multi-procedure note: "If it does, it adjusts the units of CALCULATED
-procedures before step 3"), `#booking-procedure-fields`, `#contract-line-fields`,
-`#contract-selection`, `#resolver-layers` and `#open-points` (its "RVG multi-procedure rule" point is
-now answered: it applies). [AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md) (its ERD):
-`#booking-procedure`, `#contract-line`, `#contract`. AR-24 (`#booking-procedures`,
-`#multi-procedure-rule`) and AR-01 (`#multi-procedure`) are the catalogue's process diagrams. AR-28 is
-true as written; AR-29 and AR-30 are a draft that a v5 may change.
+**Pricing model (one place).** [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) (the contract model proposal, 5 November 2026): 5.7 (the pricing
+steps; steps 3 and 4 give starting values and units) and 5.9 (the multi-procedure rule on RVG-priced Procedures, A19), with
+[AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) (the flat ERD: `#booking-procedure`, `#contract`, `#price-range`). AR-24 (`#booking-procedures`,
+`#multi-procedure-rule`) and AR-01 (`#multi-procedure`) are the catalogue's process diagrams. AR-28, AR-29 and AR-30 are
+Retired: never cite them, and build no Contract lines, versions or price ladder (24's pricing function follows 5.7).
 
 **Catalogue.** The files linked above, plus
 [US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md)
@@ -284,7 +256,7 @@ spec, and the Catalogue screenshots step re-shoots them.
 **Analysis.** `../GAP-ANALYSIS.md`: everything before "## By epic", the DM-15 row of "Structural
 buttons" summary, and the EP-03 and EP-05 tables. `../epics/EP-03.md` (US-03.2.1, US-03.2.2,
 FT-03.2) and `../epics/EP-05.md` (FT-05.3, US-05.3.1, US-05.3.5).
-`../analysis/domain-model-delta.md#dm-15` (with DM-09 for Contract lines, DM-43 for the resolver,
+`../analysis/domain-model-delta.md#dm-15` (with DM-09 for price ranges, DM-43 for the resolver,
 DM-44 for itemised modifiers and DM-50 for the price precedence 24 builds next),
 `../analysis/reverse-check.md` (RV-08; RV-34 for the ordinal key 19a removed). Code maps:
 `../analysis/prototype-map-domain.md` (section 5, billing maths), `prototype-map-shared.md` (capture
@@ -296,7 +268,7 @@ suite, Booking body, flows), `prototype-map-admin.md` (Review, Master data contr
 symbols, so follow their PROGRESS entries).**
 
 - Names the earlier phases plan (confirm each against their PROGRESS entries): 19's `pickProcedure`
-  and `ProcedurePickerSheet`; 19a's `resolveStartingUnits` and `lineFor`; 18's `nextAaCode`; 20's
+  and `ProcedurePickerSheet`; 19's `resolveStartingUnits` and 19a's `rangeInForce`; 18's `nextAaCode`; 20's
   20's step-rail path function, `setProcedureContract` and `needsContractBookings`;
   20a's `procedureStackView` and `ProcedureStack`. All are new since `60e2d1e`.
 - Types: `src/domain/types.ts`. `Procedure` (453; `isAdditional` at 494, with the RFP comment above
@@ -305,7 +277,7 @@ symbols, so follow their PROGRESS entries).**
 - Fee maths: `src/domain/billing/fee.ts`. `resolveBtm` (58), `splitBillingUnits` (107, the rule to
   remove; 19a and 19b left it in place for this phase), `FeeContext` (19a removed
   `procedureOrdinal`), `feeFor` (180), the "time units only" line description (227 to 229). 19's and
-  19a's resolver module, 19a's line helpers, 19b's modifier module (`resolveModifiers`,
+  19's resolver module, 19a's `rangeInForce`, 19b's modifier module (`resolveModifiers`,
   `preAppliedModifiersFor`).
 - Fee callers:
   - `validateBookingForBilling.ts` `feeContextFor` (77);
@@ -366,18 +338,18 @@ Model, pure engine and seed first, then store, then UI. Every write goes through
 meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
 
 1. **Baseline the figures (before any edit).** Regenerate 18's `feeParity.test.ts` fixture from the
-   code as it stands after 22 (19a's lines and resolver, 19b's modifiers). Add a census test beside it
+   code as it stands after 22 (19a's price ranges and fee path, 19b's modifiers). Add a census test beside it
    that lists every seeded Booking with more than one Procedure: its Procedures, their Contracts and
-   resolved terms (fixed price or calculated), each one's modifier items, the Booking's modifier total
+   resolved terms (fixed or open price, or RVG-priced), each one's modifier items, the Booking's modifier total
    on the primary, its invoices and its BCTI count from `bctisFor`. At `60e2d1e` there are two: the
    Holt pair (Forte, 49115 primary and 49120 additional; both seeded AS2, which 19b maps to no claim,
-   ASA I or II being AS1 at 0 units; follow 19b's entry) and the bariatric pair (Doyle, 20880 at $2,800 and 49120 at $950, both fixed-price
-   lines since 19a).
+   ASA I or II being AS1 at 0 units; follow 19b's entry) and the bariatric pair (Doyle, 20880 on a fixed-price Contract at $2,800 and 49120 on No contract · RVG
+   since 19a: the seeded mixed Booking; pin the figure 19a left).
    - At the end of the phase the fixture may differ only for the new seeded three-procedure Booking.
      Every other figure is unchanged, S3's Holt invoice included (it was $396.18 at `3d3a18c`; 19b
      re-baselined it when the ASA seed went, so pin whatever 22 left): Holt's modifier total on the
-     primary is 4 or fewer, so nothing splits, and the bariatric pair is fixed-price on both Procedures,
-     so the rule leaves it at $2,800 + $950.
+     primary is 4 or fewer, so nothing splits, and the bariatric Booking (a fixed-price primary at $2,800, an RVG-priced additional) keeps
+     the figure 19a left unless its modifiers exceed 4, because no base is billed on either.
    - Carried across, proved here: FT-03.2 (every seeded Booking has one primary and its additional
      Procedures in the same Booking) and US-05.3.5 (each Procedure's units and amount on its invoice
      line). Both assertions stay in the census and must hold at the end.
@@ -388,10 +360,10 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
    - `Procedure.isAdditional: boolean` becomes `Procedure.isPrimary: boolean`. Rewrite the doc comment
      from the RFP split-billing rule to the catalogue rule, including "the primary is a choice, not the
      first done; an ACC pre-op assessment is a pre-op event (39b), never a Procedure, so never
-     primary", and that the flag is the catalogue's addition beside the draft design's booking
-     procedure fields (AR-29#booking-procedure-fields).
+     primary", and that the flag is the catalogue's addition beside the flat ERD's booking
+     procedure fields (AR-61#booking-procedure).
    - No `MultiProcedureRule` type and no per-Contract rule field (US-04.2.5 and US-05.3.4 Retired).
-     No base-unit field or override type: 19a's lines, procedures and groups are the model this phase
+     No base-unit field or override type: 19's RVG groups and 19a's price ranges are the model this phase
      reads.
 
 3. **The multi-procedure allocation, pure** (new `src/domain/billing/multiProcedure.ts`), for FT-05.3,
@@ -407,17 +379,21 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
    - `procedureRole(procedure, procedures)`: `{ role: 'primary' | 'additional'; baseCharged;
      modifiersRecorded }`, the one selector the capture and the store read to decide whether base and
      modifiers are editable on a Procedure.
-   - `participantsOf(procedures, isCalculated)`: the primary, plus every additional Procedure that is
-     calculated (no fixed price resolves for it on its own Contract). A fixed-price additional
-     Procedure takes no share and loses none; the primary always takes part, whatever its pricing.
-     Picked readings under D26, logged.
+   - `participantsOf(procedures, isRvgPriced)`: every RVG-priced Procedure (priced from units: No contract · RVG, or a
+     Contract with a rate or discount), the primary among them when it is one. A Procedure on a fixed or open price
+     takes no share and loses none, whatever its position (US-05.3.1, A19).
+   - `baseOn(procedures)`: the Procedure that carries base units, which is the marked primary whatever its pricing,
+     so none is billed when it is on a fixed or open price (OQ-132's default, D78; `// PROVISIONAL (OQ-132)` in this
+     one function).
    - `allocateModifierUnits(total, participantIds, primaryId)` returns a record of shares.
-     - `total <= 4`: all on the primary, 0 on the rest.
-     - Otherwise each participant gets `floor(total / n)` and the primary also gets `total mod n`.
-     - A single participant (the primary) takes everything.
-   - `ProcedureAllocation { role: 'primary' | 'additional'; calculated: boolean; baseCharged: boolean; modifierShare: number; bookingModifierUnits: number; splitAcross: number }`.
+     - `total <= 4`: all on the primary, 0 on the rest (billed nowhere when the primary is on a fixed or open price;
+       logged beside OQ-132).
+     - Otherwise each participant gets `floor(total / n)` and the primary also gets `total mod n`, or the first
+       participant in Booking order when the primary is not one (our reading, logged).
+     - A single participant takes everything.
+   - `ProcedureAllocation { role: 'primary' | 'additional'; rvgPriced: boolean; baseCharged: boolean; modifierShare: number; bookingModifierUnits: number; splitAcross: number }`.
      `splitAcross` is 1 when nothing was split.
-   - `allocateBooking(procedures, isCalculated, bookingModifierUnits)` returns the allocation for every
+   - `allocateBooking(procedures, isRvgPriced, bookingModifierUnits)` returns the allocation for every
      Procedure.
    - Tests (`multiProcedure.test.ts`), every worked example written out:
      - 0 units over 3: 0/0/0. 4 over 3: 4/0/0 (at the threshold, all on the primary).
@@ -425,11 +401,13 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
        + A1 1). 6 over 4: 3/1/1/1. 8 over 4: 2/2/2/2.
      - 5 over 6: 5/0/0/0/0/0 (every share rounds to 0, the remainder is all of it). 9 over 1: 9.
      - The primary gets the remainder wherever it sits in Booking order (first, middle or last).
-     - 7 over 3 with the three Procedures on three different calculated Contracts (No contract (RVG),
-       a fixed-rate line, a fixed-discount line): still 3/2/2.
-     - 7 over 3 with the third Procedure on a fixed-price line: split over 2, 4/3, and the third gets 0.
-     - A fixed-price primary with two calculated additional Procedures and 7 units: 3/2/2, the primary's
-       3 inside its price.
+     - 7 over 3 with the three Procedures on three different RVG-priced Contracts (No contract (RVG),
+       a rate Contract, a discount Contract): still 3/2/2.
+     - 7 over 3 with the third Procedure on a fixed price: split over 2, 4/3, and the third gets 0. An open price
+       ('Other price') behaves the same.
+     - A fixed-price primary with two RVG-priced additional Procedures: base on nobody (OQ-132's default); 7 units split
+       4/3 over the additional Procedures (remainder to the first), the primary 0; 4 units sit on the primary and are
+       billed nowhere.
      - The shares always sum to the total.
      - `inDisplayOrder` puts a primary stored last at the top and keeps the others' order; a primary
        with a later start time than an additional Procedure stays primary.
@@ -438,52 +416,50 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
 4. **`feeFor` prices one Procedure from its allocation** (`fee.ts`), for FT-05.3, US-05.3.1 and RV-08.
    - `FeeContext.allocation: ProcedureAllocation` is **required**, so the compiler finds every caller
      for item 6.
-   - `resolveBtm` keeps reading each Procedure's own inputs and its own Contract's line through 19a's
-     resolver. On an additional Procedure base is 0 with a new layer value `'additional'` (added to 19
-     and 19a's union, and grepped through every reader), whatever its procedure, its line, a range
-     choice or stored capture. On the primary, `btm.modifiers` is the Booking's modifier total, 19b's
-     `resolveModifiers` on the primary (the starting figure plus the pre-applied and claimed items, or the
-     manual M adjustment). An additional Procedure's own modifier items and starting modifier figure
-     are ignored: the store forbids claims on it (item 7e), and the engine must not count them twice if
-     old data carries them, or count the pre-applied age modifier once per Procedure.
-   - `splitBillingUnits` is deleted. Charged units are B + T + modifier share on the primary, and T +
-     modifier share on a calculated additional Procedure.
-   - Pricing stays 19a's, applied to the charged units: a fixed price resolves, so it is the whole
-     price, the BTM (with the allocation) returned for reference, on primary and additional alike
-     (US-05.2.5); otherwise charged units x (the line's fixed rate or the anaesthetist's unit value) x
-     (1 less the line's fixed discount), rounded once. This is AR-29's CALCULATED step with the units
-     adjusted first. Keep that rate and discount read in one place in `feeFor`, so 24's precedence
-     slots in around it once.
+   - `resolveBtm` keeps reading each Procedure's own inputs and 19's resolver for starting values. Base is charged only
+     on the Procedure `baseOn` returns; on every other Procedure base is 0 with a new source value `'additional'` (added
+     to 19's union and grepped through every reader), whatever its procedure, RVG group, range choice or stored
+     capture. On the primary, `btm.modifiers` is the Booking's modifier total, 19b's `resolveModifiers` on the primary
+     (the starting figure plus the pre-applied and claimed items, or the manual M adjustment). An additional
+     Procedure's own modifier items and starting figure are ignored: the store forbids claims on it (item 7e), and the
+     engine must not count them twice if old data carries them, or count the pre-applied age modifier once per
+     Procedure.
+   - `splitBillingUnits` is deleted. Charged units are B + T + modifier share on the Procedure `baseOn` returns, and T +
+     modifier share on every other RVG-priced Procedure.
+   - Pricing stays 19a's, applied to the charged units: a fixed price (the range in force) is the whole price, the BTM
+     (with the allocation) returned for reference, on primary and additional alike (US-05.2.5), and an open price
+     ('Other price') likewise stays its price; otherwise charged units x (the Contract's rate or the anaesthetist's unit
+     value) x (1 less the Contract's discount), rounded once (AR-58 5.7 step 4 with the units adjusted first, 5.9). Keep
+     that rate and discount read in one place in `feeFor`, so 24's pricing function goes around it once.
    - Line descriptions, which reach invoice lines (inside 22's line format), with no dashes. A
      single-Procedure Booking keeps exactly the description 22 left, so no single-procedure invoice,
      snapshot or spec changes. With two or more Procedures:
-     - calculated primary: "Anaesthesia, primary procedure (B 6 + T 6 + M 3 units)", and when split,
+     - RVG-priced primary: "Anaesthesia, primary procedure (B 6 + T 6 + M 3 units)", and when split,
        "(B 6 + T 6 + M 3 of 7 units)";
-     - calculated additional: "Anaesthesia, additional procedure (T 2 + M 2 of 7 units)", or "(T 2
+     - RVG-priced additional: "Anaesthesia, additional procedure (T 2 + M 2 of 7 units)", or "(T 2
        units)" with no share;
      - a fixed-price Procedure keeps 19a's "Contract price" line, with "primary procedure" or
        "additional procedure" added only when the Booking has two or more Procedures.
    - `FeeResult` gains `allocation` (echoed). `billableUnits` means the units charged at a rate, which
      is 0 on a fixed-price Procedure.
-   - The office price override still applies per Procedure after the rule, as today. Phase 24 builds
-     the full precedence (office override, the anaesthetist's typed price on adjustable Contracts, the
-     fixed price, then calculated) with a recorded price source; an override or typed price replaces a
-     Procedure's price but does not change who took part in the split (item 3 decides participation
-     from the Contract line alone). Say so in a test and in the handoff.
+   - The office price override still applies per Procedure after the rule, as today. Phase 24 builds the pricing
+     function (a price follows its Contract until a typed price, a prepayment invoice or AUTHORISED holds it); a typed
+     or changed price replaces a Procedure's price but does not change who took part in the split (item 3 decides
+     participation from the pricing kind alone). Say so in a test and in the handoff.
 
 5. **The Booking-level engine** (new `src/domain/billing/bookingFee.ts`).
    - `bookingFeeFor(procedures, ctxFor)`. `ctxFor(procedure)` returns that Procedure's `FeeContext`
-     without an allocation, including its Contract version in force on the procedure date, its line
-     and the resolver's starting values (19a), so `invoiceBuild` can inject each Procedure's resolved
+     without an allocation, including its Contract, the price range in force on the procedure date
+     and the resolver's starting values (19, 19a), so `invoiceBuild` can inject each Procedure's resolved
      Contract.
-   - Pass 1 resolves each Procedure's terms and B/T/M on its own Contract through 19a's resolver,
-     classifies it calculated (no fixed price resolves) or fixed, and takes the Booking modifier total
+   - Pass 1 resolves each Procedure's terms and B/T/M on its own Contract through 19's resolver,
+     classifies it RVG-priced (no fixed or open price) or fixed or open, and takes the Booking modifier total
      from the primary through 19b's `resolveModifiers`. Pass 2 calls `allocateBooking`, then `feeFor`
-     for each. Base units count only on the primary; nowhere does a line's base figure reach an
-     additional Procedure's charge.
+     for each. Base units count only on `baseOn`'s Procedure; nowhere does a base figure reach another
+     Procedure's charge.
    - It returns `{ kind: 'ok'; primaryId; order; allocations; fees: Record<ProcedureId, FeeResult>; units; total }`
      (`order` from `inDisplayOrder`), or `{ kind: 'structural'; reason: 'noPrimary' | 'severalPrimaries' }`.
-   - Export both new modules from `billing/index.ts`, beside 19a's resolver, so the pricing model stays
+   - Export both new modules from `billing/index.ts`, beside 19's resolver, so the pricing model stays
      in one place.
    - Tests (`bookingFee.test.ts`), dollar figures pinned from a hand calculation written in the test:
      - The seeded three-procedure example (item 8b) at Dr Souter's seeded unit value: the primary's
@@ -492,16 +468,16 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - The same Booking after making the second procedure primary: base from the new primary's own
        group or procedure figure (item 8b picks procedures whose base figures differ), modifiers still
        3/2/2 with the 3 now on the new primary, and the new primary listed first.
-     - The same Booking with one additional Procedure on a fixed-rate line: still 3/2/2, each share
-       priced at its own Contract's rate (US-05.2.6 carried across); with a fixed-discount line: the
+     - The same Booking with one additional Procedure on a rate Contract: still 3/2/2, each share
+       priced at its own Contract's rate (US-05.2.6 carried across); on a discount Contract: the
        discount applies to that Procedure's charged units only.
-     - A line base figure on the primary's Contract wins (19a's `'line'` layer); the same line base
-       figure on an additional Procedure's Contract changes nothing; making that Procedure primary
-       brings it into B.
-     - An additional Procedure on a fixed-price line keeps its price and takes no share (the bariatric
-       $2,800 + $950 unchanged).
-     - A fixed-price primary with calculated additional Procedures: the additional Procedures earn T
-       and their shares, never base.
+     - A Procedure's own RVG group base reaches B only when it is the primary; making an additional Procedure
+       primary brings its group's base into B.
+     - An additional Procedure on a fixed or open price keeps its price and takes no share.
+     - **The mixed Booking** (the seeded bariatric one: a fixed-price primary, an RVG-priced additional Procedure): the
+       primary is its price, the additional earns T and its share, and no base is billed on either (OQ-132's default,
+       D78, provisional); 4 or fewer modifier units are billed nowhere, above 4 they split across the RVG-priced
+       Procedures, the remainder to the first.
      - Holt: the same total as before the phase, and the invoice still the figure item 1 pinned in
        `invoiceBuild.test.ts`.
      - A manual M adjustment on the primary is the total that splits.
@@ -526,7 +502,7 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
    - 21's completion rule for modifier explanations reads the primary's claims (the only claims a
      Booking holds once item 7e lands).
    - `invoiceBuild.ts`:
-     - `buildInvoicesForBooking` resolves every Procedure's Contract version first, then prices the
+     - `buildInvoicesForBooking` resolves every Procedure's Contract and price range in force first, then prices the
        Booking once with `bookingFeeFor`, then keeps 21's grouping by billable party and 22's split, and orders lines with `inDisplayOrder`;
      - 22's split applies to each Procedure's allocated fee. Each Procedure still has its own priced
        line under its own Contract, so the split shares stay keyed by Procedure and need no re-key
@@ -592,9 +568,8 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
        - the old primary's base inputs (a recorded base value, and the chosen value on a ranged
          starting figure, whichever fields 19 and 19a use) are cleared and kept in the audit `before`,
          so no additional Procedure carries base inputs (item 7e, the seed invariant);
-       - the new primary's base starts from 19a's resolver for its own Contract and procedure (the
-         line, the procedure, the group). If that figure is a range with no value chosen, 19's rule for
-         that case applies; that is correct and needs no special case.
+       - the new primary's base starts from 19's resolver for its own RVG group. If that figure is a range with no
+         value chosen, 19's rule for that case applies; that is correct and needs no special case.
      - Returns `{ previousPrimaryId }`.
    - c. **`removeProcedure` guards by flag, not position.** It refuses `primaryProcedure`: "The primary
      procedure cannot be removed. Make another procedure primary first, or cancel the Booking if the
@@ -624,7 +599,8 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - set-primary moves the claims and the manual M adjustment, re-derives the pre-applied modifiers,
        drops a now-included P1 claim into `before`, and clears the old base inputs, with both audit
        entries;
-     - set-primary onto a Procedure whose Contract has a line base figure gives B from the line;
+     - set-primary onto a Procedure with a different RVG group gives B from that group, and set-primary onto an
+       RVG-priced Procedure when the old primary was on a fixed price brings base into the Booking;
      - every guard in order;
      - an integration actor succeeds on ACTIVE and is refused on SUBMITTED with `integrationImmutable`;
      - the anaesthetist is refused on a completed Booking, and the office is not;
@@ -637,8 +613,8 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
    - a. `bookings.ts`: the spec helper's `isAdditional` becomes `isPrimary`, true for a Booking's first
      Procedure unless the spec says otherwise. Any modifier claim 19b's migration left on an additional
      Procedure (the Holt and bariatric pairs) moves to the primary, a duplicate code dropped, so modifiers
-     are one set per Booking; neither figure moves (Holt's claims are worth 0, the bariatric pair is
-     fixed-price). `history.ts`, `audit.ts` and `fixtures.ts` follow.
+     are one set per Booking; Holt's figure does not move (its claims are worth 0); the bariatric primary is a fixed
+     price, so its claims bill nowhere. `history.ts`, `audit.ts` and `fixtures.ts` follow.
    - b. **The seeded three-procedure Booking**, spec in a new `src/domain/seed/multiProcedureDemo.ts` and
      shared with the trigger in item 11 (`MULTI_PROCEDURE_DEMO`: procedures, time offsets, modifier
      claims with explanations, patient).
@@ -652,7 +628,7 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
        each with its explanation, plus the pre-applied A1 from the patient's age: 2 + 2 + 2 + 1 = 7.
      - Patient: one new fixed patient with an explicit id, aged 70 to 79 on the List date (so A1 is
        pre-applied, under 19b's D29 bands), never from the generated pool.
-     - Contracts: every Procedure on No contract (RVG), so all three are calculated and the payer on the
+     - Contracts: every Procedure on No contract (RVG), so all three are RVG-priced and the payer on the
        Booking (the patient, 21) is billed.
      - List: a past Souter List that no S1 to S5 beat uses. Confirm with a one-off seed query at the
        drift check, and put the choice in the PROGRESS entry. Leave the List SUBMITTED (with its
@@ -669,8 +645,8 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - Replace the `splitBillingBooking` scenario detail ("Second procedure isAdditional: time units only
        on the BTM path.") with "Additional procedure: its own time units, base on the primary only,
        modifiers on the primary (4 or fewer)". Replace the `bariatricType3Booking` detail (whatever 19a
-       left of "second procedure priced by the ordinal rule") with "two fixed-price lines: the
-       additional procedure keeps its own Contract price". Add a `multiProcedureBooking` entry: "Three
+       left of "second procedure priced by the ordinal rule") with "fixed-price primary, RVG-priced additional
+       procedure: no base units billed (provisional, OQ-132)". Add a `multiProcedureBooking` entry: "Three
        procedures, 7 modifier units, split 3 · 2 · 2".
    - c. `seed.test.ts`:
      - exactly one primary in every Booking with Procedures (FT-03.2 carried across);
@@ -678,7 +654,7 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
      - every Contract, holder, line, procedure id and AA code that existed before this phase is
        unchanged;
      - the three-procedure Booking allocates 3/2/2;
-     - bariatric is still $2,800 + $950 from its two fixed-price lines;
+     - the bariatric Booking is the mixed Booking: its fixed-price primary at $2,800, its additional on RVG time units, no base, the figure 19a left;
      - the parity fixture holds except for the new Booking, and `bctisFor` counts are unchanged.
 
    **Session 1 ends here, green:** `npm run build`, `npm run build:pwa`, `npx vitest run`, with the parity
@@ -707,10 +683,10 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
         `setPrimaryProcedure`; a refusal shows in the sheet.
     - d. **The additional note** (the accent tint note, same place; keep the `procedure-additional-note`
       hook):
-      - calculated: "Additional procedure. Base units are charged on the primary procedure only. It
+      - RVG-priced: "Additional procedure. Base units are charged on the primary procedure only. It
         earns its own time units, and an equal share of the Booking's modifiers once they total more
         than 4."
-      - fixed price: "Additional procedure on a fixed price. Its Contract's price is the whole price;
+      - fixed or open price: "Additional procedure on a fixed price. Its Contract's price is the whole price;
         its units are recorded for reference."
       - Units only, no dollar amount (the 2026-09-28 ruling, where the catalogue gives no price).
     - e. **Modifiers on an additional Procedure.** 19b's claim actions and claimed rows are not
@@ -722,8 +698,8 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
       The range chooser (wherever 19 and 19a show a ranged starting figure) is hidden on an additional
       Procedure, which reads "Base not charged on an additional procedure".
     - f. **`UnitsCard` takes `allocation` in place of `isAdditional`.**
-      - Primary B row: 19 and 19a's captions, including the layer caption ("From the Contract line",
-        "From the procedure", "From the RVG group").
+      - Primary B row: 19's captions (the RVG group figure, or the recorded value). A primary on a fixed or open price:
+        0, caption "No base units billed on a fixed price (provisional, OQ-132)", no stepper.
       - Additional B row: 0, caption "Base units are on the primary procedure", no stepper.
       - T row: unchanged on every Procedure.
       - Primary M row: the Booking total (19b's itemised total, or the manual adjustment it edits). Its
@@ -739,14 +715,13 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
       notes are:
       - "Primary · B + T + M 3 of 7";
       - "Additional · T + M 2 of 7";
-      - "Additional · fixed price" (the line's price; units for reference).
+      - "Primary · fixed price" or "Additional · fixed price" (the Contract's price; units for reference); on a Booking
+      whose primary is on a fixed or open price, a plain neutral note "No base units billed (provisional, OQ-132)".
       "Time units only" is deleted. Under the rows, when the Booking has more than one Procedure and its
-      modifiers split, one plain neutral caption: "Modifiers 7, split 3 · 2 · 2" (no provisional pill:
-      the rule is the system's one rule). The history entity labels read "Primary · {description}" and
+      modifiers split, one plain neutral caption: "Modifiers 7, split 3 · 2 · 2" (no label here: the rule is the
+      system's one rule; only the OQ-132 note above is provisional). The history entity labels read "Primary · {description}" and
       "Additional · {description}". Hook: `data-shot="booking-total-split"` (inside the existing
       `booking-calculation` test id, which recipes already highlight).
-      `data-shot="booking-total-split"` (inside the existing `booking-calculation` test id, which
-      recipes already highlight).
     - b. The anaesthetist surfaces stay free of a calculated total: grep that no `bookingFee(...).total`
       reaches mobile or anaesthetist web output (`BookingDetailBody`'s `showBookingTotal` stays false for
       the anaesthetist).
@@ -818,14 +793,15 @@ needs no trigger. No mobile beat waits on the office here, so no PWA office
 stand-in is needed. The Control Panel page gets no trigger; only its S3 scenario text changes (item 12).
 
 Seeded, no button: the three-procedure Souter Booking with 7 modifier units (3/2/2 on the Booking total,
-in Review and on invoice lines once authorised).
+in Review and on invoice lines once authorised), and the bariatric Booking as the mixed Booking (a fixed-price
+primary with an RVG-priced additional Procedure: no base units billed, labelled provisional, OQ-132).
 
 The feed entry's label says "changes", not "swaps": the vocabulary rule is "move or reassign, never
 swap".
 
 | id | Label | Screen (routes) | Surfaces | Effect | Disabled when |
 |---|---|---|---|---|---|
-| `load-multi-procedure-booking` | Load 3-procedure Booking (7 modifier units) | List detail and Booking detail in all three apps: `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId`, `/web/lists/:listId/bookings/:bookingId`, `/admin/day/:dateISO/bookings/:bookingId` | bar and pwa | Adds the `MULTI_PROCEDURE_DEMO` Booking (a cholecystectomy primary and two hernia repairs, AS3 + OB3 + ASE claimed with explanations plus the locked A1 = 7 modifier units, each on No contract (RVG), times set, not marked complete) to **Dr Souter's next open List**: the earliest Souter List dated after the demo clock's today that is ACTIVE, booked and has a hospital. Message: "Loaded on Dr Souter's {date} {session} List: 3 procedures, 7 modifier units, split 3 · 2 · 2." `indexPath` is that Booking's Admin detail | "Already loaded on {date} {session}" when that List holds a Booking for the demo patient; "Dr Souter has no open List ahead" when there is none |
+| `load-multi-procedure-booking` | Load 3-procedure Booking (7 modifier units) | List detail and Booking detail in all three apps: `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId`, `/web/lists/:listId/bookings/:bookingId`, `/admin/day/:dateISO/bookings/:bookingId` | bar and pwa | Adds the `MULTI_PROCEDURE_DEMO` Booking (a cholecystectomy primary and two hernia repairs, AS3 + OB3 + ASE claimed with explanations plus the pre-applied A1 = 7 modifier units, each on No contract (RVG), times set, not marked complete) to **Dr Souter's next open List**: the earliest Souter List dated after the demo clock's today that is ACTIVE, booked and has a hospital. Message: "Loaded on Dr Souter's {date} {session} List: 3 procedures, 7 modifier units, split 3 · 2 · 2." `indexPath` is that Booking's Admin detail | "Already loaded on {date} {session}" when that List holds a Booking for the demo patient; "Dr Souter has no open List ahead" when there is none |
 | `feed-changes-primary` | Hospital feed changes the primary | Booking detail in all three apps (the Booking in the URL); `when` the Booking has two or more Procedures | bar and pwa | The inbound source for the List's hospital makes the next Procedure primary through `setPrimaryProcedure`, audited with source `integration` under the feed's label; the new primary moves to the top. Message: "{Feed} made {description} the primary. Base units now come from it." | The List is not ACTIVE ("A hospital feed cannot change a submitted List", mirroring `integrationImmutable`); the Booking is cancelled; fewer than two Procedures (hidden by `when`) |
 
 Neither entry carries the Future-scope badge: the inbound source is in scope (US-03.2.2, Confirmed) and
@@ -837,7 +813,7 @@ trigger audit is the backstop).
 
 ## Out of scope
 
-- Base units, the resolver's layers, Contract lines and their editor, and the time tiers as data
+- Base units, the resolver, price ranges and the Contract editor, and the time tiers as data
   (19 and 19a; OQ-62 answered). This phase reads them.
 - Modifiers as records, the pre-applied age and P1, the explanation on claiming, and the modifier master
   (19b). This phase moves them between Procedures and reads their total.
@@ -845,7 +821,7 @@ trigger audit is the backstop).
   (US-04.2.5 and US-05.3.4 Retired; OQ-90 answered: no Contract overrides the rule). How a fee
   schedule such as SXAP or CES that prices a second code at 50% expresses it is open with OQ-89;
   build nothing for it.
-- Combinations (19a: lines of their own, no parent procedures, no flag) and splitting a combined
+- Combinations (19a: fixed-price Contracts of their own, no parent procedures, no flag) and splitting a combined
   invoice after it is sent (a credit note then additional invoices: Phase 39).
 - The price precedence, the price source, the engine rejections and the anaesthetist's typed price or
   discount (Phase 24).
@@ -895,8 +871,11 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       the 3 moves to it, and the total changes to the second pinned figure. Make the cholecystectomy
       primary again, and the original total and order return.
 - [ ] On the ACTIVE three-procedure Booking the loader trigger adds (not the seeded SUBMITTED one), put
-      one hernia repair on a Contract with a fixed-price line: it shows "Additional · fixed price", takes
+      one hernia repair on a fixed-price Contract: it shows "Additional · fixed price", takes
       no share, and the split becomes 4 · 3 over the other two. Put it back on No contract (RVG).
+- [ ] Mixed Booking (Admin, Doyle's bariatric Booking): the primary reads "Primary · fixed price", the additional
+      Procedure reads its time units (and its share above 4 modifier units), no base is billed on either, and the
+      provisional OQ-132 note shows. Making the additional Procedure primary brings its RVG base in.
 - [ ] Review queue: the seeded List's row shows "M 7 · split 3 · 2 · 2". "Next in queue" from Souter Mon 20
       AM still lands on Mon 20 PM. The Admin to-do list count is unchanged.
 - [ ] Authorise the seeded List. One invoice to the payer on the Booking; its lines read "(B n + T n + M 3
@@ -905,8 +884,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Prepaid primary (D57): the Vitest case passes (the not-prepaid additional's fee is unchanged when the
       primary is prepaid); the invoice left-off itself is checked in Phase 27.
 - [ ] S3 Beat 1 after a reset: Holt AA-2026-0002 is the figure item 1 pinned, with one invoice, and its
-      additional line reads "Anaesthesia, additional procedure (T 2 units)". The bariatric Booking is
-      still $2,800 + $950. The split pair 22 kept is unchanged.
+      additional line reads "Anaesthesia, additional procedure (T 2 units)". The bariatric Booking's primary is still
+      $2,800 and its additional is the figure item 1 pinned, no base. The split pair 22 kept is unchanged.
 - [ ] Demo actions (harness bar, on a Souter List or Booking): "Load 3-procedure Booking (7 modifier
       units)" adds it to the next open List with the message. A second run is disabled with "Already
       loaded".
@@ -932,12 +911,13 @@ cheat-sheet card and the S3 section). Line numbers are as at `60e2d1e`; earlier 
 
 - `04-presenter-cheat-sheet.md`: the "Split billing" section (98) becomes "Multi-procedure rule":
   - one primary per Booking, always listed first, and anyone with edit rights can make another primary;
-  - base on the primary only, from its Contract line, procedure or RVG group (19a's wording stays);
+  - base on the primary only, from its RVG group or the recorded value (19's wording stays), and none when the primary is on a fixed or open price (OQ-132);
   - time on every Procedure;
   - modifiers recorded once, on the primary, up to 4 units, then split equally with the remainder to
     the primary (7 over 3 = 3 / 2 / 2, agreed with AA on 7 October), whichever Contracts the
     Procedures are on;
-  - a Procedure on a fixed price keeps its price and takes no share;
+  - the rule adjusts RVG-priced Procedures only: a fixed or open price keeps its price and takes no share, and on a
+    mixed Booking whose primary is a fixed price no base units are billed (OQ-132, provisional);
   - AA confirmed the rule on 19 October (OQ-90); which Procedure is primary is not settled (Vanessa:
     the most expensive; Greg: the first in the list), so the first stays primary until someone
     changes it.
@@ -946,14 +926,15 @@ cheat-sheet card and the S3 section). Line numbers are as at `60e2d1e`; earlier 
   additional procedures by its own rule.
 - `02-workflows-and-handoffs.md`: "Multiple Procedures" (around 261 to 265) is rewritten the same way
   and adds "Make primary". Billing engine step 5 (around 349), "It enforces time-only additional
-  Procedures", becomes "It applies the multi-procedure rule to calculated Procedures".
+  Procedures", becomes "It applies the multi-procedure rule to RVG-priced Procedures".
 - `01-personas-and-responsibilities.md`: the anaesthetist's item about additional procedures (around
   51, "which charges time units only") mentions "Make primary" and drops the time-only wording. The
   office list gains "set the primary from the rooms' sheet, and correct it at review".
 - `03-demo-script.md`:
   - S3 Beat 1 (around 248): "the one-invoice, same-funder split" Booking becomes "the one-invoice
     multi-procedure Booking (additional procedure on its own time units; modifiers stay on the primary
-    at 4 or fewer)". Re-verify the Holt figure and the bariatric pair; they should not move.
+    at 4 or fewer)". Re-verify the Holt figure (it should not move) and the bariatric Booking (the mixed Booking:
+    $2,800 fixed primary, its additional on time units, no base billed, OQ-132).
   - S3 "Serves" line (232): "split billing" becomes "the multi-procedure rule".
   - Add an optional "Worth pointing at" after S3 Beat 1: open the seeded three-procedure Souter Booking
     in Admin, show 3 / 2 / 2 from AS3, OB3, emergency and the pre-applied age modifier, then click
@@ -961,7 +942,8 @@ cheat-sheet card and the S3 section). Line numbers are as at `60e2d1e`; earlier 
     demo actions.
   - S5 discovery points: drop any OQ-15, OQ-53, OQ-66 or OQ-90 point (all answered); add "which
     Procedure is primary" (Vanessa: the most expensive; Greg: the first in the list; the build keeps
-    the first until someone changes it).
+    the first until someone changes it) and "base units when the primary is on a fixed price" (OQ-132: the build
+    bills none).
 - Control Panel scenario text: the S3 blurb and steps (item 12), and the `splitBillingBooking`,
   `bariatricType3Booking` and `multiProcedureBooking` scenario detail (item 8b).
 
@@ -979,40 +961,37 @@ afterwards; only quoted RFP headings may remain.
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
-run after the review pass and before the PROGRESS.md entry. Re-run
-`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 23` first: earlier phases may have
-changed these recipes. Never leave a caption that says an additional procedure bills time units
-only, that base and modifiers "stay on the first", or that a second procedure is priced by an
-ordinal or a Contract rule. FT-05.3 has a story (US-05.3.1), so it needs no recipe of its own.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the
+review pass and before the PROGRESS.md entry. Re-run
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 23` first. Never leave a caption that says
+an additional procedure bills time units only, that base and modifiers "stay on the first", or that a second procedure is
+priced by an ordinal or a Contract rule. FT-05.3 has a story (US-05.3.1), so it needs no recipe of its own.
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure | captured · web-primary-and-additional, mobile-primary-and-additional (stale caption "bills time units only") | Stays `captured`. Re-shoot both on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`, and the mobile route; confirm it is still ACTIVE) after adding a second procedure: highlight `procedure-primary-pill` on the first block and `procedure-additional-note` on the second. Keep the shot `name`s. Caption: "One Procedure is the primary, shown first; base units, and modifiers under the usual rule, anchor to it" |
-| [US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary | absent ("no control to make another procedure primary") | `captured`. New shots `web-make-primary` and `mobile-make-primary` on BK0009 after "Add another procedure", states `before` (the teal `make-primary` action), `sheet` (`MakePrimarySheet`, a bottom sheet on mobile, a dialog on web) and `moved` (the new primary on top with the Primary pill); `admin-make-primary` on the seeded three-procedure Booking (`SEED_MARKERS.multiProcedureBooking`). Caption: "Anyone with edit rights can set the primary Procedure, and it is shown first". Drop the absent reason |
-| [US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule | captured · web-additional-base, mobile-additional-base (stale caption "base units not charged and not editable"), plus the merged US-05.3.2 `additional-time` shots | Stays `captured`. Re-shoot both `additional-base` shots on BK0022 (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0022`, and the mobile route): highlight `units-row-b` of the additional block (0, "Base units are on the primary procedure"); re-check the `nth=1` selector and the `additional-time` shots, since the additional block loses its Modifiers section. Add `admin-modifier-split` on the seeded three-procedure Booking, highlight `booking-total-split` ("Primary · B + T + M 3 of 7", "Additional · T + M 2 of 7" twice, no provisional pill). Caption: "Modifier units above 4 split equally, the remainder to the primary". The prepaid-primary criterion is shown in Phase 27's shots, not here. Anaesthetist shots show units and shares only |
-| [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) Ledger tracks each Procedure's share | captured · admin-per-procedure | Stays `captured` (carried across). Re-shoot `admin-per-procedure` (`/admin/day/2026-07-20/bookings/BK0022`, highlight `booking-calculation`): rows read "Primary" and "Additional", primary first. Keep the caption "The Booking's fee broken down by Procedure, on the office view" |
+| [US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary | absent ("no control to make another procedure primary") | `captured`. New `web-make-primary` and `mobile-make-primary` on BK0009 after "Add another procedure", states `before` (teal `make-primary`), `sheet` (`MakePrimarySheet`) and `moved` (new primary on top with the Primary pill); `admin-make-primary` on `SEED_MARKERS.multiProcedureBooking`. Caption: "Anyone with edit rights can set the primary Procedure, and it is shown first". Drop the absent reason |
+| [US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule | captured · web-additional-base, mobile-additional-base (stale caption), plus US-05.3.2's `additional-time` shots | Stays `captured` (status 3, Verify). Re-shoot both `additional-base` shots on BK0022, highlight the additional block's `units-row-b` (0, "Base units are on the primary procedure"); re-check the `nth=1` and `additional-time` shots. Add `admin-modifier-split` on the three-procedure Booking, highlight `booking-total-split` (3 / 2 / 2, no label), and `admin-mixed-booking` on the bariatric Booking, highlight `booking-total-split` (fixed-price primary, additional on time units, "No base units billed", provisional). Caption: "Modifier units above 4 split equally across RVG-priced Procedures, the remainder to the primary". Anaesthetist shots show units and shares only |
+| [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) Ledger tracks each Procedure's share | captured · admin-per-procedure | Stays `captured` (carried across). Re-shoot `admin-per-procedure` (BK0022, highlight `booking-calculation`): rows read "Primary" and "Additional", primary first; same caption |
+| [US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure | captured (stale caption "bills time units only") | No change here: it left this phase's covers (Matches). Its shots are fixed only under "Elsewhere" |
 
 **Elsewhere.**
-- US-03.2.3's shots (`web-add-procedure`, `mobile-add-procedure`) show the block that changes: re-shoot
-  with the Primary pill, the Modifiers caption row and the added Procedure starting on the primary's
-  Contract; keep the status and reason as 20 left them.
-- `US-05.3.3` (Retired: merged into US-05.3.1) is `absent` with a reason describing the old prototype
-  ("no four unit threshold or equal split"), which this phase makes untrue: replace it with "Retired:
-  merged into US-05.3.1 (the split is built in Phase 23)". `US-05.3.2` keeps its `additional-time`
-  shots. US-04.2.5 and US-05.3.4 (ordinal captions): confirm 19a set them absent; never leave either
-  caption live.
+- US-03.2.1's two shots (`web-primary-and-additional`, `mobile-primary-and-additional`) are re-shot on BK0009, highlighting
+  `procedure-primary-pill` and `procedure-additional-note`, with the stale caption replaced by "One Procedure is the primary,
+  shown first". US-03.2.3's shots (`web-add-procedure`, `mobile-add-procedure`) are re-shot with the Primary pill, the
+  Modifiers caption row and the added Procedure on the primary's Contract; keep the status and reason as 20 left them.
+- `US-05.3.3` (Retired: merged into US-05.3.1) is `absent` with a reason describing the old prototype; replace it with
+  "Retired: merged into US-05.3.1 (the split is built in Phase 23)". `US-05.3.2` keeps its `additional-time` shots.
+  US-04.2.5 and US-05.3.4: confirm 19a set them absent; never leave either caption live.
 - Recipes this phase breaks (run `--dry`): `US-03.2.1` and `US-03.2.3` (`procedure-additional-note`,
-  `procedure-header`, `procedure-contract` at `nth=1`); `US-05.3.2`; `US-03.3.4`, `US-03.3.8` and
-  `US-05.1.4` (the Modifiers section now shows on the primary only); `US-05.2.1`, `US-05.2.4` and
-  `US-05.2.5` (the `booking-calculation` rows change to "Primary" and "Additional"; the bariatric shot
-  gains "Additional · fixed price"); `US-03.1.1`, `US-03.1.2`, `US-03.1.9`, `US-03.4.1` and `US-04.3.3`
-  (`procedure-header` and 20a's shared component gain the Primary pill and Make primary).
+  `procedure-header`, `procedure-contract` at `nth=1`); `US-05.3.2`; `US-03.3.4`, `US-03.3.8` and `US-05.1.4` (Modifiers
+  now on the primary only); `US-05.2.1`, `US-05.2.4` and `US-05.2.5` (`booking-calculation` rows read "Primary" and
+  "Additional"; the bariatric shot gains "Primary · fixed price"); `US-03.1.1`, `US-03.1.2`, `US-03.1.9`, `US-03.4.1` and
+  `US-04.3.3` (`procedure-header` and 20a's `ProcedureStack` gain the Primary pill and Make primary).
 
-**ATLAS.md.** Update Seed data (the three-procedure Souter Booking, its List and its patient aged 70 to
-79; the bariatric pair now two fixed-price lines), Personas and IDs (`SEED_MARKERS.multiProcedureBooking`),
-Existing hooks (`procedure-primary-pill`, `make-primary`, `booking-total-split`) and the Demo control
-panel section for "Load 3-procedure Booking (7 modifier units)" and "Hospital feed changes the primary".
+**ATLAS.md.** Update Seed data (the three-procedure Souter Booking, its List and its patient aged 70 to 79; the bariatric
+Booking as the mixed Booking), Personas and IDs (`SEED_MARKERS.multiProcedureBooking`), Existing hooks
+(`procedure-primary-pill`, `make-primary`, `booking-total-split`) and the Demo control panel section for "Load 3-procedure
+Booking (7 modifier units)" and "Hospital feed changes the primary".
 
 ## Adversarial review (after build)
 
@@ -1033,19 +1012,20 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   - the threshold is "more than 4", so exactly 4 does not split;
   - the remainder goes to the primary wherever it sits;
   - the shares sum to the total;
-  - Procedures on different calculated Contracts split together;
-  - a fixed-price additional Procedure takes no share and loses none, and keeps its price;
+  - Procedures on different RVG-priced Contracts split together;
+  - a fixed or open price takes no share and keeps its price; with a fixed or open primary, base on no Procedure and the
+    remainder to the first participant (OQ-132's default, labelled provisional);
   - the pre-applied age modifier counts once for the Booking, never once per Procedure;
   - the threshold and the split live in one pure module, with no switch and no provisional label
     anywhere.
-- **One engine, one place.** Every fee in the app comes from `bookingFeeFor` over 19a's resolver and fee
-  path: the UI assembler, the validator, the invoice build (with resolved Contract versions), the
+- **One engine, one place.** Every fee in the app comes from `bookingFeeFor` over 19's resolver and 19a's fee
+  path: the UI assembler, the validator, the invoice build (with each Procedure's Contract and range in force), the
   prepayment build, the billing-line guards and the seed. No caller prices a Procedure alone or reads a
   position; grep `ordinal`, `[0]` near procedures, `isAdditional` and `splitBillingUnits`. No second
-  copy of the line, resolver or modifier logic.
-- **Base units are 19a's.** Every B comes from 19a's resolver (line, procedure, group) or the value
-  recorded on the primary, counts on the primary only, and never reaches an additional Procedure's
-  charge.
+  copy of the resolver, fee path or modifier logic.
+- **Base units are 19's.** Every B comes from 19's resolver (the RVG group) or the value recorded on the primary,
+  counts on the marked primary only (none when it is on a fixed or open price, OQ-132), and never reaches an additional
+  Procedure's charge.
 - **Modifiers are 19b's.** The Booking total is 19b's `resolveModifiers` on the primary; claims and
   explanations move with Make primary through `reconcileClaims`; no procedure-default pre-fill or ASA
   seed creeps back. An additional Procedure on a Neurosurgery or Spine code still shows its own pre-applied
@@ -1059,7 +1039,7 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   - the claims and the manual M adjustment are on the new primary and gone from the old one;
   - the pre-applied rows re-derive for the new primary, and a now-included claim is dropped into `before`;
   - the old primary's base inputs are cleared and kept in `before`;
-  - the new primary's base comes from its own Contract through 19a's resolver;
+  - the new primary's base comes from its own RVG group through 19's resolver;
   - 19's ranged-figure rule and out-of-range warning follow the primary, not the old one.
 - **Structural, not cosmetic.** The store refuses base values, modifier claims and a manual M on an
   additional Procedure, and `isPrimary` patches, whatever the UI shows. Clearing (a procedure or
@@ -1075,7 +1055,7 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   `PERSIST_VERSION` is bumped once.
 - **The anaesthetist sees no calculated total.** The additional note, the M share captions, the
   "already covers" note and the Make primary sheet carry units only.
-- **No gold-plating.** No per-Contract rule, no switch or provisional label, no combination work (19a),
+- **No gold-plating.** No per-Contract rule, no switch, no provisional label beyond OQ-132's, no combination work (19a),
   no invoice split or credit, no precedence or adjustment, no lock, no ledger share, no loaders. Plus
   the usual: teal-only actions, a neutral Primary pill, no dashes in copy, sheets not modals on
   mobile, `pwaPurity` green, and the trigger bodies in `src/store`.
@@ -1083,13 +1063,14 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): the participant reading (a fixed-price additional Procedure left out of the split,
-  against the catalogue's literal "every Procedure in the Booking"), that the first Procedure stays
+  themselves"): OQ-132's built default (D78: no base units when the primary is on a fixed or open price), FT-05.3 out of
+  step with US-05.3.1 (it still splits above four across every Procedure; modifiers of four or fewer on a fixed-price
+  primary are billed nowhere), the remainder going to the first participant when the primary is not one, that the first Procedure stays
   primary until someone changes it (which is primary is not settled: Vanessa, the most expensive;
   Greg, the first in the list), the other picked readings below, anything logged rather than fixed,
   and the screens worth a look, each with its route and persona.
 - A status row for catch-up Phase 23, and a phase entry covering:
-  - the drift-check result (and whether AR-29 moved to a v5);
+  - the drift-check result (and whether AR-58 5.7 or 5.9 moved);
   - what was built;
   - the parity result (the only diff being the new Booking), the BCTI count check, the FT-03.2 and
     US-05.3.5 carry-across checks, and the List chosen for the seeded Booking;
@@ -1098,8 +1079,8 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   - the review pass: findings confirmed and fixed, and anything not treated as a defect, with the reason.
 - **Decisions log:**
   1. The catalogue multi-procedure rule replaces the RFP split-billing rule ("additional Procedure = time
-     units only"), superseding the Phase 01, 04 and 08 readings. It applies to calculated Procedures
-     only (AR-29's CALCULATED note), as the one system-wide rule with no switch and no label (OQ-90
+     units only"), superseding the Phase 01, 04 and 08 readings. It applies to RVG-priced Procedures only (US-05.3.1,
+     5 November; a fixed or open price stays its price), as the one system-wide rule with no switch and no label (OQ-90
      answered 2026-10-19, D26; Greg: pricing each Procedure alone is "not correct").
   2. `isPrimary` replaces `isAdditional`, with an exactly-one invariant; the primary is listed first
      everywhere (US-03.2.2 note); which Procedure is primary is not settled, so the first is primary
@@ -1115,9 +1096,12 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
        items and manual adjustment), and move with Make primary; the pre-applied modifiers are derived
        for the primary, so the age modifier counts once; a claim the new primary's base includes is
        dropped;
-     - the participants are the primary plus calculated additional Procedures; a fixed-price additional
-       Procedure takes no share and keeps its price; a fixed-price primary still anchors the base and
-       modifiers, its share inside its price;
+     - the participants are the RVG-priced Procedures; a fixed or open price takes no share and keeps its price
+       (US-05.3.1, A19); the remainder goes to the primary, or the first participant when the primary is not one;
+       modifiers of four or fewer on a fixed-price primary are billed nowhere (FT-05.3 still splits across every
+       Procedure: logged);
+     - OQ-132's default (D78): base units stay on the marked primary, so none is billed on a fixed or open price
+       primary, labelled provisional in the one function;
      - an office override or an anaesthetist's typed price (24) never changes who took part;
      - the integration actor may set the primary on an ACTIVE List only;
      - the anaesthetist must Amend a completed Booking first, and the office need not;
@@ -1127,7 +1111,7 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   - 24 builds the price precedence around 19a's single rate and discount read in `feeFor`, after this
     phase's allocation: an office override or typed price replaces a Procedure's price and leaves the
     shares as they are; a fixed-price Procedure stays out of the split.
-  - 25 snapshots `isPrimary`, the allocation (role, calculated, share, split across) and the base
+  - 25 snapshots `isPrimary`, the allocation (role, RVG-priced, share, split across) and the base
     layer at AUTHORISED.
   - 27: leaves prepaid Procedures off the final invoice after this phase's ranking (D57; the
     not-prepaid additional keeps its reduction, tested here at the engine); a prepaid Procedure on the anaesthetist's own fixed-price Contract is fixed-price, so it keeps

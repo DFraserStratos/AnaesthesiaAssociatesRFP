@@ -6,7 +6,7 @@
  * record that `roundTripProblems` passes.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { Artifact, ArtifactKind, ArtifactStatus, Box, Citation, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Viewport } from './types.ts'
+import type { Artifact, ArtifactKind, ArtifactStatus, Box, Citation, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Step, StepBalance, StepMove, Viewport } from './types.ts'
 
 const FENCE = '---'
 export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'related', 'artifacts', 'images']
@@ -344,9 +344,12 @@ export function revOf(text: string): string {
 
 /* -------------------------------------------------------------- artifacts */
 
-export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'cited_as', 'file', 'regions']
+export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'cited_as', 'file', 'regions', 'steps']
 export const CITATION_KEYS = ['as', 'page_offset', 'within', 'spot']
 export const REGION_KEYS = ['id', 'name', 'around', 'box', 'page', 'pad', 'note']
+export const STEP_KEYS = ['id', 'name', 'group', 'caption', 'show', 'highlight', 'moves', 'balances']
+export const MOVE_KEYS = ['from', 'to']
+export const BALANCE_KEYS = ['account', 'amount']
 export const SOURCE_HEADING = '## Source'
 
 const numOrNull = (v: unknown): number | null => {
@@ -373,6 +376,32 @@ export function toRegion(raw: unknown): Region {
     page: numOrNull(o.page),
     pad: numOrNull(o.pad),
     note: str(o.note).trim(),
+  }
+}
+
+/** A balance row keeps its text as written: `$100` stays `$100`, a bare `0` comes back as "0". */
+function toBalance(raw: unknown): StepBalance {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return { account: str(o.account).trim(), amount: str(o.amount).trim() }
+}
+
+/** A move keeps its two anchors trimmed; one missing is '' (the check says so). */
+function toMove(raw: unknown): StepMove {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return { from: str(o.from).trim(), to: str(o.to).trim() }
+}
+
+export function toStep(raw: unknown): Step {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return {
+    id: str(o.id).trim(),
+    name: str(o.name).trim(),
+    group: str(o.group).trim(),
+    caption: tidyText(str(o.caption)),
+    show: strList(o.show),
+    highlight: strList(o.highlight),
+    moves: (Array.isArray(o.moves) ? o.moves : []).filter((m) => m && typeof m === 'object' && !Array.isArray(m)).map(toMove),
+    balances: (Array.isArray(o.balances) ? o.balances : []).map(toBalance),
   }
 }
 
@@ -407,6 +436,7 @@ export function toArtifact(meta: Record<string, unknown>, description: unknown =
     citedAs: (Array.isArray(meta.cited_as) ? meta.cited_as : []).map(toCitation),
     file: meta.file ? str(meta.file).trim() : null,
     regions: (Array.isArray(meta.regions) ? meta.regions : []).map(toRegion),
+    steps: (Array.isArray(meta.steps) ? meta.steps : []).map(toStep),
     description: str(description),
     source: str(source),
     extra: pickExtra((meta.extra as Record<string, unknown>) ?? {}, ARTIFACT_KEYS),
@@ -447,6 +477,18 @@ export function serialiseArtifact(a: Artifact): string {
       return o
     })
   }
+  if (a.steps?.length) {
+    meta.steps = a.steps.map((s) => {
+      const o: Record<string, unknown> = { id: s.id, name: s.name }
+      if (s.group) o.group = s.group
+      if (s.caption) o.caption = s.caption
+      if (s.show.length) o.show = s.show
+      if (s.highlight.length) o.highlight = s.highlight
+      if (s.moves?.length) o.moves = s.moves.map((m) => ({ from: m.from, to: m.to }))
+      if (s.balances.length) o.balances = s.balances.map((b) => ({ account: b.account, amount: b.amount }))
+      return o
+    })
+  }
   withExtra(meta, a.extra, ARTIFACT_KEYS)
   return assemble(meta, [
     [null, a.description],
@@ -456,7 +498,7 @@ export function serialiseArtifact(a: Artifact): string {
 
 /**
  * The facts about an artifact the board may change: its name, kind, status, date, author, area,
- * sources and description. Never its file, its regions, its mermaid source or its ID: agents
+ * sources and description. Never its file, its regions, its steps, its mermaid source or its ID: agents
  * write those, and the board never makes or edits the artifact itself.
  */
 export const ARTIFACT_EDITABLE = ['title', 'kind', 'status', 'supersededBy', 'date', 'author', 'components', 'sources', 'description'] as const
@@ -465,7 +507,7 @@ export type ArtifactDetails = Pick<Artifact, (typeof ARTIFACT_EDITABLE)[number]>
 /**
  * The artifact on disk with an untrusted edit's details laid over it: only the editable fields
  * are taken, everything else stays as the file has it. Values are tidied as a file read would
- * (trimmed, an empty date unset), and `superseded_by` only stays on a Superseded artifact.
+ * (trimmed, an empty date unset), and `superseded_by` only stays on a Retired artifact.
  */
 export function withArtifactDetails(current: Artifact, raw: unknown): Artifact {
   const o = (raw ?? {}) as Record<string, unknown>
@@ -480,7 +522,7 @@ export function withArtifactDetails(current: Artifact, raw: unknown): Artifact {
   if (has('components')) next.components = strList(o.components)
   if (has('sources')) next.sources = strList(o.sources).map((s) => s.trim()).filter(Boolean)
   if (has('description')) next.description = tidyText(str(o.description))
-  if (next.status !== 'Superseded') next.supersededBy = null
+  if (next.status !== 'Retired') next.supersededBy = null
   return next
 }
 
@@ -491,7 +533,7 @@ export function artifactRoundTripProblems(a: Artifact): string[] {
     : []
 }
 
-/** Sidecar pitfalls that parse but read wrongly: region keys the board ignores, a Source section with no diagram. */
+/** Sidecar pitfalls that parse but read wrongly: region or step keys the board ignores, a balance row it cannot read, a Source section with no diagram. */
 export function lintArtifact(text: string, a: Artifact): string[] {
   let parts
   try {
@@ -509,6 +551,34 @@ export function lintArtifact(text: string, a: Artifact): string[] {
     }
     const unknown = Object.keys(raw).filter((k) => !REGION_KEYS.includes(k))
     if (unknown.length) out.push(`region ${str((raw as Record<string, unknown>).id)} has keys the board ignores (${unknown.join(', ')})`)
+  }
+  const steps = parts.meta.steps
+  if (steps !== undefined && !Array.isArray(steps)) out.push('steps is not a list, so it is ignored')
+  for (const raw of Array.isArray(steps) ? steps : []) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      out.push('a step is not a mapping (id, name, show, highlight, moves, caption, balances), so it is ignored')
+      continue
+    }
+    const o = raw as Record<string, unknown>
+    const where = `step ${str(o.id)}`
+    const unknown = Object.keys(o).filter((k) => !STEP_KEYS.includes(k))
+    if (unknown.length) out.push(`${where} has keys the board ignores (${unknown.join(', ')})`)
+    if (o.moves !== undefined && o.moves !== null && !Array.isArray(o.moves)) out.push(`${where}: moves is not a list, so it is ignored`)
+    for (const m of Array.isArray(o.moves) ? o.moves : []) {
+      if (!m || typeof m !== 'object' || Array.isArray(m)) out.push(`${where}: a move is not {from, to}, so it is ignored`)
+      else if (Object.keys(m).some((k) => !MOVE_KEYS.includes(k))) out.push(`${where}: a move has keys the board ignores (${Object.keys(m).filter((k) => !MOVE_KEYS.includes(k)).join(', ')}); a move is {from, to}`)
+    }
+    if (o.balances !== undefined && o.balances !== null && !Array.isArray(o.balances)) out.push(`${where}: balances is not a list, so it is ignored`)
+    for (const b of Array.isArray(o.balances) ? o.balances : []) {
+      if (!b || typeof b !== 'object' || Array.isArray(b) || Object.keys(b).some((k) => !BALANCE_KEYS.includes(k))) {
+        out.push(`${where}: a balance row is not {account, amount}`)
+        continue
+      }
+      const amount = (b as Record<string, unknown>).amount
+      if (amount !== undefined && amount !== null && typeof amount !== 'string' && !Number.isInteger(amount)) {
+        out.push(`${where}: the amount for ${str((b as Record<string, unknown>).account)} was read as a ${typeof amount} (${String(amount)}); quote it to keep it exactly`)
+      }
+    }
   }
   if (parts.body.split('\n').some((l) => isHeading(l, SOURCE_HEADING)) && !a.source) out.push(`the "${SOURCE_HEADING}" section has no \`\`\`mermaid block`)
   return out

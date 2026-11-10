@@ -48,6 +48,8 @@ cpSync(boardDir, kitBoard, {
     const rel = relative(boardDir, src).split(sep).join('/')
     if (!rel) return true
     if (SKIP_TOP.has(rel.split('/')[0]!) || SKIP_PATHS.has(rel)) return false
+    // Python's bytecode cache, left by running an svg-diagram generator.
+    if (rel.split('/').includes('__pycache__')) return false
     return !rel.endsWith('/.DS_Store') && !rel.startsWith('.DS_Store')
   },
 })

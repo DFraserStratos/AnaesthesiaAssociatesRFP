@@ -23,7 +23,7 @@ export interface DiagramLink {
   title: string
   /** The hover tooltip: the record's name and status, as a link in Markdown shows. */
   tip?: string
-  /** A retired card or a superseded or retired artifact: still a link, but muted. */
+  /** A retired card or a retired artifact: still a link, but muted. */
   retired?: boolean
 }
 

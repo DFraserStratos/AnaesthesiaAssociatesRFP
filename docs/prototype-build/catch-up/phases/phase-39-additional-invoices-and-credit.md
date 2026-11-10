@@ -23,7 +23,7 @@ Read alongside (not closed here):
 [US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md) (the receivable and payable pair; Phase 36 made it the ledger's record),
 [US-08.4.3](../../../../requirements-board/requirements/stories/US-08.4.3.md) (unique invoice numbers, the `-P` payable suffix),
 [US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md) (the Xero ACCREC and ACCPAY pair the credit reverses),
-[US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) ("Combinations as Contract lines", status 4: a combination is a line of its own on its holder's fixed-price Contract, with no parent procedures; Phase 19a built Merivale's lines; its note points at this phase's split),
+[US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) ("Combinations as Contracts", status 4, retitled 5 November: a combination is a fixed-price Contract of its own, billed as one Procedure with no parent procedures; fee extras on a schedule are events or additional invoices, never Contracts, D10; Phase 19a builds Merivale's combinations under the flat model, AR-58 and AR-61),
 [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) (negative invoices netted in the [next payment run](../../../../requirements-board/requirements/stories/US-10.2.7.md), the weekly cycle: Phase 39a nets what this phase raises),
 [DM-25](../analysis/domain-model-delta.md#dm-25) (negative invoice and remittance: 39a),
 [FT-13.5](../../../../requirements-board/requirements/stories/FT-13.5.md) (roles and audit; Matches, kept on built Phase 14),
@@ -35,7 +35,7 @@ Read alongside (not closed here):
 [OQ-28](../../../../requirements-board/requirements/questions/OQ-28.md) (Answered: the credit policy),
 [OQ-42](../../../../requirements-board/requirements/questions/OQ-42.md) (Answered: credit note plus negative invoice),
 [OQ-45](../../../../requirements-board/requirements/questions/OQ-45.md) (Answered, D10: free form),
-[OQ-53](../../../../requirements-board/requirements/questions/OQ-53.md) (status 4: a combination is a line on its holder's Contract, standing alone; 19a),
+[OQ-53](../../../../requirements-board/requirements/questions/OQ-53.md) (status 4, updated 5 November: a combination is a Contract of its own; extras on a schedule are ad-hoc invoices or events on the Procedure, never Contracts, D10; 19a),
 [OQ-63](../../../../requirements-board/requirements/questions/OQ-63.md) (Answered, D13: additional invoices and credits are events, one review step),
 [OQ-71](../../../../requirements-board/requirements/questions/OQ-71.md) (Answered, D21: a negative with no later payment is handled outside the system),
 [OQ-72](../../../../requirements-board/requirements/questions/OQ-72.md) (Answered, D22: description, any billable party, a credit note option then new additional invoices),
@@ -52,8 +52,8 @@ invoice, the whole and per-anaesthetist positions, the imbalance indicator) and 
 patient name, NHI or date, the only way the anaesthetist reaches an invoiced Procedure) have run. By
 the roadmap order 14 (the demo-trigger registry, the payment entries, the shared actors), 15
 (Booking vocabulary and routes), 16 (`invoiceNumber` and `reference` on both Xero records, the `-P`
-rule, the BCTI count: `bctiRecords` and `bctisFor`), 19a (Contract lines, and Merivale's seeded
-combination lines: a combination is a line of its own, with no parent procedures and no combination
+rule, the BCTI count: `bctiRecords` and `bctisFor`), 19a (the flat Contract model, and Merivale's seeded
+combination Contracts: a combination is a fixed-price Contract of its own, with no parent procedures and no combination
 marker), 21 (who is billed from the Contract's holder or the payer on the Booking, `whoIsBilled.ts`,
 `invoiceEmailFor`, and the holder references with `referenceValuesFor`), 22 (`procedureIds`,
 `lineage`, `delivery`, `materialiseInvoices`, the Split button's typed shares), 25 (the `BookingLock`
@@ -108,7 +108,7 @@ unlocking the Booking (FT-08.6, US-07.3.2). OQ-72 is answered (D22), OQ-63 makes
   the negative invoice to net in their next weekly payment run (Phase 39a); a case with no later
   payment to net against is handled outside the system (OQ-71, D21: nothing is built).
 - **A combined Procedure can be split after its invoice is sent** (US-08.6.4, OQ-53), by the office.
-  A combination is a line of its own (19a), so there are no parent procedures to prefill from:
+  A combination is a fixed-price Contract of its own (19a, US-04.2.11), so there are no parent procedures to prefill from:
   **Split into additional invoices** is the same credit flow with at least two blank component cards
   (the office adds more), each with its own party, a description and an amount the office types
   freely (not the components' old individual prices). Per OQ-77 part 1 the
@@ -138,9 +138,9 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's baseline, catalogue commit `a68f09b` (plan.json
+1. Run the drift check against the plan's baseline, catalogue commit `efe123c` (plan.json
    `commit`; with no `--to` the tool diffs that baseline against the working tree, so it shows only
-   what changed after `a68f09b`):
+   what changed after `efe123c`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-07.4.1,US-07.4.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-10.2.7,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-61,OQ-63,OQ-71,OQ-72,OQ-76,OQ-77,OQ-97
@@ -178,8 +178,8 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      next payment run and shown on the remittance advice (39a nets it and shows it).
    - **OQ-19:** an AA-side error is credited and reissued; otherwise the invoice stays outstanding (no
      fallback to the patient).
-   - **OQ-53 (US-04.2.11, status 4):** a combination is a line of its own on its holder's fixed-price
-     Contract, standing alone, with no parent procedures (19a seeds Merivale's lines). There is
+   - **OQ-53 (US-04.2.11, status 4):** a combination is a fixed-price Contract of its own (updated 5
+     November), with no parent procedures (19a seeds Merivale's combinations; extras are events, D10). There is
      nothing to prefill a split from and no marker to test: see the labelled reading below.
    - **OQ-77 part 3 (D41, answered 2026-10-19):** a split asked for before the combined invoice is
      sent is a normal admin edit of the Booking's Procedures, Contracts and prices (Greg: "the admin
@@ -227,7 +227,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      - *The credit note's delivery* (US-08.6.2: "the mechanism is to be designed"): the engine sends
        it through Phase 22's delivery plan exactly as it sends an invoice, badged "Simulated send",
        with the caption "Xero does not send credit notes; the engine sends it".
-     - *What counts as a combined Procedure.* The catalogue gives a combination line no marker and no
+     - *What counts as a combined Procedure.* The catalogue gives a combination Contract no marker and no
        parent procedures, so **Split into additional invoices** is offered on any live, post-paid
        standard invoice of an invoiced Procedure (the office can split what the billable party asks to
        see in pieces; a split is always a credit and new invoices that add up). Logged for the owner.
@@ -276,10 +276,11 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      code had `BillingCase`, `handoffCase` and `retryBillingCase`: 36 renamed or deleted them.
      36 left the legs' amounts signed and able to take a credit but added no credit path: this phase
      adds it (work item 3);
-   - from **19a**: Merivale's seeded Contract with its three lines ("Face lift" $3,565, "Facelift plus
-     1 add on (eg bleph)" $3,910, "Facelift plus 2 add ons (eg bleph & fat grafting)" $4,255, each
-     with default RVG code H3), held by a rooms holder that is not billed, so the payer on the Booking
-     is billed; no seeded Booking uses it; a Procedure keeps the line it was priced from in its lock;
+   - from **19a**: Merivale's seeded combinations as fixed-price Contracts of their own under the flat model
+     (AR-58, AR-61; "Face lift" $3,565, "Facelift plus 1 add on (eg bleph)" $3,910, "Facelift plus 2
+     add ons (eg bleph & fat grafting)" $4,255, each with default RVG code H3; use the names 19a
+     built), held by a rooms holder that is not billed, so the payer on the Booking is billed; no
+     seeded Booking uses it; a Procedure keeps the Contract it was priced from in its lock;
    - from **25**: `BookingLock` and its per-Procedure pricing snapshot (`ProcedureSnapshot`), the
      locked payee, `regenerateInvoiceFromLock` and the `regenerate-invoice` trigger (38b extended it to
      additional invoices);
@@ -738,7 +739,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
       yet.", Phase 41); the original already credited or pending; and `splitTotalMismatch` from
       `splitTotalCheck`. There is no combination test (labelled reading, drift check step 3).
     - The sheet opens with two blank component cards, party the original's, and the office adds or
-      removes cards (a combination line has no parent procedures to prefill from; the store does not
+      removes cards (a combination Contract has no parent procedures to prefill from; the store does not
       prefill). The office types each component's description and amount freely (US-08.6.4: not the
       components' old individual prices), and the components **must add up to the credited invoice**
       (OQ-77 part 1, answered): the sheet shows the credited amount, the components' sum and a live
@@ -761,7 +762,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
       Booking, Procedures, lock and original are deep-equal before and after a split.
     - **`SplitCombinedSheet`**: `CreditSheet` in split mode, opened from **Split into additional
       invoices** on an invoiced Procedure (Admin Booking detail and the original invoice's rail), shown
-      only in Admin. Header "{Contract line} · split into additional invoices"; one card per component;
+      only in Admin. Header "{Contract name} · split into additional invoices"; one card per component;
       add or remove a component; the credited total, the components' sum and **Left to allocate** in
       mono tabular figures, with the note "The new invoices must add up to the credited invoice."; the
       note "The original invoice is credited in full"; one primary teal **Submit N invoices for
@@ -842,7 +843,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
     - **Stage combined procedure** (new, `stage-combined-procedure`, Admin · Invoices, bar; body in
       `src/store`): on the List picked at the drift check, creates one Booking for a fixed patient
       with an explicit id (never from the generated pool), its payer on the Booking prefilled from the
-      patient (21), and one Procedure priced from 19a's Merivale line "Facelift plus 2 add ons (eg
+      patient (21), and one Procedure priced from 19a's Merivale combination Contract "Facelift plus 2 add ons (eg
       bleph & fat grafting)" ($4,255), post-paid (not prepaid; the rooms holder is not billed, so the
       patient is), then authorises and bills it through the real actions (`authoriseList`, the run,
       `handoffPair`) as `OFFICE_SIMULATION_ACTOR`. Result "Staged: a billed Merivale combination. Open
@@ -898,7 +899,7 @@ registry gains or changes:
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Stage combined procedure (new, `stage-combined-procedure`) | Admin · Invoices | bar | A billed, post-paid Merivale combination ("Facelift plus 2 add ons" line from 19a), so its invoice can be credited and split three ways that must add up to the credit. Disabled "Already staged" |
+| Stage combined procedure (new, `stage-combined-procedure`) | Admin · Invoices | bar | A billed, post-paid Merivale combination ("Facelift plus 2 add ons" Contract from 19a), so its invoice can be credited and split three ways that must add up to the credit. Disabled "Already staged" |
 | Stage refund after payout (new, `stage-refund-after-payout`) | Admin · Billing monitor (Sarah Mitchell's live invoice) and Admin · Invoice (the URL's invoice) | bar | Marks the invoice paid in full and its payable disbursed, so its credit raises a negative invoice with an amount to net. Disabled with the reasons in work item 14 |
 | Office reviews this credit (new, `office-reviews-credit`, following 38b's `office-reviews-additional-invoice`) | Mobile · Booking detail when one of its Procedures has a credit awaiting review | PWA | Approves the oldest such credit with its replacements as `OFFICE_SIMULATION_ACTOR` and runs the next run for it, so the handset shows the credit issued. Result "Approved by the office and issued in the next billing run (CN-2026-00nn)." Disabled "No credit on this Booking is awaiting review". Body in `src/store` |
 | Office reviews this additional invoice (38b's, re-pointed) | Mobile · Booking detail | PWA | Skips a replacement event, which is issued only through its credit; unchanged otherwise |
@@ -1011,7 +1012,7 @@ Session 2 (after **Reset** and the same staging):
       original and the Procedure with its own Xero pair, adding up to the credit; the original
       credited in full with its negative invoice; the ledger in balance; the AA fee count up by three.
 - [ ] Credit a replacement again (a chain): refused on the credited original, allowed on the
-      replacement. On an ACTIVE Booking whose Procedure is priced from the Merivale line (not yet
+      replacement. On an ACTIVE Booking whose Procedure is priced from the Merivale combination Contract (not yet
       invoiced), **Split into additional invoices** is disabled with "Not invoiced yet. Edit the
       Booking's Procedures, Contracts and prices instead."; editing the price there works as a normal
       admin edit and raises no credit (OQ-77 part 3, D41); no chip anywhere.
@@ -1132,7 +1133,7 @@ matches what was built:
 | [US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) Additional invoice for late charges | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] | No change here (Phase 38b owns it). Check only that it still passes with the Credit note option beside Create additional invoice; fix by text, not position |
 | [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue | absent | captured. Admin `/admin/invoices/<id>`, shot `credit-rebill`: `rail` state highlights `[data-shot=credit-rebill-button]`; `sheet` state fills `[data-shot=credit-sheet]` (reason chip, copied lines and holder references, payable-reversal line, trail preview); `credit-note` state (after Approve for billing and `run-next-billing-run`) opens the credit note highlighting `[data-shot=negative-invoice-card]`; `credited` state highlights `[data-shot=invoice-credited-banner]`. Paid-out variant via `stage-refund-after-payout`. Simulator `/demo/xero/invoices/<accRecId>` shot `xero-credit-note`. Captions: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist". Nothing may suggest an automatic credit |
 | [US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md) Create an additional invoice on a Procedure | absent · stub (38b captures it) | No change here (Phase 38b owns it). Check only that its shots pass with the Credit note option added, in Admin and the anaesthetist apps |
-| [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Run `stage-combined-procedure` (Merivale's combination line) on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards adding up to the credited invoice and `[data-shot=split-left-to-allocate]` at $0.00; `result` state (after review and the run) shows a component invoice linking to the original and the Procedure. Captions in the catalogue's words: "A split after invoicing credits the original, then raises one additional invoice per component", "The components must add up to the credited amount; each amount is entered freely", "The credit reverses the linked payable". Before sending the split is a normal admin edit: no shot or caption for it. The prepaid-combination split is a PROGRESS note handed to 41 |
+| [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Run `stage-combined-procedure` (Merivale's combination Contract) on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards adding up to the credited invoice and `[data-shot=split-left-to-allocate]` at $0.00; `result` state (after review and the run) shows a component invoice linking to the original and the Procedure. Captions in the catalogue's words: "A split after invoicing credits the original, then raises one additional invoice per component", "The components must add up to the credited amount; each amount is entered freely", "The credit reverses the linked payable". Before sending the split is a normal admin edit: no shot or caption for it. The prepaid-combination split is a PROGRESS note handed to 41 |
 | [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe, office and anaesthetist. Admin Booking detail for Sarah Mitchell (after `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another party and the payable-reversal line; `event` state highlights `[data-shot=procedure-credit-event]`. Shot `anaesthetist-credit-note` on web (Dr Souter, David Chen's Mon 22 Jun Booking, reached by 38a's search "Chen"; ids from ATLAS.md): `option` highlights `[data-shot=anaesthetist-credit-note-button]`, `sheet` fills `[data-shot=credit-form]` with "Less work than expected"; the same on mobile in the bottom sheet. Captions in the catalogue's words (credit to the party picked; includes the payable reversal; recorded as an event; none exists until someone creates one by hand). The prepaid half of "After a fixed price" is Phase 41's |
 | [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | captured. New recipe. Admin `/admin/invoices/<id>` for Sarah Mitchell's original: shot `rebill-from-copy` presses `[data-shot=credit-rebill-button]` and highlights the prefilled card in `[data-shot=credit-sheet]` holding the original's lines. Caption "After a credit note, the rebill starts from a copy of the original's lines" |
 | [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of changes (retitled) | captured · admin-audit-viewer, admin-sign-in-attempts | captured. Keep both shots passing, and re-check `admin-audit-viewer` shows no payment, receipt or disbursement row (the carve-out). Add shot `credit-note-audit`: the steps make one credit first (`stage-post-op`, Credit in full and rebill, Approve for billing, `run-next-billing-run`), then `/admin/audit` with entity filter `creditNote`, credit note rows highlighted. Caption "Credit notes are audited, every step with who, role, source and what changed"; add "Payments, receipts and disbursements are not audited here: they are recorded in Xero" |
@@ -1236,7 +1237,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
   themselves"): OQ-77 part 3 as answered (D41: before sending, a split is the existing admin edit,
   nothing built); the labelled readings (what counts as a combined Procedure: any invoiced, post-paid
-  Procedure, since a combination line has no marker; the equal-total rule applied to the split only, not to a rebill or a plain credit; replacements issued with their credit as their own invoices, not bundled with other events' lines (OQ-121 bundles where it can); equal
+  Procedure, since a combination Contract has no marker; the equal-total rule applied to the split only, not to a rebill or a plain credit; replacements issued with their credit as their own invoices, not bundled with other events' lines (OQ-121 bundles where it can); equal
   measured ex GST with per-invoice GST rounding accepted; what the anaesthetist sees on their credit
   sheet; a credit to another party is the addressee only and the Xero sim allocates it to the
   original; the engine sends the credit note; a rebill is a free-form copy with no re-pricing, no new
@@ -1247,7 +1248,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   note, a credited original, the split sheet with Left to allocate, the review row, the
   anaesthetist's credit sheet on web and mobile, the Audit viewer filtered to credit notes).
 - **Status row** for catch-up Phase 39, and a phase entry with:
-  - the drift-check result (items changed or not since `a68f09b`; FT-08.6, US-08.6.2, US-08.6.4,
+  - the drift-check result (items changed or not since `efe123c`; FT-08.6, US-08.6.2, US-08.6.4,
     US-13.5.2 and the other covered items; OQ-60 and OQ-97 status; the
     List the combined-procedure trigger uses; the prepaid-combination split left refused, as a known
     gap against US-08.6.4 handed to 41; the prepaid half of US-08.6.5's "After a fixed price" handed
@@ -1297,8 +1298,8 @@ review-and-fix pass (PROGRESS convention 18)**:
      must add up to the credited invoice, measured ex GST to the cent with per-invoice GST rounding
      accepted, in `splitTotalCheck`; applied to the split only (labelled reading). **New (OQ-77 part
      3, answered 2026-10-19, D41):** before sending, a split is a normal admin edit; the split action
-     waits for the invoice. A combination is a line (19a), so the split has no parent procedures and
-     no combination marker.
+     waits for the invoice. A combination is a Contract of its own (19a, 5 November), so the split has no parent procedures and
+     no combination marker; fee extras are events, never Contracts (D10).
   9. **New (provisional, OQ-60):** replacements each add one BCTI; credit notes and negative invoices
      are not BCTIs; a credited original keeps its count.
   10. **New:** credit notes join the audited set (US-13.5.2, DM-45); payments, receipts and

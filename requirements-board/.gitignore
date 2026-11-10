@@ -6,3 +6,4 @@ dist
 /.history/
 /.links/
 /requirements/exports/
+__pycache__/

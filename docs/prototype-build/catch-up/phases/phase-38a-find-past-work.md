@@ -88,7 +88,7 @@ new stored entity. The seed grows, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `a68f09b`):
+1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `efe123c`):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-07.2,US-07.2.1,US-07.2.3,US-07.3.2,US-07.4.1,US-07.4.2,FT-07.4,US-03.1.6,US-03.1.7,EP-07,FT-03.1,US-03.1.1,US-03.1.4,US-12.2.1,US-02.5.5,FT-03.4,OQ-26,OQ-17,OQ-31,OQ-86

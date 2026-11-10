@@ -216,17 +216,17 @@ const SKILLS: Skill[] = [
     role: 'Feeds step 3',
     when: 'You have a diagram, mockup, screenshot, transcript, note or PDF that requirements should point to.',
     say: '/add-artifact docs/checkout-flow.png is our checkout flow; link the payment stories to the card step',
-    changes: 'Registers the next AR number in artifacts/, keeps the file in artifacts/files/, names highlighted regions in it, and links the items it illustrates.',
+    changes: 'Registers the next AR number in artifacts/, keeps the file in artifacts/files/, names highlighted regions in it (and steps, for a stepped diagram), and links the items it illustrates.',
     then: 'Open it on the Artifacts tab; each region shows the items that point at it.',
   },
   {
     name: 'svg-diagram',
     kind: 'skill',
     role: 'Feeds step 3',
-    when: 'A rule or flow is easier to agree on as a picture.',
+    when: 'A rule or flow is easier to agree on as a picture, or a flow that unfolds is easier to follow one step at a time.',
     say: '/svg-diagram Draw how an order moves from basket to delivery, in the house style',
-    changes: 'Draws the diagram as an SVG in the board’s house style, with a region per part, and saves it as an artifact.',
-    then: 'Check it on the Artifacts tab and ask for changes in plain words.',
+    changes: 'Draws the diagram as an SVG in the board’s house style, with a region per part (and for a stepped diagram, the steps the board plays through), and saves it as an artifact.',
+    then: 'Check it on the Artifacts tab, stepping through it if it has steps, and ask for changes in plain words.',
   },
   {
     name: 'transcript-reconciler',
@@ -359,6 +359,10 @@ function Anatomy() {
           <p>
             The diagrams, transcripts, notes and documents behind the requirements, on the <Link to="/artifacts">Artifacts</Link> tab. A region is a named, highlighted spot in one; a requirement can link straight to it.
           </p>
+          <p>
+            A stepped diagram plays a flow one step at a time. Step through it from the bar on the drawing, its Steps tab or the arrow keys: each step reveals more of the drawing, highlights what it is
+            about, flies what moves from where it was to where it lands, and shows a caption and any running balances in the Steps tab. A requirement can link to a step as it can to a region.
+          </p>
           <ul className="about-statuses">
             {ARTIFACT_STATUSES.map((s) => (
               <li key={s}>
@@ -367,7 +371,7 @@ function Anatomy() {
               </li>
             ))}
           </ul>
-          <p>An artifact is never deleted. One replaced by a newer one is Superseded and points at it; one that no longer reflects the design, with nothing to replace it, is Retired.</p>
+          <p>An artifact is never deleted. One that is no longer the version to go by is Retired: hidden on the Artifacts tab until Show retired is on, and still opened by a link. When a newer artifact replaced it, Replaced by points at that one, and sources citing the old one open the new.</p>
         </div>
         <div className="about-tile">
           <h3>Diff review</h3>

@@ -7,7 +7,8 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 import type { ItemDiff } from '../../shared/diff.ts'
 import { shownOf, type Entry } from '../../shared/diffModel.ts'
 import { regionChanges } from '../../shared/history.ts'
-import { TYPE_LABEL, firstLaneName, parseArtifactRef, type Artifact, type ImageRef, type Item, type ItemType, type Question, type Region } from '../../shared/types.ts'
+import { stepChanges } from '../../shared/steps.ts'
+import { TYPE_LABEL, firstLaneName, parseArtifactRef, type Artifact, type ImageRef, type Item, type ItemType, type Question, type Region, type Step } from '../../shared/types.ts'
 import { historyBlobUrl } from '../api.ts'
 import { ArtifactIcon, ArtifactName, ArtifactRefName, Lineage, QuestionName, RecordMark, RecordName, TypeIcon, type MarkOf } from '../components/bits.tsx'
 import type { SourceIndex } from '../../shared/sources.ts'
@@ -223,6 +224,28 @@ export function RegionsCell({ side, before, after, expanded }: { side: Side; bef
         <span>
           {r.name || r.id}
           {side === 'after' && what.has(r.id) && <span className="diff-note"> · {what.get(r.id)}</span>}
+        </span>
+      )}
+    />
+  )
+}
+
+/** A stepped diagram's steps: names, with what changed about the ones on both sides (a step moved in the order included). */
+export function StepsCell({ side, before, after, expanded }: { side: Side; before: Step[]; after: Step[]; expanded: boolean }) {
+  const ch = stepChanges(before, after)
+  const what = new Map(ch.changed.map((c) => [c.id, c.what.join(', ')]))
+  const list = side === 'before' ? before : after
+  return (
+    <ListCell
+      list={list}
+      other={side === 'before' ? after : before}
+      side={side}
+      expanded={expanded || what.size > 0}
+      keyOf={(s) => s.id}
+      render={(s) => (
+        <span>
+          {s.name || s.id}
+          {side === 'after' && what.has(s.id) && <span className="diff-note"> · {what.get(s.id)}</span>}
         </span>
       )}
     />

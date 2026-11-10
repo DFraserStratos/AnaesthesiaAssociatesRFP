@@ -37,6 +37,7 @@ npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhe
 npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/)
 npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run first)
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
+npm run artifact:steps # screenshot a stepped diagram in the running board, whole then each step (-- AR-nn [--out <dir>] [--url <base>])
 npm run source       # where a source string points: artifact, file, page or lines (-- --item <ID> --text, -- --report)
 npm run capture      # screenshots of the project's app from recipes (optional; see Capturing screenshots)
 npm run install-skills # copy the skills and workflows into the repo root's .claude/ (merges with others; -- --link to symlink)
@@ -69,6 +70,7 @@ shared/        code shared by server, scripts and browser
   ids.ts         next-ID assignment, sibling order
   move.ts        Mapped board moves (pure): planMove / applyMove / invertChanges, lane-name rules
   history.ts     card and artifact history (pure): field and line diffs, the journal + git timeline merge
+  steps.ts       stepped diagrams (pure): what is hidden and highlighted at a step, groups, changed balances, step changes
   textCompare.ts the one LCS and the one spacing rule that history and the Diff review share
   diff.ts        the Diff review's API types (commits, a comparison, the count)
   diffModel.ts   the Diff review's model (pure, server and page): entries, minor changes, the count, filters, page order
@@ -87,7 +89,7 @@ server/
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
   pdfFacts.ts        a PDF's page sizes and text, in a child process (pdf.js is async; the catalogue loads sync)
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
-               link-index, apply-links (+ linkProposals: the applier, testable), new-artifact
+               link-index, apply-links (+ linkProposals: the applier, testable), new-artifact, shoot-steps
 src/
   store.ts       catalogue mirror + derived index + view prefs
   artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
@@ -100,8 +102,8 @@ src/
                  DiffFields, DiffProse, DiffFile, diffMarks (remark plugin), diff.css, useUncommittedCount
   views/         BoardView, ArtifactsView (grid or list; a click opens ArtifactPage), ArtifactPage, QuestionsView, OutlineView
   artifacts/     the viewers: CanvasViewer (SVG, image, mermaid: viewBox pan and zoom, minimap, red box),
-                 MarkdownReader, PdfReader, sanitise, camera (pure), regionsDom, ArtifactPanel, ArtifactHistory,
-                 VisualCompare, Thumb
+                 MarkdownReader, PdfReader, sanitise, camera (pure), regionsDom, stepsDom, stepMoves, StepBar, ArtifactPanel,
+                 ArtifactHistory, VisualCompare, Thumb
   board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, pure), graph (nodes + edges
                  from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
@@ -181,7 +183,7 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 
 - **Artifacts** (the Artifacts tab): diagrams, transcripts, notes and documents. The board edits
   only their details (`PUT /api/artifacts/:id` takes the title, kind, status, superseded_by, date,
-  author, components, sources and description, and keeps the file, regions and source as on disk). Each
+  author, components, sources and description, and keeps the file, regions, steps and source as on disk). Each
   has a sidecar `requirements/artifacts/AR-nn.md` (format under Artifact file in `requirements/SCHEMA.md`),
   and its file in `requirements/artifacts/files/`;
   items point at one, or at a spot in one, through their `artifacts` field or a text link, and both
@@ -195,6 +197,12 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   from git: the sidecar's commits as field changes, the file's as before and after (side by side,
   swipe, or a source diff). Every artifact with text has a find box (`src/artifacts/find.ts`):
   matches across element and line breaks, counted over a whole PDF from pdf.js's page text.
+  An SVG drawing's sidecar can also list `steps`, which makes it a stepped diagram: a slim step bar
+  on the canvas and a Steps tab play them in order, each step revealing more of the drawing (reveal
+  is cumulative; nothing is hidden again), highlighting what it is about, flying its `moves` (what
+  travels, from where it was to where it lands) on stepping forward, and showing a caption and a
+  balances table in the Steps tab. A step is a spot like a region (`AR-nn#step-id`, `?region=step-id`); thumbnails,
+  the minimap, visual compare and the Diff review show the finished picture, everything visible.
 
 - **Diff review** (its tab): the catalogue between two git states (`server/catalogueDiff.ts`,
   read-only git in child processes; statuses read as today's codes; a folder that moved, and each
@@ -289,9 +297,12 @@ catalogue. It is optional: a project with no `capture` section in `board.config.
 `npm run artifact:new -- <file> --title "Name" --kind diagram` (or `--mermaid <file.mmd>`) takes the
 next `AR-nn`, brings the file into `requirements/artifacts/files/` (a drawing copied in as
 `AR-nn.<ext>`, a transcript or document moved in under its own name, `git mv` when tracked; `--keep`
-leaves it where it is) and writes the sidecar for you to fill in: regions, sources, description. Then
-link items to it (`artifacts: [AR-nn#spot]`) and run `npm run check`. The `add-artifact` skill walks
-an agent through it; the `svg-diagram` skill saves new diagrams this way.
+leaves it where it is) and writes the sidecar for you to fill in: regions, sources, description, and
+for a stepped diagram its steps. Then link items to it (`artifacts: [AR-nn#spot]`) and run
+`npm run check`. With the board running, `npm run artifact:steps -- AR-nn` screenshots a stepped
+diagram, the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...), into a temp
+folder it prints (or `--out <dir>`), to check every step by eye. The `add-artifact` skill walks an
+agent through it; the `svg-diagram` skill saves new diagrams this way and says how to draw a stepped one.
 
 ### Sources open their spot
 

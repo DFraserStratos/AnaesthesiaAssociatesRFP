@@ -1,7 +1,7 @@
 /**
  * One artifact, full size: its panel docked on the left (as a card's sheet docks on the board,
  * resizable, width kept per browser) and the artifact filling the rest. `?region=` names the spot
- * to bring into view in the red box.
+ * to bring into view in the red box, or the step of a stepped diagram to show.
  */
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -45,7 +45,7 @@ export function ArtifactPage() {
       </aside>
       <PanelResizer width={panelW} onChange={setPanelW} label="Resize the artifact panel" />
       <div className="artifact-stage">
-        <ArtifactViewer key={id} rec={rec} spot={spot} focusKey={`${spot ?? ''}|${asks}`} preview={preview} />
+        <ArtifactViewer key={id} rec={rec} spot={spot} focusKey={`${spot ?? ''}|${asks}`} preview={preview} onSpot={goTo} />
       </div>
     </div>
   )

@@ -2,17 +2,18 @@
 
 **Requirements covered:**
 [FT-05.1](../../../../requirements-board/requirements/stories/FT-05.1.md) RVG groups and modifiers (status 4; Partial; the modifier half is Phase 19b's) ·
-[US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG groups (status 4; Partial) ·
+[US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG groups (status 3; Partial) ·
 [US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Anatomy headings and AA groups (status 4, Agreed; Partial) ·
 [DM-13](../analysis/domain-model-delta.md#dm-13) the RVG group becomes the one master list (hidden key, duplicate codes, modifier units, AA groups); there is no procedure list ·
-[RV-10](../analysis/reverse-check.md#rv-10-ranged-base-code-is-hard-bounded-to-the-published-range) ranged base code hard-bounded to the published range.
+[RV-10](../analysis/reverse-check.md#rv-10-ranged-base-code-is-hard-bounded-to-the-published-range) ranged base code hard-bounded to the published range ·
+[RV-41](../analysis/reverse-check.md) the invented five-digit demo codes are replaced by the NZSA RVG groups (joined 5 November).
 
 **Left this phase (2026-10-20 update).** US-05.1.6 (the procedure master) is Retired: OQ-88 is
 answered, the RVG groups are the one list, and its work (the procedure list, a general procedure per
 group, the body-section picker and the Procedures and RVG codes tabs, the prepaid whole-group marking
 of US-05.1.3) is deleted, not moved. RV-04 of the old numbering was this phase's clamp finding; the
 reverse check renumbered it RV-10, and the id RV-04 now means the price-adjustment reason (Phase 24).
-Modifiers stay 19b's; Contract lines and starting values filled onto the Procedure are 19a's; the
+Modifiers stay 19b's; Contracts (including a default RVG code) are 19a's; the
 Contract pick is 20's; the received wording is 20a's.
 
 **Decisions and questions.** All answered; build them with no label. **D3** ([OQ-56](../../../../requirements-board/requirements/questions/OQ-56.md),
@@ -21,8 +22,9 @@ is accepted, and an out-of-range one raises an after-procedure warning for the o
 **D39** ([OQ-88](../../../../requirements-board/requirements/questions/OQ-88.md)): one list,
 each row with a hidden key that is a unique identifier only, never shown, with no system code
 (settled 2026-10-28, US-05.1.1). **D12** is superseded a second time ([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md)):
-base units sit on the RVG group, a Contract line may state its own (19a), the anaesthetist may change
-them, and there is no procedure layer. **D35**
+base units sit on the RVG group alone (extended 5 November, D4 and D9: a Contract states none of its
+own and may only name a default RVG code, 19a), the anaesthetist may change them, and there is no
+procedure layer. **D35**
 ([OQ-101](../../../../requirements-board/requirements/questions/OQ-101.md), answered 2026-10-29): a row
 holds a starting figure plus the published range where the guide prints one, and the range is shown to
 the anaesthetist when choosing the value. OQ-103 no longer gates this phase (the general procedure is
@@ -45,7 +47,7 @@ plan-approval stop. Choices made without a catalogue ruling are logged on the ph
 ## Goal
 
 Replace the flat `RvgCode` table (keyed by its code) with the catalogue's one master list, the RVG
-groups, before 19a adds Contract lines and 19b the modifiers.
+groups, before 19a adds the Contracts (a default RVG code, no base units) and 19b the modifiers.
 
 - **RVG groups** (US-05.1.1, US-05.1.3, FT-05.1; DM-13). The NZSA RVG 2021 as published
   ([AR-16](../../../../requirements-board/requirements/artifacts/AR-16.md), Section II), plus AA's own
@@ -62,9 +64,9 @@ groups, before 19a adds Contract lines and 19b the modifiers.
   heading as a small label). On mobile, web and the Admin Booking detail, the manual add form and phone
   advice. The Procedure's `rvgBaseCode` (a string into the old table) becomes an optional
   `rvgGroupId`; the "procedure" on a Booking stays the text received (`description`, 20a's).
-- **One starting-units answer.** Base and modifier units from the picked row, with the recorded value
-  winning as today (a typed override, else a chosen value on a ranged row). 19a adds the Contract line
-  above and turns it into values filled onto the Procedure at pick.
+- **One starting-units answer.** Base and modifier units from the picked row alone, with the recorded
+  value winning as today (a typed override, else a chosen value on a ranged row). A Contract states no
+  base units; 19a only lets one name a default RVG code that fills an empty `rvgGroupId`.
 - **Any base-unit value is accepted (D3, RV-10).** The range clamp and the completion refusal go. A
   recorded value that differs from the starting value and lies outside the row's range (or figure)
   raises one mild after-procedure warning through 15a's routine, never a block.
@@ -72,29 +74,27 @@ groups, before 19a adds Contract lines and 19b the modifiers.
 
 **Pricing model in one place.** The row type, seed, search, the resolver and the out-of-range test
 live in one module in `aa-prototype/src/domain/billing/` (joining 18's module if it made one), behind
-types the UI reads; `domain/types.ts` only re-exports. Reference shape: the technical design v6,
-[AR-29](../../../../requirements-board/requirements/artifacts/AR-29.md) regions `rvg-group-fields`,
-`data-model`, `booking-procedure-fields`, `resolver`, `null-handling` and `data-loading`;
-[AR-30](../../../../requirements-board/requirements/artifacts/AR-30.md) region `rvg-group`;
-[AR-28](../../../../requirements-board/requirements/artifacts/AR-28.md) region `how-a-procedure-is-priced`.
-It is Greg's proposal: field names are for orientation, the catalogue wins; departures (the range, the
-anatomy label) are named fields in that module.
+types the UI reads; `domain/types.ts` only re-exports. Reference shape: the flat ERD,
+[AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md) region `rvg-group`, and the
+contract model proposal, [AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md)
+(AR-28, AR-29 and AR-30 are Retired). Greg's v6 design is orientation only: the catalogue wins;
+departures (the range, the anatomy label) are named fields in that module.
 
 No S1 to S5 figure moves: every seeded Procedure is remapped to a row whose base units equal today's
 figure (item 5).
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `a68f09b` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `efe123c` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.1,US-05.1.1,US-05.1.3,US-05.1.6,US-03.3.1,FT-04.3,US-04.2.4,US-05.1.4,US-13.7.1,OQ-56,OQ-62,OQ-88,OQ-99,OQ-101,OQ-106
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.1,US-05.1.1,US-05.1.3,US-05.1.6,US-03.3.1,FT-04.3,US-04.2.18,US-05.1.4,US-13.7.1,OQ-56,OQ-62,OQ-88,OQ-99,OQ-101,OQ-106
    ```
 
-   The plan already reflects the catalogue at `d436947` (US-05.1.1's range criterion and the settled
-   system code, US-05.1.3 Agreed, OQ-101 answered); diff only for anything after it.
-2. If an item changed after `d436947`, re-read it whole and adjust the work items. If one is now
+   The plan reflects the catalogue at `efe123c` (US-05.1.1 with base units on the group alone, RV-41
+   joined, OQ-101 answered); diff only for anything after it.
+2. If an item changed after `efe123c`, re-read it whole and adjust the work items. If one is now
    Retired or Future, drop its work and say so in the PROGRESS entry.
 3. Read `requirements-board/requirements/domain-model.md` "RVG groups and modifier master", the
    "Base units come from the RVG code" row of §1 and §3's resolver block.
@@ -133,7 +133,7 @@ screen 3 (and its web twin) with the search box leading; tokens, pills and the w
 **Catalogue.** The files linked above, plus
 [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) (the anaesthetist's pick, closed by 20),
 [FT-04.3](../../../../requirements-board/requirements/stories/FT-04.3.md) (Contract list and the RVG code before or after, 20),
-[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) (lines with a default RVG code, 19a),
+[US-04.2.18](../../../../requirements-board/requirements/stories/US-04.2.18.md) (a Contract's default RVG code, 19a),
 [US-13.7.1](../../../../requirements-board/requirements/stories/US-13.7.1.md) (the warning routine, 15a),
 [US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md) (spreadsheet loads, 42),
 [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) (included P1, 19b: why the Neurosurgery and Spine rows are seeded here),
@@ -195,7 +195,7 @@ meta. Every rule is a pure function with a Vitest test.
    regenerate with `-u`: a mismatch is a failure to explain. Also record each seeded Procedure's B and
    its source, for item 5's remap.
 
-2. **The module: RVG groups** (US-05.1.1, US-05.1.3, DM-13; AR-29 `rvg-group-fields`, AR-30 `rvg-group`).
+2. **The module: RVG groups** (US-05.1.1, US-05.1.3, DM-13; AR-61 `rvg-group`).
    - `RvgGroup` replaces `RvgCode`: `{ id: RvgGroupId; code: string; description: string; anatomy:
      string; baseUnits: number; baseUnitsRange?: { min: number; max: number }; modifierUnits: number;
      retired: boolean }`. `baseUnits` is whole and above 0; where a range is present `min <= baseUnits
@@ -215,9 +215,9 @@ meta. Every rule is a pure function with a Vitest test.
    - Never key anything by a printed code: P1, A1 and A2 as RVG rows are not the modifiers, T1 and T2
      are not time codes; the UI always shows a row's code with its description.
 
-3. **The resolver and the recorded value** (US-05.1.1, DM-43's first layer; AR-29 `resolver`).
-   - `resolveStartingUnits({ group })` returns `{ base: { units, layer: 'rvgGroup' }, modifier: { units,
-     layer }, guide: { figure, range? } }` (19a adds `'contractLine'` above, and a `line?` input).
+3. **The resolver and the recorded value** (US-05.1.1, DM-43).
+   - `resolveStartingUnits({ group })` returns `{ base: { units }, modifier: { units }, guide: { figure,
+     range? } }`: base units come from the group alone, with no Contract input (US-05.1.1; 19a adds none).
    - `baseUnitsFor({ procedure, starting })` returns `{ units, source, starting, outsideGuide }`,
      `source` one of `'overridden' | 'chosen' | 'rvgGroup' | 'none'`: the typed override, else
      `baseUnitsSelected` on a row with a range, else the starting value, else (no group) 0 and
@@ -225,8 +225,8 @@ meta. Every rule is a pure function with a Vitest test.
      differ from the starting value and lie outside the row's range (or differ from its figure where
      it has none).
    - `resolveBtm` delegates its base branch; the resolved modifier units (0 everywhere) join the sum
-     (19b decides how itemised modifiers combine). `BtmBreakdown` gains `baseSource`, `baseLayer`
-     and `baseGuide`. `FeeContext.baseCode` becomes `rvgGroup?`; both assemblers (`feeContextFor`,
+     (19b decides how itemised modifiers combine). `BtmBreakdown` gains `baseSource` and
+     `baseGuide`. `FeeContext.baseCode` becomes `rvgGroup?`; both assemblers (`feeContextFor`,
      `procedureFee`), `naturalBtm`, `invoiceBuild`, `seed/billing.ts` and the warning rule pass the
      same inputs. `modifierUnits` reads the interim `includesModifierCodes` from the row.
    - Tests (`startingUnits.test.ts`): each `baseUnitsFor` step; `outsideGuide` at a range's min and max
@@ -255,7 +255,9 @@ meta. Every rule is a pure function with a Vitest test.
      submit or authorise (one store test through each); two outside Procedures give two warnings;
      **the pristine seed raises none of this rule**.
 
-5. **Seed and remap** (AR-16; AR-35's groups; AR-34's CSV). One `PERSIST_VERSION` bump for the phase.
+5. **Seed and remap** (RV-41; AR-16; AR-35's groups; AR-34's CSV). One `PERSIST_VERSION` bump for the phase. The invented
+   five-digit codes (`seed/rvgCodes.ts`, keyed by `contracts.ts`' fixed prices) go; 19b's RV-09 (P1) and
+   RV-38 (modifier values) reseed on the same rows, so keep the legacy table the only bridge.
    **Draw nothing new from the seeded RNG.** `seed/rvgGroups.ts` replaces `rvgCodes.ts`, demo-sized
    and labelled "Demo-sized: the full NZSA 2021 set loads through Phase 42".
    - a. **Published rows** (code, description, anatomy heading, base units, range): every group
@@ -281,10 +283,10 @@ meta. Every rule is a pure function with a Vitest test.
    - d. **Intake fixtures and triggers** carrying a code (`messages.ts` `operation.code`, the phone
      advice prefill, any demo trigger that creates a Procedure) point at a row by id; the operation
      text stays as the Procedure's `description`.
-   - e. **Contract price rows re-keyed** (forced by retiring the invented codes): the three Type 3 rows
-     (gastric bypass, sleeve gastrectomy, second-procedure umbilical hernia) match on `rvgGroupId`
+   - e. **Contract price rows re-keyed** (forced by retiring the invented codes, RV-41): the three Type 3
+     rows (gastric bypass, sleeve gastrectomy, second-procedure umbilical hernia) match on `rvgGroupId`
      with the same prices and ordinal; `contracts.ts`, `contractActions.ts` and `ContractEditSheet`'s
-     price row pick a row (a select by code and description). 19a replaces them with Contract lines.
+     price row pick a row (a select by code and description). 19a re-seeds them as flat Contracts.
    - f. `seed.test.ts`: base units above 0 and a range holds its figure on every row; every seeded
      Procedure's `rvgGroupId` resolves; the same code appears on more than one row (T2, P6); every AR-35
      row and every H7A to H9b and S1 to S10 row is present; every anatomy heading has a row; no seeded
@@ -296,16 +298,15 @@ meta. Every rule is a pure function with a Vitest test.
    - a. `createRvgGroup` validates a non-empty code, description and anatomy, base units whole and above
      0, a range (if any) holding the figure, and modifier units whole and 0 or more. `editRvgGroup`
      edits every field but the id (a code edit breaks nothing: Procedures link by id). An edited
-     figure re-prices unlocked Procedures that take it live (no snapshot until 25; 19a turns this into
-     values filled at pick); built invoices keep their amounts: say so in a test. `retireRvgGroup` and
+     figure re-prices unlocked Procedures that take it live (no snapshot until 25); built invoices keep their amounts: say so in a test. `retireRvgGroup` and
      `restoreRvgGroup`: retiring hides the row from the picker and keeps it for existing Procedures.
      Duplicate codes are allowed; an exact duplicate (same code, description and figure) is refused.
    - b. `pickRvgGroup(api, actor, procedureId, rvgGroupId | null)`: in one audited commit, sets or
      clears `rvgGroupId`; when the row changes, clears `baseUnitsSelected` and `baseUnitsCaptured` (the
      starting value then shows); never touches `description`. Same rights as `editProcedure` (the
      anaesthetist on an ACTIVE Booking, the office per its edit rules). `createBooking`'s input
-     carries `rvgGroupId`, validated the same way. Phase 20 adds the Contract pick; 19a fills starting
-     values here.
+     carries `rvgGroupId`, validated the same way. Phase 20 adds the Contract pick; 19a's default RVG code fills
+     an empty `rvgGroupId` through this action.
    - c. Tests (`rvgGroupActions.test.ts`): every guard and audit entry; a retired row absent from the
      picker and still pricing an existing Procedure; a figure edit re-pricing an ACTIVE Procedure and
      not a built invoice; `pickRvgGroup` clearing a chosen value only on a row change and leaving
@@ -350,7 +351,7 @@ meta. Every rule is a pure function with a Vitest test.
      opens a numeric input (`inputMode="numeric"`). It starts at the row's figure; label "Guide 10 to 12
      · 11 chosen". Outside the range, a warn-tinted caption (not an error): "Outside the guide range.
      The office will see a warning after the procedure."
-   - d. `UnitsCard`'s B caption comes from `baseSource` and `baseLayer`: "From the RVG group",
+   - d. `UnitsCard`'s B caption comes from `baseSource`: "From the RVG group",
      "Chosen", "Set manually", with ", outside the guide range" when `outsideGuide`.
    - e. **Creation paths.** `ManualBookingForm` (mobile and web add, Admin add, phone advice): the
      "Procedure code" select becomes an optional "RVG code" chooser row opening the same sheet,
@@ -399,9 +400,8 @@ meta. Every rule is a pure function with a Vitest test.
 - Modifiers in every form (Phase 19b): the NZSA modifier table, itemised records, explanations, age and
   the included P1, the ASA card, absorbed modifiers out. The interim `includesModifierCodes` holds
   today's behaviour until then.
-- Contract lines, the line layer, starting values filled onto the Procedure at pick, first-party
-  price lists and time tiers as data (19a). The Contract pick and RVG-code reverse lookup of lines
-  (20). Source wording and the stack (20a). Completion and a "needs an RVG code" rule (21).
+- Contracts, a Contract's default RVG code, first-party price lists and time tiers as data (19a). The
+  Contract pick (20). Source wording and the stack (20a). Completion and a "needs an RVG code" rule (21).
 - Pricing snapshot (25). Spreadsheet loads of the full NZSA set (42). Warning thresholds and mutes
   (US-13.7.4, Future).
 - A procedure list, general procedures, body sections, tabs, a prepaid RVG group, tags across groups:
@@ -470,7 +470,8 @@ No scripted figure changes. Patch the wording these beats carry, and the same se
   optional, and the system does not infer it". "Some RVG codes are ranges and require professional
   judgement" becomes "A ranged group starts at its starting figure; any value is accepted, and one
   outside the guide raises a warning for the office after the procedure, never a block". Add "Base
-  units sit on the RVG group; a Contract line may override them (next phase)". Leave the positioning
+  units sit on the RVG group alone; a Contract states none and may only name a default RVG code (next
+  phase)". Leave the positioning
   line for 19b. In "Statements to avoid", keep "The app automatically chooses the clinical RVG code."
 - `02-workflows-and-handoffs.md` capture step 3 ("For each Procedure she selects the RVG base code")
   becomes "For each Procedure she may pick an RVG code by typing; on a ranged group she may change the
@@ -485,7 +486,7 @@ No scripted figure changes. Patch the wording these beats carry, and the same se
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
 `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 19` first (earlier phases may have changed
-these recipes). Every current caption about the flat RVG code master ("RVG codes with ... absorbed
+these recipes). RV-41 and US-05.1.1 carry no recipe of their own beyond the rows below. Every current caption about the flat RVG code master ("RVG codes with ... absorbed
 modifiers", "grouped by anatomical site") is replaced, never left standing. FT-05.1's modifier half
 (US-05.1.4, US-05.1.5) is Phase 19b's; this phase only keeps their recipes running. US-05.1.6 is
 Retired: no recipe row.
@@ -493,7 +494,7 @@ Retired: no recipe row.
 | Item | Recipe now | When this phase is done |
 |---|---|---|
 | [FT-05.1](../../../../requirements-board/requirements/stories/FT-05.1.md) RVG groups and modifiers | captured · admin-rvg-codes | Stays `captured`, re-pointed: `rvg-groups` (the RVG groups tab, `masters-rvg-groups`, anatomy headings visible, an AA row among them; caption "RVG groups as published, with their anatomy heading, plus AA's own") and a mobile `type-ahead` shot (caption "Find an RVG code by typing; each row shows its description and base units"). The modifier half stays 19b's |
-| [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG groups | captured · admin-rvg-codes | Stays `captured`. `rvg-groups` on the tab (highlight the Code, Description and Base units columns and two rows sharing one code; caption "Each RVG group has a code, description and base units above 0; the same code can sit on several rows"), an `add-group` state with `RvgGroupSheet` open (caption "AA can add its own groups and set their base units"), and `type-ahead` on web and mobile with "H1" typed (highlight the rows' base units; caption "Typing H1 lists every H1 row"). The old caption goes |
+| [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG groups (status 3) | captured · admin-rvg-codes | Stays `captured`; no Contract base units appear in any shot. `rvg-groups` on the tab (highlight the Code, Description and Base units columns and two rows sharing one code; caption "Each RVG group has a code, description and base units above 0; the same code can sit on several rows"), an `add-group` state with `RvgGroupSheet` open (caption "AA can add its own groups and set their base units"), and `type-ahead` on web and mobile with "H1" typed (highlight the rows' base units; caption "Typing H1 lists every H1 row"). The old caption goes |
 | [US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Anatomy headings and AA groups | partial · admin-rvg-sites, web-code-picker, mobile-code-picker ("grouped by anatomical site") | `captured`, the old partial reason ("codes cannot be selected as a set", AA groups) dropped (prepaid groups are gone from the catalogue). `rvg-sites` as the tab's anatomy-heading groups with an AA group beside the published ones (caption "RVG groups under the guide's anatomy headings, with AA's own beside them"); `code-picker` on web and mobile with the anatomy label on each row (caption "Each row carries its anatomy heading"). Keep the shot names. The heading is a label only, as the catalogue agrees |
 | [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Included modifiers | captured · admin-rvg-absorbs, web-absorbed-positioning, mobile-absorbed-positioning | No change here (Phase 19b owns it); only the recipe repair below |
 | [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier master | partial · admin-modifier-codes | No change here (Phase 19b owns it) |
@@ -542,7 +543,7 @@ bug), re-greens, and records the pass. Do not re-raise anything settled in the D
   module and the seed only.
 - **One starting-units answer.** The row's figure, then the recorded value (override, then a chosen
   value on a ranged row). Both fee-context assemblers, `invoiceBuild`, `seed/billing.ts`,
-  `naturalBtm` and the warning rule pass the same inputs. 19a's change is one more input and layer.
+  `naturalBtm` and the warning rule pass the same inputs. 19a adds no layer: a Contract's default RVG code only fills an empty RVG code.
 - **D3 is done exactly.** No clamp in the UI, no range check in the store, no range refusal in the
   validator, no demand for an RVG code. An outside value raises one mild after-procedure warning per
   Procedure and blocks nothing; the pristine seed raises none; `multiWarning` shows two warnings; the
@@ -556,7 +557,7 @@ bug), re-greens, and records the pass. Do not re-raise anything settled in the D
   no body-section picker anywhere; mobile, web, the Admin Booking detail, the manual form and phone
   advice all use it; typed text is never overwritten.
 - **No modifier work and no Contract work.** Only the interim `includesModifierCodes` read (19b's); no
-  Contract line, Contract pick, prepaid UI, loader or warning settings; no "default modifier".
+  Contract, Contract pick, prepaid UI, loader or warning settings; no "default modifier".
   Plus the usual: teal-only actions, no dashes in copy, mobile sheets not modals, `pwaPurity` green.
 
 ## PROGRESS.md updates
@@ -573,28 +574,26 @@ bug), re-greens, and records the pass. Do not re-raise anything settled in the D
   pass (findings confirmed and fixed, anything not treated as a defect and why), tests added, and the
   `PERSIST_VERSION` bump.
 - **Decisions log:**
-  1. D12 superseded a second time: base units sit on the RVG group, a Contract line may state its own
-     (19a), no procedure layer; the RVG groups are the one master list with a hidden key (OQ-88, D39).
+  1. D12 superseded a second time and extended 5 November: base units sit on the RVG group alone, a
+     Contract states none and may only name a default RVG code (19a), no procedure layer; the RVG groups are the one master list with a hidden key (OQ-88, D39).
   2. RV-10 under D3 (OQ-56): any base-unit value, typed or stepped; an out-of-range value raises a mild
      after-procedure warning (mild is a picked reading); with D35's starting figure a ranged row no
      longer blocks completion. Supersedes the Phase 04 in-range completion rule and stepper clamp.
   3. The capture picker is a type-ahead on code and description (US-05.1.1), superseding the Phase 04
      picker grouped by anatomical site; the RVG code is optional.
-  4. The NZSA RVG 2021 groups replace the invented 5-digit codes (Decisions log 2026-07-22 superseded
-     for the published rows); seeded Procedures keep their fees through AA rows.
+  4. The NZSA RVG 2021 groups replace the invented 5-digit codes (RV-41; Decisions log 2026-07-22
+     superseded for the published rows); seeded Procedures keep their fees through AA rows.
   5. The 2026-10-02 readings superseded: "default modifiers pre-filled and untickable" and AA groups as
      many-to-many tags.
 - **Handoff list:**
-  - 19a adds the Contract line layer (`'contractLine'`, a `line?` input to `resolveStartingUnits`),
-    replaces the re-keyed Type 3 price rows with Contract lines (a line's default RVG code is an
-    `rvgGroupId`), and turns live group resolution into starting values filled onto the Procedure at
-    pick and reset on a Contract change.
+  - 19a re-seeds the re-keyed Type 3 price rows as flat Contracts; a Contract's default RVG code is an
+    `rvgGroupId` that fills an empty RVG code at pick. It adds no resolver layer and no base units.
   - 19b replaces the interim `includesModifierCodes` with the included P1 on H7A to H9b and S1 to S10
     (seeded here) and owns everything modifier; the row's `modifierUnits` is resolved and added (0
     everywhere) for it to combine with itemised modifiers.
-  - 20 inserts the Contract pick and the RVG-code reverse lookup of lines; `pickRvgGroup` is its entry
+  - 20 inserts the Contract pick; `pickRvgGroup` is its entry
     point. 20a turns `description` into the received wording and seeds AR-35's wording on the seeded
-    groups. 21 owns completion rules for an absent RVG code. 25 snapshots `baseSource`, `baseLayer`,
-    the starting value and the recorded value. 42 loads groups from spreadsheets (AR-29
-    `data-loading`), including the full NZSA set.
+    groups. 21 owns completion rules for an absent RVG code. 25 snapshots `baseSource`,
+    the starting value and the recorded value. 42 loads groups from spreadsheets (US-13.4.3),
+    including the full NZSA set.
   - 20 shows the range when the Contract pick leaves the base units to the anaesthetist; 19 holds it.

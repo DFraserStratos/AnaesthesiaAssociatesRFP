@@ -244,7 +244,7 @@ async function readSide(repo: Repo, side: Side, paths: string[]): Promise<(strin
 
 /**
  * What the page needs of an artifact it does not show (to name it, and to read sources citing it):
- * the sidecar without its prose, its highlights by name only.
+ * the sidecar without its prose, its highlights and steps by name only.
  */
 const slim = (a: Artifact): Artifact => ({
   ...a,
@@ -253,6 +253,7 @@ const slim = (a: Artifact): Artifact => ({
   components: [],
   extra: {},
   regions: a.regions.map((r) => ({ id: r.id, name: r.name, around: [], box: null, page: null, pad: null, note: '' })),
+  steps: a.steps.map((s) => ({ id: s.id, name: s.name, group: s.group, caption: '', show: [], highlight: [], moves: [], balances: [] })),
 })
 
 const sidecarOfText = new Map<string, Artifact | null>()

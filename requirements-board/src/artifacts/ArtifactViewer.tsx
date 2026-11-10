@@ -1,11 +1,14 @@
 /**
  * Any artifact, shown the way its format reads best: a drawing on a canvas that pans and zooms, a
  * document as pages that scroll. Given a spot (a named region, a page, a heading, a line range),
- * it brings that into view inside the red box, and says so when the spot can't be found.
+ * it brings that into view inside the red box, and says so when the spot can't be found. A
+ * stepped diagram also gets its step bar, and a step as the spot shows the drawing at that step
+ * (no red box, and the view stays where it is as the steps change).
  */
 import { AlertTriangle, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { isArtifactId, isQuestionId } from '../../shared/links.ts'
+import { stepIndex, stepState } from '../../shared/steps.ts'
 import { isCanvasFormat, type ArtifactRec, type Region } from '../../shared/types.ts'
 import { artifactFileUrl } from '../api.ts'
 import { spotName } from '../artifactIndex.ts'
@@ -16,6 +19,8 @@ import { CanvasViewer, type FindProps } from './CanvasViewer.tsx'
 import { loadCanvas, useLoaded } from './content.ts'
 import { MarkdownReader } from './MarkdownReader.tsx'
 import { PdfReader } from './PdfReader.tsx'
+import { StepBar } from './StepBar.tsx'
+import { beforeSteps, movesToPlay } from './stepMoves.ts'
 import { catalogueResolver } from './svgLinks.ts'
 
 export interface ArtifactViewerProps {
@@ -26,6 +31,8 @@ export interface ArtifactViewerProps {
   focusKey?: string
   /** A named region to outline while it is hovered in the panel. */
   preview?: string | null
+  /** Go to another spot (a step from the step bar), or null for the whole artifact. */
+  onSpot?: (id: string | null) => void
 }
 
 export const fetchText = async (url: string) => {
@@ -34,7 +41,7 @@ export const fetchText = async (url: string) => {
   return res.text()
 }
 
-export function ArtifactViewer({ rec, spot, focusKey, preview = null }: ArtifactViewerProps) {
+export function ArtifactViewer({ rec, spot, focusKey, preview = null, onSpot }: ArtifactViewerProps) {
   const a = rec.data
   const format = rec.meta.format
   const url = artifactFileUrl(a.id, rec.meta.fileRev)
@@ -43,6 +50,32 @@ export function ArtifactViewer({ rec, spot, focusKey, preview = null }: Artifact
   const [found, setFound] = useState<boolean | null>(null)
   useEffect(() => setFound(null), [spot, rec.rev, rec.meta.fileRev])
   const unknownSpot = !!spot && !spotName(rec, spot)
+  // A stepped diagram: the step chosen (-1 for none: the whole drawing). Steps are only for a drawing file.
+  const steps = format && isCanvasFormat(format) && format !== 'raster' ? (a.steps ?? []) : []
+  const at = spot && steps.length ? stepIndex(a, spot) : -1
+  // A flight: stepping forward by one (the bar or the keys) onto a step with moves flies them; so
+  // does Replay. A jump (the panel, a link) never does, so a flight is dropped once the step is left.
+  const [flight, setFlight] = useState<{ to: number; n: number; replay: boolean } | null>(null)
+  const flights = useRef(0)
+  useEffect(() => {
+    if (flight && flight.to !== at) setFlight(null)
+  }, [at])
+  const go = (i: number) => {
+    setFlight(movesToPlay(steps, at, i).length ? { to: i, n: ++flights.current, replay: false } : null)
+    onSpot?.(i < 0 ? null : (steps[i]?.id ?? null))
+  }
+  const replay = at >= 0 && steps[at]?.moves.length ? () => setFlight({ to: at, n: ++flights.current, replay: true }) : undefined
+  // The arrow keys step, with the drawing or the step bar in focus (not while typing, not with a modifier).
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!steps.length || !onSpot || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+    const t = e.target
+    if (!(t instanceof Element) || !t.closest('.canvas-frame, .step-bar') || t.closest('input, textarea, select, [contenteditable="true"]')) return
+    const next = e.key === 'ArrowRight' ? (at < 0 ? 0 : at + 1) : at - 1
+    if (next < 0 || next >= steps.length) return
+    e.preventDefault()
+    go(next)
+  }
 
   // Find in the artifact: the query (deferred, so typing stays quick in a long transcript), the
   // current match and how many there are. An image has no text, so it has no find.
@@ -57,13 +90,15 @@ export function ArtifactViewer({ rec, spot, focusKey, preview = null }: Artifact
 
   let body
   if (!format) body = <div className="viewer-note bad">This artifact has no file the board can show.</div>
-  else if (isCanvasFormat(format)) body = <CanvasBody rec={rec} url={url} region={region} focusKey={focusKey} preview={preview} onRegionFound={setFound} find={find} />
+  // Moving between steps (or back to the whole drawing) leaves the view where it is: one key for them all.
+  else if (isCanvasFormat(format)) body = <CanvasBody rec={rec} url={url} region={region} focusKey={steps.length && (!spot || at >= 0) ? 'steps' : focusKey} preview={preview} onRegionFound={setFound} find={find} step={at} flight={flight && flight.to === at ? flight : null} />
   else if (format === 'markdown') body = <MarkdownBody url={url} rec={rec} region={region} auto={auto} focusKey={focusKey} onRegionFound={setFound} find={find} />
   else body = <PdfReader url={url} spot={{ region, auto }} focusKey={focusKey} label={a.title} onRegionFound={setFound} find={find} />
 
   return (
-    <div className="artifact-viewer">
+    <div className="artifact-viewer" onKeyDown={onKeyDown}>
       {body}
+      {steps.length > 0 && onSpot && <StepBar steps={steps} at={at} onGo={go} onReplay={replay} />}
       {searchable && (
         <FindBar
           noun={(ARTIFACT_KIND_LABEL[a.kind] ?? 'artifact').toLowerCase()}
@@ -144,7 +179,7 @@ function FindBar({ noun, query, setQuery, count, active, step }: { noun: string;
   )
 }
 
-function CanvasBody({ rec, url, region, focusKey, preview, onRegionFound, find }: { rec: ArtifactRec; url: string; region: Region | null; focusKey?: string; preview: string | null; onRegionFound: (f: boolean) => void; find: FindProps }) {
+function CanvasBody({ rec, url, region, focusKey, preview, onRegionFound, find, step, flight }: { rec: ArtifactRec; url: string; region: Region | null; focusKey?: string; preview: string | null; onRegionFound: (f: boolean) => void; find: FindProps; step: number; flight: { to: number; n: number; replay: boolean } | null }) {
   const a = rec.data
   const format = rec.meta.format!
   const key = `${a.id}|${rec.meta.fileRev ?? ''}|${format === 'mermaid' ? a.source : ''}`
@@ -157,10 +192,18 @@ function CanvasBody({ rec, url, region, focusKey, preview, onRegionFound, find }
   const openRef = useRef(open)
   openRef.current = open
   const onLink = useCallback((id: string) => guarded(() => (isQuestionId(id) ? openRef.current.question(id) : isArtifactId(id) ? openRef.current.artifact(id) : openRef.current.item(id))), [])
+  const steps = a.steps
+  const view = useMemo(() => (steps?.length && step >= 0 ? stepState(steps, step) : null), [steps, step])
+  // The moves to fly at this step, once per flight asked for; a replay starts from the step before.
+  const moves = flight && steps?.[step]?.moves.length ? steps[step]!.moves : null
+  const flying = useMemo(
+    () => (flight && moves ? { key: `${flight.to}|${flight.n}`, moves, before: flight.replay ? (step > 0 ? stepState(steps, step - 1) : beforeSteps(steps)) : null } : null),
+    [flight, moves, steps, step],
+  )
   if (loaded.status === 'loading') return <div className="viewer-note">Drawing</div>
   if (loaded.status === 'error') return <div className="viewer-note bad">{format === 'mermaid' ? 'The diagram could not be drawn' : 'The file could not be shown'}: {loaded.error}</div>
   const previewRegion = preview ? (a.regions.find((r) => r.id === preview) ?? null) : null
-  return <CanvasViewer content={loaded.value} region={region} focusKey={focusKey} preview={previewRegion} dragPans={format === 'raster'} label={a.title} onRegionFound={onRegionFound} find={find} resolveLink={resolveLink} onLink={onLink} />
+  return <CanvasViewer content={loaded.value} region={region} focusKey={focusKey} preview={previewRegion} dragPans={format === 'raster'} label={a.title} onRegionFound={onRegionFound} find={find} resolveLink={resolveLink} onLink={onLink} stepState={view} flight={flying} />
 }
 
 function MarkdownBody({ url, rec, region, auto, focusKey, onRegionFound, find }: { url: string; rec: ArtifactRec; region: Region | null; auto: string | null; focusKey?: string; onRegionFound: (f: boolean) => void; find: FindProps }) {

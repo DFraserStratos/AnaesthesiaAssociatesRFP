@@ -1,22 +1,23 @@
 # Phase 22 · Invoice presentation, delivery and the split
 
 **Requirements covered:**
-[US-04.2.8](../../../../requirements-board/requirements/stories/US-04.2.8.md) Invoice presentation and delivery (agreed with Greg 2026-10-07 and 2026-10-14: layout, GST and the holder's reference set on the Contract, every price held GST exclusive with GST at the foot; **delivery is the contract holder's setting, not a Contract field**, Greg 2026-10-28, [OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md) in part, D55) ·
-[US-08.4.1](../../../../requirements-board/requirements/stories/US-08.4.1.md) Generate invoice documents (the holder's layout carries the BTM breakdown and cross-match fields, the patient's does not; each line prints the Procedure's [invoice description](../../../../requirements-board/requirements/stories/US-08.4.6.md) from 20a, a discount prints as its own line, the holder's reference where the Contract names one) ·
+[US-04.2.8](../../../../requirements-board/requirements/stories/US-04.2.8.md) Invoice presentation and delivery (Agreed to Verify, 5 November, Donald's D2, D16 and D17: how a Contract's invoices look and travel follow from the Contract and its Party, with **no invoicing settings on the Contract**: the layout from whether the Contract bills its holder, every price held GST exclusive with GST at the foot, the Contract's [holder reference code](../../../../requirements-board/requirements/stories/US-04.2.18.md) printed, and **delivery set on the Party: email or post for now**, other outputs open in [OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), D55's new default) ·
+[US-08.4.1](../../../../requirements-board/requirements/stories/US-08.4.1.md) Generate invoice documents (the holder's layout when the Contract bills its holder, the patient's when it bills the payer, our reading A31; the holder's carries the BTM breakdown and cross-match fields, the patient's does not; each line prints the Procedure's [invoice description](../../../../requirements-board/requirements/stories/US-08.4.6.md) from 20a, a discount prints as its own line, and the Contract's holder reference code where it has one) ·
 [FT-08.4](../../../../requirements-board/requirements/stories/FT-08.4.md) Invoice generation and despatch (Proposed) ·
-[US-08.4.2](../../../../requirements-board/requirements/stories/US-08.4.2.md) Send to the invoice email (Confirmed; a payer with only a postal address gets "To post", [OQ-122](../../../../requirements-board/requirements/questions/OQ-122.md), D70) ·
+[US-08.4.2](../../../../requirements-board/requirements/stories/US-08.4.2.md) Send to the invoice email (Agreed to Verify: where the Contract bills the payer, the Booking's invoice email; an invoice to a holder goes by the delivery on its Party, email or post; a payer with only a postal address gets "To post", [OQ-122](../../../../requirements-board/requirements/questions/OQ-122.md), D70) ·
 [US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) Anaesthetist as supplier, AA as agent (Proposed, [OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md)) ·
 [US-08.2.3](../../../../requirements-board/requirements/stories/US-08.2.3.md) Split one Procedure's fee between two payers (the owner's typed decision of 2026-10-05: a Split button on the Procedure, no Contract setting; basis from [OQ-68](../../../../requirements-board/requirements/questions/OQ-68.md), answered) ·
 [US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md) ACCPAY as buyer-created tax invoice (expected to stand as the BCTI; wording, the same-record question and whether one BCTI is per procedure, per payment or per payment run are all open in OQ-29) ·
 [DM-28](../analysis/domain-model-delta.md#dm-28) splitting a Procedure's fee is a Booking action with typed $ or % shares, not a line-level funder override ·
 [RV-31](../analysis/reverse-check.md) (was RV-37; the numbers moved at the 2026-10-19 update) the office-only per-line funder allocation editor is reworked into that user action.
-This phase also builds the layout half of
-[DM-16](../analysis/domain-model-delta.md#dm-16) (Phase 21 built its holder-references half; delivery is the holder's, 18's) and
-the invoice-presentation part of [DM-22](../analysis/domain-model-delta.md#dm-22) (supplier, agent,
+This phase also builds the invoice-presentation part of [DM-22](../analysis/domain-model-delta.md#dm-22) (supplier, agent,
 Procedure links, lineage; the ledger itself is Phase 36's), and
 [DM-62](../analysis/domain-model-delta.md#dm-62) (new 4 November): the optional `Anaesthetist.gstNumber`
 on the Admin anaesthetist record that US-08.4.5's invoice prints (the profile stories, so Phase 26,
 name no GST number).
+**DM-16 is no longer held** (5 November: holder references wait on OQ-136, D82). This phase builds no
+holder-references half and no Contract invoicing settings; the one piece it uses is the Contract's holder
+reference code (US-04.2.18, held by 18 and 19a), printed on the holder's invoice.
 **Left this phase at the 2026-10-08 update:** US-04.2.12 (the Contract payment setting, Retired
 2026-10-05: "neither a Contract nor a Procedure holds a full payment or split setting"), so owner
 decision D18's old reading ("set on the Booking, defaulting from the Contract") is superseded and
@@ -25,19 +26,22 @@ presentation part is listed above). The settled July rulings superseded here are
 `funderOverride` conservation split (2026-07-22 fifth review #4) and the office-only per-line funder
 editor (seventh review, RV-31), the counterparty-kind layout and the GST caption (Phase 08 decisions
 2 and 4), and the manual "Email invoice" send (Phase 08 work item 2), listed under PROGRESS.md updates.
-**Changed at the 2026-10-28 update (7cd7802):** delivery is the contract holder's setting (18), not a Contract
-field (US-04.2.8, OQ-114 in part, D55), and the insurer-kind delivery hard-wiring (RV-39's last part) goes
-here; a payer with only a postal address gets "To post" with a print view (OQ-122's default, D70); whether
-one BCTI is per procedure, per payment or per payment run is no longer settled (US-09.1.4, OQ-29).
-**Depends on:** Phase 21 (who is invoiced: the Contract holder's billable party when the holder is
-billed, otherwise the payer on the Booking, prefilled from the patient and editable to a guardian
+**Changed at the 2026-10-28 and 5 November (efe123c) updates:** delivery is held on the Party (18; US-04.2.8,
+OQ-114 in part, D55's new default): email or post, with no portal value until OQ-114 names one, so nib's
+Party delivers by email for now and the portal queue and its stamp go, with the insurer-kind hard-wiring
+(RV-39's last part); the layout follows whether the Contract bills its holder; a payer with only a postal
+address gets "To post" with a print view (OQ-122's default, D70); whether one BCTI is per procedure, per
+payment or per payment run is not settled (US-09.1.4, OQ-29). The doc's contract-holder readings and its
+AR-28, AR-29 and AR-30 citations (Retired) are replaced by AR-61 (the flat ERD) and AR-58 (the proposal).
+**Depends on:** Phase 21 (who is invoiced: the Contract's holder Party when it bills its holder,
+otherwise the payer on the Booking, prefilled from the patient and editable to a guardian
 (D17, US-11.2.2); `billablePartyForProcedure` or 21's name for it; the invoice email and postal address that go with
 the party (`invoiceEmailFor`, snapshotted as `Invoice.invoiceEmail` by the run; the address is in `billedTo`); grouping by billable
-party (US-08.2.1); the holder references; and `funderOverride` still the interim split), and so on
+party (US-08.2.1); and `funderOverride` still the interim split), and so on
 20a (the three-part Procedure stack whose Contract part carries the Split button, and its one "who is
 invoiced" selector), 20 (one Contract per Procedure; the interim `prepaymentRequired` flag on the
-Booking), 18 (`ContractHolder` with `holderType`, `billsHolder`, its billable party and its delivery setting;
-the Master data Contract sheet; No contract (RVG)), 17 (hospital and rooms contact emails), 16 (the payable equals
+Booking), 18 (the Party master with its delivery setting, email or post; the flat Contract with `billsHolder`, its
+holder Party and holder reference code; the Master data Contract sheet; No contract (RVG)), 17 (hospital and rooms contact emails), 16 (the payable equals
 the receivable; `invoiceNumber` and `reference` on both Xero records; neutral Xero contact names;
 `bctisFor` in `domain/billing/bcti.ts`, the one pure BCTI count, fed only by `bctiRecords(state)`),
 15b (ACTIVE Lists), 15a (the warning routine and its one registry, `WARNING_RULES` in
@@ -52,25 +56,33 @@ items 10 to 15 are UI and fit a short second session.
 Every receivable invoice is **issued in the anaesthetist's name**, with their GST number, and names
 **AA as agent**, not supplier (US-08.4.5). The number is an **optional field on the Admin anaesthetist
 record** (DM-62; master data form and seed, not Phase 26's profile); the invoice prints it when held and
-"GST number not held" when not. The agency wording stays provisional in one label until OQ-29 is answered. Each Contract carries its own **invoicing settings**,
-agreed with Greg on 2026-10-07 (US-04.2.8, Confirmed): the layout (the holder's, or the patient's) and
-the GST treatment, so every invoice raised under it looks and is taxed the same way without the office
-choosing booking by booking, plus the **holder's reference** for the Contract (for example SXAP), printed so the holder knows which of its contracts to file the invoice under. The two layouts are very similar: the **holder's carries the BTM breakdown and a few cross-match fields** so a hospital can match the invoice to its own records, the **patient's does not** (US-08.4.1). On both, each line prints the **Procedure's invoice description** (20a's, never re-derived) and a **discount prints as its own line** once Phase 24 holds one (22 builds the line and its print; 24 supplies the discount). The GST treatment is the one rule the catalogue now states: **every price is held GST
-exclusive and GST is worked out at the foot of the invoice** (US-05.2.7, Matches today: keep it, and
-build no GST-inclusive presentation). It is stored on the Contract as a single-valued setting shown
-read-only, so a later treatment (OQ-29) is a one-place change.
+"GST number not held" when not. The agency wording stays provisional in one label until OQ-29 is answered.
 
-**Delivery is not a Contract setting** (Greg, 28 October; OQ-114 in part, D55). When the Contract bills its
-holder, the holder's own setting says how its invoices travel: email (the default) or a portal (18 holds
-it; this phase reads it, and what other outputs a holder may have is still open). Otherwise the invoice
-goes to the payer on the Booking's email, or, when the payer has only a postal address (US-11.2.3), is
-marked **To post** with a print view (OQ-122's default, D70, labelled provisional; no posting
-integration). Nothing keys on the insurer kind any more.
+**How an invoice looks follows from the Contract and its Party; the Contract carries no invoicing
+settings** (US-04.2.8, US-08.4.1; Donald's D2, D16 and D17). The layout is the holder's when the Contract
+bills its holder and the patient's when it bills the payer (our reading, A31). The two layouts are very
+similar: the **holder's carries the BTM breakdown and a few cross-match fields** so a hospital can match the
+invoice to its own records, the **patient's does not**. On both, each line prints the **Procedure's invoice
+description** (20a's, never re-derived) and a **discount prints as its own line** once Phase 24 holds one
+(22 builds the line and its print; 24 supplies the discount). The Contract's **holder reference code**
+(US-04.2.18, a field 18 and 19a hold on the Contract, for example SXAP) prints on the holder's invoice so
+the holder knows which of its contracts to file it under. The GST rule is the one the catalogue states:
+**every price is held GST exclusive and GST is worked out at the foot of the invoice** (US-05.2.7, Matches
+today: keep it, and build no GST-inclusive presentation); it is a constant in one module, not a stored
+setting, so a later treatment (OQ-29) is a one-place change.
+
+**Delivery is set on the Party** (US-04.2.8, D2; OQ-114 partly answered, D55's new default): **email or
+post**, with no portal value until OQ-114 names the other outputs. nib's Party therefore delivers by email
+for now, and the portal queue and its "Queued for portal" stamp are gone. When the Contract bills its
+holder, the holder Party's setting says how its invoices travel (18 holds it; this phase reads it). Otherwise
+the invoice goes to the payer on the Booking's email, or, when the payer has only a postal address
+(US-11.2.3), is marked **To post** with a print view (OQ-122's default, D70, labelled provisional; no posting
+integration). Nothing keys on the insurer kind.
 
 The Billing/Invoice Engine now **sends each invoice itself** as part of the billing run (FT-08.4,
 US-08.4.2). Authorising a List in Admin Review raises the invoices and stamps each one "Emailed to
 <address>" (the invoice email of the party invoiced, which is a guardian's where the payer on the
-Booking is a guardian) or "Queued for <holder> portal" (the holder's setting), or "To post" (print view). The office's manual "Email invoice" button
+Booking is a guardian) or "To post" (print view). The office's manual "Email invoice" button
 goes; a single-invoice **Resend** stays on the invoice rail.
 
 **Splitting a Procedure's fee is a user action on the Booking** (US-08.2.3, DM-28, RV-31; the owner's
@@ -97,41 +109,38 @@ per procedure, per payment or per payment run is not settled (OQ-29, 28 October;
 granularity), so the wording stays provisional in its one module.
 
 **Pricing model in one place.** This phase builds none of the pricing structures (RVG groups,
-procedures, holders, Contracts, lines, the resolver or the precedence) and never re-prices: the split
+procedures, Parties, Contracts, the resolver or the precedence) and never re-prices: the split
 divides the Procedure's final fee as the engine already computed it (after any office override). The
-split record sits on the booking procedure
-([AR-30#booking-procedure](../../../../requirements-board/requirements/artifacts/AR-30.md#booking-procedure), [AR-29#booking-procedure-fields](../../../../requirements-board/requirements/artifacts/AR-29.md#booking-procedure-fields)) and the
-invoicing settings on the Contract ([AR-30#contract](../../../../requirements-board/requirements/artifacts/AR-30.md#contract), [AR-29#contract-fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-fields)).
-The draft design v4 names neither (its booking procedure lists pricing fields only, and its Contract
-has no invoicing fields), so both are additions beside its shapes, typed in `aa-prototype/src/domain`
-next to the ones 18 to 21 built; the split maths lives only in
-`aa-prototype/src/domain/billing/splitShare.ts` and the presentation rules only in
-`invoicePresentation.ts`, so a later design change (v4 may become v5) stays a contained edit. Who
-receives each invoice follows [AR-28#who-gets-the-invoice](../../../../requirements-board/requirements/artifacts/AR-28.md#who-gets-the-invoice) (true as
-written) and [AR-29#billable-party](../../../../requirements-board/requirements/artifacts/AR-29.md#billable-party), as Phase 21 built it in
-`whoIsBilled.ts`; this phase reads it, never re-derives it.
+split record sits on the booking procedure and adds nothing to the Contract (no invoicing fields; the
+layout is derived), so it is typed in `aa-prototype/src/domain` next to the shapes 18 to 21 built; the
+split maths lives only in `aa-prototype/src/domain/billing/splitShare.ts` and the presentation rules only
+in `invoicePresentation.ts`, so a later design change stays a contained edit. Who receives each invoice
+follows [AR-61#who-is-billed](../../../../requirements-board/requirements/artifacts/AR-61.md#who-is-billed) and the proposal's section 5.9
+([AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md)), as Phase 21 built it in `whoIsBilled.ts`; this phase reads it, never
+re-derives it.
 
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the ones it leans on against the plan's
-   baseline, catalogue commit `a68f09b` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `efe123c` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.2.8,FT-08.4,US-08.4.1,US-08.4.2,US-08.4.5,US-08.2.3,US-09.1.4,US-04.2.12,US-08.4.6,US-05.2.7,US-11.4.1,US-11.2.2,US-11.2.3,US-04.1.5,US-08.4.3,FT-08.2,US-08.2.1,FT-09.1,US-08.6.3,US-08.6.4,OQ-29,OQ-42,OQ-60,OQ-68,OQ-23,OQ-67,OQ-73,OQ-78,OQ-114,OQ-122
    ```
 
-   The plan already reflects the catalogue at a68f09b (DM-62 joined; none of the covered items changed in substance since d436947; US-04.2.8's delivery now the holder's, OQ-114 and
-   OQ-122 as above, US-09.1.4's open granularity): US-04.2.12 Retired and US-08.2.3 rewritten
-   (2026-10-05 typed decision: a Split button on the Procedure, several billable
-   parties, typed $ or %, no Contract setting and no default); US-04.2.8 agreed with Greg on
-   2026-10-07 and 2026-10-14 (adds the holder's reference on the Contract, and the hospital layout's BTM breakdown) and US-05.2.7 Confirmed (all prices held GST exclusive, GST at the foot of the invoice);
-   US-11.4.1's technical note (cover split is a Booking split, not a Contract setting); US-11.2.2 the
-   payer on the Booking; US-08.6.3 (the additional invoice, a separate button) and US-08.6.4 (the
-   combined split, Phase 39). US-08.4.1 (2026-10-14 and 10-16: two very similar layouts, the holder's with the BTM breakdown and cross-match fields; lines print the invoice description, a discount its own line, the holder's reference) and US-09.1.4 (the ACCPAY is expected to stand as the BCTI, pending OQ-29) changed in substance; FT-08.4 and US-08.4.2 did not. Also
-   read the domain-model Contract rows `invoiceLayout` and `gstTreatment` (delivery is no longer a Contract row), the
-   Internal ledger bullet "Invoices are issued in the anaesthetist's name with AA as agent; the ACCPAY
-   is a buyer-created tax invoice" and the Invoice email glossary entry.
+   The plan reflects the catalogue at efe123c (5 November: US-04.2.8, US-08.4.1 and US-08.4.2 changed as
+   the Requirements covered note says; DM-16 no longer held; AR-28, AR-29 and AR-30 Retired). Earlier, and
+   carried here: US-04.2.12 Retired and US-08.2.3 rewritten (2026-10-05 typed decision: a Split button on
+   the Procedure, several billable parties, typed $ or %, no Contract setting and no default); US-08.4.1
+   (two very similar layouts, the holder's with the BTM breakdown and cross-match fields; lines print the
+   invoice description, a discount its own line); US-05.2.7 Confirmed (all prices held GST exclusive, GST at
+   the foot of the invoice); US-11.4.1's technical note (cover split is a Booking split, not a Contract
+   setting); US-11.2.2 the payer on the Booking; US-08.6.3 (the additional invoice, a separate button) and
+   US-08.6.4 (the combined split, Phase 39); US-09.1.4 (the ACCPAY is expected to stand as the BCTI, pending
+   OQ-29). Also read the domain model's Contract and Party sections (delivery on the Party; the layout
+   derived), the Internal ledger bullet "Invoices are issued in the anaesthetist's name with AA as agent;
+   the ACCPAY is a buyer-created tax invoice" and the Invoice email glossary entry.
 2. If an item changed since, re-read it in full and adjust the work items. If an item is now Retired
    or Future, drop it and say so in the PROGRESS entry. If US-08.2.3 is retired, still remove
    `funderOverride` (retired behaviour either way), bill Prentice in full to one party, re-baseline S3
@@ -144,9 +153,10 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
      parties; at most one takes the rest; without one, the shares must total the fee) and work item
      4's wording, keep both in `splitShare.ts`, and log both on the owner's review list. If a later
      catalogue change settles either, change that module only.
-   - **D55 (delivery, OQ-114 answered in part).** Delivery is the contract holder's setting (18), email or
-     portal, read by the run; not a Contract field, and no insurer master or direct-claims flag. What
-     other outputs exist is open: build the two values, log it.
+   - **D55 (delivery, OQ-114 answered in part; Donald's D2, 5 November).** Delivery is set on the Party
+     (18), email or post, read by the run: the new default, our reading A32. It is not a Contract field,
+     and there is no insurer master, direct-claims flag or portal value; nib's Party delivers by email. The
+     other outputs (nib's portal, an API) are open in OQ-114: build the two values, log it.
    - **D70 (posted invoices, OQ-122), open: built as its default.** A billed payer has an email or a postal
      address (21); a postal-only payer's invoice is marked "To post" with a print view, no posting
      integration. Carries a small "Provisional (OQ-122)" pill; log it.
@@ -164,16 +174,16 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
      receivable invoice, wording provisional, and leave Phase 16's count function and its tests
      untouched. If AA's accountant has settled it, stop and tell the owner: the count function, the $700 seed and the S3 and S4 figures re-baseline in one
      place first (ROADMAP).
-   - **OQ-67 and OQ-78 are answered (D17 as superseded):** the Contract decides who is billed, the
-     holder's billable party when the holder is billed, otherwise the payer on the Booking. Phase 21
+   - **OQ-67 and OQ-78 are answered (D17 as superseded):** the Contract decides who is billed, its
+     holder Party when it bills its holder, otherwise the payer on the Booking. Phase 21
      built it. A split adds parties for that one Procedure's fee; it never changes who the Contract
      bills for any other Procedure.
    - **OQ-73 (D23)** does not change this phase. A Procedure on a Booking carrying 20's interim
      `prepaymentRequired` flag (it sits on the Booking, not the Procedure) cannot be split (work item
      5): Phase 27 prices a prepaid Procedure at its prepaid amount with nothing left to bill.
-4. **Read what 16 and 18 to 21 actually left** (their PROGRESS entries): 18's `ContractHolder` field
-   names (`holderType`, `billsHolder`, its billable party) and where 18 put the holder's delivery
-   setting (its field name and values, and its portal name); the Master data Contract sheet; 20a's stack
+4. **Read what 16 and 18 to 21 actually left** (their PROGRESS entries): 18's Party master (kind, billing
+   details, the delivery setting's field name and its email and post values) and flat Contract
+   (`billsHolder`, its holder Party, the holder reference code's field name); the Master data Contract sheet; 20a's stack
    (`ProcedureStack`, `procedureStackView` and `whoIsInvoicedFor` in `domain/billing/procedureStack.ts`);
    21's names for the payer on the Booking, the billable party per Procedure
    (`billablePartyForProcedure` in `whoIsBilled.ts`), `invoiceEmailFor` and `Invoice.invoiceEmail`,
@@ -198,7 +208,7 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
 sheet, the Split sheet or the Xero simulation, so extend the existing screens' own patterns and
 [Design Language.dc.html](../../../design/Design%20Language.dc.html): teal `#0D6E63` for Split, Save,
 Resend and Send; pill radius 999 on semantic tokens for delivery states (success tint for Emailed,
-neutral for Queued for portal and To post, warning tint for No invoice address), never the six
+neutral for To post, warning tint for No invoice address), never the six
 schedule status colours; Spline Sans Mono with tabular-nums for every amount, share, GST number and
 invoice number. Crimson stays identity only: the AA logo moves into the invoice's agent block (still
 identity), and nothing new is crimson. The Split sheet is a bottom sheet on mobile and a side sheet
@@ -222,29 +232,24 @@ the layout for the authorise banner whose copy changes. The 2026-07-28 invoice w
 Read why with `npm --prefix requirements-board run source -- --item <ID> --text` (Node 22.18 or newer):
 US-04.2.8 and US-05.2.7 cite [notes/2026-10-07-aa-meeting-with-greg.md](../../../../requirements-board/requirements/notes/2026-10-07-aa-meeting-with-greg.md)
 #32 ("everything internally is exclusive and then the GST goes on the bottom of the invoice") and #38
-(layout and GST set on the Contract; delivery moved to the holder, Notes 2026-10-28 · AA meeting with Greg #3, [OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), [OQ-122](../../../../requirements-board/requirements/questions/OQ-122.md)); US-08.2.3 cites
+(set on the Contract then; since 5 November the layout is derived and delivery is the Party's, Notes 2026-11-05 · Donald contract model decisions #2 #16 #17 and Notes 2026-10-28 · AA meeting with Greg #3, [OQ-114](../../../../requirements-board/requirements/questions/OQ-114.md), [OQ-122](../../../../requirements-board/requirements/questions/OQ-122.md)); US-08.2.3 cites
 [notes/2026-10-02-aa-meeting-with-greg.md](../../../../requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md) #9
 ("split in any which way", "You pick what's best") and the 2026-10-05 typed decision recorded in
 [changes/2026-10-07-requirements-update.md](../../../../requirements-board/requirements/changes/2026-10-07-requirements-update.md)
 section 9; US-09.1.4 cites [notes/2026-10-01-aa-meeting-with-greg.md](../../../../requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md) #18 and #41.
 Diagrams: [AR-25#generate-send](../../../../requirements-board/requirements/artifacts/AR-25.md),
 [AR-24#send-invoice and #xero-pair](../../../../requirements-board/requirements/artifacts/AR-24.md);
-the pricing model guide AR-28 ([#who-gets-the-invoice](../../../../requirements-board/requirements/artifacts/AR-28.md#who-gets-the-invoice),
-[#booking-to-invoice](../../../../requirements-board/requirements/artifacts/AR-28.md#booking-to-invoice)), draft design AR-29
-([#billable-party](../../../../requirements-board/requirements/artifacts/AR-29.md#billable-party), [#contract-fields](../../../../requirements-board/requirements/artifacts/AR-29.md#contract-fields),
-[#booking-procedure-fields](../../../../requirements-board/requirements/artifacts/AR-29.md#booking-procedure-fields)) and ERD AR-30
-([#contract](../../../../requirements-board/requirements/artifacts/AR-30.md#contract), [#contract-holder](../../../../requirements-board/requirements/artifacts/AR-30.md#contract-holder),
-[#booking-procedure](../../../../requirements-board/requirements/artifacts/AR-30.md#booking-procedure)). The catalogue screenshots for US-08.2.3 ("nib and St
-George's"), US-08.4.2 (ready, emailed, portal) and US-09.1.4 (the old fee panel) show the July UI;
+the flat ERD [AR-61#who-is-billed](../../../../requirements-board/requirements/artifacts/AR-61.md#who-is-billed) and the contract model proposal
+[AR-58](../../../../requirements-board/requirements/artifacts/AR-58.md) section 5.9 (who is billed; AR-28, AR-29 and AR-30 are Retired). The catalogue screenshots for US-08.2.3 ("nib and St
+George's"), US-08.4.2 (ready, emailed) and US-09.1.4 (the old fee panel) show the July UI;
 grade against the text.
 
 **Analysis.**
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Summary theme 3 (the Contract replaces the billing route)
-  and theme 7 (Money model, which includes the BCTI), the Uncertainty bullet on OQ-29, the DM-16,
-  DM-22 and DM-28 rows, and the EP-04, EP-08 and EP-09 tables. Per-gap detail:
+  and theme 7 (Money model, which includes the BCTI), the Uncertainty bullet on OQ-29, the DM-22 and DM-28 rows, and the EP-04, EP-08 and EP-09 tables. Per-gap detail:
   [epics/EP-08.md](../epics/EP-08.md) (header note, and US-08.2.3, US-08.4.2, FT-08.4, US-08.4.5),
   [epics/EP-04.md](../epics/EP-04.md) (US-04.2.8), [epics/EP-09.md](../epics/EP-09.md) (US-09.1.4).
-- [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-28, DM-16, and DM-22 (its
+- [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-28 and DM-22 (its
   invoice-presentation part and the BCTI cardinality note; DM-27 is merged into it).
 - [analysis/reverse-check.md](../analysis/reverse-check.md) RV-31 (and the US-04.2.12 row).
 - [analysis/prototype-map-domain.md](../analysis/prototype-map-domain.md) (`Invoice`, `BillingLine`,
@@ -263,7 +268,7 @@ both superseded, Phase 08 work item 2's "Email invoice = mark emailed-at", **202
 preview centred with a sticky information rail** (kept; its Email control becomes Resend), and the
 handoff item **P3 GST per-invoice rounding on funder splits** (still true of split shares).
 
-**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, a68f09b; use the shapes 16 and
+**Code entry points** (paths under `aa-prototype/src/`, lines as at the plan's earlier baseline, efe123c; use the shapes 16 and
 18 to 21 left).
 - Types, `domain/types.ts`: `Anaesthetist` (~141, no GST number), `Contract` (~216, reshaped by 18),
   `PrepaymentDetail` (~435, the prepayment's own `'full' | 'split'`, a different concept: do not reuse
@@ -280,8 +285,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
   ~218, the `funderAllocationOfficeOnly` refusals ~154, ~232, ~313), `store/bookingActions.ts` (the
   anaesthetist funder guard ~531), `store/officeStandIn.ts` (`authoriseAsSimulatedOffice` ~28),
   `store/xeroHandoff.ts` (`handoffCase` ~153), `store/mastersActions.ts` (`editAnaesthetist`,
-  `addAnaesthetist`, or 18's holder actions), `store/contractActions.ts`
-  (`createContract`, `editContract`, as 18 reshaped them), `store/selectors.ts` (monitor stages ~385,
+  `addAnaesthetist`, or 18's holder actions), `store/selectors.ts` (monitor stages ~385,
   the `emailed` stage ~524, `MonitorListRow.emailedCount`), `store/index.ts` exports.
 - PWA: `pwa/officeSimulation.ts` (the kept "Play the office" auto-authorise, RV-22, which calls
   `authoriseAsSimulatedOffice` and so runs `runBillingForList`) with `pwa/officeSimulation.test.ts`,
@@ -295,10 +299,10 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
   `domain/seed/audit.ts` (`funderOverride`), `domain/seed/index.ts` (`SEED_MARKERS.twoFunderBooking`
   ~597), `domain/seed/seed.test.ts` (~259, ~367).
 - UI: `apps/admin/screens/InvoiceDocument.tsx` (masthead ~100-145, the agent line ~142, GST caption
-  ~216, rail with "Email invoice" ~278 and "Present via ... upload portal" ~262),
+  ~216, rail with "Email invoice" ~278 and the portal button ~262, both gone),
   `apps/admin/screens/InvoicesScreen.tsx` (Layout and Status columns), `apps/admin/screens/BillingMonitorScreen.tsx`
   (stage strip), `apps/admin/screens/ReviewScreen.tsx` (authorise banner), `apps/admin/screens/MasterData.tsx`,
-  `apps/admin/flows/ContractEditSheet.tsx`, `apps/admin/flows/EditAnaesthetistSheet.tsx`,
+  `apps/admin/flows/EditAnaesthetistSheet.tsx`,
   `apps/admin/flows/AddAnaesthetistFlow.tsx`, `apps/admin/screens/AdminBookingDetail.tsx`,
   `shared/booking/OfficeBillingSetup.tsx` (the funder lines ~46 and the Funder allocation button),
   `shared/capture/BillingLinesCard.tsx` (~91-103 "Billed to"), `shared/flows/FunderAllocationSheet.tsx`
@@ -313,18 +317,14 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
 
 ## Work items
 
-1. **Model** (`domain/types.ts`). DM-28, DM-16 (layout and delivery), DM-22 (presentation).
+1. **Model** (`domain/types.ts`). DM-28, DM-22 (presentation).
    - `Anaesthetist.gstNumber?: string`, optional, on the Admin anaesthetist record only (DM-62; Phase 26's profile holds none). US-08.4.5.
-   - `ContractInvoicing`: `{ invoiceLayout: 'contractHolder' | 'patient'; holderReference?: string;
-     gstTreatment: 'exclusiveAtFoot' }`, with no delivery field (delivery is the holder's, 18, D55), and
-     `Contract.invoicing: ContractInvoicing`, required, on every Contract including No contract
-     (RVG) and Contracts whose holder is not billed. `holderReference` is the holder's own reference for
-     this Contract (US-04.2.8, "SXAP"), free text, optional; it replaces reading the reference from
-     the Procedure's `billingReference` for printing (the Booking-level reference 21 built stays as
-     the fallback where the Contract names none; logged). The names are the domain model's Contract rows. `gstTreatment`
-     has the one value the catalogue states (every price held GST exclusive, GST at the foot of the
-     invoice, US-05.2.7); it is a union of one so OQ-29 can add a value in one place. US-04.2.8.
-     Phase 25's lock copies `invoicing` with the Contract version.
+   - **No invoicing fields on the Contract.** The layout is derived from the Contract's `billsHolder` (item
+     2's `invoiceLayoutFor`); GST is one rule held as a constant in `invoicePresentation.ts` (every price
+     GST exclusive, GST at the foot, US-05.2.7), never a stored setting; delivery is the Party's (18). The
+     holder reference code is the Contract's own field (US-04.2.18, built by 18 and 19a: read its name) and
+     is printed from there; this phase adds nothing to `Contract`, so Phase 25 has no invoicing to lock.
+     US-04.2.8.
    - **The split, on the booking procedure** (US-08.2.3; no Contract or Procedure setting):
      `Procedure.split?: FeeSplit` where `FeeSplit = { shares: SplitShare[] }` and
      `SplitShare = { party: CounterpartyRef; basis: { kind: 'amount'; amountExGst: number } |
@@ -338,17 +338,16 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
        taken at the run;
      - `split?: { procedureId; feeExGst; shareLabel; isRest: boolean }` (set on each invoice raised
        from a split share);
-     - `holderReference?: string` (snapshot from the Contract at the run);
+     - `holderReference?: string` (snapshot of the Contract's holder reference code at the run);
      - `lineage?: { role: 'otherShareOfSplit'; invoiceId: InvoiceId }[]` (Phase 38b adds
        `additionalTo`, Phase 39 adds `rebillOf`);
      - `delivery: InvoiceDelivery`, a discriminated union:
        `{ method: 'email'; status: 'sent'; sentAtISO; sends: { atISO; to; by }[] }`,
        `{ method: 'email'; status: 'noAddress' }`,
-       `{ method: 'portal'; status: 'queued'; portalName; queuedAtISO }`,
-       `{ method: 'post'; status: 'toPost'; address; markedAtISO }` (OQ-122's default, provisional);
-     - `layout` (kept, now set from `invoiceLayoutFor`) and `gstTreatment` (new, copied from the
-       Contract's `invoicing`), snapshots taken at the run, so Phase 38b's additional invoice and
-       Phase 25's regenerate read them from the original invoice;
+       `{ method: 'post'; status: 'toPost'; address; markedAtISO }` (OQ-122's default, provisional); no portal
+       variant (D55's new default);
+     - `layout` (kept, now set from `invoiceLayoutFor`), a snapshot taken at the run, so Phase 38b's
+       additional invoice and Phase 25's regenerate read it from the original invoice;
      - the recipient address is 21's `invoiceEmail` snapshot and the postal address is in its `billedTo`; do not add a second copy of either;
      - remove `emailedAtISO`.
    - `InvoiceLine` gains `kind: 'fee' | 'discount' | 'adjustment'` (existing price-override line stays `adjustment`), `description` (the Procedure's invoice description), and, on holder-layout fee lines, `btm?: { base; time; modifiers; unitValue }` snapshotted from the fee result; `Invoice.crossMatch?: { procedureDateISO; surgeon; hospitalRef? }` on the holder layout only. US-08.4.1.
@@ -371,33 +370,32 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      `formatGstNumber` (`NN-NNN-NNN` or `NNN-NNN-NNN`). Format only, no IRD check digit.
    - `supplierFor(anaesthetist)`: the snapshot, `gstNumber` only when held; the invoice and the BCTI wording print "GST number not held" or leave out ", GST {number}" when it is absent.
    - `invoiceLineViews(layout, feeResult, invoiceDescription)` and `crossMatchFor(booking, procedure, masters)`: one place for what each layout prints (US-08.4.1). Both layouts: a fee line per Procedure worded by the invoice description (never the generic fee text), a separate **discount line** (negative, ex GST) when the fee result carries a discount, and today's price-override line. Holder layout only: the BTM breakdown on each fee line (base, time and modifier units x unit value) and the cross-match fields (procedure date, surgeon, hospital reference). Patient layout: neither. The discount is read from the fee result, so 22 prints a discount as its own line without building the discount (Phase 24 puts it on the Procedure; where 18 to 21 left a Contract percentage discount folded into the rate, show it as its own line now, figures unchanged).
-   - `invoiceLayoutFor(contract, party, isContractParty)`: the Contract's `invoiceLayout` when the
-     invoice goes to the party the Contract bills (21's who is invoiced); for any other party (a split
-     share to an added party) the recipient's class: a person gets the patient layout, an
-     organisation the contract-holder layout (logged reading). US-04.2.8.
-   - `deliveryPlanFor(party, holder | undefined, invoiceEmail, postalAddress)`: when the party is a
-     contract holder's billable party (the Contract's own, or an added split share), the holder's
-     delivery setting (`portal` with the holder's portal name, "{holder} provider portal" if 18 holds
-     none, or `email`); otherwise (the payer on the Booking) `email` when there is an address, else
-     `post` when there is a postal address, else `noAddress`. `email` with an empty address is
-     `noAddress`. Nothing reads an insurer kind. Returns the plan, not a stamped state, so the run stamps
-     the time. US-08.4.2, US-04.2.8, D55, D70.
+   - `invoiceLayoutFor(contract, party, isContractParty)`: when the invoice goes to the party the Contract
+     bills (21's who is invoiced), the holder's layout if the Contract bills its holder, the patient's if it
+     bills the payer (our reading, A31; no stored field); for any other party (a split share to an added
+     party) the recipient's class: a person gets the patient layout, an organisation the holder layout
+     (logged reading). US-04.2.8, US-08.4.1.
+   - `deliveryPlanFor(party, partyDelivery | undefined, invoiceEmail, postalAddress)`: when the party is a
+     holder Party (the Contract's own when it bills its holder, or an added split share), the Party's
+     delivery setting: `email` (to its billing email) or `post` (to its postal address); otherwise (the
+     payer on the Booking) `email` when there is an address, else `post` when there is a postal address.
+     `email` with an empty address, or `post` with no postal address, or a payer with neither, is
+     `noAddress`. There is no portal value (OQ-114's other outputs are open). Nothing reads an insurer
+     kind. Returns the plan, not a stamped state, so the run stamps the time. US-08.4.2, US-04.2.8, D55, D70.
    - `buyerCreatedTaxInvoiceFor(invoice, accPayNumber)`: the ACCPAY snapshot. Wording (dash-free):
      "{BCTI_DOCUMENT_NAME}. Raised by Anaesthesia Associates Limited, GST {aa}, as agent, on behalf
      of the supplier {name}, GST {number}, for services invoiced on {invoiceNumber}." No patient name
      or NHI (OQ-30, 16's neutral Xero contacts).
-   - `invoiceDeliveryLabel(invoice)`: "Emailed to {to} {hh:mm}", "Queued for {portal} portal", "To
-     post", "No invoice address".
-   - `defaultInvoicingFor(contract, holder)`: No contract (RVG) and Contracts
-     whose holder is not billed (including the anaesthetist's own) get the patient layout (they bill the
-     payer on the Booking); any billed holder the contract-holder layout; `gstTreatment:
-     'exclusiveAtFoot'` throughout. No delivery default: that is the holder's.
-   - Tests: layout for the Contract's own party under each holder kind, a guardian payer, and an
-     added person and organisation split party; delivery for a billed holder on portal and on email, an added
-     holder's party (its own setting), a payer with an email, a postal-only payer (`post`), a payer with
-     neither (`noAddress`), email with and without an address; GST
-     number validation and formatting; the wording has no en or em dash, names both GST numbers (the supplier's only when held, the not-held variant tested) and
-     uses `BCTI_DOCUMENT_NAME`; the defaults for each holder kind; the holder layout prints the BTM breakdown and cross-match fields and the patient layout neither; each line prints the invoice description; a discount is its own negative line and the totals match the folded figure; the holder reference prints from the Contract, falling back to the Booking's.
+   - `invoiceDeliveryLabel(invoice)`: "Emailed to {to} {hh:mm}", "To post", "No invoice address".
+   - Tests: layout for a Contract that bills its holder and one that bills the payer, a guardian payer, and
+     an added person and organisation split party; delivery for a holder Party on email and on post, an
+     added holder's party (its own setting), a payer with an email, a postal-only payer (`post`), a payer
+     with neither (`noAddress`), email with and without an address; GST number validation and
+     formatting; the wording has no en or em dash, names both GST numbers (the supplier's only when held,
+     the not-held variant tested) and uses `BCTI_DOCUMENT_NAME`; the holder layout prints the BTM
+     breakdown and cross-match fields and the patient layout neither; each line prints the invoice
+     description; a discount is its own negative line and the totals match the folded figure; the
+     Contract's holder reference code prints on the holder's invoice.
 3. **Pure split** in a new `src/domain/billing/splitShare.ts`, the one home of the split basis
    (US-08.2.3, OQ-68 answered as our pick). No provisional caption.
    - `parseShare(text)`: "$132.50" or "132.50" is an amount ex GST, "62.5%" a percent; returns the
@@ -451,7 +449,7 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      split party who is also another Procedure's billable party on the same Booking gets one invoice
      holding both (its `split` then describes the split line only; logged reading, test-pinned).
      Drafts follow the share order, so numbering follows it. A party's invoice that spans Procedures
-     on Contracts with different invoicing settings takes the first Procedure's (logged, test-pinned).
+     on Contracts that differ in layout takes the first Procedure's (logged, test-pinned).
    - `layoutFor(counterparty)` is deleted; drafts use `invoiceLayoutFor`. Draft lines come from `invoiceLineViews` (item 2): description from 20a's `procedureInvoiceWording`, a discount as its own line, BTM on holder-layout lines, `holderReference` and `crossMatch` copied to the draft. Replace the generic fee line text in `fee.ts` (~215-240) for printing; the fee maths is untouched and every unsplit invoice's total is unchanged (the parity test covers it).
    - **One BCTI per receivable invoice.** Each draft becomes one invoice and so one ACCPAY at
      handoff. Do not split payables per Procedure and do not touch 16's count function.
@@ -484,8 +482,8 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
    - `shared/flows/FunderAllocationSheet.tsx`: delete, with its export. New
      `shared/flows/SplitFeeSheet.tsx` (pure-props, pwaPurity-safe): the Procedure's fee (mono), one row
      per party (a party picker, new here since 21 builds only the payer sheet: the payer on
-     the Booking and the Contract's party first, then the contract holders' billable parties from 18's
-     master, `billablePartyRef`, searchable by name; it creates no party record. Build it as its own
+     the Booking and the Contract's party first, then the Parties from 18's
+     master, searchable by name; it creates no party record. Build it as its own
      pure-props component, `shared/booking/PartyPicker.tsx` (PWA-safe), with its options from one
      pure selector, because Phases 38b, 39 and 39b reuse it for their party fields: they call it
      "21's party search", and since 21 builds none, this is that component; never a second copy);
@@ -523,27 +521,25 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      unsent and sends it on admin approval (D6) through the same helper. Today the office raises the
      prepayment invoice itself, so `send: true` there for now.
    - Audit, per invoice, source system, actor "Billing run": `invoice.sent` (after: `to`, `atISO`),
-     `invoice.portalQueued` (after: `portalName`), `invoice.toPost` (after: `address`),
-     `invoice.notSent` (after: `reason: 'noAddress'`). The `list.billed` audit gains `sentCount`,
-     `queuedCount`, `toPostCount`, `notSentCount`.
+     `invoice.toPost` (after: `address`), `invoice.notSent` (after: `reason: 'noAddress'`). The
+     `list.billed` audit gains `sentCount`, `toPostCount`, `notSentCount`.
    - A missing address never fails the run or the Booking: the invoice is raised with
      `delivery.status: 'noAddress'` and shows in the monitor (item 11).
    - Replace `markInvoiceEmailed` with `resendInvoice(api, actor, invoiceId, { to? })`: office only;
      email delivery appends a send (to `to` if given, which must pass 21's invoice email check, else
      to the snapshot address) and moves `noAddress` to `sent`; `post` becomes an email send
-     once an address is given (the print view stays); `portal` refuses with `portalDelivery` ("This invoice is queued for
-     the {portal}."). Audit `invoice.resend`, source office. Update `store/index.ts`.
-   - Selectors: the monitor's `emailed` stage becomes **"Sent, queued or to post"**: done when every
-     standard invoice is `sent`, `queued` or `toPost`, partial when any is `noAddress`, detail "3 emailed,
-     1 queued for portal, 1 to post, 1 needs an address." `MonitorListRow.emailedCount` becomes `deliveredCount` and
+     once an address is given (the print view stays). Audit `invoice.resend`, source office. Update `store/index.ts`.
+   - Selectors: the monitor's `emailed` stage becomes **"Sent or to post"**: done when every
+     standard invoice is `sent` or `toPost`, partial when any is `noAddress`, detail "3 emailed,
+     1 to post, 1 needs an address." `MonitorListRow.emailedCount` becomes `deliveredCount` and
      `noAddressCount`.
    - AA fee invoices (16's `AaFeeInvoice`) do not go through the materialiser and gain no
      `supplier`, `agent` or `delivery`: they are AA's own invoices in AA's name.
-   - Tests: every invoice from an authorised List is stamped at the clock time; the three audit
-     actions and counts; `noAddress` raises the invoice; a postal-only payer is marked `toPost`; a holder on portal is queued; retry and prepayment raise stamp delivery
+   - Tests: every invoice from an authorised List is stamped at the clock time; the audit
+     actions and counts; `noAddress` raises the invoice; a postal-only payer is marked `toPost`; a holder Party set to post is marked `toPost` and one set to email is sent; retry and prepayment raise stamp delivery
      too; split lineage links resolve to real invoice ids; a Booking whose payer is a guardian (21's
      Grace Park) is emailed to the guardian's address, not the patient's (US-08.4.2); `resendInvoice`
-     rights, the portal refusal, the `noAddress` recovery and the send history; PWA "Office
+     rights, the `noAddress` recovery and the send history; PWA "Office
      authorises this List" (14) and the kept "Play the office" auto-authorise
      (`officeSimulation.test.ts`) run the same send (store-level tests calling their bodies); an AA
      fee run is unchanged.
@@ -557,23 +553,22 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      both Prentice ACCPAYs carry their own `taxInvoice` and equal their receivables ($152.38 and
      $91.43); 16's `bctisFor` over `bctiRecords`, unchanged, counts them as two and its own tests pass
      untouched; `store/xeroNhi.test.ts` (16's privacy scan) still passes. US-09.1.4.
-8. **Masters and their actions** (`store/mastersActions.ts`, `store/contractActions.ts`, or where 18
-   put the holder actions):
+8. **Masters and their actions** (`store/mastersActions.ts`):
    - `editAnaesthetist` and `addAnaesthetist` gain an optional `gstNumber` (blank is allowed and clears it; a non-blank invalid one is refused: "Enter a GST number of 8 or 9
      digits."). Audit field label "GST number". DM-62.
-   - `createContract`, `editContract` and 18's new-version flow carry `invoicing` (a new Contract or
-     version starts from `defaultInvoicingFor`): `holderReference` is free text; `gstTreatment` is fixed.
-     No delivery field and no direct-claims switch (the flag is gone, 18, RV-39): changing a holder's
-     delivery is 18's holder edit, and the run reads it live.
-   - Tests for each validation and the defaults on create and on a new version.
+   - No Contract action changes: `createContract` and `editContract` (18's) carry no invoicing, and there is
+     no direct-claims switch (the flag is gone, 18, RV-39). A Party's delivery is edited on 18's Party
+     sheet, and the run reads it live.
+   - Tests for the GST number validation and its audit label.
 9. **Seed** (determinism, convention 5), then **bump `PERSIST_VERSION`** by one:
    - `cast.ts`: a deterministic, synthetic 9-digit GST number on all 14 anaesthetists so every scripted invoice shows one (from the
      registration number, labelled synthetic in a comment); Dr Souter's is the one the demo guide
      quotes. One unscripted anaesthetist is left blank so "GST number not held" shows (logged).
-   - `contracts.ts`: `invoicing` on every Contract via `defaultInvoicingFor`, with a `holderReference` on the St George's and nib billed Contracts (the catalogue's SXAP style, synthetic). nib's holder carries portal
-     delivery ("nib provider portal"; 18's seed, else add it there), so the nib invoice queues. One
-     unscripted Booking on a submitted List gets a payer with a postal address and no email (21's, or
-     seeded here and logged), so "To post" shows.
+   - `contracts.ts`: no invoicing fields on any Contract. The Contracts that bill a holder carry the holder
+     reference code 19a seeded (a synthetic SXAP-style code on the St George's and nib billed Contracts;
+     add it there if missing). nib's Party delivers by email (18's seed, D55's new default, no portal), so
+     the nib invoice is emailed. One unscripted Booking on a submitted List gets a payer with a postal
+     address and no email (21's, or seeded here and logged), so "To post" shows.
    - `bookings.ts` Prentice (Souter Mon 20 PM): the two stored lines go; the Procedure sits on the
      Contract the drift check settled (No contract (RVG) unless 20 or 21 left it on another Contract
      that bills Alan at $212.00); its `split` is `[{ party: nib, basis: { kind: 'amount', amountExGst:
@@ -586,16 +581,16 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
      (`const splitBooking` ~538, `scenario.splitBilling`, `SEED_MARKERS.splitBillingBooking`, the
      RFP split-billing rule), which Phase 23 renames multi-procedure; leave those untouched here.
    - `history.ts` and `billing.ts`: every seeded invoice gets `procedureIds`, `supplier`, `agent` and
-     a `delivery` stamped at its `raisedAtISO` (email to the party's seeded address, or portal for a
-     nib invoice); every seeded ACCPAY gets its `taxInvoice`.
+     a `delivery` stamped at its `raisedAtISO` (email to the party's seeded address, nib's included);
+     every seeded ACCPAY gets its `taxInvoice`.
    - `index.ts`: `SEED_MARKERS.twoFunderBooking` becomes `feeSplitBooking` ("One procedure's fee split
      between nib and the patient"); update every reference (Control Panel, 14's trigger registry,
      tests, capture recipes).
    - Tests (`seed.test.ts`, `demoScenarios.test.ts`): two builds deep-equal; every held GST
-     number is valid and unique and a blank one is allowed; every Contract has `invoicing`; no seeded line carries a funder and no
+     number is valid and unique and a blank one is allowed; no seeded line carries a funder and no
      Contract carries a split; `authoriseList` on both S3 Lists raises **AA-2026-0002 Brian Holt Forte
-     Health $396.18**, **AA-2026-0005 nib $152.38 (queued for nib provider portal)** and
-     **AA-2026-0006 Alan Prentice $91.43 (emailed to Alan)**, with every S3 invoice `sent` or `queued`
+     Health $396.18**, **AA-2026-0005 nib $152.38 (emailed to nib)** and
+     **AA-2026-0006 Alan Prentice $91.43 (emailed to Alan)**, with every S3 invoice `sent`
      and none `noAddress`; re-typing nib's share as 62.5% gives the same two invoices; nib 60% with
      Alan the rest gives $146.28 and $97.52; removing the split gives one invoice of $243.80 to Alan.
    - Re-green `npm run build`, `npm run build:pwa` and `npx vitest run` here (the stop point).
@@ -608,18 +603,18 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
       pill with `OQ29_CAPTION`. The old italic agency line goes (`data-shot` `invoice-agency-line`
       moves to the block).
     - **Addressee:** the party from 21's `billedTo` snapshot (name and address, so a guardian payer
-      reads as the guardian), "Attn: Accounts" on the contract-holder layout, and 21's invoice
+      reads as the guardian), "Attn: Accounts" on the holder layout, and 21's invoice
       email, or the postal address when that is all there is, in small mono.
-    - **Lines:** each fee line prints the Procedure's invoice description. On the holder layout, beneath it, the BTM breakdown (base, time, modifiers, unit value, mono) and a cross-match strip (procedure date, surgeon, hospital reference); the patient layout has neither. A discount is its own negative line. The Contract's `holderReference` prints beside the Attn line ("Your reference: SXAP"). `data-shot` hooks `invoice-btm-breakdown`, `invoice-cross-match`, `invoice-holder-reference`.
+    - **Lines:** each fee line prints the Procedure's invoice description. On the holder layout, beneath it, the BTM breakdown (base, time, modifiers, unit value, mono) and a cross-match strip (procedure date, surgeon, hospital reference); the patient layout has neither. A discount is its own negative line. The Contract's holder reference code prints beside the Attn line ("Your reference: SXAP"). `data-shot` hooks `invoice-btm-breakdown`, `invoice-cross-match`, `invoice-holder-reference`.
     - **Totals:** as today, Subtotal, "GST (15%)" and Total due at the foot, with
       `GST_TREATMENT_CAPTION` replacing the old "GST ... is a demo assumption" footer.
     - **Split note** on a split share's invoice, from `splitNoteText`, linking each sibling invoice.
       No provisional pill (the split is the owner's decision); the wording is logged as unsettled.
     - **Rail, Delivery card** from `invoice.delivery`: Emailed to {to} at {time} (success, DemoBadge
-      "Simulated send", with the send history when resent); Queued for {portal} (neutral, DemoBadge
-      "Simulated portal queue"); To post (neutral, a print view, DemoBadge "Simulated posting", a
-      small "Provisional (OQ-122)" pill, no posting integration); No invoice address (warning, an inline
-      email field and a teal **Send**). A secondary **Resend** on sent email invoices; Print stays. No Email invoice button anywhere.
+      "Simulated send", with the send history when resent); To post (neutral, a print view, DemoBadge
+      "Simulated posting", a small "Provisional (OQ-122)" pill, no posting integration); No invoice
+      address (warning, an inline email field and a teal **Send**). A secondary **Resend** on sent email
+      invoices; Print stays. No Email invoice button anywhere.
     - **Rail, Related invoices** card when `lineage` is present (the split's other shares).
     - `data-shot` hooks: `invoice-supplier`, `invoice-agent-block`, `invoice-delivery`,
       `invoice-split-note`.
@@ -630,19 +625,17 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
       `invoiceDeliveryLabel`), Layout reads the snapshot, and the Counterparty cell gains a small
       "Split" chip on split shares. Keep the table's min width. `data-shot` `invoice-list-delivery`.
       FT-08.4 ("with layout and delivery status").
-    - `BillingMonitorScreen.tsx`: the stage strip shows "Sent, queued or to post" with item 6's detail, and a
+    - `BillingMonitorScreen.tsx`: the stage strip shows "Sent or to post" with item 6's detail, and a
       row with `noAddressCount > 0` links to its first such invoice.
-    - `ReviewScreen.tsx`: the post-authorise banner reads "{n} invoices raised. {e} emailed, {q}
-      queued for portal, {p} to post." (plus "{m} need an invoice address." when any).
-12. **Master data** (`MasterData.tsx`, `ContractEditSheet.tsx`, `EditAnaesthetistSheet.tsx`,
-    `AddAnaesthetistFlow.tsx`). US-04.2.8.
-    - The Contract sheet gains an **Invoicing** section: Layout (segmented: Contract holder,
-      Patient), and GST shown read-only
-      as "GST exclusive, added at the foot of the invoice" with `GST_TREATMENT_CAPTION`. A **Holder reference** field. No delivery,
-      payment or split setting on the sheet.
-    - The Contracts table gains a read-only Delivery column read from the holder ("Email", "nib provider
-      portal", or "Payer's email or post" where the holder is not billed); it is edited on 18's holder sheet.
-    - The Anaesthetists table gains a mono **GST number** column (blank reads "Not held"); Edit and Add sheets gain the optional field. DM-62.
+    - `ReviewScreen.tsx`: the post-authorise banner reads "{n} invoices raised. {e} emailed, {p} to
+      post." (plus "{m} need an invoice address." when any).
+12. **Master data** (`MasterData.tsx`, `EditAnaesthetistSheet.tsx`, `AddAnaesthetistFlow.tsx`). US-04.2.8, DM-62.
+    - The Contract sheet gains **no invoicing section**: no layout, delivery, GST, payment or split control.
+    - The Contracts table gains read-only **Layout** ("Holder's layout" where the Contract bills its holder,
+      else "Patient's layout") and **Delivery** columns, the latter read from the holder Party ("Email" or
+      "Post", or "Payer's email or post" where the Contract bills the payer); it is edited on 18's Party
+      sheet. The holder reference code stays on 18's Contract sheet.
+    - The Anaesthetists table gains a mono **GST number** column (blank reads "Not held"); Edit and Add sheets gain the optional field.
 13. **Xero simulation** (`apps/demo/DemoXero.tsx`, `AccPayCard`). US-09.1.4.
     - A **{BCTI_DOCUMENT_NAME}** block beneath the meta grid: the wording, then Supplier ({name},
       GST {number}) and Agent (Anaesthesia Associates Limited, GST {aa}) as `MetaItem`s, with the
@@ -651,18 +644,17 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
       anaesthetist, one for each invoice and the same value." Any remaining note that the RFP does not
       specify GST treatment goes.
 14. **Copy, labels and shots.**
-    - `actionLabels.ts`: `invoice.sent` "Invoice emailed", `invoice.portalQueued` "Invoice queued for
-      portal", `invoice.toPost` "Invoice marked to post", `invoice.notSent` "Invoice not sent", `invoice.resend` "Invoice resent",
+    - `actionLabels.ts`: `invoice.sent` "Invoice emailed", `invoice.toPost` "Invoice marked to post", `invoice.notSent` "Invoice not sent", `invoice.resend` "Invoice resent",
       `procedure.split` "Fee split"; remove `invoice.email`. `fieldLabels.ts`: `gstNumber`,
-      `invoicing`, `split`, `delivery`; remove `emailedAtISO` and `funderOverride`.
+      `split`, `delivery`; remove `emailedAtISO` and `funderOverride`.
     - Sweep `src` for "Email invoice", "Upload portal", "Billed by Anaesthesia Associates as agent",
       "two-funder", "funder" in copy, "Funder allocation", "cover" used for the split, and the GST
       assumption caption: each is replaced or gone.
     - No en or em dashes in any new string.
     - Playwright: `visual/admin-phase08.spec.ts` (the agent text, no Email invoice button, the
-      Delivery card says Emailed to the Forte address, the Prentice rows show Queued for portal and
-      Emailed, the nib rail has no Resend, the split note), `visual/xero-pair.spec.ts` (the
-      buyer-created block), a Master data shot of the Invoicing section, and Split sheet shots on the
+      Delivery card says Emailed to the Forte address, the Prentice rows show Emailed to nib and
+      Emailed to Alan, the split note), `visual/xero-pair.spec.ts` (the
+      buyer-created block), a Master data shot of the Contracts table's Layout and Delivery columns, and Split sheet shots on the
       Admin Booking detail and the mobile Booking.
 15. **Re-green:** `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots`.
 
@@ -673,7 +665,7 @@ visible on product actions, as the gap analysis recommends:
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| **Authorise for billing** (existing product action, not a trigger) | Admin Review (`/admin/review/:listId`) | Product UI | Runs the billing run, which now raises and sends every invoice: the banner counts emailed, queued and to post, and each invoice's rail shows its delivery stamp (single-invoice Resend stays on the rail) |
+| **Authorise for billing** (existing product action, not a trigger) | Admin Review (`/admin/review/:listId`) | Product UI | Runs the billing run, which now raises and sends every invoice: the banner counts emailed and to post, and each invoice's rail shows its delivery stamp (single-invoice Resend stays on the rail) |
 | **Resend** / **Send** (existing rail, reworked; product office action) | Admin invoice (`/admin/invoices/:invoiceId`) | Product UI | `resendInvoice` on the invoice in the URL |
 | **Split** (product action, office) | Admin Booking detail (`/admin/day/:dateISO/bookings/:bookingId`), a Procedure's Contract part | Product UI | `setProcedureSplit` on that Procedure: add parties, type each share in $ or %, one may take the rest; authorising then raises one invoice per party |
 | **Split** (product action, anaesthetist) | Mobile Booking (framed and PWA) and web Booking, a Procedure's Contract part, on the anaesthetist's own Booking before submit | Product UI | The same action and sheet; the Contract part then reads "Split: ..." |
@@ -691,19 +683,17 @@ Audit after a PWA authorise.
 
 ## Out of scope
 
-- Real email or PDF generation, any posting integration (OQ-122), other holder outputs (OQ-114), and the portal upload itself (who uploads and when, and an
-  "uploaded" state). The queued state is where the engine's job ends in the demo; note it as a
-  discovery question.
+- Real email or PDF generation, any posting integration (OQ-122), and other Party outputs such as nib's
+  portal or an API (OQ-114: email or post only; note it as a discovery question).
 - Any Contract or Procedure payment setting or default share (US-04.2.12 Retired).
-- The additional invoice on top of a Contract line (US-08.6.3, Phase 38b) and the combined split by
+- The additional invoice on top of a Procedure's Contract (US-08.6.3, Phase 38b) and the combined split by
   credit then additional invoices (US-08.6.4, Phase 39).
 - One BCTI per Procedure, per payment or per payment run (OQ-29 leaves it open; ROADMAP "BCTI granularity") and a BCTI document separate from
   the ACCPAY record (built as the ACCPAY). Approving a period's BCTIs (US-10.2.6) is Phase 39a's.
 - Anaesthetist-facing GST number editing (Phase 26's profile holds none, US-12.1.4; the office edits it on the Admin anaesthetist record here, DM-62), and any mobile or
   web view of invoice delivery.
 - Building the discount (Phase 24 holds it on the Procedure; this phase only prints it as its own line) and the invoice description itself (20a).
-- Locking the Contract's invoicing settings and the Procedure's split at AUTHORISED (Phase 25; the
-  invoice snapshots are enough until then).
+- Locking the Procedure's split at AUTHORISED (Phase 25; the invoice snapshots are enough until then).
 - The primary Procedure and multi-procedure pricing (23), the price precedence and the anaesthetist
   adjustment (24), and how a prepaid Procedure is priced (27, which removes `prepaidSplit` with the
   interim flag).
@@ -722,17 +712,17 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 
 - [ ] Reset. Admin, Master data, Anaesthetists: every row shows a GST number or "Not held"; editing Dr Souter's to
       "12" refuses with the GST message; a valid one saves and shows in History; blank saves and her next invoice reads "GST number not held". Nothing on the anaesthetist's own profile screens shows or edits it.
-- [ ] Master data, Contracts: every row shows a read-only Delivery from its holder; nib's billed
-      Contract shows "nib provider portal"; No contract (RVG) shows "Payer's email or post"; the sheet
-      has no delivery control; the GST line reads "GST exclusive, added at the foot of the invoice" and cannot be changed; there is
-      no payment or split setting anywhere on the sheet.
-- [ ] S3 Beat 1: authorise Forte AM, then St George's PM. The banner counts emailed and queued.
+- [ ] Master data, Contracts: each row shows a read-only Layout and a Delivery read from its Party; nib's
+      billed Contract shows "Email", No contract (RVG) shows "Payer's email or post"; the St George's and
+      nib billed Contracts show their holder reference codes; the sheet has no invoicing, delivery, payment
+      or split control.
+- [ ] S3 Beat 1: authorise Forte AM, then St George's PM. The banner counts the emailed invoices.
       AA-2026-0002 Brian Holt Forte Health $396.18 shows "Emailed to" Forte's address in the rail,
       with the Simulated send badge; there is no Email invoice button.
-- [ ] AA-2026-0005 nib $152.38: contract-holder layout, Queued for nib provider portal, the split
+- [ ] AA-2026-0005 nib $152.38: holder layout, Emailed to nib's address (the Party's email delivery; no portal), the split
       note naming AA-2026-0006. AA-2026-0006 Alan Prentice $91.43: patient layout, the share line,
       Emailed to Alan's address, linked back. No invoice goes to St George's for this Booking.
-- [ ] Holder layout (AA-2026-0005 nib, or a hospital invoice): each line prints the Procedure's invoice description, the BTM breakdown and cross-match strip show, and "Your reference" shows the Contract's holder reference. The patient layout (AA-2026-0006 to Alan) has no BTM breakdown or cross-match strip. A Procedure with a discount (once 24 has one, else a Contract percentage discount) shows it as its own line. Master data, Contracts: the Holder reference field saves and prints.
+- [ ] Holder layout (AA-2026-0005 nib, or a hospital invoice): each line prints the Procedure's invoice description, the BTM breakdown and cross-match strip show, and "Your reference" shows the Contract's holder reference code. The patient layout (AA-2026-0006 to Alan) has no BTM breakdown or cross-match strip. A Procedure with a discount (once 24 has one, else a Contract percentage discount) shows it as its own line. Then set nib's Party to Post in 18's Party sheet and authorise again after a reset: AA-2026-0005 reads "To post" with a print view and the Provisional (OQ-122) pill.
 - [ ] Every invoice shows Dr Souter as supplier with her GST number (the unscripted anaesthetist with none reads "GST number not held"), the agent block with AA's GST
       number, the Provisional (OQ-29) pill, and GST at the foot with the GST caption.
 - [ ] Admin Booking detail, Prentice's Booking (after a reset, before authorising): the Contract part
@@ -756,7 +746,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       with a link; typing an address and Send stamps it Emailed.
 - [ ] Guardian: authorise the List holding Grace Park's Booking (submit it first if it is ACTIVE; 21's guardian as the payer on the
       Booking). Her invoice is addressed to the guardian and "Emailed to" the guardian's address.
-- [ ] Resend on a sent invoice adds a second send to the history; the nib invoice offers no Resend.
+- [ ] Resend on a sent invoice adds a second send to the history; a To post invoice offers Print and, once an address is typed, Send.
 - [ ] An AA fee invoice (16) still reads as AA's own invoice: no supplier, agent or OQ-29 pill; the
       next fee run counts the two Prentice BCTIs as two, as 16's count function did before.
 - [ ] No "Funder allocation", "Billed to", "two-funder" or "covered portion" text anywhere in the
@@ -764,7 +754,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Xero simulation, AA-2026-0005 and AA-2026-0006 pairs: each ACCPAY shows its own Buyer-created
       tax invoice block with Dr Souter's and AA's GST numbers and the provisional pill, and equals
       its receivable; no NHI or patient name appears.
-- [ ] Admin, Audit shows `invoice.sent`, `invoice.portalQueued`, `invoice.toPost`, `invoice.resend` and
+- [ ] Admin, Audit shows `invoice.sent`, `invoice.toPost`, `invoice.resend` and
       `procedure.split` with the right actor and source.
 - [ ] PWA: "Office authorises this List" on a submitted List, then in the framed build Admin, Audit
       shows that List's invoices sent by the Billing run.
@@ -789,10 +779,10 @@ sheet's Split billing and money sections) and the S3 scenario text in `DemoContr
   two-procedure Booking until Phase 23 renames it multi-procedure).
 - **S3 Beat 1** (the beat with the "Funder allocation" aside):
   - Click: drop "Email invoice, All invoices"; instead "Pause on the Delivery card: the run already
-    emailed it", then open AA-2026-0005 (Queued for nib's portal; holder layout: point at the description, the BTM breakdown and the holder's reference) and AA-2026-0006 (patient layout: the same lines without the BTM breakdown).
+    emailed it", then open AA-2026-0005 (Emailed to nib; holder layout: point at the description, the BTM breakdown and the Contract's holder reference code) and AA-2026-0006 (patient layout: the same lines without the BTM breakdown).
   - Say: "The Billing Engine, not Xero, produces and sends every invoice as part of the run, in Dr
-    Souter's name with her GST number and AA as agent. Each Contract decides the layout and GST, which is always added at the foot; the holder decides whether
-    its invoice goes by email or to its portal, and a payer with only a postal address gets "To post". Alan's
+    Souter's name with her GST number and AA as agent. The layout follows the Contract (the holder's when it bills its holder) and GST is always added at the foot; the Party decides whether
+    its invoice goes by email or post, and a payer with only a postal address gets "To post". Alan's
     knee arthroscopy was split on the Booking: nib pays $132.50 and Alan the rest, so nib is invoiced
     its share and Alan the gap, each on its own invoice." Name the agent and buyer-created wording as
     provisional (OQ-29). The Split button is the owner's decision, so it is not called provisional.
@@ -809,14 +799,14 @@ sheet's Split billing and money sections) and the S3 scenario text in `DemoContr
 - **Discovery points (S3):** add the OQ-29 wording and IRD's new name for the document, the split's
   open details (whether typed % shares must total 100, what the split lines say), BCTI granularity
   (one per invoice built; per procedure, per payment or per run is open, OQ-29), what other outputs a
-  holder can have (OQ-114), posting (OQ-122) and portal upload ownership; drop the funder-split wording, including "the split-billing invoice count (the prototype
+  Party can have, nib's portal among them (OQ-114), and posting (OQ-122); drop the funder-split wording, including "the split-billing invoice count (the prototype
   groups by counterparty, two invoices when funders differ)", which becomes "one invoice per billable
   party per Booking; a Split on the Booking gives one invoice per share".
 - **Cheat sheet:** the Split billing bullets become "Split is a button on a Procedure's Contract part
   in the Booking, for the office or the anaesthetist. Each party's share is typed in $ or %, one
   party can take the rest, and each party gets its own invoice. No split setting on the Contract."
   Add an "Invoices" block (anaesthetist as supplier, AA as agent, layout and GST set on the
-  Contract, delivery on the holder, GST at the foot, sent by the run to email or portal or marked To post, Resend on the rail, one BCTI per
+  Contract, delivery on the Party (email or post), GST at the foot, sent by the run by email or marked To post, Resend on the rail, one BCTI per
   invoice). The bullets "One Procedure may allocate conserved lines across two funders" and "The
   prototype groups lines by counterparty; different funders create separate invoices", and the
   RFP-tension bullet "two invoices when funders differ", become the Split wording above and "one
@@ -845,12 +835,12 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-04.2.8](../../../../requirements-board/requirements/stories/US-04.2.8.md) Invoice presentation and delivery | absent | Captured. The recipe file exists with `status: absent`: drop the absent reason and add the shots, admin: `contract-invoicing` on Master data, Contracts, the Contract sheet's Invoicing section (layout, the Holder reference field filled, and the read-only GST line "GST exclusive, added at the foot of the invoice"; highlight the section); `contracts-table` with the Delivery column. Caption: layout, GST treatment and the holder's reference are set on the Contract, not booking by booking; every price is held GST exclusive; delivery is the holder's setting (the column reads it). |
-| [US-08.4.2](../../../../requirements-board/requirements/stories/US-08.4.2.md) Send to the invoice email | partial · admin-email-invoice (ready, emailed), admin-portal-upload | Captured. The billing run now sends, so the manual "Email invoice" click goes. Keep the shot `name`s: `admin-email-invoice` states `ready` (the authorise banner "{n} invoices raised. {e} emailed, {q} queued") and `emailed` (the Delivery card "Emailed to {address}", `invoice-delivery`); add a `guardian` state on Grace Park's invoice emailed to the guardian's invoice email (the payer on the Booking, 21) and a `to-post` state on the postal-only payer's invoice ("To post", print view, Provisional (OQ-122) pill in the highlight); `admin-portal-upload` shows the Prentice nib invoice "Queued for nib provider portal" (the holder's setting). Replace the "Invoice ready to email" caption with one that says the run sends it. Drop the partial reason. |
-| [US-08.4.1](../../../../requirements-board/requirements/stories/US-08.4.1.md) Generate invoice documents | captured · admin-patient-layout, admin-contract-holder-layout | Stays captured. Re-shoot both. `admin-contract-holder-layout` (admin, desktop): the holder invoice with the invoice description on each line, `invoice-btm-breakdown`, `invoice-cross-match` and `invoice-holder-reference` (highlight the breakdown and strip), the supplier masthead and agent block above. `admin-patient-layout`: the patient invoice with the same description lines and no BTM breakdown or cross-match strip (highlight the lines). Add state `discount` on a discounted invoice once 24 holds one. Caption: two very similar layouts, the holder's carries the BTM breakdown and cross-match fields so the hospital can match it. Re-check `INV0001` is still the patient-layout invoice. |
+| [US-04.2.8](../../../../requirements-board/requirements/stories/US-04.2.8.md) Invoice presentation and delivery | absent | Captured. The recipe file exists with `status: absent`: drop the absent reason and add the shots, admin: `contracts-table` on Master data, Contracts with the new Layout and Delivery columns (highlight both; nib's row reads Email, a payer-billed Contract reads "Payer's email or post"); `invoice-holder-reference` on a holder invoice (highlight "Your reference" and the layout). Caption: no per-Contract invoicing settings: the layout follows whether the Contract bills its holder, every price is held GST exclusive, the Contract's holder reference code is printed, and delivery is set on the Party (email or post). |
+| [US-08.4.2](../../../../requirements-board/requirements/stories/US-08.4.2.md) Send to the invoice email | partial · admin-email-invoice (ready, emailed), admin-portal-upload | Captured. The billing run now sends, so the manual "Email invoice" click goes and `admin-portal-upload` is dropped (no portal value, D55). Keep the shot name `admin-email-invoice`, states `ready` (the authorise banner "{n} invoices raised. {e} emailed, {p} to post") and `emailed` (the Delivery card "Emailed to {address}", `invoice-delivery`, on the nib invoice too); add a `guardian` state on Grace Park's invoice emailed to the guardian's invoice email (the payer on the Booking, 21) and a `to-post` state on the postal-only payer's invoice ("To post", print view, Provisional (OQ-122) pill in the highlight). Replace the "Invoice ready to email" caption with one that says the run sends it by the Party's delivery. Drop the partial reason. |
+| [US-08.4.1](../../../../requirements-board/requirements/stories/US-08.4.1.md) Generate invoice documents | captured · admin-patient-layout, admin-contract-holder-layout | Stays captured. Re-shoot both. `admin-contract-holder-layout` (admin, desktop): the holder invoice (the Contract bills its holder) with the invoice description on each line, `invoice-btm-breakdown`, `invoice-cross-match` and `invoice-holder-reference` (highlight the breakdown and strip), the supplier masthead and agent block above. `admin-patient-layout`: the patient invoice (the Contract bills the payer) with the same description lines and no BTM breakdown or cross-match strip (highlight the lines). Add state `discount` on a discounted invoice once 24 holds one. Caption: the holder's layout when the Contract bills its holder, the patient's when it bills the payer; the holder's carries the BTM breakdown and cross-match fields so the hospital can match it. Re-check `INV0001` is still the patient-layout invoice. |
 | [US-08.4.6](../../../../requirements-board/requirements/stories/US-08.4.6.md) Invoice description | none (create it) | No change here (Phase 20a owns it); this phase only prints it on the lines above. |
 | [US-08.4.3](../../../../requirements-board/requirements/stories/US-08.4.3.md) Unique invoice numbers | captured · simulator-xero-numbers | Stays captured. Verify only: the numbers (AA-2026-0002, 0005, 0006) must not move; re-shoot if the ACCPAY rows or the first four rows changed. |
-| [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Stays partial. Re-shoot `admin-snapshot-invoice` on the new document (it now stores supplier, agent and delivery on the snapshot). Keep the partial reason, naming Phase 25 as the phase that builds the regenerate action from the locked data and Contract version. |
+| [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Stays partial. Re-shoot `admin-snapshot-invoice` on the new document (it now stores supplier, agent and delivery on the snapshot). Keep the partial reason, naming Phase 25 as the phase that builds the regenerate action from the locked data and the price range in force. |
 | [US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | Captured, labelled provisional (OQ-29). Re-point `admin-agent-line` from `invoice-agency-line` to `invoice-agent-block` ("Issued by Anaesthesia Associates Limited as agent for {supplier}") and add `admin-supplier` on `invoice-supplier` (the anaesthetist's name and GST number in the masthead). The "Provisional (OQ-29)" pill sits in the highlight. Add state `not-held` on the unscripted anaesthetist's invoice ("GST number not held"). Drop the partial reason. |
 | [DM-62](../analysis/domain-model-delta.md#dm-62) Anaesthetist GST number (a data item) | no recipe | No recipe of its own: US-08.4.5's shots show it. Add one shot to US-08.4.5, `admin-gst-number`, on Master data, Anaesthetists (the GST number column and the Edit sheet's optional field). |
 | [US-08.2.3](../../../../requirements-board/requirements/stories/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | Captured. Replace all three stale captions (they say "nib and St George's" and "invoiced to St George's"). Re-shoot on the Booking split (a button on the Procedure): `admin-split-invoices` the two Prentice rows in the Invoices list (nib and Alan Prentice, "Split" chips, `invoice-list-delivery`), caption "One procedure's fee split on the Booking between nib and the patient, an invoice each"; `admin-insured-portion` nib's share (AA-2026-0005, `invoice-split-note`); `admin-remaining-portion` the patient's gap (AA-2026-0006 to Alan Prentice). Add `admin-split-button`: the Admin Booking detail with the Split button on the Contract part and the Split sheet open on Prentice's Booking, states `amount` (nib $132.50, Alan the rest) and `percent` (after typing "62.5%"); and `mobile-split-button` (app mobile): the Split sheet on an anaesthetist's own Booking. Caption in the catalogue's words: a button on the Procedure, each share typed in $ or %, no setting on the Contract. Drop the partial reason. |
@@ -869,10 +859,10 @@ setting."
 - `US-08.2.1`, `US-08.2.2`, `US-08.3.1` and `US-10.1.2` authorise a List and then pick rows (`tr:has-text("Alan Prentice")`, `"Brian Holt"`, the `invoice-info-rail` "Xero handoff" section) in the Invoices list; Prentice's two rows are now a Booking split, the second billed to Alan, not St George's. Re-check the row text, any step or caption that names St George's for AA-2026-0006, and the rail section titles.
 - `US-06.2.2`, `US-06.3.1`, `US-06.4.1`, `US-09.1.1` start on `/admin/invoices`; the `--dry` run is the check that they still resolve (their stale prepayment captions are Phase 27's and 41's).
 - Every `/demo/xero` recipe that highlights `xero-accpay-card` (`US-08.3.1`, `US-09.2.4`, `US-10.2.1`, `US-10.2.2`; `US-09.1.4` is covered above): the card gains the buyer-created block, so re-check each highlight and caption.
-- The Billing monitor recipes on `/admin/billing` (`FT-08.5`, `FT-13.3`, `US-08.1.1`, `US-08.3.4`, `US-08.5.2`): the emailed stage becomes "Sent, queued or to post" (work item 11); re-check their captions.
+- The Billing monitor recipes on `/admin/billing` (`FT-08.5`, `FT-13.3`, `US-08.1.1`, `US-08.3.4`, `US-08.5.2`): the emailed stage becomes "Sent or to post" (work item 11); re-check their captions.
 - Any recipe that opens Prentice's office billing setup or the Funder allocation sheet: point it at the Split sheet.
 
-**ATLAS.md.** Update Seed data (Prentice's Booking split, `SEED_MARKERS.feeSplitBooking` replacing `twoFunderBooking`, AA-2026-0006 now to Alan Prentice), Existing hooks (`invoice-supplier`, `invoice-agent-block`, `invoice-delivery`, `invoice-split-note`, `invoice-list-delivery`, `xero-accpay-buyer-created`, the Split button and sheet hooks; `invoice-agency-line` removed) and the Overlays section (the Split sheet on Admin and mobile; the Contract sheet's Invoicing section).
+**ATLAS.md.** Update Seed data (Prentice's Booking split, `SEED_MARKERS.feeSplitBooking` replacing `twoFunderBooking`, AA-2026-0006 now to Alan Prentice), Existing hooks (`invoice-supplier`, `invoice-agent-block`, `invoice-delivery`, `invoice-split-note`, `invoice-list-delivery`, `xero-accpay-buyer-created`, the Split button and sheet hooks; `invoice-agency-line` removed) and the Overlays section (the Split sheet on Admin and mobile).
 
 ## Adversarial review (after build)
 
@@ -906,18 +896,18 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   receivable; no per-Procedure payable; Phase 16's count function and its tests are unchanged and
   count a split as one per share.
 - **No residue.** Zero hits for `funderOverride`, `FunderAllocation`, `allocationNotConserved`,
-  `allocationStale`, `markInvoiceEmailed`, `emailedAtISO`, "Email invoice" and "Funder allocation";
+  `allocationStale`, `markInvoiceEmailed`, `emailedAtISO`, `invoice.portalQueued`, "Queued for", "portal queue", "Email invoice" and "Funder allocation"; no `invoicing` field on `Contract`;
   no dead exports; no test skipped instead of rewritten.
 - **Sending.** Every invoice path (run, retry, prepayment raise) goes through the one materialiser and
   stamps delivery in the same `mutate()` with a system audit entry; the send step is separable for 27;
-  `noAddress` never fails a run; delivery is read from the holder's setting, never keyed on insurer kind;
+  `noAddress` never fails a run; delivery is read from the Party's setting (email or post), never keyed on insurer kind, with no portal residue;
   a postal-only payer is To post with no posting integration; `resendInvoice` is office-only and audited.
 - **Snapshots.** Supplier, agent, invoice email, delivery and the ACCPAY `taxInvoice` are snapshots,
-  so editing a GST number, a Contract's invoicing or an email after the run changes no raised
+  so editing a GST number, a Party's delivery or an email after the run changes no raised
   invoice; no NHI or patient name reaches Xero (16's privacy scan).
 - **GST.** Every price stays GST exclusive with GST at the foot (US-05.2.7 carried across unchanged);
   `GST_RATE` and the GST caption live in one place; no GST-inclusive presentation was built.
-- **Layout and lines (US-08.4.1).** The holder layout carries the BTM breakdown and cross-match fields, the patient layout neither; both print 20a's invoice description (read, never re-derived), a discount as its own line with totals unchanged, and the Contract's holder reference; `invoiceLineViews` is the one place that decides what each layout prints.
+- **Layout and lines (US-08.4.1).** The holder layout carries the BTM breakdown and cross-match fields, the patient layout neither; both print 20a's invoice description (read, never re-derived), a discount as its own line with totals unchanged, and the Contract's holder reference code; `invoiceLineViews` is the one place that decides what each layout prints.
 - **GST number (DM-62).** `gstNumber` is optional and held only on the Admin anaesthetist record (no profile screen shows it); blank saves, invalid is refused; the invoice and BCTI say "not held" or omit it when blank; supplier snapshots survive a later edit.
 - **Provisional labels.** Every surface with the agent or buyer-created wording shows the OQ-29 pill, and "To post" the OQ-122 pill;
   the wording and `BCTI_DOCUMENT_NAME` live only in `invoicePresentation.ts`. The Split button carries
@@ -936,10 +926,10 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   US-08.2.3's unsettled "must % shares total 100"); the split's line and note wording; the
   anaesthetist splitting until submit; Prentice's second invoice now to Alan Prentice, not St
   George's (if 20 and 21 had not already moved it; S3 Beat 1's figures unchanged); a split share to a
-  holder's party delivered by that holder's setting; holder delivery limited to email and portal (OQ-114's other outputs open); a postal-only payer marked To post with a print view (OQ-122/D70 default); layout for an added party by recipient class; the bare
-  number read as dollars; the OQ-29 wording; GST treatment stored as a single value; the cross-match fields chosen (procedure date, surgeon, hospital reference) and the Booking reference as fallback for the holder's reference; the GST number optional on the Admin record with "not held" printed when blank (DM-62, wording held on OQ-29).
+  holder's party delivered by that Party's setting; Party delivery limited to email and post (D55's new default, our reading A32; OQ-114's other outputs open, nib by email for now); a postal-only payer marked To post with a print view (OQ-122/D70 default); layout for an added party by recipient class; the bare
+  number read as dollars; the OQ-29 wording; the cross-match fields chosen (procedure date, surgeon, hospital reference); no Contract invoicing fields (layout derived from billsHolder, GST a constant); the GST number optional on the Admin record with "not held" printed when blank (DM-62, wording held on OQ-29).
 - **Status table:** a catch-up row for Phase 22.
-- **Phase entry:** the drift check result (catalogue diff from the a68f09b baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
+- **Phase entry:** the drift check result (catalogue diff from the efe123c baseline, OQ-29, OQ-114 and OQ-122 status, US-08.2.3 built
   as the 2026-10-05 decision, BCTI granularity, what 16 and 18 to 21 left), files and actions added and
   removed, the `PERSIST_VERSION` bump, the tests added and rewritten, the manual checklist item by
   item, and the review pass.
@@ -954,29 +944,27 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   - Supersede **Phase 08 decision (2)**'s layout rule: layout comes from the Contract for the party it
     bills, by recipient class for an added split party (US-04.2.8), and **decision (4)**'s GST
     caption: every price held GST exclusive with GST at the foot is the Confirmed rule (US-05.2.7,
-    agreed with Greg 2026-10-07), stored as the Contract's GST treatment.
+    agreed with Greg 2026-10-07), a constant in one module, not a Contract setting.
   - Supersede Phase 08 work item 2's manual "Email invoice": the run sends or queues each invoice
     (US-08.4.2); the office only resends. The 2026-07-28 rail layout stands with Resend in the Email
     slot.
   - New readings: the split rule and wording above; a split adds parties for that one Procedure only;
     each share goes to its party at that party's own invoice email; a split that no longer fits the
     fee fails review; a split party who is also another Procedure's billable party on the Booking gets
-    one invoice; a party's multi-Contract invoice takes the first Procedure's invoicing settings;
-    delivery is the holder's setting, never a Contract field and never keyed on insurer kind (supersedes
+    one invoice; a party's multi-Contract invoice takes the first Procedure's layout;
+    delivery is the Party's setting (email or post), never a Contract field and never keyed on insurer kind (supersedes
     RV-39's last part); a postal-only payer is marked To post; a missing invoice address raises the
     invoice unsent rather than failing it; one BCTI per receivable invoice (so a split gives one per
     share), with per procedure, per payment or per run still open; the OQ-29 supplier, agent and buyer-created
     wording and the document's name are provisional.
   - Handoff item P3 (GST per-invoice rounding on splits) now reads "split shares".
 - **Handoff notes:** Phase 23 re-keys `Procedure.split` if Booking-level pricing moves the priced
-  line; Phase 25 locks `invoicing` with the Contract version and the Procedure's split in the
-  snapshot; Phase 24 supplies the discount that `invoiceLineViews` prints as its own line; Phase 27 removes `prepaidSplit` and the
+  line; Phase 25 locks the Procedure's split in the snapshot (the Contract has no invoicing to lock); Phase 24 supplies the discount that `invoiceLineViews` prints as its own line; Phase 27 removes `prepaidSplit` and the
   split refusal with the interim flag, and generates the prepayment invoice unsent, sending it on
   admin approval (D6) through `materialiseInvoices`' separate send step; Phase 36's ledger legs read
   `procedureIds` and `lineage`, one payable leg per receivable, with its parity test against 16's
   count; Phase 38b adds the `additionalTo` lineage role and Phase 39 `rebillOf`; Phases 38b, 39 and
-  39b reuse `shared/booking/PartyPicker.tsx` (the party search they attribute to 21); portal upload
-  ownership, other holder outputs (OQ-114), posting (OQ-122), the OQ-29 wording and the document's new name, the split's open details and BCTI
+  39b reuse `shared/booking/PartyPicker.tsx` (the party search they attribute to 21); other Party outputs such as nib's portal (OQ-114), posting (OQ-122), the OQ-29 wording and the document's new name, the split's open details and BCTI
   granularity are questions for AA.
 - **Catalogue screenshots.** The step's result: recipes created (US-04.2.8) and changed (US-08.4.2,
   US-08.4.1, US-08.4.3, US-08.4.4, US-08.4.5, US-08.2.3, US-09.1.4, US-04.2.12 to Retired, plus

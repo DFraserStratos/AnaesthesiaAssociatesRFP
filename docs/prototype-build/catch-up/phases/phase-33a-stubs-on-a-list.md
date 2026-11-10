@@ -22,13 +22,13 @@ The office resolves it on Matching: **Add NHI** creates the Booking through 33's
 
 ## Before you start
 
-1. **Drift check** against the plan baseline `a68f09b`:
+1. **Drift check** against the plan baseline `efe123c`:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.6,US-02.6.1,US-02.6.2,US-02.6.3,US-02.1.4,US-11.1.4,US-11.1.5,US-13.7.3,US-02.1.2,OQ-118,OQ-49
    ```
 
-   Re-read anything changed after `a68f09b`. If a covered item is Retired or Future, drop it and record it; if OQ-118 is reopened or a stub is redefined as a Booking, stop and tell the user.
+   Re-read anything changed after `efe123c`. If a covered item is Retired or Future, drop it and record it; if OQ-118 is reopened or a stub is redefined as a Booking, stop and tell the user.
 2. **Confirm 33 is DONE** and read its PROGRESS entry: the slice and row names, how `suggestDecision` exposes the List a no-NHI row would land on (if it does not, add a pure `landingListFor(view, row)` beside `findMatch`, the same List-key rule), where `stageImportRows` commits, and the row panel's waiting state. Note `PERSIST_VERSION`.
 3. **Our readings, built and labelled once** (one `STUB_READINGS` block in `domain/intake/stubs.ts`, one mist caption in the stub sheet, "How a stub reads is our reading, to confirm with AA", and the owner's review list): the Booking takes the stub's place (US-02.6.3); what a stub shows (US-02.6.2: patient name, procedure wording and time as received, the reason, the source); how a List holding one reads (US-02.6.1: the triangle and "1 waiting at intake", no prompt or block); no stub when the row has no List to land on or its List is AUTHORISED; a stub follows its List on a reassign or move; removing or re-dating a Draft List takes its stub off and the row keeps waiting; a row the office decides onto another List resolves the stub and the Booking appears there. OQ-118 part 1 (how often) is unknown; nothing hangs on it.
 
@@ -46,7 +46,7 @@ The office resolves it on Matching: **Add NHI** creates the Booking through 33's
 3. **Store** (new `src/store/stubActions.ts`, with tests).
    - **Place.** `stageImportRows` places a stub for each staged no-NHI row with a landing List, in its own commit (meta `stub.place`), from any source: 33's import and received list, and later 34's synced and PDF rows. The List's Bookings are added as usual.
    - **Settle, one place.** `settleStubForRow(draft, row, outcome)`, called inside `decideImportRow`'s commit: a create or match marks the stub `resolved` with the `bookingId`; reject marks it `removed`. Metas `stub.resolve`, `stub.remove`. No other code changes a stub's status.
-   - **Resolve, one path.** `resolveStub(api, actor, stubId, { kind: 'addNhi', nhi } | { kind: 'reject', reason })`: `addNhi` runs `correctImportRow` (validated on entry) and then, when 33's suggestion is `createBooking` on the stub's List or a match there, `decideImportRow` with it and no picks, so the Booking lands on the stub's List with no Contract and waits on "Needs a Contract"; any other suggestion stops after the NHI with `needsDecision` and the stub stands. `reject` runs `decideImportRow` reject. Refusals pass through 33's (`invalidNhi`, `listLocked`, `wordingOrCodeRequired`, `staleSuggestion`) and leave the row and stub unchanged. Office actors only (the PWA stand-in as `OFFICE_SIMULATION_ACTOR`).
+   - **Resolve, one path.** `resolveStub(api, actor, stubId, { kind: 'addNhi', nhi } | { kind: 'reject', reason })`: `addNhi` runs `correctImportRow` (validated on entry) and then, when 33's suggestion is `createBooking` on the stub's List or a match there, `decideImportRow` with it and no picks, so the Booking lands on the stub's List with no Contract and waits on 20's "Needs an invoice destination" list; any other suggestion stops after the NHI with `needsDecision` and the stub stands. `reject` runs `decideImportRow` reject. Refusals pass through 33's (`invalidNhi`, `listLocked`, `wordingOrCodeRequired`, `staleSuggestion`) and leave the row and stub unchanged. Office actors only (the PWA stand-in as `OFFICE_SIMULATION_ACTOR`).
    - **The List changes.** `removeDraftList` and `redateDraftList` take a standing stub off (`removed`, reason in the meta) and leave its row waiting; reassign and own-List moves change nothing (the stub follows `listId`).
    - Selectors: `stubsForList(state, listId)`, `stubForRow(state, rowId)`, `standingStubCount(state)`.
 4. **Never a Booking** (tests, one sweep file `stubIsolation.test.ts`): with the seeded stub standing, `bookingsForList`, mobile and web progress counts, the Day grid count, the dashboard summary, `completionBlockersFor`, the warning routine and the to-do list, `needsContractBookings`, the billing run, `bctiRecordsFrom`, 38a's search and the audit viewer's Booking filter all return what they return without it. `submitList` and `authoriseList` succeed on a List holding a stub, with no prompt and no refusal, and the stub stands afterwards.
@@ -87,7 +87,7 @@ Run these yourself in the running app and report pass or fail with evidence.
 - [ ] Admin Day: the block's count unchanged with the stub marker; the drawer row and "Resolve on Matching" open the waiting row; Review shows it, uncounted.
 - [ ] Complete every Booking on that List: progress still reads "1 waiting at intake", no to-do entry or Booking warning appears; submit and authorise go through with no prompt; the stub stands.
 - [ ] Matching, Receive tomorrow's theatre list, Southern Cross: R4 waits and a stub appears on its List in all three apps.
-- [ ] Add NHI with an invalid NHI: refused, nothing changes. With a valid one: the Booking takes the stub's place on the List (mobile, web, Admin), on "Needs a Contract", the audit shows `stub.resolve` with `importRow.decide`.
+- [ ] Add NHI with an invalid NHI: refused, nothing changes. With a valid one: the Booking takes the stub's place on the List (mobile, web, Admin), on "Needs an invoice destination", the audit shows `stub.resolve` with `importRow.decide`.
 - [ ] Reject a waiting row: the stub goes; audited.
 - [ ] Remove a Draft List holding a stub: the stub goes, the row still waits.
 - [ ] PWA: "Office adds the NHI to this stub" from the sheet; reload keeps state; Reset restores the stub; build, build:pwa and vitest green.
@@ -126,6 +126,6 @@ Standard pass (convention 18), steered at:
 
 ## PROGRESS.md updates
 
-- **For the owner's review:** the readings in Before you start item 3 (labelled, one place each); Add NHI creates the Booking with no Contract; the seeded stub's List and row.
-- Status row and phase entry: drift check against `a68f09b`, OQ-118 and OQ-49 as built, names 33 shipped, tests added, `PERSIST_VERSION` old to new, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 34 (stubs placed through `stageImportRows`), 40 (`resolveStub` for its waiting view), 40a (Add NHI's field), 43 (stubs through the same module), 44 (the beat and cheat-sheet line).
+- **For the owner's review:** the readings in Before you start item 3 (labelled, one place each); Add NHI creates the Booking with no Contract, waiting on "Needs an invoice destination"; the seeded stub's List and row.
+- Status row and phase entry: drift check against `efe123c`, OQ-118 and OQ-49 as built, names 33 shipped, tests added, `PERSIST_VERSION` old to new, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 34 (stubs placed through `stageImportRows`), 40 (`resolveStub` for its waiting view), 40a (Add NHI's field), 43 (stubs through the same module), 44 (the beat and cheat-sheet line).
 - Decisions log: D66 built (a stub, not a Booking, on its own record); the readings; superseded: 33's "no stub on the List" default.

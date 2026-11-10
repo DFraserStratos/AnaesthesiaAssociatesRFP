@@ -1,12 +1,13 @@
 /**
  * An artifact's history, on the same time column as a card's: its sidecar's changes (name,
- * status, highlights, description, a mermaid source) from git, and its file's, each new version
- * a "File updated" disclosure over a before and after.
+ * status, highlights, steps, description, a mermaid source) from git, and its file's, each new
+ * version a "File updated" disclosure over a before and after.
  */
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { lineCounts, lineDiff, regionChanges, setDiff, TEXT_FIELDS, type ContentVersion, type FieldChange, type TimelineEntry } from '../../shared/history.ts'
-import type { ArtifactRec, Region } from '../../shared/types.ts'
+import { stepChanges } from '../../shared/steps.ts'
+import type { ArtifactRec, Region, Step } from '../../shared/types.ts'
 import { api } from '../api.ts'
 import { StatusLabel } from '../components/bits.tsx'
 import { Counts, Diff, HistoryTimeline, TEXT_LABEL } from '../components/HistoryView.tsx'
@@ -102,7 +103,7 @@ function ArtifactChangeRow({ change: c, rec }: { change: FieldChange; rec: Artif
       )
     case 'supersededBy': {
       const by = c.to ? artifacts[String(c.to)]?.data.title ?? String(c.to) : null
-      return <p className="hist-row">{by ? <>Superseded by <strong>{by}</strong></> : 'No longer marked as superseded'}</p>
+      return <p className="hist-row">{by ? <>Replaced by <strong>{by}</strong></> : 'No longer marked as replaced'}</p>
     }
     case 'author':
       return (
@@ -160,6 +161,32 @@ function ArtifactChangeRow({ change: c, rec }: { change: FieldChange; rec: Artif
               </li>
             ))}
             {!added.length && !removed.length && !changed.length && <li className="quiet">Reordered</li>}
+          </ul>
+        </div>
+      )
+    }
+    case 'steps': {
+      const { added, removed, changed } = stepChanges((c.from as Step[] | undefined) ?? [], (c.to as Step[] | undefined) ?? [])
+      return (
+        <div className="hist-row">
+          <span className="hist-field">Steps</span>
+          <ul className="hist-lines">
+            {added.map((s) => (
+              <li key={`+${s.id}`} className="add">
+                {s.name || s.id}
+              </li>
+            ))}
+            {removed.map((s) => (
+              <li key={`-${s.id}`} className="del">
+                {s.name || s.id}
+              </li>
+            ))}
+            {changed.map((s) => (
+              <li key={`~${s.id}`}>
+                {s.name || s.id} <span className="quiet">{s.what.join(', ')}</span>
+              </li>
+            ))}
+            {!added.length && !removed.length && !changed.length && <li className="quiet">No change to any step</li>}
           </ul>
         </div>
       )
