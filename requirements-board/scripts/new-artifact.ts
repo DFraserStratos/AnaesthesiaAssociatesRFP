@@ -115,6 +115,7 @@ const a: Artifact = {
   file,
   regions: [],
   steps: [],
+  stepView: null,
   description: '',
   source,
   extra: {},

@@ -121,6 +121,7 @@ const ARTIFACT_FIELDS: FieldDef<Artifact, ArtifactEntry>[] = [
     label: 'Steps',
     cell: (side, mine, other, expanded) => <StepsCell side={side} before={(side === 'before' ? mine : other).steps ?? []} after={(side === 'before' ? other : mine).steps ?? []} expanded={expanded} />,
   },
+  { field: 'stepView', simple: true, label: 'Step view', cell: (_s, mine) => <PlainCell value={mine.stepView ?? null} /> },
   { field: 'source', label: 'Diagram source', text: { lines: true } },
   { field: 'sources', label: 'Sources', cell: sources() },
   {

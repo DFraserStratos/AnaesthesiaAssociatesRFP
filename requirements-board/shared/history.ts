@@ -117,7 +117,7 @@ export function diffItems(a: Item, b: Item): FieldChange[] {
 export const TEXT_FIELDS: ReadonlySet<HistoryField> = new Set(['description', 'acceptance', 'technical', 'notes', 'source'])
 
 /** An artifact's fields in the order a history row lists them. */
-const ARTIFACT_FIELDS = fieldList<Artifact>()(['title', 'status', 'supersededBy', 'kind', 'date', 'author', 'components', 'sources', 'citedAs', 'file', 'regions', 'steps', 'description', 'source', 'extra'])
+const ARTIFACT_FIELDS = fieldList<Artifact>()(['title', 'status', 'supersededBy', 'kind', 'date', 'author', 'components', 'sources', 'citedAs', 'file', 'regions', 'steps', 'stepView', 'description', 'source', 'extra'])
 
 export function diffArtifacts(a: Artifact, b: Artifact): FieldChange[] {
   return ARTIFACT_FIELDS.filter((f) => JSON.stringify(a[f]) !== JSON.stringify(b[f])).map((field) => ({ field, from: a[field], to: b[field] }))

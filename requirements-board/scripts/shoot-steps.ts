@@ -10,7 +10,9 @@
  * scripts read it), so the board at --url (default http://localhost:5180) must be serving the same
  * catalogue. Each shot opens `/#/artifacts/AR-nn?region=<step-id>` and waits for the fonts and the
  * step's transition to settle; motion is reduced, so no shot catches a fade halfway. An artifact
- * with no steps gets the whole-drawing shot only.
+ * with no steps gets the whole-drawing shot only. Each shot is what a reader opening that link
+ * sees: `00-whole` the whole drawing fitted, and each step the whole drawing too, unless the
+ * sidecar has `step_view: follow`, when each step is shown framed as the board frames it.
  */
 import { mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

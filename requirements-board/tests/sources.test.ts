@@ -21,6 +21,7 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   file: `artifacts/files/${over.id}.pdf`,
   regions: [],
   steps: [],
+  stepView: null,
   description: '',
   source: '',
   extra: {},

@@ -204,9 +204,17 @@ static diagram is better. Numbered parts alone are no reason to step a picture.
    several moves on one step fly in order, a moment apart. Use moves sparingly: one or two per step,
    only for what really changes place. Something that merely appears, or a total that changes, is a
    reveal or a balance, not a move. Jumping to a step, stepping back and reduced motion show the
-   step without the flight, so the finished picture must explain itself without it.6. **Regions still work**, and should mark the standing parts (each account, panel or ledger), so a
+   step without the flight, so the finished picture must explain itself without it.
+6. **Choose the view: `fixed` or `follow`.** A diagram that fits on one screen stays `fixed` (the
+   default: leave `step_view` out), so the view never moves as it steps. A wide flow that does not
+   fit one screen (a long left-to-right strip) sets `step_view: follow` in the sidecar, beside
+   `steps`: the board then frames each step's focus as the reader arrives, when it is not already in
+   view. The focus is what the step highlights (else what it reveals) plus both ends of its moves,
+   so keep each step's highlight compact, and its moves short: the view frames all of it, and a
+   focus spread across the strip can only be framed small.
+7. **Regions still work**, and should mark the standing parts (each account, panel or ledger), so a
    requirement can point at them whatever step is showing.
-7. **Check every step by eye.** With the board running ("This repo"),
+8. **Check every step by eye.** With the board running ("This repo"),
    `npm --prefix BOARD run artifact:steps -- AR-nn [--out <dir>]` writes `00-whole.png`, then
    `01-<step-id>.png`, `02-<step-id>.png` and so on, at a laptop size (its out folder is printed at
    the end). Read every one: the right things visible and highlighted at each step, nothing

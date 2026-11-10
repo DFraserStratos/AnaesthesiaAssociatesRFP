@@ -87,3 +87,16 @@ export function stepChanges(from: Step[], to: Step[]) {
   }
   return { added: to.filter((s) => !before.has(s.id)), removed: from.filter((s) => !after.has(s.id)), changed }
 }
+
+/**
+ * What a step is about, for a diagram whose view follows the steps (`step_view: follow`): its
+ * `highlight` anchors, or its `show` anchors when it highlights nothing, plus both ends of its moves,
+ * so a flight sets off and lands on screen. Empty when the step names neither: the view stays put.
+ */
+export function stepFocusAnchors(step: Pick<Step, 'show' | 'highlight' | 'moves'>): string[] {
+  const base = anchorsOf(step.highlight).length ? anchorsOf(step.highlight) : anchorsOf(step.show)
+  if (!base.length) return []
+  const out = [...base]
+  for (const m of step.moves ?? []) for (const a of anchorsOf([m.from, m.to])) if (!out.includes(a)) out.push(a)
+  return out
+}

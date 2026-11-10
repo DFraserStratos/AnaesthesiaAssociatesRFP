@@ -129,7 +129,7 @@ describe('screenshots', () => {
 
 describe('artifact steps', () => {
   const step = (id: string, name: string, caption = ''): Step => ({ id, name, group: 'Ordinary invoice', caption, show: [], highlight: [], moves: [], balances: [] })
-  const art: Artifact = { id: 'AR-01', title: 'Trust', status: 'Current', supersededBy: null, date: null, kind: 'diagram', author: '', components: [], sources: [], citedAs: [], file: 'artifacts/files/AR-01.svg', regions: [], steps: [], description: '', source: '', extra: {} }
+  const art: Artifact = { id: 'AR-01', title: 'Trust', status: 'Current', supersededBy: null, date: null, kind: 'diagram', author: '', components: [], sources: [], citedAs: [], file: 'artifacts/files/AR-01.svg', regions: [], steps: [], stepView: null, description: '', source: '', extra: {} }
   const before = { ...art, steps: [step('invoice', 'Invoice', 'Cr Sales'), step('gone', 'Old step'), step('bill', 'Bill to Nick'), step('pays', 'Patient pays'), step('pay-nick', 'Pay Nick')] }
   // Invoice renamed and re-captioned, Old step removed, Bill to Nick moved after Pay Nick, Check added.
   const after = { ...art, steps: [step('invoice', 'Raise the invoice', 'Cr Sales, Dr Debtors'), step('pays', 'Patient pays'), step('pay-nick', 'Pay Nick'), step('bill', 'Bill to Nick'), step('check', 'Check')] }

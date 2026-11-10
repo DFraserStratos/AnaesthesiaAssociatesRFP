@@ -162,12 +162,12 @@ ${READ_RULINGS}
 Diagrams to check (each pack holds the sidecar, the text drawn in the SVG in document order, and the items that link to it):
 ${ds.map((d) => `- ${d.id} · ${d.title}: pack ${RUN}/artifact-packs/${d.id}.md; SVG ${ROOT}${d.svg}; sidecar ${REQ}/artifacts/${d.id}.md`).join('\n')}
 
-For each: read the pack; flag any drawn text or region note that contradicts a ruling, uses a retired term or a stale understanding, or omits something so central that the diagram now misleads (for example a state or flag the rulings added). Diagram dates matter: compare a diagram's date with the dates of the rulings it touches.${A.diagramNote ? ' ' + A.diagramNote : ''}
+For each: read the pack; flag any drawn text, region note, or (in a stepped diagram, whose sidecar has a steps list) step name, caption or balance that contradicts a ruling, uses a retired term or a stale understanding, or omits something so central that the diagram now misleads (for example a state or flag the rulings added). In a stepped diagram also check the steps against each other and the drawing: the order of the steps, each caption against what that step reveals, and the balances as running totals from one step to the next. Diagram dates matter: compare a diagram's date with the dates of the rulings it touches.${A.diagramNote ? ' ' + A.diagramNote : ''}
 ${protectedText}
 Fixes:
-- Sidecar text (region names and notes, description): normal edits.
-- SVG text: an edit replacing the text inside one <text>/<tspan> only when the new text is about the same length (within about 20%); "old" must be exact from the SVG file and unique.
-- Anything needing layout changes, new boxes or arrows, or longer text: no edits; size large, and "change" describes exactly what to redraw (it will be done with the svg-diagram skill).
+- Sidecar text (region names and notes, step names, captions and balance amounts, description): normal edits. Never edit an id or an anchor (a region's around, a step's show, highlight or moves): links and the drawing depend on them.
+- SVG text: an edit replacing the text inside one <text>/<tspan> only when the new text is about the same length (within about 20%); "old" must be exact from the SVG file and unique. If a region or step anchor in the sidecar is "text=" that exact text, edit the anchor to match in the same change.
+- Anything needing layout changes, new boxes or arrows, longer text, or (in a stepped diagram) a step added, removed, reordered or revealing different marks, or a different move: no edits; size large, and "change" describes exactly what to redraw (it will be done with the svg-diagram skill).
 
 ${EDIT_RULES}`
 

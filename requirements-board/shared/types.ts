@@ -135,6 +135,9 @@ export type ArtifactKind = (typeof ARTIFACT_KINDS)[number]
 export const ARTIFACT_STATUSES = ['Draft', 'Current', 'Retired'] as const
 export type ArtifactStatus = (typeof ARTIFACT_STATUSES)[number]
 /** Retired: kept for traceability, no longer the version to go by, so links to it show muted. */
+/** A stepped diagram's `step_view`: `fixed` (the default) leaves the view where it is as the steps change; `follow` frames each step. */
+export const STEP_VIEWS = ['fixed', 'follow'] as const
+export type StepViewMode = (typeof STEP_VIEWS)[number]
 export const isPastArtifact = (status: ArtifactStatus) => status === 'Retired'
 
 /** How the board shows an artifact, from its file's extension (or its inline mermaid source). */
@@ -246,6 +249,12 @@ export interface Artifact {
   regions: Region[]
   /** A stepped diagram's steps, in order (SVG only); empty for any other artifact. */
   steps: Step[]
+  /**
+   * How the view behaves as a stepped diagram steps (`step_view`): `fixed` (the default; also null,
+   * when the sidecar leaves it out) leaves the view where it is, `follow` frames each step. Kept as
+   * written, so `check` can name a value it does not know. See `STEP_VIEWS`.
+   */
+  stepView: string | null
   /** Markdown, before any `## Source` section. */
   description: string
   /** The mermaid source (the fenced block under `## Source`), or empty. */

@@ -162,7 +162,9 @@ stage 1 and adjust (a group with `topics: null` takes every topic no other group
    - **Verify** (Sonnet, per epic in chunks of 30 findings): opens each file, drops false positives
      and anything resting on an open question, merges duplicates, drafts exact `old`/`new` edits and
      sizes them; Sonnet passes also check the diagrams (artifact packs) and `domain-model.md`.
-     Diagram fixes too big for a same-length text swap become "needs redrawing" changes.
+     In a stepped diagram that covers its steps too: names, captions and running balances, and
+     the order of the steps. Diagram fixes too big for a same-length text swap, and any change
+     to what a step reveals or moves, become "needs redrawing" changes.
    - **Consolidate** (Opus, per topic group): re-checks large and medium findings against the
      sources, makes wording consistent across items, adds the same fix to items that were missed,
      merges overlapping edits, titles and sizes each change, and keeps only genuinely open questions.
@@ -213,7 +215,10 @@ stage 1 and adjust (a group with `topics: null` takes every topic no other group
    (when something is), `**Still to answer:**` (with the person to ask) and numbered bold questions,
    then `Recommendation: ...`. Link the affected items' text to it where it says the point is pending.
 6. Changes marked "needs redrawing" that the user accepted: redraw with the `svg-diagram` skill,
-   keeping each diagram's regions and the links into them.
+   keeping each diagram's regions and the links into them. A stepped diagram keeps its steps as
+   well: the step ids that items link to, each step's `show`, `highlight` and `moves` anchors
+   pointing at marks that still exist, and captions and balances brought into line with the
+   redrawn picture; then look at every step (`artifact:steps`, in the `svg-diagram` skill).
 7. `npm run check` until there are no errors and no new warnings; then `npm run verify:board`.
 8. Hand back uncommitted: a short summary (changes applied by size, rewritten by hand, rejected,
    new questions with their OQ ids, diagrams redrawn, anything left undecided) and `git diff --stat
