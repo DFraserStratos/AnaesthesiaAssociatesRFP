@@ -230,7 +230,8 @@ test('the fonts are self-hosted and actually load', async ({ page }) => {
   // Every woff2 came from our own origin.
   const woff2 = requests.filter((url) => url.endsWith('.woff2'))
   expect(woff2.length).toBeGreaterThan(0)
-  for (const url of woff2) expect(url.startsWith('http://localhost:5174/fonts/')).toBe(true)
+  const origin = new URL(page.url()).origin
+  for (const url of woff2) expect(url.startsWith(`${origin}/fonts/`)).toBe(true)
 
   // `check()` alone would also pass if the family silently fell back to a
   // system font, so pair it with the FontFace set: each family must have a
@@ -339,4 +340,66 @@ test('a colleague moves a List into my free session, then I return one of mine t
   await sheet.getByRole('button', { name: 'Done' }).click()
   await expect(page).toHaveURL(/\/mobile\/lists$/)
   await expect(page.locator('[data-list-id="L-34821-2026-07-23-AM"]')).toHaveCount(0)
+})
+
+test('a colleague moves a Booking to me; the acceptance beat; then I move one of mine (catch-up Phase 32a)', async ({ page }) => {
+  await page.goto('/mobile/lists')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+
+  // The stand-in, with its choices: Dr Hughes's Wed 22 PM Booking only (her Fri 31 AM is not available yet).
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const row = page.locator('[data-shot="pwa-demo-action-colleague-moves-booking-to-me"]')
+  await expect(row).toBeVisible()
+  await expect(row.getByRole('radio')).toHaveText(['Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery'])
+  await row.scrollIntoViewIfNeeded()
+  await page.screenshot({ path: 'visual/shots/pwa-14-booking-stand-in.png' })
+  await row.getByRole('button', { name: 'Run' }).click()
+  const status = row.getByRole('status')
+  await expect(status).toContainText('It is on a new List in your free session.')
+  expect(/Draft List|slot|prefer|tier/i.test((await status.textContent()) ?? '')).toBe(false)
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('[data-shot="list-row-badge"]').first()).toHaveText('New')
+  await page.screenshot({ path: 'visual/shots/pwa-15-booking-new-list.png' })
+  await page.goto('/mobile/availability')
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('[data-shot="moved-to-you-booking-row"]')).toContainText('Dr Hughes moved a Booking to you: Wed 22 Jul PM, Christchurch Eye Surgery')
+
+  // The acceptance beat: nothing fits until she sets Fri 31 Jul AM available herself in My calendar.
+  await page.locator('[data-shot="availability-open-calendar"]').click()
+  await page.locator('[data-shot="mobile-add-days-off"]').click()
+  const sheet = page.locator('[data-shot="mobile-availability-sheet"]')
+  await sheet.locator('[data-status-choice="free"]').click()
+  await sheet.getByLabel('From').fill('2026-07-31')
+  await sheet.getByLabel('To').fill('2026-07-31')
+  await sheet.getByRole('group', { name: 'Sessions' }).getByRole('button', { name: 'AM' }).click()
+  await sheet.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(sheet.locator('[data-shot="availability-result"]')).toBeVisible()
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click()
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  await expect(row.getByRole('radio')).toHaveText(['Dr Beaumont · Fri 31 Jul AM · Christchurch Eye Surgery'])
+  await row.getByRole('button', { name: 'Run' }).click()
+  await expect(row.getByRole('status')).toContainText('Fri 31 Jul AM')
+  await page.screenshot({ path: 'visual/shots/pwa-16-acceptance.png' })
+
+  // Her own move: the pinned Booking to Dr Whitaker, from its Booking screen; it leaves her List.
+  await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046')
+  await page.waitForLoadState('networkidle')
+  const action = page.locator('[data-shot="move-booking-action"]')
+  await action.scrollIntoViewIfNeeded()
+  await action.getByRole('button', { name: 'Move to a colleague' }).click()
+  const move = page.locator('[data-shot="move-booking-sheet"]')
+  await move.locator('[data-shot="move-booking-search"] input').fill('whi')
+  await move.locator('[data-shot="move-booking-receiver"][data-anaesthetist-id="36208"]').click()
+  await move.getByRole('button', { name: 'Move Booking' }).click()
+  await expect(move.locator('[data-shot="move-booking-done"]')).toContainText('Moved to Dr Whitaker.')
+  await page.screenshot({ path: 'visual/shots/pwa-17-own-booking-move.png' })
+  await move.getByRole('button', { name: 'Back to your List' }).click()
+  await expect(page).toHaveURL(/\/mobile\/lists\/L-34821-2026-07-22-AM$/)
+  // Her List held six Bookings; it now holds five, and still exists.
+  await expect(page.getByText('0 of 5 complete')).toBeVisible()
 })

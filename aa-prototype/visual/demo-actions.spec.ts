@@ -7,15 +7,15 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: absent on the Review queue, five on the Day view, four on the Billing monitor', async ({ page }) => {
+test('demo actions: absent on the Review queue, six on the Day view, four on the Billing monitor', async ({ page }) => {
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(0)
 
-  // The Day view carries the sample warnings (catch-up Phase 15a), Simulate sickness (catch-up Phase 30), Add Draft List for this day (catch-up Phase 31) and Colleague moves a List to the office (catch-up Phase 32).
+  // The Day view carries the sample warnings (catch-up Phase 15a), Simulate sickness (catch-up Phase 30), Add Draft List for this day (catch-up Phase 31), Colleague moves a List to the office (catch-up Phase 32) and Colleague hands a Booking to Dr Souter (catch-up Phase 32a).
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 5')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 6')
 
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
