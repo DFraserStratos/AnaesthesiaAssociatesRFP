@@ -68,6 +68,11 @@ export function boxInRoot(svg: SVGSVGElement, el: Element): Rect | null {
   return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) }
 }
 
+/** The box round everything some anchors match in a drawing (unpadded), or null when they match nothing drawn. */
+export function anchorsRect(svg: SVGSVGElement, anchors: string[]): Rect | null {
+  return unionRects(anchors.flatMap((a) => anchorElements(svg, a)).filter((el) => el !== svg).map((el) => boxInRoot(svg, el)).filter((r): r is Rect => !!r && (r.w > 0 || r.h > 0)))
+}
+
 /** A region's box in a drawing (padded), or null when nothing it names is there. */
 export function canvasRegionRect(svg: SVGSVGElement, region: Region): Rect | null {
   const rects = region.around.flatMap((a) => anchorElements(svg, a)).map((el) => boxInRoot(svg, el)).filter((r): r is Rect => !!r && (r.w > 0 || r.h > 0))

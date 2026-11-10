@@ -344,7 +344,7 @@ export function revOf(text: string): string {
 
 /* -------------------------------------------------------------- artifacts */
 
-export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'cited_as', 'file', 'regions', 'steps']
+export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'cited_as', 'file', 'regions', 'steps', 'step_view']
 export const CITATION_KEYS = ['as', 'page_offset', 'within', 'spot']
 export const REGION_KEYS = ['id', 'name', 'around', 'box', 'page', 'pad', 'note']
 export const STEP_KEYS = ['id', 'name', 'group', 'caption', 'show', 'highlight', 'moves', 'balances']
@@ -437,6 +437,7 @@ export function toArtifact(meta: Record<string, unknown>, description: unknown =
     file: meta.file ? str(meta.file).trim() : null,
     regions: (Array.isArray(meta.regions) ? meta.regions : []).map(toRegion),
     steps: (Array.isArray(meta.steps) ? meta.steps : []).map(toStep),
+    stepView: meta.step_view === null || meta.step_view === undefined || str(meta.step_view).trim() === '' ? null : str(meta.step_view).trim(),
     description: str(description),
     source: str(source),
     extra: pickExtra((meta.extra as Record<string, unknown>) ?? {}, ARTIFACT_KEYS),
@@ -489,6 +490,7 @@ export function serialiseArtifact(a: Artifact): string {
       return o
     })
   }
+  if (a.stepView) meta.step_view = a.stepView
   withExtra(meta, a.extra, ARTIFACT_KEYS)
   return assemble(meta, [
     [null, a.description],

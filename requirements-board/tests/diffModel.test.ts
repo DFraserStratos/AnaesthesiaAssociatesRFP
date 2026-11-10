@@ -26,6 +26,7 @@ const art: Artifact = {
   file: 'artifacts/files/AR-01.svg',
   regions: [],
   steps: [],
+  stepView: null,
   description: '',
   source: '',
   extra: {},

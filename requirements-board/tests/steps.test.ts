@@ -1,6 +1,6 @@
 /** Stepped diagrams: the pure logic in `shared/steps.ts` (the reveal fold, groups, changed balances, history). */
 import { describe, expect, it } from 'vitest'
-import { changedBalances, stepChanges, stepGroups, stepIndex, stepOf, stepState } from '../shared/steps.ts'
+import { changedBalances, stepChanges, stepFocusAnchors, stepGroups, stepIndex, stepOf, stepState } from '../shared/steps.ts'
 import type { Step } from '../shared/types.ts'
 
 const step = (over: Partial<Step> & Pick<Step, 'id'>): Step => ({ name: over.id, group: '', caption: '', show: [], highlight: [], moves: [], balances: [], ...over })
@@ -99,5 +99,18 @@ describe('stepChanges', () => {
     // A step added or removed in between moves nothing.
     expect(stepChanges(from, [step({ id: 'a' }), step({ id: 'x' }), step({ id: 'c' }), step({ id: 'd' })]).changed).toEqual([])
     expect(stepChanges(from, from).changed).toEqual([])
+  })
+})
+
+describe('stepFocusAnchors', () => {
+  it('frames what the step highlights, with both ends of its moves', () => {
+    expect(stepFocusAnchors(step({ id: 'a', show: ['#new'], highlight: [' #lit ', '#other'], moves: [{ from: '#start', to: '#lit' }] }))).toEqual(['#lit', '#other', '#start'])
+  })
+  it('falls back to what it reveals when it highlights nothing', () => {
+    expect(stepFocusAnchors(step({ id: 'a', show: ['#new', ''], moves: [{ from: '#start', to: '#new' }] }))).toEqual(['#new', '#start'])
+  })
+  it('is empty for a step that names neither, moves or not, so the view stays put', () => {
+    expect(stepFocusAnchors(step({ id: 'a' }))).toEqual([])
+    expect(stepFocusAnchors(step({ id: 'a', moves: [{ from: '#x', to: '#y' }] }))).toEqual([])
   })
 })

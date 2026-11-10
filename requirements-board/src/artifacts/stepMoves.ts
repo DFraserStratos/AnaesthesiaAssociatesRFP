@@ -72,9 +72,10 @@ export function flightScale(from: { w: number; h: number }, to: { w: number; h: 
 
 /**
  * Flies each planned move: returns null when there is nothing to fly. `onDone` runs once every
- * flight has landed (not when cancelled).
+ * flight has landed (not when cancelled). `wait` holds every move back that long (ms) first, each
+ * copy sitting at its start meanwhile: the view framing a followed step settles before anything flies.
  */
-export function playFlights(svg: SVGSVGElement, moves: StepMove[], onDone?: () => void): Flight | null {
+export function playFlights(svg: SVGSVGElement, moves: StepMove[], onDone?: () => void, wait = 0): Flight | null {
   const root = svg.getScreenCTM()
   if (!root) return null
   const inv = root.inverse()
@@ -115,7 +116,7 @@ export function playFlights(svg: SVGSVGElement, moves: StepMove[], onDone?: () =
     const s = flightScale(a, b)
     const tx = a.x + a.w / 2 - s * (b.x + b.w / 2)
     const ty = a.y + a.h / 2 - s * (b.y + b.h / 2)
-    anims.push(wrap.animate([{ transform: `translate(${tx}px, ${ty}px) scale(${s})` }, { transform: 'translate(0px, 0px) scale(1)' }], { duration: MOVE_MS, delay, easing: MOVE_EASE, fill: 'backwards' }))
+    anims.push(wrap.animate([{ transform: `translate(${tx}px, ${ty}px) scale(${s})` }, { transform: 'translate(0px, 0px) scale(1)' }], { duration: MOVE_MS, delay: wait + delay, easing: MOVE_EASE, fill: 'backwards' }))
   }
   if (!anims.length) return null
   let over = false

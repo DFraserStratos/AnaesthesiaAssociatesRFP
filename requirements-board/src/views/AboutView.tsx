@@ -360,8 +360,16 @@ function Anatomy() {
             The diagrams, transcripts, notes and documents behind the requirements, on the <Link to="/artifacts">Artifacts</Link> tab. A region is a named, highlighted spot in one; a requirement can link straight to it.
           </p>
           <p>
+            To show one to a room, the full screen button at the end of the view bar, bottom right, hides the panel and the board's header and fills the screen. Esc or the same button comes back, with the panel as you left it.
+          </p>
+          <p>
             A stepped diagram plays a flow one step at a time. Step through it from the bar on the drawing, its Steps tab or the arrow keys: each step reveals more of the drawing, highlights what it is
             about, flies what moves from where it was to where it lands, and shows a caption and any running balances in the Steps tab. A requirement can link to a step as it can to a region.
+          </p>
+          <p>
+            A diagram that fits on one screen keeps its view still as it steps. A wide flow that does not fit one screen can be set to follow its steps (<code>step_view: follow</code> in its
+            sidecar): each step is framed as you arrive at it, close enough to read, unless it is already in view, and its moves fly once the view settles. Pan and zoom freely; Whole drawing fits
+            it all again.
           </p>
           <ul className="about-statuses">
             {ARTIFACT_STATUSES.map((s) => (

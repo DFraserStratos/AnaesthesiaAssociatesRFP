@@ -132,7 +132,7 @@ scrolls) and as the modal elsewhere.
   without opening it: it pans the card clear of the panel and the list, and a teal ring closes in on
   it. Enter or a click opens it; Esc takes the board back to where it was and clears the search (on
   the board too, with the card closing as usual).
-- One round teal plus, bottom right of every view (or `n`), makes any card: epic, feature, story or
+- One round teal plus, bottom right of every view but an artifact's page (or `n`), makes any card: epic, feature, story or
   outstanding item. It asks only for the type, the title and where it sits (a searchable parent, or
   what an outstanding item affects), starting from the open card, then opens the new card in Edit.
 - Outline and Outstanding items open the same sheet as a centred modal. A question opened from the
@@ -169,7 +169,7 @@ scrolls) and as the modal elsewhere.
   hold and drag to sweep along. Undo and redo are keyboard only (Cmd Z, Cmd Shift Z), with no
   toolbar buttons.
 - Motion only on action (sheet open, lineage fade, pan to card, a stepped diagram's move when the
-  reader steps forward); respect reduced motion. Stepping
+  reader steps forward, a following diagram's view framing its step); respect reduced motion. Stepping
   between records (prev/next sibling, a lineage pill, an open question) swaps the sheet's contents
   in place and skips the entrance, so the page behind never flashes through a re-fading scrim.
 - Mobile is out of scope: this is a desktop tool.
@@ -231,6 +231,14 @@ edits only their details (below), never the file, its highlights or the links to
   outstanding items), **Details** (description, its **Sources** as rows like a card's, an artifact's own
   origin naming itself shown plain, then author, area, **Cited as** (the words sources cite it by), file
   path and size, and the ID bottom right, which copies a link), **History**. The artifact fills the rest.
+- **No new-card plus on the artifact page**: the bottom right corner is the artifact's view bar
+  (a drawing's or a PDF's, and a one-button bar for a Markdown document), 16px in.
+- **Full screen**, the last button of that view bar, after a rule: the masthead and the panel go, the artifact fills the window,
+  and the browser is asked to fill the screen (where it refuses, the window is enough). The step
+  bar, view bar, find and record links all still work; a card opened from a link shows as its sheet
+  over the artifact. Esc (or the browser's own exit, or the button, now Leave full screen) comes
+  back with the panel as it was, its tab and any edit kept. Opening another artifact stays in full
+  screen; leaving the page leaves it.
 - **Edit details**, in the panel's footer as on an item sheet, swaps the tabs for a form: name,
   kind, status (and Replaced by, when Retired), date (as written, `2026-10-01`, `2026-10` or
   `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and
@@ -266,8 +274,18 @@ edits only their details (below), never the file, its highlights or the links to
   short of the view dock; the hover minimap, being passing, opens over its right end, drawn above
   it. With no step chosen it is one quiet control, "Step through · 8 steps". The left and
   right arrows step while the drawing or the bar has focus. A step is a spot like a highlight (in
-  the URL, a link, a copy link) but never shows the red box, and stepping leaves the view where it
-  is. A **Steps** tab comes first in the panel: the steps under their group headings, numbered, each
+  the URL, a link, a copy link) but never shows the red box. By default stepping leaves the view
+  where it is: a drawing that fits one screen must not move as it steps. A wide flow that does not
+  fit one screen opts in to **following** (`step_view: follow` in its sidecar): on arriving at a
+  step (the bar, the arrow keys, the Steps tab, a link) the view frames the step's focus (what it
+  highlights, else what it reveals, plus both ends of its moves) when that is not already in view,
+  padded clear of the find bar, step bar and view bar: centred, at the zoom it already has if the
+  focus fits there, else the zoom that fits it, never past the drawing's own size (100%). Coming
+  from the whole drawing, a focus in view but under three quarters of that size is framed too, so a
+  long strip fitted whole zooms in to read its first step. It eases over 560ms (reduced motion
+  jumps); a link or URL at a step opens already framed; Whole drawing fits the whole again. The
+  reader still pans and zooms freely, and the next step moves the view only if its focus is out of
+  view. A step's moves wait for the view to settle, then fly. A **Steps** tab comes first in the panel: the steps under their group headings, numbered, each
   row a highlight row with its number where the red mark would be. The current one is ruled teal
   and opens in place to its caption as prose (record IDs link) and its balances, a small two-column
   table with amounts in tabular figures, the rows that changed at this step on a quiet teal tint in

@@ -191,6 +191,12 @@ function ArtifactChangeRow({ change: c, rec }: { change: FieldChange; rec: Artif
         </div>
       )
     }
+    case 'stepView':
+      return (
+        <p className="hist-row">
+          <span className="hist-field">Step view</span> {String(c.from ?? 'fixed')} to {String(c.to ?? 'fixed')}
+        </p>
+      )
     default:
       return <p className="hist-row quiet">Other file details changed</p>
   }

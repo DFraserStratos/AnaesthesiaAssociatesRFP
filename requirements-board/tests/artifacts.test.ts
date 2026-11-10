@@ -37,6 +37,7 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   file: `artifacts/${over.id}.svg`,
   regions: [],
   steps: [],
+  stepView: null,
   description: '',
   source: '',
   extra: {},
@@ -158,6 +159,18 @@ A flow in steps.
     expect(lintArtifact(withMoves, a)).toEqual([])
     // Taking the moves away writes the old sidecar exactly.
     expect(serialiseArtifact({ ...a, steps: a.steps.map((s) => ({ ...s, moves: [] })) })).toBe(STEPPED)
+  })
+
+  it('reads step_view and writes it back unchanged after the steps, and none when it is left out', () => {
+    expect(parseArtifact(STEPPED).stepView).toBeNull()
+    const follow = STEPPED.replace('---\n\nA flow in steps.', 'step_view: follow\n---\n\nA flow in steps.')
+    const a = parseArtifact(follow)
+    expect(a.stepView).toBe('follow')
+    expect(serialiseArtifact(a)).toBe(follow)
+    expect(lintArtifact(follow, a)).toEqual([])
+    expect(serialiseArtifact({ ...a, stepView: null })).toBe(STEPPED)
+    // A value the board does not know is kept as written, for the check to name.
+    expect(parseArtifact(follow.replace('step_view: follow', 'step_view: Pan')).stepView).toBe('Pan')
   })
 
   it('writes a sidecar with no steps exactly as before: no steps key at all', () => {
@@ -396,6 +409,14 @@ describe('the check', () => {
     it('takes steps on an SVG drawing only', () => {
       const a = artifact({ id: 'AR-02', kind: 'screenshot', file: 'artifacts/AR-02.png', steps: [step({ id: 'one', name: 'One' })] })
       expect(errors(runSteps([a]))).toEqual(['AR-02: has steps, but steps only work on an SVG drawing'])
+    })
+
+    it('takes step_view fixed or follow, and only on a stepped diagram', () => {
+      const flow = [step({ id: 'one', name: 'One', show: ['#s1'] })]
+      expect(runSteps([stepped(flow, { stepView: 'follow' })])).toEqual([])
+      expect(runSteps([stepped(flow, { stepView: 'fixed' })])).toEqual([])
+      expect(errors(runSteps([stepped(flow, { stepView: 'pan' })]))).toEqual(['AR-01: step_view is "pan"; it is fixed (the default) or follow'])
+      expect(errors(runSteps([stepped([], { stepView: 'follow' })]))).toEqual(['AR-01: has step_view but no steps; step_view only applies to a stepped diagram'])
     })
 
     it('names every way a step can be wrong', () => {

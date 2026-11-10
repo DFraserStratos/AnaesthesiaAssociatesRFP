@@ -2,6 +2,15 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.8.0 · 2026-11-10
+
+- Stepped diagrams can follow their steps: `step_view: follow` in the sidecar (beside `steps`) makes the view frame each step as the reader arrives at it, by the step bar, the arrow keys, the Steps tab or a link. `fixed`, the default and the same as leaving it out, keeps today's behaviour: the view stays where it is, right for a diagram that fits one screen. Follow is for a wide flow that does not.
+- The framing: a step's focus is what it highlights (else what it reveals) plus both ends of its moves. When the focus is already in view, clear of the find bar, step bar and view bar, nothing moves; otherwise the view centres it, at the zoom it has if the focus fits there, else the zoom that fits it, never closer in than the drawing's own size. Arriving from the whole drawing, a focus in view but too small to read (under three quarters of its framing size) is framed too, so a long strip fitted whole zooms in on its first step. The view eases there over 560ms and the step's moves fly once it settles; reduced motion jumps and flies nothing. A link or URL at a step opens framed. Whole drawing fits the whole again. Panning and zooming by hand still work at any time, and the next step moves the view only if its focus is out of view.
+- `check` errors on a `step_view` other than `fixed` or `follow`, and on `step_view` on an artifact with no steps. The board keeps the field when it rewrites a sidecar; History and the Diff review show a change to it. It is not in Edit details: agents set it.
+- `artifact:steps` shoots each step as a reader opening its link sees it: the whole drawing for a fixed diagram, each step framed for a following one. `00-whole` is always the whole drawing.
+- Full screen for an artifact: the last button of the view bar, bottom right of the artifact page (a Markdown document gets a one-button bar for it), hides the masthead and the panel and asks the browser to fill the screen (the window alone where it refuses). Esc, the browser's own exit or the button comes back, the panel's tab and any edit kept. Opening another artifact from a link stays in full screen. The artifact page has no new-card plus (nor its `n` key), so its view bar sits in the corner. DESIGN.md and the About page say so.
+- SCHEMA.md (a `step_view` row and a paragraph under Steps), DESIGN.md, the About page and the svg-diagram skill (when to choose follow; keep each step's highlight compact, since the view frames it) say so. The e2e fixture has a wide following strip.
+
 ## 1.7.0 · 2026-11-10
 
 - One past status for artifacts: Superseded is folded into Retired. A retired artifact may name its replacement in `superseded_by` (Replaced by in Edit details, "Nothing replaces it" otherwise); with one, the panel shows "by" its title and sources citing it hand on to the replacement, as before. Show retired now hides every past artifact, replaced or not.
@@ -21,6 +30,7 @@ Bump `version` in `package.json` and add an entry here before each kit export.
 - `npm run artifact:steps -- AR-nn [--out <dir>] [--url <base>]` screenshots a stepped diagram in the running board, the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...), at a laptop size, to check every step by eye. It says so plainly when the board is not running.
 - The svg-diagram skill has a Stepped diagrams section (when one earns its place, draw the finished picture first, group each step's marks, write `steps`, check every step); the add-artifact skill covers steps beside regions.
 - The starter's loop diagram is the worked example: its cards are grouped and its sidecar steps through the loop in two groups, with running balances. `__pycache__` folders stay out of git and out of the exported kit.
+- The consistency review checks a stepped diagram's steps too (names, captions, running balances, their order), never edits an id or an anchor, and a redraw keeps the steps and their links.
 
 ## 1.5.1 · 2026-11-10
 

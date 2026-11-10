@@ -28,7 +28,7 @@ test.beforeEach(async ({ page, request, context }) => {
       const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
       return `${Object.keys(snap.artifacts ?? {}).length}|${snap.items['US-01.1.1']?.data.artifacts.join(',')}`
     })
-    .toBe('6|AR-01#totals,AR-03')
+    .toBe('7|AR-01#totals,AR-03')
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto('/')
   await page.evaluate(() => localStorage.clear())
@@ -36,13 +36,13 @@ test.beforeEach(async ({ page, request, context }) => {
 
 test('the Artifacts tab sits between Board and Outstanding items, and lists every artifact by kind', async ({ page }) => {
   await page.goto('/#/artifacts')
-  await expect(page.locator('.tabs .tab')).toHaveText([/^Board/, /^Artifacts\s*6/, /^Outstanding items/, /^Outline/, /^Diff review/])
-  await expect(page.locator('.plate')).toHaveCount(6)
-  await expect(page.locator('.group-head')).toHaveText([/Diagrams\s*3/, /Screenshots\s*1/, /Notes\s*1/, /Documents\s*1/])
+  await expect(page.locator('.tabs .tab')).toHaveText([/^Board/, /^Artifacts\s*7/, /^Outstanding items/, /^Outline/, /^Diff review/])
+  await expect(page.locator('.plate')).toHaveCount(7)
+  await expect(page.locator('.group-head')).toHaveText([/Diagrams\s*4/, /Screenshots\s*1/, /Notes\s*1/, /Documents\s*1/])
   await expect(page.locator('.plate', { hasText: 'Fixture drawing' }).locator('.artifact-date')).toHaveText('6 Oct 2026')
   await expect(page.locator('.plate', { hasText: 'Fixture document' }).locator('.artifact-date')).toHaveText('2021')
   // Newest first within a kind.
-  await expect(page.locator('.group', { hasText: 'Diagrams' }).locator('.plate-title')).toHaveText(['Fixture drawing', 'Fixture flow', 'Fixture steps'])
+  await expect(page.locator('.group', { hasText: 'Diagrams' }).locator('.plate-title')).toHaveText(['Fixture drawing', 'Fixture flow', 'Fixture steps', 'Fixture strip'])
   // A stepped diagram counts its steps beside its highlights.
   await expect(page.locator('.plate', { hasText: 'Fixture steps' }).locator('.badge[title="3 steps"]')).toHaveText('3')
   await page.getByRole('button', { name: /^Notes/ }).click()
@@ -54,9 +54,9 @@ test('the list layout is remembered: a row per artifact, and one click opens its
   await page.goto('/#/artifacts')
   await page.getByRole('radio', { name: /List/ }).click()
   await page.reload()
-  await expect(page.locator('.artifact-row')).toHaveCount(6)
+  await expect(page.locator('.artifact-row')).toHaveCount(7)
   await expect(page.locator('.plate')).toHaveCount(0)
-  await expect(page.locator('.artifact-row .thumb')).toHaveCount(6)
+  await expect(page.locator('.artifact-row .thumb')).toHaveCount(7)
   await expect(page.locator('.artifact-row', { hasText: 'Fixture flow' }).locator('.artifact-row-date')).toHaveText('October 2026')
   await page.locator('.artifact-row', { hasText: 'Fixture drawing' }).click()
   await expect(page).toHaveURL(/#\/artifacts\/AR-01$/)
@@ -368,6 +368,37 @@ test('find works in mermaid, Markdown and PDF artifacts too, and an image has no
   await expect(page.locator('.find-bar')).toHaveCount(0)
 })
 
+test('full screen, at the end of the view bar, hides the masthead and the panel, keeps the panel tab, and comes back', async ({ page }) => {
+  await page.goto('/#/artifacts/AR-01')
+  await expect(page.locator('.canvas-host svg text', { hasText: 'Totals panel' })).toBeVisible()
+  // No new-card plus on an artifact's page: the view bar has the corner.
+  await expect(page.getByRole('button', { name: 'New card' })).toHaveCount(0)
+  await page.getByRole('tab', { name: /Details/ }).click()
+  const frameW = (await boxOf(page, '.canvas-frame')).width
+  await page.locator('.canvas-dock .view-bar').getByRole('button', { name: 'Full screen' }).click()
+  await expect(page.locator('.masthead')).toBeHidden()
+  await expect(page.locator('.artifact-dock')).toBeHidden()
+  await expect.poll(async () => (await boxOf(page, '.canvas-frame')).width).toBeGreaterThan(frameW)
+  // The find box still works in full screen.
+  await page.getByPlaceholder('Find in this diagram').fill('PANEL')
+  await expect(page.locator('.find-bar .search-count')).toHaveText('1 of 2')
+  await page.getByRole('button', { name: 'Leave full screen' }).click()
+  await expect(page.locator('.masthead')).toBeVisible()
+  await expect(page.locator('.artifact-dock')).toBeVisible()
+  await expect(page.getByRole('tab', { name: /Details/ })).toHaveAttribute('aria-selected', 'true')
+
+  // An image has it in its view bar too, and a Markdown note, with no view bar of its own, gets one for it.
+  await page.goto('/#/artifacts/AR-02')
+  await expect(page.locator('.canvas-dock .view-bar').getByRole('button', { name: 'Full screen' })).toBeVisible()
+  await page.goto('/#/artifacts/AR-04')
+  await expect(page.locator('.doc-dock .view-bar').getByRole('button', { name: 'Full screen' })).toBeVisible()
+  await page.goto('/#/artifacts/AR-05')
+  await expect(page.locator('.doc-dock .view-bar').getByRole('button', { name: 'Full screen' })).toBeVisible({ timeout: 15_000 })
+  // Back on the board, the plus is there again.
+  await page.goto('/#/board')
+  await expect(page.getByRole('button', { name: 'New card' })).toBeVisible()
+})
+
 test.describe('a stepped diagram', () => {
   /** The step classes on an element of the drawing shown (inside the viewer's shadow root). */
   const marks = (page: Page, sel: string) =>
@@ -632,6 +663,58 @@ test.describe('a stepped diagram', () => {
     expect(await inFlight(page)).toEqual(grounded)
     await expect(marks(page, '#payout-entries')).resolves.toBe('rb-step-lit')
     await expect(marks(page, '#payment-entries')).resolves.toBe('')
+  })
+
+  test.describe('a view that follows the steps (step_view: follow)', () => {
+    /** How much of a card of the strip is on screen (0 to 1), and its drawn width over its width in the drawing (the zoom). */
+    const seen = (page: Page, sel: string) =>
+      page.locator('.canvas-frame').evaluate((f, sel) => {
+        const host = f.querySelector('.canvas-host')!
+        const el = host.shadowRoot!.querySelector(sel) as SVGGraphicsElement
+        const r = el.getBoundingClientRect()
+        const o = f.getBoundingClientRect()
+        const w = Math.max(0, Math.min(r.right, o.right) - Math.max(r.left, o.left))
+        const h = Math.max(0, Math.min(r.bottom, o.bottom) - Math.max(r.top, o.top))
+        return { share: Math.round(((w * h) / (r.width * r.height)) * 100) / 100, zoom: Math.round((r.width / el.getBBox().width) * 100) / 100 }
+      }, sel)
+    const openStrip = async (page: Page, spot = '') => {
+      await page.goto(`/#/artifacts/AR-07${spot ? `?region=${spot}` : ''}`)
+      await expect(page.locator('.canvas-host svg text', { hasText: 'Order placed' })).toBeAttached()
+    }
+
+    test('frames each step as it comes, never past the drawing\'s own size, and Whole drawing fits it all again', async ({ page }) => {
+      await openStrip(page)
+      await page.waitForTimeout(300)
+      const whole = await viewBox(page)
+      // Fitted whole, the strip is far smaller than its own size.
+      expect((await seen(page, '#card-1')).zoom).toBeLessThan(0.5)
+      await bar(page).getByRole('button', { name: 'Step through · 3 steps' }).click()
+      await expect.poll(() => seen(page, '#card-1')).toEqual({ share: 1, zoom: 1 })
+      await stepForward(page)
+      await expect.poll(() => seen(page, '#card-2')).toEqual({ share: 1, zoom: 1 })
+      expect((await seen(page, '#card-1')).share).toBe(0)
+      await page.locator('.canvas-frame').press('ArrowRight')
+      await expect.poll(() => seen(page, '#card-3')).toEqual({ share: 1, zoom: 1 })
+      await bar(page).getByRole('button', { name: 'Whole drawing' }).click()
+      await expect.poll(() => viewBox(page)).toBe(whole)
+    })
+
+    test('a step already in view leaves the view where it is, and a link to a step opens framed', async ({ page }) => {
+      await openStrip(page, 'shipped')
+      // Framed at once: no ease to watch.
+      expect(await seen(page, '#card-3')).toEqual({ share: 1, zoom: 1 })
+      // Zoomed out by hand so the middle card is in view too: going back to it keeps the view.
+      for (let i = 0; i < 7; i++) {
+        await page.locator('.canvas-frame').press('-')
+        await page.waitForTimeout(480)
+      }
+      expect((await seen(page, '#card-2')).share).toBe(1)
+      const out = await viewBox(page)
+      await bar(page).getByRole('button', { name: 'Previous step' }).click()
+      await expect(page).toHaveURL(/region=paid$/)
+      await page.waitForTimeout(800)
+      expect(await viewBox(page)).toBe(out)
+    })
   })
 
   test('the Steps tab comes first, lists the steps under their groups, and goes to one', async ({ page, request }) => {

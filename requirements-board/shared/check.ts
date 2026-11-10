@@ -10,6 +10,7 @@ import {
   PARENT_TYPES,
   ITEM_TYPES,
   QUESTION_KINDS,
+  STEP_VIEWS,
   VIEWPORTS,
   artifactFormat,
   isPastArtifact,
@@ -275,6 +276,10 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
 
     if (a.steps.length && format !== 'svg') err(a.id, `has steps, but steps only work on an SVG drawing`)
+    if (a.stepView !== null) {
+      if (!(STEP_VIEWS as readonly string[]).includes(a.stepView)) err(a.id, `step_view is "${a.stepView}"; it is fixed (the default) or follow`)
+      else if (!a.steps.length) err(a.id, `has step_view but no steps; step_view only applies to a stepped diagram`)
+    }
     const stepIds = new Set<string>()
     a.steps.forEach((s, i) => {
       const where = `step ${s.id || '(no id)'}`

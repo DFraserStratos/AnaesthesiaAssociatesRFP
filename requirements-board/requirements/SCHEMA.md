@@ -277,6 +277,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-client-meeting.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
 | `steps` | Optional, an SVG drawing only: makes it a stepped diagram the board plays one step at a time. Each step is a spot too. See Steps below. |
+| `step_view` | Optional, a stepped diagram only: how the view behaves as it steps. `fixed` (the default, the same as leaving it out) leaves the view where it is; `follow` frames each step as the reader arrives at it. See Steps below. `check` errors on any other value, and on `step_view` on an artifact with no `steps`. Agents write it; the board keeps it. |
 
 Body: the description (Markdown, links work), then for a mermaid diagram a `## Source` section
 holding one fenced ` ```mermaid ` block, which the board draws.
@@ -334,6 +335,14 @@ the thumbnail and the Diff review show. Each step has:
   `from` matching several elements and on a `from` or `to` a later step reveals.
 - `balances`: optional rows of `account` and `amount`, both plain text (quote a number, `"0"`, to
   keep it exactly as written). The board marks the rows whose amount changed since the step before.
+
+**The view while stepping** (`step_view`). By default (`fixed`) the view stays where it is as the
+reader steps: right for a drawing that fits one screen. A wide flow that does not fit one screen
+sets `step_view: follow`: arriving at a step, the view frames the step's focus (its `highlight`
+matches, or its `show` matches when it highlights nothing, plus both ends of its moves) unless that
+is already in view, never closer in than the drawing's own size; a step's moves fly once the view
+settles, and the whole drawing fits everything again. Keep each step's highlight compact, since the
+view frames all of it.
 
 With no step chosen the board shows the whole drawing, nothing dimmed. `check` errors on steps on
 anything but an SVG drawing, a step with no name, a balance row with no account, and an anchor that
