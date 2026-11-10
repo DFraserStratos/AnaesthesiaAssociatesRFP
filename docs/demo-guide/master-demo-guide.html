@@ -502,10 +502,11 @@
   <pre class="tree">ACTIVE &#8594; SUBMITTED &#8594; AUTHORISED &#8594; Billing run completed</pre>
   <ul class="tight">
     <li><code>ACTIVE</code>: anaesthetist, office and integrations may update.</li>
-    <li><code>SUBMITTED</code>: office-only edits; the anaesthetist sees it completed and unbilled.</li>
-    <li><code>AUTHORISED</code>: Bookings are locked; the whole List hands to billing.</li>
-    <li>Billing-run completion stamps <code>billedAt</code> and removes the List from the anaesthetist's
-      work view. There is no <code>RETURNED</code> state.</li>
+    <li><code>SUBMITTED</code>: the office reviews and corrects; the anaesthetist sees it less prominent ("Done · unbilled") and can still change it until it is authorised. The last change stands, and Review shows "Changed since submitted".</li>
+    <li><code>AUTHORISED</code>: Bookings are locked; the whole List hands to billing. The List leaves the
+      anaesthetist's main view at once, its invoices show in their balances at once, and search finds it.</li>
+    <li>Billing-run completion stamps <code>billedAt</code> for the office's billing monitor; it no longer
+      decides what the anaesthetist sees. There is no <code>RETURNED</code> state.</li>
     <li>A List's state is <code>DRAFT</code> (a Draft List, no anaesthetist yet), <code>ACTIVE</code>, <code>SUBMITTED</code> or <code>AUTHORISED</code>; a session's availability is separate.</li>
   </ul>
 
@@ -529,6 +530,7 @@
     <tr><td>Admin day view, changes, cover, review, authorise, masters, audit</td><td><span class="chip ready">Ready</span></td><td>Phases 06 to 07</td></tr>
     <tr><td>Draft Lists, including recurring clashes</td><td><span class="chip ready">Ready</span></td><td>Phase 31</td></tr>
     <tr><td>Billing run and invoice documents</td><td><span class="chip ready">Ready</span></td><td>Phase 08</td></tr>
+    <tr><td>Edit until authorised, the main view from today, search by name, NHI or date</td><td><span class="chip ready">Ready</span></td><td>Catch-up Phase 38a</td></tr>
     <tr><td>Prepayment warning, post-op addendum, billing monitor</td><td><span class="chip ready">Ready</span></td><td>Phase 09</td></tr>
     <tr><td>Warnings: To-do card, triangle on Bookings, warning on opening, Day view outline</td><td><span class="chip ready">Ready</span></td><td>Catch-up 15a</td></tr>
     <tr><td>Xero pairs, payments, payables, live balances, GST</td><td><span class="chip ready">Ready</span></td><td>Phase 10</td></tr>
@@ -589,15 +591,18 @@
       surgeons; mobile during the day. Captures accurate Base, Time and Modifier data with minimal typing,
       completes Bookings, and submits the whole List.</p>
       <p style="font-size:13px"><strong>May:</strong> edit own Bookings on ACTIVE Lists, submit when every uncancelled Booking is
-      complete, see colleagues' session availability (not their patient details), and move one of her own
-      Lists to a free colleague or back to the office. <strong>May not:</strong>
-      edit after submission, authorise, or touch master data.</p>
+      complete, still change a submitted List of her own until the office authorises it, see colleagues'
+      session availability (not their patient details), and move one of her own Lists to a free colleague
+      or back to the office. Her main view starts at today, with earlier Lists not yet authorised a scroll
+      back; past work is found by patient name, NHI or date. <strong>May not:</strong>
+      edit an authorised List, authorise, or touch master data.</p>
     </div>
     <div class="card">
       <span class="eyebrow">Primary persona 2</span>
       <h3>Dr Souter at a desktop · anaesthetist web</h3>
       <p style="font-size:14px;color:var(--slate)">A usage context, not a separate role. Wider view of
-      upcoming work, availability and finances, with the same List, Booking and BTM actions.</p>
+      upcoming work, availability and finances, with the same List, Booking and BTM actions. The Lists
+      table opens with earlier Lists not yet authorised, and searches past work by name, NHI or date.</p>
       <p style="font-size:13px">Balances and GST activity are now live over the Billing Engine's mirror. Use
       web for overview and planning; use mobile for the procedure-day action.</p>
     </div>
@@ -631,7 +636,7 @@
     <tr><td>View own Lists/Bookings</td><td class="yes">Yes</td><td class="yes">Yes, all</td><td>As needed</td></tr>
     <tr><td>View colleague patient details</td><td class="no">No</td><td class="yes">Yes</td><td>As needed</td></tr>
     <tr><td>Edit a Booking on an ACTIVE List</td><td class="yes">Yes, own</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
-    <tr><td>Edit a SUBMITTED Booking</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No, park for intervention</td></tr>
+    <tr><td>Edit a SUBMITTED Booking</td><td class="yes">Yes, own, until authorised</td><td class="yes">Yes</td><td class="no">No, park for intervention</td></tr>
     <tr><td>Edit an AUTHORISED Booking</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
     <tr><td>Submit a List</td><td class="yes">Yes, own</td><td class="no">Receives after submission</td><td class="no">No</td></tr>
     <tr><td>Authorise a List</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
@@ -750,8 +755,9 @@
   </div></details>
 
   <details><summary>5 · Submit the whole List and office review</summary><div class="details-body">
-    <p>The anaesthetist marks the List complete and submits; it becomes SUBMITTED and read-only to her. The
-    office reviews the full set (route, Contract, Insurer, reference, BTM, advisory flags), corrects
+    <p>The anaesthetist marks the List complete and submits; it becomes SUBMITTED, stays on her main view
+    less prominent, and she can still change it until the office authorises it (Review shows "Changed
+    since submitted"; a reopened Booking must be completed before authorise). The office reviews the full set (route, Contract, Insurer, reference, BTM, advisory flags), corrects
     office-owned data, optionally logs a phone note, and authorises. One list-authorised event hands the
     whole List to the Billing Engine. Review is a human sanity check, not an automatic gate.
     <span class="chip ready">Ready</span></p>
@@ -761,8 +767,9 @@
     <p>The Billing Engine resolves the explicit route per Procedure (hospital/contract holder, billable
     party, direct-claim insurer), selects the governing Contract and rating method, calculates from the
     captured snapshot, enforces time-only additional Procedures and conserved two-funder allocations,
-    groups by counterparty, and produces contract-holder or patient invoice layouts. Billing-run completion
-    stamps <code>billedAt</code> and removes the List from the anaesthetist's views. <span class="chip ready">Ready</span></p>
+    groups by counterparty, and produces contract-holder or patient invoice layouts. The List left the
+    anaesthetist's main view at authorise; its invoices show in her balances at once, and search finds it
+    afterwards. <span class="chip ready">Ready</span></p>
   </div></details>
 
   <details><summary>7 · Collect money and disburse to the anaesthetist</summary><div class="details-body">
@@ -835,7 +842,9 @@
     <code>/admin</code> open the Lists tab, the dashboard and today's day view respectively.</p>
     <div class="table-wrap"><table>
       <tr><th>Anaesthetist Mobile App</th><th>URL</th></tr>
-      <tr><td>Forward Lists</td><td><code>/mobile/lists</code></td></tr>
+      <tr><td>Lists, main view (from today)</td><td><code>/mobile/lists</code></td></tr>
+      <tr><td>Lists, one day</td><td><code>/mobile/lists?day=2026-03-13</code> (Fri 13 Mar 2026, the pinned history List)</td></tr>
+      <tr><td>Lists, search</td><td><code>/mobile/lists?q=Mitchell</code></td></tr>
       <tr><td>List detail</td><td><code>/mobile/lists/&lt;listId&gt;</code></td></tr>
       <tr><td>Booking detail</td><td><code>/mobile/lists/&lt;listId&gt;/bookings/&lt;bookingId&gt;</code></td></tr>
       <tr><td>Availability (Find cover)</td><td><code>/mobile/availability</code></td></tr>
@@ -846,7 +855,9 @@
     <div class="table-wrap"><table>
       <tr><th>Anaesthetist Web App</th><th>URL</th></tr>
       <tr><td>Dashboard</td><td><code>/web</code> (another week: <code>/web?week=2026-07-27</code>)</td></tr>
-      <tr><td>Lists table</td><td><code>/web/lists</code></td></tr>
+      <tr><td>Lists table (main view from today)</td><td><code>/web/lists</code></td></tr>
+      <tr><td>Lists, one day</td><td><code>/web/lists?day=2026-03-13</code></td></tr>
+      <tr><td>Lists, search</td><td><code>/web/lists?q=Mitchell</code></td></tr>
       <tr><td>List detail</td><td><code>/web/lists/&lt;listId&gt;</code></td></tr>
       <tr><td>Booking detail</td><td><code>/web/lists/&lt;listId&gt;/bookings/&lt;bookingId&gt;</code></td></tr>
       <tr><td>Availability grid (Find cover)</td><td><code>/web/availability</code></td></tr>
@@ -879,8 +890,9 @@
     <code>/demo/xero/invoices/&lt;accRecId&gt;</code>. Because the seed is
     deterministic, the ids in a URL you copied stay valid across a Reset demo data, so you can bookmark a
     beat and re-open it after every reset; a URL that has gone stale falls back to its parent screen rather
-    than showing a blank page. Sheets and drawers are deliberately not in the URL, so the back button
-    closes a screen rather than a sheet.</p>
+    than showing a blank page. Sheets and drawers (the phone's date sheet included) are deliberately not in
+    the URL, so the back button closes a screen rather than a sheet; a picked day (<code>?day=</code>) and a
+    search (<code>?q=</code>) are, so back from a List or a Booking returns to the same day or results.</p>
   </div></details>
 
   <details class="demo-scenario print-first" open><summary>S1 · Booking to theatre</summary><div class="details-body">
@@ -991,7 +1003,7 @@
       <h4>Beat 4 · authorise a submitted List</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Review queue &#8594; Dr Kate Morrison, Mon 20 Jul &#8594; Review.</li><li>Pause on the submitted List, then Authorise for billing &#8594; Confirm.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Booking and hands the List to the Billing Engine."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls. Until now the List stayed on Dr Morrison's main view, less prominent, and she could still change it (Review would show "Changed since submitted"); now it leaves her main view and her search finds it.</span></div>
     </div>
     <div class="callout warn">Discovery: settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no acceptance and no office confirmation (OQ-39), every move posts to one shared notification pool for the whole office (OQ-65), and her own move shows no preference warning (OQ-43); open: short-notice sickness (OQ-81 part 3), shown here as a conflict the office records; settled context rather than a question: availability is a status on each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64 answered), and the status values are a list AA maintains, starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); what the vacated session shows after a move (OQ-84: the prototype asks the anaesthetist, Free by default, and returns it to Free on the office's reassignment unless the office marks it otherwise); what else posts to the notification pool and how long notices last (OQ-79: the prototype keeps every List move, newest first and paged, with no expiry and no read or actioned state); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).</div>
   </div></details>
@@ -1006,7 +1018,7 @@
       <h4>Beat 1 · authorise and generate invoices</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Review queue.</li><li>Process the two Melanie Lists: authorise Forte AM, then use Next in queue to authorise St George's PM.</li><li>View invoices &#8594; <strong>AA-2026-0002 · Brian Holt</strong> &#8594; View.</li><li>Pause on the invoice, then Email invoice &#8594; All invoices.</li><li>Locate the fixed comparison rows and pause:<ul><li><strong>AA-2026-0002 · Brian Holt · Forte Health · $396.18</strong> is the one-invoice, same-funder split Booking.</li><li><strong>AA-2026-0005 · Alan Prentice · nib · $152.38</strong> and <strong>AA-2026-0006 · Alan Prentice · St George's · $91.43</strong> are the two invoices from the same Booking at 14:00.</li></ul></li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
-      <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Booking, two for the two-funder Booking.</span></div>
+      <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as soon as the office authorises them, and their invoices show in her Balances at once, with no Next morning needed.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
@@ -1026,7 +1038,13 @@
       <div class="row"><span class="k">Say</span><span class="say">"AA's fee is AA invoicing the anaesthetist once a month, from settings the office maintains: fixed charges plus a charge per buyer-created tax invoice. It is always a separate invoice, paid into AA's own account, and never deducted from a payment to the anaesthetist, because trust law forbids it. Only invoices that have been paid are counted, so a Booking moved between anaesthetists is never charged twice. The real fixed schedule, and confirmation of the paid-only count and of one BCTI per invoice, are with AA's accountant."</span></div>
       <div class="row"><span class="k">Expect</span><span>Web Accounts &#8594; AA fees highlights AA-FEE-2026-H02 as Paid, with May Paid and July Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. If Beat 3 was skipped, Dr Souter's July invoice counts three BCTIs ($515.00 before GST).</span></div>
     </div>
-    <div class="callout warn">Discovery: the exact List-disappearance trigger (prototype uses billing-run completion); split-billing invoice count (group by counterparty, two invoices when funders differ); AA's fee schedule, the paid-only BCTI count and one BCTI per invoice or per procedure (all with AA's accountant).</div>
+    <div class="beat">
+      <h4>Optional closing moment · finding past work</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Switch to the Anaesthetist Mobile App. The Lists tab starts at today; scroll up (or tap the teal hint under Today) for anything not yet authorised.</li><li>Type <strong>Prentice</strong> in the search field. Open Monday's Booking, authorised a minute ago: it opens read only with what was entered. Back to its List: the <strong>Invoices</strong> section shows the S3 invoice numbers.</li><li>Optionally tap the calendar button and pick <strong>Fri 13 Mar</strong> to show a day from the history.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Until the office authorises a List the anaesthetist can still change it; after that it leaves the main view, but nothing is lost: search finds it by patient name, NHI or date. Their own work only."</span></div>
+      <div class="row"><span class="k">Expect</span><span>Prentice's Mon 20 Jul Booking and his June ACC Booking, both marked <strong>Invoiced</strong>.</span></div>
+    </div>
+    <div class="callout warn">Discovery: whether date of birth joins name and NHI (the three-way match) and whether the office needs this search too; split-billing invoice count (group by counterparty, two invoices when funders differ); AA's fee schedule, the paid-only BCTI count and one BCTI per invoice or per procedure (all with AA's accountant).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S4 · Exceptions</summary><div class="details-body">
@@ -1234,9 +1252,10 @@
     <div class="card"><h3>1 · NHI in Xero (settled)</h3><p style="font-size:14px">One section allowed NHI as a searchable
       Xero cross-reference; Appendix 2 said NHI never leaves the practice system. Confirmed with AA: no NHI or
       other personal information in Xero, patient names included.</p></div>
-    <div class="card"><h3>2 · List disappearance trigger</h3><p style="font-size:14px">A table implies
-      disappearance at AUTHORISED; the text says invoice generation is the precise trigger and needs
-      confirming. The prototype uses billing-run completion.</p></div>
+    <div class="card"><h3>2 · List disappearance trigger (answered)</h3><p style="font-size:14px">A List leaves
+      the anaesthetist's main view when the office authorises it (OQ-31), not at submit, not when billed,
+      not on payment. Its invoices show in their balances at once; older work is found by search on patient
+      name, NHI or date, with no calendar archive.</p></div>
     <div class="card"><h3>3 · Billing failure isolation</h3><p style="font-size:14px">The RFP asks whether one
       failed Booking blocks the whole List. The prototype isolates the failed Booking and bills the others.</p></div>
     <div class="card"><h3>4 · Monitoring location</h3><p style="font-size:14px">Admin Web vs a separate
@@ -1300,10 +1319,13 @@
     ahead after a change, without touching booked Lists. Office staff reserve and amend Lists and handle
     exceptions. "Shift" is not the RFP term.</p></div></details>
   <details><summary>Can an anaesthetist edit after submission?</summary><div class="details-body">
-    <p>No. Submitted Bookings are read-only to the anaesthetist and editable only by office; authorised Bookings
-    are immutable.</p></div></details>
+    <p>Yes, until the office authorises the List. A submitted List stays on the anaesthetist's main view,
+    less prominent, and they can still change it; every change is audited and Review shows "Changed since
+    submitted". The last change stands, and a Booking reopened after submit must be completed again before
+    the office can authorise. Authorised Bookings are immutable.</p></div></details>
   <details><summary>What happens when the office finds a mistake?</summary><div class="details-body">
-    <p>Office staff phone for clarification and make the correction. There is no Returned state.</p></div></details>
+    <p>Office staff phone for clarification and make the correction. There is no Returned state; the
+    anaesthetist can also correct it themselves until the office authorises it.</p></div></details>
   <details><summary>Why is Xero not doing all the billing?</summary><div class="details-body">
     <p>AA has agency-specific billing rules and needs Procedure-level calculation, grouping and
     anaesthetist-facing views. Xero is the AR and banking add-on.</p></div></details>

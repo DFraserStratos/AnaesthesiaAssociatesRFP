@@ -4,14 +4,17 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "review-queue",
-      "app": "admin",
-      "caption": "Review queue of submitted Lists",
-      "start": "/admin/review",
+      "name": "submitted-list",
+      "app": "web",
+      "caption": "A submitted List stays visible and editable until the office authorises it",
+      "start": "/web/lists/L-34821-2026-07-20-AM",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "span:has-text(\"Submitted to office\")",
+            "button:has-text(\"Add a booking\")"
+          ]
         }
       ]
     }

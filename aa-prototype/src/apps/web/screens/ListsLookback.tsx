@@ -36,6 +36,7 @@ export function WebSearchField({ query, onQueryChange }: { query: string; onQuer
         value={text}
         onChange={(e) => setText(e.target.value)}
         data-testid="web-lists-search"
+        className="aa-search-field"
         style={{ ...pillInput, width: 280, padding: text !== '' ? '0 36px 0 34px' : '0 14px 0 34px', appearance: 'none' }}
       />
       {text !== '' && (

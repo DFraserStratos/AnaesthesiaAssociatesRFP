@@ -740,3 +740,16 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
     transition: none;
   }
 }
+
+/* Catch-up Phase 38a: the Lists search field on both anaesthetist apps. The
+   app's teal focus outline (not the browser's own), and no native search
+   cancel glyph beside the field's own clear button. */
+.aa-search-field:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.aa-search-field::-webkit-search-cancel-button,
+.aa-search-field::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}

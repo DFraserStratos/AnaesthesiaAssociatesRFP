@@ -47,7 +47,9 @@ view respectively.
 
 | Anaesthetist Mobile App | URL |
 |---|---|
-| Forward Lists | `/mobile/lists` |
+| Lists, main view (from today) | `/mobile/lists` |
+| Lists, one day | `/mobile/lists?day=2026-03-13` (Fri 13 Mar 2026, the pinned history List) |
+| Lists, search | `/mobile/lists?q=Mitchell` |
 | List detail | `/mobile/lists/<listId>` |
 | Booking detail | `/mobile/lists/<listId>/bookings/<bookingId>` |
 | Availability (Find cover) | `/mobile/availability` |
@@ -58,7 +60,9 @@ view respectively.
 | Anaesthetist Web App | URL |
 |---|---|
 | Dashboard | `/web` (another week: `/web?week=2026-07-27`) |
-| Lists table | `/web/lists` |
+| Lists table (main view from today) | `/web/lists` |
+| Lists, one day | `/web/lists?day=2026-03-13` |
+| Lists, search | `/web/lists?q=Mitchell` |
 | List detail | `/web/lists/<listId>` |
 | Booking detail | `/web/lists/<listId>/bookings/<bookingId>` |
 | Availability grid (Find cover) | `/web/availability` |
@@ -94,8 +98,10 @@ a **Reset demo data** — you can bookmark a beat and re-open it after every res
 gone stale (an id the current data no longer holds) falls back to its parent screen rather than
 showing a blank page.
 
-Sheets and drawers are deliberately **not** in the URL: the capture sheets, the move sheet and the
-admin List drawer are overlays, so the back button closes a screen rather than a sheet.
+Sheets and drawers are deliberately **not** in the URL: the capture sheets, the move sheet, the
+phone's date sheet and the admin List drawer are overlays, so the back button closes a screen rather
+than a sheet. A picked day (`?day=`) and a search (`?q=`) are in the URL, so back from a List or a
+Booking returns to the same day or results.
 
 ## How to read the readiness
 
@@ -392,7 +398,10 @@ already seeded.
 - **Say:** "The office reviews the Bookings as a set, a human sanity check, not an automatic gate. If
   something needs clarification the office phones and corrects it here. The List is never returned.
   Authorisation locks every Booking and hands the whole List to the Billing Engine."
-- **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls.
+- **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls. Until
+  this moment the List stayed on Dr Morrison's main view, less prominent, and she could still change
+  it; if she had, Review would show **Changed since submitted** with the count. Now it leaves her main
+  view and her search finds it.
 
 **Discovery points:** settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
 before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase
@@ -442,7 +451,9 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
   Procedure, applies the governing Contract, and groups by counterparty. Xero follows as the
   receivables and banking service."
 - **Expected:** invoice rows appear for both Lists, derived from the same captured data; one invoice
-  for the split-billing Booking, two for the two-funder Booking.
+  for the split-billing Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave
+  her main view (phone and web) as soon as the office authorises them, and their invoices show in her
+  Balances at once, with no Next morning needed.
 - **Optional aside:** to also show the patient invoice layout, reallocate part of the two-funder Booking's
   fee to the patient via **Funder allocation** before authorising the PM List.
 
@@ -504,8 +515,22 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
   Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
   Dr Souter's July figures from the app if Beat 3 was skipped (then three BCTIs, $515.00 before GST).
 
-**Discovery points:** the exact List-disappearance trigger (the prototype uses billing-run completion);
-the split-billing invoice count (the prototype groups by counterparty, two invoices when funders
+### Optional closing moment: finding past work
+
+- **Click:**
+  - Switch to the **Anaesthetist Mobile App**. The Lists tab starts at today; scroll up (or tap the
+    teal hint under Today) for anything not yet authorised.
+  - Type **Prentice** in the search field. Open Monday's Booking, authorised a minute ago: it opens
+    read only with what was entered. Back to its List: the **Invoices** section shows the S3 invoice
+    numbers.
+  - Optionally tap the calendar button and pick **Fri 13 Mar** to show a day from the history.
+- **Say:** "Until the office authorises a List the anaesthetist can still change it; after that it
+  leaves the main view, but nothing is lost: search finds it by patient name, NHI or date. Their own
+  work only."
+- **Expected:** Prentice's Mon 20 Jul Booking and his June ACC Booking, both marked **Invoiced**.
+
+**Discovery points:** whether date of birth joins name and NHI (the three-way match) and whether the
+office needs this search too; the split-billing invoice count (the prototype groups by counterparty, two invoices when funders
 differ); and AA's fee schedule, the paid-only BCTI count and one BCTI per invoice or per procedure
 (all with AA's accountant).
 

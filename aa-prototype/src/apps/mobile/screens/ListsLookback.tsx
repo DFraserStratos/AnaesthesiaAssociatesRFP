@@ -47,6 +47,7 @@ export function LookbackSearchRow({
           value={text}
           onChange={(e) => setText(e.target.value)}
           data-testid="mobile-lists-search"
+          className="aa-search-field"
           style={{
             width: '100%',
             boxSizing: 'border-box',

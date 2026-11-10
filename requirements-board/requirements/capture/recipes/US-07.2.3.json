@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "override",
-          "caption": "Price override on a submitted Booking: a dollar adjustment with its reason",
+          "caption": "Price change on a submitted Booking: a dollar adjustment",
           "steps": [
             {
               "click": "role=button[name=\"Price override\"]"
@@ -92,6 +92,38 @@
           ],
           "highlight": [
             "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "changed-since-submitted",
+      "app": "admin",
+      "caption": "Review shows the anaesthetist changed the List after submitting it; the last change stands",
+      "start": "/admin/review/L-34821-2026-07-20-PM",
+      "setup": [
+        {
+          "goto": "/mobile/lists/L-34821-2026-07-20-PM/bookings/BK0025"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "role=button[name=/Amend/] >> nth=0"
+        },
+        {
+          "wait": 700
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-changed-since-submitted]"
           ]
         }
       ]
