@@ -187,6 +187,8 @@ interface ReaderProps {
   label: string
   onRegionFound?: (found: boolean) => void
   find?: FindProps
+  /** More buttons at the end of the view bar (the artifact page's full screen). */
+  viewExtra?: ReactNode
 }
 
 export function PdfReader({ url, ...props }: ReaderProps & { url: string }) {
@@ -196,7 +198,7 @@ export function PdfReader({ url, ...props }: ReaderProps & { url: string }) {
   return <PdfPages pdf={loaded.value} {...props} />
 }
 
-function PdfPages({ pdf, spot, focusKey, label, onRegionFound, find }: ReaderProps & { pdf: LoadedPdf }) {
+function PdfPages({ pdf, spot, focusKey, label, onRegionFound, find, viewExtra }: ReaderProps & { pdf: LoadedPdf }) {
   const shellRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const [frameSize, setFrameSize] = useState({ w: 0, h: 0 })
@@ -544,6 +546,12 @@ function PdfPages({ pdf, spot, focusKey, label, onRegionFound, find }: ReaderPro
               <button className="btn icon ghost sm" onClick={() => setPrefs({ pdfPages: !pagesPref })} aria-label="Page thumbnails" title={pagesPref ? 'Hide the page thumbnails' : 'Show the page thumbnails'} aria-pressed={pagesPref}>
                 <PanelRight size={14} />
               </button>
+            </>
+          )}
+          {viewExtra && (
+            <>
+              <span className="view-bar-rule" aria-hidden />
+              {viewExtra}
             </>
           )}
         </div>

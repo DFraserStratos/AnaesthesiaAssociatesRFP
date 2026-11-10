@@ -132,7 +132,7 @@ scrolls) and as the modal elsewhere.
   without opening it: it pans the card clear of the panel and the list, and a teal ring closes in on
   it. Enter or a click opens it; Esc takes the board back to where it was and clears the search (on
   the board too, with the card closing as usual).
-- One round teal plus, bottom right of every view (or `n`), makes any card: epic, feature, story or
+- One round teal plus, bottom right of every view but an artifact's page (or `n`), makes any card: epic, feature, story or
   outstanding item. It asks only for the type, the title and where it sits (a searchable parent, or
   what an outstanding item affects), starting from the open card, then opens the new card in Edit.
 - Outline and Outstanding items open the same sheet as a centred modal. A question opened from the
@@ -231,6 +231,14 @@ edits only their details (below), never the file, its highlights or the links to
   outstanding items), **Details** (description, its **Sources** as rows like a card's, an artifact's own
   origin naming itself shown plain, then author, area, **Cited as** (the words sources cite it by), file
   path and size, and the ID bottom right, which copies a link), **History**. The artifact fills the rest.
+- **No new-card plus on the artifact page**: the bottom right corner is the artifact's view bar
+  (a drawing's or a PDF's, and a one-button bar for a Markdown document), 16px in.
+- **Full screen**, the last button of that view bar, after a rule: the masthead and the panel go, the artifact fills the window,
+  and the browser is asked to fill the screen (where it refuses, the window is enough). The step
+  bar, view bar, find and record links all still work; a card opened from a link shows as its sheet
+  over the artifact. Esc (or the browser's own exit, or the button, now Leave full screen) comes
+  back with the panel as it was, its tab and any edit kept. Opening another artifact stays in full
+  screen; leaving the page leaves it.
 - **Edit details**, in the panel's footer as on an item sheet, swaps the tabs for a form: name,
   kind, status (and Replaced by, when Retired), date (as written, `2026-10-01`, `2026-10` or
   `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and

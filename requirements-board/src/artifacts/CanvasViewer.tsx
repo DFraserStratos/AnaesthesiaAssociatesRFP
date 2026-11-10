@@ -9,7 +9,7 @@
  * use; asked for, the view eases onto it and the box closes in.
  */
 import { Crosshair, Map as MapIcon, Minus, Plus, Scan } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { HIGHLIGHT } from '../../shared/highlight.ts'
 import type { Rect, Region, StepMove } from '../../shared/types.ts'
 import { GESTURE_GAP_MS, LINE_PX, PINCH_RATE, classifyWheel, type WheelKind } from '../board/trackpad.ts'
@@ -68,6 +68,8 @@ export interface CanvasViewerProps {
   dragPans?: boolean
   /** View controls and minimap (off for a side-by-side comparison). */
   controls?: boolean
+  /** More buttons at the end of the view bar (the artifact page's full screen). */
+  viewExtra?: ReactNode
   label: string
   /** Told whether the region's anchors were found. */
   onRegionFound?: (found: boolean) => void
@@ -96,7 +98,7 @@ export interface CanvasViewerProps {
 /** A press that moves further than this is a text selection, not a click on a link. */
 const CLICK_SLOP_PX = 4
 
-export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, label, onRegionFound, find, resolveLink, onLink, stepState = null, flight = null, follow = null }: CanvasViewerProps) {
+export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, viewExtra, label, onRegionFound, find, resolveLink, onLink, stepState = null, flight = null, follow = null }: CanvasViewerProps) {
   const frameRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -569,7 +571,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
           const next = bounded({ zoom: c.zoom, x: pane.w / 2 - p.x * c.zoom, y: pane.h / 2 - p.y * c.zoom })
           if (animate) ease(next)
           else apply(next)
-        }} onZoom={zoomBy} onFit={fit} onBox={box ? toBox : null} />
+        }} onZoom={zoomBy} onFit={fit} onBox={box ? toBox : null} extra={viewExtra} />
       )}
     </div>
   )
@@ -601,10 +603,11 @@ interface ControlsProps {
   onFit: () => void
   /** Back to the region's box, when there is one. */
   onBox: (() => void) | null
+  extra?: ReactNode
 }
 
-/** Bottom right, beside the new-card plus, as on the board: the minimap button, zoom out and in, fit, and back to the highlight. */
-function CanvasControls({ bounds, imageUrl, view, box, onCentre, onZoom, onFit, onBox }: ControlsProps) {
+/** Bottom right, as on the board: the minimap button, zoom out and in, fit, back to the highlight, and any extra (full screen). */
+function CanvasControls({ bounds, imageUrl, view, box, onCentre, onZoom, onFit, onBox, extra }: ControlsProps) {
   const { open, pinned, togglePin, enterButton, enterMap, leaveZone } = useHoverPin()
   const svgRef = useRef<SVGSVGElement>(null)
   const frame = useMemo(() => {
@@ -671,6 +674,12 @@ function CanvasControls({ bounds, imageUrl, view, box, onCentre, onZoom, onFit, 
             <button className="btn icon ghost sm region-go" onClick={onBox} aria-label="Back to the highlight" title="Back to the highlight">
               <Crosshair size={14} />
             </button>
+          </>
+        )}
+        {extra && (
+          <>
+            <span className="view-bar-rule" aria-hidden />
+            {extra}
           </>
         )}
       </div>

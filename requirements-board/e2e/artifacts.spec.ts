@@ -368,6 +368,37 @@ test('find works in mermaid, Markdown and PDF artifacts too, and an image has no
   await expect(page.locator('.find-bar')).toHaveCount(0)
 })
 
+test('full screen, at the end of the view bar, hides the masthead and the panel, keeps the panel tab, and comes back', async ({ page }) => {
+  await page.goto('/#/artifacts/AR-01')
+  await expect(page.locator('.canvas-host svg text', { hasText: 'Totals panel' })).toBeVisible()
+  // No new-card plus on an artifact's page: the view bar has the corner.
+  await expect(page.getByRole('button', { name: 'New card' })).toHaveCount(0)
+  await page.getByRole('tab', { name: /Details/ }).click()
+  const frameW = (await boxOf(page, '.canvas-frame')).width
+  await page.locator('.canvas-dock .view-bar').getByRole('button', { name: 'Full screen' }).click()
+  await expect(page.locator('.masthead')).toBeHidden()
+  await expect(page.locator('.artifact-dock')).toBeHidden()
+  await expect.poll(async () => (await boxOf(page, '.canvas-frame')).width).toBeGreaterThan(frameW)
+  // The find box still works in full screen.
+  await page.getByPlaceholder('Find in this diagram').fill('PANEL')
+  await expect(page.locator('.find-bar .search-count')).toHaveText('1 of 2')
+  await page.getByRole('button', { name: 'Leave full screen' }).click()
+  await expect(page.locator('.masthead')).toBeVisible()
+  await expect(page.locator('.artifact-dock')).toBeVisible()
+  await expect(page.getByRole('tab', { name: /Details/ })).toHaveAttribute('aria-selected', 'true')
+
+  // An image has it in its view bar too, and a Markdown note, with no view bar of its own, gets one for it.
+  await page.goto('/#/artifacts/AR-02')
+  await expect(page.locator('.canvas-dock .view-bar').getByRole('button', { name: 'Full screen' })).toBeVisible()
+  await page.goto('/#/artifacts/AR-04')
+  await expect(page.locator('.doc-dock .view-bar').getByRole('button', { name: 'Full screen' })).toBeVisible()
+  await page.goto('/#/artifacts/AR-05')
+  await expect(page.locator('.doc-dock .view-bar').getByRole('button', { name: 'Full screen' })).toBeVisible({ timeout: 15_000 })
+  // Back on the board, the plus is there again.
+  await page.goto('/#/board')
+  await expect(page.getByRole('button', { name: 'New card' })).toBeVisible()
+})
+
 test.describe('a stepped diagram', () => {
   /** The step classes on an element of the drawing shown (inside the viewer's shadow root). */
   const marks = (page: Page, sel: string) =>
