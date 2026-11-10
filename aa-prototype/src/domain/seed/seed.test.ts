@@ -751,10 +751,13 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     contracts,
     surgeonIds: new Set(Object.keys(seed.masters.surgeons)),
     anaesthetistIds: new Set(Object.keys(seed.masters.anaesthetists)),
+    specialtyIds: new Set(Object.keys(seed.masters.specialties)),
+    fundingTagIds: new Set(Object.keys(seed.masters.fundingTags)),
   }
 
   it('pins the AA code table, every code unique', () => {
-    const table = Object.fromEntries(Object.values(contracts).map((c) => [c.id, c.aaCode]))
+    // The office's Contracts; Phase 18a's open-price fallbacks are pinned in specialtiesAndFallbacks.test.ts.
+    const table = Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole !== 'openPriceFallback').map((c) => [c.id, c.aaCode]))
     expect(table).toEqual({
       'CT-NO-CONTRACT': 'AA-RVG',
       'CT-STG-D1': 'STG-001',
@@ -772,7 +775,7 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-UNISPORTS': 'UNI-001',
       'CT-COS-FIXED': 'COS-002',
     })
-    const codes = Object.values(table)
+    const codes = Object.values(contracts).map((c) => c.aaCode)
     expect(new Set(codes).size).toBe(codes.length)
   })
 
@@ -783,7 +786,9 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(noContractRvg(contracts)).toMatchObject({ id: 'CT-NO-CONTRACT', holderId: 'PY-AA', billsTo: 'payer', anaesthetistMayOverridePrice: true })
     // The override is seeded on No contract · RVG only (A18); nothing is prepaid; every Contract is Active.
     expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id)).toEqual(['CT-NO-CONTRACT'])
-    expect(Object.values(contracts).some((c) => c.prepaid || c.status !== 'active')).toBe(false)
+    // Nothing the office seeded is prepaid; the only prepaid Contract is the system's Prepaid · Fixed price (Phase 18a).
+    expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.name)).toEqual(['Prepaid · Fixed price'])
+    expect(Object.values(contracts).some((c) => c.status !== 'active')).toBe(false)
   })
 
   it('keeps the named rates and fixed prices (SXAP $26.50, Health NZ $23, ACC $25 and $24, Unisports $93.47)', () => {

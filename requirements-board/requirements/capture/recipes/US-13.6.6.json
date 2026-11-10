@@ -1,0 +1,72 @@
+{
+  "id": "US-13.6.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "surgeon-specialties",
+      "app": "admin",
+      "caption": "A surgeon's specialties on their profile",
+      "start": "/admin/masters/surgeons/S-WHITFORD",
+      "states": [
+        {
+          "state": "profile",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-specialties]"
+          ]
+        },
+        {
+          "state": "required",
+          "caption": "A surgeon holds one or more specialties; a save with none is refused",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit details\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=surgeon-edit-sheet] >> role=button[name=\"Remove Ophthalmology\"]"
+            },
+            {
+              "click": "[data-shot=surgeon-edit-sheet] >> role=button[name=\"Save changes\"]"
+            },
+            {
+              "wait": "[data-shot=surgeon-edit-sheet] >> role=alert"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "several",
+          "caption": "A surgeon can hold more than one specialty",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit details\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "select": "[data-shot=surgeon-specialties-field] select",
+              "value": "SPC-PLASTIC"
+            },
+            {
+              "wait": 200
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-specialties-field]"
+          ]
+        }
+      ]
+    }
+  ]
+}

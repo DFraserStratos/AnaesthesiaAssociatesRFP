@@ -36,7 +36,6 @@ export function mkProcedure(overrides: Partial<Procedure> = {}): Procedure {
     bookingId: 'booking-1',
     description: 'Laparoscopic cholecystectomy',
     billingRoute: 'hospital',
-    accRelated: false,
     isAdditional: false,
     selectedModifierCodes: [],
     ...overrides,
@@ -70,6 +69,7 @@ export function mkContract(overrides: Partial<Contract> = {}): Contract {
     pricing: { kind: 'rvgAnaesthetistRate' },
     status: 'active',
     permitsRateTime: false,
+    specialtyIds: [],
     ...overrides,
   }
 }

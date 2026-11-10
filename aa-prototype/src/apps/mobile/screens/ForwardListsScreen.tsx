@@ -125,6 +125,7 @@ export function ForwardListsScreen({
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const todayISO = useToday()
   const [filter, setFilter] = useState<Filter>('week')
 
@@ -187,7 +188,7 @@ export function ForwardListsScreen({
     }
 
     function listRow(l: AssignedList): Row {
-      const model = listRowModel(l, activeBookings(l.id), progressOf(l), { hospitals, surgeons })
+      const model = listRowModel(l, activeBookings(l.id), progressOf(l), { hospitals, surgeons, specialties })
       return {
         key: l.id,
         slotId: l.slotId,

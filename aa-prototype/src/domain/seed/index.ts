@@ -37,6 +37,8 @@ import type {
   OfficePrivateSlice,
   Party,
   Slot,
+  Specialty,
+  FundingTag,
   Surgeon,
   SurgeonGroup,
   SurgeonRoom,
@@ -66,6 +68,8 @@ import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
 import { PARTIES } from './parties'
+import { SPECIALTIES } from './specialties'
+import { FUNDING_TAGS } from './fundingTags'
 import { RECURRING_BOOKINGS } from './recurringBookings'
 import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
@@ -104,6 +108,8 @@ export function seedSlotStatusRecords(): Record<string, SlotStatus> {
 }
 export { CONTRACT } from './contracts'
 export { PARTY, PARTIES } from './parties'
+export { SPC, SPECIALTIES, SPECIALTY_FOR_DIRECTORY_TEXT } from './specialties'
+export { TAG, FUNDING_TAGS } from './fundingTags'
 export { BP, PAT } from './patients'
 export {
   ANAESTHETIST_DASHBOARD,
@@ -132,6 +138,10 @@ export interface SeedMasters {
   hospitals: Record<string, Hospital>
   /** The Party master (catch-up Phase 18; US-04.1.5): everyone who holds Contracts. */
   parties: Record<string, Party>
+  /** AA's broad specialties (catch-up Phase 18a; US-13.4.4): held by surgeons and Contracts. */
+  specialties: Record<string, Specialty>
+  /** AA's funding tags in step-rail order (catch-up Phase 18a; US-13.4.5): SXAP, HNZ, ACC. */
+  fundingTags: Record<string, FundingTag>
   /** INTERIM identities behind insurer Parties and `Procedure.insurerId` (no view, no flag; Phases 20 and 21 retire them). */
   insurers: Record<string, Insurer>
   /** INTERIM identity behind the COS surgeon-group Party (Phase 21 retires it). */
@@ -526,6 +536,8 @@ function buildSeedInternal(): SeedBuild {
       surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
       parties: byId(PARTIES, (p) => p.id),
+      specialties: byId(SPECIALTIES, (x) => x.id),
+      fundingTags: byId(FUNDING_TAGS, (t) => t.id),
       insurers: byId(INSURERS, (i) => i.id),
       organisations: organisationsRec,
       contracts: byId(CONTRACTS, (c) => c.id),
@@ -900,7 +912,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'ACC related procedure (hospital route)',
       entityType: 'booking',
       entityId: scenario.accRelated,
-      detail: "Billed under ACC elective services via St George's; sources W4's ACC column.",
+      detail: "Billed under ACC elective services via St George's, which carries the ACC funding tag; sources W4's ACC column once invoiced.",
     },
     guardianMinorBooking: {
       label: 'Guardian pays for a minor',

@@ -91,7 +91,6 @@ function procedureSetup(procedure: Procedure): Record<string, unknown> {
     billablePartyId: procedure.billablePartyId,
     patientPaymentCategory: procedure.patientPaymentCategory,
     prepaymentDetail: procedure.prepaymentDetail,
-    accRelated: procedure.accRelated,
     billingReference: procedure.billingReference,
     isAdditional: procedure.isAdditional,
     rvgBaseCode: procedure.rvgBaseCode,

@@ -50,7 +50,6 @@ export const FIELD_LABELS: Record<string, string> = {
   billablePartyId: 'Billable party',
   patientPaymentCategory: 'Payment category',
   prepaymentDetail: 'Pre-payment',
-  accRelated: 'ACC related',
   billingReference: 'Billing reference',
   isAdditional: 'Additional procedure',
   asaClass: 'ASA class',
@@ -173,7 +172,10 @@ export const FIELD_LABELS: Record<string, string> = {
 
   // --- Surgeons, rooms, groups, hospitals (catch-up Phase 17) ---------------
   contactEmail: 'Contact email',
-  specialty: 'Specialty',
+  // Catch-up Phase 18a: a surgeon's or a Contract's specialties and a Contract's tag, audited by name.
+  specialties: 'Specialties',
+  fundingTag: 'Funding tag',
+  funder: 'Funder',
   roomId: "Surgeons' room",
   medicalRegistrationNumber: 'NZ medical registration number',
   memberSurgeonIds: 'Members',

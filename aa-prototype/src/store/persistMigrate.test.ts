@@ -312,7 +312,6 @@ describe('Parties and flat Contracts (catch-up Phase 18)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v31 store whose Contracts carry no AA code or pricing kind, and reseeds the flat Contracts', () => {
-    expect(PERSIST_VERSION).toBe(32)
     const fresh = freshAppState()
     const { aaCode: _code, pricing: _pricing, ...oldShape } = fresh.masters.contracts['CT-HNZ']!
     const stale = { ...fresh, masters: { ...fresh.masters, contracts: { 'CT-HNZ': { ...oldShape, type: 2 } } } }
@@ -321,5 +320,26 @@ describe('Parties and flat Contracts (catch-up Phase 18)', () => {
     expect(s.masters.contracts['CT-HNZ']).toMatchObject({ aaCode: 'CPH-002', pricing: { kind: 'rvgContractRate', unitRate: 23 } })
     expect(s.masters.contracts['CT-NO-CONTRACT']?.systemRole).toBe('noContractRvg')
     expect(Object.keys(s.masters.parties).length).toBeGreaterThan(10)
+  })
+})
+
+describe('Specialties, funding tags and the fallbacks (catch-up Phase 18a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v32 store whose surgeons hold free-text specialties, and reseeds the lists and fallbacks', () => {
+    expect(PERSIST_VERSION).toBe(33)
+    const fresh = freshAppState()
+    const { specialtyIds: _ids, ...oldSurgeon } = fresh.masters.surgeons['S-HALE']!
+    const { specialties: _s, fundingTags: _t, ...oldMasters } = fresh.masters
+    const stale = { ...fresh, masters: { ...oldMasters, surgeons: { 'S-HALE': { ...oldSurgeon, specialty: 'Orthopaedics' } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 32 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.surgeons['S-HALE']?.specialtyIds).toEqual(['SPC-ORTHO'])
+    expect(s.masters.fundingTags['TAG-ACC']?.code).toBe('ACC')
+    expect(Object.values(s.masters.contracts).some((c) => c.systemRole === 'openPriceFallback')).toBe(true)
   })
 })

@@ -4,11 +4,13 @@ import type { SurgeonGroup } from '../../../domain/types'
 import { compareBySurname } from '../../../domain/surgeons'
 import { createSurgeonGroup, editSurgeonGroup, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../shared'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 /** Add or edit a surgeon group and its members (catch-up Phase 17, US-13.4.1). */
 export function SurgeonGroupSheet({ group, actor, onClose }: { group?: SurgeonGroup; actor: Actor; onClose: () => void }) {
   const { Overlay } = useSurface()
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const [name, setName] = useState(group?.name ?? '')
   const [description, setDescription] = useState(group?.description ?? '')
   const [members, setMembers] = useState<readonly string[]>(group?.memberSurgeonIds ?? [])
@@ -39,7 +41,7 @@ export function SurgeonGroupSheet({ group, actor, onClose }: { group?: SurgeonGr
               <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', fontSize: 14, borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}`, cursor: 'pointer' }}>
                 <input type="checkbox" checked={members.includes(s.id)} onChange={() => toggle(s.id)} style={{ accentColor: accent.base, width: 16, height: 16 }} />
                 <span>{s.name}</span>
-                {s.specialty !== undefined && <span style={{ color: neutral.mist, fontSize: 12.5 }}>{s.specialty}</span>}
+                <span style={{ color: neutral.mist, fontSize: 12.5 }}>{surgeonSpecialtyLabel({ specialties }, s)}</span>
               </label>
             ))}
           </div>

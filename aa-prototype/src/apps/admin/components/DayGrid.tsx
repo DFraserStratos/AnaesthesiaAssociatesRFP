@@ -14,6 +14,7 @@ import { OPEN_OUT_OF_HOURS, OUT_OF_HOURS } from '../../../shared/outOfHoursTerms
 import { DraftListBand } from './DraftListBand'
 import { BookingCount } from './draftLists/DraftListParts'
 import { draftListCount } from '../../../shared/scheduleTerms'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
@@ -404,7 +405,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   } else if (list !== undefined) {
     l1 = hospitalName ?? resolved.longLabel
     if (templateLabel !== undefined) l2 = templateLabel
-    else if (surgeon !== undefined) l2 = surgeon.name + (surgeon.specialty !== undefined ? ` · ${surgeon.specialty}` : '')
+    else if (surgeon !== undefined) l2 = [surgeon.name, surgeonSpecialtyLabel(masters, surgeon)].filter((p) => p !== '').join(' · ')
     else l2 = note ?? ''
   } else if (isOpenEmpty) {
     l1 = resolved.label

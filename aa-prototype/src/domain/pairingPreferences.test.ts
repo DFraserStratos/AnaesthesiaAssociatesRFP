@@ -33,9 +33,9 @@ const ANAE: Record<string, Anaesthetist> = Object.fromEntries(
   ]),
 )
 const SURG: Record<string, Surgeon> = {
-  REID: { id: 'REID', name: 'Ms A. Reid', roomId: 'R1', hpiId: '47REIA' },
-  WHIT: { id: 'WHIT', name: 'Mr J. Whitford', roomId: 'R1', hpiId: '42WHIJ' },
-  HALE: { id: 'HALE', name: 'Mr T. Hale', roomId: 'R2', hpiId: '40HALT' },
+  REID: { id: 'REID', name: 'Ms A. Reid', roomId: 'R1', hpiId: '47REIA', specialtyIds: ['SPC-OPHTH'] },
+  WHIT: { id: 'WHIT', name: 'Mr J. Whitford', roomId: 'R1', hpiId: '42WHIJ', specialtyIds: ['SPC-OPHTH'] },
+  HALE: { id: 'HALE', name: 'Mr T. Hale', roomId: 'R2', hpiId: '40HALT', specialtyIds: ['SPC-ORTHO'] },
 }
 const MASTERS = { anaesthetists: ANAE, surgeons: SURG }
 

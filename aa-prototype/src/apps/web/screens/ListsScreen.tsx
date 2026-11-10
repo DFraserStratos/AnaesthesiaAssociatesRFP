@@ -11,6 +11,7 @@ import { Panel } from '../components'
 import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
 import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from './ListsLookback'
 import { sessionText } from '../../../domain/outOfHours'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 interface ListsScreenProps {
   anaesthetistId: string
@@ -81,6 +82,7 @@ export function ListsScreen({
   const appSettings = useAppStore((s) => s.appSettings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
@@ -103,7 +105,7 @@ export function ListsScreen({
       const location = locationName(l.hospitalId, hospitals)
       if (l.kind === 'preop') return l.notes ?? `Pre-op assessment clinic · ${location}`
       const surgeon = surgeons[l.surgeonId]
-      return [location, surgeon?.name, surgeon?.specialty].filter((p): p is string => p !== undefined && p !== '').join(' · ')
+      return [location, surgeon?.name, surgeonSpecialtyLabel({ specialties }, surgeon)].filter((p): p is string => p !== undefined && p !== '').join(' · ')
     }
     const progressOf = (l: AssignedList) => listProgress(l, active.get(l.id) ?? [], todayISO)
 

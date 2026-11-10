@@ -12,10 +12,20 @@
  * Procedures affected). No contract · RVG changes only its name and AA code
  * and is never disabled. The AA code is stamped on create from the holder
  * Party's code prefix by `nextAaCode`.
+ *
+ * Catch-up Phase 18a: a Contract carries specialties and at most one funding
+ * tag, checked by the same guard. Every create, edit and re-enable runs
+ * `ensureFallbacks` inside the same `mutate()`, so a Contract that implies a
+ * new invoice destination (a hospital's first SXAP Contract, say) has its
+ * open-price fallback in the same commit, audited `contract.fallbackCreate`
+ * once per fallback made. The office never creates, disables or reshapes a
+ * fallback (the guard's system rule).
  */
 
 import type { Contract, ContractPrice } from '../domain/types'
 import { contractRefusal, nextAaCode, normaliseAaCode, type ContractRefusalContext } from '../domain/billing/contracts'
+import { ensureFallbacks } from '../domain/billing/fallbacks'
+import { contractSpecialtyLabel } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 
@@ -26,7 +36,50 @@ function refusalContext(state: AppState, prev?: Contract): ContractRefusalContex
     contracts: state.masters.contracts,
     surgeonIds: new Set(Object.keys(state.masters.surgeons)),
     anaesthetistIds: new Set(Object.keys(state.masters.anaesthetists)),
+    specialtyIds: new Set(Object.keys(state.masters.specialties)),
+    fundingTagIds: new Set(Object.keys(state.masters.fundingTags)),
   }
+}
+
+/**
+ * The Contracts with every missing open-price fallback added (AR-58 5.5),
+ * ids allocated from the counters in turn, and one `contract.fallbackCreate`
+ * audit meta per fallback, pushed onto `metas`. Called inside a `mutate()`
+ * recipe so the fallback lands in the commit that implied it.
+ */
+function withFallbacks(
+  s: Pick<AppState, 'masters'>,
+  contracts: Record<string, Contract>,
+  counters: Record<string, number>,
+  metas: MutationMeta[],
+): { contracts: Record<string, Contract>; counters: Record<string, number> } {
+  let next = counters
+  const result = ensureFallbacks(contracts, s.masters.parties, s.masters.fundingTags, () => {
+    const alloc = allocateId(next, 'contract')
+    next = alloc.counters
+    return alloc.id
+  })
+  for (const f of result.created) {
+    const { id: _id, ...after } = f
+    metas.push({ entityType: 'contract', entityId: f.id, action: 'contract.fallbackCreate', after: named(after, s), stampBookingId: null })
+  }
+  return { contracts: result.contracts, counters: next }
+}
+
+/**
+ * A Contract's audit values with its holder, specialties and tag as names,
+ * never ids (`holder: "St George's"`, `specialties: 'General surgery'` or
+ * 'Every specialty', `fundingTag: 'SXAP'` or 'None').
+ */
+function named(values: Record<string, unknown>, state: Pick<AppState, 'masters'>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(values)) {
+    if (k === 'specialtyIds') out.specialties = Array.isArray(v) ? contractSpecialtyLabel(state.masters, v as string[]) : v
+    else if (k === 'holderId') out.holder = typeof v === 'string' ? (state.masters.parties[v]?.name ?? v) : v
+    else if (k === 'fundingTagId') out.fundingTag = typeof v === 'string' && v !== '' ? (state.masters.fundingTags[v]?.code ?? v) : 'None'
+    else out[k] = v
+  }
+  return out
 }
 
 /** The changed fields of a Contract, before and after, for its audit entry. */
@@ -59,6 +112,10 @@ export interface ContractInput {
   holderReference?: string
   /** INTERIM until Phase 24: the Method 3 (rate x time) gate. */
   permitsRateTime?: boolean
+  /** The specialties it is offered for; none (the default) means every specialty. */
+  specialtyIds?: string[]
+  /** At most one funding tag from AA's list. */
+  fundingTagId?: string
 }
 
 /** Create a Contract, Active, with the next AA code for its holder. Audited `contract.create`. */
@@ -82,6 +139,8 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
     status: 'active',
     ...(reference !== '' ? { holderReference: reference } : {}),
     permitsRateTime: input.permitsRateTime ?? false,
+    specialtyIds: [...new Set(input.specialtyIds ?? [])],
+    ...(input.fundingTagId !== undefined && input.fundingTagId !== '' ? { fundingTagId: input.fundingTagId } : {}),
   }
   const refused = contractRefusal(draft, refusalContext(state))
   if (refused !== null) return refuse(refused.code, refused.message)
@@ -93,8 +152,9 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
     const contract: Contract = { ...draft, id: alloc.id }
     created = contract
     const { id: _id, ...after } = contract
-    metas.push({ entityType: 'contract', entityId: contract.id, action: 'contract.create', after, stampBookingId: null })
-    return { masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: contract } }, counters: alloc.counters }
+    metas.push({ entityType: 'contract', entityId: contract.id, action: 'contract.create', after: named(after, s), stampBookingId: null })
+    const kept = withFallbacks(s, { ...s.masters.contracts, [contract.id]: contract }, alloc.counters, metas)
+    return { masters: { ...s.masters, contracts: kept.contracts }, counters: kept.counters }
   })
   if (created === undefined) return refuse('createFailed', 'The Contract could not be created.')
   return ok({ contract: created })
@@ -103,9 +163,10 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
 /**
  * A patch to a Contract. Any field may be named, but `contractRefusal` refuses
  * a change to the holder, prepaid or the pricing kind, and anything but the
- * name and AA code on No contract · RVG. The status changes only through
+ * fields in `SYSTEM_CONTRACT_EDITABLE_FIELDS` on a system Contract (No
+ * contract · RVG and the open-price fallbacks). The status changes only through
  * `disableContract` and `enableContract`. A blank `holderReference`, or
- * `linkedAnaesthetistId` set to undefined, clears it.
+ * `linkedAnaesthetistId` or `fundingTagId` set to undefined, clears it.
  */
 export type ContractEditPatch = Partial<Omit<Contract, 'id' | 'status'>>
 
@@ -121,12 +182,16 @@ function save(api: AppStoreApi, actor: Actor, contractId: string, apply: (prev: 
   if (refused !== null) return refuse(refused.code, refused.message)
   const { before, after } = diff(prev, next)
   if (Object.keys(after).length === 0) return ok(undefined)
-  mutate(
-    api,
-    actor,
-    { entityType: 'contract', entityId: contractId, action: audit.action, before, after, stampBookingId: null },
-    (s) => ({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contractId]: next } } }),
-  )
+  const metas: MutationMeta[] = [
+    { entityType: 'contract', entityId: contractId, action: audit.action, before: named(before, state), after: named(after, state), stampBookingId: null },
+  ]
+  mutate(api, actor, metas, (s) => {
+    const contracts = { ...s.masters.contracts, [contractId]: next }
+    // A disable implies no new destination; an edit or a re-enable may.
+    if (audit.action === 'contract.disable') return { masters: { ...s.masters, contracts } }
+    const kept = withFallbacks(s, contracts, s.counters, metas)
+    return { masters: { ...s.masters, contracts: kept.contracts }, counters: kept.counters }
+  })
   return ok(undefined)
 }
 
@@ -141,7 +206,7 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
       // optional fields an empty value clears; so a raw patch is refused as
       // data, never thrown on.
       const defined = Object.fromEntries(
-        Object.entries(patch).filter(([k, v]) => v !== undefined || k === 'linkedAnaesthetistId' || k === 'holderReference'),
+        Object.entries(patch).filter(([k, v]) => v !== undefined || k === 'linkedAnaesthetistId' || k === 'holderReference' || k === 'fundingTagId'),
       ) as ContractEditPatch
       const next: Contract = { ...prev, ...defined, id: prev.id, status: prev.status }
       if (next.holderReference === undefined) delete next.holderReference
@@ -152,6 +217,8 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
       if ('linkedAnaesthetistId' in patch && (patch.linkedAnaesthetistId === undefined || patch.linkedAnaesthetistId === '')) {
         delete next.linkedAnaesthetistId
       }
+      if ('fundingTagId' in patch && (patch.fundingTagId === undefined || patch.fundingTagId === '')) delete next.fundingTagId
+      if ('specialtyIds' in patch && patch.specialtyIds !== undefined) next.specialtyIds = [...new Set(patch.specialtyIds)]
       return next
     },
     { action: 'contract.update' },

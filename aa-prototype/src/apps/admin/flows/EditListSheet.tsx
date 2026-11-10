@@ -7,6 +7,7 @@ import { useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
+import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
 
 interface EditListSheetProps {
   open: boolean
@@ -35,6 +36,7 @@ const selectStyle = {
 export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps) {
   const { Overlay } = useSurface()
   const hospitals = useAppStore((s) => s.masters.hospitals)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const times = useListTimes(list)
   const defaultTimes = useAppStore((s) => s.appSettings.schedule.defaultTimes[list.session])
   // A Draft List has no session yet, so no session times to edit (catch-up Phase 31).
@@ -112,7 +114,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
             value={surgeonId}
             onChange={setSurgeonId}
             emptyLabel="Choose a surgeon"
-            optionLabel={(s) => `${s.name}${s.specialty !== undefined ? ` (${s.specialty})` : ''}`}
+            optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}
             style={selectStyle}
           />
         </label>

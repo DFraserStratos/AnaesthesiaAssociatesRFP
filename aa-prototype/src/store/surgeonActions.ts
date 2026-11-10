@@ -7,10 +7,15 @@
  * The surgeon's HPI CPN (OQ-52) is required, stored trimmed and upper-cased,
  * shape-checked, and unique across every practitioner, surgeons and
  * anaesthetists alike. A room's surgeons are derived from `Surgeon.roomId`.
+ *
+ * Catch-up Phase 18a (US-13.6.6): a surgeon holds one or more specialties from
+ * AA's list, required here (not only in the form): a save with none, or with
+ * an unknown one, is refused. The audit prints them by name.
  */
 
 import type { Surgeon, SurgeonGroup, SurgeonRoom } from '../domain/types'
 import { hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, normaliseHpiCpn } from '../domain/surgeons'
+import { cleanSpecialtyIds, specialtyNames } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 
@@ -20,7 +25,8 @@ import type { AppState, AppStoreApi } from './appStore'
 
 export interface SurgeonFields {
   name: string
-  specialty?: string
+  /** One or more, from AA's list; the first is shown first. */
+  specialtyIds: string[]
   roomId: string
   hpiId: string
   medicalRegistrationNumber?: string
@@ -33,6 +39,8 @@ function cleanSurgeonFields(
 ): Outcome<Omit<Surgeon, 'id'>> {
   const name = fields.name.trim()
   if (name === '') return refuse('nameRequired', 'A surgeon name is required.')
+  const specialties = cleanSpecialtyIds(fields.specialtyIds, state.masters.specialties)
+  if (!specialties.ok) return refuse(specialties.code, specialties.message)
   if (state.masters.surgeonRooms[fields.roomId] === undefined) {
     return refuse('roomRequired', "Choose the surgeon's room.")
   }
@@ -43,15 +51,20 @@ function cleanSurgeonFields(
   }
   const holder = hpiCpnHolder(state.masters, hpiId, excludeSurgeonId !== undefined ? { surgeonId: excludeSurgeonId } : undefined)
   if (holder !== null) return refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
-  const specialty = fields.specialty?.trim() ?? ''
   const registration = fields.medicalRegistrationNumber?.trim() ?? ''
   return ok({
     name,
+    specialtyIds: specialties.ids,
     roomId: fields.roomId,
     hpiId,
-    ...(specialty !== '' ? { specialty } : {}),
     ...(registration !== '' ? { medicalRegistrationNumber: registration } : {}),
   })
+}
+
+/** A surgeon's audit values with the specialties as names (`specialties: ['ENT']`), never ids. */
+function auditValues(values: Partial<Omit<Surgeon, 'id'>>, state: Pick<AppState, 'masters'>): Record<string, unknown> {
+  const { specialtyIds, ...rest } = values
+  return specialtyIds !== undefined ? { ...rest, specialties: specialtyNames(state.masters, specialtyIds) } : rest
 }
 
 /** Add a surgeon. Audited `surgeon.create`. */
@@ -65,7 +78,7 @@ export function createSurgeon(api: AppStoreApi, actor: Actor, fields: SurgeonFie
     const alloc = allocateId(s.counters, 'surgeon')
     id = alloc.id
     const surgeon: Surgeon = { id, ...cleaned.value }
-    metas.push({ entityType: 'surgeon', entityId: id, action: 'surgeon.create', after: { ...cleaned.value }, stampBookingId: null })
+    metas.push({ entityType: 'surgeon', entityId: id, action: 'surgeon.create', after: auditValues(cleaned.value, s), stampBookingId: null })
     return { masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [id]: surgeon } }, counters: alloc.counters }
   })
   return ok({ id })
@@ -80,8 +93,8 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
   const cleaned = cleanSurgeonFields(state, fields, surgeonId)
   if (!cleaned.ok) return cleaned
   const next: Surgeon = { id: surgeonId, ...cleaned.value }
-  const keys = ['name', 'specialty', 'roomId', 'hpiId', 'medicalRegistrationNumber'] as const
-  const changed = keys.filter((k) => (existing[k] ?? '') !== (next[k] ?? ''))
+  const keys = ['name', 'specialtyIds', 'roomId', 'hpiId', 'medicalRegistrationNumber'] as const
+  const changed = keys.filter((k) => JSON.stringify(existing[k] ?? '') !== JSON.stringify(next[k] ?? ''))
   if (changed.length === 0) return ok(undefined)
   mutate(
     api,
@@ -90,8 +103,8 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
       entityType: 'surgeon',
       entityId: surgeonId,
       action: 'surgeon.update',
-      before: Object.fromEntries(changed.map((k) => [k, existing[k] ?? ''])),
-      after: Object.fromEntries(changed.map((k) => [k, next[k] ?? ''])),
+      before: auditValues(Object.fromEntries(changed.map((k) => [k, existing[k] ?? ''])), state),
+      after: auditValues(Object.fromEntries(changed.map((k) => [k, next[k] ?? ''])), state),
       stampBookingId: null,
     },
     (s) => ({ masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [surgeonId]: next } } }),

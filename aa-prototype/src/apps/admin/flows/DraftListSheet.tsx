@@ -15,6 +15,7 @@ import { useSurface } from '../../../shared/surface'
 import { DRAFT_LIST, SOURCE_LABELS } from '../../../shared/scheduleTerms'
 import { assignSelectStyle, withKind } from './AssignListFields'
 import { useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
+import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
 
 const KIND_OPTIONS: { value: ListKind; label: string }[] = [
   { value: 'private', label: 'Private' },
@@ -56,6 +57,7 @@ export function DraftListSheet({
   const { Overlay } = useSurface()
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const today = useAppStore((s) => s.clock.todayISO)
   const horizonEnd = useAppStore((s) => scheduleHorizon(s).endISO)
   const aaRoomsId = Object.values(hospitals).find((h) => h.locationType === 'aaRooms')?.id
@@ -122,7 +124,7 @@ export function DraftListSheet({
             {Object.values(surgeons)
               .sort((a, b) => a.name.localeCompare(b.name))
               .map((s) => (
-                <option key={s.id} value={s.id}>{s.name}{s.specialty !== undefined ? ` (${s.specialty})` : ''}</option>
+                <option key={s.id} value={s.id}>{withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}</option>
               ))}
           </select>
         </label>

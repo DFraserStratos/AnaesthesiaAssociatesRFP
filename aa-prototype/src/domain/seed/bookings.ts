@@ -263,7 +263,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     patientPaymentCategory?: 'selfFundedPostProcedure' | 'selfFundedPrepayment' | 'insuredReimbursement'
     prepaymentDetail?: { type: 'full' | 'split'; depositAmount?: number }
     billingReference?: string
-    accRelated?: boolean
     isAdditional?: boolean
     timeUnitsOverride?: number
   }
@@ -274,7 +273,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       id: `P${String(procN).padStart(4, '0')}`,
       bookingId: booking.id,
       description: spec.description,
-      accRelated: spec.accRelated ?? false,
       isAdditional: spec.isAdditional ?? false,
       selectedModifierCodes: spec.selectedModifierCodes ?? [],
     }
@@ -469,7 +467,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       billingRoute: 'hospital',
       governingContractId: s.acc === true ? CONTRACT.stgAcc : CONTRACT.stgRvg,
       ...(s.ref !== undefined ? { billingReference: s.ref } : {}),
-      ...(s.acc === true ? { accRelated: true } : {}),
     })
     if (i === 1) missingRefProc1 = procedure.id
     if (s.acc === true) accRelatedBookingId = booking.id
@@ -783,7 +780,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     billingRoute: 'hospital',
     governingContractId: CONTRACT.cosAcc,
     billingReference: 'ACC45-104772',
-    accRelated: true,
   })
 
   // Repeat patient: Sarah Mitchell's first episode (Sharma, Tue 14 Jul, CPH).
@@ -949,7 +945,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     billingRoute: 'hospital',
     governingContractId: CONTRACT.cosAcc,
     billingReference: 'ACC45-118844',
-    accRelated: true,
   })
   const failureSiblingBooking = addBooking({
     listId: ropataThu16,

@@ -83,6 +83,9 @@ view respectively.
 | Integration monitor | `/admin/integrations` |
 | Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
 | Availability statuses | `/admin/masters?view=availability-statuses` |
+| Contracts | `/admin/masters?view=contracts` (one holder: `&holder=PY-COS`) |
+| Specialties | `/admin/masters?view=specialties` |
+| Funding tags | `/admin/masters?view=fundingTags` |
 | Recurring bookings | `/admin/masters?view=recurringBookings` |
 | Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |

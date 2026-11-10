@@ -7,6 +7,7 @@
  * billing setup and the billing monitor's "Choose a Contract".
  */
 
+import { contractChoosableForProcedure } from '../../domain/billing/fallbacks'
 import { useMemo, type CSSProperties } from 'react'
 import { contractSearch } from '../../domain/billing/contracts'
 import { useAppStore } from '../../store'
@@ -28,8 +29,10 @@ export function ContractSelect({ value, onChange, selectStyle, label = 'Governin
   const parties = useAppStore((s) => s.masters.parties)
 
   const groups = useMemo(() => {
+    // Never an open-price fallback (catch-up Phase 18a): it has no price of its
+    // own, and Phase 20's "Other price" picks one with the amount typed.
     const listed = contractSearch('', { contracts, parties, filters: { status: 'all' } }).filter(
-      (c) => c.status === 'active' || c.id === value,
+      (c) => (c.status === 'active' || c.id === value) && contractChoosableForProcedure(c),
     )
     const system = listed.filter((c) => c.systemRole !== undefined)
     const byHolder = new Map<string, typeof listed>()

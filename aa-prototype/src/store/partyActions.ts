@@ -6,6 +6,7 @@
  * read-only; nothing is deleted. Creating a Party creates no Contract.
  */
 
+import { FUNDER_PARTY_KINDS } from '../domain/billing/fundingTags'
 import type { DeliveryMethod, Party, PartyKind } from '../domain/types'
 import { partyRefusal } from '../domain/billing/parties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -100,6 +101,11 @@ export function editParty(api: AppStoreApi, actor: Actor, partyId: string, field
     ...partyContractFacts(state, partyId),
   })
   if (refused !== null) return refuse(refused.code, refused.message)
+  // A Party a funding tag names stays an insurer or funder (catch-up Phase 18a).
+  const namedBy = Object.values(state.masters.fundingTags).find((t) => t.funderPartyId === partyId)
+  if (namedBy !== undefined && next.kind !== prev.kind && !FUNDER_PARTY_KINDS.includes(next.kind)) {
+    return refuse('funderKindFixed', `${prev.name} is the funder named on the ${namedBy.code} funding tag, so it stays an insurer or funder. Change the tag's funder first.`)
+  }
 
   const keys = new Set<keyof Party>([...(Object.keys(prev) as (keyof Party)[]), ...(Object.keys(next) as (keyof Party)[])])
   const changed = [...keys].filter((k) => k !== 'legacyCounterparty' && prev[k] !== next[k])

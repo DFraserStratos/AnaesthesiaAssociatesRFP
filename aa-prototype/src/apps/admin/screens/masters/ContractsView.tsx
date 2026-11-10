@@ -6,13 +6,21 @@
  * headings with No contract · RVG first. Office only (D42). Each row opens the
  * Contract editor; nothing is deleted. Hundreds of Contracts arrive with
  * Phase 19a, so the list is always searched, never browsed bare.
+ *
+ * Catch-up Phase 18a: a filter by funding tag beside the holder filter; each
+ * row shows its tag as a neutral pill and its specialties in mist; the system
+ * Contracts (No contract · RVG and the Fixed price fallbacks) carry a "System"
+ * pill. No control shows or hides Contracts by specialty here.
  */
 
+import { isOfficeContract } from '../../../../domain/billing/fallbacks'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
 import type { Contract } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
+import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
+import { specialtyNames } from '../../../../domain/specialties'
 import { Button, FieldLabel, Segmented } from '../../../../shared'
 import { NameSearchBox } from '../../../../shared/ui'
 import { BILLS_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
@@ -29,12 +37,16 @@ const COLUMNS = ['AA code', 'Name', 'Bills', 'Pricing', 'Tags', 'Status', '']
 export function ContractsView({ actor }: { actor: Actor }) {
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
+  const fundingTags = useAppStore((s) => s.masters.fundingTags)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const [params, setParams] = useSearchParams()
+  const [tagFilter, setTagFilter] = useState('')
+  const tagId = fundingTags[tagFilter] !== undefined ? tagFilter : ''
   const [query, setQuery] = useState('')
   // Active by default; a Party's link that holds only Disabled Contracts opens on All.
   const [status, setStatus] = useState<ContractStatusFilter>(() => {
     const h = params.get('holder')
-    return h !== null && !Object.values(contracts).some((c) => c.holderId === h && c.status === 'active') ? 'all' : 'active'
+    return h !== null && !Object.values(contracts).some((c) => c.holderId === h && c.status === 'active' && isOfficeContract(c)) ? 'all' : 'active'
   })
   const [panel, setPanel] = useState<{ id?: string } | null>(null)
   const holderParam = params.get('holder') ?? ''
@@ -54,9 +66,9 @@ export function ContractsView({ actor }: { actor: Actor }) {
       contractSearch(query, {
         contracts,
         parties,
-        filters: { status, ...(holderId !== '' ? { holderId } : {}) },
+        filters: { status, ...(holderId !== '' ? { holderId } : {}), ...(tagId !== '' ? { fundingTagId: tagId } : {}) },
       }),
-    [query, contracts, parties, status, holderId],
+    [query, contracts, parties, status, holderId, tagId],
   )
   const groups = useMemo(() => {
     const map = new Map<string, Contract[]>()
@@ -68,7 +80,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
     [parties, contracts],
   )
 
-  const filtered = query.trim() !== '' || status !== 'active' || holderId !== ''
+  const filtered = query.trim() !== '' || status !== 'active' || holderId !== '' || tagId !== ''
 
   return (
     <>
@@ -79,17 +91,18 @@ export function ContractsView({ actor }: { actor: Actor }) {
       />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div data-shot="contract-search" style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div data-shot="contract-search" style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Search</FieldLabel>
           <NameSearchBox value={query} onChange={setQuery} label="Search by name, code or AA code" />
           <div data-shot="contract-result-count" style={{ fontSize: 12.5, color: neutral.slate }}>
             <span className="mono">{results.length}</span> {results.length === 1 ? 'Contract' : 'Contracts'}
             {status === 'active' ? ' active' : status === 'disabled' ? ' disabled' : ''}
             {holderId !== '' ? ` held by ${parties[holderId]?.name ?? holderId}` : ''}
+            {tagId !== '' ? ` tagged ${fundingTags[tagId]?.code ?? tagId}` : ''}
             {query.trim() !== '' ? ` matching "${query.trim()}"` : ''}
           </div>
         </div>
-        <div data-shot="contract-status-filter" style={{ width: 280 }}>
+        <div data-shot="contract-status-filter" style={{ width: 260 }}>
           <Segmented
             label="Status"
             value={status}
@@ -101,12 +114,21 @@ export function ContractsView({ actor }: { actor: Actor }) {
             onChange={setStatus}
           />
         </div>
-        <label data-shot="contract-holder-filter" style={{ width: 260, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label data-shot="contract-holder-filter" style={{ width: 210, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Holder</FieldLabel>
           <select value={holderId} onChange={(e) => setHolder(e.target.value)} style={selectControlStyle}>
             <option value="">Every holder</option>
             {holderOptions.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </label>
+        <label data-shot="contract-tag-filter" style={{ width: 140, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <FieldLabel>Funding tag</FieldLabel>
+          <select value={tagId} onChange={(e) => setTagFilter(e.target.value)} style={selectControlStyle}>
+            <option value="">Every tag</option>
+            {fundingTagsInOrder(fundingTags).map((t) => (
+              <option key={t.id} value={t.id}>{t.code}</option>
             ))}
           </select>
         </label>
@@ -122,6 +144,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
                 setQuery('')
                 setStatus('all')
                 setHolder('')
+                setTagFilter('')
               }}
             >
               Search all Contracts
@@ -143,6 +166,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
                 <tr
                   key={c.id}
                   data-contract={c.id}
+                  data-system={c.systemRole !== undefined ? c.systemRole : undefined}
                   className="aa-clickable-table-row"
                   onClick={(event) => {
                     if (!isInteractiveRowTarget(event.target)) setPanel({ id: c.id })
@@ -152,11 +176,16 @@ export function ContractsView({ actor }: { actor: Actor }) {
                   <td style={{ ...rowCellStyle, fontWeight: 500 }}>
                     {c.name}
                     {c.holderReference !== undefined && <span className="mono" style={{ color: neutral.mist, marginLeft: 8 }}>{c.holderReference}</span>}
+                    {c.specialtyIds.length > 0 && (
+                      <div style={{ fontSize: 12.5, color: neutral.mist, fontWeight: 400, marginTop: 2 }}>{specialtyNames({ specialties }, c.specialtyIds).join(', ')}</div>
+                    )}
                   </td>
                   <td style={rowCellStyle}>{BILLS_LABEL[c.billsTo]}</td>
                   <td style={rowCellStyle}><PricingText contract={c} /></td>
                   <td style={rowCellStyle}>
-                    <span style={{ display: 'inline-flex', gap: 4 }}>
+                    <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
+                      {c.systemRole !== undefined && <Pill shot="contract-system-pill">System</Pill>}
+                      {c.fundingTagId !== undefined && <Pill><span className="mono">{fundingTags[c.fundingTagId]?.code ?? c.fundingTagId}</span></Pill>}
                       {c.prepaid && <Pill>Prepaid</Pill>}
                       {c.anaesthetistMayOverridePrice && <Pill>Override</Pill>}
                     </span>

@@ -19,6 +19,7 @@
  *   - integration-sourced writes only while the List is ACTIVE.
  */
 
+import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
 import type { Booking, List, ListPhoneNote, Procedure } from '../domain/types'
 import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
@@ -489,6 +490,12 @@ export function editProcedure(
   if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
+  // An open-price Contract is never chosen this way (catch-up Phase 18a): it
+  // has no price of its own, and Phase 20's "Other price" picks it with an amount.
+  if (patch.governingContractId !== undefined && patch.governingContractId !== procedure.governingContractId) {
+    const contract = state.masters.contracts[patch.governingContractId]
+    if (contract !== undefined && !contractChoosableForProcedure(contract)) return refuse('openPriceNotChosen', OPEN_PRICE_NOT_CHOSEN_MESSAGE)
+  }
 
   mutate(
     api,

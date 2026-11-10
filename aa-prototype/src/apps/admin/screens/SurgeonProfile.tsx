@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { neutral, radius } from '../../../theme/tokens'
 import { groupsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
 import { useAppStore, type Actor } from '../../../store'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
+import { Pill } from '../components/MasterPills'
 import { HistorySheet } from '../../../shared/booking'
 import { PairingSection, useProfileHistory } from '../components/pairing'
 import { BackLink, Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
@@ -20,6 +22,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const rooms = useAppStore((s) => s.masters.surgeonRooms)
   const groups = useAppStore((s) => s.masters.surgeonGroups)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const [editing, setEditing] = useState(false)
   const [history, setHistory] = useState(false)
   const profileHistory = useProfileHistory('surgeon', surgeonId)
@@ -35,11 +38,20 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       <ProfileHeader
         name={surgeon.name}
         chip={<IdChip label="HPI CPN" value={surgeon.hpiId} shot="surgeon-hpi-chip" />}
-        sub={[surgeon.specialty, room?.name].filter((v) => v !== undefined).join(' · ')}
+        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), room?.name].filter((v) => v !== undefined && v !== '').join(' · ')}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, alignItems: 'start' }}>
+        <ProfileCard title="Specialties" shot="surgeon-specialties">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
+              <Pill key={id}>{specialties[id]!.name}</Pill>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: neutral.mist }}>From AA&apos;s specialties list. One or more, usually one.</div>
+        </ProfileCard>
+
         <ProfileCard title="Identifiers" shot="surgeon-identifiers">
           <Fact label="HPI CPN" value={surgeon.hpiId} mono note="Unique index on the Health Provider Index. Not the patient's NHI." />
           <Fact

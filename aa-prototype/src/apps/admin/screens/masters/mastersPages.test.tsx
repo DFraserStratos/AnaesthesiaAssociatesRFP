@@ -111,14 +111,18 @@ describe('Master data views', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add surgeon' }))
     const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ms R. Tester' } })
-    fireEvent.change(within(sheet()).getByRole('combobox'), { target: { value: 'RM-MERI' } })
+    fireEvent.change(within(sheet()).getByLabelText("Surgeons' room"), { target: { value: 'RM-MERI' } })
     fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '12shap' } })
+    // Catch-up Phase 18a: a surgeon needs at least one specialty (US-13.6.6).
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose at least one specialty.')
+    fireEvent.change(within(sheet()).getByLabelText('Specialties'), { target: { value: 'SPC-OPHTH' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
     expect(screen.getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Dr Priya Sharma.')
     fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: ' 50test ' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
     const added = Object.values(useAppStore.getState().masters.surgeons).find((s) => s.name === 'Ms R. Tester')
-    expect(added).toMatchObject({ hpiId: '50TEST', roomId: 'RM-MERI' })
+    expect(added).toMatchObject({ hpiId: '50TEST', roomId: 'RM-MERI', specialtyIds: ['SPC-OPHTH'] })
   })
 
   it('edits a hospital contact email, and shows "No contact email" when there is none', () => {

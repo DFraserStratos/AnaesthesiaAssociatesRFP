@@ -11,6 +11,7 @@ import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChro
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 interface ReviewScreenProps {
   listId: string
@@ -175,7 +176,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
             {anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId}
             {surgeon !== undefined ? ` · ${surgeon.name}` : ''}
-            {surgeon?.specialty !== undefined ? ` · ${surgeon.specialty}` : ''}
+            {surgeonSpecialtyLabel(masters, surgeon) !== '' ? ` · ${surgeonSpecialtyLabel(masters, surgeon)}` : ''}
             {` · ${dayLabel}${times !== undefined ? ` · ${slotTimeRange(times)}` : ''}`}
           </div>
         </div>

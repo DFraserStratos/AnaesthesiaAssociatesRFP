@@ -1,0 +1,41 @@
+{
+  "id": "US-13.4.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "funding-tags",
+      "app": "admin",
+      "caption": "Funding tags in step-rail order, each optionally naming its funder",
+      "start": "/admin/masters?view=fundingTags",
+      "states": [
+        {
+          "state": "table",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=masters-funding-tags]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Editing a funding tag: its code and the insurer or funder it names",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit SXAP\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

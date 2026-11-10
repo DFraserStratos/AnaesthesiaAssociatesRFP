@@ -287,7 +287,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
@@ -343,6 +343,31 @@ badge carries `data-shot=nav-badge-<section>`.
   fees (fixed, no prices); `ARIA-001` (rate and time); `UNI-001` Unisports Ortho ($93.47). All Active.
 - The row's Edit button's accessible name is "Edit <name>": click `button:text-is("Edit")` inside the
   row, not `role=button[name="Edit"]`. The search input is `[data-shot=contract-search] input`.
+
+**Specialties, funding tags and the Fixed price Contracts** (catch-up Phase 18a; Admin, Master data)
+
+- Specialties (`SPC-<NAME>`; runtime `SPN001`), twelve, rows
+  `[data-shot=masters-specialties] tr[data-specialty=<id>]`: Ophthalmology `SPC-OPHTH` (20 surgeons),
+  General surgery `SPC-GENSURG` (29 surgeons, 1 Contract), Plastic surgery `SPC-PLASTIC`, ENT
+  `SPC-ENT`, Gynaecology `SPC-GYNAE`, Orthopaedics `SPC-ORTHO`, Urology `SPC-UROLOGY`,
+  Gastroenterology `SPC-GASTRO` and Cardiothoracic surgery `SPC-CARDIO` (none held), Neurosurgery
+  `SPC-NEURO`, Vascular surgery `SPC-VASCULAR`, Oral and maxillofacial surgery `SPC-OMFS`. Removing a
+  held one (Ophthalmology) shows the refusal as `[role=alert]` above the table.
+- The directory's free text is mapped: a Fertility surgeon (`S-BANCROFT`, `S-CARMODY`, `S-HUXLEY`,
+  `S-JESSOP`) reads Gynaecology, an Upper GI one (`S-MORLAND`, `S-WAINWRIGHT`) General surgery; Ms G.
+  Lim reads Plastic surgery (the day grid line is "Ms G. Lim · Plastic surgery").
+- Funding tags in step-rail order, rows `[data-shot=masters-funding-tags] tr[data-tag=<id>]`:
+  `TAG-SXAP` SXAP (Southern Cross Health Society), `TAG-HNZ` HNZ (Health NZ), `TAG-ACC` ACC (ACC).
+  Row actions are named "Move SXAP up", "Edit SXAP", "Remove SXAP"; removing SXAP is refused (2
+  Contracts).
+- Tagged Contracts: `SX-002` SXAP, `CPH-002` HNZ, `STG-002`, `COS-001` and `COS-002` ACC. Doyle's
+  `DOYLE-001` holds General surgery; every other Contract holds none (every specialty).
+- System Contracts, rows `tr[data-system=openPriceFallback]` with a "System" pill (No contract · RVG is
+  `tr[data-system=noContractRvg]`), ids `CT-FIX-<destination key>`: `AA-FIX` No contract · Fixed price,
+  `AA-PRE` Prepaid · Fixed price, `STG-ACC-FIX`, `SX-SXAP-FIX`, `CPH-HNZ-FIX` (hospital and tag), and
+  one `<PREFIX>-FIX` per Special holder (`STG-FIX`, `SX-FIX`, `FORTE-FIX`, `CES-FIX`, `CPH-FIX`,
+  `NIB-FIX`, `COS-FIX`, `ARIA-FIX`, `UNI-FIX`). Search "Fixed price" lists them. Tagging `CES-001`
+  SXAP and saving makes `CES-SXAP-FIX` at once.
 
 
 **Sessions and Lists** (catch-up Phase 28)
@@ -527,6 +552,17 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   600px right-docked panel (`[data-shot=party-panel]`, `[data-shot=contract-detail]`), not a centred
   Dialog. "New contract" and "Add Party" open it empty; the Contract panel shows "Assigned on save"
   for the AA code and its refusals as `[data-shot=contract-detail] [role=alert]` (scroll it into view).
+  Catch-up Phase 18a: its "Where it is offered" section holds `[data-shot=contract-specialties]` (chips
+  and an "Add a specialty" select) and `[data-shot=contract-funding-tag]` (a select labelled "Funding
+  tag"), then `[data-shot=contract-placement]`, the live "Offered under ..." line (scroll to it). A
+  system Contract shows `[data-shot=contract-system-notice]`, both fields read-only, and no Disable.
+- **Specialty and funding tag sheets** (Master data, catch-up Phase 18a): "Add specialty" or a row's
+  "Rename <name>" opens `[data-shot=specialty-sheet]` (one Name field); "Add funding tag" or "Edit
+  <code>" opens `[data-shot=funding-tag-sheet]` (Code, Funder select). Both are `[role=dialog]`.
+- **Surgeon sheet, specialties** (catch-up Phase 18a): "Edit details" on a profile opens
+  `[data-shot=surgeon-edit-sheet]` with `[data-shot=surgeon-specialties-field]` (chips named
+  "Remove <specialty>", and a select labelled "Specialties", value an id such as `SPC-PLASTIC`).
+  Removing every chip and saving shows "Choose at least one specialty." as the sheet's `role=alert`.
 
 - **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
   pick `[data-shot="office-status-choices"] [data-status-choice="unavailable"]`; on a session holding a
@@ -801,7 +837,14 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   kind, rate or discount, override), `contract-links` (Holder and who it bills: holder, Bills, linked
   surgeons and anaesthetist), `contract-disable` (Disable, error treatment), `contract-price-rows` (the
   fixed kind's prices), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
-  failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first.
+  failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first,
+  and never a Fixed price fallback.
+- Specialties, funding tags and fallbacks (catch-up Phase 18a): `masters-specialties`,
+  `masters-funding-tags`, `specialty-sheet`, `funding-tag-sheet`, `surgeon-specialties` (the profile's
+  Specialties card), `surgeon-specialties-field` (the surgeon sheet's field), `contract-specialties`,
+  `contract-funding-tag`, `contract-placement`, `contract-tag-filter` (the Contracts view's funding tag
+  select), `contract-system-notice`, `contract-system-pill` (the "System" pill), and the row marker
+  `tr[data-system=openPriceFallback|noContractRvg]`.
 - Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
   `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-rooms`
   (`tr[data-room=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`

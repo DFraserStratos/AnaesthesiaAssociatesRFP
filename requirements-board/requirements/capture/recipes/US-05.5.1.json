@@ -16,6 +16,33 @@
           ]
         }
       ]
+    },
+    {
+      "name": "acc-tag",
+      "app": "admin",
+      "caption": "ACC is a funding tag on a holder's Contract, priced from RVG units",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-STG-ACC\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-funding-tag]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-funding-tag]"
+          ]
+        }
+      ]
     }
   ]
 }

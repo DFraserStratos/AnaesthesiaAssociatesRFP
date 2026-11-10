@@ -13,6 +13,7 @@ import { useAppStore } from '../../../store'
 import { FieldLabel, Segmented, TextField } from '../../../shared/ui'
 import { SurgeonPicker } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
+import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
 
 export interface AssignDraft {
   hospitalId: string
@@ -84,6 +85,7 @@ export function AssignListFields({
   // store instead (catch-up Phase 32b, D59).
   const conflicts = useConflictPreview({ dateISO, hospitalId: draft.hospitalId })
   const optionLabel = useHospitalOptionLabel(dateISO)
+  const specialties = useAppStore((s) => s.masters.specialties)
   return (
     <>
       <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -104,7 +106,7 @@ export function AssignListFields({
           value={draft.surgeonId}
           onChange={(surgeonId) => onChange({ ...draft, surgeonId })}
           emptyLabel="Choose a surgeon"
-          optionLabel={(s) => `${s.name}${s.specialty !== undefined ? ` (${s.specialty})` : ''}`}
+          optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}
           style={assignSelectStyle}
         />
       </label>

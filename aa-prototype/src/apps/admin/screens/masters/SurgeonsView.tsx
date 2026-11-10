@@ -5,6 +5,7 @@ import { pairingCounts } from '../../../../domain/pairingPreferences'
 import { compareBySurname, surgeonsInRoom } from '../../../../domain/surgeons'
 import type { Surgeon, SurgeonGroup, SurgeonRoom } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
+import { surgeonSpecialtyLabel } from '../../../../domain/specialties'
 import { Button } from '../../../../shared'
 import { SurgeonEditSheet } from '../../flows/SurgeonEditSheet'
 import { SurgeonRoomSheet } from '../../flows/SurgeonRoomSheet'
@@ -34,6 +35,7 @@ function SurgeonLink({ id, name }: { id: string; name: string }) {
 export function SurgeonsView({ actor }: { actor: Actor }) {
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const rooms = useAppStore((s) => s.masters.surgeonRooms)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const entries = usePairingEntries()
   const navigate = useNavigate()
   const [sheet, setSheet] = useState<{ surgeon?: Surgeon } | null>(null)
@@ -46,7 +48,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
         sub="One record per surgeon, keyed on the HPI CPN. Open a surgeon for their room, groups and pairing preferences."
         action={<Button variant="secondary" onClick={() => setSheet({})}>Add surgeon</Button>}
       />
-      <Table heads={['Name', 'Specialty', 'Room', 'HPI CPN', 'Pairings', '']} rightAlign={[5]} shot="masters-surgeons">
+      <Table heads={['Name', 'Specialties', 'Room', 'HPI CPN', 'Pairings', '']} rightAlign={[5]} shot="masters-surgeons">
         {rows.map((s) => {
           const counts = pairingCounts(entries, { surgeonId: s.id })
           return (
@@ -59,7 +61,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
               }}
             >
               <td style={rowCellStyle}><SurgeonLink id={s.id} name={s.name} /></td>
-              <td style={rowCellStyle}>{s.specialty ?? <span style={mist}>·</span>}</td>
+              <td style={rowCellStyle}>{surgeonSpecialtyLabel({ specialties }, s)}</td>
               <td style={rowCellStyle}>{rooms[s.roomId]?.name ?? s.roomId}</td>
               <td className="mono" style={rowCellStyle}>{s.hpiId}</td>
               <td style={rowCellStyle}>

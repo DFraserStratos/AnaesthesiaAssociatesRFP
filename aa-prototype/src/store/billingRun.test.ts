@@ -10,14 +10,14 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
+import { handoffListCases, markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
 import { authoriseList, completeBooking, editProcedure, reassignBooking, submitList } from './lifecycle'
 import { disableContract, editContract, editContractPrice } from './contractActions'
 import { editAnaesthetist } from './mastersActions'
 import { setBillingLineAllocation } from './billingLineActions'
 import { advanceClockMinutes } from './clockActions'
 import { clockISO, type Actor } from './mutate'
-import { invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
+import { accpayInvoicesFor, invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
 import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, SURG, CONTRACT } from '../domain/seed'
 import { roundToCents } from '../domain/billing/money'
 import type { Invoice, InvoiceLine } from '../domain/types'
@@ -131,6 +131,17 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     const standardInvoice = invoicesForBooking(api, missingRefBookingId)[0]
     expect(standardInvoice).toBeDefined()
     expect(linesOf(api, standardInvoice!.id)[0]!.description).toContain('at $35.00 per unit')
+  })
+
+  it("once billed and handed to Xero, the ACC booking reads ACC from its Contract's tag, and only it (catch-up Phase 18a)", () => {
+    const api = store()
+    billMorrison(api)
+    handoffListCases(api, MORRISON_LIST)
+    const rows = accpayInvoicesFor(api.getState(), ANAE.morrison, '2026-07-21')
+    const morrison = rows.filter((r) => invoicesForList(api.getState(), MORRISON_LIST).some((i) => i.id === r.invoiceId))
+    expect(morrison).toHaveLength(6)
+    const acc = morrison.filter((r) => r.accFunded)
+    expect(acc.map((r) => api.getState().billing.cases[r.caseId]?.bookingId)).toEqual([marker('accRelatedBooking')])
   })
 
   it('the missing-billing-reference booking bills anyway (an advisory, never a billing blocker)', () => {

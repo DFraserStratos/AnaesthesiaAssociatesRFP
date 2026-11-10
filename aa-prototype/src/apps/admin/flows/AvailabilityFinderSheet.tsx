@@ -23,6 +23,7 @@ import { Button, FieldLabel, Segmented } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { AnaesthetistCandidates, useSuggestionKey } from '../components/pairing'
 import { assignSelectStyle } from './AssignListFields'
+import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
 
 interface AvailabilityFinderSheetProps {
   open: boolean
@@ -40,6 +41,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
   const appSettings = useAppStore((s) => s.appSettings)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const [session, setSession] = useState<Session>(initialSession)
   const [surgeonId, setSurgeonId] = useState('')
 
@@ -80,7 +82,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
             <select data-shot="finder-surgeon" value={surgeonId} onChange={(e) => setSurgeonId(e.target.value)} style={assignSelectStyle}>
               <option value="">Any surgeon</option>
               {surgeonOptions.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}{s.specialty !== undefined ? ` (${s.specialty})` : ''}</option>
+                <option key={s.id} value={s.id}>{withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}</option>
               ))}
             </select>
           </label>

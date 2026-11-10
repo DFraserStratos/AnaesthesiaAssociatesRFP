@@ -17,12 +17,25 @@
  * AA codes come from `nextAaCode` in seed order, `<codePrefix>-<nnn>`; No
  * contract · RVG is `AA-RVG` (AR-58 8.2). Holder reference codes stay empty
  * until Phase 19a; nothing is prepaid. Demo values within RFP-stated ranges.
+ *
+ * Specialties and funding tags (catch-up Phase 18a; US-04.2.16, US-04.2.17):
+ * SXAP on the Southern Cross Affiliated Provider, HNZ on Health NZ's agreed
+ * rate, ACC on St George's ACC and both COS ACC Contracts (COS fixed fees
+ * too, our reading, so the billing-failure demo's Procedure keeps its ACC
+ * marker). The plain RVG Contracts carry no tag, so they sit under Special.
+ * Specialties only on Doyle's bariatric Contract (General surgery, his own),
+ * so every seeded Procedure's Contract still fits its List's surgeon. Then
+ * `ensureFallbacks` adds one open-price fallback per invoice destination,
+ * ids derived from the destination key.
  */
 
 import type { Contract, ContractPrice, ContractPricing } from '../types'
 import { nextAaCode } from '../billing/contracts'
+import { ensureFallbacks, seedFallbackId } from '../billing/fallbacks'
 import { SURG } from './cast'
+import { FUNDING_TAGS, TAG } from './fundingTags'
 import { PARTIES, PARTY } from './parties'
+import { SPC } from './specialties'
 
 export const CONTRACT = {
   noContractRvg: 'CT-NO-CONTRACT',
@@ -56,6 +69,8 @@ interface SeedContract {
   permitsRateTime?: boolean
   systemRole?: 'noContractRvg'
   aaCode?: string
+  fundingTagId?: string
+  specialtyIds?: string[]
 }
 
 const RVG: ContractPricing = { kind: 'rvgAnaesthetistRate' }
@@ -71,12 +86,12 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.cphRvg, name: 'Christchurch Public RVG', holderId: PARTY.cph, billsTo: 'holder', pricing: RVG },
   { id: CONTRACT.nibRvg, name: 'nib RVG', holderId: PARTY.nib, billsTo: 'holder', pricing: RVG },
   // RVG at the Contract's rate. SXAP is $26.50 (Decisions log 2026-07-23).
-  { id: CONTRACT.sxap, name: 'Southern Cross Affiliated Provider', holderId: PARTY.sx, billsTo: 'holder', pricing: rate(26.5) },
-  { id: CONTRACT.healthNz, name: 'Health NZ agreed rate', holderId: PARTY.cph, billsTo: 'holder', pricing: rate(23) },
-  { id: CONTRACT.stgAcc, name: "ACC elective services via St George's", holderId: PARTY.stg, billsTo: 'holder', pricing: rate(25) },
+  { id: CONTRACT.sxap, name: 'Southern Cross Affiliated Provider', holderId: PARTY.sx, billsTo: 'holder', pricing: rate(26.5), fundingTagId: TAG.sxap },
+  { id: CONTRACT.healthNz, name: 'Health NZ agreed rate', holderId: PARTY.cph, billsTo: 'holder', pricing: rate(23), fundingTagId: TAG.hnz },
+  { id: CONTRACT.stgAcc, name: "ACC elective services via St George's", holderId: PARTY.stg, billsTo: 'holder', pricing: rate(25), fundingTagId: TAG.acc },
   // Fixed price over the interim rows; bills the payer (the route still bills Doyle until Phase 21).
-  { id: CONTRACT.doyleBariatric, name: 'Bariatric fixed prices, Mr P. Doyle', holderId: PARTY.doyle, billsTo: 'payer', pricing: { kind: 'fixed' }, linkedSurgeonIds: [SURG.doyle] },
-  { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS },
+  { id: CONTRACT.doyleBariatric, name: 'Bariatric fixed prices, Mr P. Doyle', holderId: PARTY.doyle, billsTo: 'payer', pricing: { kind: 'fixed' }, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
+  { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // The Method 3 gate (`permitsRateTime`, INTERIM until Phase 24), linked to
   // the surgeons on its seeded Bookings (Ms G. Lim, Mr C. Okafor; logged).
   { id: CONTRACT.ariaHourly, name: 'Aria Skin and Laser Clinic hourly rate', holderId: PARTY.aria, billsTo: 'holder', pricing: rate(26.5), permitsRateTime: true, linkedSurgeonIds: [SURG.lim, SURG.okafor] },
@@ -85,7 +100,7 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.unisports, name: 'Unisports Ortho', holderId: PARTY.unisports, billsTo: 'holder', pricing: rate(93.47), linkedSurgeonIds: [SURG.hale] },
   // No rows: the billing-failure demo points Losa Tuilagi's Procedure at it
   // ("No price in force"). Phase 19a gives it a range starting after 16 Jul 2026.
-  { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: { kind: 'fixed' }, linkedSurgeonIds: COS_SURGEONS },
+  { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: { kind: 'fixed' }, linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
 ]
 
 function buildContracts(): Contract[] {
@@ -109,11 +124,24 @@ function buildContracts(): Contract[] {
       status: 'active',
       ...(c.systemRole !== undefined ? { systemRole: c.systemRole } : {}),
       permitsRateTime: c.permitsRateTime ?? false,
+      specialtyIds: c.specialtyIds ?? [],
+      ...(c.fundingTagId !== undefined ? { fundingTagId: c.fundingTagId } : {}),
     }
   })
 }
 
-export const CONTRACTS: readonly Contract[] = buildContracts()
+/** The seeded Contracts, then one open-price fallback per invoice destination they imply. */
+function withFallbacks(contracts: readonly Contract[]): Contract[] {
+  const { contracts: all } = ensureFallbacks(
+    Object.fromEntries(contracts.map((c) => [c.id, c])),
+    Object.fromEntries(PARTIES.map((p) => [p.id, p])),
+    Object.fromEntries(FUNDING_TAGS.map((t) => [t.id, t])),
+    (_d, key) => seedFallbackId(key),
+  )
+  return Object.values(all)
+}
+
+export const CONTRACTS: readonly Contract[] = withFallbacks(buildContracts())
 
 /**
  * The fixed-price rows for Doyle's bariatric Contract (INTERIM until Phase

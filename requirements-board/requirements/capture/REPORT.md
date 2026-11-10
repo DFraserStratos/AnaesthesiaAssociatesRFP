@@ -6,13 +6,13 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 152 | 138 |
+| Captured | 157 | 143 |
 | Partial | 54 | 54 |
 | Absent from the app | 65 | 64 |
 | Failed recipe | 0 | 0 |
-| No recipe | 44 | 44 |
+| No recipe | 39 | 39 |
 
-560 screenshots. Items per app: admin 133, web 71, mobile 63, simulator 35.
+571 screenshots. Items per app: admin 138, web 71, mobile 63, simulator 35.
 
 ## Failed recipes (0)
 
@@ -143,7 +143,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (44)
+## No recipe (39)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-02.2.3** Detect Bookings removed from a re-sent List
@@ -165,8 +165,6 @@ None.
 - **US-04.2.13** Export and re-import Contracts
 - **US-04.2.14** Anaesthetist's own price list Contracts
 - **US-04.2.15** Price ranges on a fixed price
-- **US-04.2.16** Specialties on a Contract
-- **US-04.2.17** Funding tag on a Contract
 - **US-04.2.18** Holder reference code, invoice description and default RVG code
 - **US-04.3.8** Where the invoice goes, then the Contract
 - **US-04.3.9** Open-price fallbacks and the Other price toggle
@@ -182,15 +180,12 @@ None.
 - **US-08.6.6** Start a rebill from a copy of the original lines
 - **US-11.4.3** Insurance and approval number on the Booking
 - **US-13.2.4** Reconciliation status at a glance
-- **US-13.4.4** Specialties
-- **US-13.4.5** Funding tags
 - **US-13.5.3** Sign in to the anaesthetist app
 - **US-13.6.5** Practice manager and PA contacts
-- **US-13.6.6** Surgeon specialties
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (152)
+## Captured (157)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -259,6 +254,8 @@ None.
 - **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
 - **US-04.1.5** Parties · admin
 - **US-04.2.2** Pricing kinds · admin
+- **US-04.2.16** Specialties on a Contract · admin
+- **US-04.2.17** Funding tag on a Contract · admin
 - **US-04.3.4** Admin sets Contracts at booking setup · admin
 - **US-04.3.5** Contract locked at AUTHORISED · admin
 - **US-05.1.1** RVG groups · admin
@@ -326,12 +323,15 @@ None.
 - **US-13.1.2** Review future days in the day view · admin
 - **US-13.3.1** Processing monitor · admin
 - **US-13.3.2** Manual intervention · admin
+- **US-13.4.4** Specialties · admin
+- **US-13.4.5** Funding tags · admin
 - **US-13.5.1** Role-based access · admin, simulator
 - **US-13.5.2** Audit trail of changes · admin
 - **US-13.6.1** Surgeons' rooms master record · admin
 - **US-13.6.2** Surgeon profile · admin
 - **US-13.6.3** Not-preferred pairings of surgeons and anaesthetists · admin
 - **US-13.6.4** Preferred pairings · admin
+- **US-13.6.6** Surgeon specialties · admin
 - **US-13.7.2** Warnings on the dashboard to-do list · admin
 - **US-13.7.3** Warning flag on a Booking · mobile, web, admin
 - **US-13.8.1** See the team's notifications · admin

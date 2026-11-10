@@ -13,7 +13,7 @@
           "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "text=\"Ms G. Lim · Plastics\""
+          "click": "text=\"Ms G. Lim · Plastic surgery\""
         },
         {
           "wait": 600
@@ -96,7 +96,7 @@
           "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "text=\"Ms G. Lim · Plastics\""
+          "click": "text=\"Ms G. Lim · Plastic surgery\""
         },
         {
           "wait": 600

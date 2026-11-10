@@ -231,6 +231,9 @@ export {
   type SurgeonGroupFields,
 } from './surgeonActions'
 export { createParty, editParty, partyContractFacts, type PartyFields } from './partyActions'
+// Catch-up Phase 18a: AA's specialties and funding tags (Admin Master data).
+export { createSpecialty, renameSpecialty, removeSpecialty } from './specialtyActions'
+export { createFundingTag, editFundingTag, moveFundingTagInList, removeFundingTag, type FundingTagFields } from './fundingTagActions'
 export {
   createContract,
   editContract,

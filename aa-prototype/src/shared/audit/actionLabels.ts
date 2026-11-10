@@ -131,12 +131,21 @@ export const ACTION_LABELS: Record<string, string> = {
   // Catch-up Phase 18 (US-04.1.5).
   'party.create': 'Party added',
   'party.update': 'Party updated',
+  // Catch-up Phase 18a (US-13.4.4, US-13.4.5).
+  'specialty.create': 'Specialty added',
+  'specialty.update': 'Specialty renamed',
+  'specialty.remove': 'Specialty removed',
+  'fundingTag.create': 'Funding tag added',
+  'fundingTag.update': 'Funding tag updated',
+  'fundingTag.move': 'Funding tag moved',
+  'fundingTag.remove': 'Funding tag removed',
 
   // --- Contracts -----------------------------------------------------------
   'contract.create': 'Contract created',
   'contract.update': 'Contract updated',
   'contract.disable': 'Contract disabled',
   'contract.enable': 'Contract made active',
+  'contract.fallbackCreate': 'Fixed price Contract made by the system',
   'contractPrice.create': 'Fixed price added',
   'contractPrice.update': 'Fixed price updated',
 

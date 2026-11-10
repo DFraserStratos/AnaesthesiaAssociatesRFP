@@ -5,6 +5,7 @@
  * Insurers and Organisations tabs (RV-39). A row opens the Party panel.
  */
 
+import { isOfficeContract } from '../../../../domain/billing/fallbacks'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Party, PartyKind } from '../../../../domain/types'
@@ -38,6 +39,8 @@ export function PartiesView({ actor }: { actor: Actor }) {
     const active = new Map<string, number>()
     const held = new Map<string, number>()
     for (const c of Object.values(contracts)) {
+      // The system's Fixed price fallbacks are never counted as a Party's Contracts (catch-up Phase 18a).
+      if (!isOfficeContract(c)) continue
       held.set(c.holderId, (held.get(c.holderId) ?? 0) + 1)
       if (c.status === 'active') active.set(c.holderId, (active.get(c.holderId) ?? 0) + 1)
     }

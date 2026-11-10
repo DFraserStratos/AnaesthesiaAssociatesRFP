@@ -135,7 +135,6 @@ export function createBooking(
       bookingId,
       description: input.operation.trim(),
       billingRoute: input.billingRoute,
-      accRelated: false,
       isAdditional: false,
       selectedModifierCodes: [],
     }
@@ -269,7 +268,6 @@ export function addPostOpAddendum(
       id: procedureId,
       bookingId,
       description: '',
-      accRelated: false,
       isAdditional: false,
       selectedModifierCodes: [],
     }
@@ -356,7 +354,6 @@ export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string):
       id: procedureId,
       bookingId,
       description: '',
-      accRelated: false,
       isAdditional: true,
       selectedModifierCodes: [],
     }

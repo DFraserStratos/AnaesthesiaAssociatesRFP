@@ -16,6 +16,8 @@ import { ScheduleSettingsView } from './ScheduleSettingsView'
 import { AvailabilityStatusesView } from './AvailabilityStatusesView'
 import { PartiesView } from './PartiesView'
 import { ContractsView } from './ContractsView'
+import { SpecialtiesView } from './SpecialtiesView'
+import { FundingTagsView } from './FundingTagsView'
 
 interface MasterDataProps {
   actor: Actor
@@ -63,6 +65,8 @@ export function MasterData({ actor }: MasterDataProps) {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
         {view === 'contracts' && <ContractsView actor={actor} />}
+        {view === 'fundingTags' && <FundingTagsView actor={actor} />}
+        {view === 'specialties' && <SpecialtiesView actor={actor} />}
         {view === 'parties' && <PartiesView actor={actor} />}
         {view === 'recurringBookings' && <RecurringBookingsMaster actor={actor} />}
         {view === 'hospitals' && <HospitalsView actor={actor} />}

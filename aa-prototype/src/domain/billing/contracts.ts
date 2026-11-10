@@ -26,6 +26,8 @@
 import type { AnaesthetistId, ContractId, ContractPrice, HospitalId, Procedure, SurgeonId } from '../types'
 import type { Party, PartyId, PartyKind } from './parties'
 import { billingDetailsRefusal } from './parties'
+import type { SpecialtyId } from '../specialties'
+import type { FundingTagId } from './fundingTags'
 
 // ---------------------------------------------------------------------------
 // The model
@@ -49,6 +51,15 @@ export type ContractPricing =
   | { kind: 'open' }
 
 export type ContractStatus = 'active' | 'disabled'
+/** The two system roles (AR-58 5.5): the one No contract · RVG, and every open-price fallback. */
+export type SystemRole = 'noContractRvg' | 'openPriceFallback'
+
+/**
+ * The fields the office may change on a system Contract (AR-58 validation
+ * 14): its name and AA code. Phase 19a adds the invoice description. The one
+ * list; the save guard and the editor both read it.
+ */
+export const SYSTEM_CONTRACT_EDITABLE_FIELDS = ['name', 'aaCode'] as const satisfies readonly (keyof Contract)[]
 export type BillsTo = 'holder' | 'payer'
 
 export interface Contract {
@@ -79,8 +90,25 @@ export interface Contract {
   pricing: ContractPricing
   /** AR-58 `status`: a Disabled Contract leaves the default list; a Procedure already on it keeps it and bills as normal (D81). */
   status: ContractStatus
-  /** AR-58 `systemRole`: marks the one built-in, found by role, never by name (OQ-78). */
-  systemRole?: 'noContractRvg'
+  /**
+   * AR-58 `systemRole`: a system Contract, found by role, never by name
+   * (OQ-78): the one No contract · RVG, or an open-price fallback that
+   * `ensureFallbacks` makes (one per invoice destination, Phase 18a). The
+   * office never sets it; a system Contract changes only the fields in
+   * `SYSTEM_CONTRACT_EDITABLE_FIELDS` and is never disabled.
+   */
+  systemRole?: SystemRole
+  /**
+   * AR-58 `specialtyIds` (US-04.2.16, Phase 18a): the specialties it is offered
+   * for; empty means every specialty. Phase 20's filter reads it through
+   * `contractFitsSpecialties`.
+   */
+  specialtyIds: SpecialtyId[]
+  /**
+   * AR-58 `fundingTagId` (US-04.2.17, Phase 18a): at most one tag from AA's list.
+   * With `billsTo` it decides where the Contract sits (`destinationOf`).
+   */
+  fundingTagId?: FundingTagId
   /**
    * Ours, INTERIM until Phase 24: today's Method 3 gate (rate x time capture is
    * offered only under a Contract carrying it, 5th review #1). Phase 24 removes it.
@@ -159,6 +187,8 @@ export type ContractRefusalCode =
   | 'pricingKindFixed'
   | 'systemFixed'
   | 'systemNeverDisabled'
+  | 'specialtyUnknown'
+  | 'fundingTagUnknown'
 
 export const CONTRACT_REFUSAL_MESSAGES: Record<ContractRefusalCode, string> = {
   nameRequired: 'A Contract needs a name.',
@@ -169,7 +199,6 @@ export const CONTRACT_REFUSAL_MESSAGES: Record<ContractRefusalCode, string> = {
   rateAboveZero: 'The rate must be above zero.',
   discountRange: 'The discount must be above 0% and below 100%.',
   openNotChosen: 'Open price is only for the system fallbacks; choose another pricing kind.',
-  systemRoleNotChosen: 'Only the system makes No contract · RVG.',
   prepaidBillsPayer: 'A prepaid Contract always bills the payer.',
   prepaidNotRvg: 'A prepaid Contract cannot be priced from RVG units; use a fixed price.',
   overrideOnlyRvg: 'Only a Contract priced from RVG units can let the anaesthetist override its price.',
@@ -180,8 +209,11 @@ export const CONTRACT_REFUSAL_MESSAGES: Record<ContractRefusalCode, string> = {
   linkUnknown: 'A linked surgeon or anaesthetist could not be found.',
   prepaidFixed: 'Prepaid is set when the Contract is created and cannot change.',
   pricingKindFixed: 'The pricing kind is set when the Contract is created and cannot change.',
-  systemFixed: 'Only the name and AA code of No contract · RVG can change.',
-  systemNeverDisabled: 'No contract · RVG is always available and cannot be disabled.',
+  systemRoleNotChosen: 'Only the system makes No contract · RVG and the Fixed price Contracts.',
+  systemFixed: 'Only the name and AA code of a system Contract can change.',
+  systemNeverDisabled: 'A system Contract is always available and cannot be disabled.',
+  specialtyUnknown: 'A specialty on this Contract is not on the list.',
+  fundingTagUnknown: 'That funding tag is not on the list.',
 }
 
 export interface ContractRefusal {
@@ -199,6 +231,9 @@ export interface ContractRefusalContext {
   contracts: Readonly<Record<ContractId, Contract>>
   surgeonIds: ReadonlySet<SurgeonId>
   anaesthetistIds: ReadonlySet<AnaesthetistId>
+  /** AA's specialties and funding tags (validation 9, Phase 18a). */
+  specialtyIds: ReadonlySet<SpecialtyId>
+  fundingTagIds: ReadonlySet<FundingTagId>
 }
 
 /**
@@ -209,12 +244,11 @@ export interface ContractRefusalContext {
 export function contractRefusal(next: Contract, ctx: ContractRefusalContext): ContractRefusal | null {
   const prev = ctx.prev
 
-  // 14: a system Contract changes only its name and AA code, and is never disabled.
-  if (prev?.systemRole !== undefined) {
+  // 14: a system Contract changes only the allowed fields, and is never disabled.
+  const system = prev?.systemRole !== undefined
+  if (system) {
     if (next.status !== 'active') return refusal('systemNeverDisabled')
-    const { name: _n, aaCode: _c, ...restNext } = next
-    const { name: _pn, aaCode: _pc, ...restPrev } = prev
-    if (JSON.stringify(sortKeys(restNext)) !== JSON.stringify(sortKeys(restPrev))) return refusal('systemFixed')
+    if (JSON.stringify(sortKeys(withoutEditable(next))) !== JSON.stringify(sortKeys(withoutEditable(prev)))) return refusal('systemFixed')
   } else if (next.systemRole !== undefined) {
     return refusal('systemRoleNotChosen')
   }
@@ -226,6 +260,8 @@ export function contractRefusal(next: Contract, ctx: ContractRefusalContext): Co
   if (Object.values(ctx.contracts).some((c) => c.id !== next.id && normaliseAaCode(c.aaCode) === code)) {
     return refusal('aaCodeTaken')
   }
+  // Nothing else on a system Contract can have changed, so its other rules hold as made.
+  if (system) return null
 
   // 13: holder, prepaid and pricing kind are fixed after creation.
   if (prev !== undefined) {
@@ -238,8 +274,11 @@ export function contractRefusal(next: Contract, ctx: ContractRefusalContext): Co
   const holder = ctx.parties[next.holderId]
   if (holder === undefined) return refusal('holderMissing')
 
-  // 6: the office never chooses open price.
-  if (next.pricing.kind === 'open' && prev?.pricing.kind !== 'open') return refusal('openNotChosen')
+  // 6: open price exists only on the system fallbacks; the office never chooses it.
+  if (next.pricing.kind === 'open') return refusal('openNotChosen')
+  // 9: its specialties and tag are on AA's lists.
+  if (next.specialtyIds.some((id) => !ctx.specialtyIds.has(id))) return refusal('specialtyUnknown')
+  if (next.fundingTagId !== undefined && !ctx.fundingTagIds.has(next.fundingTagId)) return refusal('fundingTagUnknown')
   // 3: the rate above zero, the discount between 0 and 100.
   if (next.pricing.kind === 'rvgContractRate' && !(next.pricing.unitRate > 0)) return refusal('rateAboveZero')
   if (next.pricing.kind === 'rvgDiscount' && !(next.pricing.discountPct > 0 && next.pricing.discountPct < 100)) {
@@ -272,6 +311,12 @@ export function contractRefusal(next: Contract, ctx: ContractRefusalContext): Co
   return null
 }
 
+function withoutEditable(c: Contract): Record<string, unknown> {
+  const rest: Record<string, unknown> = { ...c }
+  for (const k of SYSTEM_CONTRACT_EDITABLE_FIELDS) delete rest[k]
+  return rest
+}
+
 function sortKeys(o: object): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(o)
@@ -295,6 +340,8 @@ export interface ContractFilters {
   /** Active by default (US-04.1.2). */
   status?: ContractStatusFilter
   holderId?: PartyId
+  /** Only Contracts carrying this funding tag (Phase 18a), fallbacks included. */
+  fundingTagId?: FundingTagId
 }
 
 const squash = (s: string): string => s.replace(/\s+/g, '').toLowerCase()
@@ -312,7 +359,8 @@ export function contractMatchesQuery(contract: Contract, query: string): boolean
 
 /**
  * The Contract list: the query and filters applied, No contract · RVG first,
- * then by holder (AA first, then the holder's name) and AA code.
+ * then by holder (AA first, then the holder's name), each holder's open-price
+ * fallbacks after its own Contracts, then AA code.
  */
 export function contractSearch(
   query: string,
@@ -326,11 +374,14 @@ export function contractSearch(
   return Object.values(contracts)
     .filter((c) => status === 'all' || c.status === status)
     .filter((c) => filters.holderId === undefined || c.holderId === filters.holderId)
+    .filter((c) => filters.fundingTagId === undefined || c.fundingTagId === filters.fundingTagId)
     .filter((c) => contractMatchesQuery(c, query))
     .sort(
       (a, b) =>
-        Number(b.systemRole !== undefined) - Number(a.systemRole !== undefined) ||
+        Number(b.systemRole === 'noContractRvg') - Number(a.systemRole === 'noContractRvg') ||
         holderRank(a).localeCompare(holderRank(b)) ||
+        // A holder's open-price fallbacks after its own Contracts.
+        Number(a.systemRole === 'openPriceFallback') - Number(b.systemRole === 'openPriceFallback') ||
         a.aaCode.localeCompare(b.aaCode),
     )
 }
@@ -400,7 +451,7 @@ export function noPriceInForceMessage(contractName: string): string {
 
 /**
  * True when a primary (not additional) Procedure is on a fixed-price Contract
- * with no interim price row for it. An additional procedure keeps the
+ * with no interim price row for it, or any Procedure is on an open-price one. An additional procedure keeps the
  * 2026-07-22 fallback to time units; the fee calculator is unchanged.
  */
 export function noPriceInForce(
@@ -408,6 +459,9 @@ export function noPriceInForce(
   procedure: Procedure,
   q: { procedureOrdinal: number; prices: readonly ContractPrice[]; surgeonId?: string },
 ): boolean {
+  // An open-price Contract has no price of its own (catch-up Phase 18a): until
+  // Phase 20 types an amount on the Procedure, nothing bills one silently.
+  if (contract.pricing.kind === 'open') return true
   if (contract.pricing.kind !== 'fixed' || procedure.isAdditional) return false
   return (
     matchContractPrice(q.prices, {

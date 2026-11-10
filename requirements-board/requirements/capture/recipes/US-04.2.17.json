@@ -1,0 +1,52 @@
+{
+  "id": "US-04.2.17",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "funding-tag",
+      "app": "admin",
+      "caption": "A Contract carries at most one funding tag, which places it under its hospital",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "state": "editor",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SXAP\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-funding-tag]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-funding-tag]",
+            "[data-shot=contract-placement]"
+          ]
+        },
+        {
+          "state": "fallbacks",
+          "caption": "One system-made Fixed price Contract for every invoice destination",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Fixed price"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-catalogue] tr[data-system=openPriceFallback]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,7 @@
  * directly or wire explicitly and unsubscribe.
  */
 
+import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
 import { noRouteCounterpartyMessage, routeCounterpartyForParty } from '../domain/billing/parties'
 import { listHospitalFor } from '../domain/listPairing'
 import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine } from '../domain/types'
@@ -303,6 +304,7 @@ export function chooseContractForFailedBooking(
   if (contract.status !== 'active' && procedure.governingContractId !== contractId) {
     return refuse('contractDisabled', 'Choose an Active Contract.')
   }
+  if (!contractChoosableForProcedure(contract)) return refuse('openPriceNotChosen', OPEN_PRICE_NOT_CHOSEN_MESSAGE)
   // INTERIM until Phase 21: on the hospital route the Contract's holder must
   // have a billing record, or the retry would fail again.
   if (procedure.billingRoute === 'hospital' && routeCounterpartyForParty(state.masters.parties[contract.holderId]) === undefined) {

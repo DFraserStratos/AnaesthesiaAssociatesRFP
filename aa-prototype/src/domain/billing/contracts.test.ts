@@ -33,6 +33,8 @@ function ctx(overrides: Partial<ContractRefusalContext> = {}, contracts: Contrac
     contracts: Object.fromEntries(contracts.map((c) => [c.id, c])),
     surgeonIds: new Set(['surg-1', 'surg-2']),
     anaesthetistIds: new Set(['34821']),
+    specialtyIds: new Set(['spc-ortho', 'spc-gen']),
+    fundingTagIds: new Set(['tag-acc', 'tag-sxap']),
     ...overrides,
   }
 }
@@ -204,6 +206,8 @@ describe('noPriceInForce (the interim of 19a\'s "no range in force")', () => {
     expect(noPriceInForce(fixed, mkProcedure({ rvgBaseCode: 'GA10' }), { procedureOrdinal: 1, prices })).toBe(false)
     expect(noPriceInForce(fixed, mkProcedure({ rvgBaseCode: 'SP07' }), { procedureOrdinal: 1, prices })).toBe(true)
     expect(noPriceInForce(fixed, mkProcedure({ rvgBaseCode: 'SP07', isAdditional: true }), { procedureOrdinal: 2, prices })).toBe(false)
+    // Catch-up Phase 18a: an open-price Contract has no price of its own, so nothing bills one silently.
+    expect(noPriceInForce(mkContract({ pricing: { kind: 'open' } }), mkProcedure({ rvgBaseCode: 'GA10' }), { procedureOrdinal: 1, prices })).toBe(true)
     expect(noPriceInForce(mkContract(), mkProcedure({ rvgBaseCode: 'SP07' }), { procedureOrdinal: 1, prices })).toBe(false)
     expect(noPriceInForceMessage('COS ACC fixed fees')).toBe('No price in force for this procedure under COS ACC fixed fees.')
   })

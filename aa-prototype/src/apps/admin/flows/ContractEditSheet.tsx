@@ -8,12 +8,23 @@
  * kinds. It is edited in place, disabled rather than deleted. Every rule and
  * refusal sentence is the store's (`contractRefusal`); the panel only shows
  * the settings a rule makes fixed as read-only.
+ *
+ * Catch-up Phase 18a (US-04.2.16, US-04.2.17): the specialties it is offered
+ * for (none means every specialty) and at most one funding tag, with a live
+ * line saying where it will be offered (`destinationOf`). A system Contract
+ * (No contract · RVG, or a Fixed price fallback the system makes) shows its
+ * settings read-only with one reason; only the fields in
+ * `SYSTEM_CONTRACT_EDITABLE_FIELDS` stay live, and it offers no Disable.
  */
 
 import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Contract, ContractPricing, PricingKind } from '../../../domain/types'
-import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
+import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, SYSTEM_CONTRACT_EDITABLE_FIELDS, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
+import { destinationHint, destinationOf, isOpenPriceFallback } from '../../../domain/billing/fallbacks'
+import { fundingTagsInOrder } from '../../../domain/billing/fundingTags'
+import { contractSpecialtyLabel, specialtiesInOrder } from '../../../domain/specialties'
+import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import {
   addContractPrice,
   createContract,
@@ -70,6 +81,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   const [rate, setRate] = useState(contract?.pricing.kind === 'rvgContractRate' ? String(contract.pricing.unitRate) : '')
   const [discount, setDiscount] = useState(contract?.pricing.kind === 'rvgDiscount' ? String(contract.pricing.discountPct) : '')
   const [override, setOverride] = useState<YesNo>(contract?.anaesthetistMayOverridePrice === true ? 'yes' : 'no')
+  const [specialtyIds, setSpecialtyIds] = useState<string[]>(contract?.specialtyIds ?? [])
+  const [fundingTagId, setFundingTagId] = useState(contract?.fundingTagId ?? '')
   const [error, setError] = useState<string | null>(null)
 
   const holder = masters.parties[holderId]
@@ -79,6 +92,12 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   const shownBillsTo = forcedPayer ? 'payer' : billsTo
   const showLinks = takesLinks(holder?.kind)
   const rvg = isRvgKind(kind)
+  // Where it will be offered, worked out live from the settings as they stand.
+  const placement = destinationHint(
+    destinationOf({ billsTo: shownBillsTo, prepaid: prepaid === 'yes', holderId, ...(fundingTagId !== '' ? { fundingTagId } : {}) }, masters.parties),
+    masters.parties,
+    masters.fundingTags,
+  )
 
   const partyGroups = useMemo(() => {
     const groups = new Map<string, { id: string; name: string }[]>()
@@ -120,6 +139,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       linkedSurgeonIds: showLinks ? surgeonIds : [],
       anaesthetistMayOverridePrice: rvg && override === 'yes',
       holderReference,
+      specialtyIds,
     }
     const outcome = editing
       ? editContract(
@@ -127,12 +147,13 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           actor,
           contract.id,
           system
-            ? { name, aaCode }
+            ? systemPatch({ name, aaCode })
             : {
                 ...settings,
                 aaCode,
                 pricing: pricing(),
                 linkedAnaesthetistId: showLinks && anaesthetistId !== '' ? anaesthetistId : undefined,
+                fundingTagId: fundingTagId !== '' ? fundingTagId : undefined,
               },
         )
       : createContract(useAppStore, actor, {
@@ -141,6 +162,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           pricing: pricing(),
           prepaid: prepaid === 'yes',
           ...(showLinks && anaesthetistId !== '' ? { linkedAnaesthetistId: anaesthetistId } : {}),
+          ...(fundingTagId !== '' ? { fundingTagId } : {}),
         })
     if (!outcome.ok) {
       setError(outcome.message)
@@ -159,6 +181,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
     <>
       <span className="mono" style={{ fontWeight: 600, color: neutral.ink }}>{contract.aaCode}</span>
       <Pill tone={contract.status === 'active' ? 'success' : 'neutral'}>{STATUS_LABEL[contract.status]}</Pill>
+      {system && <Pill>System</Pill>}
       <span>{masters.parties[contract.holderId]?.name ?? contract.holderId}</span>
     </>
   ) : undefined
@@ -196,8 +219,10 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       }
     >
       {system && (
-        <div style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-          No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name and AA code can change.
+        <div data-shot="contract-system-notice" style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+          {isOpenPriceFallback(contract)
+            ? 'Made by the system: one Fixed price Contract for each place an invoice can go, where a person types the amount on the Procedure. It is always available and never disabled. Only its name and AA code can change.'
+            : "No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name and AA code can change."}
         </div>
       )}
       {editing && contract.status === 'disabled' && (
@@ -213,7 +238,11 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           ) : (
             <ReadOnlyField label="AA code" mono>Assigned on save</ReadOnlyField>
           )}
-          <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code, if it has one." />
+          {system && !SYSTEM_EDITABLE.has('holderReference') ? (
+            <ReadOnlyField label="Holder reference code" mono hint="Not set on a system Contract.">{holderReference !== '' ? holderReference : 'None'}</ReadOnlyField>
+          ) : (
+            <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code, if it has one." />
+          )}
         </PanelGrid>
         <TextField label="Name" value={name} onChange={setName} />
       </PanelSection>
@@ -270,6 +299,47 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
         {holder?.kind === 'hospital' && <Helper>{CONTRACT_REFUSAL_MESSAGES.noLinksOnHospital}</Helper>}
       </PanelSection>
 
+      <PanelSection title="Where it is offered">
+        <PanelGrid>
+          {system ? (
+            <ReadOnlyField label="Specialties" hint="Set by the system: offered for every specialty.">
+              {contractSpecialtyLabel(masters, specialtyIds)}
+            </ReadOnlyField>
+          ) : (
+            <ChipMultiSelect
+              label="Specialties"
+              options={specialtiesInOrder(masters.specialties)}
+              value={specialtyIds}
+              onChange={setSpecialtyIds}
+              addLabel="Add a specialty"
+              empty="Every specialty"
+              hint="None means every specialty."
+              shot="contract-specialties"
+            />
+          )}
+          <div data-shot="contract-funding-tag" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {system ? (
+              <ReadOnlyField label="Funding tag" hint="Set by the system for the place it serves.">
+                {fundingTagId !== '' ? <span className="mono">{masters.fundingTags[fundingTagId]?.code ?? fundingTagId}</span> : 'None'}
+              </ReadOnlyField>
+            ) : (
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <FieldLabel>Funding tag</FieldLabel>
+                <select value={fundingTagId} onChange={(e) => setFundingTagId(e.target.value)} style={selectStyle}>
+                  <option value="">None</option>
+                  {fundingTagsInOrder(masters.fundingTags).map((t) => (
+                    <option key={t.id} value={t.id}>{t.code}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+        </PanelGrid>
+        <div data-shot="contract-placement" aria-live="polite" style={{ fontSize: 13, color: neutral.ink, background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '8px 12px' }}>
+          {placement}
+        </div>
+      </PanelSection>
+
       <PanelSection title="Pricing" shot="contract-settings">
         <PanelGrid>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -310,6 +380,16 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       <FormError message={error} />
     </MasterPanel>
   )
+}
+
+/** The fields a system Contract may change, read from the model's one list. */
+const SYSTEM_EDITABLE: ReadonlySet<string> = new Set(SYSTEM_CONTRACT_EDITABLE_FIELDS)
+
+/** A system Contract's save: only the fields `SYSTEM_CONTRACT_EDITABLE_FIELDS` names. */
+function systemPatch(values: Partial<Record<(typeof SYSTEM_CONTRACT_EDITABLE_FIELDS)[number], string>>): Partial<Contract> {
+  const patch: Partial<Contract> = {}
+  for (const k of SYSTEM_CONTRACT_EDITABLE_FIELDS) if (values[k] !== undefined) patch[k] = values[k]
+  return patch
 }
 
 function Helper({ children }: { children: React.ReactNode }) {

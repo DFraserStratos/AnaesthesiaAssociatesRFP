@@ -14,6 +14,7 @@ import { formatCurrency, slotTimeRange, locationName } from '../../../shared/for
 import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 import { sessionText } from '../../../domain/outOfHours'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 interface ListDetailViewProps {
   listId: string
@@ -126,7 +127,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const dayLabel = list.dateISO === todayISO ? 'Today' : format(parseISO(list.dateISO), 'EEE d MMM yyyy')
   const authorised = list.state === 'AUTHORISED'
   const progressLabel = LIST_PROGRESS_LABEL[listProgress(list, [], todayISO)]
-  const subline = [surgeon?.name, surgeon?.specialty, dayLabel, times !== undefined ? slotTimeRange(times) : undefined]
+  const subline = [surgeon?.name, surgeonSpecialtyLabel(masters, surgeon), dayLabel, times !== undefined ? slotTimeRange(times) : undefined]
     .filter((p): p is string => p !== undefined && p !== '')
     .join(' · ')
   // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).

@@ -34,7 +34,7 @@
 | Open or DRAFT for an assigned List | Active | DRAFT is only for a Draft List |
 | A List being prepared (for a Draft List) | Draft List | One name for it |
 | Xero calculates the invoice | Billing Engine calculates/issues; Xero provides AR/banking | The RFP explicitly puts the Billing Engine at the centre |
-| ACC route | An ordinary Contract, such as ACC orthopaedic services | ACC is not a separate billing route |
+| ACC route | A holder's Contract carrying the ACC funding tag, such as ACC orthopaedic services | ACC is a funding tag, not a billing route or a kind of Contract |
 
 ## The lifecycle
 
@@ -126,7 +126,19 @@ Do not treat these as the same workflow.
   Contract, and the old one is disabled.
 - **No contract · RVG**, held by AA, is always there.
 - Every Contract has AA's own code (for example `COS-001`).
-- Tip: find a Contract by typing its name or AA code in the Contracts search.
+- A Contract carries none or more **specialties** from AA's list (none means every specialty) and at
+  most one **funding tag** (SXAP, HNZ, ACC). With who it bills, the tag decides where it is offered:
+  billed to the payer, under Patient; billed to a hospital that holds it and tagged, under that
+  hospital and tag; anything else, under Special. The editor shows this live ("Offered under
+  Southern Cross › SXAP").
+- Specialties and funding tags are lists the office keeps in Master data, each change audited, in
+  their own tabs.
+- The system keeps one **Fixed price** Contract for every place an invoice can go (No contract ·
+  Fixed price, Prepaid · Fixed price, one per hospital and tag, one per Special holder), marked
+  System. Tagging a hospital's first Contract with a new tag makes its Fixed price Contract at once.
+  They are never disabled; only their name and AA code change. Nothing is priced on them yet.
+- Tip: find a Contract by typing its name or AA code in the Contracts search; filter by holder or
+  funding tag.
 
 ## The money model
 
@@ -193,7 +205,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Review and authorise
 - Master data and audit
 - Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
-  sits in one surgeons' room with its contact email and phone, and surgeons can belong to groups
+  holds one or more specialties from AA's list (required; a save with none is refused), sits in one
+  surgeons' room with its contact email and phone, and surgeons can belong to groups
 - Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
   record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
   order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
@@ -425,10 +438,22 @@ Say:
 
 ### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
 
-- ACC is not a billing route: ACC-related work bills through an ordinary Contract, such as ACC orthopaedic services.
+- ACC is not a billing route or a kind of Contract: ACC work bills through a holder's Contract carrying the ACC funding tag, such as ACC orthopaedic services, priced like any other.
 - ACC pre-operative assessment has its own flat-fee code set (CS250, CS260, CS70); the prototype
   captures these as ancillary fixed-amount billing lines with the code named in the description.
 - The RFP flags the code set as a special pre-assessment case to confirm with AA billing.
+
+### 13. Specialties and funding tags (for AA to confirm)
+
+- The starting specialties are the catalogue's nine plus Neurosurgery, Vascular surgery and Oral and
+  maxillofacial surgery, because the specialist list holds surgeons in them. Subspecialties fold in:
+  Colorectal, Breast, Upper GI and HPB under General surgery, Fertility under Gynaecology. AA's
+  spreadsheet replaces the list.
+- A surgeon can hold more than one specialty (Ben said this is "not a thing"; built as a list, usually
+  one, for AA to confirm). A Contract is offered when it shares any one of them.
+- Each funding tag may name its funder (Southern Cross Health Society for SXAP, Health NZ for HNZ,
+  ACC for ACC), for suggesting a path later.
+- A specialty or tag in use cannot be removed; rename it instead.
 
 ## Likely evaluator questions
 

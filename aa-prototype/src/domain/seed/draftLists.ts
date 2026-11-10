@@ -118,7 +118,6 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       bookingId,
       description: spec.description,
       rvgBaseCode: spec.code,
-      accRelated: false,
       isAdditional: false,
       selectedModifierCodes: [],
       billingRoute: 'billableParty',

@@ -5,6 +5,7 @@
  * delete, and saving a Party creates no Contract.
  */
 
+import { isOfficeContract } from '../../../domain/billing/fallbacks'
 import { useMemo, useState } from 'react'
 import type { DeliveryMethod, Party, PartyKind } from '../../../domain/types'
 import { CREATABLE_PARTY_KINDS, PARTY_REFUSAL_MESSAGES, suggestCodePrefix } from '../../../domain/billing/parties'
@@ -62,7 +63,7 @@ export function PartyPanel({ open, actor, party, onClose }: Props) {
     [masters.hospitals],
   )
   const heldCount = useMemo(
-    () => (party === undefined ? 0 : Object.values(masters.contracts).filter((c) => c.holderId === party.id).length),
+    () => (party === undefined ? 0 : Object.values(masters.contracts).filter((c) => c.holderId === party.id && isOfficeContract(c)).length),
     [party, masters.contracts],
   )
 

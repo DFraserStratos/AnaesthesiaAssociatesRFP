@@ -42,6 +42,8 @@ export function AuditViewer() {
   const audit = useAppStore((s) => s.audit)
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
+  const specialties = useAppStore((s) => s.masters.specialties)
+  const fundingTags = useAppStore((s) => s.masters.fundingTags)
   const [entityType, setEntityType] = useState('all')
 
   // A Contract reads by its AA code and name, a Party by its name (catch-up Phase 18).
@@ -51,6 +53,9 @@ export function AuditViewer() {
       return c !== undefined ? contractLabel(c) : id
     }
     if (type === 'party') return parties[id]?.name ?? id
+    // Catch-up Phase 18a: a specialty by its name, a funding tag by its code.
+    if (type === 'specialty') return specialties[id]?.name ?? id
+    if (type === 'fundingTag') return fundingTags[id]?.code ?? id
     return id
   }
   const [source, setSource] = useState('all')

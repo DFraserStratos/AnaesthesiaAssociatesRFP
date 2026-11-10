@@ -15,6 +15,8 @@
  * arrays, never `enum`; IDs are string aliases for readability, not branding.
  */
 
+import type { SpecialtyId } from './specialties'
+
 // ---------------------------------------------------------------------------
 // Shared scalars & refs
 // ---------------------------------------------------------------------------
@@ -267,7 +269,12 @@ export interface Hospital {
 export interface Surgeon {
   id: SurgeonId
   name: string
-  specialty?: string
+  /**
+   * The surgeon's specialties from AA's list (US-13.6.6, catch-up Phase 18a):
+   * one or more, usually one, never empty (the store refuses a save with
+   * none). Shown everywhere through `surgeonSpecialtyLabel`.
+   */
+  specialtyIds: SpecialtyId[]
   /** The surgeon's room (US-13.6.1: one room per surgeon). The room's surgeons are derived from this field, never stored on the room. */
   roomId: SurgeonRoomId
   /**
@@ -371,11 +378,19 @@ export interface ContractHolderOrganisation {
 export type { DeliveryMethod, Party, PartyId, PartyKind } from './billing/parties'
 
 // ---------------------------------------------------------------------------
+// Specialties and funding tags (catch-up Phase 18a; their model modules are
+// domain/specialties.ts and domain/billing/fundingTags.ts)
+// ---------------------------------------------------------------------------
+
+export type { Specialty, SpecialtyId } from './specialties'
+export type { FundingTag, FundingTagId } from './billing/fundingTags'
+
+// ---------------------------------------------------------------------------
 // Contracts
 // ---------------------------------------------------------------------------
 
 /** The flat Contract (catch-up Phase 18; the model module is domain/billing/contracts.ts). */
-export type { BillsTo, Contract, ContractPricing, ContractStatus, PricingKind } from './billing/contracts'
+export type { BillsTo, Contract, ContractPricing, ContractStatus, PricingKind, SystemRole } from './billing/contracts'
 
 /**
  * A fixed-price row: INTERIM, the `fixed` pricing kind's prices until Phase
@@ -831,13 +846,6 @@ export interface Procedure {
   patientPaymentCategory?: PatientPaymentCategory
   /** Required when `patientPaymentCategory === 'selfFundedPrepayment'`. */
   prepaymentDetail?: PrepaymentDetail
-  /**
-   * Informational (6th review #3): ACC-relatedness is "invisible to the
-   * billing engine" (RFP), but sources W4's ACC column and the
-   * authorisation-review advisory when such a procedure sits on the
-   * Billable Party route.
-   */
-  accRelated: boolean
   /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
   billingReference?: string
   /**
@@ -1132,6 +1140,12 @@ export type BillingPipelineStatus =
 export interface BillingCase {
   id: string
   bookingId: BookingId
+  /**
+   * The archived account's ACC marker, as the old system recorded it: set only
+   * on the seeded history cases, whose Procedures predate Contracts (catch-up
+   * Phase 18a). Every other case reads ACC from its Procedures' Contract tag.
+   */
+  archivedAccRelated?: true
   invoiceId?: InvoiceId
   accRecId?: string
   accPayId?: string

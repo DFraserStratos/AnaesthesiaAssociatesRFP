@@ -211,6 +211,7 @@ export function formatAuditValue(key: string, value: unknown): string {
     if (key === 'billsTo' && value === 'payer') return 'The payer'
     if (key === 'status' && Object.hasOwn(STATUS_LABEL, value)) return STATUS_LABEL[value as ContractStatus]
     if (key === 'systemRole' && value === 'noContractRvg') return 'No contract · RVG'
+    if (key === 'systemRole' && value === 'openPriceFallback') return 'Fixed price'
     return value
   }
   if (Array.isArray(value)) {

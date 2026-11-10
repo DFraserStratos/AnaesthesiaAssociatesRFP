@@ -99,7 +99,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
                   <span style={{ fontSize: 12.5, color: neutral.slate }}>
                     <span className="mono">{r.invoiceNumber}</span> · {r.counterpartyLabel}
                   </span>
-                  <AgeChip days={r.agingDays} accRelated={r.accRelated} />
+                  <AgeChip days={r.agingDays} accFunded={r.accFunded} />
                 </div>
               </div>
             ))
@@ -137,11 +137,11 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
   )
 }
 
-function AgeChip({ days, accRelated }: { days: number; accRelated: boolean }) {
+function AgeChip({ days, accFunded }: { days: number; accFunded: boolean }) {
   const overdue = days > 60
   return (
     <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-      {accRelated && (
+      {accFunded && (
         <span style={{ fontSize: 10.5, fontWeight: 600, color: STATUS_PALETTE.preop.onTint, background: STATUS_PALETTE.preop.tint, borderRadius: 999, padding: '2px 8px' }}>ACC</span>
       )}
       <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 9px', background: overdue ? semantic.warning.tint : neutral.sunken, color: overdue ? semantic.warning.onTint : neutral.slate }}>

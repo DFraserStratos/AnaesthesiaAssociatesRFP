@@ -15,6 +15,7 @@ import { AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useM
 import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 import { sessionText } from '../../../domain/outOfHours'
+import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 interface ListDetailScreenProps {
   listId: string
@@ -40,6 +41,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const patients = useAppStore((s) => s.masters.patients)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const todayISO = useToday()
   // Catch-up Phase 32: her own move, and the notice when a colleague moved it to her.
   const movable = useIsMovable(listId, actor.anaesthetistId)
@@ -112,7 +114,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const authorised = list.state === 'AUTHORISED'
   const sublineParts = [
     surgeon?.name,
-    surgeon?.specialty,
+    surgeonSpecialtyLabel({ specialties }, surgeon),
     dayLabel,
     times !== undefined ? slotTimeRange(times) : undefined,
   ].filter((p): p is string => p !== undefined && p !== '')

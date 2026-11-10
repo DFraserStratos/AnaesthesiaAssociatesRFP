@@ -29,7 +29,7 @@ function stubFee(btm: BtmBreakdown = ZERO_BTM): FeeResult {
 }
 
 function proc(over: Partial<Procedure> = {}): Procedure {
-  return { id: 'P1', bookingId: 'BK1', description: 'Test op', accRelated: false, isAdditional: false, selectedModifierCodes: [], ...over }
+  return { id: 'P1', bookingId: 'BK1', description: 'Test op', isAdditional: false, selectedModifierCodes: [], ...over }
 }
 
 function booking(over: Partial<Booking> = {}): Booking {
@@ -53,11 +53,11 @@ describe('reviewFlags (pure)', () => {
     expect(insurerRoute.some((f) => f.text === 'No billing reference')).toBe(false)
   })
 
-  it('(c) raises no ACC flag on any route (catch-up Phase 18, RV-37)', () => {
-    const bp = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'billableParty' }), fee: stubFee() }] })
+  it('(c) raises no ACC flag on any route (catch-up Phase 18, RV-37), whatever the text says', () => {
+    const bp = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', billingRoute: 'billableParty' }), fee: stubFee() }] })
     expect(bp.some((f) => f.text.startsWith('ACC'))).toBe(false)
 
-    const hospitalAcc = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
+    const hospitalAcc = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
     expect(hospitalAcc.some((f) => f.text.startsWith('ACC'))).toBe(false)
   })
 

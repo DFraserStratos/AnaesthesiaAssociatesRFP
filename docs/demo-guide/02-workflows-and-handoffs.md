@@ -96,8 +96,10 @@ The office receives a stable schedule on which it can paint assignments and pati
 
 ### Master data the office keeps
 
-In Admin, the office also maintains surgeons (each keyed on their HPI CPN), surgeons' rooms, surgeon
-groups, hospital contact emails, and its private pairing preferences and anaesthetist priority tiers.
+In Admin, the office also maintains surgeons (each keyed on their HPI CPN and holding one or more
+specialties), surgeons' rooms, surgeon groups, hospital contact emails, AA's list of specialties, its
+funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pairing preferences and
+anaesthetist priority tiers.
 Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
 warning.
 

@@ -3,6 +3,8 @@ import type { Surgeon } from '../../../domain/types'
 import { createSurgeon, editSurgeon, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../shared'
 import { selectControlStyle } from './fieldChrome'
+import { ChipMultiSelect } from '../components/ChipMultiSelect'
+import { specialtiesInOrder } from '../../../domain/specialties'
 
 interface Props {
   /** Absent: add a surgeon. */
@@ -15,13 +17,16 @@ interface Props {
  * Add or edit a surgeon (catch-up Phase 17, US-13.6.2): the HPI CPN is
  * required, the surgeon's unique index (OQ-52); the NZ medical registration
  * number is held for information. The store normalises the HPI CPN and
- * refuses a blank, malformed or already held one.
+ * refuses a blank, malformed or already held one. Catch-up Phase 18a
+ * (US-13.6.6): one or more specialties from AA's list, required; the store
+ * refuses a save with none and this sheet shows its sentence.
  */
 export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
   const { Overlay } = useSurface()
   const rooms = useAppStore((s) => s.masters.surgeonRooms)
+  const specialties = useAppStore((s) => s.masters.specialties)
   const [name, setName] = useState(surgeon?.name ?? '')
-  const [specialty, setSpecialty] = useState(surgeon?.specialty ?? '')
+  const [specialtyIds, setSpecialtyIds] = useState<string[]>(surgeon?.specialtyIds ?? [])
   const [roomId, setRoomId] = useState(surgeon?.roomId ?? '')
   const [hpiId, setHpiId] = useState(surgeon?.hpiId ?? '')
   const [registration, setRegistration] = useState(surgeon?.medicalRegistrationNumber ?? '')
@@ -29,7 +34,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
   const roomOptions = Object.values(rooms).sort((a, b) => a.name.localeCompare(b.name))
 
   function save() {
-    const fields = { name, specialty, roomId, hpiId, medicalRegistrationNumber: registration }
+    const fields = { name, specialtyIds, roomId, hpiId, medicalRegistrationNumber: registration }
     const outcome = surgeon === undefined ? createSurgeon(useAppStore, actor, fields) : editSurgeon(useAppStore, actor, surgeon.id, fields)
     if (!outcome.ok) { setError(outcome.message); return }
     onClose()
@@ -40,7 +45,16 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
       <div data-shot="surgeon-edit-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{surgeon === undefined ? 'Add a surgeon' : 'Edit surgeon'}</div>
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Ms A. Reid" />
-        <TextField label="Specialty (optional)" value={specialty} onChange={setSpecialty} placeholder="e.g. Ophthalmology" />
+        <ChipMultiSelect
+          label="Specialties"
+          options={specialtiesInOrder(specialties)}
+          value={specialtyIds}
+          onChange={(ids) => { setSpecialtyIds(ids); setError(null) }}
+          addLabel={specialtyIds.length === 0 ? 'Choose a specialty' : 'Add another specialty'}
+          empty="None chosen yet"
+          hint="At least one, from AA's list. Usually one."
+          shot="surgeon-specialties-field"
+        />
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Surgeons&apos; room</FieldLabel>
           <select value={roomId} onChange={(e) => setRoomId(e.target.value)} style={selectControlStyle}>

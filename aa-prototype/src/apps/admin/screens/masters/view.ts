@@ -13,6 +13,8 @@ export type MastersView =
   | 'surgeonRooms'
   | 'surgeonGroups'
   | 'parties'
+  | 'specialties'
+  | 'fundingTags'
   | 'rvgCodes'
   | 'modifierCodes'
   | 'scheduleSettings'
@@ -23,11 +25,15 @@ export type MastersView =
 export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'anaesthetists', label: 'Anaesthetists' },
   { view: 'contracts', label: 'Contracts' },
+  // Catch-up Phase 18a (US-13.4.5): AA's funding tags in step-rail order, beside the Contracts that carry them.
+  { view: 'fundingTags', label: 'Funding tags' },
   // Catch-up Phase 18 (US-04.1.5): everyone who holds Contracts; replaces Insurers and Organisations (RV-39).
   { view: 'parties', label: 'Parties' },
   { view: 'recurringBookings', label: 'Recurring bookings' },
   { view: 'hospitals', label: 'Hospitals & holidays' },
   { view: 'surgeons', label: 'Surgeons' },
+  // Catch-up Phase 18a (US-13.4.4): AA's broad specialties, beside the surgeons who hold them.
+  { view: 'specialties', label: 'Specialties' },
   { view: 'surgeonRooms', label: "Surgeons' rooms" },
   { view: 'surgeonGroups', label: 'Surgeon groups' },
   { view: 'rvgCodes', label: 'RVG codes' },

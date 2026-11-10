@@ -26,7 +26,8 @@ export const PRICING_KIND_LABEL: Record<PricingKind, string> = {
   rvgContractRate: "RVG at the Contract's rate",
   rvgDiscount: 'RVG less a discount',
   fixed: 'Fixed price',
-  open: 'Open price',
+  // The open-price fallbacks (Phase 18a): named "Fixed price", priced by an amount a person types.
+  open: 'Amount typed on the Procedure',
 }
 
 /** A Contract's pricing as one short phrase: "RVG at $26.50 per unit", "RVG less 10%". */

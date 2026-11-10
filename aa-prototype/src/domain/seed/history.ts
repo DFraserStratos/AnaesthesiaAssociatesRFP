@@ -82,6 +82,12 @@ export interface HistoryAccount {
   raisedISO: string
   /** Invoice total, GST-inclusive. */
   total: number
+  /**
+   * The archived account's ACC marker, as the old system recorded it. Kept as
+   * history (catch-up Phase 18a): these Procedures predate Contracts and carry
+   * none, so the marker rides on the history case (`archivedAccRelated`) and
+   * every live case reads ACC from its Contract's funding tag.
+   */
   accRelated: boolean
   paidState: PaidState
   /**
@@ -439,7 +445,6 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       bookingId,
       description: acc.description,
       billingRoute: isPatientRoute(acc.counterparty) ? 'billableParty' : 'hospital',
-      accRelated: acc.accRelated,
       isAdditional: false,
       selectedModifierCodes: [],
     }
@@ -520,6 +525,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       disbursedAmount: disbursed,
     }
     if (paid && acc.paidAtISO !== undefined) theCase.paidInAtISO = acc.paidAtISO
+    if (acc.accRelated) theCase.archivedAccRelated = true
     if (paid && acc.disbursedAtISO !== undefined) theCase.disbursedAtISO = acc.disbursedAtISO
     build.cases[caseId] = theCase
 

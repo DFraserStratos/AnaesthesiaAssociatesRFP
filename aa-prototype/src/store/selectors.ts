@@ -6,6 +6,7 @@
  * every snapshot.
  */
 
+import { isOpenPriceFallback } from '../domain/billing/fallbacks'
 import type {
   AssignedList,
   DraftList,
@@ -52,6 +53,7 @@ import { isSeriesActive, seriesLine as describeSeriesLine } from '../domain/avai
 import { horizonFor, type Horizon } from '../domain/clock'
 import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
+import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
@@ -902,7 +904,8 @@ export interface AccpayInvoiceRow {
   patientName: string
   counterparty: CounterpartyRef
   counterpartyLabel: string
-  accRelated: boolean
+  /** ACC-funded: a Procedure's Contract carries the ACC funding tag (`procedureAccFunded`, catch-up Phase 18a), or an archived account's own marker. */
+  accFunded: boolean
   amountTotal: number
   receivedAmount: number
   disbursedAmount: number
@@ -935,7 +938,8 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
     patientName: patientNameFor(state, booking.patientId),
     counterparty: invoice.counterparty,
     counterpartyLabel: counterpartyName(state, invoice.counterparty),
-    accRelated: proceduresForBooking(state, c.bookingId).some((p) => p.accRelated),
+    // An archived account keeps the old system's marker; every other reads its Contract's tag.
+    accFunded: c.archivedAccRelated === true || proceduresForBooking(state, c.bookingId).some((p) => procedureAccFunded(state.masters, p)),
     amountTotal: invoice.total,
     receivedAmount: c.receivedAmount,
     disbursedAmount: c.disbursedAmount,
@@ -1162,7 +1166,11 @@ export interface EntityCounts {
   surgeons: number
   hospitals: number
   parties: number
+  /** The office's Contracts; the system's Fixed price fallbacks are counted apart (catch-up Phase 18a). */
   contracts: number
+  fixedPriceFallbacks: number
+  specialties: number
+  fundingTags: number
   rvgCodes: number
   modifierCodes: number
   recurringBookings: number
@@ -1184,7 +1192,10 @@ export function entityCounts(state: AppState): EntityCounts {
     surgeons: Object.keys(state.masters.surgeons).length,
     hospitals: Object.keys(state.masters.hospitals).length,
     parties: Object.keys(state.masters.parties).length,
-    contracts: Object.keys(state.masters.contracts).length,
+    contracts: Object.values(state.masters.contracts).filter((c) => !isOpenPriceFallback(c)).length,
+    fixedPriceFallbacks: Object.values(state.masters.contracts).filter(isOpenPriceFallback).length,
+    specialties: Object.keys(state.masters.specialties).length,
+    fundingTags: Object.keys(state.masters.fundingTags).length,
     rvgCodes: Object.keys(state.masters.rvgCodes).length,
     modifierCodes: Object.keys(state.masters.modifierCodes).length,
     recurringBookings: Object.keys(state.masters.recurringBookings).length,

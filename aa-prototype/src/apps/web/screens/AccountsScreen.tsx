@@ -137,7 +137,7 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
                     {r.bucket === c.key ? formatCurrency(r.outstanding) : '·'}
                   </Td>
                 ))}
-                <Td center>{r.accRelated ? <span style={{ fontSize: 11, fontWeight: 600, color: neutral.slate }}>ACC</span> : '·'}</Td>
+                <Td center>{r.accFunded ? <span style={{ fontSize: 11, fontWeight: 600, color: neutral.slate }}>ACC</span> : '·'}</Td>
               </tr>
             ))}
           </tbody>

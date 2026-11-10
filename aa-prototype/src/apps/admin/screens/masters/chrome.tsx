@@ -32,9 +32,17 @@ export function Table({ heads, children, rightAlign, shot }: { heads: string[]; 
   )
 }
 
-export function TextAction({ onClick, children, label }: { onClick: () => void; children: ReactNode; label?: string }) {
+export function TextAction({ onClick, children, label, disabled }: { onClick: () => void; children: ReactNode; label?: string; disabled?: boolean }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} style={textActionStyle}>{children}</button>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      disabled={disabled}
+      style={disabled === true ? { ...textActionStyle, color: neutral.mist, cursor: 'default' } : textActionStyle}
+    >
+      {children}
+    </button>
   )
 }
 

@@ -3,12 +3,12 @@ import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
 import { createSurgeon, createSurgeonGroup, createSurgeonRoom, editSurgeon, editSurgeonGroup, editSurgeonRoom } from './surgeonActions'
 import { addAnaesthetist, createHospital, editAnaesthetist, editHospital } from './mastersActions'
-import { ANAE, HOSP, ROOM, SURG } from '../domain/seed'
+import { ANAE, HOSP, ROOM, SPC, SURG } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
-const NEW_SURGEON = { name: 'Ms R. Kerr', specialty: 'Orthopaedics', roomId: ROOM.riccarton, hpiId: ' 50kerr ', medicalRegistrationNumber: '80123' }
+const NEW_SURGEON = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], roomId: ROOM.riccarton, hpiId: ' 50kerr ', medicalRegistrationNumber: '80123' }
 
 describe('surgeons', () => {
   it('adds a surgeon with a normalised HPI CPN, a runtime id and an audit entry', () => {
@@ -47,13 +47,13 @@ describe('surgeons', () => {
   it('edits a surgeon, keeping its own HPI CPN, and audits only the changed fields', () => {
     const api = createAppStore()
     const reid = api.getState().masters.surgeons[SURG.reid]!
-    const outcome = editSurgeon(api, OFFICE, SURG.reid, { name: reid.name, roomId: reid.roomId, hpiId: reid.hpiId, specialty: 'Ophthalmology', medicalRegistrationNumber: '77150' })
+    const outcome = editSurgeon(api, OFFICE, SURG.reid, { name: reid.name, roomId: reid.roomId, hpiId: reid.hpiId, specialtyIds: reid.specialtyIds, medicalRegistrationNumber: '77150' })
     expect(outcome.ok).toBe(true)
     const entry = api.getState().audit.at(-1)
     expect(entry).toMatchObject({ action: 'surgeon.update', before: { medicalRegistrationNumber: '77149' }, after: { medicalRegistrationNumber: '77150' } })
-    const clash = editSurgeon(api, OFFICE, SURG.reid, { name: reid.name, roomId: reid.roomId, hpiId: '40HALT' })
+    const clash = editSurgeon(api, OFFICE, SURG.reid, { name: reid.name, specialtyIds: reid.specialtyIds, roomId: reid.roomId, hpiId: '40HALT' })
     expect(clash.ok ? '' : clash.code).toBe('duplicateHpiCpn')
-    expect(editSurgeon(api, SOUTER, SURG.reid, { name: reid.name, roomId: reid.roomId, hpiId: reid.hpiId }).ok).toBe(false)
+    expect(editSurgeon(api, SOUTER, SURG.reid, { name: reid.name, specialtyIds: reid.specialtyIds, roomId: reid.roomId, hpiId: reid.hpiId }).ok).toBe(false)
   })
 })
 

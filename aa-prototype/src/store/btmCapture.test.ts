@@ -135,7 +135,6 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
       id: 'P-TEST',
       bookingId: 'C-TEST',
       description: 'Laparoscopic cholecystectomy',
-      accRelated: false,
       isAdditional: false,
       selectedModifierCodes: [],
       rvgBaseCode: '20941',

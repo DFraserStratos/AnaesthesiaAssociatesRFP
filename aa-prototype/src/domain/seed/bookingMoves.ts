@@ -42,7 +42,6 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     bookingId,
     description: 'Cataract extraction with IOL',
     rvgBaseCode: '42702',
-    accRelated: false,
     isAdditional: false,
     selectedModifierCodes: [],
     billingRoute: 'hospital',

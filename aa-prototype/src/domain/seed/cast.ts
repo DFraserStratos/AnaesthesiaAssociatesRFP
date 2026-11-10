@@ -5,6 +5,7 @@
  * 2026-07-21); every person is fictional.
  */
 
+import { SPC } from './specialties'
 import type {
   Anaesthetist,
   ContractHolderOrganisation,
@@ -109,16 +110,16 @@ export const SURGEON_ROOMS: readonly SurgeonRoom[] = [
  * no List (canvasFingerprint.test.ts).
  */
 export const SURGEONS: readonly Surgeon[] = [
-  { id: SURG.hale, name: 'Mr T. Hale', specialty: 'Orthopaedics', roomId: ROOM.riccarton, hpiId: '40HALT', medicalRegistrationNumber: '70412' },
-  { id: SURG.patel, name: 'Ms K. Patel', specialty: 'General surgery', roomId: ROOM.avonside, hpiId: '41PATK', medicalRegistrationNumber: '71588' },
-  { id: SURG.whitford, name: 'Mr J. Whitford', specialty: 'Ophthalmology', roomId: ROOM.merivale, hpiId: '42WHIJ', medicalRegistrationNumber: '72905' },
-  { id: SURG.okafor, name: 'Mr C. Okafor', specialty: 'General surgery', roomId: ROOM.avonside, hpiId: '43OKAC', medicalRegistrationNumber: '73318' },
-  { id: SURG.lim, name: 'Ms G. Lim', specialty: 'Plastics', roomId: ROOM.fendalton, hpiId: '44LIMG', medicalRegistrationNumber: '74071' },
-  { id: SURG.doyle, name: 'Mr P. Doyle', specialty: 'General surgery', roomId: ROOM.avonside, hpiId: '45DOYP', medicalRegistrationNumber: '75264' },
-  { id: SURG.tan, name: 'Mr S. Tan', specialty: 'Urology', roomId: ROOM.papanui, hpiId: '46TANS', medicalRegistrationNumber: '76630' },
-  { id: SURG.reid, name: 'Ms A. Reid', specialty: 'Ophthalmology', roomId: ROOM.merivale, hpiId: '47REIA', medicalRegistrationNumber: '77149' },
-  { id: SURG.nand, name: 'Mr V. Nand', specialty: 'ENT', roomId: ROOM.fendalton, hpiId: '48NANV', medicalRegistrationNumber: '78852' },
-  { id: SURG.cameron, name: 'Ms H. Cameron', specialty: 'Gynaecology', roomId: ROOM.papanui, hpiId: '49CAMH', medicalRegistrationNumber: '79503' },
+  { id: SURG.hale, name: 'Mr T. Hale', specialtyIds: [SPC.orthopaedics], roomId: ROOM.riccarton, hpiId: '40HALT', medicalRegistrationNumber: '70412' },
+  { id: SURG.patel, name: 'Ms K. Patel', specialtyIds: [SPC.generalSurgery], roomId: ROOM.avonside, hpiId: '41PATK', medicalRegistrationNumber: '71588' },
+  { id: SURG.whitford, name: 'Mr J. Whitford', specialtyIds: [SPC.ophthalmology], roomId: ROOM.merivale, hpiId: '42WHIJ', medicalRegistrationNumber: '72905' },
+  { id: SURG.okafor, name: 'Mr C. Okafor', specialtyIds: [SPC.generalSurgery], roomId: ROOM.avonside, hpiId: '43OKAC', medicalRegistrationNumber: '73318' },
+  { id: SURG.lim, name: 'Ms G. Lim', specialtyIds: [SPC.plasticSurgery], roomId: ROOM.fendalton, hpiId: '44LIMG', medicalRegistrationNumber: '74071' },
+  { id: SURG.doyle, name: 'Mr P. Doyle', specialtyIds: [SPC.generalSurgery], roomId: ROOM.avonside, hpiId: '45DOYP', medicalRegistrationNumber: '75264' },
+  { id: SURG.tan, name: 'Mr S. Tan', specialtyIds: [SPC.urology], roomId: ROOM.papanui, hpiId: '46TANS', medicalRegistrationNumber: '76630' },
+  { id: SURG.reid, name: 'Ms A. Reid', specialtyIds: [SPC.ophthalmology], roomId: ROOM.merivale, hpiId: '47REIA', medicalRegistrationNumber: '77149' },
+  { id: SURG.nand, name: 'Mr V. Nand', specialtyIds: [SPC.ent], roomId: ROOM.fendalton, hpiId: '48NANV', medicalRegistrationNumber: '78852' },
+  { id: SURG.cameron, name: 'Ms H. Cameron', specialtyIds: [SPC.gynaecology], roomId: ROOM.papanui, hpiId: '49CAMH', medicalRegistrationNumber: '79503' },
 ] as const
 
 /**

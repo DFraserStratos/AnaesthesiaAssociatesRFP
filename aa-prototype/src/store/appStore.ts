@@ -109,7 +109,11 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v32: catch-up Phase 18 session 2, the flat Contract (AA code, pricing
+/** v33: catch-up Phase 18a, AA's specialties and funding tags (`masters.specialties`,
+ *  `masters.fundingTags`), `Surgeon.specialtyIds` replacing the free text, a
+ *  Contract's `specialtyIds` and `fundingTagId`, the open-price fallbacks,
+ *  and `Procedure.accRelated` gone. Reseeds on load.
+ * v32: catch-up Phase 18 session 2, the flat Contract (AA code, pricing
  *  kind, links, prepaid, override, Active or Disabled; no type, dates or
  *  default), No contract · RVG, Unisports Ortho and COS ACC fixed fees.
  *  Reseeds on load.
@@ -211,7 +215,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 32
+export const PERSIST_VERSION = 33
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
