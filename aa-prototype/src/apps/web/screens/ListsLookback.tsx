@@ -12,6 +12,7 @@ import { listsOnDayFor, useAppStore, type BookingSearchRow } from '../../../stor
 import { ProgressPill, resolveDisplayStatus, StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { dayWithYear, locationName, longDay, nhiBadge } from '../../../shared/format'
 import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
+import { sessionText } from '../../../domain/outOfHours'
 
 const pillInput = {
   height: 38,
@@ -141,7 +142,7 @@ function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: st
       <td className="mono" style={td}>
         <button
           type="button"
-          aria-label={`Open ${row.patientName}'s Booking on ${date} ${row.session}`}
+          aria-label={`Open ${row.patientName}'s Booking on ${date} ${sessionText(row.session)}`}
           onClick={(e) => {
             e.stopPropagation()
             onOpen(row.listId, row.bookingId)
@@ -151,7 +152,7 @@ function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: st
           {date}
         </button>
       </td>
-      <td className="mono" style={td}>{row.session}{row.scheduledTime !== undefined ? ` · ${row.scheduledTime}` : ''}</td>
+      <td className="mono" style={td}>{sessionText(row.session)}{row.scheduledTime !== undefined ? ` · ${row.scheduledTime}` : ''}</td>
       <td style={td}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
           {row.patientName}
@@ -197,14 +198,14 @@ export function WebDayTable({ anaesthetistId, dateISO, todayISO, onOpenList }: {
                   <span aria-hidden style={{ width: 3, height: 20, borderRadius: 99, background: c.solid }} />
                   <button
                     type="button"
-                    aria-label={`Open List ${dayWithYear(dateISO)} ${d.list.session}, ${location}`}
+                    aria-label={`Open List ${dayWithYear(dateISO)} ${sessionText(d.list.session)}, ${location}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       onOpenList(d.list.id)
                     }}
                     style={{ border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}
                   >
-                    {d.list.session}
+                    {sessionText(d.list.session)}
                   </button>
                 </span>
               </td>

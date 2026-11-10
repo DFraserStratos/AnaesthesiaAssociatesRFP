@@ -18,4 +18,5 @@ export * from './seed'
 export * from './warnings'
 // The anaesthetist's main view and search (catch-up Phase 38a).
 export * from './listProgress'
+export * from './outOfHours'
 export * from './bookingSearch'

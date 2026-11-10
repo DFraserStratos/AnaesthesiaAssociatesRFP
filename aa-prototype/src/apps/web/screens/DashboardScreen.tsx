@@ -3,7 +3,7 @@ import { format, parseISO, addDays } from 'date-fns'
 import { accent, neutral, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import { hasLeftMainView } from '../../../domain/listProgress'
-import type { Session, Slot } from '../../../domain/types'
+import type { Slot } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
 import { openSlotViews, receivablesAgingFor, useAppStore } from '../../../store'
 import { drSurname, formatCurrency } from '../../../shared/format'
@@ -12,6 +12,7 @@ import { sessionKey, useMovableLists, useMoveListPrompt, useMoveTargets } from '
 import { locationName } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
+import { SESSIONS_IN_ORDER, sessionText } from '../../../domain/outOfHours'
 
 interface DashboardScreenProps {
   anaesthetistId: string
@@ -103,7 +104,8 @@ export function DashboardScreen({
     const rows: { key: string; label: string; entries: { name: string; phone: string; slot: Slot }[] }[] = []
     for (let i = 0; i < 5; i++) {
       const dateISO = format(addDays(parseISO(todayISO), i), 'yyyy-MM-dd')
-      for (const session of ['AM', 'PM'] as Session[]) {
+      // An opened, free out-of-hours session is free like any (catch-up Phase 32c).
+      for (const session of SESSIONS_IN_ORDER) {
         const entries = openSlotViews(slotState, dateISO, session)
           .filter((v) => v.slot.anaesthetistId !== anaesthetistId)
           .map(({ slot }) => {
@@ -112,7 +114,7 @@ export function DashboardScreen({
           })
           .sort((a, b) => a.name.localeCompare(b.name))
         if (entries.length > 0) {
-          rows.push({ key: `${dateISO}-${session}`, label: `${format(parseISO(dateISO), 'EEE d')} ${session}`.toUpperCase(), entries })
+          rows.push({ key: `${dateISO}-${sessionText(session)}`, label: `${format(parseISO(dateISO), 'EEE d')} ${sessionText(session)}`.toUpperCase(), entries })
         }
       }
     }
@@ -171,7 +173,7 @@ export function DashboardScreen({
                 }}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: 'none', borderTop: i === 0 ? 'none' : `1px solid ${neutral.sunken}`, background: neutral.surface, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
-                <span className="mono" style={{ width: 92, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{format(parseISO(l.dateISO), 'EEE d MMM')} {l.session}</span>
+                <span className="mono" style={{ width: 92, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{format(parseISO(l.dateISO), 'EEE d MMM')} {sessionText(l.session)}</span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: neutral.ink }}>{locationName(l.hospitalId, masters.hospitals)}</span>
                 <span style={{ fontSize: 13, color: neutral.slate }}>{masters.surgeons[l.surgeonId]?.name ?? ''}</span>
               </button>
@@ -328,7 +330,7 @@ export function DashboardScreen({
                         type="button"
                         data-shot={`dashboard-move-to-${e.slot.anaesthetistId}`}
                         onClick={() => movePrompt.openMove(mine.list.id, { toSlotId: e.slot.id })}
-                        title={`Move your ${e.slot.session} List to ${e.name}${e.phone !== '' ? ` · ${e.phone}` : ''}`}
+                        title={`Move your ${sessionText(e.slot.session)} List to ${e.name}${e.phone !== '' ? ` · ${e.phone}` : ''}`}
                         style={{ ...chip, cursor: 'pointer' }}
                       >
                         {drSurname(e.name)}

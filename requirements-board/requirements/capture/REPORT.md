@@ -6,13 +6,13 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 154 | 140 |
+| Captured | 155 | 141 |
 | Partial | 54 | 54 |
 | Absent from the app | 59 | 59 |
 | Failed recipe | 0 | 0 |
-| No recipe | 47 | 47 |
+| No recipe | 46 | 46 |
 
-550 screenshots. Items per app: admin 135, web 70, mobile 62, simulator 35.
+559 screenshots. Items per app: admin 136, web 71, mobile 63, simulator 35.
 
 ## Failed recipes (0)
 
@@ -137,10 +137,9 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (47)
+## No recipe (46)
 
 - **US-01.1.5** Split a session between two surgeons
-- **US-01.1.6** Out-of-hours Lists
 - **US-02.2.3** Detect Bookings removed from a re-sent List
 - **US-02.3.4** Update email templates per kind of change
 - **US-02.3.5** Send booking change emails automatically
@@ -187,7 +186,7 @@ None.
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (154)
+## Captured (155)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -207,6 +206,7 @@ None.
 - **US-01.1.2** Horizon rolls forward daily · admin
 - **US-01.1.3** New anaesthetist gets a populated canvas · admin
 - **US-01.1.4** Slot default times · admin
+- **US-01.1.6** Out-of-hours Lists · admin, mobile, web
 - **US-01.2.1** Anaesthetist sets half-day availability · mobile, web, admin
 - **US-01.2.2** Slot status master data · admin
 - **US-01.2.3** Status is independent of bookings · admin, web, mobile

@@ -16,6 +16,7 @@ import {
   type ParsedMessage,
 } from '../../domain/integrations'
 import { ANAE } from '../../domain/seed'
+import { sessionText } from '../../domain/outOfHours'
 
 const FEED_ORDER = [FEED.stg, FEED.cph, FEED.sx]
 
@@ -582,6 +583,6 @@ function bookingEffectLabel(
   const patient = patients[patientId]?.name ?? patientId
   const list = lists[listId]
   const who = list?.anaesthetistId !== undefined ? anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId : ''
-  const when = list !== undefined ? `${list.dateISO} ${list.session}` : ''
+  const when = list !== undefined ? `${list.dateISO} ${sessionText(list.session)}` : ''
   return `Booking ${bookingId} · ${patient} · ${who} ${when}`.trim()
 }

@@ -51,6 +51,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
   }, [open, initialSession])
 
   // One shuffle per opening (Phase 17's counter), keyed by the day and session.
+  // "this AM", "this PM", or "out of hours" for the evening session (catch-up Phase 32c).
+  const when = session === 'OOH' ? 'out of hours' : `this ${session}`
   const requestKey = useSuggestionKey(`${dateISO}:${session}`, open)
 
   const candidates = useMemo(
@@ -70,8 +72,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <div style={{ width: 160, flex: 'none' }}>
-            <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]} onChange={setSession} />
+          <div style={{ width: 260, flex: 'none' }}>
+            <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }, { value: 'OOH', label: 'Out-of-hours' }]} onChange={setSession} />
           </div>
           <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <FieldLabel>Surgeon for the List (optional)</FieldLabel>
@@ -85,7 +87,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
         </div>
 
         <div data-shot="finder-count" style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>
-          {count === 0 ? `No one is free this ${session}.` : `${count} ${count === 1 ? 'anaesthetist' : 'anaesthetists'} free this ${session}`}
+          {count === 0 ? `No one is free ${when}.` : `${count} ${count === 1 ? 'anaesthetist' : 'anaesthetists'} free ${when}`}
         </div>
 
         {count > 0 && (
@@ -94,8 +96,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
             surgeonId={surgeonId !== '' ? surgeonId : undefined}
             requestKey={requestKey}
             onPick={(anaesthetistId) => onPick(slotIdFor(anaesthetistId, dateISO, session), surgeonId !== '' ? surgeonId : undefined)}
-            emptyText={`No one is free this ${session}.`}
-            trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {session}</span>}
+            emptyText={`No one is free ${when}.`}
+            trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {session === 'OOH' ? 'out of hours' : session}</span>}
           />
         )}
 

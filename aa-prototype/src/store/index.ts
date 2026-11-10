@@ -269,7 +269,10 @@ export {
   clearAllSamples,
   type WarningSample,
 } from './warningSamples'
+export { openOutOfHoursSession, closeOutOfHoursSession, closeOutOfHoursRefusal } from './outOfHoursActions'
 export {
+  addOutOfHoursListAsSimulatedOffice,
+  outOfHoursStandInRefusal,
   assignDraftListAsSimulatedOffice,
   assignNextFreeSlotAsSimulatedOffice,
   authoriseAsSimulatedOffice,

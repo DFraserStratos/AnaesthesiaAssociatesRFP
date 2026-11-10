@@ -20,6 +20,7 @@ import { ContractEditSheet } from '../../flows/ContractEditSheet'
 import { RecurringBookingSheet } from '../../flows/RecurringBookingSheet'
 import { EditCell, Header, Table } from './chrome'
 import { cellStyle, textActionStyle } from './tableStyles'
+import { sessionText } from '../../../../domain/outOfHours'
 
 /**
  * The Master data views catch-up Phase 17 did not change, moved out of the
@@ -170,7 +171,7 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
             <tr key={p.id} data-recurring-booking={p.id} data-retired={retired ? 'true' : undefined} style={retired ? { background: neutral.bg } : undefined}>
               <td style={style}>{masters.anaesthetists[p.anaesthetistId]?.name ?? p.anaesthetistId}</td>
               <td style={style}>{DAY_LABELS[p.dayOfWeek]}</td>
-              <td style={style}>{p.session}</td>
+              <td style={style}>{sessionText(p.session)}</td>
               <td style={style}><span style={{ opacity: retired ? 0.6 : 1 }}><StatusChip status={p.kind} /></span></td>
               <td style={style}>{locationName(p.hospitalId, masters.hospitals)}</td>
               <td style={style}>{p.surgeonId !== null ? (masters.surgeons[p.surgeonId]?.name ?? p.surgeonId) : '·'}</td>

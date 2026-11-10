@@ -91,7 +91,7 @@ describe('ids and settings', () => {
   it('seeds four months and today\'s default times', () => {
     expect(defaultScheduleSettings()).toEqual({
       horizonMonths: 4,
-      defaultTimes: { AM: { startTime: '07:30', endTime: '12:30' }, PM: { startTime: '13:00', endTime: '17:30' } },
+      defaultTimes: { AM: { startTime: '07:30', endTime: '12:30' }, PM: { startTime: '13:00', endTime: '17:30' }, OOH: { startTime: '18:00', endTime: '21:00' } },
     })
   })
 

@@ -407,6 +407,31 @@ already seeded.
   PM, Mr Nair) shows "This Booking is prepaid. The prepaid amount stays as agreed, and Dr ... claims
   it." on the confirm step; Reset after moving one.
 
+### Beat 3e (optional): an emergency case after hours
+
+- **Click:**
+  - **Admin Web App → Day view → Tue 21 Jul**. Hover **Dr Souter**'s name on her row (or Tab to it): a
+    small teal **Open out-of-hours session** control appears. Select it.
+  - The sheet offers **18:00 to 21:00** (the default; the office can change it). Select **Open
+    out-of-hours session**: the ruler now runs past 18:00, a Free evening block sits after her PM List,
+    and its drawer opens.
+  - In the drawer, **Assign List**: Southern Cross, Ms K. Patel. The evening block now shows the List.
+    (Alternatively, log the request first as a Draft List with the session **Out-of-hours** on the
+    Draft Lists page; the evening session's drawer then lists it under **Draft Lists for this session**
+    with **Assign here**.)
+  - Switch to the **Anaesthetist Mobile App** (Dr Souter): her Lists show a third row today after PM,
+    a moon and **18:00**, "Out-of-hours · Ms K. Patel". It is a List like any other.
+  - On a handset (the PWA), the Demo sheet's **The office adds an out-of-hours List for me tonight**
+    (Office stand-in) does the same.
+- **Say:** "Late and emergency cases go through a List like everything else. The office opens an
+  out-of-hours session after PM, even the same evening, and puts a List in it, a new one or a request
+  that was waiting. From then on it is a session like AM and PM: it has its own times, the
+  anaesthetist can mark it available or not, and the finders offer it while it is free."
+- **Expected:** the evening block on Admin Day only on a day that has one (every other day looks as
+  before); the row control gone from Dr Souter's row once her evening is open (one a day); her row after
+  PM on mobile and web; **Find available → Out-of-hours** offers a free evening session; an empty one can
+  be closed from its drawer. Reset afterwards.
+
 ### Optional: find who is free
 
 - **Click:**
@@ -464,6 +489,10 @@ whether an alerted Booking may still be submitted (the prototype allows it); whe
 in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
 preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
 Tier 4 as placeholders; still open); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).
+Settled (US-01.1.6, D84): an out-of-hours session after PM is a third kind of session the office opens for an
+anaesthetist on a day, one a day; any List goes in it, new or a Draft List for the evening; it is a full
+session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any
+List (our reading; no after-hours pricing).
 
 ---
 

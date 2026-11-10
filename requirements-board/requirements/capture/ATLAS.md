@@ -484,6 +484,25 @@ Christchurch Eye Surgery, Ms Reid). The acceptance beat: the appended `BK0162` o
 AM List, offered only after Souter sets her Fri 31 AM (`S-34821-2026-07-31-AM`, Unavailable) available.
 A moved Booking lands on a new List `LG0001` on.
 
+**Out-of-hours sessions** (catch-up Phase 32c, US-01.1.6): none is seeded, so every existing day and shot
+is unchanged; the Admin Day ruler runs 07:00 to 18:00 unless the day has an out-of-hours session (or an
+evening Draft List). The schedule settings hold its default times, 18:00 to 21:00. Stage one live:
+- **Admin (product control):** on `/admin/day/2026-07-21`, `hover` the row's right gutter `[data-day-grid-row="34821"] .aa-row-gutter`,
+  click `[data-day-grid-row="34821"] [data-shot=out-of-hours-open]`, then
+  `[data-shot=out-of-hours-open-sheet] >> role=button[name="Open out-of-hours session"]`. It opens Slot
+  `S-34821-2026-07-21-OOH` (Free) and lands on its drawer: `role=button[name="Assign List"]` (the usual
+  `[data-shot=admin-assign-list]`, `H-SX` and the second `select` `S-PATEL`), or a waiting evening Draft List
+  under `[data-shot=drawer-session-draft-lists]` (`role=button[name="Assign here"]`). The block is
+  `[data-shot=daygrid-evening-block]` on her row; the ruler then runs to 21:00.
+- **An evening Draft List:** `/admin/draft-lists`, New Draft List, hospital and surgeon, then click the
+  session choice `text="Out-of-hours"`.
+- **Mobile (PWA Demo sheet):** `{ "trigger": "office-adds-out-of-hours-list" }` on `/mobile/lists`: opens
+  tonight's session and assigns a List at the hospital and with the surgeon of Dr Souter's latest List
+  (Southern Cross, Ms K. Patel on a fresh seed). Her row is `[data-shot=out-of-hours-row]`, after the PM List.
+- **Web:** stage it through the Admin steps in `setup`, then `start` at `/web/lists` (the row is
+  `tr[data-shot=out-of-hours-row]`), `/web` (the week strip block `[data-slot-id="S-34821-2026-07-21-OOH"]`) or
+  `/web/availability` (an Out-of-hours column on a day that has one).
+
 ## Overlays that need clicks
 
 - **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
@@ -492,6 +511,15 @@ A moved Booking lands on a new List `LG0001` on.
   `office-status-choice-colleague` then a `[data-candidate]`), then the confirm step with
   `office-status-vacated` and `office-status-confirm-button`. An empty session saves at once
   (`office-status-save`).
+- **Open out-of-hours session** (Admin Day, catch-up Phase 32c): the row control
+  `[data-day-grid-row="<reg>"] [data-shot=out-of-hours-open]` is in the DOM, in the row's right gutter
+  `.aa-row-gutter` (40px; the ruler and the Draft Lists band end with the same gutter), but transparent
+  until the pointer is over that gutter (not while a drawer or sheet is open) or the control has keyboard
+  focus; it is absent for a row that already
+  has one and on a past day. It opens `[data-shot=out-of-hours-open-sheet]` (the session-times fields, Start
+  and End, 18:00 and 21:00), then the session's drawer. On an empty evening session the drawer adds
+  `[data-shot=drawer-session-draft-lists]` (Draft Lists for that day and session, `Assign here`) and
+  `[data-shot=drawer-close-out-of-hours]` (Close out-of-hours session, disabled while it holds a List).
 - **Alert the office** (catch-up Phase 32b; a bottom sheet on mobile, a dialog on web): on a Booking
   scroll to `[data-shot="alert-office-action"]`, click its button, fill
   `[data-shot="alert-office-sheet"] textarea`, then `[data-shot="alert-office-send"] button` and
@@ -608,6 +636,12 @@ the exception: use the `trigger` step)
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
 
 ## Existing hooks
+
+- Out-of-hours sessions (catch-up Phase 32c): `out-of-hours-open` (the row control), `out-of-hours-open-sheet`,
+  `daygrid-evening-block` (any block in the out-of-hours session, with `data-out-of-hours`; the after-hours zone
+  behind it is `[data-after-hours]`), `drawer-session-draft-lists`, `drawer-close-out-of-hours`; the
+  anaesthetist's `out-of-hours-row` (the mobile `ListRow` button and the web Lists `tr`, each with
+  `data-list-id`); mobile availability `availability-mine-ooh`. Session `OOH` reads "Out-of-hours" everywhere.
 
 - Single-Booking move (catch-up Phase 32a): `move-booking-action` (the entry point and its line),
   `move-booking-sheet`, `move-booking-header`, `move-booking-search` (the shared type-ahead box; the
@@ -811,6 +845,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/availability` (PWA Demo sheet) | `colleague-moves-list-to-me` | Catch-up Phase 32, badged "Colleague stand-in". A colleague hands a List into Dr Souter's free session (from the pristine seed, Morrison's Wed 22 PM Southern Cross into her Wed 22 PM); the Moved to you panel and Forward Lists' "New" follow. PWA only |
 | `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: `<listId>|office` or `<listId>|colleague`) | Catch-up Phase 30, re-pointed in 32b. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)") and, in the same step, the List goes back to the Draft Lists or to the first open colleague in the office's order; never a conflict. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
 | `/admin/day/<date>`, `/admin/draft-lists`, `/admin/conflicts` (only while an Assign or Reassign picker is open) | `ask-colleague-make-available` (choice: a closed session id) | Catch-up Phase 32b, badged Colleague stand-in. Plays the anaesthetist freeing their own closed, empty session (Free, as themselves), so the picker row becomes assignable. Shots use the inline copy on the row, `[data-candidate-closed=<reg>] [data-shot=demo-action-ask-colleague-make-available-inline]`, since the dialog's scrim covers the bar. |
+| `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 

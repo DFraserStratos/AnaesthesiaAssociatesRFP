@@ -16,6 +16,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { backfillMerge, createAppStore, freshAppState, PERSIST_KEY, PERSIST_VERSION } from './appStore'
 import { flushPersist } from './persistStorage'
+import { openOutOfHoursSession } from './outOfHoursActions'
+import { OFFICE_ACTOR } from './demoActors'
+import { ANAE } from '../domain/seed'
 
 describe('persisted store versioning', () => {
   beforeEach(() => {
@@ -251,7 +254,7 @@ describe('unavailability is never a conflict (catch-up Phase 32b)', () => {
   afterEach(() => localStorage.clear())
 
   it("discards a v28 store holding an 'availability' conflict on Rutherford's Wed 22 AM List, and reseeds it as a returned Draft List", () => {
-    expect(PERSIST_VERSION).toBe(29)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(29)
     const fresh = freshAppState()
     const id = 'L-29104-2026-07-22-AM'
     const draft = fresh.schedule.lists[id]!
@@ -270,5 +273,33 @@ describe('unavailability is never a conflict (catch-up Phase 32b)', () => {
     expect(s.schedule.lists[id]?.draft?.origin).toBe('unavailableReturn')
     const kinds = Object.values(s.schedule.lists).flatMap((l) => l.conflicts.map((c) => c.kind as string))
     expect(kinds.every((k) => k === 'holiday')).toBe(true)
+  })
+})
+
+describe('the out-of-hours session (catch-up Phase 32c)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v29 store (its schedule settings have no out-of-hours default) and reseeds with one', () => {
+    expect(PERSIST_VERSION).toBe(30)
+    const fresh = freshAppState()
+    const { OOH: _ooh, ...twoSessions } = fresh.appSettings.schedule.defaultTimes
+    const stale = { ...fresh, appSettings: { ...fresh.appSettings, schedule: { ...fresh.appSettings.schedule, defaultTimes: twoSessions } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 29 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.appSettings.schedule.defaultTimes.OOH).toEqual({ startTime: '18:00', endTime: '21:00' })
+    expect(Object.values(s.schedule.slots).some((slot) => slot.session === 'OOH')).toBe(false)
+  })
+
+  it('a v30 store holding an opened out-of-hours session reloads it intact', () => {
+    const api = createAppStore({ persisted: true })
+    const out = openOutOfHoursSession(api, OFFICE_ACTOR, ANAE.souter, '2026-07-21')
+    expect(out.ok).toBe(true)
+    if (!out.ok) return
+    flushPersist()
+    expect(createAppStore({ persisted: true }).getState().schedule.slots[out.value.slotId]).toEqual(api.getState().schedule.slots[out.value.slotId])
   })
 })

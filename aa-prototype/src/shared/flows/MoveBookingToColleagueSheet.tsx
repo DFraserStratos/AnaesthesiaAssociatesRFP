@@ -16,6 +16,7 @@ import { drSurname, locationName } from '../format'
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
 import { Initials } from './moveSheetParts'
+import { sessionText } from '../../domain/outOfHours'
 
 /**
  * Move to a colleague: an anaesthetist hands one Booking to a colleague free in
@@ -144,7 +145,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
         {snapshot.procedure !== undefined && <span style={{ fontWeight: 400, color: neutral.slate }}>, {snapshot.procedure}</span>}
       </span>
       <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
-        {[day, list.session, hospital, surgeon].filter((p): p is string => p !== undefined).join(' · ')}
+        {[day, sessionText(list.session), hospital, surgeon].filter((p): p is string => p !== undefined).join(' · ')}
       </span>
     </div>
   )
@@ -157,7 +158,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
             {header}
             <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-booking-search" />
             <div style={{ fontSize: 13, color: neutral.slate }}>
-              {searching ? 'Matching colleagues, in name order' : `Free this session · ${day} ${list.session}`}
+              {searching ? 'Matching colleagues, in name order' : `Free this session · ${day} ${sessionText(list.session)}`}
             </div>
             <ul
               data-shot="move-booking-receivers"
@@ -203,7 +204,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>{receiver.name}</span>
                 <span style={{ fontSize: 13, color: neutral.slate }}>
-                  {snapshot.patientName}, {day} {list.session}
+                  {snapshot.patientName}, {day} {sessionText(list.session)}
                 </span>
               </div>
             </div>
@@ -212,7 +213,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
               <span data-shot="move-booking-landing">
-                A new List is created in {receiverShort}&apos;s {day} {list.session} session at {hospital}.
+                A new List is created in {receiverShort}&apos;s {day} {sessionText(list.session)} session at {hospital}.
               </span>
               <span data-shot="move-booking-payable">{receiverShort} is paid for it.</span>
             </div>
@@ -263,7 +264,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
             <TickBadge size={72} animate />
             <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Moved to {drSurname(done.name)}.</div>
             <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center', lineHeight: '19px' }}>
-              It is on a new List in their {day} {list.session} session.
+              It is on a new List in their {day} {sessionText(list.session)} session.
               {done.toldOffice && (
                 <>
                   <br />
@@ -337,7 +338,7 @@ function LandingPath({ hospital, session, receiverShort, bookingsOnList }: { hos
     <div aria-hidden style={{ display: 'grid', gridTemplateColumns: '14px 1fr', columnGap: 12, padding: '12px 14px', borderRadius: radius.card, background: neutral.bg }}>
       <span style={{ width: 10, height: 10, marginTop: 4, marginLeft: 2, borderRadius: radius.pill, border: `2px solid ${neutral.lineStrong}`, background: neutral.surface, boxSizing: 'border-box' }} />
       <span style={{ fontSize: 13, color: neutral.slate }}>
-        Your {hospital} {session} List · {stays}
+        Your {hospital} {sessionText(session)} List · {stays}
       </span>
       <span style={{ justifySelf: 'center', width: 2, height: 14, background: neutral.lineStrong, margin: '2px 0' }} />
       <span />

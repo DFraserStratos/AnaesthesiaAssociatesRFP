@@ -280,7 +280,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   it('seeds the schedule settings: four months, AM 07:30 to 12:30, PM 13:00 to 17:30', () => {
     expect(seed.appSettings.schedule).toEqual({
       horizonMonths: 4,
-      defaultTimes: { AM: { startTime: '07:30', endTime: '12:30' }, PM: { startTime: '13:00', endTime: '17:30' } },
+      defaultTimes: { AM: { startTime: '07:30', endTime: '12:30' }, PM: { startTime: '13:00', endTime: '17:30' }, OOH: { startTime: '18:00', endTime: '21:00' } },
     })
     expect('availability' in seed.masters).toBe(false)
     expect(seed.counters['availability']).toBeUndefined()

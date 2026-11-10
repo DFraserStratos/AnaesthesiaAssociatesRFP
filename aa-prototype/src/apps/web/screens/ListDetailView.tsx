@@ -13,6 +13,7 @@ import { AddBookingFlow, AlertOfficeEntry, SubmitListSheet, movedToYouByLine, us
 import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
 import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface ListDetailViewProps {
   listId: string
@@ -147,7 +148,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-              {title} {list.session}
+              {title} {sessionText(list.session)}
             </h1>
             <StatusChip status={list.kind} />
           </div>

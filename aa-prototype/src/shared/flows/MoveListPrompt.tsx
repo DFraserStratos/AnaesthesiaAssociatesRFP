@@ -8,6 +8,7 @@ import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotSta
 import { Button } from '../ui'
 import { useSurface } from '../surface'
 import { MoveListSheet } from './MoveListSheet'
+import { sessionText } from '../../domain/outOfHours'
 
 /** What a screen can ask the host for. */
 export interface MoveListPromptApi {
@@ -141,7 +142,7 @@ function ListsToMoveIntro({ listIds, statusKey, onStart, onCancel }: { listIds: 
                   {i + 1} of {listIds.length}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, color: neutral.ink }}>
-                  {format(parseISO(l.dateISO), 'EEE d MMM')} {l.session} · {locationName(l.hospitalId, hospitals)}
+                  {format(parseISO(l.dateISO), 'EEE d MMM')} {sessionText(l.session)} · {locationName(l.hospitalId, hospitals)}
                 </span>
               </div>
             )

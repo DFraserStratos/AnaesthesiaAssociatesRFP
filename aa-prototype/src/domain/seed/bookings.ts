@@ -26,6 +26,7 @@ import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
 import { CONTRACT } from './contracts'
 import { BP, PAT, genericPatientIds } from './patients'
 import { EYE_CODES, GENERAL_CODES, RVG_CODES } from './rvgCodes'
+import { compareSessions } from '../outOfHours'
 
 // ---------------------------------------------------------------------------
 // Result & scenario id shapes
@@ -1127,7 +1128,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   const sortedLists = [...lists].sort((a, b) =>
     a.dateISO === b.dateISO
       ? a.anaesthetistId === b.anaesthetistId
-        ? a.session.localeCompare(b.session)
+        ? compareSessions(a, b)
         : a.anaesthetistId.localeCompare(b.anaesthetistId)
       : a.dateISO.localeCompare(b.dateISO),
   )

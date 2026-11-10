@@ -18,6 +18,7 @@ import {
 } from '../../../store'
 import { dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -164,7 +165,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 }
 
 function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveRetry: (r: MonitorBookingRow) => void }) {
-  const context = [row.hospitalName ?? row.list.hospitalId, row.list.session, dayMicroCap(row.list.dateISO)].join(' · ')
+  const context = [row.hospitalName ?? row.list.hospitalId, sessionText(row.list.session), dayMicroCap(row.list.dateISO)].join(' · ')
   return (
     <div data-shot={`billing-pipeline-${row.listId}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>

@@ -58,6 +58,8 @@ import { useMemo } from 'react'
 import { addDays, format, getDaysInMonth, parseISO } from 'date-fns'
 import { useAppStore, type AppState } from './appStore'
 import { clockISO } from './mutate'
+import { compareSessions } from '../domain/outOfHours'
+import { SESSIONS_IN_ORDER } from '../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
 // Plain selectors
@@ -130,7 +132,7 @@ function slotIndex(slots: Readonly<Record<string, Slot>>): SlotIndex {
     if (a === undefined) byAnaesthetist.set(slot.anaesthetistId, [slot])
     else a.push(slot)
   }
-  const order = (x: Slot, y: Slot) => x.dateISO.localeCompare(y.dateISO) || x.session.localeCompare(y.session)
+  const order = (x: Slot, y: Slot) => x.dateISO.localeCompare(y.dateISO) || compareSessions(x, y)
   for (const list of byAnaesthetist.values()) list.sort(order)
   const index = { byDate, byAnaesthetist }
   slotIndexCache.set(slots, index)
@@ -271,6 +273,8 @@ export interface CalendarDay {
   dateISO: string
   AM?: CalendarSession
   PM?: CalendarSession
+  /** The out-of-hours session, on a day the office opened one (catch-up Phase 32c). */
+  OOH?: CalendarSession
 }
 
 /**
@@ -306,7 +310,7 @@ export function availabilityMonthFor(
   for (let d = 1; d <= days; d++) {
     const dateISO = `${monthISO}-${String(d).padStart(2, '0')}`
     const day: CalendarDay = { dateISO }
-    for (const session of ['AM', 'PM'] as const) {
+    for (const session of SESSIONS_IN_ORDER) {
       const v = byKey.get(`${dateISO}|${session}`)
       if (v === undefined) continue
       const line = v.slot.seriesId !== undefined ? seriesLine(v.slot.seriesId) : undefined
@@ -360,7 +364,7 @@ export function listsForDate(state: AppState, dateISO: string): AssignedList[] {
     .filter((l): l is AssignedList => l.dateISO === dateISO && isAssignedList(l))
     .sort((a, b) =>
       a.anaesthetistId === b.anaesthetistId
-        ? a.session.localeCompare(b.session)
+        ? compareSessions(a, b)
         : a.anaesthetistId.localeCompare(b.anaesthetistId),
     )
 }
@@ -1650,7 +1654,7 @@ function allConflictRows(state: Pick<AppState, 'schedule' | 'masters'>): Conflic
   rows.sort(
     (a, b) =>
       a.dateISO.localeCompare(b.dateISO) ||
-      a.session.localeCompare(b.session) ||
+      compareSessions(a, b) ||
       rosterRank(a.anaesthetistId ?? '') - rosterRank(b.anaesthetistId ?? '') ||
       (a.anaesthetistId ?? '').localeCompare(b.anaesthetistId ?? '') ||
       a.cause.localeCompare(b.cause),

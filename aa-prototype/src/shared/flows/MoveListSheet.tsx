@@ -19,6 +19,7 @@ import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
 import { BackLink, ChoiceRow, Initials } from './moveSheetParts'
 import { VacatedSessionChoice } from './VacatedSessionChoice'
+import { sessionText } from '../../domain/outOfHours'
 
 interface MoveListSheetProps {
   open: boolean
@@ -98,7 +99,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
 
   if (list === undefined) return null
 
-  const dayLine = `${format(parseISO(list.dateISO), 'EEE d MMM')} · ${list.session}`
+  const dayLine = `${format(parseISO(list.dateISO), 'EEE d MMM')} · ${sessionText(list.session)}`
   const hospital = locationName(list.hospitalId, hospitals)
   const surgeon = surgeons[list.surgeonId]?.name
   const bookingCount = Object.values(bookings).filter((b) => b.listId === list.id && b.cancellation === undefined).length
@@ -239,8 +240,8 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
             )}
             <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 14, fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
               {route === 'colleague'
-                ? `${colleagueShort} gets your ${hospital} ${list.session} List and its ${bookingWord} straight away. There is no need for ${colleagueShort} or the office to accept.`
-                : `Your ${hospital} ${list.session} List goes back to the office with its ${bookingWord}, and the office finds someone for it.`}
+                ? `${colleagueShort} gets your ${hospital} ${sessionText(list.session)} List and its ${bookingWord} straight away. There is no need for ${colleagueShort} or the office to accept.`
+                : `Your ${hospital} ${sessionText(list.session)} List goes back to the office with its ${bookingWord}, and the office finds someone for it.`}
             </div>
 
             <VacatedSessionChoice

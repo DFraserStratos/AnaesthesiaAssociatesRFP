@@ -53,6 +53,10 @@ Bookings and capture the data AA needs for billing.
    them before she submits: whoever submits a List did every procedure on it.
 8b. From a Booking or a List, **Alert the office** with a note when she is unsure about it; the
    office sees it in its notifications until someone there deals with it.
+8c. See an **out-of-hours List** the office added for an emergency or late case: it shows on her day
+   after her PM List, in an evening session the office opened. She captures and submits its Bookings as
+   on any List, and marks that evening session available or not like AM and PM; she does not open one
+   herself (she rings the office).
 9. Create a missing Booking manually.
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
@@ -171,6 +175,9 @@ short-notice cover.
     back), and assign the Draft Lists they return.
 14. Record a sickness phoned in (Change status on the Day view): the List goes back to the office or on
     to a colleague there and then, never left on the unavailable session.
+15. Open an **out-of-hours session** for an emergency or late case (Open out-of-hours session on an
+    anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and put a List in
+    it, a new one or a Draft List for that evening; close an empty one from its drawer.
 
 ### Permissions
 

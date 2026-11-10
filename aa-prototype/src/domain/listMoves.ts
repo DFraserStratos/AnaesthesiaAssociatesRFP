@@ -27,6 +27,7 @@ import { titledSurname } from './names'
 import { SEED_STATUS, isOpenSlot, type SlotStatusRecords } from './slotStatus'
 import { slotIdFor } from './slots'
 import type { Anaesthetist, AnaesthetistId, AssignedList, List, Slot, SlotStatusKey } from './types'
+import { compareSessions } from './outOfHours'
 
 /** The slices a move reads. */
 export interface ListMoveInput {
@@ -190,5 +191,5 @@ export function movableListsFor(input: Pick<ListMoveInput, 'lists'>, anaesthetis
     if (ownMoveRefusal(input, list.id, anaesthetistId, todayISO) !== null) continue
     out.push(list)
   }
-  return out.sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.session.localeCompare(b.session) || a.id.localeCompare(b.id))
+  return out.sort((a, b) => a.dateISO.localeCompare(b.dateISO) || compareSessions(a, b) || a.id.localeCompare(b.id))
 }

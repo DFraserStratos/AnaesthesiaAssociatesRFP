@@ -5,6 +5,7 @@ import { drSurname, shortDay } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { ConflictDot } from './conflicts/ConflictDot'
 import { ClearWarningButton, WarningTriangle, warningTone } from '../../../shared/warnings'
+import { sessionText } from '../../../domain/outOfHours'
 
 /** Rows shown before "Show all". */
 export const TODO_VISIBLE_ROWS = 6
@@ -82,7 +83,7 @@ export function WarningsToDo({
                 <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <span style={{ fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>{r.warning.text}</span>
                   <span style={{ fontSize: 11, lineHeight: '15px', color: neutral.slate }}>
-                    {patient} · {anae !== undefined ? drSurname(anae.name) : (r.anaesthetistId ?? UNASSIGNED)} · {shortDay(r.dateISO)} {r.session}
+                    {patient} · {anae !== undefined ? drSurname(anae.name) : (r.anaesthetistId ?? UNASSIGNED)} · {shortDay(r.dateISO)} {sessionText(r.session)}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                     <button

@@ -17,6 +17,8 @@ import { assignSelectStyle } from './AssignListFields'
 const SESSION_OPTIONS: { value: Session; label: string }[] = [
   { value: 'AM', label: 'AM' },
   { value: 'PM', label: 'PM' },
+  // A Draft List can be for the evening (catch-up Phase 32c): it is assigned into an opened out-of-hours session.
+  { value: 'OOH', label: 'Out-of-hours' },
 ]
 
 export function RedateDraftListSheet({ open, listId, actor, onClose, onDone }: { open: boolean; listId: string; actor: Actor; onClose: () => void; onDone: () => void }) {

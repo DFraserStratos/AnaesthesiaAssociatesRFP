@@ -33,6 +33,8 @@ import { surnameOf } from './util'
 import { locationName } from '../../shared/format'
 import type { AssignedList } from '../../domain/types'
 import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
+import { sessionText } from '../../domain/outOfHours'
+import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 
@@ -90,6 +92,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const [drawerSlotId, setDrawerSlotId] = useState<string | null>(null)
   // A Draft List has no session, so its drawer opens by List id (catch-up Phase 31).
   const [drawerDraftListId, setDrawerDraftListId] = useState<string | null>(null)
+  // The anaesthetist whose row's "Open out-of-hours session" is open (catch-up Phase 32c).
+  const [openOutOfHoursFor, setOpenOutOfHoursFor] = useState<string | null>(null)
   // Set when Find available opens a session: the drawer starts on Assign List.
   const [drawerAssign, setDrawerAssign] = useState<{ surgeonId?: string } | undefined>(undefined)
   const [shellScrollbarWidth, setShellScrollbarWidth] = useState(0)
@@ -143,6 +147,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     const openParam = pathname.startsWith('/admin/draft-lists') ? params.get('open') : null
     setDrawerDraftListId(target !== undefined && target.state === 'DRAFT' ? target.id : openParam)
     setDrawerAssign(undefined)
+    setOpenOutOfHoursFor(null)
     // The `?open=` param is read on arrival only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, navigationState])
@@ -207,7 +212,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         const count = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
         return {
           listId: l.id,
-          title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${l.session}`,
+          title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${sessionText(l.session)}`,
           sub: `${count} booking${count === 1 ? '' : 's'} · submitted`,
         }
       }),
@@ -262,6 +267,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       setDrawerDraftListId(listId)
     },
     onOpenList: (listId) => openList(listId),
+    // Any day from today, today included (US-01.1.6); a past day offers nothing to open.
+    ...(selectedDate >= todayISO ? { onOpenOutOfHours: (anaesthetistId: string) => setOpenOutOfHoursFor(anaesthetistId) } : {}),
   }
 
   /** Open an assigned List on its day, in the session drawer (navigation state carries the target). */
@@ -322,6 +329,21 @@ function AdminShell({ todayISO }: { todayISO: string }) {
           onOpenList={(listId) => {
             setDrawerDraftListId(null)
             openList(listId)
+          }}
+        />
+      )}
+      {openOutOfHoursFor !== null && (
+        <OpenOutOfHoursSheet
+          open
+          anaesthetistId={openOutOfHoursFor}
+          dateISO={selectedDate}
+          actor={OFFICE_ACTOR}
+          onClose={() => setOpenOutOfHoursFor(null)}
+          onOpened={(slotId) => {
+            // Straight on to the new session's drawer, to put a List in it.
+            setOpenOutOfHoursFor(null)
+            setDrawerAssign(undefined)
+            setDrawerSlotId(slotId)
           }}
         />
       )}

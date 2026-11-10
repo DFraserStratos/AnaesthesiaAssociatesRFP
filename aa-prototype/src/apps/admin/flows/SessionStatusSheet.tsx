@@ -16,6 +16,7 @@ import { drSurname, locationName } from '../../../shared/format'
 import { surnameFirst } from '../util'
 import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { NotAvailableColleagues } from '../components/pairing/AnaesthetistCandidates'
+import { sessionText } from '../../../domain/outOfHours'
 
 type Step = 'status' | 'where' | 'colleague' | 'confirm' | 'done'
 
@@ -99,7 +100,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
   if (slot === undefined) return null
   const { session, dateISO } = slot
 
-  const dayLine = `${format(parseISO(dateISO), 'EEE d MMM')} · ${session}`
+  const dayLine = `${format(parseISO(dateISO), 'EEE d MMM')} · ${sessionText(session)}`
   const closing = statusKey !== '' && isClosedKey(statuses, statusKey)
   const holdsList = assigned !== undefined && liveList?.id === assigned.id
   const needsWhere = holdsList && closing && statusKey !== slot.status
@@ -124,7 +125,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
       setError(out.message)
       return
     }
-    setDone({ line: out.value.result === 'noChange' ? 'Nothing changed' : 'Status saved', detail: `${who}'s ${session} session on ${format(parseISO(dateISO), 'EEE d MMM')} is ${statusLabel}.` })
+    setDone({ line: out.value.result === 'noChange' ? 'Nothing changed' : 'Status saved', detail: `${who}'s ${sessionText(session)} session on ${format(parseISO(dateISO), 'EEE d MMM')} is ${statusLabel}.` })
     setStep('done')
   }
 
@@ -148,7 +149,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
       setError(out.message)
       return
     }
-    const sessionLine = `${who}'s ${session} session is ${vacatedLabel}.`
+    const sessionLine = `${who}'s ${sessionText(session)} session is ${vacatedLabel}.`
     setDone(
       out.value.route === 'colleague'
         ? { line: `Moved to ${drSurname(target?.name ?? '')}`, detail: `The List and its ${bookingCountLabel(bookingCount)} are in ${drSurname(target?.name ?? '')}'s session now. ${sessionLine}` }
@@ -256,8 +257,8 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
                 setTargetId(id)
                 setStep('confirm')
               }}
-              emptyText={`No colleague has a free ${session} session on this day.`}
-              trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {slot.session}</span>}
+              emptyText={`No colleague has a free ${sessionText(session)} session on this day.`}
+              trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {sessionText(slot.session)}</span>}
             />
             <NotAvailableColleagues slots={closedColleagues} session={session} query={query} shot="office-status-not-available" />
           </>
@@ -269,7 +270,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
             {header}
             <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 14, fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
               {route === 'colleague'
-                ? `${drSurname(target?.name ?? '')} gets the List and its ${bookingCountLabel(bookingCount)} straight away, in their ${session} session.`
+                ? `${drSurname(target?.name ?? '')} gets the List and its ${bookingCountLabel(bookingCount)} straight away, in their ${sessionText(session)} session.`
                 : `The List goes back to the office with its ${bookingCountLabel(bookingCount)} and waits in the ${DRAFT_LISTS} for someone to take it.`}
             </div>
             <VacatedSessionChoice label={`${who}'s session after the move`} value={vacated} onChange={setVacated} statusBeingSet={statusKey} shot="office-status-vacated" />

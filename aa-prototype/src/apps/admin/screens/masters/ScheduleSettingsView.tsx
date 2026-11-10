@@ -25,6 +25,7 @@ import { Button, FieldLabel, FormError, useSurface } from '../../../../shared'
 import { assignSelectStyle } from '../../flows/AssignListFields'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle } from './tableStyles'
+import { sessionText, SESSIONS_IN_ORDER } from '../../../../domain/outOfHours'
 
 const longDate = (iso: string) => format(parseISO(iso), 'EEE d MMM yyyy')
 
@@ -62,9 +63,9 @@ export function ScheduleSettingsView({ actor }: { actor: Actor }) {
           action={<Button variant="secondary" onClick={() => setSheet('times')}>Edit session times</Button>}
         />
         <Table heads={['Session', 'Start', 'End', '']} rightAlign={[3]} shot="admin-session-times">
-          {(['AM', 'PM'] as const).map((session) => (
+          {SESSIONS_IN_ORDER.map((session) => (
             <tr key={session}>
-              <td style={{ ...cellStyle, fontWeight: 600 }}>{session}</td>
+              <td style={{ ...cellStyle, fontWeight: 600 }}>{sessionText(session)}</td>
               <td className="mono" style={cellStyle}>{settings.defaultTimes[session].startTime}</td>
               <td className="mono" style={cellStyle}>{settings.defaultTimes[session].endTime}</td>
               <td style={{ ...cellStyle, textAlign: 'right' }}><TextAction onClick={() => setSheet('times')}>Edit</TextAction></td>
@@ -204,15 +205,15 @@ function SessionTimesSheet({ open, actor, onClose }: { open: boolean; actor: Act
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-session-times-edit" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Default session times</div>
-        {(['AM', 'PM'] as const).map((session) => (
+        {SESSIONS_IN_ORDER.map((session) => (
           <div key={session} style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-            <span className="mono" style={{ width: 32, paddingBottom: 14, fontSize: 12, fontWeight: 600, color: neutral.mist }}>{session}</span>
+            <span className="mono" style={{ width: 88, paddingBottom: 14, fontSize: 12, fontWeight: 600, color: neutral.mist }}>{sessionText(session)}</span>
             <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>{`${session} start`}</FieldLabel>
+              <FieldLabel>{`${sessionText(session)} start`}</FieldLabel>
               <input type="time" value={draft[session].startTime} onChange={(e) => set(session, 'startTime', e.target.value)} style={assignSelectStyle} />
             </label>
             <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>{`${session} end`}</FieldLabel>
+              <FieldLabel>{`${sessionText(session)} end`}</FieldLabel>
               <input type="time" value={draft[session].endTime} onChange={(e) => set(session, 'endTime', e.target.value)} style={assignSelectStyle} />
             </label>
           </div>

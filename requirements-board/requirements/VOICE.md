@@ -49,15 +49,17 @@ What never goes in a description:
 
 US-01.1.6, Out-of-hours Lists:
 
-> An admin can create an out-of-hours List: a List after the PM session, for any specialty,
-> created on the day if need be. Like any List it has an anaesthetist, surgeon, hospital and day,
-> and it has its own start time. The anaesthetist sees it on their day after their AM and PM
-> Lists, and its Bookings are recorded and billed as on any other List.
+> An admin can open an out-of-hours Slot for an anaesthetist on a day: a third Slot, after the PM
+> session, that holds an out-of-hours List for emergency and late cases in any specialty. The office
+> can open one for any day from today, today included, to the end of the schedule. Like the AM and PM
+> Slots it holds at most one List, and it has default times (starting at 18:00) that the Slot can
+> override.
 >
 > This is so emergency and late cases are booked and billed through Lists like everything else.
 
-Its Notes hold the rest: that AA accepted it and when, Vanessa's and Ben's words in the meeting, and
-which part is our reading. Its Technical discussion holds what is still to design.
+Its Notes hold the rest: that AA accepted it and when, Vanessa's and Ben's words in the meeting, the
+owner's decision on how it is held, and which part is our reading. Its Technical discussion holds what
+is still open.
 
 ## Words
 

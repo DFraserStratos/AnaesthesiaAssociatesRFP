@@ -5,6 +5,7 @@ import { addDaysISO } from '../../domain/clock'
 import type { AssignedList, Notification, Session } from '../../domain/types'
 import { useShallow } from 'zustand/react/shallow'
 import { bookingMovedToMe, bookingMoveEntries, bookingsMovedToMe, movedToMe, movedToMeForList, useAppStore, useToday, type AppState, type BookingMove } from '../../store'
+import { SESSIONS_IN_ORDER } from '../../domain/outOfHours'
 
 /** The slices a move reads, memoised on exactly those four (not every schedule edit). */
 export function useMoveInput(): ListMoveInput {
@@ -48,9 +49,13 @@ export function useMoveTargets(anaesthetistId: string, fromISO: string, untilISO
 export function useMovableSessions(anaesthetistId: string, dateISO: string): Partial<Record<Session, MovableSession>> {
   const targets = useMoveTargets(anaesthetistId, dateISO, dateISO)
   return useMemo(() => {
-    const am = targets.get(sessionKey(dateISO, 'AM'))
-    const pm = targets.get(sessionKey(dateISO, 'PM'))
-    return { ...(am !== undefined ? { AM: am } : {}), ...(pm !== undefined ? { PM: pm } : {}) }
+    // Every session of the day, an opened out-of-hours one included (catch-up Phase 32c).
+    const out: Partial<Record<Session, MovableSession>> = {}
+    for (const session of SESSIONS_IN_ORDER) {
+      const m = targets.get(sessionKey(dateISO, session))
+      if (m !== undefined) out[session] = m
+    }
+    return out
   }, [targets, dateISO])
 }
 

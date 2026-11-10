@@ -20,7 +20,8 @@ import { addDays, format, parseISO } from 'date-fns'
 import { ChevronUp } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
 import { useBookingsMovedToMe, useMovedToMe } from '../../../shared/flows'
-import type { AssignedList, Booking, DisplayKey } from '../../../domain/types'
+import type { AssignedList, Booking, DisplayKey, Session } from '../../../domain/types'
+import { sessionRank } from '../../../domain/outOfHours'
 import { hasLeftMainView, listProgress } from '../../../domain/listProgress'
 import { isAssignedList } from '../../../domain/draftLists'
 import { mainViewFor, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
@@ -54,7 +55,8 @@ interface Row {
   slotId?: string
   listId?: string
   dateISO: string
-  sessionOrder: string
+  /** Its session: rows sort AM, PM, then out-of-hours (`sessionRank`). */
+  sessionOrder: Session
   statusKey: DisplayKey
   variant: 'default' | 'open' | 'closed'
   session?: string
@@ -97,7 +99,7 @@ function groupByDate(rows: Row[]): Section[] {
   }
   return [...byDate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, dayRows]) => ({ date, rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)) }))
+    .map(([date, dayRows]) => ({ date, rows: dayRows.sort((a, b) => sessionRank(a.sessionOrder) - sessionRank(b.sessionOrder)) }))
 }
 
 export function ForwardListsScreen({

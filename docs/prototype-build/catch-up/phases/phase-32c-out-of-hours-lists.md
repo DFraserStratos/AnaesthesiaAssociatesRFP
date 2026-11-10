@@ -1,5 +1,12 @@
 # Phase 32c · Out-of-hours Lists
 
+> **Superseded in part on 2026-11-10.** The owner answered D84 after this plan was written: an
+> out-of-hours List sits in a third kind of Slot, an out-of-hours session the office opens for an
+> anaesthetist on a day (one a day, 18:00 to 21:00 by default); any List goes in it, a new one or a Draft
+> List for the evening; once open it is a full session for availability and the finders. The phase was
+> rebuilt that way (see PROGRESS.md, catch-up Phase 32c). Where this plan says "a List held outside the
+> Slots", an `outOfHours` marker, no own moves or the finders ignoring it, the decision replaces it.
+
 **Requirements covered:**
 [US-01.1.6](../../../../requirements-board/requirements/stories/US-01.1.6.md) Out-of-hours Lists (new at `efe123c`, status 5 Confirmed, design still to do; Vanessa and Ben, 5 November) ·
 [DM-66](../analysis/domain-model-delta.md#dm-66) an out-of-hours List after the PM session with its own start time, a List that does not fit the AM and PM Slots.

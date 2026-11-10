@@ -29,6 +29,7 @@ import {
   type Outcome,
 } from '../../store'
 import { neutral, accent, semantic, radius, elevation } from '../../theme/tokens'
+import { compareSessions, sessionText } from '../../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
 // Shared bits
@@ -149,7 +150,7 @@ export function DemoData() {
     () =>
       slotViewsForDate(state, todayISO).sort((a, b) =>
         a.slot.anaesthetistId === b.slot.anaesthetistId
-          ? a.slot.session.localeCompare(b.slot.session)
+          ? compareSessions(a.slot, b.slot)
           : (masters.anaesthetists[a.slot.anaesthetistId]?.name ?? '').localeCompare(masters.anaesthetists[b.slot.anaesthetistId]?.name ?? ''),
       ),
     [state, todayISO, masters.anaesthetists],
@@ -244,7 +245,7 @@ export function DemoData() {
     const list = schedule.lists[listId]
     if (list === undefined) return listId
     const who = list.anaesthetistId !== undefined ? (masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId) : UNASSIGNED
-    return `${list.dateISO} ${list.session} · ${who} · ${locationName(list.hospitalId, masters.hospitals)} · ${list.state}`
+    return `${list.dateISO} ${sessionText(list.session)} · ${who} · ${locationName(list.hospitalId, masters.hospitals)} · ${list.state}`
   }
 
   function describeBooking(bookingId: string): string {
@@ -357,7 +358,7 @@ export function DemoData() {
                   style={{ cursor: 'pointer' }}
                 >
                   <td style={cellStyle}>{masters.anaesthetists[slot.anaesthetistId]?.name ?? slot.anaesthetistId}</td>
-                  <td style={cellStyle}>{slot.session}</td>
+                  <td style={cellStyle}>{sessionText(slot.session)}</td>
                   <td style={cellStyle}><StatusChip status={displayKey} /></td>
                   <td style={cellStyle}>{list !== undefined ? locationName(list.hospitalId, masters.hospitals) : ''}</td>
                   <td style={cellStyle}>{list !== undefined ? (masters.surgeons[list.surgeonId]?.name ?? list.surgeonId) : ''}</td>

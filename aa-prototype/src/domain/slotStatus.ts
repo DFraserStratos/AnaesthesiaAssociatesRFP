@@ -251,7 +251,12 @@ export function validateRetireSlotStatus(
 // Ranges
 // ---------------------------------------------------------------------------
 
-export type SessionChoice = 'AM' | 'PM' | 'both'
+/**
+ * The sessions an availability change covers: one session, or both AM and PM.
+ * `OOH` is a single opened out-of-hours session (catch-up Phase 32c): ranges
+ * and series offer AM, PM or both, since no out-of-hours session is generated.
+ */
+export type SessionChoice = Session | 'both'
 
 /** The sessions a choice covers, AM first. */
 export function sessionsOf(choice: SessionChoice): Session[] {

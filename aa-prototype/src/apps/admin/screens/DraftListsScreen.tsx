@@ -28,6 +28,7 @@ import { AssignDraftListSheet } from '../flows/AssignDraftListSheet'
 import { RedateDraftListSheet } from '../flows/RedateDraftListSheet'
 import { RemoveDraftListSheet } from '../flows/RemoveDraftListSheet'
 import { DraftListSheet } from '../flows/DraftListSheet'
+import { sessionText } from '../../../domain/outOfHours'
 
 const cellStyle = adminCell()
 const headCellStyle = adminHead()
@@ -62,7 +63,7 @@ export function DraftListsScreen({
     const l = listsRecord[assignedId]
     if (l === undefined || l.anaesthetistId === undefined) return null
     const a = masters.anaesthetists[l.anaesthetistId]
-    return { listId: assignedId, text: `${DRAFT_LIST} assigned to ${surnameFirst(a?.name ?? '')}, ${shortDay(l.dateISO)} ${l.session}. It is now an active List.` }
+    return { listId: assignedId, text: `${DRAFT_LIST} assigned to ${surnameFirst(a?.name ?? '')}, ${shortDay(l.dateISO)} ${sessionText(l.session)}. It is now an active List.` }
   }, [assignedId, listsRecord, masters.anaesthetists])
   function setAssigned(listId: string | null) {
     const p = new URLSearchParams(params)
@@ -185,7 +186,7 @@ export function DraftListsScreen({
                         style={{ cursor: 'pointer', ...(i === 0 && g > 0 ? { borderTop: `2px solid ${neutral.lineStrong}` } : {}) }}
                       >
                         <td style={{ ...cellStyle, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? neutral.ink : neutral.mist, whiteSpace: 'nowrap' }}>{i === 0 ? shortDay(dateISO) : ''}</td>
-                        <td className="mono" style={{ ...cellStyle, fontWeight: 600 }}>{l.session}</td>
+                        <td className="mono" style={{ ...cellStyle, fontWeight: 600 }}>{sessionText(l.session)}</td>
                         <td style={{ ...cellStyle, fontWeight: 600 }}>{locationName(l.hospitalId, masters.hospitals)}</td>
                         <td style={cellStyle}>{surgeon(l)}</td>
                         <td style={{ ...cellStyle, textAlign: 'right' }}><BookingCount count={counts.get(l.id) ?? 0} style={{ fontSize: 13 }} /></td>
@@ -209,7 +210,7 @@ export function DraftListsScreen({
                           <span style={{ display: 'inline-flex', gap: 12 }}>
                             <button
                               type="button"
-                              aria-label={`Assign ${DRAFT_LIST}, ${shortDay(l.dateISO)} ${l.session}`}
+                              aria-label={`Assign ${DRAFT_LIST}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`}
                               disabled={passed}
                               title={passed ? 'This day has passed. Change its date or remove it.' : undefined}
                               style={passed ? { ...textActionStyle, color: neutral.mist, cursor: 'default' } : textActionStyle}
@@ -259,12 +260,12 @@ export function DraftListsScreen({
                 const at = assigned ? l.draft?.assignedAtISO : l.removedAtISO
                 return (
                   <tr key={l.id} data-draft-history-row={l.id}>
-                    <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{shortDay(l.dateISO)} {l.session}</td>
+                    <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{shortDay(l.dateISO)} {sessionText(l.session)}</td>
                     <td style={cellStyle}>{locationName(l.hospitalId, masters.hospitals)}</td>
                     <td style={cellStyle}>{surgeon(l)}</td>
                     <td style={cellStyle}>
                       {assigned
-                        ? `Assigned to ${drSurname(who?.name ?? l.anaesthetistId ?? '')}, ${shortDay(l.dateISO)} ${l.session}`
+                        ? `Assigned to ${drSurname(who?.name ?? l.anaesthetistId ?? '')}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`
                         : `Removed${l.removeReason !== undefined ? `: ${l.removeReason}` : ''}`}
                     </td>
                     <td style={cellStyle}><WaitingTime list={l} style={{ fontSize: 13 }} /></td>

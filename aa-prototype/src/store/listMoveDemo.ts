@@ -26,6 +26,7 @@ import { moveBookingToAnaesthetist, moveListToOffice, pushListToSlot, type Booki
 import { ok, refuse, type Outcome } from './mutate'
 import { bookingMoveInputOf, closedEmptyColleagueSlots, listInSlot, moveInputOf } from './selectors'
 import { setAvailability } from './slotActions'
+import { compareSessions } from '../domain/outOfHours'
 
 /** The persona the anaesthetist apps act as: her Lists are never a colleague's move. */
 export const LIST_MOVE_DEMO_PERSONA = ANAE.souter
@@ -60,7 +61,7 @@ export function colleagueMoveCandidates(state: DemoState, fromISO?: string): Ass
     if (ownMoveRefusal(input, list.id, list.anaesthetistId, todayISO) !== null) continue
     out.push(list)
   }
-  return out.sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.session.localeCompare(b.session) || a.id.localeCompare(b.id))
+  return out.sort((a, b) => a.dateISO.localeCompare(b.dateISO) || compareSessions(a, b) || a.id.localeCompare(b.id))
 }
 
 /** The colleagues a demo hand-on may use: the receive rule's targets, minus the persona and scripted sessions. */

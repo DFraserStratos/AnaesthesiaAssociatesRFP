@@ -20,6 +20,7 @@ import { OFFICE_ACTOR } from './demoActors'
 import { refuse, ok, type Outcome } from './mutate'
 import { markUnavailableAndMoveList } from './listMoveActions'
 import { firstOfficeColleagueSlot } from './slotActions'
+import { compareSessions } from '../domain/outOfHours'
 
 export const SIMULATED_SICKNESS_NOTE = 'Unwell, short notice (phoned in, simulated)'
 
@@ -36,7 +37,7 @@ export function sicknessCandidates(state: Pick<AppState, 'schedule' | 'clock'>, 
   for (const b of Object.values(state.schedule.bookings)) if (b.cancellation === undefined) booked.set(b.listId, (booked.get(b.listId) ?? 0) + 1)
   return Object.values(state.schedule.lists)
     .filter((l): l is AssignedList => isAssignedList(l) && l.dateISO === dateISO && l.dateISO >= state.clock.todayISO && l.state !== 'AUTHORISED' && !isBackdropList(l))
-    .sort((a, b) => Number((booked.get(b.id) ?? 0) > 0) - Number((booked.get(a.id) ?? 0) > 0) || a.session.localeCompare(b.session) || a.anaesthetistId.localeCompare(b.anaesthetistId))
+    .sort((a, b) => Number((booked.get(b.id) ?? 0) > 0) - Number((booked.get(a.id) ?? 0) > 0) || compareSessions(a, b) || a.anaesthetistId.localeCompare(b.anaesthetistId))
 }
 
 /** The colleague session the sickness would hand this List to (the office's first pick), or undefined. */

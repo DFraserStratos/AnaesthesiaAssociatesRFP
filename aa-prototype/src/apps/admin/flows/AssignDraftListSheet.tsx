@@ -27,6 +27,7 @@ import { surnameFirst } from '../util'
 import { NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { DraftListCandidates } from '../components/pairing/DraftListCandidates'
 import { BookingCount, UnassignedPill } from '../components/draftLists/DraftListParts'
+import { sessionText } from '../../../domain/outOfHours'
 
 const SUCCESS_DURATION_MS = 1050
 
@@ -108,7 +109,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
             <UnassignedPill />
           </div>
           <div style={{ fontSize: 13, color: neutral.slate, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session} · {pairingLine(list, masters)}</span>
+            <span>{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)} · {pairingLine(list, masters)}</span>
             <span aria-hidden>·</span>
             <BookingCount count={bookingCount} style={{ fontSize: 12.5 }} noun />
           </div>
@@ -128,7 +129,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
           <>
             <div data-shot="assign-draft-list-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 8, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 14 }}>
               <ConfirmRow label="Anaesthetist">{surnameFirst(target?.name ?? targetId)}</ConfirmRow>
-              <ConfirmRow label="Session">{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session}</ConfirmRow>
+              <ConfirmRow label="Session">{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)}</ConfirmRow>
               <ConfirmRow label="Hospital">{hospitalName}</ConfirmRow>
               <ConfirmRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</ConfirmRow>
               <ConfirmRow label="Kind">{LIST_KIND_LABELS[list.kind].label}</ConfirmRow>
@@ -153,7 +154,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
       </div>
       {assigned !== null ? (
         <SuccessOverlay title={`${DRAFT_LIST} assigned`} testId="draft-list-assigned-overlay" onDismiss={() => onAssigned(listId, assigned.slotId)}>
-          <div style={{ fontSize: 14, color: neutral.slate }}>Now an active List in {surnameFirst(target?.name ?? '')}'s {list.session} session</div>
+          <div style={{ fontSize: 14, color: neutral.slate }}>Now an active List in {surnameFirst(target?.name ?? '')}'s {sessionText(list.session)} session</div>
         </SuccessOverlay>
       ) : null}
     </Overlay>

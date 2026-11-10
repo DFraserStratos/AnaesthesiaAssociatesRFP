@@ -15,6 +15,7 @@ import { pairingLine } from '../../../../shared/format'
 import { DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { BookingCount, UnassignedPill, WaitingTime } from './DraftListParts'
+import { sessionText } from '../../../../domain/outOfHours'
 
 const RAIL_ROWS = 5
 
@@ -52,7 +53,7 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
                 style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', border: 'none', borderRadius: 10, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
                 <span style={{ fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>
-                  {format(parseISO(l.dateISO), 'EEE d')} {l.session} · {pairingLine(l, masters)}
+                  {format(parseISO(l.dateISO), 'EEE d')} {sessionText(l.session)} · {pairingLine(l, masters)}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: neutral.slate }}>
                   <UnassignedPill />

@@ -200,7 +200,11 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Availability statuses (Master data): rename, recolour or add a status and every app follows; rules
   read the status's ID; it is availability only, never a List's state (Active, Submitted or
   Authorised, or Draft for a Draft List)
-- The app never says "slot": it says session, AM or PM
+- Out-of-hours sessions: **Open out-of-hours session** on an anaesthetist's Day row (hover the name or
+  Tab to it) opens an evening session after PM for any day from today, one a day, 18:00 to 21:00 by
+  default; it works like any session: Assign List, a Draft List for the evening (session Out-of-hours),
+  availability and the finders; an empty one closes from its drawer (US-01.1.6)
+- The app never says "slot": it says session, AM, PM or Out-of-hours
 - Later: billing and integration monitoring
 
 ## Strong phrases to use
@@ -275,7 +279,10 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - In the Admin **Assign Draft List** and **Reassign** pickers, each colleague marked unavailable shows
   read only with **Ask Dr X to make this session available** (badged "Colleague stand-in"): it plays
   that anaesthetist freeing the session, so the row becomes assignable. On a handset List or Booking,
-  **Office resolves this alert** (badged "Office stand-in") plays the office ticking her alert.
+  **Office resolves this alert** (badged "Office stand-in") plays the office ticking her alert. On her
+  handset Lists, **The office adds an out-of-hours List for me tonight** (badged "Office stand-in")
+  opens tonight's out-of-hours session and puts a List in it, at the hospital and with the surgeon of
+  her latest List; in the framed build play the office with **Open out-of-hours session** on Admin Day.
   **Alert the office**, the tick and **Show resolved** are product actions, not demo actions.
 - **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
@@ -429,6 +436,14 @@ The system creates AM and PM sessions on the rolling canvas. Recurring bookings 
 defaults, painted after the anaesthetist's own calendar. "Apply to canvas now" repopulates the schedule
 ahead after a change, without touching booked Lists. Office staff reserve and amend Lists and handle
 exceptions. "Shift" is not the RFP term.
+
+### "What about cases after six?"
+
+The office opens an out-of-hours session after PM for the anaesthetist, even the same evening, and puts
+a List in it: a new one, or a request already waiting as a Draft List for that evening. It is a session
+like AM and PM, one a day, 18:00 to 21:00 by default: the anaesthetist can mark it available or not, the
+finders offer it while it is free, and its Bookings are captured, submitted and billed like any List
+(S2 Beat 3e).
 
 ### "Can an anaesthetist edit after submission?"
 

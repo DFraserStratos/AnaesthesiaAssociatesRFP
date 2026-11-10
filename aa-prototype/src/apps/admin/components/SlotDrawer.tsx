@@ -2,16 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim } from '../../../theme/tokens'
-import { bookingCountLabel } from '../../../shared/scheduleTerms'
-import { bookingMovesOntoList, latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
+import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
+import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/scheduleTerms'
+import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
 import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
-import { drSurname, LIST_STATE_LABELS, locationName, slotTimeRange } from '../../../shared/format'
+import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
@@ -26,6 +26,8 @@ import type { AssignedList, Slot } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 import { surgeonProfilePath } from '../mastersPaths'
+import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
+import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 
 interface SlotDrawerProps {
   /** The session open in the drawer (a Slot id). */
@@ -71,7 +73,7 @@ export function SlotDrawer({ slotId, actor, onClose, onOpenBooking, initialAssig
   return (
     <>
       {view.list === undefined ? (
-        <EmptySessionDrawer slot={view.slot} times={view.times} sheet={sheet} setSheet={setSheet} onClose={onClose} />
+        <EmptySessionDrawer slot={view.slot} times={view.times} actor={actor} sheet={sheet} setSheet={setSheet} onClose={onClose} />
       ) : (
         <ListBody list={view.list} slot={view.slot} times={view.times} actor={actor} sheet={sheet} setSheet={setSheet} onClose={onClose} onOpenBooking={onOpenBooking} />
       )}
@@ -134,7 +136,7 @@ function ListBody({
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : list.anaesthetistId}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
             <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <StatusChip status={list.kind} />
             </div>
@@ -254,19 +256,41 @@ function ListBody({
 function EmptySessionDrawer({
   slot,
   times,
+  actor,
   sheet,
   setSheet,
   onClose,
 }: {
   slot: Slot
   times: EffectiveSlotTimes
+  actor: Actor
   sheet: Sheet
   setSheet: (s: Sheet) => void
   onClose: () => void
 }) {
   const anae = useAppStore((s) => s.masters.anaesthetists[slot.anaesthetistId])
   const statuses = useAppStore((s) => s.masters.slotStatuses)
+  const masters = useAppStore((s) => s.masters)
   const open = !isClosedKey(statuses, slot.status)
+  // The Draft Lists waiting for this day and session (an evening one included, catch-up Phase 32c): one tap puts one here.
+  const lists = useAppStore((s) => s.schedule.lists)
+  const waiting = useMemo(() => draftListsForDate({ schedule: { lists } }, slot.dateISO).filter((l) => l.session === slot.session), [lists, slot.dateISO, slot.session])
+  const evening = isOutOfHours(slot)
+  const closeBlocked = useAppStore((s) => (evening ? closeOutOfHoursRefusal(s, slot.id) : null))
+  const [error, setError] = useState<string | null>(null)
+
+  function assignDraft(listId: string) {
+    setError(null)
+    const out = assignDraftList(useAppStore, actor, listId, { anaesthetistId: slot.anaesthetistId })
+    if (!out.ok) setError(out.message)
+  }
+
+  function closeSession() {
+    setError(null)
+    const out = closeOutOfHoursSession(useAppStore, actor, slot.id)
+    if (!out.ok) setError(out.message)
+    else onClose()
+  }
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
@@ -274,7 +298,7 @@ function EmptySessionDrawer({
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : slot.anaesthetistId}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(slot.dateISO), 'EEE d MMM')} · {slot.session}</div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(slot.dateISO), 'EEE d MMM')} · {sessionText(slot.session)}</div>
             <div style={{ marginTop: 8 }}><StatusChip status={slot.status} /></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
@@ -299,13 +323,28 @@ function EmptySessionDrawer({
           </Section>
           {open ? (
             <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
-              No List in this session yet. Assign one to give it a surgeon and hospital, or book a patient straight from a call.
+              No List in this session yet. Assign one to give it a surgeon and hospital{waiting.length > 0 ? `, put a waiting ${DRAFT_LIST} here` : ''}, or book a patient straight from a call.
             </div>
           ) : (
             // A closed session takes no List (US-01.6.3, D59; catch-up Phase 32b): made available first.
             <div data-shot="drawer-closed-session" style={{ background: neutral.bg, color: neutral.ink, borderRadius: radius.card, padding: 12, fontSize: 13, lineHeight: '19px' }}>
               This session is marked {displayStatusLabel(slot.status, statuses)}. It needs to be made available, with {anae !== undefined ? drSurname(anae.name) : 'the anaesthetist'}'s agreement, before a List or Booking can go here.
             </div>
+          )}
+          {open && waiting.length > 0 && (
+            <Section label={`${DRAFT_LISTS} for this session (${waiting.length})`}>
+              <div data-shot="drawer-session-draft-lists" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {waiting.map((l) => (
+                  <div key={l.id} data-draft-list-id={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', margin: '0 -10px', borderBottom: `1px solid ${neutral.line}` }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: neutral.ink }}>{pairingLine(l, masters)}</span>
+                    <DrawerLink onClick={() => assignDraft(l.id)}>Assign here</DrawerLink>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+          {error !== null && (
+            <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
           )}
         </div>
 
@@ -326,6 +365,12 @@ function EmptySessionDrawer({
             <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
               <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
               <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+            </div>
+          )}
+          {evening && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ActionBtn shot="drawer-close-out-of-hours" disabled={closeBlocked !== null} onClick={closeSession}>{CLOSE_OUT_OF_HOURS}</ActionBtn>
+              {closeBlocked !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{closeBlocked}</span>}
             </div>
           )}
         </div>
@@ -362,13 +407,14 @@ function DrawerLink({ onClick, children }: { onClick: () => void; children: Reac
   )
 }
 
-function ActionBtn({ onClick, children, primary, shot }: { onClick: () => void; children: React.ReactNode; primary?: boolean; shot?: string }) {
+function ActionBtn({ onClick, children, primary, shot, disabled }: { onClick: () => void; children: React.ReactNode; primary?: boolean; shot?: string; disabled?: boolean }) {
   return (
     <button
       type="button"
       data-shot={shot}
       onClick={onClick}
-      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? '#FFFFFF' : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}
+      disabled={disabled}
+      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? '#FFFFFF' : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
     >
       {children}
     </button>

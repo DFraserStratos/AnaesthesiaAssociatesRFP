@@ -753,3 +753,40 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
   -webkit-appearance: none;
   appearance: none;
 }
+
+/*
+ * Admin Day row controls revealed only when the pointer is near them, over the
+ * row's right gutter, or on the control's own keyboard focus (catch-up Phase
+ * 32c: "Open out-of-hours session" beside where the evening session will
+ * appear). Hidden while a drawer or sheet is open. Always in the DOM and in the
+ * tab order; a pointer-less device shows it outright.
+ */
+.aa-row-reveal {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+.aa-row-reveal:focus-visible {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .aa-row-gutter:hover .aa-row-reveal {
+    opacity: 1;
+  }
+  body:has([data-testid='admin-list-drawer'], [role='dialog']) .aa-row-gutter:hover .aa-row-reveal:not(:focus-visible) {
+    opacity: 0;
+  }
+}
+@media (hover: none) {
+  .aa-row-reveal {
+    opacity: 1;
+  }
+}
+.aa-row-reveal:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aa-row-reveal {
+    transition: none;
+  }
+}

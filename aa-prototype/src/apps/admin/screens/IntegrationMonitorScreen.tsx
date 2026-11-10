@@ -19,6 +19,7 @@ import { dayMicroCap, locationName } from '../../../shared/format'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { compareSessions, sessionText } from '../../../domain/outOfHours'
 
 interface Props {
   actor: Actor
@@ -253,7 +254,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
   const listOptions = useMemo(() => {
     return Object.values(lists)
       .filter((l) => l.anaesthetistId === pdf.targetList.anaesthetistId && l.state === 'ACTIVE' && l.dateISO >= pdf.targetList.dateISO)
-      .sort((a, b) => (a.dateISO === b.dateISO ? a.session.localeCompare(b.session) : a.dateISO.localeCompare(b.dateISO)))
+      .sort((a, b) => (a.dateISO === b.dateISO ? compareSessions(a, b) : a.dateISO.localeCompare(b.dateISO)))
       .slice(0, 12)
   }, [lists, pdf.targetList])
 
@@ -297,7 +298,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
             <select value={targetListId} onChange={(e) => setTargetListId(e.target.value)} style={{ font: 'inherit', fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }}>
               {listOptions.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {dayMicroCap(l.dateISO)} {l.session} · {locationName(l.hospitalId, hospitals)}
+                  {dayMicroCap(l.dateISO)} {sessionText(l.session)} · {locationName(l.hospitalId, hospitals)}
                 </option>
               ))}
             </select>

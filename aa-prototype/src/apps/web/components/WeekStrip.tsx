@@ -8,6 +8,7 @@ import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../s
 import { hasLeftMainView, LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { slotTimeRange, weekDays, locationName } from '../../../shared/format'
 import { Panel } from './Panel'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface WeekStripProps {
   anaesthetistId: string
@@ -71,14 +72,14 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
     const list = v.list
     if (list === undefined) {
       const status = resolveDisplayStatus(v.slot.status, slotStatuses)
-      if (v.open) return { l1: `${status.label} · ${v.slot.session}`, l2: v.slot.note ?? 'Open for cover' }
+      if (v.open) return { l1: `${status.label} · ${sessionText(v.slot.session)}`, l2: v.slot.note ?? 'Open for cover' }
       return { l1: status.longLabel, l2: v.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
     const hospital = locationName(list.hospitalId, hospitals)
     // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
     const surgeon = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
-    return { l1: hospital, l2: `${surgeon}${surgeon !== '' ? ' · ' : ''}${list.session}` }
+    return { l1: hospital, l2: `${surgeon}${surgeon !== '' ? ' · ' : ''}${sessionText(list.session)}` }
   }
 
   return (
@@ -96,6 +97,7 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
           const isToday = dateISO === todayISO
           const am = slotFor(dateISO, 'AM')
           const pm = slotFor(dateISO, 'PM')
+          const ooh = slotFor(dateISO, 'OOH')
           // A whole day under one closed status (a day off) reads as one tall block.
           const mergedHoliday =
             am !== undefined && pm !== undefined && am.list === undefined && pm.list === undefined && !am.open && am.slot.status === pm.slot.status
@@ -137,6 +139,8 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
                     <Block view={pm} labels={pm !== undefined ? labels(pm) : undefined} onOpenList={onOpenList} submitted={submittedDone(pm)} />
                   </>
                 )}
+                {/* An opened out-of-hours session, after PM (catch-up Phase 32c). */}
+                {ooh !== undefined && <Block view={ooh} labels={labels(ooh)} onOpenList={onOpenList} submitted={submittedDone(ooh)} />}
               </div>
             </div>
           )

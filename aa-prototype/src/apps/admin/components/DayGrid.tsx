@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
-import { TriangleAlert } from 'lucide-react'
+import { Moon, Plus, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic } from '../../../theme/tokens'
 import type { DisplayKey, DraftList } from '../../../domain/types'
 import { isClosedKey } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
 import type { AppState, ListWarningSummary, SlotView } from '../../../store'
-import { useConflictLookups } from '../../../store'
+import { useAppStore, useConflictLookups } from '../../../store'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
-import { attentionReasons, blockGeometry, slotSpan, surnameFirst } from '../util'
+import { attentionReasons, blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, rulerEndLabel, rulerFor, rulerLabels, slotSpan, surnameFirst, type Ruler } from '../util'
+import { compareSessions, isOutOfHours } from '../../../domain/outOfHours'
+import { OPEN_OUT_OF_HOURS, OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { DraftListBand } from './DraftListBand'
 import { BookingCount } from './draftLists/DraftListParts'
 import { draftListCount } from '../../../shared/scheduleTerms'
@@ -31,9 +33,12 @@ interface DayGridProps {
   /** Active (not cancelled) Bookings per List id: every block's count. */
   bookingCounts?: ReadonlyMap<string, number>
   onOpenDraftList?: (listId: string) => void
+  /**
+   * "Open out-of-hours session" on a row (catch-up Phase 32c; US-01.1.6), for
+   * an anaesthetist with none open that day; absent on a past day.
+   */
+  onOpenOutOfHours?: (anaesthetistId: string) => void
 }
-
-const RULER_LABELS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
 
 /** The needs-attention amber (the warning token, not the pre-op status hue). */
 const ATTENTION = semantic.warning.solid
@@ -66,6 +71,8 @@ interface DisplaySegment extends Segment {
 function segmentsFor(views: SlotView[], statuses: AppState['masters']['slotStatuses']): Segment[] {
   const am = views.find((v) => v.slot.session === 'AM')
   const pm = views.find((v) => v.slot.session === 'PM')
+  // An opened out-of-hours session draws after PM in its own block, whatever the day's status (catch-up Phase 32c).
+  const evening = views.filter((v) => isOutOfHours(v.slot)).map((v) => ({ view: v, ...slotSpan(v) }))
   if (
     am !== undefined &&
     pm !== undefined &&
@@ -74,9 +81,9 @@ function segmentsFor(views: SlotView[], statuses: AppState['masters']['slotStatu
     am.slot.status === pm.slot.status &&
     isClosedKey(statuses, am.slot.status)
   ) {
-    return [{ view: am, start: 7, end: 18 }]
+    return [{ view: am, start: 7, end: 18 }, ...evening]
   }
-  return [...views].sort((a, b) => a.slot.session.localeCompare(b.slot.session)).map((v) => ({ view: v, ...slotSpan(v) }))
+  return [...views].sort((a, b) => compareSessions(a.slot, b.slot)).map((v) => ({ view: v, ...slotSpan(v) }))
 }
 
 /**
@@ -94,7 +101,16 @@ function hasNoteSignal(view: SlotView): boolean {
 const NO_DRAFTS: readonly DraftList[] = []
 const NO_COUNTS: ReadonlyMap<string, number> = new Map()
 
-export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList }: DayGridProps) {
+export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList, onOpenOutOfHours }: DayGridProps) {
+  // The ruler: 07:00 to 18:00, longer only on a day with an out-of-hours session or an evening Draft List.
+  const eveningDefaults = useAppStore((s) => s.appSettings.schedule.defaultTimes.OOH)
+  const ruler = useMemo(() => {
+    const ends = Object.values(viewsByAnaesthetist).flatMap((vs) => vs.filter((v) => isOutOfHours(v.slot)).map((v) => slotSpan(v).end))
+    const draftEnds = draftLists.some((l) => isOutOfHours(l)) ? [hoursOf(eveningDefaults.endTime)] : []
+    return rulerFor([...ends, ...draftEnds])
+  }, [viewsByAnaesthetist, draftLists, eveningDefaults])
+  const gridline = `repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) ${(100 / ruler.hours).toFixed(4)}%)`
+  const afterHours = ruler.hours !== DAY_RULER.hours ? blockGeometry(DAY_RULER.start + DAY_RULER.hours, ruler.start + ruler.hours, ruler) : undefined
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<DisplayKey>>(() => new Set())
   const slotStatuses = useSlotStatusRecords()
   const legendKeys = useLegendKeys()
@@ -191,14 +207,16 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
       <div style={{ display: 'flex', padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
         <span style={{ width: 148, flex: 'none', paddingLeft: 16, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, boxSizing: 'border-box' }}>ANAESTHETIST</span>
         <span style={{ flex: 1, display: 'flex' }}>
-          {RULER_LABELS.map((t) => (
+          {rulerLabels(ruler).map((t) => (
             <span key={t} className="mono" style={{ flex: 1, fontSize: 10, color: neutral.mist }}>{t}</span>
           ))}
         </span>
+        {/* The ruler's end hour, in the gutter above the row controls, so the ruler reads to its end (18:00, or later on an evening). */}
+        <span className="mono" style={{ width: GRID_GUTTER, flex: 'none', fontSize: 10, color: neutral.mist }}>{rulerEndLabel(ruler)}</span>
       </div>
 
       {/* The day's Draft Lists, above the anaesthetists on the same ruler; never filtered. */}
-      <DraftListBand draftLists={draftLists} bookingCounts={bookingCounts} onOpen={(id) => onOpenDraftList?.(id)} />
+      <DraftListBand draftLists={draftLists} bookingCounts={bookingCounts} onOpen={(id) => onOpenDraftList?.(id)} ruler={ruler} />
 
       {displayedRows.map(({ anaesthetist, segments }, index) => {
         const inactive = filtered && segments.length === 0
@@ -210,6 +228,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           data-filter-match={inactive ? 'false' : 'true'}
           data-filter-divider={startsInactiveGroup ? 'true' : undefined}
           style={{
+            position: 'relative',
             display: 'flex',
             alignItems: 'stretch',
             borderBottom: '1px solid #F1F4F2',
@@ -220,10 +239,33 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           <span style={{ width: 148, flex: 'none', display: 'flex', alignItems: 'center', paddingLeft: 16, fontSize: 12.5, fontWeight: 600, boxSizing: 'border-box', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: inactive ? neutral.mist : neutral.ink }}>
             {surnameFirst(anaesthetist.name)}
           </span>
-          <span style={{ flex: 1, position: 'relative', height: 44, display: 'block', backgroundImage: 'repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 9.0909%)' }}>
+          <span style={{ flex: 1, position: 'relative', height: 44, display: 'block', backgroundImage: gridline }}>
+            {afterHours !== undefined && (
+              // After 18:00: a quiet zone, so the evening reads as outside the AM and PM sessions.
+              <span aria-hidden data-after-hours style={{ position: 'absolute', top: 0, bottom: 0, left: afterHours.left, width: afterHours.width, background: neutral.bg, borderLeft: `1px dashed ${neutral.lineStrong}` }} />
+            )}
             {segments.map((seg) => (
-              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} bookingCount={seg.view.list !== undefined ? (bookingCounts.get(seg.view.list.id) ?? 0) : undefined} onClick={() => onSelectSlot(seg.view.slot.id)} />
+              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} ruler={ruler} bookingCount={seg.view.list !== undefined ? (bookingCounts.get(seg.view.list.id) ?? 0) : undefined} onClick={() => onSelectSlot(seg.view.slot.id)} />
             ))}
+          </span>
+          {/* The row's right gutter (catch-up Phase 32c): "Open out-of-hours session" beside where the evening session
+              appears, shown only when the pointer is over the gutter or the control has keyboard focus. Last in the row,
+              so a row's first button is still its first block. */}
+          <span className="aa-row-gutter" style={{ width: GRID_GUTTER, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {onOpenOutOfHours !== undefined && !(viewsByAnaesthetist[anaesthetist.registrationNumber] ?? []).some((v) => isOutOfHours(v.slot)) && (
+              <button
+                type="button"
+                className="aa-row-reveal"
+                data-shot="out-of-hours-open"
+                aria-label={`${OPEN_OUT_OF_HOURS} for ${surnameFirst(anaesthetist.name)}`}
+                title={OPEN_OUT_OF_HOURS}
+                onClick={() => onOpenOutOfHours(anaesthetist.registrationNumber)}
+                style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 1, padding: 0, cursor: 'pointer', boxShadow: '0 1px 2px rgba(23,35,32,0.08),0 2px 6px rgba(23,35,32,0.08)' }}
+              >
+                <Plus size={10} strokeWidth={3} aria-hidden />
+                <Moon size={11} strokeWidth={2.4} aria-hidden />
+              </button>
+            )}
           </span>
         </div>
         )
@@ -323,7 +365,7 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
   )
 }
 
-function GridBlock({ seg, masters, bookingCount, onClick }: { seg: DisplaySegment; masters: AppState['masters']; bookingCount: number | undefined; onClick: () => void }) {
+function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: DisplaySegment; masters: AppState['masters']; ruler: Ruler; bookingCount: number | undefined; onClick: () => void }) {
   const { slot, list } = seg.view
   const { displayKey, listAttention, needsAttention, conflict, hasNote: hasNoteSignal, warnings } = seg
   const resolved = resolveDisplayStatus(displayKey, masters.slotStatuses)
@@ -333,7 +375,9 @@ function GridBlock({ seg, masters, bookingCount, onClick }: { seg: DisplaySegmen
   const reasons = list !== undefined ? attentionReasons(list, conflictLookups) : []
   // The block's note: the List's when a List is in the session, else the session's own.
   const note = list !== undefined ? list.notes : slot.note
-  const geo = blockGeometry(seg.start, seg.end)
+  const geo = blockGeometry(seg.start, seg.end, ruler)
+  // The out-of-hours session (catch-up Phase 32c): a moon before its first line, and "Out-of-hours" on an empty one.
+  const evening = isOutOfHours(slot)
 
   // A conflicted List takes the warning tint (the design's amber attention
   // treatment, no new hex); its kind's left bar and label stay.
@@ -364,10 +408,10 @@ function GridBlock({ seg, masters, bookingCount, onClick }: { seg: DisplaySegmen
     else l2 = note ?? ''
   } else if (isOpenEmpty) {
     l1 = resolved.label
-    l2 = (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
+    l2 = evening ? (note ?? OUT_OF_HOURS) : (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
   } else {
     l1 = resolved.label
-    l2 = note ?? ''
+    l2 = note ?? (evening ? OUT_OF_HOURS : '')
   }
 
   // The has-note dot marks a genuine office annotation, not a note already shown
@@ -386,8 +430,9 @@ function GridBlock({ seg, masters, bookingCount, onClick }: { seg: DisplaySegmen
       onClick={onClick}
       data-slot-id={slot.id}
       data-list-id={list?.id}
-      data-shot={warnings !== undefined ? 'daygrid-block-warnings' : conflict ? 'daygrid-block-conflict' : undefined}
+      data-shot={warnings !== undefined ? 'daygrid-block-warnings' : conflict ? 'daygrid-block-conflict' : evening ? 'daygrid-evening-block' : undefined}
       data-conflict={conflict ? 'true' : undefined}
+      data-out-of-hours={evening ? 'true' : undefined}
       title={tooltip !== '' ? tooltip : undefined}
       style={{
         position: 'absolute',
@@ -411,7 +456,10 @@ function GridBlock({ seg, masters, bookingCount, onClick }: { seg: DisplaySegmen
         fontFamily: 'inherit',
       }}
     >
-      <span style={{ fontSize: 10.5, lineHeight: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint }}>{l1}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 3, minWidth: 0, fontSize: 10.5, lineHeight: '13px', fontWeight: 600, color: colour.onTint }}>
+        {evening && <Moon size={9} strokeWidth={2.6} aria-label={OUT_OF_HOURS} style={{ flex: 'none' }} />}
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l1}</span>
+      </span>
       {(l2 !== '' || bookingCount !== undefined) && (
         // The second line starts with the List's booking count (US-13.1.1): the block's bottom-left corner.
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>

@@ -12,6 +12,7 @@
 
 import type { DisplayKey, List, ScheduleSettings, Session, Slot } from './types'
 import { DEFAULT_HORIZON_MONTHS } from './clock'
+import { OUT_OF_HOURS_DEFAULT_END, OUT_OF_HOURS_DEFAULT_START } from './outOfHours'
 
 /**
  * The seeded schedule settings (FT-01.1, US-01.1.4): four months, and the
@@ -24,6 +25,8 @@ export function defaultScheduleSettings(): ScheduleSettings {
     defaultTimes: {
       AM: { startTime: '07:30', endTime: '12:30' },
       PM: { startTime: '13:00', endTime: '17:30' },
+      // The out-of-hours session the office opens (catch-up Phase 32c).
+      OOH: { startTime: OUT_OF_HOURS_DEFAULT_START, endTime: OUT_OF_HOURS_DEFAULT_END },
     },
   }
 }

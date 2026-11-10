@@ -110,6 +110,7 @@ export function AdminDayRoute() {
             draftLists={ctx.dayDraftLists}
             bookingCounts={ctx.bookingCounts}
             onOpenDraftList={ctx.onOpenDraftList}
+            {...(ctx.onOpenOutOfHours !== undefined ? { onOpenOutOfHours: ctx.onOpenOutOfHours } : {})}
           />
         )}
         <RightRail

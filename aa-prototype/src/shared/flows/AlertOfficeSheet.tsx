@@ -6,6 +6,7 @@ import { alertOffice, activeAlertFor, latestAlertFor, officeAlertRefusal, OFFICE
 import { Button, FormError, TextArea, TickBadge, TickButton } from '../ui'
 import { useSurface } from '../surface'
 import { drSurname } from '../format'
+import { sessionText } from '../../domain/outOfHours'
 
 type Target = { listId: string; bookingId?: string }
 
@@ -98,7 +99,7 @@ export function AlertOfficeSheet({ open, actor, target, onClose }: { open: boole
 
   if (list === undefined) return null
   const what = target.bookingId !== undefined ? 'Booking' : 'List'
-  const line = [patient, `${format(parseISO(list.dateISO), 'EEE d MMM')} ${list.session}`, hospital].filter((x): x is string => x !== undefined).join(' · ')
+  const line = [patient, `${format(parseISO(list.dateISO), 'EEE d MMM')} ${sessionText(list.session)}`, hospital].filter((x): x is string => x !== undefined).join(' · ')
   const trimmed = note.trim().length
 
   function send() {

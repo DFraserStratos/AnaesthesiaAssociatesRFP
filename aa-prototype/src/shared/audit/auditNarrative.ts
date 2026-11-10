@@ -32,6 +32,7 @@ import { BOOKING_SOURCE_LABELS, LIST_STATE_LABELS, formatCurrency } from '../for
 import { ORIGIN_LABELS, SOURCE_LABELS, UNASSIGNED } from '../scheduleTerms'
 import { fieldLabel } from './fieldLabels'
 import { PAIRING_LABELS, isPriorityTier, tierLabel } from '../../domain/pairingPreferences'
+import { sessionText } from '../../domain/outOfHours'
 
 /** A key present in the patch but holding no value. */
 export const NOT_SET = 'not set'
@@ -201,6 +202,8 @@ export function formatAuditValue(key: string, value: unknown): string {
     if (value.trim() === '') return 'empty'
     if (DATE_TIME.test(value)) return format(parseISO(value), 'd MMM HH:mm')
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
+    // A session reads AM, PM or Out-of-hours (catch-up Phase 32c).
+    if (key === 'session' || key === 'sessions') return sessionText(value)
     if (key === 'source' && Object.hasOwn(BOOKING_SOURCE_LABELS, value)) return BOOKING_SOURCE_LABELS[value as BookingSource]
     if (key === 'source' && Object.hasOwn(SOURCE_LABELS, value)) return SOURCE_LABELS[value as RequestSource]
     if (key === 'origin' && Object.hasOwn(ORIGIN_LABELS, value)) return ORIGIN_LABELS[value as DraftOrigin]

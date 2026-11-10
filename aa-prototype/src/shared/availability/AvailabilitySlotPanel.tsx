@@ -8,6 +8,7 @@ import { StatusChip } from '../StatusChip'
 import { FormError } from '../ui'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
+import { SESSIONS_IN_ORDER, sessionText } from '../../domain/outOfHours'
 
 /** What the panel asks its host to open: the form for one session (or both), prefilled. */
 export interface ChangeRequest {
@@ -51,7 +52,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
   const [error, setError] = useState<string | null>(null)
   // Catch-up Phase 32 (Phase 29's handoff): a movable List offers "Move this List" here.
   const movePrompt = useMoveListPrompt()
-  const sessions = (['AM', 'PM'] as const).map((s) => day[s]).filter((s): s is CalendarSession => s !== undefined)
+  const sessions = SESSIONS_IN_ORDER.map((s) => day[s]).filter((s): s is CalendarSession => s !== undefined)
 
   function remove(session: CalendarSession) {
     const out = clearAvailability(useAppStore, actor, session.slotId)
@@ -91,7 +92,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
             style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 10, background: neutral.surface }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="mono" style={{ width: 26, fontSize: 12, fontWeight: 700, color: neutral.slate, flex: 'none' }}>{s.session}</span>
+              <span className="mono" style={{ width: 26, fontSize: 12, fontWeight: 700, color: neutral.slate, flex: 'none' }}>{sessionText(s.session)}</span>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <StatusChip status={s.displayKey} />
@@ -153,7 +154,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
           </div>
         )
       })}
-      {!past && sessions.length === 2 && (
+      {!past && day.AM !== undefined && day.PM !== undefined && (
         <PanelAction onClick={() => onChange({ sessions: 'both' })}>Change both sessions</PanelAction>
       )}
       <FormError message={error} />

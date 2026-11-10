@@ -19,6 +19,10 @@ import { assignDraftList, createDraftList, draftListFitsAnaesthetist, surgeonFit
 import { CANNED_DRAFT_LIST_REQUESTS } from '../domain/seed'
 import { assignListToSlot } from './slotActions'
 import type { Slot } from '../domain/types'
+import { OUT_OF_HOURS, compareSessions } from '../domain/outOfHours'
+import { isAssignedList } from '../domain/draftLists'
+import { slotIdFor } from '../domain/slots'
+import { closeOutOfHoursSession, openOutOfHoursSession } from './outOfHoursActions'
 
 /**
  * The stand-in's refusal while a Booking on the SUBMITTED List is incomplete
@@ -138,4 +142,47 @@ export function assignDraftListAsSimulatedOffice(
   const out = assignDraftList(api, OFFICE_SIMULATION_ACTOR, created.value.listId, { anaesthetistId })
   if (!out.ok) return out
   return ok({ listId: created.value.listId, slot, logged: true, hospitalId: choice.hospitalId, surgeonId: choice.surgeonId, bookings: 0 })
+}
+
+/**
+ * Why the office stand-in cannot open tonight's out-of-hours session and put a
+ * List in it, or null (catch-up Phase 32c): one is already open tonight, or
+ * the anaesthetist has no List yet to take the hospital and surgeon from.
+ */
+export function outOfHoursStandInRefusal(state: AppState, anaesthetistId: string): string | null {
+  if (state.schedule.slots[slotIdFor(anaesthetistId, state.clock.todayISO, OUT_OF_HOURS)] !== undefined) return 'An out-of-hours session is already open tonight'
+  if (latestListOf(state, anaesthetistId) === undefined) return 'No List yet to take the hospital and surgeon from'
+  return null
+}
+
+/** The anaesthetist's latest List on or before today (by day, then session). */
+function latestListOf(state: AppState, anaesthetistId: string) {
+  return Object.values(state.schedule.lists)
+    .filter(isAssignedList)
+    .filter((l) => l.anaesthetistId === anaesthetistId && l.dateISO <= state.clock.todayISO && l.removedAtISO === undefined)
+    .sort((a, b) => b.dateISO.localeCompare(a.dateISO) || compareSessions(b, a) || b.id.localeCompare(a.id))[0]
+}
+
+/**
+ * "The office adds an out-of-hours List for me tonight" (catch-up Phase 32c;
+ * PWA parity for US-01.1.6): stands in for the office, acting as
+ * `OFFICE_SIMULATION_ACTOR`. It opens today's out-of-hours session at its
+ * default times and assigns a List into it, at the hospital and with the
+ * surgeon of the anaesthetist's latest List, through the same store actions
+ * the office uses on Admin Day.
+ */
+export function addOutOfHoursListAsSimulatedOffice(api: AppStoreApi, anaesthetistId: string): Outcome<{ listId: string; startTime: string }> {
+  const state = api.getState()
+  const reason = outOfHoursStandInRefusal(state, anaesthetistId)
+  if (reason !== null) return refuse('notEligible', reason)
+  const latest = latestListOf(state, anaesthetistId)!
+  const opened = openOutOfHoursSession(api, OFFICE_SIMULATION_ACTOR, anaesthetistId, state.clock.todayISO)
+  if (!opened.ok) return opened
+  const assigned = assignListToSlot(api, OFFICE_SIMULATION_ACTOR, opened.value.slotId, { hospitalId: latest.hospitalId, surgeonId: latest.surgeonId, kind: latest.kind })
+  if (!assigned.ok) {
+    // Leave nothing half done: close the session it just opened.
+    closeOutOfHoursSession(api, OFFICE_SIMULATION_ACTOR, opened.value.slotId)
+    return assigned
+  }
+  return ok({ listId: assigned.value.listId, startTime: api.getState().appSettings.schedule.defaultTimes.OOH.startTime })
 }

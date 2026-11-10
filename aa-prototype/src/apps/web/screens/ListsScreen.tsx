@@ -10,6 +10,7 @@ import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, Statu
 import { Panel } from '../components'
 import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
 import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from './ListsLookback'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface ListsScreenProps {
   anaesthetistId: string
@@ -147,6 +148,7 @@ export function ListsScreen({
         key={r.key}
         data-slot-id={r.slotId}
         data-list-id={list?.id}
+        data-shot={r.session === 'OOH' ? 'out-of-hours-row' : undefined}
         data-quiet={quiet ? 'true' : undefined}
         onClick={list !== undefined ? () => onOpenList(list.id) : undefined}
         style={{
@@ -163,7 +165,7 @@ export function ListsScreen({
               // The row's keyboard handle: a plain button on the date (the row click stays for the mouse).
               <button
                 type="button"
-                aria-label={`Open List ${dateText} ${r.session}, ${r.description}`}
+                aria-label={`Open List ${dateText} ${sessionText(r.session)}, ${r.description}`}
                 onClick={(e) => {
                   e.stopPropagation()
                   onOpenList(list.id)
@@ -178,7 +180,7 @@ export function ListsScreen({
             {r.dateISO === todayISO && <span style={{ fontSize: 11, fontWeight: 600, color: neutral.mist }}>Today</span>}
           </span>
         </Td>
-        <Td mono>{r.session}</Td>
+        <Td mono>{sessionText(r.session)}</Td>
         <Td mono>{showTimes ? r.times.startTime : '·'}</Td>
         <Td mono>{showTimes ? r.times.endTime : '·'}</Td>
         <Td>{r.description}</Td>

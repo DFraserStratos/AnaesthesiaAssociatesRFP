@@ -5,6 +5,7 @@
 
 import { format, parseISO } from 'date-fns'
 import type { CalendarDay } from '../../store'
+import { SESSIONS_IN_ORDER, sessionText } from '../../domain/outOfHours'
 
 export function describeDayForScreenReaders(
   dateISO: string,
@@ -13,11 +14,11 @@ export function describeDayForScreenReaders(
   past: boolean,
 ): string {
   const parts = [format(parseISO(dateISO), 'EEEE d MMMM')]
-  for (const session of ['AM', 'PM'] as const) {
+  for (const session of SESSIONS_IN_ORDER) {
     const s = day?.[session]
     if (s === undefined) continue
     const what = s.list !== undefined ? `${labelOf(s.displayKey)} List${s.list.hospitalName !== undefined ? ` at ${s.list.hospitalName}` : ''}` : labelOf(s.statusKey)
-    parts.push(`${session} ${what}${s.series !== undefined ? ', repeating' : ''}${s.conflict ? ', with a conflict for the office to resolve' : ''}`)
+    parts.push(`${sessionText(session)} ${what}${s.series !== undefined ? ', repeating' : ''}${s.conflict ? ', with a conflict for the office to resolve' : ''}`)
   }
   if (past) parts.push('past')
   return parts.join(', ')

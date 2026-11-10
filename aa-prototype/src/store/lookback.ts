@@ -11,7 +11,7 @@
 import { isAssignedList } from '../domain/draftLists'
 import { hasLeftMainView, listProgress, type ListProgress } from '../domain/listProgress'
 import { parseBookingQuery, patientMatches, type BookingQuery } from '../domain/bookingSearch'
-import type { AssignedList, AuditEntry, Booking, Procedure } from '../domain/types'
+import type { AssignedList, AuditEntry, Booking, Procedure, Session } from '../domain/types'
 import type { AppState } from './appStore'
 import {
   bookingCountsByList,
@@ -23,6 +23,7 @@ import {
   type SlotState,
   type SlotView,
 } from './selectors'
+import { compareSessions, sessionRank } from '../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
 // The main view (US-07.4.2)
@@ -65,7 +66,7 @@ export function mainViewFor(
         !isBackdropList(l) &&
         (counts.get(l.id) ?? 0) > 0,
     )
-    .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.session.localeCompare(b.session))
+    .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || compareSessions(a, b))
   const upcoming = slotViewsForAnaesthetist(state, anaesthetistId, todayISO, forwardToISO).filter(
     (v) => v.list === undefined || !hasLeftMainView(v.list),
   )
@@ -209,7 +210,6 @@ function proceduresByBooking(state: Pick<AppState, 'schedule'>): Map<string, Pro
   return out
 }
 
-const sessionRank = (session: string): number => (session === 'AM' ? 0 : 1)
 
 /**
  * The date lookup's bounds: the anaesthetist's earliest List (the seeded
@@ -266,7 +266,7 @@ export function listsOnDayFor(state: LookbackState, anaesthetistId: string, date
   const procs = proceduresByBooking(state)
   return ownLists(state, anaesthetistId)
     .filter((l) => l.dateISO === dateISO)
-    .sort((a, b) => sessionRank(a.session) - sessionRank(b.session) || a.id.localeCompare(b.id))
+    .sort((a, b) => compareSessions(a, b) || a.id.localeCompare(b.id))
     .map((list) => {
       const active = activeBookingsOn(state, list.id).sort(
         (a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id),
@@ -353,7 +353,7 @@ export function searchBookingsFor(
       progress,
     })
   }
-  const when = (r: BookingSearchRow) => `${r.dateISO}|${sessionRank(r.session)}|${r.scheduledTime ?? '99:99'}|${r.bookingId}`
+  const when = (r: BookingSearchRow) => `${r.dateISO}|${sessionRank(r.session as Session)}|${r.scheduledTime ?? '99:99'}|${r.bookingId}`
   const upcoming = rows.filter((r) => r.dateISO >= todayISO).sort((a, b) => when(a).localeCompare(when(b)))
   const past = rows.filter((r) => r.dateISO < todayISO).sort((a, b) => when(b).localeCompare(when(a)))
   const capped = [...upcoming, ...past].slice(0, BOOKING_SEARCH_CAP)

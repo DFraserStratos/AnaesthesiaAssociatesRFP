@@ -54,7 +54,7 @@ export const RECURRING_BOOKING_CHANGED = 'Recurring booking changed'
 // Order and waiting time
 // ---------------------------------------------------------------------------
 
-const SESSION_ORDER: Record<Session, number> = { AM: 0, PM: 1 }
+const SESSION_ORDER: Record<Session, number> = { AM: 0, PM: 1, OOH: 2 }
 
 /**
  * THE order for Draft Lists everywhere (US-01.6.2 "sorted in ascending date

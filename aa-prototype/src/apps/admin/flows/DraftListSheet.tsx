@@ -24,6 +24,8 @@ const KIND_OPTIONS: { value: ListKind; label: string }[] = [
 const SESSION_OPTIONS: { value: Session; label: string }[] = [
   { value: 'AM', label: 'AM' },
   { value: 'PM', label: 'PM' },
+  // A Draft List can be for the evening (catch-up Phase 32c): it is assigned into an opened out-of-hours session.
+  { value: 'OOH', label: 'Out-of-hours' },
 ]
 const SOURCE_OPTIONS = (Object.keys(SOURCE_LABELS) as RequestSource[]).map((value) => ({ value, label: SOURCE_LABELS[value] }))
 

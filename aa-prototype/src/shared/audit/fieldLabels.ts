@@ -73,6 +73,10 @@ export const FIELD_LABELS: Record<string, string> = {
   state: 'State',
   // Sessions (catch-up Phase 28; the UI says session, never "slot")
   slotId: 'Session',
+  // The schedule settings' default times, by session (catch-up Phase 32c).
+  AM: 'AM',
+  PM: 'PM',
+  OOH: 'Out-of-hours',
   slots: 'Sessions',
   note: 'Note',
   startDateISO: 'Start date',

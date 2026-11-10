@@ -9,6 +9,7 @@ import type { SlotView } from '../../store'
 import { locationName, nameWithoutTitle, surnameOf } from '../../shared/format'
 import { UNASSIGNED } from '../../shared/scheduleTerms'
 import { CONFLICT_REASONS, describeConflict, type ConflictLookups } from '../../domain/conflicts'
+import { sessionText } from '../../domain/outOfHours'
 
 /** Grid ruler bounds (07:00 to 18:00 = 11 hours), matching Admin Day.dc.html. */
 export const RULER_START = 7
@@ -32,13 +33,51 @@ export function slotSpan(view: Pick<SlotView, 'times'>): { start: number; end: n
   return { start, end: end > start ? end : start + 0.5 }
 }
 
+/**
+ * The day grid's right gutter (catch-up Phase 32c): every row, the ruler and
+ * the Draft Lists band end with it, so the timeline lines up and each row has
+ * room for its "Open out-of-hours session" control beside the evening.
+ */
+export const GRID_GUTTER = 40
+
+/** The grid's hour range: a start hour and how many hours it spans. */
+export interface Ruler {
+  start: number
+  hours: number
+}
+
+/** Every day's ruler, 07:00 to 18:00. */
+export const DAY_RULER: Ruler = { start: RULER_START, hours: RULER_HOURS }
+
+/**
+ * The ruler for a day (catch-up Phase 32c): 07:00 to 18:00, extended to the
+ * next whole hour after the latest out-of-hours session ends, only on a day
+ * that has one, so every other day draws exactly as before.
+ */
+export function rulerFor(outOfHoursEnds: readonly number[]): Ruler {
+  if (outOfHoursEnds.length === 0) return DAY_RULER
+  const end = Math.min(24, Math.max(RULER_START + RULER_HOURS, ...outOfHoursEnds.map((h) => Math.ceil(h))))
+  return { start: RULER_START, hours: end - RULER_START }
+}
+
+/** The ruler's hour labels (`07:00` up to the last whole hour before its end). */
+export function rulerLabels(ruler: Ruler): string[] {
+  return Array.from({ length: ruler.hours }, (_, i) => `${String(ruler.start + i).padStart(2, '0')}:00`)
+}
+
+/** The ruler's end hour (`18:00`, or later on a day with an out-of-hours session): the label in the header's gutter. */
+export function rulerEndLabel(ruler: Ruler): string {
+  return `${String(ruler.start + ruler.hours).padStart(2, '0')}:00`
+}
+
 /** Proportional left/width percentages for a [start,end] hour span. */
-export function blockGeometry(start: number, end: number): { left: string; width: string } {
-  const clampedStart = Math.max(RULER_START, Math.min(RULER_START + RULER_HOURS, start))
-  const clampedEnd = Math.max(clampedStart, Math.min(RULER_START + RULER_HOURS, end))
+export function blockGeometry(start: number, end: number, ruler: Ruler = DAY_RULER): { left: string; width: string } {
+  const last = ruler.start + ruler.hours
+  const clampedStart = Math.max(ruler.start, Math.min(last, start))
+  const clampedEnd = Math.max(clampedStart, Math.min(last, end))
   return {
-    left: `${(((clampedStart - RULER_START) / RULER_HOURS) * 100).toFixed(2)}%`,
-    width: `${(((clampedEnd - clampedStart) / RULER_HOURS) * 100).toFixed(2)}%`,
+    left: `${(((clampedStart - ruler.start) / ruler.hours) * 100).toFixed(2)}%`,
+    width: `${(((clampedEnd - clampedStart) / ruler.hours) * 100).toFixed(2)}%`,
   }
 }
 
@@ -65,7 +104,7 @@ export function listShortLabel(
   const anae = list.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
   // A Draft List has no anaesthetist: its flag stands in (catch-up Phase 31).
   const who = anae !== undefined ? surnameOf(anae.name) : (list.anaesthetistId ?? UNASSIGNED)
-  return `${who} · ${locationName(list.hospitalId, masters.hospitals)} ${list.session}`
+  return `${who} · ${locationName(list.hospitalId, masters.hospitals)} ${sessionText(list.session)}`
 }
 
 /**
@@ -80,7 +119,7 @@ export function listSourceLabels(
 ): { primary: string; secondary?: string } {
   const surgeon = masters.surgeons[list.surgeonId]?.name
   return {
-    primary: `${locationName(list.hospitalId, masters.hospitals)} · ${list.session}`,
+    primary: `${locationName(list.hospitalId, masters.hospitals)} · ${sessionText(list.session)}`,
     ...(surgeon !== undefined ? { secondary: surgeon } : {}),
   }
 }

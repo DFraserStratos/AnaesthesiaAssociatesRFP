@@ -6,6 +6,9 @@ import type { DisplayKey } from '../../domain/types'
 import { LIST_PROGRESS_LABEL, type ListProgress } from '../../domain/listProgress'
 import { useDisplayStatus } from '../status/useSlotStatuses'
 import { TickBadge } from '../ui/TickBadge'
+import { OutOfHoursMoon } from './OutOfHoursMark'
+import { OUT_OF_HOURS } from '../outOfHoursTerms'
+import { sessionText } from '../../domain/outOfHours'
 
 /**
  * The right-hand state cluster of a list row (mockup screen 1). `progress` reads
@@ -22,7 +25,7 @@ export type ListRowRight =
 interface ListRowProps {
   /** A List kind or an availability status ID (catch-up Phase 29). */
   statusKey: DisplayKey
-  /** "AM" / "PM"; omit to hide the session column (e.g. a leave row). */
+  /** "AM" / "PM" / "OOH"; omit to hide the session column (e.g. a leave row). */
   session?: string
   /** Mono start time under the session label. */
   time?: string
@@ -46,6 +49,13 @@ interface ListRowProps {
    * normal tap target and still editable; only the weight and lift drop.
    */
   quiet?: boolean
+  /**
+   * The out-of-hours session (catch-up Phase 32c; set by itself when `session`
+   * is `OOH`): the session column shows a moon and the start time in place of
+   * AM or PM, and the subtitle starts with "Out-of-hours" (the title stays on
+   * one line, as on any row).
+   */
+  outOfHours?: boolean
 }
 
 function Chevron() {
@@ -141,8 +151,11 @@ export function ListRow({
   listId,
   badge,
   quiet = false,
+  outOfHours: outOfHoursProp = false,
 }: ListRowProps) {
   const resolved = useDisplayStatus(statusKey)
+  // The out-of-hours session (catch-up Phase 32c): a moon in the session column, the words in the subtitle.
+  const outOfHours = outOfHoursProp || session === 'OOH'
   const c = resolved.visual
   const isOpen = variant === 'open'
   const isClosed = variant === 'closed'
@@ -168,6 +181,7 @@ export function ListRow({
       data-slot-id={slotId}
       data-list-id={listId}
       data-quiet={quiet ? 'true' : undefined}
+      data-shot={outOfHours ? 'out-of-hours-row' : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -186,7 +200,11 @@ export function ListRow({
       )}
       {session !== undefined && (
         <span style={{ width: 46, flex: 'none', display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 14, fontWeight: quiet ? 600 : 700, color: quiet ? neutral.slate : sessionColor }}>{session}</span>
+          {outOfHours ? (
+            <OutOfHoursMoon color={quiet ? neutral.slate : sessionColor} />
+          ) : (
+            <span style={{ fontSize: 14, fontWeight: quiet ? 600 : 700, color: quiet ? neutral.slate : sessionColor }}>{sessionText(session)}</span>
+          )}
           {time !== undefined && (
             <span className="mono" style={{ fontSize: 11, color: isOpen ? c.onTint : neutral.mist, opacity: isOpen ? 0.75 : 1 }}>
               {time}
@@ -203,8 +221,10 @@ export function ListRow({
             </span>
           )}
         </span>
-        {subtitle !== undefined && (
-          <span style={{ fontSize: 12, color: subColor, opacity: isOpen || isClosed ? 0.85 : 1 }}>{subtitle}</span>
+        {(subtitle !== undefined || outOfHours) && (
+          <span style={{ fontSize: 12, color: subColor, opacity: isOpen || isClosed ? 0.85 : 1 }}>
+            {outOfHours ? [OUT_OF_HOURS, subtitle].filter((p) => p !== undefined && p !== '').join(' · ') : subtitle}
+          </span>
         )}
       </span>
       <RightCluster right={right} />

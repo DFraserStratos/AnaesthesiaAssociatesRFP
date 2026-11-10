@@ -32,6 +32,7 @@ import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
 import { NotPreferredPill, PreferredPill, TierPill } from './Pills'
 import { usePairingEntries, usePriorityTiers } from './useOfficePairings'
+import { sessionText } from '../../../../domain/outOfHours'
 
 type TierFilter = 'all' | '1' | '2' | '3' | '4'
 
@@ -228,7 +229,7 @@ export function NotAvailableColleagues({ slots, session, query, shot }: { slots:
     <details data-shot={shot} style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '8px 12px' }}>
       <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate }}>Not available ({shown.length})</summary>
       <div style={{ fontSize: 12, color: neutral.mist, margin: '6px 0 8px' }}>
-        Their {session} session is marked not available. They need to make it available before a List can go there.
+        Their {sessionText(session)} session is marked not available. They need to make it available before a List can go there.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {shown.map((x) => (

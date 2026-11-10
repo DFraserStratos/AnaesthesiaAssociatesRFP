@@ -25,6 +25,7 @@ import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ClearConflictSheet } from '../components/conflicts/ClearConflictSheet'
 import { selectControlStyle } from '../flows/fieldChrome'
+import { sessionText } from '../../../domain/outOfHours'
 
 const cellStyle = { ...adminCell(), verticalAlign: 'top' as const }
 const headCellStyle = adminHead()
@@ -114,7 +115,7 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
     setReassigning(null)
     if (list === undefined) return
     const who = drSurname(nameOf(list.anaesthetistId))
-    const when = `${shortDay(list.dateISO)} ${list.session}`
+    const when = `${shortDay(list.dateISO)} ${sessionText(list.session)}`
     // Name what is left: a closure moves with the List.
     const left = [...new Set(list.conflicts.map((c) => CONFLICT_REASONS[c.kind].toLowerCase()))]
     setConfirmation(
@@ -204,10 +205,10 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                       {dayRows.map((r) => {
                         const cleared = r.clear !== undefined
                         const muted = cleared ? { color: neutral.mist } : {}
-                        const rowName = `${r.anaesthetistId !== undefined ? drSurname(nameOf(r.anaesthetistId)) : UNASSIGNED} ${shortDay(r.dateISO)} ${r.session}`
+                        const rowName = `${r.anaesthetistId !== undefined ? drSurname(nameOf(r.anaesthetistId)) : UNASSIGNED} ${shortDay(r.dateISO)} ${sessionText(r.session)}`
                         return (
                           <tr key={r.key} data-conflict-row={r.listId} data-conflict-cleared={cleared ? 'true' : undefined}>
-                            <td className="mono" style={{ ...cellStyle, ...muted, boxShadow: `inset 3px 0 0 ${cleared ? neutral.line : semantic.warning.solid}`, fontWeight: 600, whiteSpace: 'nowrap' }}>{r.session}</td>
+                            <td className="mono" style={{ ...cellStyle, ...muted, boxShadow: `inset 3px 0 0 ${cleared ? neutral.line : semantic.warning.solid}`, fontWeight: 600, whiteSpace: 'nowrap' }}>{sessionText(r.session)}</td>
                             <td style={{ ...cellStyle, ...muted, fontWeight: 600 }}>{r.anaesthetistId === undefined ? <UnassignedPill /> : nameOf(r.anaesthetistId)}</td>
                             <td style={{ ...cellStyle, ...muted }}>{locationName(r.hospitalId, masters.hospitals)}</td>
                             <td style={{ ...cellStyle, ...muted }}>{masters.surgeons[r.surgeonId]?.name ?? r.surgeonId}</td>

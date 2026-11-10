@@ -10,6 +10,7 @@ import { StatusChip } from '../StatusChip'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useAvailabilityBounds } from './useAvailability'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
+import { OUT_OF_HOURS_SESSION } from '../outOfHoursTerms'
 
 type RepeatChoice = 'none' | '1' | '2' | 'more'
 
@@ -102,7 +103,8 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
     setError(out.message)
   }
 
-  const repeating = allowRepeat && repeat !== 'none'
+  // An out-of-hours session is one opened day, never a series (catch-up Phase 32c).
+  const repeating = allowRepeat && repeat !== 'none' && sessions !== 'OOH'
   const everyWeeks = (repeat === 'more' ? moreWeeks : Number(repeat)) as 1 | 2 | 3 | 4
   const quickSpan = fromISO === '' ? null : toISO === fromISO ? 'day' : toISO === plusDays(fromISO, 6) ? 'week' : toISO === plusDays(fromISO, 13) ? 'fortnight' : null
 
@@ -192,18 +194,26 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
         </div>
       </div>
 
-      <Segmented
-        label="Sessions"
-        value={sessions}
-        options={[
-          { value: 'AM', label: 'AM' },
-          { value: 'PM', label: 'PM' },
-          { value: 'both', label: 'Both' },
-        ]}
-        onChange={(v) => { touched(); setSessions(v) }}
-      />
+      {sessions === 'OOH' ? (
+        // An opened out-of-hours session is changed on its own: one session, one day (catch-up Phase 32c).
+        <div data-shot="availability-form-out-of-hours" style={{ fontSize: 14, color: neutral.ink }}>
+          <FieldLabel>Session</FieldLabel>
+          <div style={{ marginTop: 6 }}>{OUT_OF_HOURS_SESSION}</div>
+        </div>
+      ) : (
+        <Segmented
+          label="Sessions"
+          value={sessions}
+          options={[
+            { value: 'AM', label: 'AM' },
+            { value: 'PM', label: 'PM' },
+            { value: 'both', label: 'Both' },
+          ]}
+          onChange={(v) => { touched(); setSessions(v) }}
+        />
+      )}
 
-      {allowRepeat && !singleSession && (
+      {allowRepeat && !singleSession && sessions !== 'OOH' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <FieldLabel>Repeat</FieldLabel>
           <SlidingSegmentedControl
@@ -264,7 +274,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
             </div>
           </div>
         </>
-      ) : singleSession ? (
+      ) : singleSession || sessions === 'OOH' ? (
         <div data-shot="availability-form-single" style={{ fontSize: 14, color: neutral.ink }}>
           <FieldLabel>Date</FieldLabel>
           <div style={{ marginTop: 6 }}>{ISO_DATE.test(fromISO) ? format(parseISO(fromISO), 'EEEE d MMMM') : fromISO}</div>

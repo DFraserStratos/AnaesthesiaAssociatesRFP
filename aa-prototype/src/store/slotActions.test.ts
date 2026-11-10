@@ -56,7 +56,7 @@ function store(): BoundAppStore {
 }
 
 /** The first open session on a date and session, other than `exclude`'s. */
-function openSlotOn(api: BoundAppStore, dateISO: string, session: 'AM' | 'PM', exclude?: string) {
+function openSlotOn(api: BoundAppStore, dateISO: string, session: 'AM' | 'PM' | 'OOH', exclude?: string) {
   const v = slotViewsForDate(api.getState(), dateISO)
     .filter((x) => x.slot.session === session && x.slot.anaesthetistId !== exclude && isOpenSlotView(x))
     .sort((a, b) => a.slot.id.localeCompare(b.slot.id))[0]

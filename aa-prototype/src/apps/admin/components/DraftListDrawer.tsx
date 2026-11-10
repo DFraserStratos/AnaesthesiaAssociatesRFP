@@ -34,6 +34,8 @@ import { RemoveDraftListSheet } from '../flows/RemoveDraftListSheet'
 import { TierPill, PreferredPill, useSuggestionKey } from './pairing'
 import { useDraftListCandidates } from './pairing/DraftListCandidates'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from './draftLists/DraftListParts'
+import { ActionBtn, DrawerLink, Row, Section } from './drawerParts'
+import { sessionText } from '../../../domain/outOfHours'
 
 type Sheet = 'none' | 'assign' | 'edit' | 'redate' | 'remove' | 'history' | 'addBooking' | { move: string } | { assignTo: string }
 
@@ -111,7 +113,7 @@ function DraftBody({
             </div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{locationName(list.hospitalId, masters.hospitals)}</div>
             <div style={{ fontSize: 13, color: neutral.slate, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session}</span>
+              <span>{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)}</span>
               <span aria-hidden>·</span>
               <span>Waiting <WaitingTime list={list} /></span>
               <span aria-hidden>·</span>
@@ -142,7 +144,7 @@ function DraftBody({
                 {trail.origin === 'recurringClash' && (
                   <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
                     {recurring !== undefined
-                      ? `${format(parseISO(trail.projectedFor?.dateISO ?? list.dateISO), 'EEE')} ${recurring.session} · ${pairingLine(recurring, masters)}`
+                      ? `${format(parseISO(trail.projectedFor?.dateISO ?? list.dateISO), 'EEE')} ${sessionText(recurring.session)} · ${pairingLine(recurring, masters)}`
                       : ORIGIN_SHORT_LABELS.recurringClash}
                     {from !== undefined ? ` · ${unavailableDetail(drSurname(from.name))}` : ''}
                   </div>
@@ -239,45 +241,5 @@ function DraftBody({
         <MoveBookingFlow open bookingId={sheet.move} actor={actor} onClose={() => setSheet('none')} onMoved={() => setSheet('none')} />
       )}
     </>
-  )
-}
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</div>
-      {children}
-    </div>
-  )
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-      <span style={{ width: 80, flex: 'none', fontSize: 12, color: neutral.mist }}>{label}</span>
-      <span style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{children}</span>
-    </div>
-  )
-}
-
-function DrawerLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', borderRadius: 8, padding: '4px 10px' }}>
-      {children}
-    </button>
-  )
-}
-
-function ActionBtn({ onClick, children, primary, disabled, title }: { onClick: () => void; children: React.ReactNode; primary?: boolean; disabled?: boolean; title?: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 12px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? (disabled === true ? neutral.lineStrong : accent.base) : neutral.surface, color: primary === true ? '#FFFFFF' : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
-    >
-      {children}
-    </button>
   )
 }

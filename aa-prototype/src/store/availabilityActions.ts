@@ -43,6 +43,7 @@ import { slotIdFor } from '../domain/slots'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listIndexBySlot, scheduleHorizon } from './selectors'
+import { sessionText } from '../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
 // Outcome
@@ -96,7 +97,7 @@ export function replacedStatusRefusal<T>(statuses: SlotStatusRecords, actor: Act
   const locked = slots.find((slot) => statusFor(statuses, slot.status)?.anaesthetistCanSet === false)
   if (locked === undefined) return null
   const label = displayStatusLabel(locked.status, statuses)
-  return refuse('statusNotSettable', `${label} on ${shortDateLabel(locked.dateISO)} ${locked.session} is set by the office. Ask the office to change it.`)
+  return refuse('statusNotSettable', `${label} on ${shortDateLabel(locked.dateISO)} ${sessionText(locked.session)} is set by the office. Ask the office to change it.`)
 }
 
 /** The status must exist, be in use, and (for an anaesthetist) be one they may set. */
@@ -158,7 +159,7 @@ export function holdsListRefusal<T>(
 ): Outcome<T> | null {
   const locked = result.lockedLists?.[0]
   if (locked !== undefined) {
-    const when = `${shortDateLabel(locked.dateISO)} ${locked.session}`
+    const when = `${shortDateLabel(locked.dateISO)} ${sessionText(locked.session)}`
     if (actor?.role === 'office') {
       return refuse('holdsLockedList', `The ${when} List is authorised and locked, so its session cannot be marked not available.`, { listIds: [locked.id] })
     }
@@ -364,14 +365,16 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
     horizonEndISO: scheduleHorizon(state).endISO,
   })
   if (issues.length > 0) return refuse('invalidRange', issues.join(' '))
-  if (!['AM', 'PM', 'both'].includes(input.sessions)) return refuse('invalidSessions', 'Choose AM, PM or both.')
+  if (!['AM', 'PM', 'both', 'OOH'].includes(input.sessions)) return refuse('invalidSessions', 'Choose AM, PM or both.')
+  // An out-of-hours session is set on its own day only: it exists where the office opened it (catch-up Phase 32c).
+  if (input.sessions === 'OOH' && input.toISO !== input.fromISO) return refuse('invalidSessions', 'An out-of-hours session is changed one day at a time.')
 
   const writes: SessionWrite[] = []
   const skip = new Set(input.skipSlotIds ?? [])
   for (const { dateISO, session } of slotsInRange(input.fromISO, input.toISO, input.sessions)) {
     const slot = state.schedule.slots[slotIdFor(input.anaesthetistId, dateISO, session)]
     if (slot === undefined) {
-      return refuse('noSlot', `There is no ${session} session on ${shortDateLabel(dateISO)}: it is before the start date.`)
+      return refuse('noSlot', session === 'OOH' ? `There is no out-of-hours session open on ${shortDateLabel(dateISO)}.` : `There is no ${sessionText(session)} session on ${shortDateLabel(dateISO)}: it is before the start date.`)
     }
     if (skip.has(slot.id)) continue
     writes.push({ slot, statusKey: input.statusKey, ...(input.note !== undefined ? { note: input.note } : {}) })

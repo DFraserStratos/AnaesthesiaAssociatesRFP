@@ -60,7 +60,7 @@ export function isActivePairing(list: Pick<List, 'dateISO' | 'session' | 'hospit
     !blank(list.anaesthetistId) &&
     !blank(list.slotId) &&
     !blank(list.dateISO) &&
-    (list.session === 'AM' || list.session === 'PM') &&
+    (list.session === 'AM' || list.session === 'PM' || list.session === 'OOH') &&
     !blank(list.hospitalId) &&
     !blank(list.surgeonId)
   )

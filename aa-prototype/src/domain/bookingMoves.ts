@@ -153,6 +153,6 @@ export function bookingPlacement(input: BookingMoveInput, bookingId: string, toA
   if (row.offer !== null) return { ok: true, slotId: row.offer.slotId }
   const who = titledSurname(receiver.name)
   if (row.block === 'hasList') return { ok: false, code: 'hasList', message: `${who} already has a List this session.` }
-  if (row.block === 'noSlot') return { ok: false, code: 'noSlot', message: `${who} has no session that day.` }
+  if (row.block === 'noSlot') return { ok: false, code: 'noSlot', message: source.from.session === 'OOH' ? `${who} has no out-of-hours session open that day.` : `${who} has no session that day.` }
   return { ok: false, code: 'notAvailable', message: `${who} is not available this session. They need to set it available first.` }
 }

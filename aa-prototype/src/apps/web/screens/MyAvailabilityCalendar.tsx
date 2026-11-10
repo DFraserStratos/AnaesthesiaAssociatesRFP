@@ -17,6 +17,7 @@ import {
   WEEKDAY_SHORT_NAMES,
 } from '../../../shared/availability'
 import { AvailabilityPageSwitch, Panel } from '../components'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface MyAvailabilityCalendarProps {
   actor: Actor
@@ -180,7 +181,7 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
       style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: 34, borderRadius: 7, padding: '0 6px 0 7px', boxSizing: 'border-box', ...blockFill(v), minWidth: 0 }}
     >
       <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: v.onTint, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-        <span className="mono" style={{ fontSize: 9.5, opacity: 0.75 }}>{session.session}</span>
+        <span className="mono" style={{ fontSize: 9.5, opacity: 0.75 }}>{sessionText(session.session)}</span>
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{resolved.label}</span>
         {session.series !== undefined && <Repeat size={10} strokeWidth={2.6} aria-label="Repeating" style={{ flex: 'none' }} />}
       </span>

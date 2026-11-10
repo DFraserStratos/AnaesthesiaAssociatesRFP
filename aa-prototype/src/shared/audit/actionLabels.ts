@@ -77,6 +77,8 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Sessions (catch-up Phase 28). A Slot's audit codes say "session", as
   // the Audit viewer prints the raw code and entity type beside the label. --
   'session.status': 'Availability set',
+  'session.outOfHoursOpen': 'Out-of-hours session opened',
+  'session.outOfHoursClose': 'Out-of-hours session closed',
   'session.times': 'Session times changed',
 
   // --- Availability (catch-up Phase 29): days off, repeating days off and the

@@ -14,6 +14,7 @@ import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface ListDetailScreenProps {
   listId: string
@@ -149,7 +150,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>
-              {title} {list.session}
+              {title} {sessionText(list.session)}
             </div>
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>{sublineParts.join(' · ')}</div>
           </div>

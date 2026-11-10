@@ -248,6 +248,11 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 9. An anaesthetist unsure about a Booking or List uses **Alert the office** with a note. It waits in
    the office's notifications, with the note, until someone there ticks it resolved; submitting is not
    affected.
+10. An emergency or late case after the PM session: Kirsty opens an **out-of-hours session** from the
+   anaesthetist's row on the Day view (any day from today, the same evening included; one a day; 18:00 to
+   21:00 by default) and puts a List in it, a new one or a Draft List waiting for that evening. From then
+   on it is a session like AM and PM: the anaesthetist marks it available or not, the finders offer it
+   while it is free, and its List moves, returns and bills like any other. An empty one can be closed.
 
 ### Handoff
 
@@ -264,7 +269,7 @@ US-01.4.1 settles the mechanism: change the List's owner, consume the covering a
 session, and return the vacated session to available (or mark it unavailable if more appropriate).
 OQ-84 is answered: whoever moves the List chooses Free or Unavailable for the vacated session. OQ-81
 part 3 is answered: sickness forces a return or a hand-on, never a conflict. Alerts to the office are
-US-03.6.3.
+US-03.6.3. Out-of-hours sessions are US-01.1.6 (the office opens a third, evening session; D84 answered 10 November).
 
 ### What not to say
 

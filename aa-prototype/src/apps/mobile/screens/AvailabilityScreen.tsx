@@ -11,6 +11,8 @@ import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedCont
 import { initialsOf, locationName } from '../../../shared/format'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
 import { useNavigate } from 'react-router-dom'
+import { sessionText } from '../../../domain/outOfHours'
+import { OutOfHoursMoon } from '../../../shared/schedule'
 
 interface AvailabilityScreenProps {
   anaesthetistId: string
@@ -73,10 +75,10 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
     }
     const rows = rosterForDate({ schedule: slotState.schedule, masters: { anaesthetists } }, selectedDate)
       .filter((a) => a.registrationNumber !== anaesthetistId)
-      .map((a) => ({ anaesthetist: a, am: slot(a.registrationNumber, 'AM'), pm: slot(a.registrationNumber, 'PM') }))
+      .map((a) => ({ anaesthetist: a, am: slot(a.registrationNumber, 'AM'), pm: slot(a.registrationNumber, 'PM'), ooh: slot(a.registrationNumber, 'OOH') }))
       .sort((x, y) => x.anaesthetist.name.localeCompare(y.anaesthetist.name))
     const freeCount = views.filter(isOpenSlotView).length
-    const mine = { am: slot(anaesthetistId, 'AM'), pm: slot(anaesthetistId, 'PM') }
+    const mine = { am: slot(anaesthetistId, 'AM'), pm: slot(anaesthetistId, 'PM'), ooh: slot(anaesthetistId, 'OOH') }
     return { rows, freeCount, mine }
   }, [slotState, anaesthetists, selectedDate, anaesthetistId])
 
@@ -99,7 +101,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
   }
 
   const isFreeView = (v: SlotView | undefined) => v !== undefined && isOpenSlotView(v)
-  const rowsToShow = mode === 'free' ? model.rows.filter((r) => isFreeView(r.am) || isFreeView(r.pm)) : model.rows
+  const rowsToShow = mode === 'free' ? model.rows.filter((r) => isFreeView(r.am) || isFreeView(r.pm) || isFreeView(r.ooh)) : model.rows
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -177,11 +179,16 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
             <Avatar initials={initials} size={34} />
             <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>My availability</span>
           </div>
-          {(['AM', 'PM'] as const).map((session) => {
-            const view = session === 'AM' ? model.mine.am : model.mine.pm
+          {/* Her out-of-hours session shows only on a day the office opened one (catch-up Phase 32c). */}
+          {(model.mine.ooh !== undefined ? (['AM', 'PM', 'OOH'] as const) : (['AM', 'PM'] as const)).map((session) => {
+            const view = session === 'AM' ? model.mine.am : session === 'PM' ? model.mine.pm : model.mine.ooh
             return (
               <div key={session} data-shot={`availability-mine-${session.toLowerCase()}`} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 32 }}>
-                <span className="mono" style={{ width: 28, fontSize: 11, fontWeight: 600, color: neutral.mist, flex: 'none' }}>{session}</span>
+                {session === 'OOH' ? (
+                  <span aria-label={sessionText(session)} style={{ width: 28, flex: 'none' }}><OutOfHoursMoon color={neutral.mist} size={13} /></span>
+                ) : (
+                  <span className="mono" style={{ width: 28, fontSize: 11, fontWeight: 600, color: neutral.mist, flex: 'none' }}>{sessionText(session)}</span>
+                )}
                 {view === undefined ? (
                   <span style={{ fontSize: 12.5, color: neutral.mist }}>No session</span>
                 ) : (
@@ -216,7 +223,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
         </div>
 
         {rowsToShow.map((r) => {
-          const anyFree = isFreeView(r.am) || isFreeView(r.pm)
+          const anyFree = isFreeView(r.am) || isFreeView(r.pm) || isFreeView(r.ooh)
           return (
             <div key={r.anaesthetist.registrationNumber} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 1px 2px rgba(23,35,32,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -227,8 +234,8 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
                 {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: openVisual.onTint, background: openVisual.tint, borderRadius: 999, padding: '3px 9px' }}>{openLabel}</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {(['AM', 'PM'] as const).map((session) => {
-                  const view = session === 'AM' ? r.am : r.pm
+                {(r.ooh !== undefined ? (['AM', 'PM', 'OOH'] as const) : (['AM', 'PM'] as const)).map((session) => {
+                  const view = session === 'AM' ? r.am : session === 'PM' ? r.pm : r.ooh
                   const cs = view !== undefined ? cellStyle(view.displayKey, slotStatuses) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
                   // The mockup's gesture, kept where it means something: her List that session can move into this free session.
                   const mine = movable[session]
@@ -238,9 +245,13 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
                     <Tag
                       key={session}
                       {...(canReceive ? { type: 'button' as const, onClick: () => movePrompt.openMove(mine.list.id, { toSlotId: view.slot.id }), 'data-shot': `availability-move-to-${view.slot.anaesthetistId}-${session.toLowerCase()}` } : {})}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: 10, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: canReceive ? 'pointer' : 'default', background: cs.bg, border: cs.border }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: 10, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: canReceive ? 'pointer' : 'default', background: cs.bg, border: cs.border, ...(session === 'OOH' ? { gridColumn: '1 / -1' } : {}) }}
                     >
-                      <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: cs.color, opacity: 0.7, flex: 'none' }}>{session}</span>
+                      {session === 'OOH' ? (
+                        <span aria-label={sessionText(session)} style={{ flex: 'none', opacity: 0.7 }}><OutOfHoursMoon color={cs.color} size={12} /></span>
+                      ) : (
+                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: cs.color, opacity: 0.7, flex: 'none' }}>{sessionText(session)}</span>
+                      )}
                       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: 12.5, fontWeight: 600, color: cs.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cellTitle(view)}</span>
                         <span style={{ fontSize: 10.5, color: cs.color, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{canReceive ? 'Tap to move your List here' : cellSubtitle(view)}</span>

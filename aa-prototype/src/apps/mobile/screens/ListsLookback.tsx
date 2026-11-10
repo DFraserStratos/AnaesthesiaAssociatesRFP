@@ -19,6 +19,7 @@ import { ListRow } from '../components'
 import { listRowModel } from './listRowModel'
 import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
 import { dayWithYear, longDay, nhiBadge, shortDay } from '../../../shared/format'
+import { sessionText } from '../../../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
 // The header row: search field and calendar button
@@ -253,7 +254,7 @@ function GroupHeading({ children }: { children: string }) {
 function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: string, bookingId: string) => void }) {
   const warnings = useBookingWarnings(row.bookingId)
   const when = shortDay(row.dateISO)
-  const subtitle = [when, row.session, row.hospitalName, row.procedureNames[0]].filter(Boolean).join(' · ')
+  const subtitle = [when, sessionText(row.session), row.hospitalName, row.procedureNames[0]].filter(Boolean).join(' · ')
   const nhi = nhiBadge(row.nhi).text
   const progress = row.progress === 'upcoming' ? '' : LIST_PROGRESS_LABEL[row.progress]
   return (
@@ -265,7 +266,7 @@ function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: st
       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius.card, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: neutral.surface, border: `1px solid ${neutral.line}`, boxShadow: elevation.e1 }}
     >
       <span style={{ width: 46, flex: 'none', display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: neutral.ink }}>{row.session}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: neutral.ink }}>{sessionText(row.session)}</span>
         {row.scheduledTime !== undefined && <span className="mono" style={{ fontSize: 11, color: neutral.mist }}>{row.scheduledTime}</span>}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>

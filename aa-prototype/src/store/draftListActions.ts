@@ -44,7 +44,7 @@ function officeRefusal(actor: Actor, verb: string): Outcome<never> | null {
 /** The day and session a Draft List is for: required, not past, within the schedule horizon. */
 function dayRefusal(state: Pick<AppState, 'clock' | 'appSettings'>, dateISO: string | undefined, session: string | undefined): Outcome<never> | null {
   if (dateISO === undefined || !ISO_DATE.test(dateISO)) return refuse('dateRequired', 'Choose the day.')
-  if (session !== 'AM' && session !== 'PM') return refuse('invalidSession', 'Choose AM or PM.')
+  if (session !== 'AM' && session !== 'PM' && session !== 'OOH') return refuse('invalidSession', 'Choose AM, PM or out-of-hours.')
   if (dateISO < state.clock.todayISO) return refuse('datePassed', 'That day has passed. Choose today or a later day.')
   if (dateISO > scheduleHorizon(state).endISO) {
     const months = state.appSettings.schedule.horizonMonths
@@ -197,7 +197,9 @@ export function assignDraftList(
   const pairing = pairingRefusal(list, state.masters)
   if (pairing !== null) return pairing
   const slot = slotFor(state, input.anaesthetistId, list.dateISO, list.session)
-  if (slot === undefined) return refuse('noSession', `${drName(state.masters, anaesthetist.registrationNumber)} has no session that day.`)
+  if (slot === undefined) {
+    return refuse('noSession', list.session === 'OOH' ? `${drName(state.masters, anaesthetist.registrationNumber)} has no out-of-hours session open that day. Open one first.` : `${drName(state.masters, anaesthetist.registrationNumber)} has no session that day.`)
+  }
   if (listInSlot(state, slot.id) !== undefined) {
     return refuse('slotOccupied', `${drName(state.masters, anaesthetist.registrationNumber)} already has a List that session. Resolve it first.`)
   }

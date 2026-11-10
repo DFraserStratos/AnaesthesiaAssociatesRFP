@@ -26,7 +26,7 @@ import type {
 } from '../domain/types'
 import { LIST_KINDS } from '../domain/types'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
-import { effectiveSlotTimes, isWallTime, slotDatesFor } from '../domain/slots'
+import { effectiveSlotTimes, isWallTime, slotDatesFor, slotIdFor } from '../domain/slots'
 import { statusFor } from '../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import {
@@ -47,6 +47,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { seriesCalendarFor, setOneSessionAvailability } from './availabilityActions'
 import { instanceKey } from '../domain/availabilitySeries'
+import { SESSIONS_IN_ORDER, sessionText, outOfHoursTimesRefusal } from '../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -764,6 +765,12 @@ export function setSlotTimes(api: AppStoreApi, actor: Actor, slotId: string, pat
   }
   const effective = effectiveSlotTimes(next, state.appSettings.schedule)
   if (!(effective.startTime < effective.endTime)) return refuse('invalidTimes', 'The start time must be before the end time.')
+  if (next.session === 'OOH') {
+    // The out-of-hours session starts no earlier than the PM session ends (catch-up Phase 32c).
+    const pm = state.schedule.slots[slotIdFor(next.anaesthetistId, next.dateISO, 'PM')]
+    const issue = outOfHoursTimesRefusal(effective, pm !== undefined ? effectiveSlotTimes(pm, state.appSettings.schedule).endTime : undefined)
+    if (issue !== null) return refuse('invalidTimes', issue)
+  }
   if (next.startTime === slot.startTime && next.endTime === slot.endTime) return ok({ changed: false })
   mutate(
     api,
@@ -799,18 +806,20 @@ export function setSlotTimes(api: AppStoreApi, actor: Actor, slotId: string, pat
 export function setSlotDefaultTimes(
   api: AppStoreApi,
   actor: Actor,
-  defaultTimes: Record<Session, { startTime: WallTime; endTime: WallTime }>,
+  // The out-of-hours default is optional here: a caller that sets AM and PM only keeps it as it is.
+  defaultTimes: Record<'AM' | 'PM', { startTime: WallTime; endTime: WallTime }> & Partial<Record<'OOH', { startTime: WallTime; endTime: WallTime }>>,
 ): Outcome<{ changed: boolean }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change the default session times.')
-  for (const session of ['AM', 'PM'] as const) {
+  for (const session of SESSIONS_IN_ORDER) {
     const t = defaultTimes[session]
+    if (t === undefined) continue
     if (!isWallTime(t.startTime) || !isWallTime(t.endTime)) return refuse('invalidTime', 'Times are HH:mm, for example 13:30.')
-    if (!(t.startTime < t.endTime)) return refuse('invalidTimes', `The ${session} start time must be before its end time.`)
+    if (!(t.startTime < t.endTime)) return refuse('invalidTimes', `The ${sessionText(session)} start time must be before its end time.`)
   }
   const state = api.getState()
   const before = state.appSettings.schedule.defaultTimes
-  if (JSON.stringify(before) === JSON.stringify(defaultTimes)) return ok({ changed: false })
-  const next = { AM: { ...defaultTimes.AM }, PM: { ...defaultTimes.PM } }
+  const next = { AM: { ...defaultTimes.AM }, PM: { ...defaultTimes.PM }, OOH: { ...(defaultTimes.OOH ?? before.OOH) } }
+  if (JSON.stringify(before) === JSON.stringify(next)) return ok({ changed: false })
   mutate(
     api,
     actor,

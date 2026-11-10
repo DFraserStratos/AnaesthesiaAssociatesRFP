@@ -19,6 +19,7 @@ import { createDraftList } from './draftListActions'
 import { createAvailabilitySeries } from './availabilityActions'
 import { refuse, ok, type Outcome } from './mutate'
 import { scheduleHorizon } from './selectors'
+import { compareSessions } from '../domain/outOfHours'
 
 export const STAGED_CLASH_NOTE = 'Unavailable · staged for the demo'
 
@@ -118,7 +119,8 @@ export function stageRecurringClash(api: AppStoreApi, recurringBookingId: string
     {
       anaesthetistId: rb.anaesthetistId,
       statusKey: SEED_STATUS.unavailable,
-      sessions: rb.session,
+      // A recurring booking is AM or PM (no out-of-hours session is generated).
+      sessions: rb.session === 'OOH' ? 'both' : rb.session,
       weekdays: [getISODay(parseISO(day.dateISO)) as Weekday],
       everyWeeks: 1,
       startISO: day.dateISO,
@@ -139,5 +141,5 @@ export function stageableRecurringBookings(state: Pick<AppState, 'clock' | 'appS
       const day = firstUnpaintedDay(state, rb)
       return day === undefined ? [] : [{ rb, dateISO: day.dateISO }]
     })
-    .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.rb.session.localeCompare(b.rb.session) || a.rb.id.localeCompare(b.rb.id))
+    .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || compareSessions(a.rb, b.rb) || a.rb.id.localeCompare(b.rb.id))
 }

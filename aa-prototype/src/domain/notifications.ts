@@ -11,6 +11,7 @@ import { shortDateLabel } from './slotStatus'
 import { titledSurname } from './names'
 import { addDaysISO } from './clock'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
+import { sessionText } from './outOfHours'
 
 /**
  * What posts to the pool and how a notice ends (OQ-79 answered 19 October,
@@ -66,7 +67,7 @@ function anaesthetistShort(masters: NotificationMasters, id: string | undefined)
 export function notificationListLine(n: Notification, masters: NotificationMasters): string {
   const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'
   const surgeon = masters.surgeons[n.surgeonId]?.name
-  return `${shortDateLabel(n.dateISO)} ${n.session} (${surgeon !== undefined ? `${hospital}, ${surgeon}` : hospital})`
+  return `${shortDateLabel(n.dateISO)} ${sessionText(n.session)} (${surgeon !== undefined ? `${hospital}, ${surgeon}` : hospital})`
 }
 
 /**
@@ -87,7 +88,7 @@ export function notificationText(n: Notification, masters: NotificationMasters):
     // "... to check a Booking (Walker, H., Thu 23 Jul AM, St George's)". The note shows beneath.
     if (n.bookingId !== undefined) {
       const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'
-      const parts = [n.patientName, `${shortDateLabel(n.dateISO)} ${n.session}`, hospital].filter((p): p is string => p !== undefined && p !== '')
+      const parts = [n.patientName, `${shortDateLabel(n.dateISO)} ${sessionText(n.session)}`, hospital].filter((p): p is string => p !== undefined && p !== '')
       return `${by} asked the office to check a Booking (${parts.join(', ')})`
     }
     return `${by} asked the office to check ${notificationListLine(n, masters)}`
@@ -95,7 +96,7 @@ export function notificationText(n: Notification, masters: NotificationMasters):
   if (n.kind === 'bookingMoved') {
     // "Dr Souter moved a Booking (Riley, A., Thu 23 Jul AM, St George's) to Dr Hughes. A new List was created."
     const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'
-    const parts = [n.patientName, `${shortDateLabel(n.dateISO)} ${n.session}`, hospital].filter((p): p is string => p !== undefined && p !== '')
+    const parts = [n.patientName, `${shortDateLabel(n.dateISO)} ${sessionText(n.session)}`, hospital].filter((p): p is string => p !== undefined && p !== '')
     return `${by} moved a Booking (${parts.join(', ')}) to ${anaesthetistShort(masters, n.toAnaesthetistId)}. A new List was created.`
   }
   const what = notificationListLine(n, masters)

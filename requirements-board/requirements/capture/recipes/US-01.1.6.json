@@ -1,0 +1,100 @@
+{
+  "id": "US-01.1.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "out-of-hours",
+      "app": "admin",
+      "caption": "The office opens an out-of-hours session after PM and puts any List in it, a new one or a Draft List for the evening; it shows after PM on the anaesthetist's day",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "sheet",
+          "caption": "Open out-of-hours session on Dr Souter's row: an evening session after PM, 18:00 to 21:00 by default",
+          "steps": [
+            { "hover": "[data-day-grid-row=\"34821\"] .aa-row-gutter" },
+            { "click": "[data-day-grid-row=\"34821\"] [data-shot=out-of-hours-open]" },
+            { "wait": "[data-shot=out-of-hours-open-sheet]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=out-of-hours-open-sheet]"]
+        },
+        {
+          "state": "drawer",
+          "caption": "Once open it is a session like AM and PM: Assign List, or put a waiting Draft List for the evening in it",
+          "steps": [
+            { "hover": "[data-day-grid-row=\"34821\"] .aa-row-gutter" },
+            { "click": "[data-day-grid-row=\"34821\"] [data-shot=out-of-hours-open]" },
+            { "wait": "[data-shot=out-of-hours-open-sheet]" },
+            { "click": "[data-shot=out-of-hours-open-sheet] >> role=button[name=\"Open out-of-hours session\"]" },
+            { "wait": "[data-testid=admin-list-drawer]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-testid=admin-list-drawer]"]
+        },
+        {
+          "state": "block",
+          "caption": "With a List in it: the evening block after the PM List, the ruler running past 18:00 only on a day that has one",
+          "steps": [
+            { "hover": "[data-day-grid-row=\"34821\"] .aa-row-gutter" },
+            { "click": "[data-day-grid-row=\"34821\"] [data-shot=out-of-hours-open]" },
+            { "wait": "[data-shot=out-of-hours-open-sheet]" },
+            { "click": "[data-shot=out-of-hours-open-sheet] >> role=button[name=\"Open out-of-hours session\"]" },
+            { "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Assign List\"]" },
+            { "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]", "value": "H-SX" },
+            { "select": "[data-shot=admin-assign-list] select >> nth=1", "value": "S-PATEL" },
+            { "click": "[data-shot=admin-assign-list] >> role=button[name=/Assign List|Assign anyway/]" },
+            { "wait": 600 },
+            { "click": "[data-testid=admin-list-drawer] button[aria-label=\"Close\"]" },
+            { "hover": "h1" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=daygrid-evening-block]"]
+        }
+      ]
+    },
+    {
+      "name": "out-of-hours",
+      "app": "mobile",
+      "caption": "The out-of-hours List shows on Dr Souter's day after her PM List, with its start time",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "state": "day",
+          "steps": [
+            { "trigger": "office-adds-out-of-hours-list" },
+            { "wait": "[data-shot=out-of-hours-row]" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-shot=out-of-hours-row]"]
+        }
+      ]
+    },
+    {
+      "name": "out-of-hours",
+      "app": "web",
+      "caption": "On the web Lists table the out-of-hours List follows the PM List",
+      "start": "/web/lists",
+      "setup": [
+        { "goto": "/admin/day/2026-07-21" },
+        { "hover": "[data-day-grid-row=\"34821\"] .aa-row-gutter" },
+        { "click": "[data-day-grid-row=\"34821\"] [data-shot=out-of-hours-open]" },
+        { "wait": "[data-shot=out-of-hours-open-sheet]" },
+        { "click": "[data-shot=out-of-hours-open-sheet] >> role=button[name=\"Open out-of-hours session\"]" },
+        { "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Assign List\"]" },
+        { "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]", "value": "H-SX" },
+        { "select": "[data-shot=admin-assign-list] select >> nth=1", "value": "S-PATEL" },
+        { "click": "[data-shot=admin-assign-list] >> role=button[name=/Assign List|Assign anyway/]" },
+        { "wait": 600 }
+      ],
+      "states": [
+        {
+          "state": "day",
+          "steps": [{ "wait": "[data-shot=out-of-hours-row]" }, { "wait": 400 }],
+          "highlight": ["[data-shot=out-of-hours-row]"]
+        }
+      ]
+    }
+  ]
+}

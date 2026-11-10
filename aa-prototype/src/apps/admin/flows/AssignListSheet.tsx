@@ -16,6 +16,7 @@ import { useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
 import { NotPreferredWarning, useNotPreferredWarning } from '../components/pairing'
 import { AssignListFields, assignDraftError, emptyAssignDraft, type AssignDraft } from './AssignListFields'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface AssignListSheetProps {
   open: boolean
@@ -70,7 +71,7 @@ export function AssignListSheet({ open, slotId, actor, initialSurgeonId, onClose
         <div>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Assign List</div>
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>
-            {surnameFirst(anaesthetistName ?? slot.anaesthetistId)} · {format(parseISO(slot.dateISO), 'EEE d MMM')} · {slot.session}
+            {surnameFirst(anaesthetistName ?? slot.anaesthetistId)} · {format(parseISO(slot.dateISO), 'EEE d MMM')} · {sessionText(slot.session)}
           </div>
         </div>
         <div style={{ fontSize: 13, color: neutral.slate }}>Assigning a surgeon and hospital turns this session into a List.</div>

@@ -44,7 +44,14 @@ export type BookingId = string
 export type ProcedureId = string
 export type InvoiceId = string
 
-export type Session = 'AM' | 'PM'
+/**
+ * A day's sessions: AM and PM, generated for every active anaesthetist, and
+ * `OOH`, the out-of-hours session after PM that the office opens for one
+ * anaesthetist on a day (catch-up Phase 32c; US-01.1.6). The UI says
+ * "Out-of-hours" for it (`sessionText`); sort sessions with `sessionRank`,
+ * never by their text.
+ */
+export type Session = 'AM' | 'PM' | 'OOH'
 
 /**
  * List lifecycle (EP-07, FT-07.1, AR-22; PROGRESS convention 6 as amended in

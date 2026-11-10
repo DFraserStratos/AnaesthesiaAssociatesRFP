@@ -41,7 +41,7 @@ function commits(api: BoundAppStore, run: () => unknown): number {
 /** Dr Chen's Tue 21 PM Christchurch Eye Surgery List (Ms A. Reid): an ACTIVE colleague List the office can mark. */
 const CHEN_PM = `L-${ANAE.chen}-2026-07-21-PM`
 const chenSlot = slotIdFor(ANAE.chen, '2026-07-21', 'PM')
-const freeColleague = (api: BoundAppStore, dateISO: string, session: 'AM' | 'PM', not: string) =>
+const freeColleague = (api: BoundAppStore, dateISO: string, session: 'AM' | 'PM' | 'OOH', not: string) =>
   Object.values(api.getState().schedule.slots).find((s) => s.dateISO === dateISO && s.session === session && s.anaesthetistId !== not && s.status === 'free' && listInSlot(api.getState(), s.id) === undefined)!
 
 describe('the office marks a booked session not available (D59)', () => {
@@ -131,7 +131,7 @@ describe('review fixes (catch-up Phase 32b review pass)', () => {
     expect(out.ok).toBe(true)
     expect(api.getState().schedule.slots[slotId]?.status).toBe('free')
     const weekday = getISODay(parseISO(slot.dateISO)) as 1 | 2 | 3 | 4 | 5 | 6 | 7
-    const series = createAvailabilitySeries(api, SOUTER, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: slot.session, weekdays: [weekday], everyWeeks: 1, startISO: slot.dateISO, untilISO: slot.dateISO }, { skipSlotIds: [slotId] })
+    const series = createAvailabilitySeries(api, SOUTER, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: slot.session === 'OOH' ? 'both' : slot.session, weekdays: [weekday], everyWeeks: 1, startISO: slot.dateISO, untilISO: slot.dateISO }, { skipSlotIds: [slotId] })
     expect(series.ok).toBe(true)
     expect(api.getState().schedule.slots[slotId]?.status).toBe('free')
   })

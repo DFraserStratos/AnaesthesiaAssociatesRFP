@@ -5,6 +5,7 @@ import { useAppStore } from '../../store'
 import type { Notification } from '../../domain/types'
 import { drSurname, locationName } from '../format'
 import { useBookingsMovedToMe, useMovedToMe } from './useListMoves'
+import { sessionText } from '../../domain/outOfHours'
 
 /** The mover as the apps name them ("Dr Hughes"), or a plain fallback when the record is gone. */
 function moverName(fromName: string | undefined): string {
@@ -13,12 +14,12 @@ function moverName(fromName: string | undefined): string {
 
 /** "Dr Hughes moved Thu 23 Jul AM, St George's, to you." from the pool's record (a snapshot). */
 export function movedToYouLine(n: Notification, names: { from: string | undefined; hospital: string }): string {
-  return `${moverName(names.from)} moved ${format(parseISO(n.dateISO), 'EEE d MMM')} ${n.session}, ${names.hospital}, to you.`
+  return `${moverName(names.from)} moved ${format(parseISO(n.dateISO), 'EEE d MMM')} ${sessionText(n.session)}, ${names.hospital}, to you.`
 }
 
 /** "Dr Souter moved a Booking to you: Wed 22 Jul AM, Christchurch Eye Surgery" (a single Booking, Phase 32a), from the move's audit event. */
 export function movedBookingToYouLine(fromName: string | undefined, where: { dateISO: string; session: string; hospital: string } | undefined): string {
-  const tail = where !== undefined ? `: ${format(parseISO(where.dateISO), 'EEE d MMM')} ${where.session}, ${where.hospital}` : ''
+  const tail = where !== undefined ? `: ${format(parseISO(where.dateISO), 'EEE d MMM')} ${sessionText(where.session)}, ${where.hospital}` : ''
   return `${moverName(fromName)} moved a Booking to you${tail}`
 }
 

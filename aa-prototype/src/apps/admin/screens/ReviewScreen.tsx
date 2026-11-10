@@ -10,6 +10,7 @@ import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface ReviewScreenProps {
   listId: string
@@ -160,7 +161,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       <div style={{ fontSize: 13, color: neutral.mist }}>
         <button onClick={onBack} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Review queue</button>
         <span style={{ color: neutral.lineStrong }}> / </span>
-        <span>{anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId} · {hospitalName} {list.session}</span>
+        <span>{anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId} · {hospitalName} {sessionText(list.session)}</span>
       </div>
 
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
@@ -170,7 +171,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{hospitalName} · {list.session} list</h1>
+          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{hospitalName} · {sessionText(list.session)} list</h1>
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
             {anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId}
             {surgeon !== undefined ? ` · ${surgeon.name}` : ''}

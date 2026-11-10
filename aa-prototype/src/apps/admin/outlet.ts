@@ -48,6 +48,8 @@ export interface AdminOutletContext {
   onOpenDraftList: (listId: string) => void
   /** Open an assigned List on its day in the session drawer. */
   onOpenList: (listId: string) => void
+  /** "Open out-of-hours session" on an anaesthetist's row (catch-up Phase 32c); absent on a past day. */
+  onOpenOutOfHours?: (anaesthetistId: string) => void
 }
 
 export function useAdminOutlet(): AdminOutletContext {

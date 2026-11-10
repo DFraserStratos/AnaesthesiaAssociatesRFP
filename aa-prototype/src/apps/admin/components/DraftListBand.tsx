@@ -15,7 +15,7 @@ import type { DraftList, Session } from '../../../domain/types'
 import { drSurname, pairingLine } from '../../../shared/format'
 import { DRAFT_LISTS, UNASSIGNED, bookingCountLabel, unavailableDetail } from '../../../shared/scheduleTerms'
 import { neutral, semantic } from '../../../theme/tokens'
-import { blockGeometry, hoursOf } from '../util'
+import { blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, type Ruler } from '../util'
 import { BookingCount, WaitingTime } from './draftLists/DraftListParts'
 
 const LANE = 52
@@ -24,11 +24,14 @@ export function DraftListBand({
   draftLists,
   bookingCounts,
   onOpen,
+  ruler = DAY_RULER,
 }: {
   /** The day's live Draft Lists, already in `compareDraftLists` order. */
   draftLists: readonly DraftList[]
   bookingCounts: ReadonlyMap<string, number>
   onOpen: (listId: string) => void
+  /** The grid's ruler (longer on a day with an out-of-hours session or an evening Draft List). */
+  ruler?: Ruler
 }) {
   const masters = useAppStore((s) => s.masters)
   const defaults = useAppStore((s) => s.appSettings.schedule.defaultTimes)
@@ -36,12 +39,12 @@ export function DraftListBand({
 
   // Lanes: the n-th Draft List of a session goes in lane n.
   const laneOf = new Map<string, number>()
-  const perSession: Record<Session, number> = { AM: 0, PM: 0 }
+  const perSession: Record<Session, number> = { AM: 0, PM: 0, OOH: 0 }
   for (const l of draftLists) {
     laneOf.set(l.id, perSession[l.session])
     perSession[l.session] += 1
   }
-  const lanes = Math.max(perSession.AM, perSession.PM, 1)
+  const lanes = Math.max(perSession.AM, perSession.PM, perSession.OOH, 1)
 
   return (
     <div data-shot="daygrid-draft-band" data-draft-band-count={draftLists.length} style={{ display: 'flex', alignItems: 'stretch', borderBottom: `1px solid ${neutral.lineStrong}`, background: neutral.bg }}>
@@ -54,7 +57,7 @@ export function DraftListBand({
       <span style={{ flex: 1, position: 'relative', height: lanes * LANE, display: 'block' }}>
         {draftLists.map((l) => {
           const t = defaults[l.session]
-          const geo = blockGeometry(hoursOf(t.startTime), hoursOf(t.endTime))
+          const geo = blockGeometry(hoursOf(t.startTime), hoursOf(t.endTime), ruler)
           const lane = laneOf.get(l.id) ?? 0
           const from = l.draft.origin === 'recurringClash' && l.draft.fromAnaesthetistId !== undefined ? masters.anaesthetists[l.draft.fromAnaesthetistId] : undefined
           const count = bookingCounts.get(l.id) ?? 0
@@ -108,6 +111,7 @@ export function DraftListBand({
           )
         })}
       </span>
+      <span aria-hidden style={{ width: GRID_GUTTER, flex: 'none' }} />
     </div>
   )
 }

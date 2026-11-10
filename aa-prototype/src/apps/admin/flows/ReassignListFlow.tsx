@@ -11,6 +11,7 @@ import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { surnameFirst } from '../util'
 import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { NotAvailableColleagues } from '../components/pairing/AnaesthetistCandidates'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface ReassignListFlowProps {
   open: boolean
@@ -105,7 +106,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         {targetId === null ? (
           <>
             <div style={{ fontSize: 13, color: neutral.slate }}>
-              Choose an anaesthetist whose {list.session} session is free, listed by tier, then preferred pairing. The List moves into their session.
+              Choose an anaesthetist whose {sessionText(list.session)} session is free, listed by tier, then preferred pairing. The List moves into their session.
             </div>
             <AnaesthetistCandidates
               candidates={candidateIds}
@@ -114,8 +115,8 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
               onPick={setTargetId}
               query={query}
               onQueryChange={setQuery}
-              emptyText={`No anaesthetist has a free ${list.session} session on this day.`}
-              trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {list.session}</span>}
+              emptyText={`No anaesthetist has a free ${sessionText(list.session)} session on this day.`}
+              trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {sessionText(list.session)}</span>}
             />
             <NotAvailableColleagues slots={unavailableSlots} session={list.session} query={query} shot="reassign-not-available" />
             <Button variant="secondary" block onClick={onClose}>Cancel</Button>
@@ -123,7 +124,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         ) : (
           <>
             <div style={{ background: accent.tint, borderRadius: radius.card, padding: 12, fontSize: 13, color: accent.pressed }}>
-              The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {list.session} session.
+              The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {sessionText(list.session)} session.
             </div>
             <VacatedSessionChoice label={`${surnameFirst(sourceName)}'s session after the move`} value={vacatedStatus} onChange={setVacatedStatus} shot="reassign-vacated" />
             <NotPreferredWarning warning={pairingWarning} shot="reassign-pairing-warning" />

@@ -23,10 +23,11 @@ import {
   type WarningRule,
   type WarningStrength,
 } from '../domain/warnings'
-import type { Booking, Procedure } from '../domain/types'
+import type { Booking, Procedure, Session } from '../domain/types'
 import type { AppState, AppStoreApi } from './appStore'
 import { clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import { prepaymentStatusFor } from './selectors'
+import { compareSessions } from '../domain/outOfHours'
 
 /** The state slices the warning selectors read. */
 export type WarningState = Pick<AppState, 'schedule' | 'billing' | 'appSettings' | 'clock'>
@@ -97,7 +98,7 @@ export interface OpenWarningRow {
   bookingId: string
   listId: string
   dateISO: string
-  session: 'AM' | 'PM'
+  session: Session
   patientId: string
   /** Absent for a Booking on a Draft List (shown as "Unassigned"). */
   anaesthetistId?: string
@@ -134,7 +135,7 @@ export function openWarnings(state: WarningState, rules: readonly WarningRule[] 
     (a, b) =>
       a.dateISO.localeCompare(b.dateISO) ||
       strengthRank(b.warning.strength) - strengthRank(a.warning.strength) ||
-      a.session.localeCompare(b.session) ||
+      compareSessions(a, b) ||
       (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') ||
       a.warning.key.localeCompare(b.warning.key),
   )

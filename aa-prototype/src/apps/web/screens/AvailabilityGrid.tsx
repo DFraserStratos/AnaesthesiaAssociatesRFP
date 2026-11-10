@@ -10,6 +10,8 @@ import { NameSearchBox } from '../../../shared/ui'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { useNavigate } from 'react-router-dom'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
+import { sessionText } from '../../../domain/outOfHours'
+import { OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 
 interface AvailabilityGridProps {
   anaesthetistId: string
@@ -24,6 +26,8 @@ interface GridRow {
   initials: string
   am: SlotView | undefined
   pm: SlotView | undefined
+  /** An opened out-of-hours session (catch-up Phase 32c). */
+  ooh: SlotView | undefined
   hasFree: boolean
 }
 
@@ -67,19 +71,25 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
       .map((a) => {
         const am = slot(a.registrationNumber, 'AM')
         const pm = slot(a.registrationNumber, 'PM')
+        const ooh = slot(a.registrationNumber, 'OOH')
         return {
           anaesthetistId: a.registrationNumber,
           name: a.name,
           initials: initialsOf(a.name),
           am,
           pm,
-          hasFree: open(am) || open(pm),
+          ooh,
+          hasFree: open(am) || open(pm) || open(ooh),
         }
       })
       .sort((x, y) => x.name.localeCompare(y.name))
-    const count = all.reduce((n, r) => n + (open(r.am) ? 1 : 0) + (open(r.pm) ? 1 : 0), 0)
+    const count = all.reduce((n, r) => n + (open(r.am) ? 1 : 0) + (open(r.pm) ? 1 : 0) + (open(r.ooh) ? 1 : 0), 0)
     return { rows: all, freeCount: count }
   }, [listsRecord, slotsRecord, appSettings, slotStatuses, anaesthetists, selectedDate])
+  // The out-of-hours column shows only on a day someone has an evening session open (catch-up Phase 32c).
+  const evening = rows.some((r) => r.ooh !== undefined)
+  const sessionsShown: readonly Session[] = evening ? ['AM', 'PM', 'OOH'] : ['AM', 'PM']
+  const columns = evening ? '220px 1fr 1fr 1fr' : '220px 1fr 1fr'
 
   const visible = rows
     .filter((r) => (filter === 'free' ? r.hasFree : true))
@@ -148,16 +158,17 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
       <Panel flush>
         <div style={{ overflowX: 'auto' }}>
           <div style={{ minWidth: 720 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 1fr', gap: '0 12px', padding: '10px 20px', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
+            <div style={{ display: 'grid', gridTemplateColumns: columns, gap: '0 12px', padding: '10px 20px', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
               <HeaderCell>Anaesthetist</HeaderCell>
               <HeaderCell>AM</HeaderCell>
               <HeaderCell>PM</HeaderCell>
+              {evening && <HeaderCell>{OUT_OF_HOURS}</HeaderCell>}
             </div>
             {visible.length === 0 && (
               <div style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>No anaesthetists match.</div>
             )}
             {visible.map((row) => (
-              <div key={row.anaesthetistId} data-shot={row.anaesthetistId === anaesthetistId ? 'availability-row-mine' : undefined} style={{ display: 'grid', gridTemplateColumns: '220px 1fr 1fr', gap: '0 12px', alignItems: 'center', padding: '7px 20px', borderBottom: `1px solid ${neutral.sunken}` }}>
+              <div key={row.anaesthetistId} data-shot={row.anaesthetistId === anaesthetistId ? 'availability-row-mine' : undefined} style={{ display: 'grid', gridTemplateColumns: columns, gap: '0 12px', alignItems: 'center', padding: '7px 20px', borderBottom: `1px solid ${neutral.sunken}` }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                   <span aria-hidden style={{ width: 30, height: 30, borderRadius: 99, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{row.initials}</span>
                   <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -175,8 +186,8 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
                     </button>
                   )}
                 </span>
-                {(['AM', 'PM'] as const).map((session) => {
-                  const view = session === 'AM' ? row.am : row.pm
+                {sessionsShown.map((session) => {
+                  const view = session === 'AM' ? row.am : session === 'PM' ? row.pm : row.ooh
                   const mine = movable[session]
                   // Her own List: Move. A colleague's free session her List could go into: Move here (the mockup's gesture, where it means something).
                   const own = row.anaesthetistId === anaesthetistId && mine !== undefined && view?.list?.id === mine.list.id
@@ -186,13 +197,14 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
                     <Cell
                       key={session}
                       view={view}
+                      quietEmpty={session === 'OOH'}
                       labels={cellLabels(view)}
                       {...(act
                         ? {
                             onClick: () => movePrompt.openMove(mine.list.id, own ? undefined : { toSlotId: view.slot.id }),
                             action: own ? 'Move' : 'Move here',
                             shot: own ? `availability-move-mine-${session.toLowerCase()}` : `availability-move-to-${row.anaesthetistId}-${session.toLowerCase()}`,
-                            title: own ? 'Move this List' : `Move your ${session} List to ${row.name}`,
+                            title: own ? 'Move this List' : `Move your ${sessionText(session)} List to ${row.name}`,
                           }
                         : {})}
                     />
@@ -207,9 +219,11 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
   )
 }
 
-function Cell({ view, labels, onClick, action, shot, title }: { view: SlotView | undefined; labels: { l1: string; l2: string }; onClick?: () => void; action?: string; shot?: string; title?: string }) {
+function Cell({ view, labels, onClick, action, shot, title, quietEmpty = false }: { view: SlotView | undefined; labels: { l1: string; l2: string }; onClick?: () => void; action?: string; shot?: string; title?: string; quietEmpty?: boolean }) {
   const resolved = useDisplayStatus(view?.displayKey ?? '')
   if (view === undefined) {
+    // An out-of-hours session not opened for this anaesthetist: an empty, quiet cell (catch-up Phase 32c).
+    if (quietEmpty) return <div aria-hidden style={{ height: 52, borderRadius: 9, border: `1px dashed ${neutral.line}` }} />
     return <div style={{ height: 52, borderRadius: 9, background: neutral.sunken, display: 'flex', alignItems: 'center', padding: '0 10px', fontSize: 12, color: neutral.mist }}>No session</div>
   }
   const c = resolved.visual

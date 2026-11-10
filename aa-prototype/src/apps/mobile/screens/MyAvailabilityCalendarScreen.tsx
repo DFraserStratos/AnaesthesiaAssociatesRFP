@@ -14,6 +14,7 @@ import {
   useAvailabilityMonth,
   WEEKDAY_INITIALS,
 } from '../../../shared/availability'
+import { sessionText } from '../../../domain/outOfHours'
 
 interface MyAvailabilityCalendarScreenProps {
   actor: Actor
@@ -172,7 +173,7 @@ function HalfBlock({ session }: { session: CalendarSession | undefined }) {
   const fill = blockFill(v)
   return (
     <span
-      title={`${session.session} ${resolved.label}`}
+      title={`${sessionText(session.session)} ${resolved.label}`}
       data-slot-id={session.slotId}
       style={{
         position: 'relative',

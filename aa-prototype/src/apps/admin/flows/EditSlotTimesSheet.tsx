@@ -12,6 +12,7 @@ import { setSlotTimes, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
+import { sessionText } from '../../../domain/outOfHours'
 
 export function EditSlotTimesSheet({ open, slotId, actor, onClose }: { open: boolean; slotId: string; actor: Actor; onClose: () => void }) {
   const { Overlay } = useSurface()
@@ -55,7 +56,7 @@ export function EditSlotTimesSheet({ open, slotId, actor, onClose }: { open: boo
       <div data-shot="admin-edit-session-times" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Edit times</div>
-          <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(slot.dateISO), 'EEE d MMM')} · {slot.session} session</div>
+          <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(slot.dateISO), 'EEE d MMM')} · {sessionText(slot.session)} session</div>
         </div>
         <SessionTimesFields session={slot.session} draft={draft} defaults={defaults} onChange={setDraft} />
         <FormError message={error} />

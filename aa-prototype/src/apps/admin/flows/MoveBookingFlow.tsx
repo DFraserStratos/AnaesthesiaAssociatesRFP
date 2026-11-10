@@ -9,6 +9,7 @@ import { Button } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { surnameOf } from '../util'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
+import { compareSessions, sessionText } from '../../../domain/outOfHours'
 
 interface MoveBookingFlowProps {
   open: boolean
@@ -41,7 +42,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
     return Object.values(lists)
       // The office may move a Booking onto a Draft List too (catch-up Phase 31); a removed one is gone.
       .filter((l) => l.dateISO === targetDate && l.id !== sourceId && l.state !== 'AUTHORISED' && l.removedAtISO === undefined)
-      .sort((a, b) => ((a.anaesthetistId ?? '') === (b.anaesthetistId ?? '') ? a.session.localeCompare(b.session) : (a.anaesthetistId ?? '').localeCompare(b.anaesthetistId ?? '')))
+      .sort((a, b) => ((a.anaesthetistId ?? '') === (b.anaesthetistId ?? '') ? compareSessions(a, b) : (a.anaesthetistId ?? '').localeCompare(b.anaesthetistId ?? '')))
   }, [sourceId, targetDate, lists])
 
   function mismatch(target: List): string | null {
@@ -92,7 +93,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
                 onClick={() => move(l)}
                 style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch', textAlign: 'left', padding: '10px 12px', borderRadius: radius.card, border: `1px solid ${neutral.line}`, background: neutral.surface, cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{anae !== undefined ? surnameOf(anae.name) : (l.anaesthetistId ?? UNASSIGNED)} · {l.session} · {LIST_STATE_LABELS[l.state]}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{anae !== undefined ? surnameOf(anae.name) : (l.anaesthetistId ?? UNASSIGNED)} · {sessionText(l.session)} · {LIST_STATE_LABELS[l.state]}</span>
                 <span style={{ fontSize: 12, color: neutral.slate }}>{hosp} · {surg}</span>
                 {flag !== null && (
                   <span style={{ fontSize: 11, color: semantic.warning.onTint, fontWeight: 600 }}>Advisory: {flag}. Pairing is not enforced.</span>

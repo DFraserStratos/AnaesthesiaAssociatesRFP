@@ -20,7 +20,8 @@
  * UI wires a short-timer auto-retry (`wireIntegrationRetry`).
  */
 
-import type { IntegrationMessage } from '../domain/types'
+import type { IntegrationMessage, Session } from '../domain/types'
+import { effectiveSlotTimes, slotIdFor } from '../domain/slots'
 import { validateEthnicityCode } from '../domain/nzhis'
 import { validateNhi } from '../domain/nhi'
 import {
@@ -33,7 +34,7 @@ import {
   type SurgeonPdf,
 } from '../domain/integrations'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppStoreApi, BoundAppStore } from './appStore'
+import type { AppState, AppStoreApi, BoundAppStore } from './appStore'
 import { createBooking } from './bookingActions'
 import { pairingRefusal } from './slotActions'
 import { cancelBooking, editBooking, editProcedure, reassignBooking, type BookingPatch } from './lifecycle'
@@ -51,6 +52,17 @@ function timeToSession(time: string | undefined): 'AM' | 'PM' {
   if (time === undefined) return 'AM'
   const hour = Number(time.slice(0, 2))
   return Number.isFinite(hour) && hour >= 12 ? 'PM' : 'AM'
+}
+
+/**
+ * The session a booked time falls in for an anaesthetist on a day: AM or PM
+ * by the hour, or their opened out-of-hours session when the time is at or
+ * after its start (catch-up Phase 32c).
+ */
+function sessionForTime(state: AppState, anaesthetistId: string, dateISO: string, time: string | undefined): Session {
+  const evening = state.schedule.slots[slotIdFor(anaesthetistId, dateISO, 'OOH')]
+  if (evening !== undefined && time !== undefined && time >= effectiveSlotTimes(evening, state.appSettings.schedule).startTime) return 'OOH'
+  return timeToSession(time)
 }
 
 // ---------------------------------------------------------------------------
@@ -192,7 +204,7 @@ function applyEffect(
   if (canned.eventType === 'S13') {
     const targetSlot =
       parsed.scheduledDateISO !== undefined
-        ? slotFor(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, timeToSession(parsed.scheduledTime))
+        ? slotFor(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, sessionForTime(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, parsed.scheduledTime))
         : undefined
     if (parsed.scheduledDateISO !== undefined && targetSlot?.id !== currentList.slotId) {
       // Interim until Phase 33: a reschedule into a session with no List parks

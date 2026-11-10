@@ -12,6 +12,7 @@ import type { Session } from '../../../domain/types'
 import { isWallTime } from '../../../domain/slots'
 import { FieldLabel } from '../../../shared/ui'
 import { assignSelectStyle } from './AssignListFields'
+import { sessionText } from '../../../domain/outOfHours'
 
 export interface TimesDraft {
   startTime: string
@@ -62,10 +63,10 @@ export function SessionTimesFields({
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, fontSize: 12, color: neutral.slate }}>
         {isDefault ? (
-          <span>Default {session} times ({defaults.startTime} to {defaults.endTime})</span>
+          <span>Default {sessionText(session)} times ({defaults.startTime} to {defaults.endTime})</span>
         ) : (
           <>
-            <span>Own times. The {session} default is {defaults.startTime} to {defaults.endTime}.</span>
+            <span>Own times. The {sessionText(session)} default is {defaults.startTime} to {defaults.endTime}.</span>
             <button
               type="button"
               onClick={() => onChange({ ...defaults })}

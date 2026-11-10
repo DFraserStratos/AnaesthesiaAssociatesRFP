@@ -188,6 +188,8 @@ export const PERSIST_KEY = 'aa-demo'
  *  locked-target List (Beaumont Mon 20), new `Booking.correlationRef` usage, and
  *  the `IntegrationMessage` log shape ('duplicate' status + failure/result
  *  fields). Reseeds on load.
+ *  v30: catch-up Phase 32c, the out-of-hours session (`Session` gains `OOH`,
+ *  the schedule settings an out-of-hours default, 18:00 to 21:00).
  *  v6: Phase 10 — new BillingCase money fields (received/authorised/disbursed +
  *  paidIn/disbursed stamps + handoffFailure), the `receipts` ledger on the
  *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
@@ -201,7 +203,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 29
+export const PERSIST_VERSION = 30
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
