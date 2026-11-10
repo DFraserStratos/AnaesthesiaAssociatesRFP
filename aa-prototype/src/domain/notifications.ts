@@ -9,6 +9,7 @@
 
 import { shortDateLabel } from './slotStatus'
 import { titledSurname } from './names'
+import { addDaysISO } from './clock'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
 
 /**
@@ -21,7 +22,9 @@ import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
  * pool deliberately does not have).
  */
 export const NOTIFICATION_POOL_RULE = {
-  sources: ['listMoved'],
+  // 'bookingMoved' is D58's optional source (OQ-79, Phase 32a): posted only when
+  // the anaesthetist moving a single Booking ticks "Tell the office".
+  sources: ['listMoved', 'bookingMoved'],
   expiresAfterDays: null,
   actionable: false,
   pageSize: 6,
@@ -34,6 +37,12 @@ export const NOTIFICATION_POOL_RULE = {
 
 /** How many demo days the receiving colleague's "Moved to you" panel looks back (a display window; the records stay). */
 export const MOVED_TO_ME_DAYS = 7
+
+/** Whether a move at `atISO` is inside the "Moved to you" window ending today: the one window rule for List and Booking notices. */
+export function inMovedToMeWindow(atISO: string, todayISO: string): boolean {
+  const day = atISO.slice(0, 10)
+  return day >= addDaysISO(todayISO, -(MOVED_TO_ME_DAYS - 1)) && day <= todayISO
+}
 
 export interface NotificationMasters {
   anaesthetists: Readonly<Record<string, Anaesthetist>>
@@ -59,9 +68,17 @@ export function notificationListLine(n: Notification, masters: NotificationMaste
  * you", in `shared/flows/MovedToYouPanel.tsx`): "Dr Hughes moved Thu 23 Jul AM (St George's, Ms A.
  * Reid) to Dr Sharma", "Dr Hughes returned ... to the office", plus "when
  * marking the session not available" for a hand-on from the unavailable prompt.
+ * A single Booking (Phase 32a): "Dr Souter moved a Booking (Riley, A., Thu 23
+ * Jul AM, St George's) to Dr Hughes. A new List was created."
  */
 export function notificationText(n: Notification, masters: NotificationMasters): string {
   const by = anaesthetistShort(masters, n.fromAnaesthetistId)
+  if (n.kind === 'bookingMoved') {
+    // "Dr Souter moved a Booking (Riley, A., Thu 23 Jul AM, St George's) to Dr Hughes. A new List was created."
+    const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'
+    const parts = [n.patientName, `${shortDateLabel(n.dateISO)} ${n.session}`, hospital].filter((p): p is string => p !== undefined && p !== '')
+    return `${by} moved a Booking (${parts.join(', ')}) to ${anaesthetistShort(masters, n.toAnaesthetistId)}. A new List was created.`
+  }
   const what = notificationListLine(n, masters)
   const tail = n.cause === 'unavailable' ? ' when marking the session not available' : ''
   if (n.route === 'office') return `${by} returned ${what} to the office${tail}`

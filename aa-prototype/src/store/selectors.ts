@@ -41,6 +41,7 @@ import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '..
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
 import type { ListMoveInput } from '../domain/listMoves'
+import type { BookingMoveInput } from '../domain/bookingMoves'
 import { conflictFromCause, describeConflict, isBackdropList, type ConflictLookups, type ConflictReason } from '../domain/conflicts'
 import { projectAllRecurringBookings, projectRecurringBookingChange, type ProjectionInputs, type ProjectionPlan } from '../domain/recurringBookingProjection'
 import { conflictLookups } from './conflictReconcile'
@@ -1769,4 +1770,9 @@ export function bookingCountsByList(bookings: Readonly<Record<string, Booking>>)
 /** The slices a List move reads (catch-up Phase 32; `domain/listMoves.ts`): the one builder. */
 export function moveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): ListMoveInput {
   return { lists: state.schedule.lists, slots: state.schedule.slots, anaesthetists: state.masters.anaesthetists, slotStatuses: state.masters.slotStatuses }
+}
+
+/** The slices a single-Booking move reads (catch-up Phase 32a): Phase 32's, plus the Bookings. No preference or tier. */
+export function bookingMoveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): BookingMoveInput {
+  return { ...moveInputOf(state), bookings: state.schedule.bookings }
 }

@@ -93,6 +93,8 @@ export {
   type OwnMoveInput,
   type UnavailableChoice,
 } from './listMoveActions'
+// An anaesthetist moves a single Booking to a colleague (catch-up Phase 32a).
+export { moveBookingToAnaesthetist, type BookingMoveOptions, type BookingMoveResult } from './listMoveActions'
 export {
   colleagueMoveCandidates,
   colleagueMoveRefusal,
@@ -101,6 +103,10 @@ export {
   moveToPersonaCandidate,
   moveToPersonaRefusal,
   stageColleagueMoveToPersona,
+  bookingMoveCandidates,
+  bookingMoveCandidateRefusal,
+  stageColleagueBookingMove,
+  type BookingMoveCandidate,
   BUSY_MORNING_MOVES,
   LIST_MOVE_DEMO_PERSONA,
 } from './listMoveDemo'
@@ -110,6 +116,12 @@ export {
   latestNotificationForList,
   movedToMe,
   movedToMeForList,
+  bookingsMovedToMe,
+  bookingMovedToMe,
+  bookingMoveEntries,
+  bookingMoveFor,
+  bookingMovesOntoList,
+  type BookingMove,
   type NotificationRow,
   type NotificationTarget,
   type PoolState,

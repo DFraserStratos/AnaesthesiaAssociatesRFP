@@ -12,8 +12,7 @@
  *   to-do list.
  */
 
-import { compareNewestFirst, MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationText, pageOf, type NotificationMasters } from '../domain/notifications'
-import { addDaysISO } from '../domain/clock'
+import { compareNewestFirst, inMovedToMeWindow, NOTIFICATION_POOL_RULE, notificationText, pageOf, type NotificationMasters } from '../domain/notifications'
 import type { Notification } from '../domain/types'
 import { allocateId } from './mutate'
 import type { AppState } from './appStore'
@@ -45,16 +44,26 @@ export function postNotification(
     hospitalId: input.hospitalId,
     surgeonId: input.surgeonId,
     ...(message !== '' ? { message } : {}),
+    ...(input.bookingId !== undefined ? { bookingId: input.bookingId } : {}),
+    ...(input.patientName !== undefined ? { patientName: input.patientName } : {}),
   }
   if (s.notifications[record.id] !== undefined) throw new Error(`postNotification would overwrite ${record.id}`)
   return { notifications: { ...s.notifications, [record.id]: record }, counters: alloc.counters, id: record.id }
 }
 
 /** What the pool's rows read: the records, the masters' names, and where each List is now. */
-export type PoolState = Pick<AppState, 'notifications'> & { masters: NotificationMasters; schedule: Pick<AppState['schedule'], 'lists'> }
+export type PoolState = Pick<AppState, 'notifications'> & { masters: NotificationMasters; schedule: Pick<AppState['schedule'], 'lists' | 'bookings'> }
 
-/** Where a row opens: the List in its Day drawer, or the Draft List page when the List is a Draft List now. */
-export type NotificationTarget = { kind: 'list'; listId: string; dateISO: string } | { kind: 'draftList'; listId: string } | { kind: 'gone' }
+/**
+ * Where a row opens: the List in its Day drawer, the Draft List page when the
+ * List is a Draft List now, or (a single Booking moved, Phase 32a) the
+ * Booking's detail on the day it now sits on.
+ */
+export type NotificationTarget =
+  | { kind: 'list'; listId: string; dateISO: string }
+  | { kind: 'draftList'; listId: string }
+  | { kind: 'booking'; bookingId: string; dateISO: string }
+  | { kind: 'gone' }
 
 export interface NotificationRow {
   notification: Notification
@@ -73,8 +82,16 @@ function targetFor(state: { schedule: Pick<AppState['schedule'], 'lists'> }, lis
   return { kind: 'list', listId, dateISO: list.dateISO }
 }
 
+function bookingTargetFor(state: { schedule: Pick<AppState['schedule'], 'lists' | 'bookings'> }, bookingId: string): NotificationTarget {
+  const booking = state.schedule.bookings[bookingId]
+  const list = booking === undefined ? undefined : state.schedule.lists[booking.listId]
+  if (booking === undefined || list === undefined || list.removedAtISO !== undefined) return { kind: 'gone' }
+  return { kind: 'booking', bookingId, dateISO: list.dateISO }
+}
+
 function rowOf(state: PoolState, n: Notification): NotificationRow {
-  return { notification: n, text: notificationText(n, state.masters), atISO: n.atISO, by: n.byActor, target: targetFor(state, n.listId) }
+  const target = n.kind === 'bookingMoved' && n.bookingId !== undefined ? bookingTargetFor(state, n.bookingId) : targetFor(state, n.listId)
+  return { notification: n, text: notificationText(n, state.masters), atISO: n.atISO, by: n.byActor, target }
 }
 
 /** Every notification the rule keeps (OQ-79: List moves, no expiry). */
@@ -94,10 +111,10 @@ export function latestNotifications(state: PoolState, n: number): NotificationRo
   return kept(state).sort(compareNewestFirst).slice(0, n).map((x) => rowOf(state, x))
 }
 
-/** The newest notification about a List (the drawer's "Moved here by" line), or undefined. */
+/** The newest notification about a List's own move (the drawer's "Moved here by" line), or undefined. A single Booking's notice is not one. */
 export function latestNotificationForList(state: Pick<AppState, 'notifications'>, listId: string): Notification | undefined {
   return Object.values(state.notifications)
-    .filter((n) => n.listId === listId)
+    .filter((n) => n.kind === 'listMoved' && n.listId === listId)
     .sort(compareNewestFirst)[0]
 }
 
@@ -108,13 +125,106 @@ export function latestNotificationForList(state: Pick<AppState, 'notifications'>
  * office names no colleague, so it never shows here.
  */
 export function movedToMe(state: Pick<AppState, 'notifications'>, anaesthetistId: string, todayISO: string): Notification[] {
-  const fromISO = addDaysISO(todayISO, -(MOVED_TO_ME_DAYS - 1))
   return Object.values(state.notifications)
-    .filter((n) => n.route === 'colleague' && n.toAnaesthetistId === anaesthetistId && n.atISO.slice(0, 10) >= fromISO && n.atISO.slice(0, 10) <= todayISO)
+    .filter((n) => n.kind === 'listMoved' && n.route === 'colleague' && n.toAnaesthetistId === anaesthetistId && inMovedToMeWindow(n.atISO, todayISO))
     .sort(compareNewestFirst)
 }
 
 /** The notice for one List the persona received, if it is in the window (List detail's "Moved to you by" line, Forward Lists' "New"). */
 export function movedToMeForList(state: Pick<AppState, 'notifications'>, anaesthetistId: string, listId: string, todayISO: string): Notification | undefined {
   return movedToMe(state, anaesthetistId, todayISO).find((n) => n.listId === listId)
+}
+
+// ---------------------------------------------------------------------------
+// A single Booking moved to a colleague (catch-up Phase 32a). Read from the
+// move's audit event, not the pool, so the receiver's notice and the office's
+// drawer line show whether or not the mover ticked "Tell the office".
+// ---------------------------------------------------------------------------
+
+/** One single-Booking move, as its `booking.movedToAnaesthetist` audit event records it. */
+export interface BookingMove {
+  auditId: string
+  atISO: string
+  bookingId: string
+  fromListId: string
+  fromAnaesthetistId: string
+  /** The new List created in the receiver's session. */
+  listId: string
+  toAnaesthetistId: string
+  message?: string
+}
+
+function bookingMoveOf(entry: AppState['audit'][number]): BookingMove | undefined {
+  if (entry.action !== 'booking.movedToAnaesthetist') return undefined
+  const before = entry.before as { listId?: unknown; anaesthetistId?: unknown } | undefined
+  const after = entry.after as { createdListId?: unknown; anaesthetistId?: unknown; message?: unknown } | undefined
+  if (typeof before?.listId !== 'string' || typeof before.anaesthetistId !== 'string') return undefined
+  if (typeof after?.createdListId !== 'string' || typeof after.anaesthetistId !== 'string') return undefined
+  return {
+    auditId: entry.id,
+    atISO: entry.atISO,
+    bookingId: entry.entityId,
+    fromListId: before.listId,
+    fromAnaesthetistId: before.anaesthetistId,
+    listId: after.createdListId,
+    toAnaesthetistId: after.anaesthetistId,
+    ...(typeof after.message === 'string' ? { message: after.message } : {}),
+  }
+}
+
+function newestMoveFirst(a: BookingMove, b: BookingMove): number {
+  return b.atISO.localeCompare(a.atISO) || b.auditId.localeCompare(a.auditId)
+}
+
+/**
+ * Bookings moved TO this anaesthetist by a colleague in the last
+ * `MOVED_TO_ME_DAYS` demo days, newest first (US-01.4.7: the receiver's
+ * "Moved to you" notice). A display window: the audit stays.
+ */
+export function bookingsMovedToMe(state: Pick<AppState, 'audit'>, anaesthetistId: string, todayISO: string): BookingMove[] {
+  const out: BookingMove[] = []
+  for (const entry of state.audit) {
+    const move = bookingMoveOf(entry)
+    if (move !== undefined && move.toAnaesthetistId === anaesthetistId && inMovedToMeWindow(move.atISO, todayISO)) out.push(move)
+  }
+  return out.sort(newestMoveFirst)
+}
+
+/** The received Booking's "Moved to you by" notice: the move that put it on her List, still there, inside the window. */
+export function bookingMovedToMe(
+  state: Pick<AppState, 'audit'> & { schedule: Pick<AppState['schedule'], 'bookings'> },
+  bookingId: string,
+  anaesthetistId: string,
+  todayISO: string,
+): BookingMove | undefined {
+  const move = bookingMoveFor(state, bookingId)
+  return move !== undefined && move.toAnaesthetistId === anaesthetistId && inMovedToMeWindow(move.atISO, todayISO) ? move : undefined
+}
+
+/** The audit's single-Booking move events only (a subscription that changes only when a move lands, not on every write). */
+export function bookingMoveEntries(state: Pick<AppState, 'audit'>): AppState['audit'] {
+  return state.audit.filter((e) => e.action === 'booking.movedToAnaesthetist')
+}
+
+/** The newest single-Booking move that put this Booking where it is, if it is still on that List (the received Booking's "Moved to you by" line). */
+export function bookingMoveFor(state: Pick<AppState, 'audit'> & { schedule: Pick<AppState['schedule'], 'bookings'> }, bookingId: string): BookingMove | undefined {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) return undefined
+  let latest: BookingMove | undefined
+  for (const entry of state.audit) {
+    if (entry.entityId !== bookingId) continue
+    const move = bookingMoveOf(entry)
+    if (move !== undefined && (latest === undefined || newestMoveFirst(move, latest) < 0)) latest = move
+  }
+  return latest !== undefined && latest.listId === booking.listId ? latest : undefined
+}
+
+/** The single-Booking moves onto this List whose Booking is still on it, newest first (the Admin drawer's "Booking moved here by" line). */
+export function bookingMovesOntoList(state: Pick<AppState, 'audit'> & { schedule: Pick<AppState['schedule'], 'bookings'> }, listId: string): BookingMove[] {
+  const out: BookingMove[] = []
+  for (const entry of state.audit) {
+    const move = bookingMoveOf(entry)
+    if (move !== undefined && move.listId === listId && state.schedule.bookings[move.bookingId]?.listId === listId) out.push(move)
+  }
+  return out.sort(newestMoveFirst)
 }

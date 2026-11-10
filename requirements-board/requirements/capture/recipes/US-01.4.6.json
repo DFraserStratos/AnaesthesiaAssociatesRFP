@@ -1,6 +1,154 @@
 {
   "id": "US-01.4.6",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 32a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "doer-rule",
+      "app": "web",
+      "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
+      "start": "/web/lists/L-34821-2026-07-21-AM",
+      "states": [
+        {
+          "state": "submit",
+          "caption": "The submit sheet says submitting means she did every procedure on the List, with no extra step",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": "[data-shot=\"submit-doer-note\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"submit-doer-note\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "doer-rule",
+      "app": "web",
+      "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
+      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "states": [
+        {
+          "state": "prepaid",
+          "caption": "Moving a prepaid Booking: the prepaid amount stays as agreed and the new anaesthetist claims it; nothing is recalculated",
+          "steps": [
+            {
+              "scroll": "[data-shot=\"move-booking-action\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-action\"] button"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-receivers\"]"
+            },
+            {
+              "click": "[data-shot=\"move-booking-receiver\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=\"move-booking-honour\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"move-booking-honour\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "doer-rule",
+      "app": "mobile",
+      "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM",
+      "states": [
+        {
+          "state": "submit",
+          "caption": "The submit sheet on the phone carries the same sentence",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": "[data-shot=\"submit-doer-note\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"submit-doer-note\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "doer-rule",
+      "app": "admin",
+      "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
+      "start": "/admin/day/2026-07-22",
+      "setup": [
+        {
+          "goto": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046"
+        },
+        {
+          "scroll": "[data-shot=\"move-booking-action\"]"
+        },
+        {
+          "click": "[data-shot=\"move-booking-action\"] button"
+        },
+        {
+          "wait": "[data-shot=\"move-booking-receivers\"]"
+        },
+        {
+          "fill": "[data-shot=\"move-booking-search\"] input",
+          "value": "whi"
+        },
+        {
+          "click": "[data-shot=\"move-booking-receiver\"][data-anaesthetist-id=\"36208\"]"
+        },
+        {
+          "wait": "[data-shot=\"move-booking-confirm\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=\"move-booking-submit\"] button"
+        },
+        {
+          "wait": "[data-shot=\"move-booking-done\"]"
+        }
+      ],
+      "states": [
+        {
+          "state": "after",
+          "caption": "The receiving List holds the moved Booking; the colleague who does it is the List's anaesthetist, so the payable follows",
+          "steps": [
+            {
+              "click": "[data-slot-id=\"S-36208-2026-07-22-AM\"]"
+            },
+            {
+              "wait": "[data-shot=\"drawer-booking-moved-here\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"drawer-booking-moved-here\"]",
+            "text=\"Lachlan Robinson\""
+          ]
+        }
+      ]
+    }
+  ]
 }

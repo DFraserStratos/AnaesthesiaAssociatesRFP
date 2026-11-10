@@ -162,7 +162,7 @@ export function drSurname(name: string): string {
 }
 
 /** The titled short form ("Ms Reid", "Dr Sharma"): one home in the domain, so the pool's sentence agrees. */
-export { titledSurname } from '../domain/names'
+export { matchesNameQuery, titledSurname } from '../domain/names'
 
 /** "Dr Melanie Souter" -> "MS" (avatar / grid initials, at most two letters). */
 export function initialsOf(name: string): string {

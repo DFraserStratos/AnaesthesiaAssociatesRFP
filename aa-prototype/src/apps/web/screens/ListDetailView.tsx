@@ -154,7 +154,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{subline}</div>
           {moved !== undefined && (
             <div data-shot="list-moved-to-you" style={{ fontSize: 13, color: neutral.slate, marginTop: 6 }}>
-              {movedToYouByLine(moved.notification, moved.fromName)}
+              {movedToYouByLine(moved.atISO, moved.fromName)}
             </div>
           )}
         </div>

@@ -27,10 +27,10 @@ import {
   type RankedCandidate,
 } from '../../../../domain/pairingPreferences'
 import type { PriorityTier } from '../../../../domain/types'
-import { pairingLine, slotTimeRange, titledSurname } from '../../../../shared/format'
+import { matchesNameQuery, pairingLine, slotTimeRange, titledSurname } from '../../../../shared/format'
 import { effectiveSlotTimes } from '../../../../domain/slots'
 import { StatusChip } from '../../../../shared'
-import { Segmented } from '../../../../shared/ui'
+import { NameSearchBox, Segmented } from '../../../../shared/ui'
 import { draftListAvailabilityFor, useAppStore } from '../../../../store'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
@@ -123,9 +123,19 @@ export function DraftListCandidates({
   const tiers = usePriorityTiers()
   const [filter, setFilter] = useState<TierFilter>('all')
   const [reach, setReach] = useState<Reach>('everyone')
+  // The shared type-ahead (catch-up Phase 32a): narrows every group by name after the one ranking, never reorders.
+  const [query, setQuery] = useState('')
   const tierFilter = useMemo(() => (filter === 'all' ? null : new Set<PriorityTier>([Number(filter) as PriorityTier])), [filter])
-  const groups = useDraftListCandidates(listId, requestKey, tierFilter)
-  if (groups === undefined) return null
+  const ranked = useDraftListCandidates(listId, requestKey, tierFilter)
+  if (ranked === undefined) return null
+  const keep = (id: string) => matchesNameQuery(anaesthetists[id]?.name ?? '', query)
+  const groups = {
+    ...ranked,
+    free: ranked.free.filter((c) => keep(c.anaesthetistId)),
+    notPreferred: ranked.notPreferred.filter((c) => keep(c.anaesthetistId)),
+    notAvailable: ranked.notAvailable.filter((c) => keep(c.anaesthetistId)),
+    occupied: ranked.occupied.filter((r) => keep(r.anaesthetistId)),
+  }
 
   const nameOf = (id: string) => surnameFirst(anaesthetists[id]?.name ?? id)
   const surgeonName = groups.surgeonId !== undefined ? surgeons[groups.surgeonId]?.name : undefined
@@ -161,10 +171,11 @@ export function DraftListCandidates({
       <div data-shot="tier-filter">
         <Segmented label="Filter by tier" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
       </div>
+      <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 380, overflow: 'auto', paddingRight: 2 }}>
         {shown === 0 && (
           <div style={{ fontSize: 13, color: neutral.mist }}>
-            {filter === 'all' ? 'No one has this session free.' : `No one in ${TIER_LABELS[Number(filter) as PriorityTier]} for this session.`}
+            {query.trim() !== '' ? 'No anaesthetist matches' : filter === 'all' ? 'No one has this session free.' : `No one in ${TIER_LABELS[Number(filter) as PriorityTier]} for this session.`}
           </div>
         )}
         {groups.free.length > 0 && (

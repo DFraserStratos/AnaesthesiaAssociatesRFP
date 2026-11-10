@@ -75,7 +75,7 @@ export function NotificationsScreen({ onOpen }: { onOpen: (target: NotificationT
                 <td style={{ ...cellStyle, textAlign: 'right' }}>
                   {r.target.kind !== 'gone' && (
                     <button type="button" onClick={() => onOpen(r.target)} style={textActionStyle}>
-                      {r.target.kind === 'draftList' ? `Open ${DRAFT_LIST}` : 'Open List'}
+                      {r.target.kind === 'draftList' ? `Open ${DRAFT_LIST}` : r.target.kind === 'booking' ? 'Open Booking' : 'Open List'}
                     </button>
                   )}
                 </td>

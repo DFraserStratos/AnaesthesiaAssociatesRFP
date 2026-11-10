@@ -472,8 +472,12 @@ export type OwnMoveRoute = 'office' | 'colleague'
 /** Why: a plain move, or the hand-on from marking the session not available (US-01.5.5). */
 export type OwnMoveCause = 'move' | 'unavailable'
 
-/** What a notification is about. One member today; OQ-79's later sources (and 32a's single Booking) add members. */
-export type NotificationKind = 'listMoved'
+/**
+ * What a notification is about. `listMoved`: an anaesthetist moved her own List
+ * (Phase 32, always posted). `bookingMoved`: she moved a single Booking to a
+ * colleague and ticked "Tell the office" (Phase 32a, optional, D58).
+ */
+export type NotificationKind = 'listMoved' | 'bookingMoved'
 
 /**
  * One record in the Admin App's shared notification pool (catch-up Phase 32;
@@ -502,6 +506,10 @@ export interface Notification {
   surgeonId: string
   /** The message the anaesthetist typed, for the office and the colleague. */
   message?: string
+  /** Kind `bookingMoved` only: the Booking moved (`listId` is the new List created for it). */
+  bookingId?: BookingId
+  /** Kind `bookingMoved` only: the patient as "Riley, A." when it moved (a snapshot, like the rest). */
+  patientName?: string
 }
 
 /**

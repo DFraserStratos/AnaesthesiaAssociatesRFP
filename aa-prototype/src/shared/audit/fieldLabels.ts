@@ -107,6 +107,8 @@ export const FIELD_LABELS: Record<string, string> = {
   // Catch-up Phase 32: an anaesthetist's own move.
   route: 'Moved to',
   notificationId: 'Notification',
+  // Catch-up Phase 32a: the List created in the colleague's session for a moved Booking.
+  createdListId: 'New List',
   phoneNotes: 'Phone notes',
   billedAtISO: 'Billed at',
   lists: 'Lists',

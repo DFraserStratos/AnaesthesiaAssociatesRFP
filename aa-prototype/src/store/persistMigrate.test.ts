@@ -223,3 +223,22 @@ describe('the browsable history (catch-up Phase 38a)', () => {
     expect(s.schedule.lists['L-HIST-2026-03-13-AM']).toBeDefined()
   })
 })
+
+describe('the single-Booking move seed (catch-up Phase 32a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards a v27 store without the acceptance beat's Booking, and reseeds with it", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(28)
+    const fresh = freshAppState()
+    const bookings = { ...fresh.schedule.bookings }
+    delete bookings['BK0162']
+    const stale = { ...fresh, schedule: { ...fresh.schedule, bookings } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 27 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.bookings['BK0162']?.listId).toBe('L-31902-2026-07-31-AM')
+  })
+})

@@ -110,6 +110,10 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
             change these bookings until the office authorises the list; the office sees any change
             at review.
           </div>
+          {/* The doer rule (catch-up Phase 32a, US-01.4.6): one sentence, no extra step. */}
+          <div data-shot="submit-doer-note" style={{ fontSize: 14, lineHeight: '21px', color: neutral.ink }}>
+            Submitting says you did every procedure on this List. If a colleague is doing one, move it to them first.
+          </div>
           {error !== null && (
             <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
               {error}

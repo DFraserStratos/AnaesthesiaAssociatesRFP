@@ -128,7 +128,7 @@ export function AdminDayRoute() {
           onOpenConflicts={() => navigate('/admin/conflicts')}
           onOpenDraftList={ctx.onOpenDraftList}
           onSeeAllDraftLists={() => navigate('/admin/draft-lists')}
-          onOpenNotification={(target) => openNotificationTarget(target, ctx)}
+          onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
         />
       </div>
@@ -253,16 +253,26 @@ export function AdminDraftListsRoute() {
   return <DraftListsScreen actor={actor} onOpenDraftList={onOpenDraftList} onOpenList={onOpenList} />
 }
 
-/** A notification opens its List in the Day drawer, or its Draft List's drawer (catch-up Phase 32). */
-function openNotificationTarget(target: NotificationTarget, ctx: Pick<AdminOutletContext, 'onOpenList' | 'onOpenDraftList'>) {
+/**
+ * A notification opens its List in the Day drawer, or its Draft List's drawer
+ * (catch-up Phase 32); a single Booking moved opens the Booking's detail on
+ * its day (catch-up Phase 32a).
+ */
+function openNotificationTarget(
+  target: NotificationTarget,
+  ctx: Pick<AdminOutletContext, 'onOpenList' | 'onOpenDraftList'>,
+  openBooking: (dateISO: string, bookingId: string) => void,
+) {
   if (target.kind === 'list') ctx.onOpenList(target.listId)
   else if (target.kind === 'draftList') ctx.onOpenDraftList(target.listId)
+  else if (target.kind === 'booking') openBooking(target.dateISO, target.bookingId)
 }
 
 /** The shared notification pool (catch-up Phase 32; US-13.8.1) — `/admin/notifications` (`?page=`). */
 export function AdminNotificationsRoute() {
   const ctx = useAdminOutlet()
-  return <NotificationsScreen onOpen={(target) => openNotificationTarget(target, ctx)} />
+  const navigate = useNavigate()
+  return <NotificationsScreen onOpen={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))} />
 }
 
 export function AdminBillingRoute() {

@@ -4,6 +4,7 @@ import { isISODate } from '../../shell/routeParams'
 import { useAppStore } from '../../store'
 import { isAssignedList } from '../../domain/draftLists'
 import { mondayOf, shiftWeeks } from '../../shared/format'
+import { useOwnBookingInView } from '../../shared/flows'
 import {
   AccountsScreen,
   AvailabilityGrid,
@@ -150,13 +151,9 @@ export function WebBookingDetailRoute() {
   const { state } = useLocation()
   const { from, listFrom } = lookbackState(state)
   // Her own Bookings only (catch-up Phase 38a): a Booking on a colleague's List
-  // or a Draft List is not found here, as with List detail.
-  const exists = useAppStore((s) => {
-    const booking = s.schedule.bookings[bookingId]
-    if (booking === undefined) return false
-    const l = s.schedule.lists[booking.listId]
-    return isAssignedList(l) && l.anaesthetistId === anaesthetistId
-  })
+  // or a Draft List is not found here, as with List detail; one she has just
+  // moved to a colleague stays until she leaves its done step (Phase 32a).
+  const exists = useOwnBookingInView(bookingId, anaesthetistId)
   const back = () =>
     from !== undefined
       ? navigate(from, listFrom !== undefined ? { state: { from: listFrom } } : undefined)

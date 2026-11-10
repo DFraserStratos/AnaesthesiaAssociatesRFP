@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { accent, brand, neutral } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
 import { resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
-import { initialsOf, locationName } from '../../../shared/format'
+import { initialsOf, locationName, matchesNameQuery } from '../../../shared/format'
+import { NameSearchBox } from '../../../shared/ui'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { useNavigate } from 'react-router-dom'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
@@ -80,10 +81,9 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
     return { rows: all, freeCount: count }
   }, [listsRecord, slotsRecord, appSettings, slotStatuses, anaesthetists, selectedDate])
 
-  const q = query.trim().toLowerCase()
   const visible = rows
     .filter((r) => (filter === 'free' ? r.hasFree : true))
-    .filter((r) => q === '' || r.name.toLowerCase().includes(q))
+    .filter((r) => matchesNameQuery(r.name, query))
 
   const selLong = format(parseISO(selectedDate), 'EEEE d MMMM')
 
@@ -129,22 +129,18 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
         </div>
       </div>
 
-      <MovedToYouPanel anaesthetistId={anaesthetistId} onOpenList={(id) => navigate(`/web/lists/${id}`)} />
+      <MovedToYouPanel
+        anaesthetistId={anaesthetistId}
+        onOpenList={(id) => navigate(`/web/lists/${id}`)}
+        onOpenBooking={(listId, bookingId) => navigate(`/web/lists/${listId}/bookings/${bookingId}`)}
+      />
 
       {/* Filters + search + legend */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>All anaesthetists</FilterChip>
           <FilterChip active={filter === 'free'} onClick={() => setFilter('free')}>Free only · {freeCount}</FilterChip>
-          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-            <Search size={14} aria-hidden style={{ position: 'absolute', left: 10, color: neutral.mist }} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name"
-              style={{ height: 36, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, padding: '0 14px 0 30px', fontFamily: 'inherit', fontSize: 13, color: neutral.ink, width: 160 }}
-            />
-          </div>
+          <NameSearchBox value={query} onChange={setQuery} label="Search name" size="pill" shot="availability-search" />
         </div>
         <StatusChipsLegend />
       </div>

@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "override",
-          "caption": "Price change on a submitted Booking: a dollar adjustment",
+          "caption": "Price override on a submitted Booking: a dollar adjustment with its reason",
           "steps": [
             {
               "click": "role=button[name=\"Price override\"]"

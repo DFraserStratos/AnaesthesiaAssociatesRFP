@@ -31,6 +31,10 @@
  * (St George's request is Draft List LD-001, which takes no session), and the
  * two Bookings on Draft List LD-002 (BK0160, BK0161) follow every other seeded
  * Booking. No other Booking, List id or placement moved.
+ *
+ * Catch-up Phase 32a added one row to `bookings` by hand, nothing else: the
+ * acceptance beat's Booking BK0162 on Dr Beaumont's Fri 31 Jul AM List
+ * (`seed/bookingMoves.ts`), appended after every other seeded Booking.
  */
 
 import { describe, expect, it } from 'vitest'

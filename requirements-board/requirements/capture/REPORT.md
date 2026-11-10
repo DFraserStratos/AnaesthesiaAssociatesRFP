@@ -6,22 +6,20 @@ Scope: every story plus every feature with no stories (299 items, 299 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 150 | 136 |
+| Captured | 152 | 138 |
 | Partial | 54 | 54 |
-| Absent from the app | 61 | 61 |
+| Absent from the app | 59 | 59 |
 | Failed recipe | 0 | 0 |
 | No recipe | 48 | 48 |
 
-525 screenshots. Items per app: admin 131, web 67, mobile 59, simulator 35.
+538 screenshots. Items per app: admin 133, web 69, mobile 61, simulator 35.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (61)
+## Absent from the app (59)
 
-- **US-01.4.6** The List's anaesthetist did its procedures · Not built yet: catch-up Phase 32a builds this.
-- **US-01.4.7** Anaesthetist moves a single Booking · Not built yet: catch-up Phase 32a builds this.
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
 - **US-02.1.5** Automatic sync from St George's and Southern Cross · Not built yet: catch-up Phase 34 builds this.
 - **US-02.3.2** Save Booking changes explicitly · Not built yet: catch-up Phase 35 builds this.
@@ -190,7 +188,7 @@ None.
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (150)
+## Captured (152)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -222,6 +220,8 @@ None.
 - **US-01.4.2** Availability finder · admin, web, mobile
 - **US-01.4.3** Anaesthetist moves their own List · web, mobile
 - **US-01.4.5** No preference warning when an anaesthetist moves their own List · web, mobile
+- **US-01.4.6** The List's anaesthetist did its procedures · web, mobile, admin
+- **US-01.4.7** Anaesthetist moves a single Booking · web, mobile, admin
 - **US-01.5.1** Hospital holiday calendar · admin
 - **US-01.5.2** Conflict flagging · admin
 - **US-01.5.3** Anaesthetist availability calendar · mobile, web

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, XCircle } from 'lucide-react'
+import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
+import { bookingMoveRefusal } from '../../domain/bookingMoves'
 import {
   validateBookingForBilling,
   type BillingValidationFailure,
@@ -30,8 +31,11 @@ import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../att
 import {
   CancelBookingSheet,
   EditPatientSheet,
+  MoveBookingToColleagueSheet,
   EditProcedureSheet,
   RemoveProcedureSheet,
+  movedToYouByLine,
+  useBookingMovedToMeNotice,
 } from '../flows'
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
@@ -151,6 +155,10 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const [showValidation, setShowValidation] = useState(false)
   const [completeError, setCompleteError] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  /** Move to a colleague (Phase 32a). Held here, outside the gated actions, so the done state outlives the move. */
+  const [moveOpen, setMoveOpen] = useState(false)
+  // A Booking a colleague handed her (Phase 32a): "Moved to you by Dr Souter on Tue 21 Jul", for the notice window.
+  const movedToMe = useBookingMovedToMeNotice(bookingId, actor.role === 'anaesthetist' ? actor.anaesthetistId : undefined)
   const [overlay, setOverlay] = useState(false)
   const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
@@ -168,6 +176,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   )
 
   const cancelled = booking?.cancellation !== undefined
+  // Leaving after Move to a colleague is explicit: once a move has committed,
+  // closing the sheet returns to her List (no effect, so no navigation loop
+  // while the slide stack keeps this layer mounted).
+  const [movedByHer, setMovedByHer] = useState(false)
+  // Mounted from the first open (and then kept, so the done state outlives the move), not on every Booking screen.
+  const [moveMounted, setMoveMounted] = useState(false)
 
   // Live validation (ctx assembled as billingContextForBooking does). Failures
   // render per-procedure anchors only after the showValidation latch.
@@ -309,7 +323,16 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // would refuse, nor hides one it allows: the office edits ACTIVE and SUBMITTED
   // (never AUTHORISED), and so does the anaesthetist on their own Lists until the
   // office authorises them (catch-up Phase 38a, RV-19, D63; the last change stands).
+  // editRefusal also refuses a Booking on a colleague's List (one she has just
+  // moved to them, or reached by URL).
   const canEdit = !cancelled && editRefusal(actor, list) === null
+  // Move to a colleague (catch-up Phase 32a, US-01.4.7): the anaesthetist's own
+  // non-cancelled Booking on her ACTIVE List dated today or later. The office
+  // keeps its own Move in Admin.
+  const canMove =
+    actor.role === 'anaesthetist' &&
+    actor.source !== 'integration' &&
+    bookingMoveRefusal({ lists: listsRecord, bookings: { [bookingId]: booking } }, bookingId, actor.anaesthetistId, todayISO) === null
   const canCapture = canEdit && !booking.completed
   const isOffice = actor.role === 'office'
   const badge = nhiBadge(patient?.nhi)
@@ -453,6 +476,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
 
   const hasBanners =
     warnings.length > 0 ||
+    movedToMe !== undefined ||
     cancelled ||
     booking.bookingType === 'postOpAddendum' ||
     prepaymentStatus === 'paid' ||
@@ -475,6 +499,11 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           ) : null
         }
       />
+      {movedToMe !== undefined && (
+        <div data-shot="booking-moved-to-you" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, color: neutral.ink, borderRadius: radius.card, padding: '10px 12px', fontSize: 13 }}>
+          {movedToYouByLine(movedToMe.atISO, movedToMe.fromName)}
+        </div>
+      )}
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
           <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
@@ -637,6 +666,23 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const actions = (
     <>
       {/* Actions */}
+      {canMove && (
+        <div data-shot="move-booking-action" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+          <Button
+            variant="secondary"
+            block
+            onClick={() => {
+              setMoveMounted(true)
+              setMoveOpen(true)
+            }}
+          >
+            <Users size={16} aria-hidden /> Move to a colleague
+          </Button>
+          <span style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>
+            Hand this Booking to a colleague who is free that session. If someone else is doing it, move it to them before the procedure.
+          </span>
+        </div>
+      )}
       {canEdit && (
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
           <button
@@ -719,6 +765,22 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       />
 
       <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'booking', id: bookingId }} actor={actor} onClose={() => setSheet('none')} />
+      {actor.role === 'anaesthetist' && moveMounted && (
+        <MoveBookingToColleagueSheet
+          open={moveOpen}
+          actor={actor}
+          bookingId={bookingId}
+          onClose={() => {
+            setMoveOpen(false)
+            if (movedByHer) onBack()
+          }}
+          onBackToList={() => {
+            setMoveOpen(false)
+            onBack()
+          }}
+          onMoved={() => setMovedByHer(true)}
+        />
+      )}
       <CancelBookingSheet open={sheet === 'cancel'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />

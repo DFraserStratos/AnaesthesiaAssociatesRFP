@@ -10,7 +10,8 @@ import { authoriseList } from '../../store/lifecycle'
 import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
 import { clearWarning, warningsForBooking } from '../../store/warnings'
-import { OFFICE_ACTOR } from '../../store/demoActors'
+import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
+import { setAvailabilityRange } from '../../store/availabilityActions'
 import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { SURGEON_PDFS } from '../../domain/integrations'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
@@ -364,6 +365,78 @@ describe('an anaesthetist moves her own List (catch-up Phase 32)', () => {
     const empty = { ...state, schedule: { ...state.schedule, lists: {} } }
     expect(byId(ADMIN).disabledReason(empty, ctxFor('/admin/notifications'), 'one')).toBe('No List on the schedule fits')
     expect(byId(PWA).disabledReason(empty, ctxFor('/mobile/availability'))).toBe('No colleague List fits one of your free sessions')
+  })
+})
+
+describe('a colleague hands a single Booking over (catch-up Phase 32a)', () => {
+  const ADMIN = 'colleague-hands-booking-to-souter'
+  const PWA = 'colleague-moves-booking-to-me'
+
+  it('has unique ids and labels with no dash but the hyphen', () => {
+    expect(DEMO_TRIGGERS.filter((t) => t.id === ADMIN || t.id === PWA)).toHaveLength(2)
+    for (const t of [byId(ADMIN), byId(PWA)]) expect(`${t.label} ${t.description}`).not.toMatch(/[–—]/)
+  })
+
+  it('shows the Admin entry in the bar on Admin Day only, never on the PWA', () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/day/2026-07-21')).toContain(ADMIN)
+    expect(ids(api, '/admin/notifications')).not.toContain(ADMIN)
+    expect(ids(api, '/admin/day/2026-07-21', 'pwa')).not.toContain(ADMIN)
+    expect(ids(api, '/mobile/lists', 'pwa')).not.toContain(ADMIN)
+  })
+
+  it('shows the stand-in on the PWA on the mobile Lists routes, with its badge, never in the bar', () => {
+    const api = createAppStore()
+    for (const path of ['/mobile/lists', '/mobile/lists/L-34821-2026-07-22-AM', '/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046']) {
+      expect(ids(api, path, 'pwa')).toContain(PWA)
+      expect(ids(api, path)).not.toContain(PWA)
+    }
+    expect(ids(api, '/mobile/availability', 'pwa')).not.toContain(PWA)
+    expect(byId(PWA).badge).toBe('colleague-stand-in')
+  })
+
+  it('the Admin entry makes exactly one move, with the office notice, a new List on Souter\'s row and a plain message', () => {
+    const api = createAppStore()
+    const ctx = ctxFor('/admin/day/2026-07-21', { dateISO: '2026-07-21' })
+    expect(byId(ADMIN).disabledReason(api.getState(), ctx)).toBeNull()
+    const out = byId(ADMIN).run(api, ctx)
+    expect(out.ok).toBe(true)
+    expect(out.message).toBe("Dr Hughes moved a Booking (Wed 22 Jul PM, Christchurch Eye Surgery) to Dr Souter. A new List was created.")
+    const s = api.getState()
+    expect(s.audit.filter((a) => a.action === 'booking.movedToAnaesthetist')).toHaveLength(1)
+    expect(Object.values(s.notifications).map((n) => n.kind)).toEqual(['bookingMoved'])
+    expect(s.schedule.bookings['BK0140']?.listId).toBe(Object.values(s.schedule.lists).find((l) => l.state === 'ACTIVE' && l.slotId === 'S-34821-2026-07-22-PM')?.id)
+    // Its only candidate is used: nothing else fits a session she is free in.
+    expect(byId(ADMIN).disabledReason(api.getState(), ctx)).toBe('No colleague Booking fits a session Dr Souter is free in')
+  })
+
+  it('the stand-in lists its candidates, runs one as the colleague, and names no preference', () => {
+    const api = createAppStore()
+    const t = byId(PWA)
+    const ctx = ctxFor('/mobile/lists')
+    const choices = t.choices!(api.getState(), ctx)
+    expect(choices).toEqual([{ id: 'BK0140', label: 'Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery' }])
+    expect(t.defaultChoice!(api.getState(), ctx)).toBe('BK0140')
+    const out = t.run(api, ctx, 'BK0140')
+    expect(out.ok).toBe(true)
+    expect(out.message).not.toMatch(/Draft List|slot|prefer|tier|[–—]/i)
+    expect(api.getState().audit.filter((a) => a.action === 'booking.movedToAnaesthetist')).toHaveLength(1)
+    expect(Object.keys(api.getState().notifications)).toEqual([])
+  })
+
+  it('offers the acceptance beat only after Souter sets Fri 31 AM available herself; no trigger sets it', () => {
+    const api = createAppStore()
+    const t = byId(PWA)
+    const ctx = ctxFor('/mobile/lists')
+    const slotBefore = api.getState().schedule.slots['S-34821-2026-07-31-AM']
+    expect(t.choices!(api.getState(), ctx).map((c) => c.id)).not.toContain('BK0162')
+    t.run(api, ctx, 'BK0140')
+    expect(api.getState().schedule.slots['S-34821-2026-07-31-AM']).toEqual(slotBefore)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No colleague Booking fits a session you are free in. Set a session available first.')
+    expect(setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: '34821', fromISO: '2026-07-31', toISO: '2026-07-31', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
+    expect(t.choices!(api.getState(), ctx).map((c) => c.id)).toEqual(['BK0162'])
+    expect(t.run(api, ctx, 'BK0162').ok).toBe(true)
+    expect(api.getState().schedule.lists[api.getState().schedule.bookings['BK0162']!.listId]?.anaesthetistId).toBe('34821')
   })
 })
 

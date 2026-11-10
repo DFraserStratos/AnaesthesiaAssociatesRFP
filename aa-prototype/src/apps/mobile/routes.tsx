@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore, useToday } from '../../store'
-import { AddBookingFlow, type AddBookingMode } from '../../shared/flows'
+import { AddBookingFlow, useOwnBookingInView, type AddBookingMode } from '../../shared/flows'
 import { useDemoTriggerMemory } from '../../shared/demoTriggers/memory'
 import { SlideStack, type SlideLayer } from './components'
 import {
@@ -98,12 +98,10 @@ export function MobileListsRoute() {
     return l === undefined || l.state === 'DRAFT' || l.anaesthetistId !== anaesthetistId
   })
   // Her own Bookings only (catch-up Phase 38a, as on the web): a Booking on a
-  // colleague's List, or moved to one, falls back to the List like a stale id.
-  const bookingMissing = useAppStore((s) => {
-    if (urlBookingId === null) return false
-    const booking = s.schedule.bookings[urlBookingId]
-    return booking === undefined || s.schedule.lists[booking.listId]?.anaesthetistId !== anaesthetistId
-  })
+  // colleague's List falls back to the List like a stale id; one she has just
+  // moved to a colleague stays until she leaves its done step (Phase 32a).
+  const bookingInView = useOwnBookingInView(urlBookingId, anaesthetistId)
+  const bookingMissing = urlBookingId !== null && !bookingInView
   // A pre-Phase-15 `/cards/` link: hand it to the `/bookings/` URL first.
   if (legacyBookingPath(pathname) !== null) return <LegacyBookingRedirect />
   if (listMissing) return <Navigate to="/mobile/lists" replace />

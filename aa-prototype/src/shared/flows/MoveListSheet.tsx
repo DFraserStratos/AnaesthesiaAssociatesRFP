@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Building2, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { Building2, ChevronRight, Users } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import {
   markUnavailableAndMoveList,
@@ -13,11 +13,12 @@ import {
 import { pushTargets, VACATED_SESSION_CHOICES, VACATED_SESSION_DEFAULT, type PushTarget } from '../../domain/listMoves'
 import { isOpenForBooking, statusFor } from '../../domain/slotStatus'
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
-import { drSurname, initialsOf, locationName } from '../format'
+import { drSurname, locationName, matchesNameQuery } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
-import { Button, TextArea, TickBadge } from '../ui'
+import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
+import { BackLink, Initials } from './moveSheetParts'
 
 interface MoveListSheetProps {
   open: boolean
@@ -63,6 +64,8 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
   const [targetSlotId, setTargetSlotId] = useState<string | undefined>(toSlotId)
   const [vacated, setVacated] = useState<SlotStatusKey>(VACATED_SESSION_DEFAULT)
   const [message, setMessage] = useState('')
+  /** The shared type-ahead (Phase 32a, US-01.4.2): narrows the free colleagues by name, never reorders them. */
+  const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   // What the header shows: the List as it was when the sheet opened (it moves on submit).
   const [snapshot, setSnapshot] = useState<AssignedList | undefined>(undefined)
@@ -77,6 +80,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
     setStep(toSlotId !== undefined ? 'confirm' : 'where')
     setVacated(VACATED_SESSION_DEFAULT)
     setMessage('')
+    setQuery('')
     setError(null)
     setDone(null)
     // Re-initialise only when it opens on a new List or target.
@@ -88,6 +92,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
     () => (step === 'done' ? [] : pushTargets(input, listId)),
     [input, listId, step],
   )
+  const shownTargets = targets.filter((t) => matchesNameQuery(t.name, query))
 
   if (list === undefined) return null
 
@@ -187,10 +192,12 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
           <>
             <BackLink onClick={() => setStep('where')}>Where it goes</BackLink>
             {header}
+            <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-search" />
             <div style={{ fontSize: 13, color: neutral.slate }}>Free on {dayLine}</div>
             <ul data-shot="move-colleagues" aria-label={`Free on ${dayLine}`} style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', maxHeight: variant === 'web' ? 360 : undefined, overflowY: 'auto' }}>
               {targets.length === 0 && <li style={{ padding: 14, fontSize: 13, color: neutral.slate }}>No colleague is free in this session.</li>}
-              {targets.map((t, i) => (
+              {targets.length > 0 && shownTargets.length === 0 && <li style={{ padding: 14, fontSize: 13, color: neutral.slate }}>No free colleague matches</li>}
+              {shownTargets.map((t, i) => (
                 <li key={t.anaesthetistId} style={{ display: 'flex' }}>
                 <button
                   type="button"
@@ -344,23 +351,6 @@ function ChoiceRow({ icon, title, line, onClick, disabled = false, shot }: { ico
       </span>
       {!disabled && <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />}
     </button>
-  )
-}
-
-function BackLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      <ChevronLeft size={15} strokeWidth={2.4} aria-hidden /> {children}
-    </button>
-  )
-}
-
-/** A colleague's initials in a neutral disc (no tint that could read as a mark). */
-function Initials({ name, size = 36 }: { name: string; size?: number }) {
-  return (
-    <span aria-hidden style={{ width: size, height: size, borderRadius: 999, background: neutral.sunken, color: neutral.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size > 40 ? 14 : 12, fontWeight: 700, flex: 'none' }}>
-      {initialsOf(name)}
-    </span>
   )
 }
 

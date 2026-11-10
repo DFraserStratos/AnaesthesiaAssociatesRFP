@@ -21,12 +21,15 @@
 
 import { isClosedKey, isOpenForBooking, statusFor } from '../domain/slotStatus'
 import { ownMoveRefusal, VACATED_SESSION_DEFAULT } from '../domain/listMoves'
+import { bookingMoveRefusal, bookingPlacement } from '../domain/bookingMoves'
+import { surnameCommaInitial } from '../domain/names'
 import type { AssignedList, OwnMoveCause, OwnMoveRoute, SlotStatusKey } from '../domain/types'
 import { clockISO, mutate, ok, refuse, type Actor, type DomainPatch, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { detachListToDraft, moveListToSlotCore, vacateSlot } from './slotActions'
+import { detachListToDraft, moveListToSlotCore, placeListOnSlot, vacateSlot } from './slotActions'
+import { reassignBookingCore } from './lifecycle'
 import { replacedStatusRefusal, statusRefusal } from './availabilityActions'
-import { listInSlot, moveInputOf } from './selectors'
+import { bookingMoveInputOf, listInSlot, moveInputOf } from './selectors'
 import { postNotification } from './notifications'
 
 export interface OwnMoveResult {
@@ -138,8 +141,9 @@ function ownMoveCore(
     ...(options.message !== undefined ? { message: options.message } : {}),
   })
 
-  // The one from/to/by/when event of the move. PHASE 41 SEAM: the payable's
-  // payee repoint for a moved prepaid Booking (OQ-80's default, D38) hangs here.
+  // The one from/to/by/when event of the move. Nothing hangs on it for money:
+  // a prepaid Booking's payable is the AA Holding account, so a move changes
+  // nothing in the ledger and nothing is repointed (D38, OQ-80; Phase 32a).
   const ownerMove: MutationMeta = {
     entityType: 'list',
     entityId: listId,
@@ -161,19 +165,26 @@ function ownMoveCore(
   })
 }
 
-function commit(api: AppStoreApi, actor: Actor, listId: string, route: OwnMoveRoute, options: OwnMoveCoreOptions): Outcome<OwnMoveResult> {
-  const preflight = ownMoveCore(api.getState(), actor, listId, route, options)
+type MoveCore<R> = (state: AppState) => Outcome<{ patch: DomainPatch; metas: MutationMeta[]; result: R }>
+
+/** Run a move core as a preflight (refusals leave the store untouched), then once inside one `mutate()` commit. */
+function commitCore<R>(api: AppStoreApi, actor: Actor, label: string, core: MoveCore<R>): Outcome<R> {
+  const preflight = core(api.getState())
   if (!preflight.ok) return preflight
   let result = preflight.value.result
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    const core = ownMoveCore(s, actor, listId, route, options)
-    if (!core.ok) throw new Error(`ownMoveCore: ${core.message}`)
-    metas.push(...core.value.metas)
-    result = core.value.result
-    return core.value.patch
+    const run = core(s)
+    if (!run.ok) throw new Error(`${label}: ${run.message}`)
+    metas.push(...run.value.metas)
+    result = run.value.result
+    return run.value.patch
   })
   return ok(result)
+}
+
+function commit(api: AppStoreApi, actor: Actor, listId: string, route: OwnMoveRoute, options: OwnMoveCoreOptions): Outcome<OwnMoveResult> {
+  return commitCore(api, actor, 'ownMoveCore', (s) => ownMoveCore(s, actor, listId, route, options))
 }
 
 export interface OwnMoveInput {
@@ -266,5 +277,137 @@ export function markUnavailableAndMoveList(
     vacatedStatus: statusKey,
     cause: 'unavailable',
     ...(message !== undefined ? { message } : {}),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// A single Booking (catch-up Phase 32a; US-01.4.7, US-01.4.6, DM-42; OQ-85
+// answered, D61; D7, D38, D44, D54, D58)
+// ---------------------------------------------------------------------------
+
+export interface BookingMoveOptions {
+  /** Optional words for the colleague and the office (kept on the move's audit event). */
+  message?: string
+  /** "Tell the office": post one row to the shared pool (off by default; D58's optional source). */
+  tellOffice?: boolean
+}
+
+export interface BookingMoveResult {
+  /** The List the Booking left (it stays, even if now empty). */
+  listId: string
+  /** The new List created for it in the receiver's session. */
+  createdListId: string
+  toAnaesthetistId: string
+  /** Only when the mover ticked "Tell the office". */
+  notificationId?: string
+}
+
+/**
+ * An anaesthetist hands one Booking to a colleague free in its day and session
+ * (US-01.4.7). It is also the doer rule (US-01.4.6): whoever submits a List did
+ * every procedure on it, so a Booking a colleague does is moved to them first.
+ * There is no second "move to the one who did it" path.
+ *
+ * - AT ONCE (D7): one `mutate()` commit; no acceptance, no confirmation.
+ * - ALWAYS A NEW LIST (D61): Phase 28's `placeListOnSlot` creates it in the
+ *   receiver's free, empty session, copying the source List's hospital, surgeon
+ *   and kind, even for one Booking. Never into an existing List. The source
+ *   List stays, even if empty.
+ * - ONE EVENT: the List's own `list.create`, and one
+ *   `booking.movedToAnaesthetist` (no `booking.reassign`).
+ * - OPTIONAL NOTICE (D58): one pool row only when `tellOffice`. The receiver's
+ *   notice reads the audit event, so it shows either way.
+ * - NO PREFERENCE (D44, D54): nothing read, warned or acknowledged.
+ * - NO MONEY (D38, US-06.3.5, US-06.5.4): the payable follows by derivation
+ *   (the List's owner); no payee or price is written; no prepayment re-check,
+ *   invoice, ledger pair or Xero record is read or touched. A prepaid
+ *   Booking's payable is the AA Holding account: nothing moves, and the new
+ *   anaesthetist claims the prepaid amount. No hook.
+ */
+export function moveBookingToAnaesthetist(
+  api: AppStoreApi,
+  actor: Actor,
+  bookingId: string,
+  toAnaesthetistId: string,
+  options: BookingMoveOptions = {},
+): Outcome<BookingMoveResult> {
+  return commitCore(api, actor, 'bookingMoveCore', (s) => bookingMoveCore(s, actor, bookingId, toAnaesthetistId, options))
+}
+
+function bookingMoveCore(
+  state: AppState,
+  actor: Actor,
+  bookingId: string,
+  toAnaesthetistId: string,
+  options: BookingMoveOptions,
+): Outcome<{ patch: DomainPatch; metas: MutationMeta[]; result: BookingMoveResult }> {
+  if (actor.role !== 'anaesthetist' || actor.source === 'integration' || actor.anaesthetistId === undefined) {
+    return refuse('ownerOnly', "Only the Booking's anaesthetist moves it this way. The office uses Move on the Booking in Admin.")
+  }
+  const input = bookingMoveInputOf(state)
+  const refusal = bookingMoveRefusal(input, bookingId, actor.anaesthetistId, state.clock.todayISO)
+  if (refusal !== null) return refuse(refusal.code, refusal.message)
+  const placement = bookingPlacement(input, bookingId, toAnaesthetistId)
+  if (!placement.ok) return refuse(placement.code, placement.message)
+
+  const booking = state.schedule.bookings[bookingId]!
+  const source = state.schedule.lists[booking.listId] as AssignedList
+  const slot = state.schedule.slots[placement.slotId]!
+  const atISO = clockISO(state.clock)
+
+  const placed = placeListOnSlot(state.counters, slot, { kind: source.kind, hospitalId: source.hospitalId, surgeonId: source.surgeonId })
+  const listsWithNew = { ...state.schedule.lists, [placed.list.id]: placed.list }
+  const schedule = reassignBookingCore({ ...state.schedule, lists: listsWithNew }, bookingId, placed.list.id)
+
+  const message = options.message?.trim() ?? ''
+  let notifications = state.notifications
+  let counters = placed.counters
+  let notificationId: string | undefined
+  if (options.tellOffice === true) {
+    const patient = state.masters.patients[booking.patientId]
+    const post = postNotification(
+      { notifications, counters },
+      {
+        kind: 'bookingMoved',
+        atISO,
+        byActor: actor.who,
+        listId: placed.list.id,
+        bookingId,
+        ...(patient !== undefined ? { patientName: surnameCommaInitial(patient.name) } : {}),
+        route: 'colleague',
+        cause: 'move',
+        fromAnaesthetistId: source.anaesthetistId,
+        toAnaesthetistId,
+        dateISO: source.dateISO,
+        session: source.session,
+        hospitalId: source.hospitalId,
+        surgeonId: source.surgeonId,
+        ...(message !== '' ? { message } : {}),
+      },
+    )
+    notifications = post.notifications
+    counters = post.counters
+    notificationId = post.id
+  }
+
+  // The one from/to/by/when event of the move. D38: a prepaid Booking's payable
+  // is the AA Holding account, so nothing here touches money and no hook runs.
+  const moved: MutationMeta = {
+    entityType: 'booking',
+    entityId: bookingId,
+    action: 'booking.movedToAnaesthetist',
+    before: { listId: source.id, anaesthetistId: source.anaesthetistId },
+    after: {
+      listId: placed.list.id,
+      anaesthetistId: toAnaesthetistId,
+      createdListId: placed.list.id,
+      ...(message !== '' ? { message } : {}),
+      ...(notificationId !== undefined ? { notificationId } : {}),
+    },
+  }
+  return ok({
+    patch: { schedule, counters, ...(notificationId !== undefined ? { notifications } : {}) },
+    metas: [placed.meta, moved],
+    result: { listId: source.id, createdListId: placed.list.id, toAnaesthetistId, ...(notificationId !== undefined ? { notificationId } : {}) },
   })
 }

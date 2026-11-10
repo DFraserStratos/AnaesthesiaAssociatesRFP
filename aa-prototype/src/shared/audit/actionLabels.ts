@@ -67,6 +67,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'list.phoneNote': 'Phone note logged',
   // Catch-up Phase 32: an anaesthetist moves her own List (to the office or a colleague).
   'list.ownerMove': 'List moved by its anaesthetist',
+  // Catch-up Phase 32a: an anaesthetist hands one Booking to a colleague (a new List for them).
+  'booking.movedToAnaesthetist': 'Booking moved to a colleague',
   'list.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
 
   // --- Sessions (catch-up Phase 28). A Slot's audit codes say "session", as

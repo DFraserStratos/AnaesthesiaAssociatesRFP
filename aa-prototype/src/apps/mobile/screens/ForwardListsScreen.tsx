@@ -19,7 +19,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronUp } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
-import { useMovedToMe } from '../../../shared/flows'
+import { useBookingsMovedToMe, useMovedToMe } from '../../../shared/flows'
 import type { AssignedList, Booking, DisplayKey } from '../../../domain/types'
 import { hasLeftMainView, listProgress } from '../../../domain/listProgress'
 import { isAssignedList } from '../../../domain/draftLists'
@@ -117,7 +117,9 @@ export function ForwardListsScreen({
   const appSettings = useAppStore((s) => s.appSettings)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
   const movedToMeList = useMovedToMe(anaesthetistId)
-  const movedToMeIds = useMemo(() => new Set(movedToMeList.map((n) => n.listId)), [movedToMeList])
+  // A List made for a single Booking a colleague handed her (Phase 32a) is new to her too.
+  const bookingsMovedToMe = useBookingsMovedToMe(anaesthetistId)
+  const movedToMeIds = useMemo(() => new Set([...movedToMeList.map((n) => n.listId), ...bookingsMovedToMe.map((m) => m.listId)]), [movedToMeList, bookingsMovedToMe])
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)

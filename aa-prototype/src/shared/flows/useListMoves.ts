@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { isAssignedList } from '../../domain/draftLists'
 import { isMovableByOwner, movableListsFor, pushTargets, type ListMoveInput } from '../../domain/listMoves'
 import { addDaysISO } from '../../domain/clock'
 import type { AssignedList, Notification, Session } from '../../domain/types'
-import { movedToMe, movedToMeForList, useAppStore, useToday } from '../../store'
+import { useShallow } from 'zustand/react/shallow'
+import { bookingMovedToMe, bookingMoveEntries, bookingsMovedToMe, movedToMe, movedToMeForList, useAppStore, useToday, type AppState, type BookingMove } from '../../store'
 
 /** The slices a move reads, memoised on exactly those four (not every schedule edit). */
 export function useMoveInput(): ListMoveInput {
@@ -76,14 +78,76 @@ export function useMovedToMe(anaesthetistId: string): Notification[] {
   return useMemo(() => movedToMe({ notifications }, anaesthetistId, todayISO), [notifications, anaesthetistId, todayISO])
 }
 
-/** The notice for one List a colleague moved to her, inside the window (List detail's "Moved to you by"), and who moved it. */
-export function useMovedToMeNotice(listId: string, anaesthetistId: string | undefined): { notification: Notification; fromName: string | undefined } | undefined {
+/**
+ * The single-Booking move events from the audit (Phase 32a), subscribed so a
+ * component re-renders only when a move lands, not on every audited write.
+ */
+export function useBookingMoveEntries(): AppState['audit'] {
+  return useAppStore(useShallow(bookingMoveEntries))
+}
+
+/**
+ * The notice for one List a colleague moved to her, inside the window (List
+ * detail's "Moved to you by"), and who moved it. A List made for a single
+ * Booking a colleague handed her (Phase 32a) reads the same, from the move's
+ * audit event.
+ */
+export function useMovedToMeNotice(listId: string, anaesthetistId: string | undefined): { atISO: string; fromName: string | undefined } | undefined {
   const notifications = useAppStore((s) => s.notifications)
+  const moves = useBookingMoveEntries()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const todayISO = useToday()
   return useMemo(() => {
     if (anaesthetistId === undefined) return undefined
     const n = movedToMeForList({ notifications }, anaesthetistId, listId, todayISO)
-    return n === undefined ? undefined : { notification: n, fromName: anaesthetists[n.fromAnaesthetistId]?.name }
-  }, [notifications, anaesthetists, anaesthetistId, listId, todayISO])
+    if (n !== undefined) return { atISO: n.atISO, fromName: anaesthetists[n.fromAnaesthetistId]?.name }
+    const b = bookingsMovedToMe({ audit: moves }, anaesthetistId, todayISO).find((m) => m.listId === listId)
+    return b === undefined ? undefined : { atISO: b.atISO, fromName: anaesthetists[b.fromAnaesthetistId]?.name }
+  }, [notifications, moves, anaesthetists, anaesthetistId, listId, todayISO])
+}
+
+/** Single Bookings colleagues handed her in the notice window, newest first (catch-up Phase 32a; US-01.4.7), from the moves' audit events. */
+export function useBookingsMovedToMe(anaesthetistId: string): BookingMove[] {
+  const moves = useBookingMoveEntries()
+  const todayISO = useToday()
+  return useMemo(() => bookingsMovedToMe({ audit: moves }, anaesthetistId, todayISO), [moves, anaesthetistId, todayISO])
+}
+
+/** The received Booking's "Moved to you by" line (Phase 32a): the move that put it on her List, inside the window, and who made it. */
+export function useBookingMovedToMeNotice(bookingId: string, anaesthetistId: string | undefined): { atISO: string; fromName: string | undefined } | undefined {
+  const moves = useBookingMoveEntries()
+  const bookings = useAppStore((s) => s.schedule.bookings)
+  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const todayISO = useToday()
+  return useMemo(() => {
+    if (anaesthetistId === undefined) return undefined
+    const move = bookingMovedToMe({ audit: moves, schedule: { bookings } }, bookingId, anaesthetistId, todayISO)
+    return move === undefined ? undefined : { atISO: move.atISO, fromName: anaesthetists[move.fromAnaesthetistId]?.name }
+  }, [moves, bookings, anaesthetists, anaesthetistId, bookingId, todayISO])
+}
+
+/**
+ * Whether a Booking route may show `bookingId` to her (catch-up Phase 38a's own
+ * Bookings only rule, with Phase 32a's one exception). A Booking on her own List
+ * shows; a missing one, or one on a colleague's or a Draft List, falls back like
+ * a stale id, except a Booking this same view showed as hers a moment ago:
+ * Move to a colleague takes it off her List while its sheet is still showing the
+ * done step, and leaving is explicit ("Back to your List", or closing the sheet).
+ * The latch lives only as long as the route stays on that Booking, so a deep link
+ * or a later visit to a colleague's Booking still falls back.
+ */
+export function useOwnBookingInView(bookingId: string | null, anaesthetistId: string): boolean {
+  const ownership = useAppStore((s): 'none' | 'hers' | 'notHers' => {
+    if (bookingId === null) return 'none'
+    const booking = s.schedule.bookings[bookingId]
+    if (booking === undefined) return 'none'
+    const list = s.schedule.lists[booking.listId]
+    if (!isAssignedList(list)) return 'none'
+    return list.anaesthetistId === anaesthetistId ? 'hers' : 'notHers'
+  })
+  const shownAsHers = useRef<string | null>(null)
+  // Idempotent ref writes during render: the same inputs always write the same value.
+  if (ownership === 'hers') shownAsHers.current = bookingId
+  else if (bookingId !== shownAsHers.current) shownAsHers.current = null
+  return ownership === 'hers' || (ownership === 'notHers' && shownAsHers.current === bookingId)
 }

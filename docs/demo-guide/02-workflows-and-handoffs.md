@@ -207,7 +207,7 @@ Show a single Booking move and explain that it is different from reassigning an 
 **Primary actors:** Anaesthetist and AA scheduling coordinator
 
 **Prototype readiness:** Ready (US-01.4.3: the anaesthetist's own move; US-01.4.1: the office's
-reassignment; the single-Booking move is Phase 32a)
+reassignment; US-01.4.7 and US-01.4.6: the single-Booking move and the doer rule, Phase 32a)
 
 ### Trigger
 
@@ -225,6 +225,14 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 4. A List she returns goes back to the office as a Draft List with its hospital, surgeon and Bookings;
    one she hands on moves with every Booking and its history, exactly as the office's reassignment.
    Nothing about billing or prepayment is recalculated.
+4a. When it is one case, not the whole List, she moves that Booking from its Booking screen ("Move to
+   a colleague"): a colleague free that session, found by typing a name or from the free list, takes
+   it as a new List of theirs in that session, never added to an existing List. A colleague on leave
+   is offered only once they set that session available themselves. Telling the office is a tick she
+   may leave off. This is also the doer rule: whoever submits a List did every procedure on it, so a
+   Booking a colleague does moves to a new List of theirs before the procedure, and its payable
+   follows. A prepaid Booking's payable stays the AA Holding account: the new anaesthetist claims the
+   prepaid amount and nothing is recalculated.
 5. When nobody has arranged cover, Kirsty sees the conflict on the Conflicts screen, or receives the
    phone call and records the sickness.
 6. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
@@ -235,9 +243,10 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 
 ### Handoff
 
-Each anaesthetist's own move posts to the office's shared notifications (Admin Day's rail and the
-Notifications page), the same for the whole office; the colleague sees the List with a "Moved to
-you" notice. The office then assigns any Draft List returned to it.
+Each anaesthetist's own List move posts to the office's shared notifications (Admin Day's rail and the
+Notifications page), the same for the whole office; a single Booking posts there only when she ticks
+"Tell the office". The colleague sees the List or the Booking with a "Moved to you" notice either way.
+The office then assigns any Draft List returned to it.
 
 ### Requirement
 
@@ -248,7 +257,8 @@ What the vacated session shows by default is OQ-84, still open; the prototype us
 ### What not to say
 
 There is no claiming of open shifts, no acceptance step, no preference warning for the anaesthetist,
-no prepayment recalculation on a move, and notifications are not tasks.
+no prepayment recalculation or payee change on a move, no moving a Booking into a colleague's existing
+List, and notifications are not tasks.
 
 ### Source
 
@@ -556,7 +566,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Fixed canvas and recurring bookings | Yes | Phase 02 |
 | Manual phone booking and office changes | Yes | Phase 06 |
 | Mobile/web manual Booking creation | Yes | Phases 03 to 05 |
-| Anaesthetist's own List move, the notification pool, and office List reassignment | Yes | Phases 28, 32 (32a adds the single-Booking move) |
+| Anaesthetist's own List move, the notification pool, and office List reassignment | Yes | Phases 28, 32 |
+| Single-Booking moves and the doer rule | Yes | Phase 32a |
 | BTM capture, completion and submit | Yes | Phase 04 |
 | Office review and authorisation | Yes | Phase 07 |
 | Invoice calculation and documents | Yes | Phase 08 |
@@ -565,4 +576,4 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | HL7/FHIR/PDF ingestion and monitoring | Yes | Phase 11 |
 | Scenario jump controls and guided script | Yes | Phase 12 |
-| Mobile atmospheric gradient (visual only) | Upcoming | Phase 13 |
+| Mobile atmospheric gradient (visual only) | Yes | Phase 13 |

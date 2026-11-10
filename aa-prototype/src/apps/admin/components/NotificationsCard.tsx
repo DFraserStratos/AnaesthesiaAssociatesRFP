@@ -34,7 +34,11 @@ export function usePoolState(): PoolState {
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const lists = useAppStore((s) => s.schedule.lists)
-  return useMemo(() => ({ notifications, masters: { anaesthetists, hospitals, surgeons }, schedule: { lists } }), [notifications, anaesthetists, hospitals, surgeons, lists])
+  const bookings = useAppStore((s) => s.schedule.bookings)
+  return useMemo(
+    () => ({ notifications, masters: { anaesthetists, hospitals, surgeons }, schedule: { lists, bookings } }),
+    [notifications, anaesthetists, hospitals, surgeons, lists, bookings],
+  )
 }
 
 export function NotificationsCard({ onOpen, onSeeAll }: { onOpen: (target: NotificationTarget) => void; onSeeAll: () => void }) {
