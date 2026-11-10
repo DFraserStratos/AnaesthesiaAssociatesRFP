@@ -7,6 +7,7 @@ import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
+import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -39,6 +40,8 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
   }, [booking, bookingId, proceduresRecord])
 
   const warnings = useBookingWarnings(bookingId)
+  // The anaesthetist changed this Booking after submitting (catch-up Phase 38a).
+  const changed = useChangedSinceSubmitted(booking?.listId)
 
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
@@ -71,6 +74,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {/* A Booking on a Draft List has no anaesthetist yet (catch-up Phase 31). */}
           {list.state === 'DRAFT' && <UnassignedPill />}
+          {changed !== null && changed.bookingIds.includes(bookingId) && <ChangedSinceSubmittedPill cue={changed} />}
           <StatusChip status={list.kind} />
         </div>
       </div>

@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (299 items, 299 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 148 | 135 |
+| Captured | 152 | 138 |
 | Partial | 54 | 54 |
-| Absent from the app | 62 | 62 |
+| Absent from the app | 59 | 59 |
 | Failed recipe | 0 | 0 |
 | No recipe | 48 | 48 |
 
-524 screenshots. Items per app: admin 134, web 64, mobile 58, simulator 36.
+538 screenshots. Items per app: admin 133, web 69, mobile 61, simulator 35.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (62)
+## Absent from the app (59)
 
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
 - **US-02.1.5** Automatic sync from St George's and Southern Cross · Not built yet: catch-up Phase 34 builds this.
@@ -29,8 +29,6 @@ None.
 - **US-02.4.4** Add a Booking from a photo of the booking card · Future Work lane: photo capture is Future Work; Phase 15b took it out of the Add a booking sheet and keeps it only as a badged Future-scope demo action on the mobile List
 - **US-02.5.6** Concurrent edits · No concurrency handling is shown. The prototype is a single in-browser store where writes apply in order (last write wins, each audited); there is no conflict detection, locking or merge UI. Searched store/ and apps/ for concurrency, stale or version-conflict handling.
 - **US-03.1.5** Anaesthetist sees the patient's NHI · Not built yet: catch-up Phase 40 builds this.
-- **US-03.1.6** Find past work and old invoices · Not built yet: catch-up Phase 38a builds this.
-- **US-03.1.7** Search Bookings by NHI or patient name · Not built yet: catch-up Phase 38a builds this.
 - **US-03.2.2** Anyone with edit rights can set the primary · The first procedure on a booking is its fixed anchor (it cannot be removed and there is no control to make another procedure primary). Searched BookingDetailBody, BtmCaptureBlock, EditProcedureSheet, AdminBookingDetail and the store for a primary switch.
 - **US-03.7.1** Add a pre-op or post-op event to a Procedure · Not built yet: catch-up Phase 39b builds this.
 - **US-03.7.2** Bill an event · Not built yet: catch-up Phase 39b builds this.
@@ -58,7 +56,6 @@ None.
 - **US-06.5.2** Cancellation of prepayment procedures · Not built yet: catch-up Phase 41 builds this.
 - **US-06.5.3** Prepayment for a replacement anaesthetist · Not built yet: catch-up Phase 41 builds this.
 - **US-06.5.4** Prepaid Booking moved to another anaesthetist · Not built yet: catch-up Phase 41 builds this.
-- **US-07.4.2** Anaesthetist's main view · Not built yet: catch-up Phase 38a builds this.
 - **US-08.6.2** Credit note and re-issue · No credit note, payable reversal or re-issue flow. Searched the prototype source for credit note, reverse and re-issue; none exist. Invoiced bookings can only take a post-op addendum.
 - **US-08.6.3** Create an additional invoice on a Procedure · Not built yet: catch-up Phase 39 builds this.
 - **US-08.6.4** Split a combined Procedure into additional invoices · Not built yet: catch-up Phase 39 builds this.
@@ -191,14 +188,15 @@ None.
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (148)
+## Captured (152)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-04.1** Contract catalogue · admin
 - **FT-05.1** RVG groups and modifiers · admin
 - **FT-07.1** ACTIVE · admin
-- **FT-07.2** SUBMITTED · admin
+- **FT-07.2** SUBMITTED · web
+- **FT-07.4** List visibility in the anaesthetist app · web
 - **FT-08.4** Invoice generation and despatch · admin
 - **FT-08.5** Processing status and failures · admin
 - **FT-09.1** Invoice pair creation · simulator
@@ -242,6 +240,8 @@ None.
 - **US-03.1.1** Schedule to List to Booking drill-down · web, mobile
 - **US-03.1.3** Attachments · web, mobile
 - **US-03.1.4** Each app used for what it does best · web, mobile
+- **US-03.1.6** Find past work and old invoices · mobile, web
+- **US-03.1.7** Search Bookings by NHI or patient name · mobile, web
 - **US-03.2.1** One primary Procedure · web, mobile
 - **US-03.3.1** Choose the RVG code, with starting units · web, mobile
 - **US-03.3.2** Override a ranged base code · web, mobile
@@ -277,12 +277,13 @@ None.
 - **US-06.4.1** Nothing further after a prepaid procedure · admin
 - **US-07.1.1** Submit a List · web, mobile
 - **US-07.1.2** Cannot submit an incomplete List · web, mobile
-- **US-07.2.1** Anaesthetist can still edit a submitted List · web, mobile, simulator
+- **US-07.2.1** Anaesthetist can still edit a submitted List · mobile, web
 - **US-07.2.2** Office review of Contracts and references · admin
 - **US-07.2.3** Office corrections · admin
 - **US-07.3.1** Authorise the List · admin
 - **US-07.3.2** Immutable after AUTHORISED · admin, simulator
 - **US-07.4.1** List leaves the main view once authorised · mobile, web
+- **US-07.4.2** Anaesthetist's main view · mobile, web
 - **US-08.1.1** Process an AUTHORISED List using each Procedure's locked Contract · admin
 - **US-08.1.2** Contract already resolved · admin
 - **US-08.2.1** Group by billable party · admin

@@ -97,15 +97,13 @@ describe('editList', () => {
     expect(api.getState().schedule.lists[SOUTER_AM]?.notes).toBeUndefined()
   })
 
-  it('anaesthetist edits own ACTIVE, but not a colleague list or a submitted one', () => {
+  it('anaesthetist edits own ACTIVE and own SUBMITTED (catch-up Phase 38a), never a colleague list', () => {
     const api = store()
     expect(editList(api, SOUTER, SOUTER_AM, { notes: 'mine' }).ok).toBe(true)
     const notOwn = editList(api, SOUTER, MORRISON_LIST, { notes: 'nope' })
     expect(notOwn.ok).toBe(false)
     if (!notOwn.ok) expect(notOwn.code).toBe('notOwnList')
-    const submitted = editList(api, MORRISON, MORRISON_LIST, { notes: 'nope' })
-    expect(submitted.ok).toBe(false)
-    if (!submitted.ok) expect(submitted.code).toBe('listSubmitted')
+    expect(editList(api, MORRISON, MORRISON_LIST, { notes: 'still mine' }).ok).toBe(true)
   })
 
   it('refuses on an AUTHORISED list', () => {

@@ -226,7 +226,8 @@ Hooks already added:
 | List (runtime) | `LG0001`… | Created by Assign List, Book (phone advice), the post-op addendum and the PWA stand-in, and by New Draft List (the Draft List keeps its id when assigned). |
 | Draft List | `LD-001`… (request), `LD-<RCBnnn>-<date>-<session>` (recurring clash) | Seeded Draft Lists (catch-up Phase 31). Unassigned until the office assigns an anaesthetist; runtime ones are `LG####`. |
 | Booking | `BK0001`… | Seed order. `BK0001`..`BK0005` are Souter Tue 21 AM (BK0001 Hemi Walker). `BK0006` Wiremu Tane, `BK0007` Susan Marsh, `BK0008` David Chen, `BK0009` **Margaret Ellison** (pending). Verify with one run. |
-| History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. |
+| History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. Catch-up Phase 38a appended `HBK14` to `HBK42` on twelve Lists keyed by date and session, `L-HIST-2026-01-12-PM` to `L-HIST-2026-03-27-AM`, all paid before April. |
+| Pinned history List | `L-HIST-2026-03-13-AM` | `SEED_LOOKBACK`: Fri 13 Mar 2026 AM, St George's, Mr P. Doyle, three Bookings (Sarah Mitchell `HBK36`), invoices `AA-2026-H36` to `H38`, paid. |
 | Attachment | `AT0001`… | Store-allocated. `AT0001` is the seeded theatre-list PDF on Souter Tue 28 AM. |
 | Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is the seeded paid pre-payment. Runtime invoices start at `INV0002` once a list is authorised. |
 | Xero pair | `XRB0` | The seeded pre-payment. History pairs are `XRH01`… and runtime pairs `XR0001`…. |
@@ -240,7 +241,7 @@ Hooks already added:
 | Morrison Mon 20 | `L-25490-2026-07-20-AM` | SUBMITTED. 6 complete and 1 cancelled. |
 | Whitaker Fri 17 | `L-36208-2026-07-17-AM` | SUBMITTED. |
 | Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Split billing, Brian Holt. |
-| Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. Two funders: Alan Prentice, nib plus St George's. |
+| Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. Two funders: Alan Prentice (`BK0025`), nib plus St George's. Dr Souter can still change it (catch-up Phase 38a): "Amend" on a Booking makes Review show "Changed since submitted" and disables Authorise until it is completed again. |
 | Souter Fri 24 AM | `L-34821-2026-07-24-AM` | Pre-payment **unpaid** (Annette Riley). |
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target. |
@@ -261,8 +262,8 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | Route | Shows |
 |---|---|
 | `/web` | Dashboard: "Kia ora, Dr Souter", week strip, receivables aging, productivity, leave, "Offer cover". Add `?week=YYYY-MM-DD` (a Monday) to show another week. |
-| `/web/lists` | Table of Souter's lists. |
-| `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. |
+| `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 20 Jul AM and PM), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]`, name "Search your Bookings") and "Go to date" (`[data-testid=web-lists-go-to-date]`). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
+| `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. A SUBMITTED List stays editable (catch-up Phase 38a). An AUTHORISED List shows "Invoiced · read only" (`list-authorised-status`), an Invoiced column in place of Units and Fee, and the Invoices panel (`list-invoices`). |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
 | `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
@@ -299,7 +300,8 @@ badge carries `data-shot=nav-badge-<section>`.
 
 | Route | Shows |
 |---|---|
-| `/mobile/lists` | Forward lists. Segments Week, Month, To-Do, Done. Free rows read "Open for bookings or cover". |
+| `/mobile/lists` | The main view (catch-up Phase 38a): it opens scrolled so the Today heading (`mobile-lists-today`) sits at the top of `mobile-lists-scroll`; above it, "Earlier, not yet authorised" (`mobile-main-view-earlier-group`, Mon 20 Jul AM and PM, rows `[data-quiet=true]`, "Done · unbilled"), reached by scrolling up or the teal hint under Today (`mobile-main-view-earlier`, "2 earlier Lists not yet authorised"). Chips Week, Month, To-Do, Done (Done = submitted only; an authorised List is under no chip). In the fixed header: the search field (`[data-testid=mobile-lists-search]`, accessible name "Search your Bookings", placeholder "Search patient name or NHI") and the calendar button (`[aria-label="Go to a date"]`) that opens the date sheet (`mobile-lookback-calendar`, days `[data-date=YYYY-MM-DD]`, labelled "Friday 13 March 2026, 1 List"; the title button opens month chips, e.g. `role=button[name="March 2026"]`). `?day=YYYY-MM-DD` shows that date's Lists (`mobile-lookback-day`) under a teal day chip (`mobile-lists-day-chip`); `?q=` shows results (`mobile-lookback-search`, rows `button[data-booking-id]`, Upcoming then Past) with the count line (`mobile-lists-search-count`). Free rows read "Open for bookings". |
+| `/mobile/lists?day=2026-03-13` | The pinned history day (`SEED_LOOKBACK`): one invoiced List, `L-HIST-2026-03-13-AM`. Back from its List returns here. |
 | `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
 | `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. "Move to a colleague" (`move-booking-action`, scroll to it, above Cancel booking) opens the single-Booking move as a bottom sheet (catch-up Phase 32a). |
 | `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, a "Move" button on a movable List, `availability-move-am`/`-pm`; "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), and the everyone / free-only grid. The six-day strip's days are `button[data-date=YYYY-MM-DD]` (Tue 21 to Sun 26). A colleague's free cell is tappable only where Dr Souter has a movable List that session (`availability-move-to-<registration>-am`/`-pm`, "Tap to move your List here"). "Moved to you" (`moved-to-you`) tops the screen when a colleague moved a List to her (catch-up Phase 32; the cover request and "Tap to ask" are retired). |
@@ -427,7 +429,10 @@ Authorising Morrison raises 6 invoices.
 **Web accounts (backdrop history)**
 
 - Overdue: Tane, Marsh, Chen, Prentice (ACC), Holt, Foster, Mitchell, Walker.
-- Paid: Bennett, Webb, Mills, Riley, Park.
+- Paid: Bennett, Webb, Mills, Riley, Park, and the 29 January to March 2026 accounts (catch-up Phase 38a).
+- Search examples (catch-up Phase 38a): "Mitchell" or `CQY9304` (three: Mon 27 Jul, Tue 14 Apr, Fri 13
+  Mar; never her Booking on Dr Sharma's List), "Prentice" (Mon 20 Jul PM and the June ACC Booking),
+  "Prescott" (Noah Prescott, NHI pending), "tane".
 
 **Also seeded:**
 
@@ -614,6 +619,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 **Admin**
 
 - `admin-list-drawer` (the session drawer, kept for recipes), `admin-list-actions`, `admin-right-rail`
+- Review (catch-up Phase 38a): `review-changed-since-submitted` (the pill, on the List review and the
+  queue row, and on Booking detail for a changed Booking), `review-changed-booking` (the "Changed" tag
+  on a row, opens its History), test id `review-authorise-blocked` (why Authorise is disabled)
 - `data-shot` (catch-up Phase 28): `admin-slot-drawer`, `admin-assign-list`, `assign-hospital`,
   `admin-availability-finder-open`, `admin-availability-finder`, `finder-surgeon`, `finder-count`,
   `admin-schedule-settings`, `admin-session-times`, `admin-session-times-edit`, `admin-horizon-months`,
@@ -655,7 +663,11 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 **Mobile**
 
 - `mobile-tab-bar`, `slide-home`, `slide-list`, `slide-booking`
-- `mobile-lists-header`, `mobile-lists-scroll`
+- `mobile-lists-header`, `mobile-lists-scroll`, `mobile-lists-today`
+- Main view and look-back (catch-up Phase 38a): `mobile-main-view-earlier` (the hint),
+  `mobile-main-view-earlier-group`, `mobile-lookback-calendar`, `mobile-lookback-day`,
+  `mobile-lookback-search`; test ids `mobile-lists-search`, `mobile-lists-day-chip`,
+  `mobile-lists-search-count`; `list-invoices` and `list-authorised-status` on an authorised List
 - `mobile-list-header`, `mobile-list-scroll`, `mobile-list-footer`, `list-submission-overlay`
 - `mobile-booking-header`, `mobile-booking-header-actions`, `mobile-booking-scroll`, `mobile-booking-commit`
 
@@ -678,6 +690,10 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 **Web**
 
 - `web-booking-header`, `web-booking-commit`, `payment-history-row-<invoiceNumber>`
+- Main view and look-back (catch-up Phase 38a): `web-main-view-earlier` (the earlier group's
+  `tbody`), `web-lookback-search`, `web-lookback-day`; test ids `web-lists-search`,
+  `web-lists-go-to-date`; `[data-progress=submitted]` on a Progress cell and on a submitted week-strip
+  block (its name ends "Done · unbilled")
 
 **Shared capture** (web and mobile booking)
 

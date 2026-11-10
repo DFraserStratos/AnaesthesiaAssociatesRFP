@@ -21,7 +21,7 @@ const ROLES: RoleEntry[] = [
   {
     role: 'Anaesthetist (e.g. Dr Melanie Souter)',
     view: 'Only their OWN Lists and Bookings. A colleague\'s availability shows session status only, never patient or billing detail.',
-    edit: 'Edits their own Bookings while the List is ACTIVE; sets their own availability; submits their own Lists. No access to authorisation, master data, audit or billing.',
+    edit: 'Edits their own Bookings while the List is ACTIVE or SUBMITTED, until the office authorises it; sets their own availability; submits their own Lists. No access to authorisation, master data, audit or billing.',
   },
   {
     role: 'OfficeAdmin (Kirsty W. · Office)',

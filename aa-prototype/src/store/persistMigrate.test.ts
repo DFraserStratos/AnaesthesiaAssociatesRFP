@@ -205,6 +205,25 @@ describe('the notification pool and the cover marker gone (catch-up Phase 32)', 
   })
 })
 
+describe('the browsable history (catch-up Phase 38a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v26 store without the January to March history and reseeds with it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(27)
+    const fresh = freshAppState()
+    const lists = { ...fresh.schedule.lists }
+    for (const id of Object.keys(lists)) if (/^L-HIST-\d{4}-/.test(id)) delete lists[id]
+    const stale = { ...fresh, schedule: { ...fresh.schedule, lists } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 26 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.lists['L-HIST-2026-03-13-AM']).toBeDefined()
+  })
+})
+
 describe('the single-Booking move seed (catch-up Phase 32a)', () => {
   beforeEach(() => {
     flushPersist()
@@ -212,13 +231,13 @@ describe('the single-Booking move seed (catch-up Phase 32a)', () => {
   })
   afterEach(() => localStorage.clear())
 
-  it("discards a v26 store without the acceptance beat's Booking, and reseeds with it", () => {
-    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(27)
+  it("discards a v27 store without the acceptance beat's Booking, and reseeds with it", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(28)
     const fresh = freshAppState()
     const bookings = { ...fresh.schedule.bookings }
     delete bookings['BK0162']
     const stale = { ...fresh, schedule: { ...fresh.schedule, bookings } }
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 26 }))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 27 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.schedule.bookings['BK0162']?.listId).toBe('L-31902-2026-07-31-AM')
   })

@@ -52,7 +52,7 @@ ACTIVE -> SUBMITTED -> AUTHORISED
 | State | Anaesthetist | Office | Integrations | Meaning |
 |---|---|---|---|---|
 | `ACTIVE` | View and edit | View and edit | May update | Work is still being prepared |
-| `SUBMITTED` | View only | View and edit | Do not apply updates | Anaesthetist has handed the whole List to office |
+| `SUBMITTED` | View and edit, own, until authorised | View and edit | Do not apply updates | Anaesthetist has handed the whole List to office; the last change stands |
 | `AUTHORISED` | Locked | Locked | Do not apply updates | Office has approved it for billing |
 
 A List's state is `DRAFT` (a Draft List, no anaesthetist yet), `ACTIVE`, `SUBMITTED` or `AUTHORISED`; a
@@ -339,7 +339,10 @@ Every active Booking in the List has been marked complete.
 3. She selects **Submit to office**.
 4. A brief **List submitted** success moment confirms that it was sent to the office for review.
 5. The List becomes `SUBMITTED`.
-6. Dr Souter can still see it as completed/unbilled but cannot edit it.
+6. Dr Souter still sees it on her main view, less prominent ("Done · unbilled"), and can still change
+   it until the office authorises it, when it leaves her main view and is found by search. Any change
+   she makes is audited and Review shows "Changed since submitted"; a Booking she reopens must be
+   completed again before the office can authorise.
 7. Kirsty opens the Review queue.
 8. She checks the full set of Bookings, including:
    - billing route;
@@ -367,6 +370,15 @@ no send-back workflow.
 - RFP: `Card Immutability and the List Approval Process`
 - RFP: `Proposed Design decisions`
 - Prototype: `D6`, `M5`, `M10`, `A4`
+
+## Workflow 5a: looking back
+
+The anaesthetist's main view starts at today: upcoming work, with any earlier Lists not yet
+authorised a scroll back. Once the office authorises a List it leaves the main view and its invoices
+show in her balances at once. To find older work she searches by patient name (any part of it) or NHI,
+or picks a date and drills into that day's Lists, Bookings and Procedures; an authorised List opens
+read only with its invoices. Search covers her own Bookings only. Catch-up Phase 38a seeds January to
+March 2026 for Dr Souter so there is history to find (Fri 13 Mar 2026 is the pinned day).
 
 ## Workflow 6: calculate and issue invoices
 

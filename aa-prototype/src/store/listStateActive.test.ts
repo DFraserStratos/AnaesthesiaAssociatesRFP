@@ -42,8 +42,8 @@ describe('the lifecycle under its new name', () => {
     const submit = api.getState().audit.filter((a) => a.entityId === listId && a.action === 'list.submit').at(-1)
     expect(submit?.before).toMatchObject({ state: 'ACTIVE' })
 
-    // Submitting strips the anaesthetist's edit rights, as before.
-    expect(editBooking(api, SOUTER_ACTOR, booking.id, { notes: 'Too late.' }).ok).toBe(false)
+    // Submitting no longer strips the anaesthetist's edit rights (catch-up Phase 38a, D63).
+    expect(editBooking(api, SOUTER_ACTOR, booking.id, { notes: 'Corrected after submit.' }).ok).toBe(true)
 
     const again = submitList(api, SOUTER_ACTOR, listId)
     expect(again.ok).toBe(false)
@@ -54,6 +54,8 @@ describe('the lifecycle under its new name', () => {
 
     expect(authoriseList(api, OFFICE_ACTOR, listId).ok).toBe(true)
     expect(api.getState().schedule.lists[listId]?.state).toBe('AUTHORISED')
+    // AUTHORISED stays locked (US-07.3.2).
+    expect(editBooking(api, SOUTER_ACTOR, booking.id, { notes: 'Too late.' }).ok).toBe(false)
   })
 })
 

@@ -1,9 +1,10 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
 import { useAppStore } from '../../store'
 import { isAssignedList } from '../../domain/draftLists'
 import { mondayOf, shiftWeeks } from '../../shared/format'
+import { useOwnBookingInView } from '../../shared/flows'
 import {
   AccountsScreen,
   AvailabilityGrid,
@@ -66,14 +67,49 @@ export function WebDashboardRoute() {
 // Lists — `/web/lists`, `/web/lists/:listId`, `…/bookings/:bookingId`
 // ---------------------------------------------------------------------------
 
+/**
+ * Where a drill-in came from (catch-up Phase 38a): the Lists page passes its
+ * own URL (with `?q=` or `?day=`) as location state, so Back from List and
+ * Booking detail returns to the same results or day. A refresh or a deep link
+ * has no state and falls back to the plain parent.
+ */
+interface LookbackState {
+  from?: string
+  /** On Booking detail: where its List detail came from, handed back on the way up. */
+  listFrom?: string
+}
+
+function lookbackState(state: unknown): LookbackState {
+  if (typeof state !== 'object' || state === null) return {}
+  const s = state as Record<string, unknown>
+  return {
+    ...(typeof s['from'] === 'string' && s['from'].startsWith('/web/') ? { from: s['from'] } : {}),
+    ...(typeof s['listFrom'] === 'string' && s['listFrom'].startsWith('/web/') ? { listFrom: s['listFrom'] } : {}),
+  }
+}
+
 export function WebListsRoute() {
   const { anaesthetistId, todayISO } = useWebOutlet()
   const navigate = useNavigate()
+  const { pathname, search } = useLocation()
+  const [params, setParams] = useSearchParams()
+  // `?q=` (search) and `?day=` (a picked date) are view state, written with
+  // replace (the 2026-07-27 ruling); a junk `?day=` falls back to the main view.
+  const query = params.get('q') ?? ''
+  const rawDay = params.get('day')
+  const dayISO = isISODate(rawDay) ? rawDay : null
+  const here = `${pathname}${search}`
   return (
     <ListsScreen
       anaesthetistId={anaesthetistId}
       todayISO={todayISO}
-      onOpenList={(listId) => navigate(`/web/lists/${listId}`)}
+      query={query}
+      dayISO={dayISO}
+      // Search and the date are exclusive: each replaces the other.
+      onQueryChange={(q) => setParams(q === '' ? {} : { q }, { replace: true })}
+      onDayChange={(d) => setParams(d === null ? {} : { day: d }, { replace: true })}
+      onOpenList={(listId) => navigate(`/web/lists/${listId}`, { state: { from: here } })}
+      onOpenBooking={(listId, bookingId) => navigate(`/web/lists/${listId}/bookings/${bookingId}`, { state: { from: here } })}
     />
   )
 }
@@ -82,6 +118,8 @@ export function WebListDetailRoute() {
   const { listId = '' } = useParams()
   const { actor, todayISO, anaesthetistId } = useWebOutlet()
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const { from } = lookbackState(state)
   // A Draft List is office only (OQ-86): not found here. Nor is a List she has
   // moved on (catch-up Phase 32): it is the office's or a colleague's now.
   const exists = useAppStore((s) => {
@@ -95,8 +133,12 @@ export function WebListDetailRoute() {
         listId={listId}
         actor={actor}
         todayISO={todayISO}
-        onBack={() => navigate('/web/lists')}
-        onOpenBooking={(bookingId) => navigate(`/web/lists/${listId}/bookings/${bookingId}`)}
+        onBack={() => navigate(from ?? '/web/lists')}
+        onOpenBooking={(bookingId) =>
+          navigate(`/web/lists/${listId}/bookings/${bookingId}`, {
+            state: { from: `/web/lists/${listId}`, ...(from !== undefined ? { listFrom: from } : {}) },
+          })
+        }
       />
     </RequireEntity>
   )
@@ -104,17 +146,22 @@ export function WebListDetailRoute() {
 
 export function WebBookingDetailRoute() {
   const { listId = '', bookingId = '' } = useParams()
-  const { actor, todayISO } = useWebOutlet()
+  const { actor, todayISO, anaesthetistId } = useWebOutlet()
   const navigate = useNavigate()
-  const exists = useAppStore((s) => {
-    const booking = s.schedule.bookings[bookingId]
-    return booking !== undefined && isAssignedList(s.schedule.lists[booking.listId])
-  })
-  const backToList = () => navigate(`/web/lists/${listId}`)
+  const { state } = useLocation()
+  const { from, listFrom } = lookbackState(state)
+  // Her own Bookings only (catch-up Phase 38a): a Booking on a colleague's List
+  // or a Draft List is not found here, as with List detail; one she has just
+  // moved to a colleague stays until she leaves its done step (Phase 32a).
+  const exists = useOwnBookingInView(bookingId, anaesthetistId)
+  const back = () =>
+    from !== undefined
+      ? navigate(from, listFrom !== undefined ? { state: { from: listFrom } } : undefined)
+      : navigate(`/web/lists/${listId}`)
 
   return (
     <RequireEntity exists={exists}>
-      <BookingDetailView key={bookingId} bookingId={bookingId} actor={actor} todayISO={todayISO} onBack={backToList} />
+      <BookingDetailView key={bookingId} bookingId={bookingId} actor={actor} todayISO={todayISO} onBack={back} />
     </RequireEntity>
   )
 }

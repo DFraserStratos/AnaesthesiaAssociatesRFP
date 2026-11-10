@@ -518,7 +518,8 @@ export interface Notification {
  * clarifying a missing reference with the hospital); the note shows on the
  * review action bar AND in the List's audit trail. There is deliberately NO
  * return-to-anaesthetist action anywhere — a SUBMITTED List flows only forward
- * to AUTHORISED (no Returned state, convention 6). Optional; the seed populates
+ * to AUTHORISED (no Returned state); the anaesthetist can still change it until
+ * then, and the last change stands (catch-up Phase 38a). Optional; the seed populates
  * none, so no PERSIST_VERSION bump.
  */
 export interface ListPhoneNote {
@@ -642,9 +643,10 @@ export interface ListBase {
   /** Office-logged phone-call notes (Phase 07 review); never a return channel. */
   phoneNotes?: ListPhoneNote[]
   /**
-   * Stamped at completion of the List's billing run (Phase 08; 3rd review
-   * #12). Lists vanish from the anaesthetist's forward views at invoice
-   * generation, NOT at AUTHORISED — an authorised list is still unbilled.
+   * Stamped at completion of the List's billing run (Phase 08). The office
+   * reads it (Billing monitor, Review's recently billed, the office stand-in).
+   * It no longer decides the anaesthetist's main view: a List leaves that at
+   * AUTHORISED (`hasLeftMainView`, catch-up Phase 38a, OQ-31).
    */
   billedAtISO?: IsoDateTime
   notes?: string

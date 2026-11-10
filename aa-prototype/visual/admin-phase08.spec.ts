@@ -241,7 +241,7 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
 })
 
-test('M10 view effect: the billed design-day list vanishes from the mobile app', async ({ page }) => {
+test('the authorised design-day list leaves the mobile main view (catch-up Phase 38a: at AUTHORISED)', async ({ page }) => {
   // Presenter advances the clock so Finish now stamps an afternoon time.
   await page.goto('/demo/control')
   await page.waitForLoadState('networkidle')
@@ -295,7 +295,7 @@ test('M10 view effect: the billed design-day list vanishes from the mobile app',
   await page.waitForTimeout(400)
   await expect(page.getByText(/4 invoices raised by the billing run/)).toBeVisible()
 
-  // Billed = gone from the anaesthetist's views (billedAt, not AUTHORISED).
+  // Authorised = gone from the anaesthetist's main view (catch-up Phase 38a; search still finds it).
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Done', exact: true }).click()

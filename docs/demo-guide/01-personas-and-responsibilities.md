@@ -37,7 +37,8 @@ Bookings and capture the data AA needs for billing.
 
 ### Core actions
 
-1. Open Forward Lists and choose an assigned List.
+1. Open the Lists tab, her main view from today (earlier Lists not yet authorised a scroll back),
+   and choose an assigned List; or search by patient name or NHI, or pick a date, to find past work.
 2. Review its time-ordered Bookings.
 3. Open a Booking and confirm patient, procedure, hospital and surgeon context.
 4. Record ASA, RVG code, start/handover time, modifiers, notes and any allowed additional billing
@@ -57,7 +58,8 @@ Bookings and capture the data AA needs for billing.
 ### Permissions
 
 - `ACTIVE`: may edit her Bookings and submit the List when every uncancelled Booking is complete.
-- `SUBMITTED`: may view the List as completed/unbilled, but may not edit its Bookings.
+- `SUBMITTED`: sees the List less prominent ("Done · unbilled") on her main view and may still change
+  its Bookings until the office authorises it; her changes are audited and the last change stands.
 - `AUTHORISED`: Bookings are locked for everyone.
 - May only see her own Lists and patient Bookings.
 - May see colleagues' session availability, but not their patient details.
@@ -104,7 +106,8 @@ underlying List, Booking and BTM actions.
 ### Goals and actions
 
 - Review the dashboard and coming week.
-- Browse a date-ranged view of Lists.
+- Browse her Lists from today, with earlier ones not yet authorised at the top, and find past work by
+  patient name, NHI or date.
 - Drill into the same List and Booking detail available on mobile.
 - Create a Booking, add another procedure, and capture BTM data when a desktop is more convenient.
 - Find Free colleagues and move one of her Lists to a free colleague or back to the office.

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { accent, neutral, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { useAppStore, type Actor } from '../../store'
+import { editRefusal, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { procedureFee } from './feeContext'
 import { AsaCard } from './AsaCard'
@@ -116,7 +116,8 @@ export function BtmCaptureBlock({
     (p): p is string => p !== undefined,
   )
 
-  const editable = list.state === 'ACTIVE' && procedure !== undefined
+  // The store's edit gate (ACTIVE or SUBMITTED, own List for the anaesthetist; catch-up Phase 38a).
+  const editable = procedure !== undefined && editRefusal(actor, list) === null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -214,7 +215,7 @@ export function BtmCaptureBlock({
       )}
 
       <Pair>
-        <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} onError={onError} />
+        <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} locked={list.state === 'AUTHORISED'} onError={onError} />
 
         <ProcedureCodeCard
           procedure={procedure}

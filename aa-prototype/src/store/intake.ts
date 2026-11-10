@@ -137,9 +137,9 @@ export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone'
 /**
  * Edit a Patient's demographics, audited `patient.update` (phase doc item 3).
  * Mirrors `editBooking`: when a `viaBookingId` is supplied (the Booking screen always
- * does), the same `editRefusal` gate applies against that Booking's List, so a
- * SUBMITTED List is read-only to the anaesthetist and an AUTHORISED List is
- * locked. Called without a booking context (later office master edits) it skips
+ * does), the same `editRefusal` gate applies against that Booking's List: the
+ * anaesthetist edits their own ACTIVE or SUBMITTED List (catch-up Phase 38a) and
+ * an AUTHORISED List is locked. Called without a booking context (later office master edits) it skips
  * the list gate.
  */
 export function editPatient(

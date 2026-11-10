@@ -4,35 +4,9 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "submitted-list",
-      "app": "web",
-      "caption": "Submitted List, visible but no longer editable",
-      "start": "/web/lists/L-34821-2026-07-20-AM",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "span:has-text(\"Submitted to office\")"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "read-only-card",
-      "app": "web",
-      "caption": "Booking on a submitted List is read only, with no edit or capture controls",
-      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0022",
-      "states": [
-        {
-          "steps": [],
-          "highlight": []
-        }
-      ]
-    },
-    {
       "name": "done-unbilled",
       "app": "mobile",
-      "caption": "Submitted Lists marked Done · unbilled",
+      "caption": "Submitted Lists marked Done · unbilled, quieter than active work",
       "start": "/mobile/lists",
       "states": [
         {
@@ -45,55 +19,75 @@
             }
           ],
           "highlight": [
-            "[data-testid=slide-home] button:has-text(\"Done · unbilled\")"
+            "[data-testid=slide-home] button[data-quiet=true]"
           ]
         }
       ]
     },
     {
-      "name": "read-only-card",
+      "name": "edit-submitted",
       "app": "mobile",
-      "caption": "Booking on a submitted List is read only",
+      "caption": "The anaesthetist can still change a submitted List",
       "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0022",
-      "states": [
-        {
-          "steps": [],
-          "highlight": []
-        }
-      ]
-    },
-    {
-      "name": "edit-refused",
-      "app": "simulator",
-      "caption": "Guard refuses the anaesthetist's edit to a Booking on a submitted List",
-      "start": "/demo/data",
       "states": [
         {
           "steps": [
             {
-              "select": "[data-shot=data-guard-console] select >> nth=0",
-              "value": "souter"
+              "click": "role=button[name=/Amend/] >> nth=0"
             },
             {
-              "select": "[data-shot=data-guard-console] select >> nth=1",
-              "value": "editBooking"
+              "wait": 700
             },
             {
-              "select": "[data-shot=data-guard-console] select >> nth=2",
-              "value": "BK0022"
+              "click": "[aria-label=\"ASA physical status\"] >> text=\"III\""
             },
             {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=data-guard-console] >> role=button[name=\"Attempt\"]"
-            },
-            {
-              "wait": 600
+              "wait": 700
             }
           ],
           "highlight": [
-            "[data-shot=data-guard-console]"
+            "[aria-label=\"ASA physical status\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edit-submitted",
+      "app": "web",
+      "caption": "The anaesthetist can still change a submitted List",
+      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0022",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=/Amend/] >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[aria-label=\"ASA physical status\"] >> text=\"III\""
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[aria-label=\"ASA physical status\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lists-marker",
+      "app": "web",
+      "caption": "Submitted Lists show Done · unbilled in the Progress column, still on the main view",
+      "start": "/web/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-main-view-earlier] [data-progress=submitted]"
           ]
         }
       ]

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../../store'
-import { AddBookingFlow, type AddBookingMode } from '../../shared/flows'
+import { useAppStore, useToday } from '../../store'
+import { AddBookingFlow, useOwnBookingInView, type AddBookingMode } from '../../shared/flows'
 import { useDemoTriggerMemory } from '../../shared/demoTriggers/memory'
 import { SlideStack, type SlideLayer } from './components'
 import {
@@ -11,6 +11,7 @@ import {
   BookingDetailScreen,
   ForwardListsScreen,
   ListDetailScreen,
+  LookbackDateSheet,
   MoreScreen,
 } from './screens'
 import { LegacyBookingRedirect, legacyBookingPath } from '../../shared/legacy'
@@ -19,6 +20,7 @@ import { useAnaesthetistStatusChoices, useSurface } from '../../shared'
 import { AvailabilityEditor } from '../../shared/availability'
 import { SEED_STATUS } from '../../domain/slotStatus'
 import { useMobileOutlet } from './outlet'
+import { isISODate } from '../../shell/routeParams'
 
 /**
  * The mobile app's route elements. The three simple tabs are thin wrappers; the
@@ -33,10 +35,35 @@ import { useMobileOutlet } from './outlet'
 export function MobileListsRoute() {
   const { actor, anaesthetistId, personaName, initials } = useMobileOutlet()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const { depth, listId: urlListId, bookingId: urlBookingId } = listsStackLocation(pathname)
 
+  // The home layer's view state (catch-up Phase 38a): `?q=` (search) and `?day=`
+  // (a picked date) live on `/mobile/lists` only, written with replace (the
+  // 2026-07-27 ruling: query params are view state). Drilling in drops them from
+  // the URL, so the last home search string is remembered here and the pops
+  // restore it: back from a List or Booking returns to the same day or results.
+  // While a deeper layer shows, the home layer keeps rendering what it showed.
+  const homeSearch = useRef(depth === 0 ? search : '')
+  useEffect(() => {
+    if (depth === 0) homeSearch.current = search
+  }, [depth, search])
+  const homeParams = new URLSearchParams(depth === 0 ? search : homeSearch.current)
+  const homeQuery = homeParams.get('q') ?? ''
+  const rawDay = homeParams.get('day')
+  const homeDay = isISODate(rawDay) ? rawDay : null
+  const setHomeParams = (next: { q?: string; day?: string | null }) => {
+    const params = new URLSearchParams()
+    if (next.q !== undefined && next.q !== '') params.set('q', next.q)
+    if (next.day !== undefined && next.day !== null) params.set('day', next.day)
+    const qs = params.toString()
+    navigate({ pathname: '/mobile/lists', search: qs === '' ? '' : `?${qs}` }, { replace: true })
+  }
+
   const [addOpen, setAddOpen] = useState(false)
+  // The date sheet (catch-up Phase 38a): transient, so local state, not the URL.
+  const [dateSheetOpen, setDateSheetOpen] = useState(false)
+  const todayISO = useToday()
   const [addMode, setAddMode] = useState<AddBookingMode>('manual')
   const [addResetKey, setAddResetKey] = useState(0)
 
@@ -70,7 +97,11 @@ export function MobileListsRoute() {
     const l = s.schedule.lists[urlListId]
     return l === undefined || l.state === 'DRAFT' || l.anaesthetistId !== anaesthetistId
   })
-  const bookingMissing = useAppStore((s) => urlBookingId !== null && s.schedule.bookings[urlBookingId] === undefined)
+  // Her own Bookings only (catch-up Phase 38a, as on the web): a Booking on a
+  // colleague's List falls back to the List like a stale id; one she has just
+  // moved to a colleague stays until she leaves its done step (Phase 32a).
+  const bookingInView = useOwnBookingInView(urlBookingId, anaesthetistId)
+  const bookingMissing = urlBookingId !== null && !bookingInView
   // A pre-Phase-15 `/cards/` link: hand it to the `/bookings/` URL first.
   if (legacyBookingPath(pathname) !== null) return <LegacyBookingRedirect />
   if (listMissing) return <Navigate to="/mobile/lists" replace />
@@ -86,7 +117,7 @@ export function MobileListsRoute() {
   // row ([lists, list, list] after popping a booking), so the first system back
   // press after a pop lands on an identical URL and nothing visibly moves. One
   // dead press beats a surprise re-entry.
-  const backToLists = () => navigate('/mobile/lists', { replace: true })
+  const backToLists = () => navigate(`/mobile/lists${homeSearch.current}`, { replace: true })
   const backToList = () =>
     navigate(listId !== null ? `/mobile/lists/${listId}` : '/mobile/lists', { replace: true })
 
@@ -112,6 +143,13 @@ export function MobileListsRoute() {
           personaName={personaName}
           initials={initials}
           onOpenList={(id) => navigate(`/mobile/lists/${id}`)}
+          query={homeQuery}
+          dayISO={homeDay}
+          // Search and the day view are exclusive: each clears the other.
+          onQueryChange={(q) => setHomeParams({ q })}
+          onDayChange={(day) => setHomeParams({ day })}
+          onOpenBooking={(lid, bid) => navigate(`/mobile/lists/${lid}/bookings/${bid}`)}
+          onOpenCalendar={() => setDateSheetOpen(true)}
         />
       ),
     },
@@ -145,6 +183,18 @@ export function MobileListsRoute() {
   return (
     <>
       <SlideStack layers={listsLayers} depth={depth} onPop={popLayer} />
+
+      <LookbackDateSheet
+        open={dateSheetOpen && depth === 0}
+        onClose={() => setDateSheetOpen(false)}
+        anaesthetistId={anaesthetistId}
+        todayISO={todayISO}
+        selectedISO={homeDay}
+        onPick={(d) => {
+          setDateSheetOpen(false)
+          setHomeParams({ day: d })
+        }}
+      />
 
       {listId !== null && (
         <AddBookingFlow

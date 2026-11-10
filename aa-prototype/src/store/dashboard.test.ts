@@ -18,6 +18,7 @@ import {
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { advanceClockDays } from './clockActions'
+import { authoriseAsSimulatedOffice } from './officeStandIn'
 import { deriveDashboardFigures, ANAESTHETIST_DASHBOARD, ANAE, SEED_LIST_IDS } from '../domain/seed'
 import { toCents } from '../domain/billing/money'
 import type { Actor } from './mutate'
@@ -124,10 +125,11 @@ describe('payment history', () => {
   })
 })
 
-describe('next-day visibility (RFP handover)', () => {
-  it('a freshly-billed invoice is hidden until the next day', () => {
+describe('invoices in balances at once (catch-up Phase 38a; US-07.4.1, FT-07.4)', () => {
+  it('a freshly billed invoice is in the outstanding balances the same day', () => {
     const api = store()
-    const before = outstandingAccpayInvoicesFor(mirror(api), SOUTER, api.getState().clock.todayISO).length
+    const today = api.getState().clock.todayISO
+    const before = outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length
 
     // Bill Souter's design-day AM list today.
     const listId = SEED_LIST_IDS.souterAm21
@@ -136,13 +138,17 @@ describe('next-day visibility (RFP handover)', () => {
     expect(runBillingForList(api, listId).ok).toBe(true)
     handoffListCases(api, listId)
 
-    // Raised today → not yet visible.
-    const sameDay = outstandingAccpayInvoicesFor(mirror(api), SOUTER, api.getState().clock.todayISO).length
-    expect(sameDay).toBe(before)
+    // Raised today and visible today: no next-day handover.
+    expect(api.getState().clock.todayISO).toBe(today)
+    expect(outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length).toBeGreaterThan(before)
+  })
 
-    // Advance a day → the new invoices appear.
-    advanceClockDays(api, 1)
-    const nextDay = outstandingAccpayInvoicesFor(mirror(api), SOUTER, api.getState().clock.todayISO).length
-    expect(nextDay).toBeGreaterThan(before)
+  it('the office stand-in (PWA "Office authorises this List") lands its invoices in balances at once', () => {
+    const api = store()
+    const today = api.getState().clock.todayISO
+    const before = outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length
+    const outcome = authoriseAsSimulatedOffice(api, SEED_LIST_IDS.souterMon20Pm)
+    expect(outcome.ok).toBe(true)
+    expect(outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length).toBeGreaterThan(before)
   })
 })

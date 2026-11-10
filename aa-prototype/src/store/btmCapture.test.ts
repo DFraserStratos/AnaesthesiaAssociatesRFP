@@ -1,8 +1,8 @@
 /**
  * Phase 04 end-to-end capture tests: the Ellison live-demo flow (Finish-now at
  * 17:20 → the relocated $344.50/13u and 41u/$1,086.50 mockup pins →
- * complete → submit → read-only), the two-anaesthetist rate comparison, the
- * billedAt disappearance selector, notes round-trip and the B/T/M provenance
+ * complete → submit → still editable until authorised), the two-anaesthetist
+ * rate comparison, the billing stamp the office reads, notes round-trip and the B/T/M provenance
  * semantics the "Use seeded value" reset link relies on.
  */
 
@@ -91,7 +91,7 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
     }
   })
 
-  it('Finish now at 17:20 → 13u/$344.50, PM totals 41u/$1,086.50 → complete → submit → read-only', () => {
+  it('Finish now at 17:20 → 13u/$344.50, PM totals 41u/$1,086.50 → complete → submit → still editable until authorised', () => {
     const api = store()
     // The presenter advances the demo clock to 17:20 (seeds at 08:00), then
     // taps Finish now — which stamps clockISO, exactly as TimesCard does.
@@ -114,10 +114,8 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
     expect(submitList(api, SOUTER, SOUTER_PM).ok).toBe(true)
     expect(api.getState().schedule.lists[SOUTER_PM]?.state).toBe('SUBMITTED')
 
-    // SUBMITTED strips the anaesthetist's edit rights.
-    const refused = editProcedure(api, SOUTER, ellisonProcedureId(api), { intNotes: 'too late' })
-    expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.code).toBe('listSubmitted')
+    // SUBMITTED no longer strips the anaesthetist's edit rights (catch-up Phase 38a, D63).
+    expect(editProcedure(api, SOUTER, ellisonProcedureId(api), { intNotes: 'next-day fix' }).ok).toBe(true)
   })
 })
 
@@ -157,7 +155,7 @@ describe('per-anaesthetist rates (Type 1 default path)', () => {
   })
 })
 
-describe('billedAt disappearance selector (M10 / 3rd review #12)', () => {
+describe('isListBilled, the billing stamp the office reads (no longer the main view exit; catch-up Phase 38a)', () => {
   it('a billed list is excluded; a SUBMITTED-unbilled list stays', () => {
     const api = store()
     const morrison = SEED_LIST_IDS.morrisonMon20

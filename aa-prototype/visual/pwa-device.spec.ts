@@ -151,7 +151,7 @@ test('a List opens, a Booking completes and the List submits, all within the dev
   await expect(row.getByRole('button', { name: 'Run' })).toBeDisabled()
   await page.screenshot({ path: 'visual/shots/pwa-06-office-stand-in.png' })
 
-  // Billed = gone: the List has left the Done tab.
+  // Authorised = gone: the List has left the Done tab (catch-up Phase 38a).
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
   const lists = page.locator('[data-shot="pwa-demo-actions"]')

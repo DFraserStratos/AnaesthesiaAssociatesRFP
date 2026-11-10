@@ -74,7 +74,7 @@ import { SAMPLE_AA_FEE_SETTINGS } from './aaFee'
 import type { AppSettings, WarningClearance } from '../warnings/types'
 import { buildBookings, type BookingScenarioIds } from './bookings'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
-import { buildHistory } from './history'
+import { buildHistory, LOOKBACK_DATE_ISO, LOOKBACK_LIST_ID } from './history'
 import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftListBookings, seedRecurringClashDraftLists } from './draftLists'
 import { buildSeedAudit } from './audit'
 import { ACCEPTANCE_BEAT_LIST_ID, seedBookingMoveBookings } from './bookingMoves'
@@ -544,7 +544,7 @@ export const SEED_LIST_IDS = {
   prepaymentUnpaidList: projectedListId(ANAE.souter, '2026-07-24', 'AM'),
   prepaymentPaidList: projectedListId(ANAE.souter, '2026-07-24', 'PM'),
   billingFailure: projectedListId(ANAE.ropata, '2026-07-16', 'AM'),
-  // Phase 11: the SUBMITTED (office-locked) List holding the locked-target
+  // Phase 11: the SUBMITTED List (closed to integrations) holding the locked-target
   // integration Booking, the clean S1 create destination, and separate modify
   // targets that keep S1's List uncluttered.
   integrationLocked: projectedListId(ANAE.delaney, '2026-07-17', 'AM'),
@@ -554,6 +554,14 @@ export const SEED_LIST_IDS = {
   integrationSxList: projectedListId(ANAE.souter, '2026-07-28', 'PM'),
   integrationCphList: projectedListId(ANAE.souter, '2026-07-30', 'AM'),
 } as const
+
+/**
+ * The pinned browsable-history List (catch-up Phase 38a): Dr Souter's Fri 13
+ * March 2026 AM at St George's, three Bookings, Sarah Mitchell's among them.
+ * The look-back tests, the capture recipes and the demo guide's Direct URLs
+ * (`?day=2026-03-13`) use it.
+ */
+export const SEED_LOOKBACK = { dateISO: LOOKBACK_DATE_ISO, listId: LOOKBACK_LIST_ID } as const
 
 /**
  * The Lists and sessions the S1 to S5 run sheet scripts (catch-up Phase 32).

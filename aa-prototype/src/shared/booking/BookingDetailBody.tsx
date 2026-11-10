@@ -13,6 +13,8 @@ import {
   addProcedure,
   completeBooking,
   editBooking,
+  editRefusal,
+  isBackdropList,
   prepaymentStatusFor,
   raisePreProcedureInvoice,
   removeAttachment,
@@ -174,11 +176,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   )
 
   const cancelled = booking?.cancellation !== undefined
-  // A Booking on a colleague's List (after Move to a colleague, or reached by
-  // URL) is not hers to edit. Leaving is explicit: once a move has committed,
+  // Leaving after Move to a colleague is explicit: once a move has committed,
   // closing the sheet returns to her List (no effect, so no navigation loop
   // while the slide stack keeps this layer mounted).
-  const notHers = actor.role === 'anaesthetist' && list !== undefined && list.anaesthetistId !== actor.anaesthetistId
   const [movedByHer, setMovedByHer] = useState(false)
   // Mounted from the first open (and then kept, so the done state outlives the move), not on every Booking screen.
   const [moveMounted, setMoveMounted] = useState(false)
@@ -319,14 +319,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
 
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
-  // Mirror the store's editRefusal so the UI never offers an action the guard
+  // The store's editRefusal decides, so the UI never offers an action the guard
   // would refuse, nor hides one it allows: the office edits ACTIVE and SUBMITTED
-  // (never AUTHORISED); the anaesthetist only their own ACTIVE. This is what lets
-  // the office correct billing setup, edit the patient/times/BTM, amend and
-  // cancel a Booking on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
-  // stays blocked on SUBMITTED. Mobile/web pass an anaesthetist actor, so their
-  // behaviour is unchanged (ACTIVE-only).
-  const canEdit = !cancelled && !notHers && list.state !== 'AUTHORISED' && (list.state === 'ACTIVE' || actor.role === 'office')
+  // (never AUTHORISED), and so does the anaesthetist on their own Lists until the
+  // office authorises them (catch-up Phase 38a, RV-19, D63; the last change stands).
+  // editRefusal also refuses a Booking on a colleague's List (one she has just
+  // moved to them, or reached by URL).
+  const canEdit = !cancelled && editRefusal(actor, list) === null
   // Move to a colleague (catch-up Phase 32a, US-01.4.7): the anaesthetist's own
   // non-cancelled Booking on her ACTIVE List dated today or later. The office
   // keeps its own Move in Admin.
@@ -696,8 +695,10 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       )}
 
       {/* Post-op addendum (B8) — on a locked (authorised/billed) booking. The
-          original stays immutable; the addendum is a new linked booking. */}
-      {!cancelled && list.state === 'AUTHORISED' && booking.bookingType !== 'postOpAddendum' && (
+          original stays immutable; the addendum is a new linked booking. Not on
+          the seeded history reached by search or date (catch-up Phase 38a): it is
+          read only, and 38b's events replace this action. */}
+      {!cancelled && list.state === 'AUTHORISED' && !isBackdropList(list) && booking.bookingType !== 'postOpAddendum' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           {postOpMsg !== null && (
             <div style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>

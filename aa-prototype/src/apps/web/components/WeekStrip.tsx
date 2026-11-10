@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { brand, neutral } from '../../../theme/tokens'
 import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
-import { isListBilled, slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
+import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
+import { hasLeftMainView, LIST_PROGRESS_LABEL } from '../../../domain/listProgress'
 import { slotTimeRange, weekDays, locationName } from '../../../shared/format'
 import { Panel } from './Panel'
 
@@ -25,7 +26,10 @@ interface WeekStripProps {
  * holding a List shows the List (hospital / surgeon and its session times,
  * office overrides included) and clicks through to List detail; an empty
  * session shows its status: the Free block dashed, a full-day holiday merged
- * into one tall block. Today's pair is outlined crimson.
+ * into one tall block. Today's pair is outlined crimson. A submitted List keeps
+ * its block, quieter, with the design's "✓" and "Done · unbilled" as part of its
+ * accessible name; an authorised List has left the main view and its session
+ * shows empty (catch-up Phase 38a, `hasLeftMainView`).
  */
 export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek, onNextWeek, onOpenList }: WeekStripProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
@@ -48,10 +52,10 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
   }, [days, slotsRecord, listsRecord, appSettings, slotStatuses, anaesthetistId])
 
   function slotFor(dateISO: string, session: Session): SlotView | undefined {
-    // Billed lists vanish from the anaesthetist's forward views (M10), matching
-    // mobile Forward Lists — so the week strip agrees once billing runs.
+    // An authorised List has left the main view (catch-up Phase 38a), matching
+    // the mobile main view and the web Lists table.
     const v = views.get(`${dateISO}|${session}`)
-    return v?.list !== undefined && isListBilled(v.list) ? undefined : v
+    return v?.list !== undefined && hasLeftMainView(v.list) ? undefined : v
   }
 
   function labels(v: SlotView): { l1: string; l2: string } {
@@ -176,6 +180,7 @@ function Block({
   const list = view.list
   const c = resolved.visual
   const isFree = c.treatment === 'dashed'
+  const submitted = list?.state === 'SUBMITTED'
   const bg = c.tint
   const timeRange = list === undefined && !view.open ? undefined : slotTimeRange(view.times)
   // Only a List opens; an empty session has nothing to open.
@@ -184,8 +189,10 @@ function Block({
     <Tag
       {...(list !== undefined ? { type: 'button' as const, onClick: () => onOpenList(list.id) } : {})}
       data-slot-id={view.slot.id}
+      {...(submitted ? { 'data-progress': 'submitted', 'aria-label': `${labels.l1}, ${labels.l2}, ${LIST_PROGRESS_LABEL.submitted}` } : {})}
       style={{
         height,
+        opacity: submitted ? 0.72 : 1,
         borderRadius: 8,
         background: bg,
         border: isFree ? c.border : 'none',
@@ -203,6 +210,7 @@ function Block({
     >
       <span style={{ fontSize: 11, fontWeight: 600, color: c.onTint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {labels.l1}
+        {submitted && <span aria-hidden> ✓</span>}
       </span>
       <span style={{ fontSize: 10, color: c.onTint, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {labels.l2}

@@ -1,6 +1,56 @@
 {
   "id": "US-03.1.7",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 38a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "lookback-search",
+      "app": "mobile",
+      "caption": "Search finds a patient's Bookings by name or NHI, authorised and invoiced ones included",
+      "start": "/mobile/lists?q=mitchell",
+      "states": [
+        {
+          "state": "name",
+          "steps": [
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-lookback-search]"
+          ]
+        },
+        {
+          "state": "nhi",
+          "caption": "The same three by NHI",
+          "steps": [
+            {
+              "fill": "[data-testid=mobile-lists-search]",
+              "value": "CQY9304"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-lookback-search]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lookback-search",
+      "app": "web",
+      "caption": "Search finds a patient's Bookings by name or NHI, authorised and invoiced ones included",
+      "start": "/web/lists?q=mitchell",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-lookback-search]"
+          ]
+        }
+      ]
+    }
+  ]
 }

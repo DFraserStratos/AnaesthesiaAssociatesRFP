@@ -178,12 +178,14 @@ describe('authoriseList', () => {
 })
 
 describe('edit rights matrix', () => {
-  it('anaesthetist edit of a SUBMITTED list is rejected', () => {
+  it('anaesthetist edit of their own SUBMITTED list is allowed and audited (catch-up Phase 38a, D63)', () => {
     const api = store()
     const bookingId = firstBookingOf(api, MORRISON_LIST)
     const outcome = editBooking(api, MORRISON, bookingId, { notes: 'try' })
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
+    expect(outcome.ok).toBe(true)
+    expect(api.getState().schedule.bookings[bookingId]?.notes).toBe('try')
+    const last = api.getState().audit.at(-1)
+    expect(last).toMatchObject({ entityId: bookingId, role: 'anaesthetist', who: MORRISON.who, action: 'booking.update' })
   })
 
   it('office edit of a SUBMITTED list is allowed', () => {

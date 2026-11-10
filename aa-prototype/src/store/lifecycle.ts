@@ -1,15 +1,21 @@
 /**
  * Lifecycle guards (PROGRESS convention 6, amended in catch-up Phase 15b: the
- * state was DRAFT until EP-07 and FT-07.1 renamed it). ACTIVE → SUBMITTED → AUTHORISED is
- * strictly ordered; SUBMITTED strips anaesthetist edit rights; AUTHORISED
- * locks Bookings immutable; there is NO Returned transition anywhere. UI can
- * never bypass a guard — every guard returns an `Outcome` (refusals as data;
+ * state was DRAFT until EP-07 and FT-07.1 renamed it; its "SUBMITTED strips
+ * anaesthetist edit rights" superseded in catch-up Phase 38a, RV-19, D63).
+ * ACTIVE → SUBMITTED → AUTHORISED is strictly ordered; AUTHORISED locks
+ * Bookings immutable; there is NO Returned transition anywhere. UI can never
+ * bypass a guard — every guard returns an `Outcome` (refusals as data;
  * Phase 11's monitor turns integration refusals into manual-intervention
  * items).
  *
- * The RFP state table, as enforced here:
- *   - anaesthetist: edits own ACTIVE Lists' Bookings only;
- *   - office: edits ACTIVE and SUBMITTED; authorises; nobody edits AUTHORISED;
+ * The edit window (US-07.2.1, US-07.2.3, FT-07.2):
+ *   - anaesthetist: edits their own ACTIVE and SUBMITTED Lists' Bookings until
+ *     the office authorises the List. Submitting only tells the office it has
+ *     work to do;
+ *   - office: edits ACTIVE and SUBMITTED directly (no "returned" state);
+ *     authorises; nobody edits AUTHORISED;
+ *   - the last change stands: no lock, neither side outranks the other, every
+ *     change audited (Admin Review shows "Changed since submitted");
  *   - integration-sourced writes only while the List is ACTIVE.
  */
 
@@ -68,9 +74,7 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
     if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== list.anaesthetistId) {
       return refuse('notOwnList', 'Anaesthetists can only change Bookings on their own Lists.')
     }
-    if (list.state !== 'ACTIVE') {
-      return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
-    }
+    // ACTIVE and SUBMITTED are both theirs to change until AUTHORISED (RV-19, D63).
     return null
   }
   // office / system: DRAFT, ACTIVE and SUBMITTED are editable.
@@ -165,8 +169,9 @@ export function completeBooking(api: AppStoreApi, actor: Actor, bookingId: strin
 
 /**
  * Re-open a completed Booking (Phase 04's "Amend" link). The anaesthetist amends
- * their own Booking while the List is ACTIVE; the office may re-open on ACTIVE or
- * SUBMITTED (the standard edit-rights matrix). Completion is a clinical
+ * their own Booking while the List is ACTIVE or SUBMITTED, and so may the office
+ * (the standard edit-rights matrix; catch-up Phase 38a). A Booking re-opened on a
+ * SUBMITTED List blocks authorise until it is completed again (`authoriseList`). Completion is a clinical
  * sign-off, so integrations never take it back either — mirrors completeBooking.
  */
 export function uncompleteBooking(api: AppStoreApi, actor: Actor, bookingId: string): Outcome {
@@ -214,6 +219,15 @@ export function uncompleteBooking(api: AppStoreApi, actor: Actor, bookingId: str
 const ASSIGN_FIRST = 'Assign an anaesthetist first.'
 
 /**
+ * The List's non-cancelled Bookings not marked complete: what blocks submit and,
+ * since catch-up Phase 38a, authorise (a Booking re-opened or added on a
+ * SUBMITTED List must be completed again before the office can authorise it).
+ */
+export function incompleteBookingsOn(state: Pick<AppState, 'schedule'>, listId: string): Booking[] {
+  return bookingsForList(state, listId).filter((c) => c.cancellation === undefined && !c.completed)
+}
+
+/**
  * ACTIVE → SUBMITTED. Completion-gated: every non-cancelled Booking must be
  * marked Completed (validation alone is not enough); a cancelled Booking never
  * blocks.
@@ -238,7 +252,7 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
     return refuse('notOwnList', 'Anaesthetists can only submit their own Lists.')
   }
 
-  const incomplete = bookingsForList(state, listId).filter((c) => c.cancellation === undefined && !c.completed)
+  const incomplete = incompleteBookingsOn(state, listId)
   if (incomplete.length > 0) {
     return refuse(
       'bookingsNotCompleted',
@@ -269,8 +283,12 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
 
 /**
  * SUBMITTED → AUTHORISED (strictly ordered — an ACTIVE List can never jump).
- * Office only. Locks the List's Bookings immutable and emits `listAuthorised`
- * for Phase 08's billing run.
+ * Office only. Completion-gated like `submitList` (catch-up Phase 38a): the
+ * anaesthetist can re-open or add a Booking on a SUBMITTED List, so authorise is
+ * refused while any non-cancelled Booking is incomplete, naming them. The List
+ * stays SUBMITTED (no return state): the office completes the Booking itself or
+ * rings the anaesthetist. Locks the List's Bookings immutable and emits
+ * `listAuthorised` for Phase 08's billing run.
  */
 export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): Outcome {
   const state = api.getState()
@@ -282,6 +300,14 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
   }
   if (actor.role !== 'office') {
     return refuse('officeOnly', 'Only the office can authorise a List for billing.')
+  }
+  const incomplete = incompleteBookingsOn(state, listId)
+  if (incomplete.length > 0) {
+    return refuse(
+      'bookingsNotCompleted',
+      `Every Booking must be completed before the List is authorised (${incomplete.length} to finish).`,
+      incomplete.map((c) => c.id),
+    )
   }
 
   mutate(
@@ -315,8 +341,9 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
  * hospital) — it surfaces on the review action bar AND, via the audit entry, in
  * the List's history. Office-initiated; allowed in any List state since it is
  * an annotation, not a Booking edit. There is NO return-to-anaesthetist action
- * anywhere: a SUBMITTED List flows only forward to AUTHORISED (convention 6, no
- * Returned state).
+ * anywhere: a SUBMITTED List flows only forward to AUTHORISED (no Returned
+ * state). The office corrects directly, and the anaesthetist can too until
+ * AUTHORISED; the last change stands (catch-up Phase 38a, US-07.2.3).
  */
 export function logListNote(api: AppStoreApi, actor: Actor, listId: string, text: string): Outcome {
   const state = api.getState()
@@ -567,9 +594,10 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
 /**
  * Move one Booking (with its Procedures) to a different List — the RFP's routine
  * single-booking move, audited at Booking level. Neither List's status or other
- * Bookings change. Blocked when either List is AUTHORISED; a SUBMITTED target is
- * allowed for the office (the all-Bookings-completed rule gates the
- * ACTIVE→SUBMITTED transition, not later office rebooking).
+ * Bookings change. Blocked when either List is AUTHORISED; a SUBMITTED List at
+ * either end is allowed for the office and, on their own Lists, the anaesthetist
+ * (catch-up Phase 38a). A Booking moved onto a SUBMITTED List counts toward its
+ * completeness check at authorise.
  */
 export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: string, toListId: string): Outcome {
   const state = api.getState()
@@ -601,9 +629,10 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
     if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== target.anaesthetistId) {
       return refuse('notOwnList', 'To hand a Booking to a colleague, use Move to a colleague.')
     }
-    if (source.state !== 'ACTIVE' || target.state !== 'ACTIVE') {
-      return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
-    }
+    // ACTIVE and SUBMITTED Lists of their own, both ends (catch-up Phase 38a, D63);
+    // a Draft List is the office's (editRefusal).
+    const rights = editRefusal(actor, source) ?? editRefusal(actor, target)
+    if (rights !== null) return rights
   }
 
   mutate(

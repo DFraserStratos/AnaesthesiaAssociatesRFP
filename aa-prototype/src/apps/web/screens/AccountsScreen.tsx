@@ -100,7 +100,7 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
     return (
       <Panel>
         <div style={{ fontSize: 14, color: neutral.mist, padding: '8px 0' }}>
-          No outstanding accounts. Unpaid ACCPAY invoices appear here the day after they are billed.
+          No outstanding accounts. A List's invoices show here once the office authorises it.
         </div>
       </Panel>
     )

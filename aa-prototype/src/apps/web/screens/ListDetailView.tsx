@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Check, ChevronLeft, Plus } from 'lucide-react'
+import { Check, ChevronLeft, Lock, Plus } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
-import { removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
+import { editRefusal, removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
+import { ListInvoices, useListInvoices } from '../../../shared/schedule'
+import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
@@ -28,6 +31,8 @@ interface BookingRow {
   extraProcedures: number
   units: number
   fee: number
+  /** What the Booking was invoiced at (GST inclusive), for an authorised List. */
+  invoiced: number
 }
 
 /**
@@ -57,6 +62,14 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const movable = useIsMovable(listId, actor.anaesthetistId)
   const movePrompt = useMoveListPrompt()
   const moved = useMovedToMeNotice(listId, actor.anaesthetistId)
+  // An authorised List is read only: its invoices, and what each Booking was
+  // invoiced at, not a fee recomputed from today's prices (catch-up Phase 38a).
+  const invoices = useListInvoices(listId)
+  const invoicedByBooking = useMemo(() => {
+    const out = new Map<string, number>()
+    for (const r of invoices) out.set(r.bookingId, (out.get(r.bookingId) ?? 0) + r.total)
+    return out
+  }, [invoices])
 
   const model = useMemo(() => {
     // A Draft List never reaches an anaesthetist surface (OQ-86 answered no, D46).
@@ -75,6 +88,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .map((booking) => {
         const procs = procsByBooking.get(booking.id) ?? []
         const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0 }
+        // What it was invoiced at: the same invoices the Invoices panel lists.
+        const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {
           booking,
           time: booking.scheduledTime ?? '·',
@@ -84,6 +99,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           extraProcedures: Math.max(0, procs.length - 1),
           units: totals.units,
           fee: totals.total,
+          invoiced,
         }
       })
 
@@ -94,8 +110,9 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       done: active.filter((r) => r.booking.completed).length,
       units: active.reduce((n, r) => n + r.units, 0),
       fee: active.reduce((n, r) => n + r.fee, 0),
+      invoiced: active.reduce((n, r) => n + r.invoiced, 0),
     }
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking])
 
   const warningsByBooking = useListWarnings(listId)
 
@@ -105,11 +122,14 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const surgeon = masters.surgeons[list.surgeonId]
   const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
-  const dayLabel = list.dateISO === todayISO ? 'Today' : list.dateISO
+  const dayLabel = list.dateISO === todayISO ? 'Today' : format(parseISO(list.dateISO), 'EEE d MMM yyyy')
+  const authorised = list.state === 'AUTHORISED'
+  const progressLabel = LIST_PROGRESS_LABEL[listProgress(list, [], todayISO)]
   const subline = [surgeon?.name, surgeon?.specialty, dayLabel, times !== undefined ? slotTimeRange(times) : undefined]
     .filter((p): p is string => p !== undefined && p !== '')
     .join(' · ')
-  const canEdit = list.state === 'ACTIVE'
+  // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
+  const canEdit = editRefusal(actor, list) === null
   const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
@@ -151,6 +171,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           )}
           <SubmitAction
             state={list.state}
+            authorisedLabel={progressLabel}
             incomplete={incomplete}
             onBlockers={() => setSubmitSheet('blockers')}
             onConfirm={() => setSubmitSheet('confirm')}
@@ -179,15 +200,21 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                 <Th>Time</Th>
                 <Th>Patient</Th>
                 <Th>Procedure</Th>
-                <Th align="right">Units</Th>
-                <Th align="right">Fee</Th>
+                {authorised ? (
+                  <Th align="right">Invoiced</Th>
+                ) : (
+                  <>
+                    <Th align="right">Units</Th>
+                    <Th align="right">Fee</Th>
+                  </>
+                )}
                 <Th align="right">Status</Th>
               </tr>
             </thead>
             <tbody>
               {model.rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>
+                  <td colSpan={authorised ? 5 : 6} style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>
                     No bookings on this List yet.
                   </td>
                 </tr>
@@ -219,8 +246,14 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                         <span style={{ color: neutral.mist }}> · +{r.extraProcedures} more</span>
                       )}
                     </Td>
-                    <Td mono align="right">{cancelled ? '·' : r.units}</Td>
-                    <Td mono align="right">{cancelled ? '·' : formatCurrency(r.fee)}</Td>
+                    {authorised ? (
+                      <Td mono align="right">{cancelled ? '·' : formatCurrency(r.invoiced)}</Td>
+                    ) : (
+                      <>
+                        <Td mono align="right">{cancelled ? '·' : r.units}</Td>
+                        <Td mono align="right">{cancelled ? '·' : formatCurrency(r.fee)}</Td>
+                      </>
+                    )}
                     <Td align="right">
                       {cancelled ? (
                         <span style={{ fontSize: 12, fontWeight: 600, color: semantic.error.onTint }}>Cancelled</span>
@@ -244,8 +277,14 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                     <span style={{ fontWeight: 700 }}>Totals</span>
                   </Td>
                   <Td />
-                  <Td mono align="right"><strong>{model.units}</strong></Td>
-                  <Td mono align="right"><strong>{formatCurrency(model.fee)}</strong></Td>
+                  {authorised ? (
+                    <Td mono align="right"><strong>{formatCurrency(model.invoiced)}</strong></Td>
+                  ) : (
+                    <>
+                      <Td mono align="right"><strong>{model.units}</strong></Td>
+                      <Td mono align="right"><strong>{formatCurrency(model.fee)}</strong></Td>
+                    </>
+                  )}
                   <Td />
                 </tr>
               )}
@@ -264,6 +303,12 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           </div>
         )}
       </Panel>
+
+      {authorised && (
+        <Panel title="Invoices">
+          <ListInvoices rows={invoices} />
+        </Panel>
+      )}
 
       {/* List attachments (US-03.1.3): the web List detail's second panel, the
           Booking detail's panel pattern. Hidden when the List is locked and
@@ -298,11 +343,14 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
  */
 function SubmitAction({
   state,
+  authorisedLabel,
   incomplete,
   onBlockers,
   onConfirm,
 }: {
   state: string
+  /** "Invoiced" or "Authorised" (LIST_PROGRESS_LABEL) for a List the office has authorised. */
+  authorisedLabel: string
   incomplete: number
   onBlockers: () => void
   onConfirm: () => void
@@ -321,6 +369,13 @@ function SubmitAction({
     gap: 8,
   } as const
 
+  if (state === 'AUTHORISED') {
+    return (
+      <span data-shot="list-authorised-status" style={{ ...shared, background: neutral.sunken, color: neutral.slate }}>
+        <Lock size={15} strokeWidth={2.4} aria-hidden /> {authorisedLabel} · read only
+      </span>
+    )
+  }
   if (state !== 'ACTIVE') {
     return (
       <span style={{ ...shared, background: semantic.success.tint, color: semantic.success.onTint }}>

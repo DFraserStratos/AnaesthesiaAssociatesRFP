@@ -44,8 +44,9 @@
  * `listAuthorised`; `wireBillingRun` (wired by the PWA entry exactly as
  * `main.tsx` wires it) consumes the event, runs the billing run, raises the
  * Invoices and their BillingCases, stamps `billedAtISO`, and hands the cases off
- * to the Xero mirror as ACCREC/ACCPAY pairs. The billed List then drops out of
- * the anaesthetist's Done tab and its money appears in Balances — which is the
+ * to the Xero mirror as ACCREC/ACCPAY pairs. The authorised List leaves the
+ * anaesthetist's Done tab and its money appears in Balances (catch-up Phase 38a:
+ * both at once, at AUTHORISED) — which is the
  * whole reason this exists. Should a host ever wire this job WITHOUT the billing
  * run, the explicit run below finishes the chain itself; the `alreadyBilled`
  * guard makes running both paths harmless.
@@ -56,7 +57,7 @@
  * the audit trail names the simulation as the actor.
  */
 
-import { authoriseAsSimulatedOffice, type BoundAppStore } from '../store'
+import { authoriseAsSimulatedOffice, officeStandInRefusal, STAND_IN_INCOMPLETE, type BoundAppStore } from '../store'
 
 // ---------------------------------------------------------------------------
 // The toggle (presenter setting, persisted outside the store)
@@ -194,7 +195,9 @@ export function wireOfficeSimulation(api: BoundAppStore): () => void {
       // nothing but a live submit ever enters the map. `teardown` cancels
       // whatever is armed, re-arm included.
       const visit = () => {
-        if (!isOfficeSimulationEnabled()) {
+        // Off, or a Booking reopened (or added) since submit (catch-up Phase 38a):
+        // wait and look again rather than strand the List.
+        if (!isOfficeSimulationEnabled() || officeStandInRefusal(api.getState(), listId) === STAND_IN_INCOMPLETE) {
           pending.set(listId, window.setTimeout(visit, OFFICE_SIM_DELAY_MS))
           return
         }

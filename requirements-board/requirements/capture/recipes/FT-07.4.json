@@ -1,0 +1,51 @@
+{
+  "id": "FT-07.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "authorised-list",
+      "app": "web",
+      "caption": "An authorised List leaves the main view, its invoices show in balances, and it stays findable",
+      "start": "/web/lists?q=Prentice",
+      "setup": [
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-20-PM"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=list-invoices]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-invoices]"
+          ]
+        }
+      ]
+    }
+  ]
+}

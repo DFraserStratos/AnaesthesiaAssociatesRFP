@@ -56,6 +56,8 @@ function canvasFingerprint(state: ReturnType<typeof buildSeed>): { slots: number
 
 describe('canvas fingerprint (Phase 17, re-pinned in Phase 28)', () => {
   it('matches the pinned canvas', () => {
-    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 1117, hash: 3794423627 })
+    // Re-pinned in catch-up Phase 38a: the twelve browsable-history backdrop Lists
+    // (January to March 2026) were appended; the slots and every other List are unchanged.
+    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 1129, hash: 2258258707 })
   })
 })

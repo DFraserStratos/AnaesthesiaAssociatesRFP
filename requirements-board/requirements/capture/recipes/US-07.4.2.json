@@ -1,6 +1,55 @@
 {
   "id": "US-07.4.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 38a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "main-view",
+      "app": "mobile",
+      "caption": "The main view starts at today, with earlier Lists not yet authorised a scroll back",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "state": "today",
+          "steps": [
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-main-view-earlier]"
+          ]
+        },
+        {
+          "state": "scrolled-back",
+          "caption": "Scrolled back: Monday's submitted Lists, quieter and still editable",
+          "steps": [
+            {
+              "click": "[data-shot=mobile-main-view-earlier]"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-home] [data-shot=mobile-main-view-earlier-group]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "main-view",
+      "app": "web",
+      "caption": "On the web, earlier Lists head the table without changing a date",
+      "start": "/web/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-main-view-earlier]"
+          ]
+        }
+      ]
+    }
+  ]
 }

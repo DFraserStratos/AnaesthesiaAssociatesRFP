@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, Plus } from 'lucide-react'
+import { ChevronLeft, Lock, Plus } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
-import { removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
+import { editRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
+import { ListInvoices, useListInvoices } from '../../../shared/schedule'
+import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
@@ -94,6 +97,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   }, [list, listId, bookingsRecord, proceduresRecord, patients])
 
   const warningsByBooking = useListWarnings(listId)
+  // An authorised List is read only and shows its invoices (catch-up Phase 38a).
+  const invoices = useListInvoices(listId)
 
   // A Draft List is office only (OQ-86): nothing to show an anaesthetist.
   if (!isAssignedList(list) || model === undefined) return null
@@ -102,14 +107,16 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const surgeon = surgeons[list.surgeonId]
   const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
-  const dayLabel = list.dateISO === todayISO ? 'Today' : list.dateISO
+  const dayLabel = list.dateISO === todayISO ? 'Today' : format(parseISO(list.dateISO), 'EEE d MMM yyyy')
+  const authorised = list.state === 'AUTHORISED'
   const sublineParts = [
     surgeon?.name,
     surgeon?.specialty,
     dayLabel,
     times !== undefined ? slotTimeRange(times) : undefined,
   ].filter((p): p is string => p !== undefined && p !== '')
-  const canEdit = list.state === 'ACTIVE'
+  // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
+  const canEdit = editRefusal(actor, list) === null
   const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
@@ -260,6 +267,16 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           )
         })}
 
+        {authorised && (
+          <section
+            aria-label="Invoices"
+            style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Invoices</span>
+            <ListInvoices rows={invoices} />
+          </section>
+        )}
+
         {/* List attachments (US-03.1.3): files for the List as a whole. Hidden
             when the List is locked and holds none, so a read-only List does not
             grow an empty section. */}
@@ -329,7 +346,15 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           borderTop: `1px solid ${neutral.line}`,
         }}
       >
-        {list.state !== 'ACTIVE' ? (
+        {authorised ? (
+          <div
+            data-shot="list-authorised-status"
+            style={{ height: 54, borderRadius: radius.card, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 16, fontWeight: 700 }}
+          >
+            <Lock size={17} strokeWidth={2.4} aria-hidden />
+            {LIST_PROGRESS_LABEL[listProgress(list, [], todayISO)]} · read only
+          </div>
+        ) : list.state !== 'ACTIVE' ? (
           <div
             style={{
               height: 54,

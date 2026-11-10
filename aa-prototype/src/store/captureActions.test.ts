@@ -5,6 +5,7 @@
  * Every test uses an isolated, non-persisted store seeded from buildSeed().
  */
 
+import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { addBillingLine, removeBillingLine, setBillingLineAllocation } from './billingLineActions'
@@ -195,7 +196,7 @@ describe('addBillingLine', () => {
     expect(api.getState().audit.length).toBe(auditBefore)
   })
 
-  it('role/state matrix: anaesthetist refused on SUBMITTED, office allowed; not-own refused; AUTHORISED locked', () => {
+  it('role/state matrix: anaesthetist and office allowed on SUBMITTED (catch-up Phase 38a); not-own refused; AUTHORISED locked', () => {
     const api = store()
     const morrisonProc = firstProcedureId(api, bookingsForList(api.getState(), MORRISON_LIST)[0]!.id)
 
@@ -204,8 +205,7 @@ describe('addBillingLine', () => {
       description: 'Late ancillary',
       amount: 40,
     })
-    expect(anaesthetist.ok).toBe(false)
-    if (!anaesthetist.ok) expect(anaesthetist.code).toBe('listSubmitted')
+    expect(anaesthetist.ok).toBe(true)
 
     const office = addBillingLine(api, OFFICE, morrisonProc, {
       chargeBasis: 'fixed',
@@ -259,7 +259,7 @@ describe('removeBillingLine', () => {
     expect(state.schedule.bookings[ELLISON_BOOKING]?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
-  it('the anaesthetist may not remove a line from the submitted S3 List; the office may', () => {
+  it('the anaesthetist may not remove the office-only funder line from the submitted S3 List; the office may', () => {
     const api = store()
     const state = api.getState()
     const procedureIds = proceduresForBooking(state, TWO_FUNDER_BOOKING).map((p) => p.id)
@@ -270,7 +270,8 @@ describe('removeBillingLine', () => {
 
     const refused = removeBillingLine(api, SOUTER, funderLine.id)
     expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.code).toBe('listSubmitted')
+    // The List is open to her until AUTHORISED (catch-up Phase 38a); the funder split stays the office's.
+    if (!refused.ok) expect(refused.code).toBe('funderAllocationOfficeOnly')
     expect(api.getState().schedule.billingLines[funderLine.id]).toBeDefined()
 
     const office = removeBillingLine(api, OFFICE, funderLine.id)
@@ -315,15 +316,18 @@ describe('addProcedure', () => {
     }
   })
 
-  it('refuses the anaesthetist on a SUBMITTED list', () => {
+  it('lets the anaesthetist add a procedure on their own SUBMITTED list (catch-up Phase 38a), never on AUTHORISED', () => {
     const api = store()
     const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]!.id
-    // Re-open the completed booking (office may, on SUBMITTED) so the list gate
-    // itself is what refuses the anaesthetist.
-    expect(uncompleteBooking(api, OFFICE, morrisonBooking).ok).toBe(true)
-    const outcome = addProcedure(api, MORRISON, morrisonBooking)
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
+    // Re-open the completed booking so the list gate itself is what decides.
+    expect(uncompleteBooking(api, MORRISON, morrisonBooking).ok).toBe(true)
+    expect(addProcedure(api, MORRISON, morrisonBooking).ok).toBe(true)
+    api.setState((s) => ({
+      schedule: { ...s.schedule, lists: { ...s.schedule.lists, [MORRISON_LIST]: { ...assigned(s.schedule.lists[MORRISON_LIST]), state: 'AUTHORISED' as const } } },
+    }))
+    const locked = addProcedure(api, MORRISON, morrisonBooking)
+    expect(locked.ok).toBe(false)
+    if (!locked.ok) expect(locked.code).toBe('listAuthorised')
   })
 })
 
@@ -385,7 +389,7 @@ describe('removeProcedure', () => {
     expect(proceduresForBooking(api.getState(), ELLISON_BOOKING)).toHaveLength(2)
   })
 
-  it('refuses cancelled and completed bookings, and the anaesthetist on a SUBMITTED list', () => {
+  it('refuses cancelled and completed bookings; the anaesthetist may remove an added one on a SUBMITTED list', () => {
     const api = store()
 
     const cancelledProcedure = firstProcedureId(api, CANCELLED_BOOKING)
@@ -404,9 +408,10 @@ describe('removeProcedure', () => {
 
     const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]!.id
     expect(uncompleteBooking(api, OFFICE, morrisonBooking).ok).toBe(true)
-    const submitted = removeProcedure(api, MORRISON, firstProcedureId(api, morrisonBooking))
-    expect(submitted.ok).toBe(false)
-    if (!submitted.ok) expect(submitted.code).toBe('listSubmitted')
+    const added = addProcedure(api, MORRISON, morrisonBooking)
+    expect(added.ok).toBe(true)
+    if (!added.ok) return
+    expect(removeProcedure(api, MORRISON, added.value.procedureId).ok).toBe(true)
   })
 
   it('blocks the anaesthetist when a line carries an office funder allocation, and lets the office through', () => {
@@ -464,12 +469,12 @@ describe('uncompleteBooking', () => {
     if (!cancelled.ok) expect(cancelled.code).toBe('bookingCancelled')
   })
 
-  it('anaesthetist refused on SUBMITTED; office allowed on SUBMITTED', () => {
+  it('anaesthetist and office may both re-open on SUBMITTED (catch-up Phase 38a); the List stays SUBMITTED', () => {
     const api = store()
     const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]!.id
-    const refused = uncompleteBooking(api, MORRISON, morrisonBooking)
-    expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.code).toBe('listSubmitted')
+    expect(uncompleteBooking(api, MORRISON, morrisonBooking).ok).toBe(true)
+    expect(api.getState().schedule.lists[MORRISON_LIST]?.state).toBe('SUBMITTED')
+    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'booking.uncomplete', role: 'anaesthetist', entityId: morrisonBooking })
 
     const whitakerBooking = bookingsForList(api.getState(), WHITAKER_LIST)[0]!.id
     const office = uncompleteBooking(api, OFFICE, whitakerBooking)

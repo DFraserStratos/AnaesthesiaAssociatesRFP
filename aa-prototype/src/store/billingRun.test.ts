@@ -425,6 +425,16 @@ describe('review-pass hardening (8th review)', () => {
       const provisional = Object.values(api.getState().schedule.bookings).find((c) => c.patientId === PAT.provisional)
       expect(provisional).toBeDefined()
       expect(reassignBooking(api, OFFICE, provisional!.id, MORRISON_LIST).ok).toBe(true)
+      // Since catch-up Phase 38a authorise is completion-gated: the incomplete
+      // Booking blocks it first.
+      const gated = authoriseList(api, OFFICE, MORRISON_LIST)
+      expect(gated.ok).toBe(false)
+      if (!gated.ok) expect(gated.code).toBe('bookingsNotCompleted')
+      // A Booking marked complete with no route (the state this hardening covers)
+      // still fails as a BillingCase, never a throw.
+      api.setState((s) => ({
+        schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [provisional!.id]: { ...s.schedule.bookings[provisional!.id]!, completed: true } } },
+      }))
       const outcome = authoriseList(api, OFFICE, MORRISON_LIST)
       expect(outcome.ok).toBe(true)
       const state = api.getState()
@@ -515,7 +525,7 @@ describe('the design-day live path', () => {
     expect(nib?.counterparty.id).toBe(INS.nib)
     const patient = invoices.find((i) => i.counterparty.kind === 'patient')
     expect(patient?.layout).toBe('patient')
-    // The billed list vanishes from the anaesthetist's forward views.
+    // The billing run stamps the List (the office reads it; the main view exit is AUTHORISED).
     expect(isListBilled(api.getState().schedule.lists[SOUTER_PM]!)).toBe(true)
   })
 

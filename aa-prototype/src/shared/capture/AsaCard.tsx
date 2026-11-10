@@ -19,6 +19,11 @@ interface AsaCardProps {
   actor: Actor
   /** isAdditional or read-only — selection stays visible, taps do nothing. */
   disabled: boolean
+  /**
+   * The Booking is locked (an authorised List: catch-up Phase 38a). With no ASA
+   * recorded, the card says so instead of prompting for one.
+   */
+  locked?: boolean
   onError: (message: string) => void
 }
 
@@ -29,7 +34,7 @@ interface AsaCardProps {
  * the calculator is the maths, the mockup is the skin). Supports the
  * none-selected state — a segmented write-through would silently invent data.
  */
-export function AsaCard({ procedure, actor, disabled, onError }: AsaCardProps) {
+export function AsaCard({ procedure, actor, disabled, locked = false, onError }: AsaCardProps) {
   const selected = procedure.asaClass
 
   function pick(value: AsaClass) {
@@ -46,6 +51,8 @@ export function AsaCard({ procedure, actor, disabled, onError }: AsaCardProps) {
           <Caption color={neutral.slate}>
             ASA {ROMAN[selected]} seeds +{ASA_SEED_UNITS[selected]} modifier {ASA_SEED_UNITS[selected] === 1 ? 'unit' : 'units'}.
           </Caption>
+        ) : locked ? (
+          <Caption>Not recorded.</Caption>
         ) : (
           <Caption>Select the ASA physical status; it seeds the modifier units.</Caption>
         )

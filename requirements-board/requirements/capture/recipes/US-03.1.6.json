@@ -1,6 +1,129 @@
 {
   "id": "US-03.1.6",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 38a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "lookback-date",
+      "app": "mobile",
+      "caption": "Jump to any date back to January 2026",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "state": "sheet",
+          "steps": [
+            {
+              "click": "[aria-label=\"Go to a date\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[data-shot=mobile-lookback-calendar] >> role=button[name=/Choose a month and year/]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=mobile-lookback-calendar] >> role=button[name=\"March 2026\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-lookback-calendar]"
+          ]
+        },
+        {
+          "state": "day",
+          "caption": "Pick a past day to see its Lists, then a Booking and its Procedures",
+          "steps": [
+            {
+              "click": "[aria-label=\"Go to a date\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[data-shot=mobile-lookback-calendar] >> role=button[name=/Choose a month and year/]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=mobile-lookback-calendar] >> role=button[name=\"March 2026\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-date=\"2026-03-13\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[data-testid=mobile-lists-day-chip]",
+            "[data-shot=mobile-lookback-day]"
+          ]
+        },
+        {
+          "state": "drill",
+          "caption": "The past List opens read only, with its invoices",
+          "steps": [
+            {
+              "goto": "/mobile/lists?day=2026-03-13"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[data-list-id=\"L-HIST-2026-03-13-AM\"]"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=list-invoices]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-invoices]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lookback-day",
+      "app": "web",
+      "caption": "Pick a past day to see its Lists, then a Booking and its Procedures",
+      "start": "/web/lists?day=2026-03-13",
+      "states": [
+        {
+          "state": "day",
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-lookback-day]"
+          ]
+        },
+        {
+          "state": "drill",
+          "caption": "The past List opens read only, with its invoices",
+          "steps": [
+            {
+              "click": "[data-shot=web-lookback-day] tr[data-list-id]"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-invoices]"
+          ]
+        }
+      ]
+    }
+  ]
 }

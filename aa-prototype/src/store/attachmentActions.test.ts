@@ -122,22 +122,23 @@ describe('addAttachment / removeAttachment', () => {
 })
 
 describe('the rights matrix', () => {
-  it('anaesthetist on their own ACTIVE List only; office on ACTIVE and SUBMITTED; nobody on AUTHORISED', () => {
+  it('anaesthetist on their own ACTIVE or SUBMITTED List (catch-up Phase 38a); office on ACTIVE and SUBMITTED; nobody on AUTHORISED', () => {
     const api = store()
     const morrison: Actor = { who: 'Dr Kate Morrison', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.morrison }
     expect(addAttachment(api, morrison, { kind: 'list', id: SOUTER_PM }, FILE)).toMatchObject({ ok: false, code: 'notOwnList' })
 
     const morrisonSubmitted = SEED_MARKERS['submittedListMorrison']?.entityId ?? ''
     expect(api.getState().schedule.lists[morrisonSubmitted]?.state).toBe('SUBMITTED')
-    expect(addAttachment(api, morrison, { kind: 'list', id: morrisonSubmitted }, FILE)).toMatchObject({ ok: false, code: 'listSubmitted' })
+    expect(addAttachment(api, morrison, { kind: 'list', id: morrisonSubmitted }, FILE).ok).toBe(true)
     const submittedBooking = bookingsForList(api.getState(), morrisonSubmitted).find((b) => b.cancellation === undefined)
-    expect(addAttachment(api, morrison, { kind: 'booking', id: submittedBooking!.id }, FILE)).toMatchObject({ ok: false, code: 'listSubmitted' })
+    expect(addAttachment(api, morrison, { kind: 'booking', id: submittedBooking!.id }, FILE).ok).toBe(true)
     expect(addAttachment(api, OFFICE, { kind: 'booking', id: submittedBooking!.id }, FILE).ok).toBe(true)
     expect(addAttachment(api, OFFICE, { kind: 'list', id: morrisonSubmitted }, FILE).ok).toBe(true)
 
     expect(authoriseList(api, OFFICE, morrisonSubmitted).ok).toBe(true)
     expect(addAttachment(api, OFFICE, { kind: 'list', id: morrisonSubmitted }, FILE)).toMatchObject({ ok: false, code: 'listAuthorised' })
     expect(addAttachment(api, OFFICE, { kind: 'booking', id: submittedBooking!.id }, FILE)).toMatchObject({ ok: false, code: 'listAuthorised' })
+    expect(addAttachment(api, morrison, { kind: 'list', id: morrisonSubmitted }, FILE)).toMatchObject({ ok: false, code: 'listAuthorised' })
   })
 
   it('a cancelled Booking takes no attachment', () => {
@@ -146,11 +147,11 @@ describe('the rights matrix', () => {
     expect(addAttachment(api, SOUTER, { kind: 'booking', id: ELLISON }, FILE)).toMatchObject({ ok: false, code: 'bookingCancelled' })
   })
 
-  it('the submitted anaesthetist List refuses after submit', () => {
+  it('the anaesthetist can still attach to her List after submit (catch-up Phase 38a)', () => {
     const api = store()
     const amList = SEED_LIST_IDS.souterAm21
     expect(submitList(api, SOUTER, amList).ok).toBe(true)
-    expect(addAttachment(api, SOUTER, { kind: 'list', id: amList }, FILE)).toMatchObject({ ok: false, code: 'listSubmitted' })
+    expect(addAttachment(api, SOUTER, { kind: 'list', id: amList }, FILE).ok).toBe(true)
   })
 })
 

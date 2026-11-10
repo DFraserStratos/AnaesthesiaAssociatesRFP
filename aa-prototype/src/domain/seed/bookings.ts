@@ -493,7 +493,10 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     billingReference: 'SG-2026-0777',
   })
 
-  addListAudit(morrisonMon20, 'list.submit', 'Dr Kate Morrison', iso(MON20, '13:10'))
+  // After her last completion (13:27): a submit is completion-gated, and catch-up
+  // Phase 38a's "Changed since submitted" reads every anaesthetist write after it
+  // (it was 13:10, before two of her own seeded completions).
+  addListAudit(morrisonMon20, 'list.submit', 'Dr Kate Morrison', iso(MON20, '13:35'))
 
   // -------------------------------------------------------------------------
   // Whitaker Fri 17 Christchurch Public acute — SUBMITTED, 5 complete
@@ -971,7 +974,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // S13/S14/S15 messages locate them by appointment id (never patient
   // guesswork). Their forward ACTIVE St George's Lists are deliberately separate
   // from Tue 28 AM, so a modify message can never be confused with S1's own
-  // create. The fifth is on a SUBMITTED (office-locked) List for manual
+  // create. The fifth is on a SUBMITTED List (closed to integrations) for manual
   // intervention.
   // -------------------------------------------------------------------------
 

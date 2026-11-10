@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { isAssignedList } from '../../domain/draftLists'
 import { isMovableByOwner, movableListsFor, pushTargets, type ListMoveInput } from '../../domain/listMoves'
 import { addDaysISO } from '../../domain/clock'
 import type { AssignedList, Notification, Session } from '../../domain/types'
@@ -123,4 +124,30 @@ export function useBookingMovedToMeNotice(bookingId: string, anaesthetistId: str
     const move = bookingMovedToMe({ audit: moves, schedule: { bookings } }, bookingId, anaesthetistId, todayISO)
     return move === undefined ? undefined : { atISO: move.atISO, fromName: anaesthetists[move.fromAnaesthetistId]?.name }
   }, [moves, bookings, anaesthetists, anaesthetistId, bookingId, todayISO])
+}
+
+/**
+ * Whether a Booking route may show `bookingId` to her (catch-up Phase 38a's own
+ * Bookings only rule, with Phase 32a's one exception). A Booking on her own List
+ * shows; a missing one, or one on a colleague's or a Draft List, falls back like
+ * a stale id, except a Booking this same view showed as hers a moment ago:
+ * Move to a colleague takes it off her List while its sheet is still showing the
+ * done step, and leaving is explicit ("Back to your List", or closing the sheet).
+ * The latch lives only as long as the route stays on that Booking, so a deep link
+ * or a later visit to a colleague's Booking still falls back.
+ */
+export function useOwnBookingInView(bookingId: string | null, anaesthetistId: string): boolean {
+  const ownership = useAppStore((s): 'none' | 'hers' | 'notHers' => {
+    if (bookingId === null) return 'none'
+    const booking = s.schedule.bookings[bookingId]
+    if (booking === undefined) return 'none'
+    const list = s.schedule.lists[booking.listId]
+    if (!isAssignedList(list)) return 'none'
+    return list.anaesthetistId === anaesthetistId ? 'hers' : 'notHers'
+  })
+  const shownAsHers = useRef<string | null>(null)
+  // Idempotent ref writes during render: the same inputs always write the same value.
+  if (ownership === 'hers') shownAsHers.current = bookingId
+  else if (bookingId !== shownAsHers.current) shownAsHers.current = null
+  return ownership === 'hers' || (ownership === 'notHers' && shownAsHers.current === bookingId)
 }

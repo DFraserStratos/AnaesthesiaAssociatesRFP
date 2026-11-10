@@ -21,8 +21,8 @@ type Section = 'outstanding' | 'gst'
  * Balances tab (M11) — the anaesthetist's money, from the Billing Engine MIRROR
  * (never Xero; convention 9). Outstanding is a FLAT list of individual ACCPAY
  * invoices, no rollup (RFP); a fully-mobile card list, not a table. A GST peek
- * lists the amounts received this month with their GST component. Balances
- * appear the day AFTER billing (the RFP's next-day handover).
+ * lists the amounts received this month with their GST component. An invoice
+ * shows the moment the office authorises its List (catch-up Phase 38a).
  */
 export function BalancesScreen({ initials, anaesthetistId }: { initials: string; anaesthetistId: string }) {
   const billing = useAppStore((s) => s.billing)
@@ -87,7 +87,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
       {section === 'outstanding' ? (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {outstanding.length === 0 ? (
-            <EmptyCard>No outstanding invoices. Balances appear the day after billing.</EmptyCard>
+            <EmptyCard>No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyCard>
           ) : (
             outstanding.map((r) => (
               <div key={r.caseId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>

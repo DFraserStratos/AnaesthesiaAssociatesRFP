@@ -43,10 +43,13 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 ```
 
 - `ACTIVE`: anaesthetist, office and integrations may update.
-- `SUBMITTED`: office-only edits; anaesthetist sees completed/unbilled.
-- `AUTHORISED`: Bookings are locked; the whole List hands to billing.
-- Billing-run completion: the prototype stamps `billedAt` and removes the List from the
-  anaesthetist's work view.
+- `SUBMITTED`: the office reviews and corrects; the anaesthetist sees it less prominent ("Done ·
+  unbilled") and can still change it until it is authorised. The last change stands, and Review
+  shows "Changed since submitted".
+- `AUTHORISED`: Bookings are locked; the whole List hands to billing. The List leaves the
+  anaesthetist's main view at once, its invoices show in their balances at once, and search finds it.
+- Billing-run completion: the prototype stamps `billedAt` for the office's billing monitor; it no
+  longer decides what the anaesthetist sees.
 - There is no `RETURNED` state.
 - `DRAFT` means a Draft List with no anaesthetist yet (catch-up Phase 31); an assigned List is never DRAFT.
 
@@ -57,7 +60,7 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 | View own Lists/Bookings | Yes | Yes, all | As needed |
 | View colleague patient details | No | Yes | As needed |
 | Edit a Booking on an `ACTIVE` List | Yes, own | Yes | Yes |
-| Edit a `SUBMITTED` Booking | No | Yes | No, park for intervention |
+| Edit a `SUBMITTED` Booking | Yes, own, until authorised | Yes | No, park for intervention |
 | Edit an `AUTHORISED` Booking | No | No | No |
 | Submit a List | Yes, own | No; office receives it after submission | No |
 | Authorise a List | No | Yes | No |
@@ -152,6 +155,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 ### Anaesthetist Mobile
 
 - Procedure-day Lists and Bookings
+- A main view from today with earlier un-authorised Lists, and past work by patient name, NHI or date
 - BTM capture
 - Complete Booking and submit List
 - Add a missing Booking
@@ -164,6 +168,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 ### Anaesthetist Web
 
 - Wider dashboard and date ranges
+- A main view from today with earlier un-authorised Lists, and past work by patient name, NHI or date
 - Same List/Booking detail and capture functions
 - Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
   (My availability, the same form as the phone)
@@ -231,7 +236,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Web dashboard, Lists, availability and accounts views
 - Admin day view, changes, cover, review, authorisation, masters and audit
 - Draft Lists, including recurring clashes
-- Billing run, invoice documents and billed-List disappearance (Phase 08)
+- Billing run and invoice documents (Phase 08)
+- The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
+  name, NHI or date over months of history (catch-up Phase 38a)
 - Pre-payment, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
 - HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
@@ -294,12 +301,12 @@ Say:
 > AA confirmed the rule: Xero holds no NHI and no patient name, only a hidden ID that links each
 > transaction back to the billing system.
 
-### 2. Exact List disappearance trigger
+### 2. Exact List disappearance trigger (answered)
 
-- One table implies disappearance at `AUTHORISED`.
-- The following text says invoice generation should be the precise trigger and requires
-  confirmation.
-- The prototype uses completion of the billing run.
+- A List leaves the anaesthetist's main view when the office authorises it (OQ-31, 16 October), not
+  at submit, not when billed, not on payment.
+- Its invoices show in their balances at once (Xero returns the ID straight away).
+- Older work is found by search on patient name, NHI or date; there is no calendar archive.
 
 ### 3. Billing failure isolation
 
@@ -410,12 +417,15 @@ exceptions. "Shift" is not the RFP term.
 
 ### "Can an anaesthetist edit after submission?"
 
-No. Submitted Bookings are read-only to the anaesthetist and editable only by office. Authorised Bookings
-are immutable.
+Yes, until the office authorises the List. A submitted List stays on the anaesthetist's main view, less
+prominent, and they can still change it; every change is audited and Review shows "Changed since
+submitted". The last change stands, and a Booking reopened after submit must be completed again before
+the office can authorise. Authorised Bookings are immutable.
 
 ### "What happens when the office finds a mistake?"
 
-Office staff phone for clarification and make the correction. There is no Returned state.
+Office staff phone for clarification and make the correction. There is no Returned state; the
+anaesthetist can also correct it themselves until the office authorises it.
 
 ### "Why is Xero not doing all the billing?"
 
