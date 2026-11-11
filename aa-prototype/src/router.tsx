@@ -42,6 +42,7 @@ import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
 import { DemoIntegrations } from './apps/demo/DemoIntegrations'
 import { DemoData } from './apps/demo/DemoData'
+import { ComponentCatalogue } from './apps/demo/catalogue/ComponentCatalogue'
 import { useAppStore } from './store'
 import { LegacyBookingRedirect } from './shared/legacy'
 import { APP_CONFIG } from './shell/appConfig'
@@ -155,6 +156,9 @@ export function AppRouter() {
           </Route>
           <Route path="demo/integrations" element={<DemoIntegrations />} />
           <Route path="demo/data" element={<DemoData />} />
+          {/* UI component catalogue (docs/ui-library-research): URL only, not in the app switcher. */}
+          <Route path="demo/catalogue" element={<Navigate to="/demo/catalogue/admin" replace />} />
+          <Route path="demo/catalogue/:app" element={<ComponentCatalogue />} />
           <Route path="*" element={<RootRedirect />} />
         </Route>
       </Routes>

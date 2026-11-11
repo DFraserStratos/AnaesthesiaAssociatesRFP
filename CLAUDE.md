@@ -128,6 +128,12 @@ Not the place to edit requirements:
   `RFP response p.N`). Other evidence not cited by
   the catalogue (contract fee schedules) is in `docs/discovery-reference/Contract Files/`.
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
+- **UI library research** — `docs/ui-library-research/` (parked until late in the prototype build): research
+  and component inventories for replacing the hand-built UI with standard libraries (shadcn/ui on Base UI
+  and others) for unification, not flourish. Start at its `README.md`. Its live companion is the demo-only
+  component catalogue in the prototype (`/demo/catalogue/admin|web|mobile`, URL only, code in
+  `aa-prototype/src/apps/demo/catalogue/`): every hand-built component, one per row, grouped by replacement
+  library. Keep its rows in step when components are added, renamed or removed.
 - **Assets** — `docs/assets/` (the AA logo).
 
 ## Working in the app

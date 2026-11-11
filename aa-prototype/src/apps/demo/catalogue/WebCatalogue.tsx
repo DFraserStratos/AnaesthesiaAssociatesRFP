@@ -1,0 +1,218 @@
+import { SurfaceProvider } from '../../../shared'
+import { MoveListPromptProvider } from '../../../shared/flows/MoveListPrompt'
+import { CataloguePage, CatalogueRow, LibraryGroup } from './CatalogueKit'
+import { useWebFixtures } from './web/fixtures'
+import * as D from './web/demos'
+
+const W = 'Web'
+const WA = 'Web · Admin'
+const WM = 'Web · Mobile'
+const ALL = 'Admin · Web · Mobile'
+
+/**
+ * /demo/catalogue/web: every hand-built component in the Anaesthetist Web App,
+ * plus the shared ones it uses, live and interactive, one per row, grouped by
+ * the library that would replace it (docs/ui-library-research). Demo only.
+ * Rows read seeded data as Dr Souter; navigation is stubbed so nothing leaves
+ * the page.
+ */
+export function WebCatalogue() {
+  const f = useWebFixtures()
+  return (
+    <CataloguePage
+      title="Anaesthetist Web App · UI components"
+      intro="Every hand-built component in the Web app and the shared ones it uses, live on seeded data as Dr Souter. Navigation is stubbed. A few rows open real flows: confirming one changes the demo data, and Demo reset puts it back."
+    >
+      {/* The web surface here too, so the move sheet the provider opens is a centred dialog. */}
+      <SurfaceProvider variant="web">
+      <MoveListPromptProvider actor={f.actor}>
+        <LibraryGroup id="shadcn">
+          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar." replaceWith="shadcn NavigationMenu (links) + Avatar" note="Plain buttons today: no aria-current, no nav label, a hand-rolled avatar.">
+            <D.WebNavDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. A sliding segmented control used as route navigation." replaceWith="shadcn Tabs (as links)" note="A segmented control doing a tab bar's job; tabs-as-links give the route and aria-current.">
+            <D.PageSwitchDemo />
+          </CatalogueRow>
+          <CatalogueRow name="SubTabButton" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="The Accounts underline sub-tabs: Overdue, Payments, GST activity and AA fees." replaceWith="shadcn Tabs" note="Recreated: local to AccountsScreen.tsx. No tab roles, aria-selected or arrow keys today.">
+            <D.SubTabsDemo />
+          </CatalogueRow>
+          <CatalogueRow name="Back link" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="The teal chevron link above List and Booking detail that returns to where you came from." replaceWith="shadcn Breadcrumb" note="Recreated: inline in ListDetailView.tsx and BookingDetailView.tsx. A breadcrumb also says where you are.">
+            <D.BackLinkDemo />
+          </CatalogueRow>
+          <CatalogueRow name="Panel" source="apps/web/components/Panel.tsx" usedIn={W} what="The white card every web screen is built from: optional title row with a right-aligned action, padded or flush for a full-bleed table." replaceWith="shadcn Card" note="The title is a div, not a heading, so screen-reader users cannot jump between panels.">
+            <D.PanelDemo />
+          </CatalogueRow>
+          <CatalogueRow name="StatTile" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A dashboard figure: small caps label, a large mono value and an optional green change pill. Seeded productivity figures." replaceWith="shadcn Card + Badge" note="Recreated: local to DashboardScreen.tsx. Static figures; no animation to add.">
+            <D.StatTileDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={ALL} what="A single-choice segmented control whose highlight slides between options. Three colour variants." replaceWith="shadcn ToggleGroup (single)" note="aria-pressed buttons rather than radios, no roving focus. Keep the slide with Motion layoutId.">
+            <D.SlidingSegmentedDemo />
+          </CatalogueRow>
+          <CatalogueRow name="Segmented" source="shared/ui/Field.tsx" usedIn={ALL} what="The simpler segmented control (no slide). On web it picks the GST period on Accounts." replaceWith="shadcn ToggleGroup (single)" note="A second segmented control doing the same job; merge into one.">
+            <D.SegmentedDemo />
+          </CatalogueRow>
+          <CatalogueRow name="FilterChip" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="The All anaesthetists / Free only pills on Find cover, with today's free-session count." replaceWith="shadcn ToggleGroup (single)" note="Recreated: local to AvailabilityGrid.tsx. No aria-pressed (the mobile filter chips have it).">
+            <D.FilterChipDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="StatusLegend (toggle mode)" source="shared/StatusLegend.tsx" usedIn={ALL} what="The status legend as compact chips. Given activeStatuses and onToggleStatus it becomes a status filter; click the chips." replaceWith="shadcn ToggleGroup (multiple)" note="A group of toggles without a toggle group's keyboard model.">
+            <D.StatusLegendDemo />
+          </CatalogueRow>
+          <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={ALL} what="The pill for a List type or availability status, coloured from the status master. Every status in the legend is shown." replaceWith="shadcn Badge (status variants)" note="Status colours become --status-* tokens with tint and on-tint values.">
+            <D.StatusChipDemo />
+          </CatalogueRow>
+          <CatalogueRow name="ProgressPill" source="shared/schedule/ProgressPill.tsx" usedIn={ALL} what="A List's progress: To finish, Ready to submit, Done · unbilled, Invoiced, Authorised." replaceWith="shadcn Badge" note="One more pill family to fold into Badge variants.">
+            <D.ProgressPillDemo />
+          </CatalogueRow>
+          <CatalogueRow name="WebDayChip" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="The teal chip naming the picked day on the Lists page. Click it to close the day and go back to the main view." replaceWith="shadcn Badge (removable) / Button" note="The whole chip is the close button; a Badge with a separate remove control reads more clearly.">
+            <D.DayChipDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="WarningTriangle" source="shared/warnings/WarningTriangle.tsx" usedIn={ALL} what="The small warning marker on a Booking, coloured by the strongest open warning, with a count when there are several." replaceWith="shadcn Tooltip + Badge" note="The warning text lives only in title=, which keyboard and touch users never see.">
+            <D.WarningTriangleDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="Who's free chip" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A colleague's name on the dashboard's Who's free panel. A button when her List can move into their free session, a plain chip otherwise." replaceWith="shadcn Tooltip" note="Recreated: inline in DashboardScreen.tsx. Why it is or is not clickable is only in title=.">
+            <D.WhosFreeChipDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="IconBtn · NavButton · WeekNavButton" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Three near-identical square chevron buttons (day, month and week stepping), each labelled, at three sizes." replaceWith="shadcn Button (size icon)" note="Recreated: local to AvailabilityGrid.tsx, MyAvailabilityCalendar.tsx and WeekStrip.tsx. Three copies of one button.">
+            <D.IconButtonsDemo />
+          </CatalogueRow>
+          <CatalogueRow name="Day stepper" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Previous day, the day's name, next day and Today, for Find cover." replaceWith="shadcn Button Group" note="Recreated: inline in AvailabilityGrid.tsx. No arrow-key or T-for-today shortcuts.">
+            <D.DayStepperDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="LinkButton" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A teal text button inside a sentence, such as view overdue accounts." replaceWith="shadcn Button (variant link)" note="Recreated: local to DashboardScreen.tsx.">
+            <D.LinkButtonDemo />
+          </CatalogueRow>
+          <CatalogueRow name="SubmitAction" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="List detail's primary action in four states: blocked (count left, opens the real blockers sheet), ready, submitted and authorised." replaceWith="shadcn Button variants + Badge" note="Recreated: local to ListDetailView.tsx. Submitting just swaps the button for a green pill, with no live region or toast.">
+            <D.SubmitActionDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="Add a booking (dashed)" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="The full-width dashed button under the Bookings table. Opens the real Add a booking dialog." replaceWith="shadcn Button (outline, dashed variant)" note="Recreated: inline in ListDetailView.tsx. Saving in the dialog adds a Booking to the demo data.">
+            <D.AddBookingButtonDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="Progress bar" source="apps/web/screens/ListDetailView.tsx" usedIn={WM} what="How many Bookings on the List are complete, as a count and a green bar that eases to its new width." replaceWith="shadcn Progress" note="Recreated: inline in ListDetailView.tsx. No progressbar role or value today.">
+            <D.ProgressBarDemo />
+          </CatalogueRow>
+          <CatalogueRow name="Dialog (web Overlay)" source="shared/surface/Dialog.tsx" usedIn={WA} what="The web surface's modal: a centred card over a scrim, closed by Escape or a scrim click. Shown with the dashboard's Which List? picker." replaceWith="shadcn Dialog" note="The Overlay is real; the picker content is recreated from DashboardScreen.tsx. No focus trap, initial focus, restore or scroll lock today.">
+            <D.DialogDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="SubmitListSheet" source="shared/flows/SubmitListSheet.tsx" usedIn={WM} what="The submit flow's sheet. In blockers mode it lists each Booking still to finish and why." replaceWith="shadcn Dialog (AlertDialog for the confirm step)" note="Only blockers mode is offered here; confirm mode submits the List for real.">
+            <D.SubmitListSheetDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="AddAttachmentButton · AddAttachmentSheet" source="shared/attachments/AddAttachmentSheet.tsx" usedIn={ALL} what="The Add attachment action and its sheet for photographing or choosing a file for the List." replaceWith="shadcn Button + Dialog" note="Adding an attachment writes to the demo data (store mutation).">
+            <D.AddAttachmentDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="WebSearchField" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="The Lists page's pill search box for a patient name or NHI, with a clear button once you type." replaceWith="shadcn Input Group (search)" note="One of three search inputs (with NameSearchBox and mobile's LookbackSearchRow); merge into one.">
+            <D.WebSearchFieldDemo />
+          </CatalogueRow>
+          <CatalogueRow name="NameSearchBox" source="shared/ui/NameSearchBox.tsx" usedIn={ALL} what="The shared name filter, as a pill (Find cover) or a field. Filters the list it sits over as you type." replaceWith="shadcn Input Group (search)" note="Same job as WebSearchField; one component.">
+            <D.NameSearchBoxDemo />
+          </CatalogueRow>
+          <CatalogueRow name="MovedToYouPanel" source="shared/flows/MovedToYouPanel.tsx" usedIn={WM} what="Tells an anaesthetist which Lists or Bookings colleagues have moved to them recently, each opening its List or Booking." replaceWith="shadcn Alert" note="An informational callout built by hand.">
+            <D.MovedToYouDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="SeriesList" source="shared/availability/SeriesList.tsx" usedIn={WM} what="Her repeating days off, each with Delete and an inline are-you-sure step." replaceWith="shadcn Card list + AlertDialog" note="The inline confirm becomes an AlertDialog. Deleting a series changes the demo data.">
+            <D.SeriesListDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={ALL} what="The RVG code type-ahead: search by code or description, every row showing code, description, anatomy and base units." replaceWith="shadcn Combobox (Base UI) + TanStack Virtual" note="Picks are held locally here. No combobox or listbox roles, and every row renders.">
+            <D.CodePickerDemo />
+          </CatalogueRow>
+          <CatalogueRow name="ProcedureCodeCard" source="shared/capture/ProcedureCodeCard.tsx" usedIn={ALL} what="The capture card for a Procedure's RVG code: Choose or Change opens the picker, Clear removes it, a ranged code takes a base value." replaceWith="shadcn Card + Base UI NumberField" note="Live on a seeded Booking still to capture; changes write to the demo data.">
+            <D.ProcedureCodeCardDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="TimesCard" source="shared/capture/TimesCard.tsx" usedIn={ALL} what="Start and Finish capture: Start now and Finish now stamp the demo clock, then minus and plus 5 minute nudges." replaceWith="shadcn Card + Button Group" note="Live on a seeded Booking; stamping and nudging write to the demo data.">
+            <D.TimesCardDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="UnitsCard" source="shared/capture/UnitsCard.tsx" usedIn={ALL} what="The base, time and modifier unit rows with steppers, each showing where its value came from." replaceWith="shadcn Card + Button Group (labelled steppers)" note="Steppers announce only minus or plus today. The modifier and ASA controls were being reworked (ModifiersSection) when this page was built, so they are not shown as separate rows.">
+            <D.UnitsCardDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="sonner">
+          <CatalogueRow name="ResultLine" source="shared/availability/AvailabilityForm.tsx" usedIn={WM} what="The inline teal status line confirming an availability change (role status)." replaceWith="Sonner toast" note="Inline success banners become toasts; errors stay inline. The web also has no feedback at all after submitting a List.">
+            <D.ResultLineDemo />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="tanstack">
+          <CatalogueRow name="Lists table (Th · Td · GroupRow)" source="apps/web/screens/ListsScreen.tsx" usedIn={W} what="Her Lists from today, after an Earlier, not yet authorised group row. Row click opens a List; search and Go to date swap in the other tables." replaceWith="TanStack Table + shadcn Table (grouped rows)" note="The real ListsScreen in a scrolling stage (the table is local to it). Th and Td are copied in four files; no sorting; row clicks are mouse first." height={560}>
+            <D.ListsTableDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="WebResultsTable" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="Search results grouped Upcoming then Past: date, session, patient, NHI, hospital, procedure and progress." replaceWith="TanStack Table + shadcn Table" note="Type in the search box to drive it." height={460}>
+            <D.ResultsTableDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="WebDayTable" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="One day's Lists for Go to date: session, start time, location, Booking count, status and progress." replaceWith="TanStack Table + shadcn Table" note="Pick a day with the date input above it." height={360}>
+            <D.DayTableDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="Accounts tables (tfoot totals)" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="Overdue, Payments, GST activity and AA fees, each a table; Overdue, GST and AA fees close with totals in a tfoot." replaceWith="TanStack Table + shadcn Table (footer)" note="The real AccountsScreen; its sub-tabs switch the table. Totals rows have no row headers." height={560}>
+            <D.AccountsDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="List detail Bookings table" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="A List's Bookings with time, patient and NHI, procedure, units, fee and status, then a totals row; plus the page's actions and panels." replaceWith="TanStack Table + shadcn Table" note="The real ListDetailView in a scrolling stage. Rows have no keyboard handle at all today. Move, alert, attachments and add a booking open real flows that change the demo data." height={700}>
+            <D.ListDetailDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="ListInvoices" source="shared/schedule/ListInvoices.tsx" usedIn={WM} what="An authorised List's invoices, read only: number, who it went to, when, total and paid state." replaceWith="shadcn Table (plain)" note="A styled list today; a small static table, no TanStack features needed.">
+            <D.ListInvoicesDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="forms">
+          <CatalogueRow name="AvailabilityEditor" source="shared/availability/AvailabilityEditor.tsx" usedIn={WM} what="The rail on My availability: the selected day's AM and PM sessions and the form to change them, set a range or repeat." replaceWith="React Hook Form + Zod + shadcn Field" note="Hand-rolled form state and errors. Saving changes the demo data." height={520}>
+            <D.AvailabilityEditorDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="AlertOfficeEntry" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} what="Alert the office about this List: opens a short message sheet, then shows the open alert's status." replaceWith="shadcn Dialog + Field + React Hook Form" note="Sending an alert writes to the demo data.">
+            <D.AlertOfficeDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="OverrideCard" source="shared/capture/OverrideCard.tsx" usedIn={ALL} what="A Procedure's price adjustment or fixed charge with its mandatory reason, saved on Save." replaceWith="Base UI NumberField + shadcn Field + React Hook Form" note="Live on a seeded Booking; saving writes to the demo data.">
+            <D.OverrideCardDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="daypicker">
+          <CatalogueRow name="WeekStrip" source="apps/web/components/WeekStrip.tsx" usedIn={W} what="The dashboard week: seven columns of her AM and PM sessions in status colours, Lists clickable, today outlined, week stepping." replaceWith="react-day-picker (week view, custom day content)" note="Today is marked by colour only (no aria-current); truncated labels have no tooltip." height={300}>
+            <D.WeekStripDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="My availability month grid (DayCell)" source="apps/web/screens/MyAvailabilityCalendar.tsx" usedIn={W} what="Her month, each day with AM and PM session cells. Click a day, shift-click to select a range; the rail edits the selection." replaceWith="shadcn Calendar (react-day-picker, range mode, custom day content)" note="The real screen in a scrolling stage (the grid is local to it). The day cell has no focus style. Saving in the rail changes the demo data." height={720}>
+            <D.MyAvailabilityDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="WebGoToDate" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="The Lists page's Go to date: a native date input bounded by her first and last day with work." replaceWith="shadcn Date Picker (Popover + Calendar)" note="Pass the demo clock's today and the bounds as min and max.">
+            <D.GoToDateDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="recharts">
+          <CatalogueRow name="Receivables aging bars" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="Outstanding receivables by age bucket as horizontal bars with amounts, from the billing mirror." replaceWith="Recharts bar chart (shadcn Chart)" note="Recreated: inline in DashboardScreen.tsx. Spans with no chart semantics or table fallback.">
+            <D.AgingBarsDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="numberflow">
+          <CatalogueRow name="BookingTotalPanel · useTickingValue" source="shared/capture/BookingTotalPanel.tsx" usedIn={WA} what="The ink Booking total: breakdown lines, units and fee, rate and override note. Units and fee tick to new values with a green flash." replaceWith="NumberFlow (optional swap for useTickingValue)" note="Fed local figures here. Keep the flash and the reduced-motion jump; animate nothing that is static today.">
+            <D.BookingTotalDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="motion">
+          <CatalogueRow name="TickBadge" source="shared/ui/TickBadge.tsx" usedIn={ALL} what="The small green completion tick, still on settled rows or drawn with a pulse at the moment of completion." replaceWith="Custom on Motion" note="Keep the choreography; re-express the CSS keyframes on Motion.">
+            <D.TickBadgeDemo />
+          </CatalogueRow>
+          <CatalogueRow name="CompleteBar" source="shared/capture/CompleteBar.tsx" usedIn={ALL} what="Booking capture's Mark complete button, which becomes a green done bar with Amend while the List is active." replaceWith="Custom on Motion (shadcn Button inside)" note="Local state here; in the app it completes and reopens the Booking.">
+            <D.CompleteBarDemo />
+          </CatalogueRow>
+        </LibraryGroup>
+
+        <LibraryGroup id="custom">
+          <CatalogueRow name="Cell (AvailabilityGrid)" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there." replaceWith="Custom cell on a grid + shadcn Tooltip" note="Recreated: local to AvailabilityGrid.tsx. Non-actionable cells are disabled buttons, unreachable by keyboard.">
+            <D.AvailabilityCellDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="AvailabilityGrid" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Find cover: every anaesthetist's AM and PM for a day, filters, name search and legend, with Move and Move here gestures." replaceWith="Custom grid (role grid, roving focus) on library primitives" note="The real screen; its navigation is intercepted. Move opens the real move sheet, which changes the demo data if confirmed." height={640}>
+            <D.AvailabilityGridDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="HistoryTimeline" source="shared/booking/HistoryTimeline.tsx" usedIn={ALL} what="A record's audit trail in plain English, newest first, under day headings, with coalesced runs that expand. Shown for the seeded Booking with the longest history." replaceWith="Custom, its expandable groups on shadcn Collapsible" note="The ledger layout is ours; only the expand and collapse is a library job." height={460}>
+            <D.HistoryTimelineDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="AttachmentStrip" source="shared/attachments/AttachmentStrip.tsx" usedIn={ALL} what="Attachment thumbnails, a PDF chip on PDFs, and a remove control on each that fades in on hover and stays reachable by keyboard." replaceWith="Custom (consider a Dropzone)" note="Removals are held locally here, nothing saved.">
+            <D.AttachmentStripDemo f={f} />
+          </CatalogueRow>
+        </LibraryGroup>
+      </MoveListPromptProvider>
+      </SurfaceProvider>
+    </CataloguePage>
+  )
+}

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI Library Research</title>
+<style>
+:root{
+  --bg:#F6F5F2;--surface:#FFFFFF;--ink:#1B1F23;--slate:#4A535C;--mist:#7A848D;--line:#E3E1DC;--sunken:#EFEDE8;
+  --teal:#0D6E63;--teal-tint:#E2F1EE;--crimson:#A91E3E;
+  --ok:#2E7D4F;--ok-tint:#E4F2E9;--warn:#9A6200;--warn-tint:#FBF0DA;--bad:#B3261E;--bad-tint:#FBE6E4;
+  --sans:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Spline Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#14171A;--surface:#1C2024;--ink:#ECEDEE;--slate:#B4BAC0;--mist:#8A939B;--line:#2E343A;--sunken:#23282D;
+  --teal:#3FB3A4;--teal-tint:#173733;--ok:#5CC28A;--ok-tint:#16301F;--warn:#E3B04B;--warn-tint:#33280F;--bad:#F08A80;--bad-tint:#3A1A18;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans)}
+header.mast{background:var(--surface);border-bottom:3px solid var(--crimson)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header.mast .wrap{padding-top:28px;padding-bottom:24px}
+.eyebrow{font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mist)}
+h1{font-size:30px;line-height:1.15;margin:8px 0 8px}
+h2{font-size:22px;margin:44px 0 6px;padding-top:8px}
+h3{font-size:17px;margin:26px 0 8px}
+p.lede{color:var(--slate);max-width:820px;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+nav.toc a{font-size:13px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;color:var(--slate);text-decoration:none;background:var(--bg)}
+nav.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.grid .card{margin:0}
+.k{font:600 12px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.06em;color:var(--mist);margin-bottom:6px}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--sunken);padding:1px 5px;border-radius:5px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mist);background:var(--sunken);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.grp{background:var(--sunken);font-weight:700;font-size:13px;color:var(--slate)}
+.pill{display:inline-block;font:600 12px/1 var(--sans);padding:4px 8px;border-radius:999px;white-space:nowrap}
+.adopt{background:var(--ok-tint);color:var(--ok)}
+.maybe{background:var(--warn-tint);color:var(--warn)}
+.skip{background:var(--bad-tint);color:var(--bad)}
+.lib{background:var(--teal-tint);color:var(--teal)}
+.keep{background:var(--sunken);color:var(--slate);border:1px solid var(--line)}
+ul{padding-left:20px}li{margin:3px 0}
+.callout{border-left:4px solid var(--teal);background:var(--teal-tint);padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+.warncall{border-left-color:var(--warn);background:var(--warn-tint)}
+ol.steps li{margin:8px 0}
+a{color:var(--teal)}
+footer{color:var(--mist);font-size:13px;padding:40px 0 60px}
+.small{font-size:13px;color:var(--slate)}
+</style>
+</head>
+<body>
+<header class="mast"><div class="wrap">
+  <div class="eyebrow">Research for the AA prototype · 11 November 2026</div>
+  <h1>Replacing the custom UI with standard component libraries</h1>
+  <p class="lede">This report checks every tool from Griffin Wooldridge's video "UI Libraries for Claude Code" against a full inventory of the three apps (Admin, Anaesthetist Web, Anaesthetist Mobile) and the shared kit. It maps each hand-built component to a library replacement and lists what is missing. The goal is a future app that real developers can recognise and rebuild. Six research agents gathered the material: three read the codebase and three researched the libraries online. Versions are as reported by npm and GitHub on 11 November 2026.</p>
+  <nav class="toc">
+    <a href="#summary">Summary</a><a href="#stack">Recommended stack</a><a href="#video">Video libraries rated</a>
+    <a href="#today">How the UI is built today</a><a href="#map">Component map</a><a href="#custom">Keep custom</a>
+    <a href="#missing">Missing pieces</a><a href="#a11y">Accessibility gains</a><a href="#risks">Constraints and risks</a>
+    <a href="#order">Migration order</a><a href="#agents">Claude Code tooling</a><a href="#sources">Sources</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+
+<div class="callout" style="margin-top:24px"><b>Guiding principle: unify, don't decorate.</b> The aim is recognisable, standard building blocks that real developers can rebuild on whatever framework the real system uses. It is not about adding polish. No new animation, effects or "standout moments": existing motion is kept and re-expressed, nothing more. Start from <code>README.md</code> in this folder; it holds the goal, the principles, the provisional decisions, the open questions and the detailed inventories.</div>
+<div class="callout"><b>See every component live:</b> the prototype has a demo-only catalogue page per app, at <a href="http://localhost:5173/demo/catalogue/admin">/demo/catalogue/admin</a>, <a href="http://localhost:5173/demo/catalogue/web">/demo/catalogue/web</a> and <a href="http://localhost:5173/demo/catalogue/mobile">/demo/catalogue/mobile</a> (with the dev server running). Each row is one real, interactive component with its name, what it does and its replacement, grouped by the same libraries as the map below. The code is in <code>aa-prototype/src/apps/demo/catalogue/</code>.</div>
+
+<h2 id="summary">Summary</h2>
+<div class="grid">
+  <div class="card"><div class="k">Today</div>No component library. About 211 component files and about 2,870 inline <code>style={{}}</code> objects reading TypeScript tokens in <code>src/theme/</code>. Tailwind v4 is installed, but its utility classes are never used.</div>
+  <div class="card"><div class="k">Recommended foundation</div><b>shadcn/ui on the Base UI base</b> with Tailwind v4, on <b>React 19</b>. Our tokens go into shadcn's CSS variables, and the brand is published as a private <code>@aa</code> registry.</div>
+  <div class="card"><div class="k">Specialists</div>Sonner (toasts), Base UI Drawer (mobile sheets; <b>not Vaul, which is unmaintained</b>), Base UI Combobox (type-aheads), cmdk (⌘K palette), TanStack Table and Virtual, React Hook Form and Zod, react-day-picker, NumberFlow (live totals only), Motion, Recharts.</div>
+  <div class="card"><div class="k">The video's "designed" tier</div><b>Not used</b>, because the goal is unification, not flourish. Magic UI, Aceternity and RareUI are motion and effects libraries. 21st.dev is for browsing only. Beautiful UI is kept as reference in case an AI assistant is ever added.</div>
+  <div class="card"><div class="k">Stays custom</div>The Admin DayGrid scheduling canvas, the mobile SlideStack with edge-swipe-back, status-cell rendering, the invoice document, and the billing review and pipeline choreography. These get rebuilt <i>on</i> library primitives: tooltips, popovers, focus handling.</div>
+  <div class="card"><div class="k">Biggest wins</div>Focus trapping and restore on every overlay, real menu, tab, combobox and grid keyboard models, a toast system, accessible tooltips instead of about 75 <code>title=</code> attributes, sortable and paginated tables, drag-to-dismiss sheets, and one form and validation pattern.</div>
+</div>
+
+<h2 id="stack">Recommended stack</h2>
+<div class="tablewrap"><table>
+<tr><th>Need</th><th>Pick</th><th>Version (Nov 2026)</th><th>Why</th></tr>
+<tr><td>Runtime</td><td><b>React 19</b> (upgrade from 18.3)</td><td>19.x</td><td>Current shadcn components pass <code>ref</code> as a normal prop with no <code>forwardRef</code>, so refs silently break on React 18.</td></tr>
+<tr><td>Foundation components</td><td><b>shadcn/ui</b>, base <b>Base UI</b></td><td>shadcn CLI 4.23 · <code>@base-ui/react</code> 1.9</td><td>The de facto standard developers recognise. Base UI has been shadcn's default since July 2026, is stable at 1.x, and has the Combobox, Drawer, NumberField and Field/Form that Radix lacks.</td></tr>
+<tr><td>Styling</td><td>Tailwind v4 + shadcn CSS variables</td><td>4.3</td><td>Already installed. Our <code>tokens.ts</code> maps onto <code>--primary</code>, <code>--radius</code>, <code>--font-*</code> and new <code>--status-*</code> tokens.</td></tr>
+<tr><td>Toasts</td><td><b>Sonner</b></td><td>2.0.8</td><td>The video's pick and Emil's pick, and it ships in every shadcn base. shadcn's newer Base UI <code>Toast</code> is the alternative.</td></tr>
+<tr><td>Mobile bottom sheets</td><td><b>Base UI Drawer</b> (via shadcn Drawer)</td><td>in Base UI 1.9</td><td>Drag-to-dismiss, snap points, nested drawers, a virtual-keyboard provider and focus trapping. Vaul's README now says it is unmaintained.</td></tr>
+<tr><td>Type-ahead fields</td><td><b>Base UI Combobox</b> (shadcn Combobox)</td><td>in Base UI</td><td>Suits the RVG code, surgeon, contract and specialty pickers: a form field with listbox semantics.</td></tr>
+<tr><td>Command palette</td><td><b>cmdk</b> (shadcn Command)</td><td>1.1.1</td><td>A ⌘K "jump to" for the office. Stable but slow-moving. Do your own filtering above about 2,000 items.</td></tr>
+<tr><td>Data tables</td><td><b>TanStack Table v9</b> + shadcn Table</td><td>9.3.1</td><td>Sorting, grouping, pagination, column visibility and row selection. v9 went stable in August 2026, so v8 tutorials need adapting.</td></tr>
+<tr><td>Virtualisation</td><td><b>TanStack Virtual</b></td><td>3.14</td><td>Pairs with TanStack Table for the audit feed and RVG list. Emil's skill prefers react-virtuoso; choose one, not both.</td></tr>
+<tr><td>Forms</td><td><b>React Hook Form + Zod 4</b> + shadcn Field</td><td>RHF 7.91 · Zod 4.6</td><td>One pattern for labels, descriptions, errors and <code>aria-invalid</code> across about 30 sheets.</td></tr>
+<tr><td>Calendars</td><td><b>react-day-picker v10</b> (shadcn Calendar / Date Picker)</td><td>10.0.2</td><td>Grids with custom day content, ranges and min/max. If date and time <i>input</i> becomes central, prototype React Aria DatePicker and TimeField.</td></tr>
+<tr><td>Motion</td><td><b>Motion</b> (<code>motion/react</code>)</td><td>14.12</td><td>Exit animations, the SlideStack, the success overlay and drag with velocity. Plain CSS stays for simple fades.</td></tr>
+<tr><td>Animated numbers</td><td>Keep <code>useTickingValue</code>; NumberFlow optional</td><td>0.6.2</td><td>A like-for-like swap for the booking fee and units tween only. Do not animate any figure that is static today.</td></tr>
+<tr><td>Charts</td><td><b>Recharts</b> (shadcn Chart)</td><td>3.10</td><td>Receivables aging and productivity, with an accessible table fallback.</td></tr>
+<tr><td>Drag and drop</td><td>dnd-kit (only if needed)</td><td>core 6.3 / react 0.5</td><td>Reorder availability statuses. Keep the Move up/down buttons as the fallback.</td></tr>
+<tr><td>Icons and dates</td><td>lucide-react, date-fns (keep)</td><td>n/a</td><td>Already standard, and both are shadcn's defaults.</td></tr>
+<tr><td>State</td><td>Zustand (keep)</td><td>5</td><td>Also on Emil's list. It is unaffected by the UI swap.</td></tr>
+</table></div>
+
+<h2 id="video">The video's libraries, rated for this project</h2>
+<p class="small">The video sorts libraries into three tiers: <b>foundations</b> handle behaviour and accessibility, <b>specialists</b> do one component well, and <b>designed components</b> add flash and polish. The video's own advice, which stands, is to restyle shadcn's radius, colours and type so it does not look like a default template, and to keep to "one standout moment per page".</p>
+<div class="tablewrap"><table>
+<tr><th>Library</th><th>Tier</th><th>Verdict</th><th>Notes</th></tr>
+<tr><td class="grp" colspan="4">Foundations</td></tr>
+<tr><td><b>shadcn/ui</b></td><td>Foundation</td><td><span class="pill adopt">Adopt</span></td><td>MIT, from Vercel. Source is copied into the repo through a CLI and registry, so it is readable and editable by people and by Claude. 66 components. Bases: Base UI (the default), Radix, React Aria. It has an MCP server and a Claude Code skill.</td></tr>
+<tr><td><b>Base UI</b></td><td>Foundation</td><td><span class="pill adopt">Adopt (as the base)</span></td><td>MIT, from the creators of Radix, MUI and Floating UI. 1.0 shipped in December 2025; now at 1.9. 37 primitives, including Drawer, Combobox, Toast, NumberField and Field/Form. React 17 to 19.</td></tr>
+<tr><td><b>Radix Primitives</b></td><td>Foundation</td><td><span class="pill maybe">Fallback</span></td><td>MIT, run by WorkOS. Mature but slower-moving, with no Combobox, Drawer or NumberField. Still fully supported as a shadcn base.</td></tr>
+<tr><td>Radix Themes</td><td>Foundation (styled)</td><td><span class="pill skip">Skip</span></td><td>Brings its own visual language, which fights the AA brand. Releases have been sparse (last in January 2026).</td></tr>
+<tr><td class="grp" colspan="4">Specialists</td></tr>
+<tr><td><b>Sonner</b></td><td>Specialist</td><td><span class="pill adopt">Adopt</span></td><td>Toasts with stacking, hover-expand, swipe, promises and actions. It sets <code>aria-live="polite"</code>. Use it for confirmations only; blocking errors stay inline.</td></tr>
+<tr><td><b>Vaul</b></td><td>Specialist</td><td><span class="pill skip">Skip</span></td><td><b>Unmaintained</b> (README notice, October 2025; last release December 2024). Its job goes to <b>Base UI Drawer</b>, which shadcn's Base UI Drawer already uses.</td></tr>
+<tr><td><b>cmdk</b></td><td>Specialist</td><td><span class="pill adopt">Adopt (palette)</span></td><td>For a ⌘K palette only. Field type-aheads use Base UI Combobox. It does not virtualise.</td></tr>
+<tr><td><b>NumberFlow</b></td><td>Specialist</td><td><span class="pill maybe">Adopt sparingly</span></td><td>At most a like-for-like replacement for <code>useTickingValue</code> on the booking fee and units. Never on static tables or invoice lines: a moving number on data being checked looks like a recalculation.</td></tr>
+<tr><td><b>pick-ui-library skill</b></td><td>Agent skill</td><td><span class="pill adopt">Install</span></td><td>Emil Kowalski's skill (MIT; the repo has 55.8k stars). Maps each task to one library (see <a href="#agents">Claude Code tooling</a>). Note that it does not cover sheets, tables, forms or date pickers.</td></tr>
+<tr><td class="grp" colspan="4">Designed components</td></tr>
+<tr><td><b>Magic UI</b></td><td>Designed</td><td><span class="pill skip">Skip (for now)</span></td><td>MIT shadcn registry, well maintained, but it is a motion and effects library, which is against the no-flourish principle. If motion is ever wanted, Number Ticker, Animated List and Blur Fade are the only plausible parts, and each ignores reduced motion.</td></tr>
+<tr><td><b>Beautiful UI</b></td><td>Designed (AI interfaces)</td><td><span class="pill maybe">Reference only</span></td><td>MIT, copy-paste, no repo and no versioning. Only relevant to a future AI assistant (approval card, diff table, streaming text). Vercel AI Elements and assistant-ui are better maintained.</td></tr>
+<tr><td><b>Aceternity UI</b></td><td>Designed</td><td><span class="pill skip">Skip</span></td><td>Landing-page effects (aurora, beams, 3D cards). The paid tier is closed source.</td></tr>
+<tr><td><b>RareUI</b></td><td>Designed</td><td><span class="pill skip">Skip</span></td><td>Novelty effects. Weak maintenance signals (31 stars, idle since April 2026).</td></tr>
+<tr><td><b>21st.dev</b></td><td>Marketplace</td><td><span class="pill maybe">Browse only</span></td><td>Community registry; quality and licence vary by item. Use it for ideas, not as a dependency.</td></tr>
+<tr><td class="grp" colspan="4">Found in the research (not in the video)</td></tr>
+<tr><td><b>ReUI</b></td><td>Blocks</td><td><span class="pill maybe">Consider</span></td><td>MIT, with Base UI and Radix variants. Its Data Grid (editing, grouping, virtualisation) and Filters suit the Admin review and master-data screens.</td></tr>
+<tr><td><b>Tremor</b></td><td>Blocks</td><td><span class="pill maybe">Copy, don't depend</span></td><td>Free since Vercel bought it. Excellent KPI and chart blocks, but going stale (last push October 2025).</td></tr>
+<tr><td><b>Kibo UI</b></td><td>Blocks</td><td><span class="pill maybe">Reference</span></td><td>Its Gantt and Calendar blocks are useful reference for the theatre-list and availability views.</td></tr>
+<tr><td><b>coss ui</b> (formerly Origin UI)</td><td>Blocks</td><td><span class="pill maybe">Check licence</span></td><td>Cal.com's Base UI system, close to our domain (scheduling). The monorepo is AGPL, so confirm the licence first.</td></tr>
+<tr><td><b>React Aria</b></td><td>Foundation</td><td><span class="pill maybe">Watch</span></td><td>The strongest date, time and number fields and grid accessibility. A shadcn base since July 2026, but the base is chosen once per project.</td></tr>
+</table></div>
+<div class="callout"><b>Griffin's guide</b> (griffinwooldridge.com/ai-for-designers) is confirmed as "coming soon", a waitlist only. Its planned outline covers CLAUDE.md templates, design-review and ui-critic subagents, and Mobbin and Figma MCP servers. None of it is about these libraries. The one idea worth borrowing is a design-review subagent that checks output against our design system.</div>
+
+<h2 id="today">How the UI is built today</h2>
+<div class="card">
+<ul>
+<li><b>Shared kit</b> in <code>src/shared/ui</code> (Button, Field/TextField/TextArea/FormError, Segmented, SlidingSegmentedControl, NameSearchBox, Pill, TickBadge, TickButton, SuccessOverlay, DockSpacer) and <code>src/shared/surface</code> (Dialog, BottomSheet, SurfaceProvider).</li>
+<li><b>The surface seam:</b> <code>useSurface().Overlay</code> renders a <i>BottomSheet</i> on mobile and a <i>Dialog</i> on web and admin. About 20 shared sheets and about 37 Admin sheets go through it. That makes it the single best place to swap in a library: Drawer on mobile and Dialog on web, behind the same seam.</li>
+<li><b>Styling:</b> inline style objects from <code>tokens.ts</code>, <code>statusColours.ts</code> and <code>motion.ts</code>, plus about 45 <code>aa-*</code> classes in <code>global.css</code> (inset contract, clickable rows, hover-reveal, print, a reduced-motion collapse). Hover is often done with JS mouse handlers, and there is no consistent focus ring.</li>
+<li><b>Motion:</b> named patterns (controlPress, selectionSlide, sheetIn, cardAdvance, completeTick, valueTick, reducedMotionFade) with CSS keyframes referenced from inline <code>animation</code> strings.</li>
+<li><b>Scale of the job:</b> Admin alone has 117 files (about 17.9k lines), 17 tables, 28 native selects, 15 native date inputs and 6 native time inputs. Every popover and menu is hand-written, and the outside-click and Escape logic alone is written three times.</li>
+</ul>
+</div>
+
+<h2 id="map">Component map: what replaces what</h2>
+<p class="small">"Apps" uses A for Admin, W for Web, M for Mobile, S for shared and H for the harness or demo. <span class="pill lib">Library</span> means a straight replacement. <span class="pill keep">Custom on primitives</span> means we keep our own component but build it from library parts.</p>
+<div class="tablewrap"><table>
+<tr><th>Current component</th><th>Where</th><th>Apps</th><th>Replace with</th><th>Notes</th></tr>
+
+<tr><td class="grp" colspan="5">Overlays</td></tr>
+<tr><td>Dialog (web Overlay)</td><td><code>shared/surface/Dialog.tsx</code></td><td>W A</td><td><span class="pill lib">shadcn Dialog</span></td><td>Adds a focus trap, initial focus and restore, scroll lock, a portal, <code>aria-labelledby</code> and an exit animation. Replaces the home-grown <code>OPEN_DIALOGS</code> stack.</td></tr>
+<tr><td>BottomSheet (mobile Overlay)</td><td><code>shared/surface/BottomSheet.tsx</code></td><td>M S</td><td><span class="pill lib">shadcn Drawer (Base UI Drawer)</span></td><td>Adds drag-to-dismiss, snap points, Escape, a focus trap and nested sheets. It must still respect <code>--aa-keyboard-inset</code> and <code>--aa-inset-bottom</code> and portal into the phone frame, not <code>body</code>.</td></tr>
+<tr><td>SurfaceProvider / useSurface</td><td><code>shared/surface/SurfaceProvider.tsx</code></td><td>all</td><td><span class="pill keep">Keep the seam</span></td><td>The shadcn "Dialog on desktop, Drawer on mobile" pattern fits it exactly. Swap only the two implementations.</td></tr>
+<tr><td>SlotDrawer, DraftListDrawer</td><td><code>apps/admin/components/</code></td><td>A</td><td><span class="pill lib">shadcn Sheet (side)</span></td><td>Today they have no dialog role, no Escape and no focus handling. Merge the duplicated <code>Section/Row/ActionBtn</code> parts into <code>drawerParts.tsx</code>.</td></tr>
+<tr><td>MasterPanel (600px side sheet)</td><td><code>apps/admin/components/MasterPanel.tsx</code></td><td>A</td><td><span class="pill lib">shadcn Sheet</span></td><td>It already has a dialog role, Escape and focus-in. The Sheet adds the missing trap and portal. Used by ContractEditSheet and PartyPanel.</td></tr>
+<tr><td>Confirm sheets (Authorise, Retire, Delete holiday, Clear conflict, Demo reset)</td><td>admin screens and flows, <code>shell/DemoResetButton.tsx</code></td><td>A H</td><td><span class="pill lib">shadcn AlertDialog</span></td><td>The correct <code>alertdialog</code> role, with focus on the safe action.</td></tr>
+<tr><td>About 30 form sheets (Assign, Redate, Edit list, Holiday, Recurring booking and so on)</td><td><code>apps/admin/flows/</code>, <code>shared/flows/</code></td><td>A W M</td><td><span class="pill lib">Dialog/Drawer + Field + RHF/Zod</span></td><td>Same content inside a library shell and one form pattern.</td></tr>
+<tr><td>AppSwitcher</td><td><code>shell/AppSwitcher.tsx</code></td><td>H</td><td><span class="pill lib">shadcn DropdownMenu</span></td><td>Today it has no Escape, menuitem roles or arrow keys.</td></tr>
+<tr><td>DemoActionsMenu, DemoClockMenu</td><td><code>shell/</code></td><td>H</td><td><span class="pill lib">shadcn Popover</span></td><td>Removes two hand-written copies of the outside-click and Escape logic.</td></tr>
+<tr><td>ListOptionsSheet (action sheet)</td><td><code>apps/mobile/components/ListOptionsSheet.tsx</code></td><td>M</td><td><span class="pill lib">Drawer + plain button list</span></td><td>It declares <code>role="menu"</code> with no keyboard model. Either drop the menu roles or use a real Menu.</td></tr>
+<tr><td>MoveListPromptProvider</td><td><code>shared/flows/MoveListPrompt.tsx</code></td><td>W M</td><td><span class="pill keep">Probably retire</span></td><td>It works around the lack of overlay stacking. Nested Dialog and Drawer support may make it unnecessary.</td></tr>
+
+<tr><td class="grp" colspan="5">Buttons, toggles and selection</td></tr>
+<tr><td>Button (primary / secondary / pill)</td><td><code>shared/ui/Button.tsx</code></td><td>all</td><td><span class="pill lib">shadcn Button (cva variants)</span></td><td>Delete any non-teal filled variant. Adds focus-visible, hover and loading states. It is the most-used component (Admin alone has about 102 uses).</td></tr>
+<tr><td>TickButton, StepperButton, NudgeButton, IconBtn/NavButton/WeekNavButton copies</td><td><code>shared/ui</code>, <code>shared/capture/ui.tsx</code>, web screens</td><td>all</td><td><span class="pill lib">Button variants + Button Group</span></td><td>Stepper −/+ buttons need labels; today screen readers hear just "−" or "+". There are three near-duplicate icon buttons on web.</td></tr>
+<tr><td>SlidingSegmentedControl / Segmented</td><td><code>shared/ui/</code></td><td>all</td><td><span class="pill lib">shadcn ToggleGroup (single) or Tabs</span></td><td>Gives proper radio semantics and arrow keys. Keep the sliding indicator by restyling (Motion <code>layoutId</code>).</td></tr>
+<tr><td>StatusRadioGroup / VacatedSessionChoice</td><td><code>shared/flows/</code></td><td>A</td><td><span class="pill lib">shadcn RadioGroup</span></td><td>Already correct. Swapping it is for consistency.</td></tr>
+<tr><td>Filter chips (StatusLegend toggles, FilterChip, mobile filters, DayGrid focus pills, swatches, reason chips, ModifierChips, weekday chips)</td><td>several</td><td>all</td><td><span class="pill lib">ToggleGroup (multiple) / Toggle</span></td><td>Web's FilterChip lacks <code>aria-pressed</code>. Mobile's has it.</td></tr>
+<tr><td>ToggleRow switch</td><td><code>pwa/PwaDemoPanel.tsx</code></td><td>H</td><td><span class="pill lib">shadcn Switch</span></td><td>n/a</td></tr>
+<tr><td>Native checkboxes</td><td>several</td><td>A S</td><td><span class="pill lib">shadcn Checkbox</span></td><td>n/a</td></tr>
+
+<tr><td class="grp" colspan="5">Navigation</td></tr>
+<tr><td>SideNav (Admin)</td><td><code>apps/admin/components/SideNav.tsx</code></td><td>A</td><td><span class="pill lib">shadcn Sidebar</span></td><td>Gives real links (open in a new tab), <code>aria-current</code>, count badges and icon-collapse. Crimson only on <code>--sidebar-primary</code>.</td></tr>
+<tr><td>Masters sub-nav</td><td><code>screens/masters/MasterData.tsx</code></td><td>A</td><td><span class="pill lib">Sidebar group / NavigationMenu</span></td><td>Already has <code>aria-current</code>.</td></tr>
+<tr><td>WebNav (top tabs)</td><td><code>apps/web/components/WebNav.tsx</code></td><td>W</td><td><span class="pill lib">NavigationMenu (links)</span></td><td>Today it is plain buttons with no <code>aria-current</code>.</td></tr>
+<tr><td>Sub-tabs (Accounts SubTabButton, Integrations TabButton, AaFees TabLink, Draft Lists tablist)</td><td>web and admin screens</td><td>W A</td><td><span class="pill lib">shadcn Tabs</span></td><td>Gives arrow-key roving and <code>aria-selected</code>. Use links where the tab is a route.</td></tr>
+<tr><td>BottomTabBar</td><td><code>apps/mobile/MobileApp.tsx</code></td><td>M</td><td><span class="pill keep">Custom nav</span></td><td>No shadcn component exists. Make it a <code>&lt;nav&gt;</code> of links with <code>aria-current</code>.</td></tr>
+<tr><td>Back links, breadcrumb on Review</td><td>several</td><td>all</td><td><span class="pill lib">shadcn Breadcrumb</span></td><td>n/a</td></tr>
+<tr><td>Notifications pager, audit 500-row cap</td><td>admin screens</td><td>A</td><td><span class="pill lib">shadcn Pagination</span> / virtualisation</td><td>n/a</td></tr>
+
+<tr><td class="grp" colspan="5">Form fields and pickers</td></tr>
+<tr><td>TextField, TextArea, FieldLabel, FormError</td><td><code>shared/ui/Field.tsx</code></td><td>all</td><td><span class="pill lib">shadcn Field / Input / Textarea / Label</span></td><td>Adds <code>aria-invalid</code>, field-bound errors and a focus ring. Placeholder-only labels get fixed along the way.</td></tr>
+<tr><td>Native <code>&lt;select&gt;</code> (28 in Admin; ContractSelect, FunderAllocation, DemoData)</td><td>many</td><td>A S H</td><td><span class="pill lib">shadcn Select</span> (or NativeSelect)</td><td>Several are unlabelled today.</td></tr>
+<tr><td>CodePickerSheet (RVG code type-ahead)</td><td><code>shared/capture/CodePickerSheet.tsx</code></td><td>A W M</td><td><span class="pill lib">shadcn Combobox (Base UI)</span> + virtualisation</td><td>Gives combobox and listbox roles, arrow and Enter selection, and ranked filtering (prefix match on the code, then the description). Today every row renders.</td></tr>
+<tr><td>SurgeonPicker (native select with optgroups)</td><td><code>apps/admin/components/pairing/SurgeonPicker.tsx</code></td><td>A</td><td><span class="pill lib">Combobox with groups</span></td><td>The surgeon list is long and today it is not searchable. Keep the "Not preferred with Dr X" group.</td></tr>
+<tr><td>ChipMultiSelect (specialties)</td><td><code>apps/admin/components/ChipMultiSelect.tsx</code></td><td>A</td><td><span class="pill lib">Combobox (multiple, chips)</span></td><td>Searchable, with Backspace to remove.</td></tr>
+<tr><td>RVG anatomy <code>&lt;datalist&gt;</code></td><td>RvgGroupSheet</td><td>A</td><td><span class="pill lib">Base UI Autocomplete</span></td><td>n/a</td></tr>
+<tr><td>Candidate pickers (Anaesthetist and Draft List candidates, move-to-colleague)</td><td><code>apps/admin/components/pairing/</code>, <code>shared/flows/</code></td><td>A W M</td><td><span class="pill keep">Custom on Combobox or listbox</span></td><td>Tiered, shuffled-within-tier ranking and a non-selectable closed row are domain rules. Add listbox semantics and arrow keys.</td></tr>
+<tr><td>NameSearchBox, WebSearchField, LookbackSearchRow</td><td>shared, web, mobile</td><td>all</td><td><span class="pill lib">Input Group (search)</span></td><td>One search input instead of three.</td></tr>
+<tr><td>Inline-edit number (procedure code), ContractPriceRanges inline table</td><td><code>shared/capture/ProcedureCodeCard.tsx</code>, <code>apps/admin/flows/</code></td><td>A W M</td><td><span class="pill lib">NumberField (Base UI)</span> + Table</td><td>Keep the Enter-commits and Escape-cancels behaviour.</td></tr>
+<tr><td>OverrideCard / PriceOverrideSheet (amount and reason)</td><td><code>shared/capture/</code></td><td>A W M</td><td><span class="pill lib">NumberField + Field + RHF</span></td><td>Currency formatting in NZD.</td></tr>
+<tr><td>Native <code>type=date</code> (15 in Admin; Lists go-to-date, AvailabilityForm, EditPatient)</td><td>many</td><td>all</td><td><span class="pill lib">shadcn Date Picker (Popover + Calendar)</span></td><td>Must be passed the demo clock's today, plus the horizon as min/max. Audit filter → date-range picker.</td></tr>
+<tr><td>Native <code>type=time</code> (6)</td><td>SessionTimesFields and others</td><td>A</td><td><span class="pill maybe">React Aria TimeField, or keep native</span></td><td>Neither Base UI nor react-day-picker has a time picker.</td></tr>
+
+<tr><td class="grp" colspan="5">Calendars and grids</td></tr>
+<tr><td>MonthGrid (date sheet)</td><td><code>shared/calendar/MonthGrid.tsx</code></td><td>M</td><td><span class="pill lib">shadcn Calendar (react-day-picker)</span></td><td>It already has a full keyboard model. The library adds <code>grid</code> roles. Keep the custom day content (dots).</td></tr>
+<tr><td>MiniCalendar (Admin right rail)</td><td><code>apps/admin/components/RightRail.tsx</code></td><td>A</td><td><span class="pill lib">Calendar</span></td><td>The best accessibility in Admin today, so preserve its key bindings.</td></tr>
+<tr><td>My Availability calendars (web with shift-click range; mobile month), HospitalCalendar</td><td>web and mobile screens, admin masters</td><td>W M A</td><td><span class="pill keep">Calendar with custom day renderer</span></td><td>Half-day session bars, hatched and dashed status fills, the repeat glyph and the "!" mark are domain visuals. The library provides the grid, keyboard handling and range mode.</td></tr>
+<tr><td>WeekStrip, 6-day date strip</td><td>web dashboard, mobile availability</td><td>W M</td><td><span class="pill keep">Custom + ToggleGroup</span></td><td>Add <code>aria-current</code> for today. The free-slot dot needs a text equivalent.</td></tr>
+<tr><td>AvailabilityGrid (who's free)</td><td><code>apps/web/screens/AvailabilityGrid.tsx</code></td><td>W</td><td><span class="pill keep">Custom grid + Tooltip</span></td><td>Disabled cells cannot be reached by keyboard today.</td></tr>
+
+<tr><td class="grp" colspan="5">Tables and data display</td></tr>
+<tr><td>17 Admin tables (Review, ReviewQueue, Invoices, Audit, Conflicts, Draft Lists, Notifications, 15 master views), about 8 web tables, demo tables</td><td><code>tableChrome.ts</code>, <code>masters/chrome.tsx</code>, web screens</td><td>A W H</td><td><span class="pill lib">shadcn Table + TanStack Table v9</span></td><td>Adds sorting with <code>aria-sort</code>, sticky headers, grouped rows (Contracts by holder, RVG by anatomy, Conflicts by day), pagination, column visibility and row selection. Fixes mouse-only row clicks. <code>Th</code>/<code>Td</code> is currently duplicated in four places.</td></tr>
+<tr><td>Row actions (Edit, Retire, Restore, History, Move up/down)</td><td>master views, drawers</td><td>A</td><td><span class="pill lib">DropdownMenu "⋯" per row</span></td><td>n/a</td></tr>
+<tr><td>StatusChip, Pill, ProgressPill, OOH pill, DemoBadge, ChangedSinceSubmitted, MasterPills</td><td>shared, admin</td><td>all</td><td><span class="pill lib">shadcn Badge + 6 status variants</span></td><td>Status colours become <code>--status-*</code> tokens with tint and on-tint values.</td></tr>
+<tr><td>Avatar, Initials, the harness persona chip, WebNav avatar</td><td><code>shared/Avatar.tsx</code> and copies</td><td>all</td><td><span class="pill lib">shadcn Avatar</span></td><td>There are four hand-rolled copies today.</td></tr>
+<tr><td>Panel, CaptureSection, capture cards, ProfileChrome cards, StatTile</td><td>web, shared, admin</td><td>all</td><td><span class="pill lib">shadcn Card</span></td><td>Panel titles should become real headings.</td></tr>
+<tr><td>Receivables aging bars</td><td>web DashboardScreen</td><td>W</td><td><span class="pill lib">shadcn Chart (Recharts)</span></td><td>Needs an accessible table fallback.</td></tr>
+<tr><td>HistoryTimeline (expandable steps), <code>.aa-disclosure</code> on <code>&lt;details&gt;</code>, WarningsToDo "show more"</td><td>shared, admin</td><td>A W M</td><td><span class="pill lib">Accordion / Collapsible</span></td><td>n/a</td></tr>
+<tr><td>Native <code>title=</code> tooltips (about 75: grid blocks, disabled reasons, HalfBlock, pills)</td><td>everywhere</td><td>all</td><td><span class="pill lib">shadcn Tooltip / HoverCard</span></td><td>Reachable by keyboard. Disabled-reason text should become visible helper text on touch.</td></tr>
+<tr><td>Empty states (EmptyCard, "no match", beyond horizon)</td><td>several</td><td>all</td><td><span class="pill lib">shadcn Empty</span></td><td>n/a</td></tr>
+
+<tr><td class="grp" colspan="5">Feedback and motion</td></tr>
+<tr><td>Inline <code>role=status</code> success banners (Conflicts, Draft Lists, Recurring apply, Holiday, AaFees)</td><td>admin screens</td><td>A</td><td><span class="pill lib">Sonner toast (with action and undo)</span></td><td>Keep inline <code>role=alert</code> for errors.</td></tr>
+<tr><td>UpdatePrompt (PWA snackbar)</td><td><code>pwa/UpdatePrompt.tsx</code></td><td>M</td><td><span class="pill lib">Sonner toast with a Reload action</span></td><td>Offset above <code>--aa-dock-height</code>.</td></tr>
+<tr><td>InstallCoach, WarningsPanel, ConflictCallout, NotPreferredWarning</td><td>pwa, shared, admin</td><td>all</td><td><span class="pill lib">shadcn Alert</span></td><td>n/a</td></tr>
+<tr><td>SuccessOverlay, TickBadge, CompleteBar success state</td><td><code>shared/ui/</code>, <code>shared/capture/</code></td><td>A M</td><td><span class="pill keep">Custom (Motion)</span></td><td>This is AA's "one standout moment": keep the choreography and rebuild it on Motion. iOS ignores <code>navigator.vibrate</code>, so the haptic is mostly silent there.</td></tr>
+<tr><td>useTickingValue (fee and units tween)</td><td><code>shared/capture/useTickingValue.ts</code></td><td>A W M</td><td><span class="pill lib">NumberFlow</span></td><td>Keep the green flash tint. Respects reduced motion.</td></tr>
+<tr><td>Progress bars (List detail)</td><td>web and mobile</td><td>W M</td><td><span class="pill lib">shadcn Progress</span></td><td>n/a</td></tr>
+<tr><td>PhotoCaptureFlow fake processing step</td><td><code>shared/flows/</code></td><td>M W</td><td><span class="pill lib">Skeleton / Spinner</span></td><td>n/a</td></tr>
+<tr><td>AttachmentStrip (thumbnails, remove)</td><td><code>shared/attachments/</code></td><td>all</td><td><span class="pill maybe">Custom; consider a Dropzone</span></td><td>shadcn has an Attachment component, and Kibo UI has a Dropzone.</td></tr>
+</table></div>
+
+<h2 id="custom">What stays custom (no library covers it)</h2>
+<div class="grid">
+  <div class="card"><div class="k">Admin DayGrid canvas</div>A time-proportional 07:00 to 18:00 ruler that extends for out-of-hours sessions, absolutely positioned blocks, AM and PM merging, hatched and dashed status fills, conflict and attention overlays, the Draft List band, hover-reveal gutters and filter-and-regroup. Resource-timeline products (FullCalendar, Bryntum) would fight the design. <b>Rebuild it on primitives:</b> roving focus with <code>grid</code>/<code>gridcell</code> roles, Tooltip or HoverCard on blocks, ContextMenu for block actions, and TanStack Virtual if the number of rows grows.</div>
+  <div class="card"><div class="k">Mobile SlideStack</div>URL-driven depth with every layer kept mounted, parallax and dim, <code>inert</code> on parked layers, and an iOS edge-swipe-back gesture (touch only, axis lock, velocity commit). No library ships an iOS-style stack navigator. Rebuild on Motion's drag and <code>AnimatePresence</code>, and add focus moves to the new heading on push and pop.</div>
+  <div class="card"><div class="k">Collapsing mobile masthead</div>A scroll-driven large-title fold. Small and bespoke. Emil's <code>gestures</code> and <code>mobile-native</code> skills cover the feel.</div>
+  <div class="card"><div class="k">Billing review and pipeline</div>Authorise choreography, review flags, the changed-since-submitted cue, the lock-on-authorise state and the per-List pipeline stepper with Resolve and retry. Build them from Card, Badge, Table and AlertDialog, but the flow is ours.</div>
+  <div class="card"><div class="k">Invoice document</div>Two recipient layouts, a serif document voice and print isolation (deliberately not inside a fixed Dialog). Keep it as a print-styled page.</div>
+  <div class="card"><div class="k">Device hosts and inset contract</div>PhoneFrame (CSS <code>scale()</code>), MobileViewport, the <code>--aa-inset-*</code>, <code>--aa-keyboard-inset</code> and <code>--aa-dock-height</code> variables, and DockSpacer. Prototype harness only, but library portals must target the frame.</div>
+</div>
+
+<h2 id="missing">Missing components and functions</h2>
+<p class="small">These are things the apps don't have today that a library would give us cheaply, or that a production app would be expected to have.</p>
+<div class="tablewrap"><table>
+<tr><th>Missing</th><th>Where it would help</th><th>Library</th></tr>
+<tr><td><b>Toast and notification system</b></td><td>List moved, office alerted, attachment added or removed, web List submit (no feedback beyond a button swap today), Admin "List assigned" with an Open action, "Conflict cleared" with Undo</td><td>Sonner</td></tr>
+<tr><td><b>Command palette / global search</b></td><td>Admin: jump to an anaesthetist, List, booking, invoice, contract, master view or date. Web: find a patient or List</td><td>cmdk (shadcn Command)</td></tr>
+<tr><td><b>Accessible tooltips</b></td><td>About 75 <code>title=</code> attributes that keyboard and touch users never see</td><td>Tooltip / HoverCard</td></tr>
+<tr><td><b>Table sorting, pagination, sticky headers, column visibility, row selection and bulk actions</b></td><td>Every Admin table. Bulk authorise and bulk resolve are natural future features.</td><td>TanStack Table</td></tr>
+<tr><td><b>Virtualisation</b></td><td>Audit feed (capped at 500 rows today), RVG code list, about 85 DayGrid rows</td><td>TanStack Virtual</td></tr>
+<tr><td><b>Drag-to-dismiss sheets and snap points</b></td><td>Every mobile sheet (the handle is only a close button today)</td><td>Base UI Drawer</td></tr>
+<tr><td><b>Focus management on every overlay</b></td><td>Trap, initial focus and restore are missing on Dialog, BottomSheet, the drawers and the popovers</td><td>Dialog / Sheet / Drawer / Popover</td></tr>
+<tr><td><b>Real menus</b></td><td>Per-row "⋯" actions, the List options sheet, the app switcher, right-click on DayGrid blocks</td><td>DropdownMenu / ContextMenu</td></tr>
+<tr><td><b>A form library and schema validation</b></td><td>About 30 Admin sheets with hand-rolled state, plus capture. One place for rules, <code>aria-invalid</code> and error messages.</td><td>React Hook Form + Zod + Field</td></tr>
+<tr><td><b>Date and time pickers, and date ranges</b></td><td>21 native date and time inputs. The audit filter needs a range. The demo clock's "today" must be passed in.</td><td>Calendar + Popover; optionally React Aria</td></tr>
+<tr><td><b>Searchable comboboxes and multi-selects</b></td><td>Surgeon picker, specialties, RVG code, contract holder</td><td>Base UI Combobox</td></tr>
+<tr><td><b>Charts</b></td><td>Receivables aging, productivity trends, billing pipeline volumes</td><td>Recharts</td></tr>
+<tr><td><b>Skeletons and loading states</b></td><td>Not needed by the in-browser fake backend, but the real system will have network latency</td><td>Skeleton / Spinner</td></tr>
+<tr><td><b>Breadcrumbs</b></td><td>Admin masters, then a record; Review, then a List</td><td>Breadcrumb</td></tr>
+<tr><td><b>Resizable panes</b></td><td>Admin day grid against the right rail; review table against the drawer</td><td>Resizable</td></tr>
+<tr><td><b>Keyboard shortcuts and hints</b></td><td>⌘K, day navigation (←/→, T for today), authorise</td><td>Kbd + your own hotkeys</td></tr>
+<tr><td><b>Drag to reorder</b></td><td>Availability statuses (Move up/down buttons today)</td><td>dnd-kit</td></tr>
+<tr><td><b>Dark mode</b></td><td>Not in the design today. shadcn tokens make it nearly free if wanted later.</td><td>CSS variables (<code>.dark</code>)</td></tr>
+<tr><td><b>Login and sign-up screens</b></td><td>None in the prototype; the real system needs them</td><td>shadcn <code>login-03</code>/<code>04</code> blocks, input-otp for 2FA</td></tr>
+<tr><td><b>Future AI assistant patterns</b></td><td>"Assistant drafts a booking or fee change for approval"</td><td>Beautiful UI (reference), Vercel AI Elements, assistant-ui</td></tr>
+</table></div>
+
+<h2 id="a11y">Accessibility gains from the swap</h2>
+<div class="card"><ul>
+<li>Overlays: no focus trap, initial focus or restore anywhere. BottomSheet has no Escape. Dialog has no scroll lock. <code>aria-modal</code> is set without making the background inert.</li>
+<li>Menus claim <code>role="menu"</code> with no arrow keys. AppSwitcher has no Escape.</li>
+<li>Segmented controls use <code>aria-pressed</code> buttons rather than radios, with no roving focus (only StatusRadioGroup is correct).</li>
+<li>Tabs lack <code>role="tab"</code> and <code>aria-selected</code> (Web Accounts, Integrations, AaFees). Navs lack <code>aria-current</code> (SideNav, WebNav, BottomTabBar).</li>
+<li>Clickable <code>&lt;tr&gt;</code> rows are mouse-only. Web List detail's Bookings table has no keyboard handle at all.</li>
+<li>Comboboxes have no combobox or listbox semantics. The DayGrid is a page of individual Tab stops with no grid model.</li>
+<li>There is no consistent focus ring. <code>accent.focusRing</code> is used in one place, and inputs have no focus style.</li>
+<li>Mobile screens have no headings (titles are <code>div</code>s), and focus is not moved after a stack push or pop.</li>
+<li>Several inputs are labelled only by placeholder (notes textarea, Integration Monitor inputs, the DayNav date, DemoData selects).</li>
+<li>z-index values are ad hoc and set per file (60, 70, 90, 100, 120, 200). Library portals plus one layering scale replace them.</li>
+</ul></div>
+
+<h2 id="risks">Constraints and risks for the migration</h2>
+<div class="grid">
+  <div class="card"><div class="k">React 19 first</div>Recent shadcn code passes <code>ref</code> as a normal prop. On React 18 refs are silently dropped, which breaks focus handling and measuring. Upgrade before running <code>shadcn init</code>.</div>
+  <div class="card"><div class="k">Brand rules in tokens</div><code>--primary</code> and <code>--ring</code> are teal. Crimson lives only in identity tokens (<code>--sidebar-primary</code>, masthead, avatar), never in <code>--primary</code> or <code>--accent</code> (in shadcn, <code>--accent</code> means hover background). Delete any non-teal filled variant. Add six <code>--status-*</code> tokens with tint and on-tint values. Set fonts to Schibsted Grotesk and Spline Sans Mono, with tabular-nums in data cells.</div>
+  <div class="card"><div class="k">Avoid the "shadcn look"</div>Use our radius scale (ctl 10, card 14, panel 20, sheet 24), our type and our motion patterns rather than stock tw-animate fades, and denser data rows. Publish all of it as a private <code>@aa</code> registry so every developer and agent pulls the branded version.</div>
+  <div class="card"><div class="k">Phone frame and portals</div>The prototype renders mobile inside a CSS <code>scale()</code>d PhoneFrame. Library portals default to <code>body</code> and position with Floating UI, so they can misplace content. Point Drawer, Popover and Toaster at the frame container. Base UI also wants <code>isolation: isolate</code> on the app root.</div>
+  <div class="card"><div class="k">Determinism</div>Calendars and date pickers default to the real "today". Always pass the demo clock's date (<code>DEMO_TODAY</code>) and the horizon as min/max. No library may call <code>new Date()</code> on our behalf in seeded views.</div>
+  <div class="card"><div class="k">Test and capture hooks</div>Keep the <code>data-shot</code>, <code>data-validation-*</code> and demo-trigger attributes on the DOM nodes that the Playwright and capture suites target. shadcn parts carry <code>data-slot</code>, which helps.</div>
+  <div class="card"><div class="k">Motion and reduced motion</div>Re-express the seven named motion patterns on Motion or CSS. Keep the global reduced-motion collapse. Magic UI parts do not check reduced motion; NumberFlow does.</div>
+  <div class="card"><div class="k">Copy-in has no upgrades</div>shadcn code becomes ours. Churn is real (eight styles, a <code>cn</code> package migration, Vaul replaced by Base UI Drawer, TanStack Table v8 to v9). Pin a snapshot and record it.</div>
+  <div class="card"><div class="k">Library health</div>Vaul is unmaintained. @use-gesture is dormant. Tremor is stale. cmdk is slow but stable. NumberFlow, Floating UI and dnd-kit/react are still 0.x. Only RareUI is weak among the video's picks.</div>
+</div>
+
+<h2 id="order">Suggested migration order</h2>
+<div class="card"><ol class="steps">
+<li><b>Groundwork:</b> React 19, path alias, <code>shadcn init --base base</code>. Map <code>tokens.ts</code> and <code>statusColours.ts</code> into CSS variables with <code>@theme inline</code>. Build the <code>@aa</code> registry and preset. Write the CLAUDE.md rules (no raw palette classes, teal only, shadcn first).</li>
+<li><b>Primitives behind existing seams:</b> Button, Field/Input/Textarea/Select, Badge (status variants), Avatar, Card. Swap the inside of <code>Overlay</code>: Dialog on web, Drawer on mobile. Every one of the roughly 57 sheets improves at once.</li>
+<li><b>Feedback:</b> mount Sonner and convert the inline success banners and UpdatePrompt. Replace <code>title=</code> with Tooltip.</li>
+<li><b>Navigation:</b> Admin Sidebar, web NavigationMenu, Tabs for sub-tabs, Breadcrumbs, mobile tab bar as a <code>&lt;nav&gt;</code>.</li>
+<li><b>Pickers:</b> Combobox for RVG, surgeon, specialties and contract. Calendar and Date Picker in place of the 21 native inputs and the custom month grids (keeping custom day content).</li>
+<li><b>Tables:</b> TanStack Table v9 with shared column helpers across the 17 Admin tables, then the web tables. Add TanStack Virtual for audit and RVG.</li>
+<li><b>Forms:</b> React Hook Form + Zod for the Admin sheets, then capture, with store refusals mapped to field errors.</li>
+<li><b>Custom pieces on primitives:</b> DayGrid accessibility (grid roles, Tooltip, ContextMenu), SlideStack and SuccessOverlay re-expressed on Motion with unchanged behaviour, Recharts for aging, DropdownMenu row actions.</li>
+<li><b>Only if decided at pick-up (new features, not unification):</b> the ⌘K palette, Resizable rail, dnd-kit reorder, dark mode.</li>
+</ol></div>
+
+<h2 id="agents">Claude Code tooling</h2>
+<div class="grid">
+  <div class="card"><div class="k">shadcn MCP server</div><code>npx shadcn@latest mcp init --client claude</code> lets Claude browse, search and install from shadcn, third-party and private registries (namespaces such as <code>@aa</code>, <code>@magicui</code>, <code>@reui</code> in <code>components.json</code>).</div>
+  <div class="card"><div class="k">shadcn skill</div><code>npx skills add shadcn/ui</code> runs <code>shadcn info --json</code> for project context and enforces conventions (FieldGroup for forms, ToggleGroup for option sets, semantic colours). A separate Radix-to-Base UI migration skill commits per component, which conflicts with this repo's no-commit rule.</div>
+  <div class="card"><div class="k">Emil Kowalski's skills</div><code>npx skills add emilkowalski/skills --skill pick-ui-library -a claude-code</code>. It is invoked by name only. Also relevant: <code>gestures</code>, <code>mobile-native</code>, <code>ask-sonner</code>, <code>break-ui</code>, <code>remove-animations</code>, <code>review-animations</code>, <code>apple-design</code>.</div>
+  <div class="card"><div class="k">pick-ui-library's choices</div>Base UI (primitives), cmdk (⌘K), Sonner (toasts), input-otp, Leva (control panels), Motion, NumberFlow, torph (text), Cobe (globes), Satori, shiki, Liveline (live charts), Recharts, dnd kit, react-virtuoso (virtualisation), Zustand, clsx, cva, next-themes. It names <b>no</b> drawer, table, form or date-picker library, so this report fills those gaps.</div>
+</div>
+<div class="callout warncall">Before adopting any third-party skill or MCP server, read its files. Skills run with Claude's permissions in this repo.</div>
+
+<h2 id="sources">Sources</h2>
+<div class="card small">
+<p><b>Video:</b> Griffin Wooldridge, "UI Libraries for Claude Code" (youtube.com/watch?v=zsCGS-Yzjnw), and griffinwooldridge.com/ai-for-designers (coming soon).</p>
+<p><b>Foundations:</b> ui.shadcn.com/docs (theming, tailwind-v4, mcp, skills, registry, changelog 2026-07 Base UI default, 2026-07 React Aria, 2026-07 Toast, 2026-05 eject, components/base/data-table, components/base/drawer, installation/vite, react-19) · base-ui.com/react/overview/releases, /quick-start, /components/drawer · radix-ui.com/primitives/docs/overview/releases · radix-ui.com/themes/docs/overview/releases</p>
+<p><b>Specialists:</b> sonner.emilkowal.ski · github.com/emilkowalski/sonner · vaul.emilkowal.ski · github.com/emilkowalski/vaul · github.com/shadcn-ui/ui/issues/8455 · cmdk.paco.me · github.com/pacocoursey/cmdk · number-flow.barvian.me · github.com/emilkowalski/skills (pick-ui-library, gestures, mobile-native) · tanstack.com/blog/announcing-tanstack-table-v9 · tanstack.com/virtual · daypicker.dev · react-hook-form.com · zod.dev · motion.dev · dndkit.com · floating-ui.com · react-spectrum.adobe.com/react-aria · recharts.org · virtuoso.dev · github.com/lochie/web-haptics</p>
+<p><b>Designed and blocks:</b> beautifului.dev (and /license) · rareui.in · github.com/Codewithswappy/RareUI · magicui.design · github.com/magicuidesign/magicui · ui.aceternity.com (and /pricing) · 21st.dev (and /pricing) · github.com/21st-dev/magic-mcp · ui.shadcn.com/blocks · tremor.so · vercel.com/blog/vercel-acquires-tremor · coss.com/ui · kibo-ui.com · github.com/shadcnblocks/kibo · reui.io · github.com/keenthemes/reui · vercel.com/changelog/introducing-ai-elements · assistant-ui.com</p>
+<p><b>Codebase:</b> <code>aa-prototype/src/</code> (shared, shell, theme, pwa, apps/admin, apps/web, apps/mobile, apps/demo), inventoried read-only on 11 November 2026.</p>
+</div>
+
+<footer>Compiled by Claude Code from six research agents. Library versions and status are as reported by npm and GitHub on 11 November 2026. Recheck them before starting the migration.</footer>
+</main>
+</body>
+</html>
