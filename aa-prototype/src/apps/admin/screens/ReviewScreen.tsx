@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
-import type { AssignedList, BillingRoute, Booking, Procedure } from '../../../domain/types'
+import type { AssignedList, Booking, Procedure } from '../../../domain/types'
 import { authoriseList, incompleteBookingsOn, logListNote, useAppStore, useListTimes, type Actor } from '../../../store'
 import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
 import { bookingFee, procedureFee } from '../../../shared/capture'
-import { dayMicroCap, formatCurrency, hhmm, locationName, routeLabel, slotTimeRange } from '../../../shared/format'
+import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
+import { billedPartyFor } from '../../../domain/billing/whoIsBilled'
+import { counterpartyName } from '../../../store/selectors'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
@@ -36,8 +38,8 @@ const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Code', 'Times', 'B · T · M', 
  * pill · submitted pill), a 4-tile summary strip, the review table and totals
  * row, and the authorise action bar + choreography. Every figure comes from the
  * REAL Phase 01 calculator (procedureFee / bookingFee looped over the non-cancelled
- * bookings) — NOT the mockup's simplified numbers (Decisions log). The ROUTE column
- * shows the RFP billing route, not the anaesthetic technique. FLAGS come from
+ * bookings) — NOT the mockup's simplified numbers (Decisions log). The Billed to
+ * column shows who each Booking bills (catch-up Phase 20). FLAGS come from
  * the RFP-grounded `reviewFlags` helper (no invented duration-outlier flag).
  */
 export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: ReviewScreenProps) {
@@ -74,6 +76,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const flags = reviewFlagsForBooking({
         booking,
         procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, rvgGroup: views[i]!.rvgGroup })),
+        contracts: masters.contracts,
+        parties: masters.parties,
         timeRule: masters.rvgTimeRule,
         modifierInputs: {
           patientDobISO: masters.patients[booking.patientId]?.dobISO,
@@ -83,8 +87,15 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
-      const routes = new Set(procs.map((p) => p.billingRoute).filter((r): r is BillingRoute => r !== undefined))
-      const routeText = routes.size === 0 ? 'Not set' : routes.size > 1 ? 'Mixed' : routeLabel([...routes][0])
+      // Who is billed (INTERIM until Phase 21): the Contract says; "Mixed" when Procedures differ.
+      const billed = new Map<string, string>()
+      for (const p of procs) {
+        const contract = p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined
+        const ref = billedPartyFor(p, contract, masters.parties, booking.patientId)
+        if (ref !== undefined) billed.set(`${ref.kind}:${ref.id}`, counterpartyName({ masters }, ref))
+      }
+      const anyMissing = procs.some((p) => p.governingContractId === undefined)
+      const billedText = anyMissing ? 'Needs an invoice destination' : billed.size > 1 ? 'Mixed' : ([...billed.values()][0] ?? 'Needs an invoice destination')
       const procIds = new Set(procs.map((p) => p.id))
       const lineIds = Object.values(billingLinesRecord).filter((l) => procIds.has(l.procedureId)).map((l) => l.id)
       const entityIds = [booking.id, ...procs.map((p) => p.id), ...lineIds]
@@ -102,7 +113,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         })
         entityLabels = labels
       }
-      return { booking, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds, entityLabels }
+      return { booking, primary, primaryView, totals, flags, billedText, procCount: procs.length, entityIds, entityLabels }
     })
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
   const warningsByBooking = useListWarnings(listId)
@@ -265,13 +276,13 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1120 }}>
           <thead>
             <tr>
-              {['Time', 'Patient', 'Route', 'Contract', 'Code', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
+              {['Time', 'Patient', 'Billed to', 'Contract', 'Code', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
                 <th key={h} style={{ ...headCellStyle, textAlign: i === 7 || i === 8 ? 'right' : 'left', whiteSpace: REVIEW_NOWRAP_HEADINGS.has(h) ? 'nowrap' : undefined }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, totals, flags, routeText, procCount, entityIds, entityLabels }) => {
+            {rows.map(({ booking, primary, primaryView, totals, flags, billedText, procCount, entityIds, entityLabels }) => {
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -297,7 +308,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                     </div>
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'} · {primary?.description ?? 'Procedure'}{procCount > 1 ? ` · +${procCount - 1} more` : ''}</div>
                   </td>
-                  <td style={cellStyle}>{routeText}</td>
+                  <td style={cellStyle}>{billedText}</td>
                   <td style={cellStyle}>{primaryView?.contract?.name ?? 'None'}</td>
                   <td className="mono" title={primaryView?.rvgGroup?.description} style={{ ...nowrapCell, color: accent.base }}>{primaryView?.rvgGroup?.code ?? '·'}</td>
                   <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>

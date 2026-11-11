@@ -9,6 +9,7 @@ import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { editProcedure } from './lifecycle'
+import { setProcedureContract } from './contractSelectionActions'
 import { bookingsForList, proceduresForBooking } from './selectors'
 import {
   addAnaesthetist,
@@ -65,8 +66,9 @@ describe('editAnaesthetist', () => {
     if (booking === undefined) throw new Error('no booking')
     const proc = proceduresForBooking(api.getState(), booking.id)[0]
     if (proc === undefined) throw new Error('no procedure')
-    // Force RVG at the anaesthetist's rate (units x own unit value): no Contract, no override.
-    expect(editProcedure(api, OFFICE, proc.id, { governingContractId: undefined, priceOverride: undefined }).ok).toBe(true)
+    // Force RVG at the anaesthetist's rate (units x own unit value): No contract · RVG, no override (catch-up Phase 20).
+    expect(setProcedureContract(api, OFFICE, proc.id, 'CT-NO-CONTRACT').ok).toBe(true)
+    expect(editProcedure(api, OFFICE, proc.id, { priceOverride: undefined }).ok).toBe(true)
 
     const feeArgs = () => {
       const s = api.getState()

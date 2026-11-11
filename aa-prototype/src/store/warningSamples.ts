@@ -25,10 +25,12 @@ import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { editProcedure, editRefusal } from './lifecycle'
 import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import { pickRvgGroup } from './rvgGroupActions'
-import { bookingRequiresPrepayment, prePaymentInvoicesForBooking, proceduresForBooking } from './selectors'
+import { bookingRequiresPrepayment, prePaymentInvoicesForBooking, proceduresForBooking, railContextForList, railMastersOf } from './selectors'
+import { contractCandidatesFor, openPriceFallbackFor } from '../domain/billing/contractRail'
+import { setProcedureContract } from './contractSelectionActions'
 
-/** What the staging checks read: the schedule, and the audit trail that says who last changed it. */
-type SampleState = Pick<AppState, 'schedule' | 'audit'>
+/** What the staging checks read: the schedule and masters, and the audit trail that says who last changed it. */
+type SampleState = Pick<AppState, 'schedule' | 'audit' | 'masters'>
 
 export interface WarningSample {
   ruleId: WarningRuleId
@@ -47,7 +49,7 @@ export interface WarningSample {
    * Why this sample cannot stage cleanly on the Booking, or null. Checked for
    * every sample before any stages, so a raise never half-stages.
    */
-  stageRefusal?(state: SampleState & Pick<AppState, 'masters'>, bookingId: string): string | null
+  stageRefusal?(state: SampleState, bookingId: string): string | null
   /** Stage the condition. The caller has checked the Booking is a seeded, editable target. */
   stage(api: AppStoreApi, actor: Actor, bookingId: string): Outcome
   /** The fields to restore from the seed, as a schedule patch, or undefined when nothing is staged. */
@@ -77,20 +79,41 @@ function lastChangedByDemo(state: SampleState, entityId: string): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * The fields the prepayment sample stages on the Booking's first Procedure (in
- * `proceduresForBooking` order; there is no primary flag until Phase 23). The
- * detail keeps the Booking billing-complete, because the validator requires it
- * for this category. Phase 20 deletes these fields and re-points the sample at
- * the Booking's office-set prepayment flag; Phase 27 at the prepaid set.
+ * The prepayment sample (catch-up Phase 20 re-points 15a's): the office moves
+ * the Booking's first Procedure (in `proceduresForBooking` order; no primary
+ * flag until Phase 23) onto a prepaid Contract through the step rail's own
+ * action: the List's first prepaid candidate (its anaesthetist's own price
+ * list), else Patient › Prepaid's open-price fallback with the sample amount
+ * typed. A prepaid Contract is what requires the prepayment (INTERIM until
+ * Phase 27). Clear restores every field the Contract change can touch.
  */
-const PREPAYMENT_SAMPLE = {
-  billingRoute: 'billableParty',
-  patientPaymentCategory: 'selfFundedPrepayment',
-  prepaymentDetail: { type: 'full' },
-} as const satisfies Pick<Procedure, 'billingRoute' | 'patientPaymentCategory' | 'prepaymentDetail'>
+const PREPAYMENT_FIELDS = [
+  'governingContractId',
+  'enteredPrice',
+  'priceOverride',
+  'railAnswers',
+  'billsHolderInterim',
+  'rvgGroupId',
+  'baseUnitsSelected',
+  'baseUnitsCaptured',
+  'modifierClaims',
+  'removedModifierIds',
+] as const satisfies readonly (keyof Procedure)[]
 
-type PrepaymentField = keyof typeof PREPAYMENT_SAMPLE
-const PREPAYMENT_FIELDS = Object.keys(PREPAYMENT_SAMPLE) as PrepaymentField[]
+/** The amount the sample types on Prepaid · Fixed price, ex GST. */
+export const PREPAYMENT_SAMPLE_AMOUNT = 500
+
+/** The prepaid Contract the sample stages for a Booking: the List's first prepaid candidate, else Patient › Prepaid's fallback. */
+function prepaidSampleContract(state: Pick<AppState, 'masters' | 'schedule'>, bookingId: string): { contractId: string; enteredPrice?: number } | undefined {
+  const booking = state.schedule.bookings[bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (list === undefined) return undefined
+  const masters = railMastersOf(state)
+  const own = contractCandidatesFor(masters, railContextForList(state, list)).find((c) => c.prepaid && c.billsTo === 'payer')
+  if (own !== undefined) return { contractId: own.id }
+  const fallback = openPriceFallbackFor(masters, { kind: 'patient', prepaid: true })
+  return fallback !== undefined ? { contractId: fallback.id, enteredPrice: PREPAYMENT_SAMPLE_AMOUNT } : undefined
+}
 
 function sameValue(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b)
@@ -110,18 +133,27 @@ const prepaymentSample: WarningSample = {
   isStaged(state, bookingId) {
     const p = firstProcedure(state, bookingId)
     const seed = p !== undefined ? seedProcedure(p.id) : undefined
-    if (p === undefined || seed === undefined) return false
-    const holdsSample = PREPAYMENT_FIELDS.every((f) => sameValue(p[f], PREPAYMENT_SAMPLE[f]))
-    const differsFromSeed = PREPAYMENT_FIELDS.some((f) => !sameValue(p[f], seed[f]))
-    return holdsSample && differsFromSeed && lastChangedByDemo(state, p.id)
+    if (p === undefined || seed === undefined || p.governingContractId === seed.governingContractId) return false
+    const contract = p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined
+    return contract?.prepaid === true && lastChangedByDemo(state, p.id)
   },
   seedRaises(bookingId) {
     return bookingRequiresPrepayment(buildSeed(), bookingId)
   },
+  stageRefusal(state, bookingId) {
+    const p = firstProcedure(state, bookingId)
+    const seed = p !== undefined ? seedProcedure(p.id) : undefined
+    if (p === undefined || seed === undefined) return null
+    // Never stage over someone's real Contract change: Clear would undo it.
+    if (p.governingContractId !== seed.governingContractId) return "This Booking's Contract was changed: use Reset"
+    return prepaidSampleContract(state, bookingId) === undefined ? 'No prepaid Contract fits this Booking' : null
+  },
   stage(api, actor, bookingId) {
     const p = firstProcedure(api.getState(), bookingId)
     if (p === undefined) return refuse('noProcedure', 'Nothing to stage on this Booking')
-    return editProcedure(api, actor, p.id, { ...PREPAYMENT_SAMPLE, prepaymentDetail: { ...PREPAYMENT_SAMPLE.prepaymentDetail } })
+    const pick = prepaidSampleContract(api.getState(), bookingId)
+    if (pick === undefined) return refuse('noPrepaidContract', 'No prepaid Contract fits this Booking')
+    return setProcedureContract(api, actor, p.id, pick.contractId, pick.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {})
   },
   restore(state, bookingId) {
     if (!this.isStaged(state, bookingId)) return undefined
@@ -387,7 +419,7 @@ export function clearSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
     (s) => {
       let schedule = s.schedule
       for (const sample of staged) {
-        const patch = sample.restore({ schedule, audit: s.audit }, bookingId)
+        const patch = sample.restore({ schedule, audit: s.audit, masters: s.masters }, bookingId)
         if (patch !== undefined) schedule = { ...schedule, ...patch }
       }
       if (restoreStamp) {

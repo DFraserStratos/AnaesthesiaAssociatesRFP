@@ -17,6 +17,10 @@ import {
   editRefusal,
   isBackdropList,
   prepaymentStatusFor,
+  railActorOf,
+  railContextForList,
+  railMastersOf,
+  setRailAnswers,
   raisePreProcedureInvoice,
   removeAttachment,
   uncompleteBooking,
@@ -42,6 +46,7 @@ import {
 } from '../flows'
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
+import { contractAllowedOn, contractChangeRefusal, railAnswersFor } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
 
 interface BookingDetailBodyProps {
@@ -326,6 +331,22 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     return labels
   }, [procedures, billingLinesRecord])
 
+  // "Add another procedure" (US-03.2.3, catch-up Phase 20): the new Procedure
+  // picks its own Contract on the step rail, opened on the first Procedure's
+  // answers with its Contract ticked when it is still on offer (one tap to
+  // confirm, never stored silently). Closing the rail adds nothing.
+  const firstProcedure = procedures[0]
+  const addRailContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list) : undefined), [masters, list])
+  const addRailTick =
+    firstProcedure?.governingContractId !== undefined &&
+    addRailContext !== undefined &&
+    contractAllowedOn(railMastersOf({ masters }), addRailContext, firstProcedure.governingContractId) &&
+    contractChangeRefusal(railActorOf(actor), masters, undefined, firstProcedure.governingContractId) === null
+      ? firstProcedure.governingContractId
+      : undefined
+  const addRailStart =
+    addRailTick !== undefined ? railAnswersFor(masters, addRailTick) : firstProcedure?.governingContractId === undefined ? firstProcedure?.railAnswers : undefined
+
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   // The store's editRefusal decides, so the UI never offers an action the guard
@@ -367,8 +388,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     return removeAttachment(useAppStore, actor, { kind: 'booking', id: bookingId }, attachmentId)
   }
 
+  // "Add another procedure" (US-03.2.3): the new Procedure picks its own
+  // Contract on its own Billing card; it starts on the first Procedure's
+  // answers when that Contract still fits (answers only, never a Contract
+  // stored silently), else at the first step.
   function doAddProcedure() {
-    run(addProcedure(useAppStore, actor, bookingId))
+    const added = addProcedure(useAppStore, actor, bookingId)
+    if (!added.ok) return run(added)
+    if (addRailStart !== undefined) run(setRailAnswers(useAppStore, actor, added.value.procedureId, addRailStart))
   }
 
   function markComplete() {
@@ -671,6 +698,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           <Plus size={16} aria-hidden /> Add another procedure
         </Button>
       )}
+
     </>
   )
 

@@ -16,6 +16,9 @@
             },
             {
               "wait": 600
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
@@ -35,6 +38,9 @@
           "steps": [
             {
               "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
             },
             {
               "wait": 600

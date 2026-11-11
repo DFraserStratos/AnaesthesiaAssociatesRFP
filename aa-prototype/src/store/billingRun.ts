@@ -24,9 +24,13 @@
  */
 
 import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
-import { noRouteCounterpartyMessage, routeCounterpartyForParty } from '../domain/billing/parties'
+import { noRouteCounterpartyMessage } from '../domain/billing/parties'
+import { billedPartyFor } from '../domain/billing/whoIsBilled'
+import { NOT_A_CANDIDATE_MESSAGE, applyContractChange, contractAllowedOn } from '../domain/billing/contractRail'
+import { withRvgRowChange } from './lifecycle'
+import { railContextForList, railMastersOf } from './selectors'
 import { listHospitalFor } from '../domain/listPairing'
-import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine } from '../domain/types'
+import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine, Procedure } from '../domain/types'
 import {
   buildInvoicesForBooking,
   type BookingBuildResult,
@@ -277,9 +281,10 @@ const BILLING_RETRY_ACTOR: Actor = { who: 'Billing run (retry)', role: 'system',
  * The billing monitor's "Choose a Contract" (catch-up Phase 18; RV-32): the
  * one office edit allowed on an AUTHORISED List, and only on a Booking whose
  * billing case FAILED and that has no invoice. It sets the Procedure's
- * Contract (any Active Contract, or the one it already has) and nothing else,
- * audited as `procedure.update`; `retryBillingCase` then rebuilds it. No
- * Contract is edited.
+ * Contract (one the step rail allows on its List, or the one it already has)
+ * with the rail's change (`applyContractChange`: a typed price cleared, the
+ * RVG code filled only when empty), audited as `procedure.contract` (catch-up
+ * Phase 20); `retryBillingCase` then rebuilds it. No Contract is edited.
  */
 export function chooseContractForFailedBooking(
   api: AppStoreApi,
@@ -304,28 +309,39 @@ export function chooseContractForFailedBooking(
   if (contract.status !== 'active' && procedure.governingContractId !== contractId) {
     return refuse('contractDisabled', 'Choose an Active Contract.')
   }
+  // An open price needs its amount typed on the step rail, which the
+  // billing monitor does not ask for (catch-up Phase 20).
   if (!contractChoosableForProcedure(contract)) return refuse('openPriceNotChosen', OPEN_PRICE_NOT_CHOSEN_MESSAGE)
-  // INTERIM until Phase 21: on the hospital route the Contract's holder must
-  // have a billing record, or the retry would fail again.
-  if (procedure.billingRoute === 'hospital' && routeCounterpartyForParty(state.masters.parties[contract.holderId]) === undefined) {
+  // INTERIM until Phase 21: whoever the Contract bills needs a billing record,
+  // or the retry would fail again.
+  if (billedPartyFor(procedure, contract, state.masters.parties, state.schedule.bookings[procedure.bookingId]?.patientId ?? '') === undefined) {
     return refuse('noRouteCounterparty', noRouteCounterpartyMessage(contract.name))
   }
   if (procedure.governingContractId === contractId) return ok(undefined)
+  // The step rail's candidate rule (US-04.3.2): no "show all" here either.
+  const booking = state.schedule.bookings[procedure.bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (list === undefined || !contractAllowedOn(railMastersOf(state), railContextForList(state, list), contractId)) {
+    return refuse('notACandidate', NOT_A_CANDIDATE_MESSAGE)
+  }
+  const row = withRvgRowChange(state, procedure, applyContractChange(state.masters, procedure, contractId))
+  if (!row.ok) return row
+  const next: Procedure = { ...procedure, ...row.value.patch, ...(row.value.reconciled ?? {}) }
+  for (const key of Object.keys(row.value.patch) as (keyof Procedure)[]) {
+    if (row.value.patch[key] === undefined) delete next[key]
+  }
   mutate(
     api,
     actor,
     {
       entityType: 'procedure',
       entityId: procedureId,
-      action: 'procedure.update',
-      before: { governingContractId: procedure.governingContractId ?? '' },
-      after: { governingContractId: contractId },
+      action: 'procedure.contract',
+      before: { governingContractId: procedure.governingContractId, enteredPrice: procedure.enteredPrice, priceOverride: procedure.priceOverride, rvgGroupId: procedure.rvgGroupId },
+      after: { governingContractId: next.governingContractId, enteredPrice: next.enteredPrice, priceOverride: next.priceOverride, rvgGroupId: next.rvgGroupId },
     },
     (s) => ({
-      schedule: {
-        ...s.schedule,
-        procedures: { ...s.schedule.procedures, [procedureId]: { ...procedure, governingContractId: contractId } },
-      },
+      schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } },
     }),
   )
   return ok(undefined)

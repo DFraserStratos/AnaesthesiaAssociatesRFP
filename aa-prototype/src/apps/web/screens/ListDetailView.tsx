@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
-import { editRefusal, removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
+import { bookingContractCue, editRefusal, removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
@@ -32,6 +32,8 @@ interface BookingRow {
   nhi: string
   operation: string
   extraProcedures: number
+  /** "Needs an invoice destination" or "RVG code to fill in" (catch-up Phase 20). */
+  cue: string | undefined
   units: number
   fee: number
   /** No price on the List's date (catch-up Phase 19a): the fee reads "Needs a price". */
@@ -59,6 +61,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
+  // The cue's reads (catch-up Phase 20): the whole schedule and masters, so it never goes stale.
+  const cueState = useAppStore((s) => s)
   const masters = useAppStore((s) => s.masters)
   const [addOpen, setAddOpen] = useState(false)
   const [attachOpen, setAttachOpen] = useState(false)
@@ -102,6 +106,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           nhi: masters.patients[booking.patientId]?.nhi ?? 'NHI pending',
           operation: procs[0]?.description || 'Procedure to capture',
           extraProcedures: Math.max(0, procs.length - 1),
+          cue: booking.cancellation === undefined ? bookingContractCue(cueState, booking.id) : undefined,
           units: totals.units,
           fee: totals.total,
           needsPrice: totals.needsPrice,
@@ -119,7 +124,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       needsPrice: active.some((r) => r.needsPrice),
       invoiced: active.reduce((n, r) => n + r.invoiced, 0),
     }
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking, cueState])
 
   const warningsByBooking = useListWarnings(listId)
 
@@ -255,6 +260,9 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                       {r.operation}
                       {r.extraProcedures > 0 && (
                         <span style={{ color: neutral.mist }}> · +{r.extraProcedures} more</span>
+                      )}
+                      {r.cue !== undefined && (
+                        <div data-shot="list-row-contract-cue" style={{ fontSize: 11.5, color: neutral.slate, marginTop: 2 }}>{r.cue}</div>
                       )}
                     </Td>
                     {authorised ? (

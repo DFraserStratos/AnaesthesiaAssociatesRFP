@@ -9,9 +9,8 @@
  * here, behind the types the UI reads: the save guards (`contractRefusal`),
  * the AA code generator (`nextAaCode`), the search matcher (`contractSearch`),
  * where a Contract is offered (`linkFits`), the No contract · RVG lookup
- * (`noContractRvg`), the pricing-kind reads (`isRvgKind`) and the interim
- * bridges to today's billing route (`interimRouteContract`, with the Party
- * module's `routeCounterpartyForParty`).
+ * (`noContractRvg`) and the pricing-kind reads (`isRvgKind`). Choosing a
+ * Procedure's Contract is the step rail's (`contractRail.ts`).
  *
  * Our readings, built and logged (AR-58 11.1):
  * - A36: the pricing kind is set at creation; a kind change is a new Contract.
@@ -94,15 +93,19 @@ export interface Contract {
   holderId: PartyId
   /**
    * AR-58 `billsTo`: its holder, or the payer on the Booking (D2, US-04.2.1).
-   * Stored here; Phase 21 acts on it. Until then the billing route still
-   * decides the counterparty and no billing path reads it.
+   * Decides where the Contract sits on the step rail (`destinationOf`) and,
+   * INTERIM until Phase 21, who a Procedure on it bills (`billedPartyFor`).
    */
   billsTo: BillsTo
   /** AR-58 `linkedSurgeonIds`: surgeons whose Lists it is offered on (OQ-105: individual surgeons, never rooms). */
   linkedSurgeonIds: SurgeonId[]
   /** AR-58 `linkedAnaesthetistId`: at most one, for an anaesthetist's own price list. */
   linkedAnaesthetistId?: AnaesthetistId
-  /** AR-58 `prepaid`: fixed for the Contract's life (D4, OQ-25). Phase 27 acts on it. */
+  /**
+   * AR-58 `prepaid`: fixed for the Contract's life (D4, OQ-25). A Procedure on
+   * it requires prepayment (INTERIM read, catch-up Phase 20); Phase 27 builds
+   * the prepayment lifecycle on it.
+   */
   prepaid: boolean
   /** AR-58 `anaesthetistMayOverridePrice`: only on an RVG pricing kind (D50 extended, OQ-96, OQ-117). Phase 24 acts on it. */
   anaesthetistMayOverridePrice: boolean
@@ -463,44 +466,11 @@ export function linkFits(
   )
 }
 
-// ---------------------------------------------------------------------------
-// Interim bridges to today's billing route
-// ---------------------------------------------------------------------------
-
-/**
- * INTERIM until Phase 20: with nothing stored on the hospital or insurer
- * route, a Procedure bills under that Party's plain RVG Contract (RVG at the
- * anaesthetist's rate, not a system Contract, no links), the first Active one
- * by AA code, else a Disabled one (a Disabled Contract still bills, D81).
- * Phase 20's step rail replaces the route and this lookup.
- */
-export function interimRouteContract(
-  contracts: Readonly<Record<string, Contract>>,
-  partyId: PartyId | undefined,
-): Contract | undefined {
-  if (partyId === undefined) return undefined
-  return Object.values(contracts)
-    .filter(
-      (c) =>
-        c.holderId === partyId &&
-        c.systemRole === undefined &&
-        c.pricing.kind === 'rvgAnaesthetistRate' &&
-        c.linkedSurgeonIds.length === 0 &&
-        c.linkedAnaesthetistId === undefined,
-    )
-    .sort((a, b) => Number(b.status === 'active') - Number(a.status === 'active') || a.aaCode.localeCompare(b.aaCode))[0]
-}
-
-/** The sentence when the route's Party has no plain RVG Contract (INTERIM until Phase 20): the resolver's and the validator's. */
-export function noRouteContractMessage(partyName: string): string {
-  return `No Contract is chosen and ${partyName} has no plain RVG Contract to bill under. Choose a Contract in the office billing setup.`
-}
-
 /**
  * True when a Procedure on this Contract has no price on its procedure date
  * (the List's): a fixed price with no range in force (Phase 19a; before its
- * first start), or any open-price Contract (no price of its own until Phase
- * 20 types an amount on the Procedure). The validator and the billing
+ * first start), or any open-price Contract (no price of its own: the amount is
+ * typed on the Procedure, catch-up Phase 20). The validator and the billing
  * resolver both ask it, with `needsPriceMessage`; never a fallback to RVG.
  */
 export function noPriceInForce(contract: Contract, dateISO: string): boolean {
@@ -512,10 +482,14 @@ export function noPriceInForce(contract: Contract, dateISO: string): boolean {
  * True when this Procedure cannot be priced on its procedure date: the one
  * predicate the validator and the billing resolver share. A fixed price with
  * no range in force needs a price unless the office typed a fixed fee (a
- * price a person set; `feeFor` agrees); an open price always does until
- * Phase 20 types its amount.
+ * price a person set; `feeFor` agrees); an open price does until its amount
+ * is typed (`enteredPrice`, INTERIM until Phase 24).
  */
-export function procedureNeedsPrice(contract: Contract, dateISO: string, procedure: Pick<Procedure, 'priceOverride'>): boolean {
-  if (contract.pricing.kind === 'open') return true
+export function procedureNeedsPrice(
+  contract: Contract,
+  dateISO: string,
+  procedure: Pick<Procedure, 'priceOverride' | 'enteredPrice'>,
+): boolean {
+  if (contract.pricing.kind === 'open') return procedure.enteredPrice === undefined && procedure.priceOverride?.kind !== 'fixedFee'
   return noPriceInForce(contract, dateISO) && procedure.priceOverride?.kind !== 'fixedFee'
 }

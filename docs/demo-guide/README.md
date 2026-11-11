@@ -117,7 +117,7 @@ Use one continuous business object rather than touring unrelated screens:
 
 > Dr Melanie Souter's Tuesday 21 July PM List at Southern Cross.
 
-It contains patient Bookings using the three main billing routes and one unfinished Booking, Margaret
+It contains patient Bookings on hospital, insurer and No contract · RVG Contracts and one unfinished Booking, Margaret
 Ellison, that is designed for live BTM capture.
 
 The full story now runs end to end without narration gaps:

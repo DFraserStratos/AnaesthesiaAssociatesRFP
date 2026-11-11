@@ -12,8 +12,10 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { authoriseList, editProcedure, submitList } from './lifecycle'
+import { authoriseList, submitList } from './lifecycle'
 import { chooseContractForFailedBooking, runBillingForList, retryBillingCase } from './billingRun'
+import { setProcedureContract } from './contractSelectionActions'
+import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { handoffCase } from './xeroHandoff'
 import { addPriceRange, disableContract } from './contractActions'
 import { failedCases, invoicesForList, proceduresForBooking } from './selectors'
@@ -40,12 +42,13 @@ function losaProcedureId(api: BoundAppStore): string {
   return proceduresForBooking(api.getState(), marker('billingFailureBooking'))[0]!.id
 }
 
-/** The demo trigger's path: as the office, point Losa Tuilagi's Procedure at COS ACC fixed fees, then authorise and run. */
+/** The demo trigger's path: point Losa Tuilagi's Procedure at COS ACC fixed fees, then authorise and run. */
 function triggerFailure(api: BoundAppStore): void {
   const listId = SEED_LIST_IDS.billingFailure
   const list = api.getState().schedule.lists[listId]!
   if (list.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
-  expect(editProcedure(api, OFFICE, losaProcedureId(api), { governingContractId: CONTRACT.cosFixed }).ok).toBe(true)
+  // Catch-up Phase 20: COS ACC fixed fees has no range in force, so it is never a step-rail candidate; the trigger stages it as the demo actions.
+  expect(setProcedureContract(api, DEMO_TRIGGER_ACTOR, losaProcedureId(api), CONTRACT.cosFixed, { demoStage: true }).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   const run = runBillingForList(api, listId)
   expect(run.ok).toBe(true)
@@ -145,13 +148,13 @@ describe('chooseContractForFailedBooking (the one edit on an authorised List)', 
     const failedCaseId = failedCases(api.getState())[0]!.id
     const procId = losaProcedureId(api)
     expect(chooseContractForFailedBooking(api, SOUTER, failedCaseId, procId, CONTRACT.cosAcc)).toMatchObject({ ok: false, code: 'officeOnly' })
-    // The ordinary office edit stays locked on the authorised List.
-    expect(editProcedure(api, OFFICE, procId, { governingContractId: CONTRACT.cosAcc })).toMatchObject({ ok: false, code: 'listAuthorised' })
+    // The step rail stays locked on the authorised List.
+    expect(setProcedureContract(api, OFFICE, procId, CONTRACT.cosAcc)).toMatchObject({ ok: false, code: 'listAuthorised' })
     expect(disableContract(api, OFFICE, CONTRACT.stgAcc).ok).toBe(true)
     expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, procId, CONTRACT.stgAcc)).toMatchObject({ ok: false, code: 'contractDisabled' })
     expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, procId, CONTRACT.cosAcc).ok).toBe(true)
     expect(api.getState().audit.at(-1)).toMatchObject({
-      action: 'procedure.update',
+      action: 'procedure.contract',
       entityId: procId,
       before: { governingContractId: CONTRACT.cosFixed },
       after: { governingContractId: CONTRACT.cosAcc },
@@ -184,10 +187,22 @@ describe('Resolve & retry after the review pass', () => {
     expect(invoicesForBooking(api, marker('billingFailureBooking'))[0]!.total).toBe(1265)
   })
 
-  it('refuses a Contract whose holder cannot be billed on the hospital route', () => {
+  it('No contract · RVG bills the patient: the retry then invoices her (catch-up Phase 20, pre-approval falls through)', () => {
     const api = store()
     triggerFailure(api)
     const failedCaseId = failedCases(api.getState())[0]!.id
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, losaProcedureId(api), CONTRACT.noContractRvg)).toMatchObject({ ok: false, code: 'noRouteCounterparty' })
+    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, losaProcedureId(api), CONTRACT.noContractRvg).ok).toBe(true)
+    expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
+    const booking = api.getState().schedule.bookings[marker('billingFailureBooking')]!
+    expect(invoicesForBooking(api, booking.id)[0]!.counterparty).toEqual({ kind: 'patient', id: booking.patientId })
+  })
+})
+
+describe('the monitor Contract change follows the step rail (catch-up Phase 20 review)', () => {
+  it('refuses a Contract that does not fit the List', () => {
+    const api = store()
+    triggerFailure(api)
+    const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === marker('billingFailureBooking') && c.status === 'failed')!
+    expect(chooseContractForFailedBooking(api, OFFICE, failed.id, losaProcedureId(api), 'CT-SXAP')).toMatchObject({ ok: false, code: 'notACandidate' })
   })
 })

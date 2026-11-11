@@ -84,7 +84,6 @@ describe('mainViewFor (US-07.4.2)', () => {
     const created = createBooking(api, SOUTER, past!.id, {
       patient: { name: 'Past Patient', dobISO: '1970-01-01' },
       operation: 'Arthroscopy',
-      billingRoute: 'hospital',
     })
     expect(created.ok).toBe(true)
     if (!created.ok) return
@@ -167,7 +166,6 @@ describe('searchBookingsFor (US-03.1.7)', () => {
       const out = createBooking(api, OFFICE, SEED_LIST_IDS.souterAm21, {
         patient: { name: `Capstone Patient ${i}`, dobISO: '1980-01-01' },
         operation: 'Test',
-        billingRoute: 'hospital',
       })
       expect(out.ok).toBe(true)
     }

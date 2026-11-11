@@ -46,7 +46,6 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     isAdditional: false,
     modifierClaims: [],
     removedModifierIds: [],
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.cesRvg,
     billingReference: 'CE-2026-0731',
   }

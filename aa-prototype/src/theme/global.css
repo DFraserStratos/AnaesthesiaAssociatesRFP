@@ -790,3 +790,14 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
     transition: none;
   }
 }
+
+/* Catch-up Phase 20: the step rail and the Billing card take the app's teal
+   focus ring, never the browser's blue. */
+.aa-rail-scope button:focus-visible,
+.aa-rail-scope input:focus-visible {
+  outline: 2px solid #0d6e63;
+  outline-offset: 2px;
+}
+.aa-rail-scope button:focus:not(:focus-visible) {
+  outline: none;
+}

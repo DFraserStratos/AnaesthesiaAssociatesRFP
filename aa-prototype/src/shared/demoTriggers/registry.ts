@@ -48,7 +48,9 @@ import {
   STAND_IN_ASSIGN_CHOICES,
   officeStandInRefusal,
   authoriseList,
-  editProcedure,
+  setProcedureContract,
+  railContextForList,
+  railMastersOf,
   ingestPdfRow,
   openAccRecs,
   processMessage,
@@ -86,6 +88,8 @@ import {
   makeSessionAvailableAsColleague,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
+import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
+import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId } from '../../domain/slots'
@@ -391,6 +395,26 @@ function makeAvailableChoices(state: AppState, ctx: DemoTriggerCtx): { id: strin
   })
 }
 
+/**
+ * The Contracts the office stand-in sets on a Booking's Procedures with none
+ * (catch-up Phase 20): the List's hospital's first Contract on offer, else
+ * No contract · RVG. Read through the step rail's own rules.
+ */
+function officeContractPicks(state: AppState, bookingId: string): { procedureId: string; contractId: string }[] {
+  const booking = state.schedule.bookings[bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (booking === undefined || list === undefined || booking.cancellation !== undefined) return []
+  if (list.state === 'AUTHORISED') return []
+  const masters = railMastersOf(state)
+  const ctx = railContextForList(state, list)
+  const hospitalFirst = contractCandidatesFor(masters, ctx).find((c) => destinationOf(c, masters.parties).kind === 'hospital')
+  const contractId = hospitalFirst?.id ?? noContractRvg(masters.contracts).id
+  return Object.values(state.schedule.procedures)
+    .filter((p) => p.bookingId === bookingId && p.governingContractId === undefined)
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((p) => ({ procedureId: p.id, contractId }))
+}
+
 export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   // ── Admin · Billing monitor ───────────────────────────────────────────
   {
@@ -405,9 +429,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     disabledReason: (state) =>
       state.schedule.lists[SEED_LIST_IDS.billingFailure]?.billedAtISO !== undefined ? 'Already triggered' : null,
     // Re-based in catch-up Phase 18 (RV-32: no dates, and no Contract is
-    // edited): as the office, point Losa Tuilagi's Procedure at COS ACC fixed
-    // fees (no price range in force on her List's date) through the ordinary office action,
-    // then authorise; the billing run fails her Booking and bills its sibling.
+    // edited): point Losa Tuilagi's Procedure at COS ACC fixed fees (no price
+    // range in force on her List's date, so never a step-rail candidate:
+    // catch-up Phase 20 stages it through the rail's audited demo path), then
+    // authorise as the office; the run fails her Booking and bills its sibling.
     run: (api) => {
       const listId = SEED_LIST_IDS.billingFailure
       const list = api.getState().schedule.lists[listId]
@@ -421,7 +446,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         (p) => p.governingContractId === CONTRACT.cosAcc && bookings[p.bookingId]?.listId === listId,
       )
       if (losa !== undefined) {
-        const pointed = editProcedure(api, OFFICE_ACTOR, losa.id, { governingContractId: CONTRACT.cosFixed })
+        const pointed = setProcedureContract(api, DEMO_TRIGGER_ACTOR, losa.id, CONTRACT.cosFixed, { demoStage: true })
         if (!pointed.ok) return { ok: false, message: `Refused: ${pointed.message}` }
       }
       const outcome = authoriseList(api, OFFICE_ACTOR, listId)
@@ -1164,6 +1189,30 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => null,
   },
 
+  // ── Mobile · Booking, installed PWA only: the office sets the Contract (catch-up Phase 20)
+  {
+    id: 'office-sets-booking-contract',
+    label: "Office sets this Booking's Contract",
+    description:
+      "Stands in for the office on a Booking that needs an invoice destination: sets each Procedure's Contract as the office would on the step rail (the List's hospital's first Contract on offer, else No contract · RVG), audited as the office.",
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => (officeContractPicks(state, ctx.params['bookingId'] ?? '').length === 0 ? 'This Booking has an invoice destination' : null),
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId'] ?? ''
+      const picks = officeContractPicks(api.getState(), bookingId)
+      if (picks.length === 0) return { ok: false, message: 'This Booking has an invoice destination' }
+      for (const pick of picks) {
+        const res = setProcedureContract(api, OFFICE_SIMULATION_ACTOR, pick.procedureId, pick.contractId)
+        if (!res.ok) return { ok: false, message: `Refused: ${res.message}` }
+      }
+      return { ok: true, message: "The office set this Booking's Contract. It leaves the office's Needs an invoice destination list." }
+    },
+    indexPath: () => null,
+  },
+
   // ── Photo capture (Future scope) ──────────────────────────────────────
   // Photo capture is Future Work (US-02.4.4, catch-up Phase 15b): out of the
   // Add a booking sheet, kept here so a presenter can still show it. UI-only:
@@ -1192,7 +1241,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'fire-hospital-message',
     label: 'Fire hospital message',
     description:
-      'Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). Also on Admin · Integrations and the Integrations simulator.',
+      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). A new Booking arrives with no Contract and waits on Admin Day's Needs an invoice destination until the office sets one. Also on Admin · Integrations and the Integrations simulator.",
     screen: 'Mobile · Lists',
     routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
     surfaces: ['bar', 'pwa'],

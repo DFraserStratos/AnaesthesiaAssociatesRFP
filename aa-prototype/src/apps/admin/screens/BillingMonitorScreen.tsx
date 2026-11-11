@@ -21,6 +21,8 @@ import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChro
 import { sessionText } from '../../../domain/outOfHours'
 import { Button, FormError, useSurface } from '../../../shared'
 import { ContractSelect } from '../../../shared/contracts'
+import { contractAllowedOn } from '../../../domain/billing/contractRail'
+import { railContextForList, railMastersOf } from '../../../store'
 import { selectControlStyle } from '../flows/fieldChrome'
 
 interface BillingMonitorScreenProps {
@@ -213,6 +215,17 @@ function ChooseContractSheet({
 }) {
   const { Overlay } = useSurface()
   const current = useAppStore((s) => s.schedule.procedures[procedureId]?.governingContractId ?? '')
+  const masters = useAppStore((s) => s.masters)
+  const schedule = useAppStore((s) => s.schedule)
+  // Only the Contracts the step rail allows on this Booking's List (catch-up Phase 20).
+  const allowed = useMemo(() => {
+    const booking = schedule.procedures[procedureId] !== undefined ? schedule.bookings[schedule.procedures[procedureId]!.bookingId] : undefined
+    const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
+    if (list === undefined) return () => false
+    const ctx = railContextForList({ masters }, list)
+    const rail = railMastersOf({ masters })
+    return (id: string) => contractAllowedOn(rail, ctx, id)
+  }, [masters, schedule, procedureId])
   const [contractId, setContractId] = useState(current)
   const [error, setError] = useState<string | null>(null)
 
@@ -232,7 +245,7 @@ function ChooseContractSheet({
         <div style={{ fontSize: 13.5, color: neutral.slate }}>
           {patientName}'s Booking could not be billed. {reason} Choose the Contract it should bill under, or keep it once its price is added, then it is billed again.
         </div>
-        <ContractSelect value={contractId} onChange={setContractId} selectStyle={selectControlStyle} label="Contract" />
+        <ContractSelect value={contractId} onChange={setContractId} selectStyle={selectControlStyle} label="Contract" allowed={allowed} />
         <FormError message={error} />
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>

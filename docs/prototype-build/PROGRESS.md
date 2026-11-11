@@ -41,6 +41,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | 19 | Catch-up · RVG groups and the RVG code type-ahead | DONE | 2026-11-11 | Session 1: parity fixture first (`store/__parity__/phase-19-baseline.json`, per-Procedure B, T, M with each fee and every Booking's invoices, from the untouched code; byte-identical at the end, Phase 18's too); `domain/billing/rvgGroups.ts` (RvgGroup with hidden id, search, labels, `resolveStartingUnits`, `baseUnitsFor` and `outsideGuide`, save and pick refusals); NZSA RVG 2021 seed (84 published rows, 20 AA rows, seed-only `LEGACY_CODE_TO_RVG_GROUP`); `Procedure.rvgGroupId` optional; validator drops the range rule and the RVG-code demand; `baseUnitsOutsideGuide` rule (mild, after); `rvgGroupActions.ts`; PERSIST 33 to 34. Session 2: Admin Master data RVG groups (add, edit, retire, restore, audited); the type-ahead on every capture path and the add form; unclamped range row; the sample on `multiWarning`; 1778 Vitest + 166 Playwright; 4-lens review-fix pass; capture 276/276 |
 | 19a | Catch-up · Price ranges, the Contract's own fields and starting values | DONE | 2026-11-11 | Session 1: parity fixture first (`store/__parity__/phase-19a-baseline.json` from the untouched code; the 18, 19 and 19a fixtures byte-identical, compared with the declared hernia difference and the named Merivale addition); `domain/billing/priceRanges.ts` (`PriceRange` inside the fixed kind's pricing, `rangeInForce`, implied ends, `validatePriceRanges`, words), the Contract's `invoiceDescription` and `defaultRvgGroupId`, the search over both; `ContractPrice`, `matchContractPrice`, `contractPrices` and `procedureOrdinal` gone; the fee path reads the range in force on the List's date (`needsPrice` with none); the seed as priced items (Doyle, CES, the hernia on No contract · RVG). Session 2: range store actions (office only, audited), Merivale's combinations and Dr Souter's prepaid list, the Merivale Booking BK0163, `fillFromContract`, the editor's Invoice and codes and Price ranges, the list's in-force summary, "Needs a price" on money surfaces, the RVG time rule as data (`masters.rvgTimeRule`, panel, T caption), the Control Panel callout gone; PERSIST 34 to 35; 1853 Vitest + 171 Playwright; 4-lens review-fix pass; capture 279/279 |
 | 19b | Catch-up · Modifiers: the RVG table, pre-applied age and included modifiers, explanations | DONE | 2026-11-11 | Session 1: parity fixture first (`store/__parity__/phase-19b-baseline.json` with each row's facts); the NZSA RVG 2021 modifier table generated from AR-34 (`npm run rvg:modifiers`, drift guard); one rule module `domain/billing/modifiers.ts` (age bands, pre-applied age and included modifiers, claim refusals, the M total); `Procedure.modifierClaims`/`removedModifierIds`, `RvgGroup.includedModifierIds`/`noAgeModifier`, `masters.modifiers`; every fee assembler passes the DOB, date and master; modifier store actions; the explanation backstop; seed: no ASA seed, 20 AS3 claims, P1 on the 20 CSV groups, Ellison's A1 pre-applied, the Spine Booking BK0158; PERSIST 35 to 36. Session 2: the Modifiers ledger and the picker with an inline explanation (mobile, web, Admin), the Admin Modifiers tab and Add AA modifier, RVG groups' Included modifiers, S5 staging; 1897 Vitest + 179 Playwright; 4-lens review-fix pass; capture 280/280 |
+| 20 | Catch-up · One Contract per Procedure and the step rail | DONE | 2026-11-11 | Route, payment category and the Procedure's insurer gone; one Contract per Procedure on the decided step rail (`domain/billing/contractRail.ts`, `shared/flows/ContractRail.tsx`) for the office and, mirrored, the anaesthetist until AUTHORISED; "Needs an invoice destination" card and completion refusal; who is billed interim (`billedPartyFor`); prepayment from the prepaid Contract; figures pinned (`phase-20-baseline.json`, `contractParity.test.ts`) and unchanged; `PERSIST_VERSION` 36 → 37 |
 | 38a | Catch-up · Edit until AUTHORISED, the main view and search | DONE | 2026-11-10 | The anaesthetist edits own ACTIVE and SUBMITTED Lists until AUTHORISED (RV-19, D63), audited, last change stands; Review's "Changed since submitted" cue; `authoriseList` completion-gated; one exit `hasLeftMainView` (AUTHORISED) and `LIST_PROGRESS_LABEL` (`domain/listProgress.ts`); invoices in Balances at once (next-day rule gone); `mainViewFor`: mobile and web main views from today with an earlier group; pure search (`domain/bookingSearch.ts`), `store/lookback.ts` selectors, shared `MonthGrid`, mobile search and date sheet, web search and Go to date (`?q=`, `?day=`); authorised List detail shows its invoices; 12 history Lists for Dr Souter Jan to Mar 2026 (29 Bookings, `SEED_LOOKBACK`), no money figure moved; PERSIST 26 to 27; Vitest 1450, Playwright 134; 3-lens review-fix pass; capture 265/265 recipes |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
@@ -358,6 +359,13 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-11-11 · Catch-up Phase 19a (5): an anaesthetist's price list is one prepaid Contract per item, every range above zero** (D42, D30, D65, OQ-91, OQ-96). Office only; Dr Souter's three seeded; no override on a fixed price.
 - **2026-11-11 · Catch-up Phase 19a (6): part intervals round up under tiers held as data** (D25, OQ-75; supersedes the rounding ASSUMPTION, the second review's ruling (8) and the Control Panel callout). `masters.rvgTimeRule` seeded from `DEFAULT_RVG_TIME_RULE` (read by the seed only); `timeUnitsFromMinutes(minutes, rule)` with the rule required; read-only panel under RVG groups; Phase 42's editor. The T stepper (an override, Phase 04) stays; there is no field to type time units.
 - **2026-11-11 · Catch-up Phase 19a (7): the Contract's invoice description is the top default** (D37, OQ-103; US-04.2.18). Stored, searched and editable (also on system Contracts); 20a builds the chain. The holder reference code is not unique (A23).
+- **2026-11-11 · Catch-up Phase 20 (1): one Contract per Procedure; the billing route and payment category go** (DM-10, RV-18, US-04.3.1; D16, D33, D48 as extended; supersedes the 3rd review #1 route-setting, Phase 08's build decisions (1) Contract resolution at billing time and (2) counterparty resolution by route, the 6th review #2 direct-claims gate, the 2nd review #5 and 7th review A2 payment categories, and with 18 the protected default Type 1s). Each Procedure stores one Contract; none is "Needs an invoice destination", refused at completion and failed by the run as `noContract`; nothing is derived from the List. Who is billed comes from the Contract (`billedPartyFor`).
+- **2026-11-11 · Catch-up Phase 20 (2): the step rail as decided** (D16, D64, D7, D8; US-04.3.8, US-04.3.9, US-04.3.2, US-04.3.3; supersedes this plan's earlier one-list picker, its 4 November working-direction rail, Contract lines and the RVG reverse lookup). Where the invoice goes (worked out from each Contract, never stored), then Payment type or the hospital's tag or the holder, then the Contract by typing, No contract · RVG pinned first under Patient › Standard, "Other price" onto the destination's fallback. Candidates by status, hospital, links, specialties and the range in force; no "show all"; insurance never narrows (D28).
+- **2026-11-11 · Catch-up Phase 20 (3): the anaesthetist on the same rail until AUTHORISED** (FT-03.4, US-03.4.1; D63, A17, A37). Own ACTIVE and SUBMITTED Lists, no reason, audited `procedure.contract`; never onto or off a prepaid Contract; an amount only on No contract · Fixed price. A change clears a typed price, keeps RVG detail, fills the default RVG code only when empty (A15).
+- **2026-11-11 · Catch-up Phase 20 (4): prepayment from the prepaid Contract** (D23; supersedes the 7th review B6 derived Card-level flag's input). A Booking requires prepayment when a Procedure is on a prepaid Contract billing the payer; `prepaymentDetail` keeps full or split. No gate (D5). INTERIM until 27.
+- **2026-11-11 · Catch-up Phase 20 (5): readings this phase picks.** The answers so far stored as `railAnswers` (only those the person gave); a creation form never preselects and may save without a Contract; an added Procedure opens the rail on the first's answers with its Contract ticked when it still fits, and copies the payer override; a hospital, surgeon or reassign change re-defaults nothing; the PWA stand-in picks the List's hospital's first Contract on offer, else No contract · RVG; the route-less seeded Bookings arrive with no Contract (7 on the list at reset); a raised prepayment stays outstanding after a move off prepaid; the billing monitor's Contract change follows the rail's candidate rule; the billing-failure demo stages a non-candidate through an audited demo-only path; D81's default (a Disabled Contract stays and bills, no flag; OQ-135 open).
+- **2026-11-11 · Catch-up Phase 20 (7): the step rail is inline on the Booking, as the contract picker mock** (owner review, 2026-11-11; supersedes the phase plan's "bottom sheet on mobile, Dialog on web and Admin"). A Billing card per Procedure on Admin and web; on the phone, Billing rows opening the steps in a sheet. Look and interaction follow the mock's "A. Step rail"; no code shared with it.
+- **2026-11-11 · Catch-up Phase 20 (6): interims, with the phases that replace them.** Who is billed with the `billablePartyId` override and `billsHolderInterim` (21); `funderOverride` (22); `enteredPrice` (24); prepayment from the prepaid Contract with `prepaymentDetail` (27).
 
 ## Discovered for later — handoff list
 
@@ -2539,3 +2547,164 @@ Both sessions in one sitting (plan mode at kick-off; the step plan approved and 
 - The audit viewer shows the modifier actions as labels with field changes, not the doc's narrative sentences.
 - US-03.3.4's text still says the included pill "cannot be unselected" (catalogue, not changed here).
 - Screens worth a look: Ellison on mobile (`/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009`, Dr Souter: A1, Add a modifier, AS3); the Spine Booking (`/mobile/lists/L-34821-2026-07-27-PM/bookings/BK0158`); the Admin Booking (`/admin/day/2026-07-21/bookings/BK0009`, Kirsty W.); Master data Modifiers (`/admin/masters?view=modifiers`) and RVG groups (`?view=rvgGroups`).
+
+### Catch-up Phase 20 · One Contract per Procedure and the step rail (2026-11-11)
+
+**Drift check** (`plan-state.mjs --diff` with the phase's IDs, against `fbdd555`): US-03.3.1, US-04.1.4,
+US-04.2.17, US-04.2.18, US-04.3.2 and US-04.3.3 changed in their screenshots and captions only (earlier
+phases' capture runs); `domain-model.md` changed only in the out-of-hours Slot passages (32c). No
+requirement drift. OQ-135 still open: D81's default built.
+
+**Predecessors confirmed:** 14's trigger registry and PWA sheet; 15a's `prepaymentUnpaid`, the samples;
+15b's ACTIVE and no `copyBooking`; 18's Parties, flat Contracts (`billsTo`, `prepaid`, `pricing.kind`,
+`status`, `aaCode`), `CT-NO-CONTRACT` found by `systemRole`, `linkFits`, `contractMatchesQuery`; 18a's
+specialties, funding tags (`order`), the 14 fallbacks (`findFallback`, `destinationOf`); 19's
+`rvgGroupId` and type-ahead; 19a's `rangeInForce`, `holderReference`, `invoiceDescription`,
+`defaultRvgGroupId`, `fillFromContract`, Dr Souter's prepaid price list, the surgeon-linked Contracts;
+19b's `reconcileClaims`; 38a's `editRefusal` to AUTHORISED. No stop condition held.
+
+**Session split:** one working session covered both planned sessions. Session 1 (items 1 to 10) ended
+green (build, build:pwa, 1,943 Vitest tests) with the office's rail; session 2 (items 11 to 18) followed.
+
+**Built (decisions as built):**
+- **Figures pinned first (item 1).** `store/__parity__/phase-20-baseline.json`, written once from the
+  untouched code by `__parity__/phase20Capture.ts` (each seeded Procedure's billed party, Contract,
+  starting values and typed fixed fee; Riley's and Nair's pre-invoice builds with their ledger lines and
+  ACCREC/ACCPAY pair), compared by `store/contractParity.test.ts`. `feeParity.test.ts` gains an exact
+  Phase 20 block: the seven route-less Bookings' exception `noBillingRoute` → `noContract`, and Nair's
+  P0041 line basis RVG → fixed at the same $238.50 and units. Every other row of the 18 to 19b fixtures,
+  every counterparty and total, holds. No fixture changed; nothing ran with `-u`.
+- **Model (item 2).** `BillingRoute`, `PatientPaymentCategory`, `Procedure.billingRoute`, `.insurerId`
+  and `.patientPaymentCategory` deleted. `governingContractId` (optional: none is "Needs an invoice
+  destination"), `railAnswers`, `enteredPrice` (INTERIM until 24, in dollars like every figure),
+  `billsHolderInterim` (INTERIM until 21), `prepaymentDetail` and `billablePartyId` labelled INTERIM.
+- **One pure module (item 3)**, `domain/billing/contractRail.ts`: `contractCandidatesFor`,
+  `isContractCandidate`, `destinationOf` (18a's, re-exported), `openPriceFallbackFor`, `contractRailFor`,
+  `railAnswersFor`, `railAnswersText`, `applyContractChange`, `rvgCodeToFill`, `contractChangeRefusal`,
+  `contractAllowedOn`, `mayTypeEnteredPrice`, `hospitalTagsFor`. 31 tests. Nothing else knows the step
+  order; `ContractRail.tsx` draws it.
+- **Who is billed (item 4)**, `whoIsBilled.ts` `billedPartyFor`, INTERIM until 21: the holder when the
+  Contract bills its holder, else the payer override, else the patient. Every seeded counterparty held.
+- **Validator, engine, store (items 5 to 7):** completion refuses "This procedure needs an invoice
+  destination." first; the RVG code is required only on RVG kinds (and not with a rate x time line);
+  "Type the price for this procedure." on an open price with no amount; the reference check keyed on who
+  is billed (hospital, surgeon, organisation). The resolver reads only the stored Contract (`noContract`,
+  `contractMissing`, `contractIneffective`); `noBillingRoute`, `interimRouteContract`, the route branches,
+  `insurerPartyFor` and `hospitalPartyFor` gone. `store/contractSelectionActions.ts`:
+  `setProcedureContract` (38a's window, the candidate guard, `contractChangeRefusal`, the rail's change
+  in one audited `procedure.contract` commit), `setRailAnswers`, `setEnteredPrice`. `editProcedure`
+  refuses the Contract fields. `createBooking` and `addProcedure` take an optional Contract, checked the
+  same way; S12 and PDF creates arrive with none. Prepayment follows a prepaid Contract billing the payer
+  (`procedureRequiresPrepayment`), no gate. 15a's sample re-pointed through `setProcedureContract`.
+- **Seed (item 8):** every Procedure on one Contract (the old routes mapped to the Contract they billed
+  under), Riley on Dr Souter's Rhinoplasty ($1,200; the duplicate $1,200 billing line removed), Nair on a
+  new `CT-SOUTER-RHINO-COS` ($238.50, plastic surgery and ENT), Webb on No contract · RVG
+  (`aiaClaimBooking` marker), Doyle's primary via `billsHolderInterim`. The filler's `rng()` draws and
+  order are unchanged. `PERSIST_VERSION` 36 → 37 with a migrate test.
+- **Vocabulary (item 9):** the grep finds nothing in `src` outside the frozen parity fixtures (their
+  `noBillingRoute` code) and the parity tests that read them, and `persistMigrate.test.ts`'s stale-store
+  input. `AdminBillingRoute` → `AdminBillingPage`, `OWN_MOVE_ROUTE_LABELS` → `OWN_MOVE_WAY_LABELS`.
+- **The rail (items 10, 12):** `shared/flows/ContractRail.tsx`, one component for the office (Admin) and
+  the anaesthetist (mobile, web, PWA), a bottom sheet on mobile and a wide Dialog on web and Admin
+  (`Overlay` gains `size: 'wide'`); "Only option" on a step that filled itself in; "Other price" with the
+  amount required where this person may type it; "Enter it now" for the office on an RVG Contract;
+  closing keeps only the answers the person gave.
+- **Items 11 and 13 to 18:** `ProcedureContractRow` (Change, "Needs an invoice destination", "Set by the
+  office", the cleared-price line, the anaesthetist's caption); "RVG code to fill in" cues on the Booking
+  and List rows, "Add RVG code", "Optional, for reference"; Admin Day's "Needs an invoice destination"
+  card (one row per Booking); "Contract and payer" (the button keeps "Edit billing setup"); the creation
+  forms' Contract row, never preselected; "Add another procedure" opens the rail on the first's answers
+  with its Contract ticked when it still fits; `patientInvoiceNote`; Review's "Billed to" ("Mixed");
+  the PWA "Office sets this Booking's Contract"; the re-homed "Fire hospital message" description and
+  the Control Panel S1 text. The web Booking's right rail now measures its lead-in to the first capture
+  card (the fixed 74px no longer fitted).
+- **Demo guide:** 03 (S1 Beat 1, S2 Beat 2 with the "Worth pointing at" line, S3 Beat 1 Say, S4 Beat 1
+  Say), 04 (glossary, the step-rail card, myths), 02, 01, README and `master-demo-guide.html`.
+
+**Manual test checklist** (run in the app with Playwright, screenshots checked): card at reset (7
+Bookings, the pick-up at Patient › Standard), MSG-STG-1001's Sarah Mitchell joins and leaves once set:
+pass. Rail: three steps, no forbidden words, No contract · RVG first under any search, "No Contract
+matches", the RVG hand-off line, Prepaid for the office on Riley (Souter's four, no RVG kind), an answered
+step clears the later ones: pass. CES: Patient, Christchurch Eye Surgery (SXAP 6, HNZ 1, ACC 1), Special;
+SX fills SXAP ("Only option"): pass. Holder-code search 8268: pass. Other price: office amount field;
+the anaesthetist reads "The office types this amount." on a hospital fallback; no amount refuses "Type
+the price for this procedure.": pass. Anaesthetist (mobile, web): pick-up at step 3, Prepaid never
+offered, "Set by the office" on Riley: pass. Completion with no Contract refuses: pass. PWA stand-in:
+pass. Candidate rules, change semantics, pre-approval fall-through, guardian added Procedure, hospital
+change, S3/S4/S5 figures and samples: by the store and parity tests named above (pass). The empty-tag
+fallback is shown on CES with Ms Lim in the unit tests (no seeded List pairs them).
+
+**Adversarial review (convention 18):** four Opus reviewers (bugs and correctness, plan adherence, money
+parity, code quality). Money: no seeded figure moves. Fixed, each with a test: an anaesthetist confirming
+the same fallback cleared the office's typed amount; a prepayment invoice could bill the RVG working
+figure on Prepaid · Fixed price with no amount; the billing monitor's Contract change skipped the
+candidate guard and the change semantics (now `contractAllowedOn`, `applyContractChange`, audited
+`procedure.contract`, its select filtered); the card counted Procedures; the anaesthetist could store
+Prepaid answers at creation; a raised prepayment read "none" after a move off prepaid. Also fixed: the
+rail's live flag moved into the domain (`selectable`), the rail worked out only when open, accessibility
+(radio groups, list items, a labelled heading), "Enter it now", step 3's "Only option", the rail stored
+filled-in answers on close, Change in the form reopened at step 1, the add-procedure start, the addendum
+copy guarded and audited, the List-row cue made reactive, the prepayment refusal wording, "deposit" in a
+validator sentence, "Show all" on the card, stale route comments and marker copy, the dead `contractFrom`
+seed hint. Logged, not fixed: the embedded rail in "Contract and payer" and "Edit operation" saves at once
+while the sheet's other fields wait for Save; repeated strings ("Needs an invoice destination") across
+modules; the seeded prepayment invoice lines keep "Pre-payment, estimated full fee" and "deposit" (27).
+
+**Tests:** 1,949 Vitest (contractRail 31, whoIsBilled 5, contractSelectionActions 18, contractParity 5,
+feeParity's Phase 20 block 2, a migrate case, the review fixes); Playwright 179 (9 specs re-pointed).
+
+**Broken recipes fixed:** US-03.2.1 (the rail's confirm before procedure 2), US-06.3.5 (the office moves
+Riley to Patient › Standard), US-06.2.2, US-06.2.3, US-06.3.1, US-06.4.1 (the new note badges), US-07.2.2
+and US-02.5.5 (captions), US-04.2.7, US-04.2.8, US-15.0.5 (reasons).
+
+**Owner review, same day: the picker rebuilt to match the contract picker mock.** The owner compared
+the Dialog version with `contract-picker-mock/`'s "A. Step rail" and found it wrong. On his decision the
+rail is now inline on the Booking, as in the mock: `shared/booking/BillingCard.tsx`, a "Billing" capture
+card per Procedure (it leads the capture column) with the compact numbered rail and connector lines
+(Invoice to, Payment type / Funding tag / Holder, Contract), answers as tiles with their counts ("n
+Contracts", "None for this List"), the last step a "Choose the Contract" field dropping down the
+Contracts on offer grouped by holder (No contract · RVG pinned, searchable), "Use it" for a lone Contract,
+Other price with its amount, "Start again", and every step ticked once a Contract is set. Answers save as
+they are given; choosing a Contract sets it. On the phone the card shows "Invoice to" and "Contract" rows
+that open the same steps in a bottom sheet (`ContractRail`). "Add another procedure" adds the Procedure at
+once with the first's answers (when its Contract still fits), finished on its own card. The office setup,
+"Contract and payer" and "Edit operation" show the Contract read-only. The browser's blue focus ring is
+replaced by the teal one (`.aa-rail-scope`). Rules, store, seed and parity unchanged; 4 Playwright specs
+and 11 recipes re-pointed.
+
+**Catalogue screenshots:** US-04.3.8 and US-04.3.9 created (`captured`); US-04.3.1, US-04.3.2, US-03.4.1 and US-03.2.3 now `captured`; US-04.3.3 stays `partial` (the payer on the Booking, 21; shots renamed to `no-contract-rvg`, plus `search-pinned`); US-04.3.4 and US-03.3.1 extended; FT-03.4 has no recipe of its own. `node scripts/capture.ts --dry` then a full `npm run capture`: 282/282 recipes OK, 616 shots, 259 images changed, 0 failed. REPORT.md before: captured 156 items (142 stories), partial 55, absent 69, failed 0, no recipe 35. After: captured 162 (148), partial 51, absent 69, failed 0, no recipe 33. ATLAS.md updated (seed data, the rail's overlay and hooks, the PWA action). `npm run verify:board` green.
+
+**Handoffs:**
+- **20a:** `ProcedureContractRow` is the one Contract row to replace with the Contract stack;
+  `billedPartyFor` for the payer line.
+- **21:** the payer on the Booking replaces `billablePartyId` and `billsHolderInterim` (Doyle); the
+  funder's "Suggested" goes inside `contractRailFor`; `legacyCounterparty` goes.
+- **21a:** the `procedure.contract` audit (who, before, after) drives the anaesthetist-change flag; a
+  stored non-candidate (a moved Booking, the billing-failure demo's staged COS fixed fees) is kept and
+  flagged at review; completion's three conditions and the capture form by pricing kind.
+- **22:** `funderOverride` and `insurerPartyOptions` (the FunderAllocationSheet's list).
+- **23:** an added Procedure's Contract through the rail on the first's answers (built here); the primary.
+- **24:** `enteredPrice` and `priceOverride` become one price; "Needs a price" replaces "Type the price
+  for this procedure."; an office fixed fee now unlocks an open price, as `feeFor` already did.
+- **27:** prepaid from the Contract, `prepaymentDetail`, the seeded invoice wording.
+- **33:** created hospital Bookings arrive with no Contract and join the office's list.
+
+**For the owner's review:**
+- D81's default: a Procedure already on a Disabled Contract keeps it and bills, with no flag (OQ-135 open).
+- "Needs an invoice destination" lists 7 Bookings at reset, not 2: BK0035 and the six Thu 23 Jul pre-ops
+  had no route in the old seed; adding new Bookings would have shifted every id.
+- The PWA "Office sets this Booking's Contract" picks the List's hospital's first Contract on offer, else
+  No contract · RVG.
+- The anaesthetist may pick a hospital or holder fallback but cannot type its amount.
+- The prepayment sample stages the List's own prepaid Contract, else Patient › Prepaid · Fixed price with
+  $500 typed (Rutherford has no price list).
+- "Other price" is shown on Southern Cross › SXAP (Forte has no tagged Contract in the seed).
+- The billing-failure trigger stores COS fixed fees through an audited demo-only path (`demoStage`).
+- A post-op addendum copies only an RVG Contract that still fits; a fixed, open or prepaid one leaves it
+  needing an invoice destination.
+- Nair's prepaid item `CT-SOUTER-RHINO-COS` is new seed data (SOUTER-004).
+- Screens worth a look: the rail on Admin (`/admin/day/2026-07-22/bookings/BK0046`, Kirsty W.), web and
+  mobile (`/web` or `/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060`, Dr Souter: the pick-up), Other
+  price (`/admin/day/2026-07-21/bookings/BK0009`), the Admin Day card (`/admin/day/2026-07-21`), the
+  phone-advice Contract row (S2 Beat 2), a change after submit
+  (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0023`).

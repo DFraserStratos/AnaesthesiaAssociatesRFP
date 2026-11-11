@@ -13,8 +13,8 @@
  *   this id and DOYLE-001 ($2,800, then $2,950 from 28 Jul 2026); his sleeve
  *   gastrectomy, the CES schedule items, Merivale's combinations and Dr
  *   Souter's prepaid price list follow it. They bill the payer where their
- *   holder is a surgeon, group or anaesthetist (the billing route still
- *   bills Doyle until Phase 21, logged).
+ *   holder is a surgeon, group or anaesthetist (Doyle's bariatric primary
+ *   still bills Mr Doyle through `billsHolderInterim` until Phase 21, logged).
  * - COS ACC fixed fees has one range from 1 Aug 2026, after the billing-failure
  *   demo's Thu 16 Jul List, so that Booking still "Needs a price".
  *
@@ -35,7 +35,7 @@
 import type { Contract, ContractPricing } from '../types'
 import { nextAaCode } from '../billing/contracts'
 import { ensureFallbacks, seedFallbackId } from '../billing/fallbacks'
-import { SURG } from './cast'
+import { HOSP, SURG } from './cast'
 import { FUNDING_TAGS, TAG } from './fundingTags'
 import { PARTIES, PARTY } from './parties'
 import { SPC } from './specialties'
@@ -59,6 +59,19 @@ export const CONTRACT = {
   unisports: 'CT-UNISPORTS',
   cosFixed: 'CT-COS-FIXED',
 } as const
+
+/**
+ * Each hospital's plain RVG Contract (catch-up Phase 20): what the retired
+ * hospital route billed under when nothing was stored, so the seed writes it
+ * onto those Procedures and no fee moves.
+ */
+export const PLAIN_RVG_CONTRACT_BY_HOSPITAL: Readonly<Record<string, string>> = {
+  [HOSP.stg]: CONTRACT.stgRvg,
+  [HOSP.sx]: CONTRACT.sxRvg,
+  [HOSP.forte]: CONTRACT.forteRvg,
+  [HOSP.ces]: CONTRACT.cesRvg,
+  [HOSP.cph]: CONTRACT.cphRvg,
+}
 
 /** Canterbury Orthopaedic Surgeons' members (`SG-COS`), copied onto its Contracts' links. */
 const COS_SURGEONS = [SURG.hale]

@@ -11,7 +11,7 @@
  * links (AR-58 2.2).
  *
  * Every rule about a Party lives here (`partyRefusal`, `routeCounterpartyForParty`,
- * `insurerPartyFor`, `suggestCodePrefix`), behind the types the UI reads.
+ * `suggestCodePrefix`), behind the types the UI reads.
  */
 
 import type { CounterpartyRef, Hospital, HospitalId } from '../types'
@@ -63,9 +63,9 @@ export interface Party {
   hospitalId?: HospitalId
   /**
    * Ours, INTERIM until Phase 21: the record today's invoices go to, so no
-   * counterparty or Xero contact moves while the billing route still decides
-   * who is billed (`{ insurer, I-NIB }`, `{ organisation, O-COS }`). Read only
-   * by `routeCounterpartyForParty` and `insurerPartyFor`; 21 deletes it.
+   * counterparty or Xero contact moves while who is billed is interim
+   * (`{ insurer, I-NIB }`, `{ organisation, O-COS }`). Read only by
+   * `routeCounterpartyForParty` and `insurerPartyOptions`; 21 deletes it.
    */
   legacyCounterparty?: CounterpartyRef
 }
@@ -182,8 +182,8 @@ export function billingDetailsRefusal(party: Party): PartyRefusal | null {
 }
 
 /**
- * INTERIM until Phase 21: the counterparty today's billing route bills for a
- * Contract held by this Party, so no seeded counterparty or Xero contact moves.
+ * INTERIM until Phase 21: the counterparty a Contract held by this Party
+ * bills (`billedPartyFor`), so no seeded counterparty or Xero contact moves.
  * Reads no billing setting (never `billsTo`). Undefined is a plain billing
  * exception at run time, never a throw. Phase 21 deletes it.
  */
@@ -192,25 +192,6 @@ export function routeCounterpartyForParty(party: Party | undefined): Counterpart
   if (party.legacyCounterparty !== undefined) return party.legacyCounterparty
   if (party.kind === 'hospital' && party.hospitalId !== undefined) return { kind: 'hospital', id: party.hospitalId }
   return undefined
-}
-
-/**
- * The insurer Party behind an insurer id on a Procedure (INTERIM until
- * Phase 20 retires `Procedure.insurerId`): the insurer-kind Party whose
- * interim identity is that insurer.
- */
-export function insurerPartyFor(
-  parties: Readonly<Record<PartyId, Party>>,
-  insurerId: string,
-): Party | undefined {
-  return Object.values(parties).find(
-    (p) => p.kind === 'insurer' && p.legacyCounterparty?.kind === 'insurer' && p.legacyCounterparty.id === insurerId,
-  )
-}
-
-/** The hospital Party for a hospital master record (INTERIM: the route's hospital lookup until Phase 20). */
-export function hospitalPartyFor(parties: Readonly<Record<PartyId, Party>>, hospitalId: string): Party | undefined {
-  return Object.values(parties).find((p) => p.kind === 'hospital' && p.hospitalId === hospitalId)
 }
 
 /** The kinds the office can create: exactly one AA Party exists, seeded and read-only. */
@@ -225,18 +206,14 @@ export const CREATABLE_PARTY_KINDS: readonly Exclude<PartyKind, 'aa'>[] = [
 
 /**
  * The sentence for a Contract whose holder has no billing record on today's
- * route (INTERIM until Phase 21 bills by `billsTo`): its holder is billed only
- * once a Party carries a counterparty.
+ * counterparty (INTERIM until Phase 21 bills Parties directly): its holder is
+ * billed only once a Party carries a counterparty.
  */
 export function noRouteCounterpartyMessage(contractName: string): string {
-  return `${contractName} cannot be billed on this route yet: its holder has no billing record. Choose another Contract or route.`
+  return `${contractName} cannot be billed yet: its holder has no billing record. Choose another Contract.`
 }
 
-/** The insurer Route gate's sentence (RV-39: no insurer master, no direct-claims flag). */
-export const INSURER_PARTY_MISSING_MESSAGE =
-  'The selected insurer has no insurer Party. Add it in Master data, Parties.'
-
-/** Insurer Parties a Procedure's insurer can name: each with its interim insurer id, by name. */
+/** The insurer Parties a billing line's `funderOverride` can name, each with its interim insurer id, by name (INTERIM until Phase 22's Split). */
 export function insurerPartyOptions(
   parties: Readonly<Record<PartyId, Party>>,
 ): { insurerId: string; party: Party }[] {

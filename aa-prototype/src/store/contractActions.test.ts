@@ -74,8 +74,8 @@ describe('createContract', () => {
   it('a valid prepaid fixed price billing the payer saves', () => {
     const api = createAppStore()
     const o = createContract(api, OFFICE, { ...RATE, name: 'Cataract prepay', holderId: PARTY.souter, billsTo: 'payer', linkedAnaesthetistId: '34821', prepaid: true, pricing: FIXED })
-    // Dr Souter's seeded price list holds SOUTER-001 to SOUTER-003 (catch-up Phase 19a).
-    expect(o.ok && o.value.contract.aaCode).toBe('SOUTER-004')
+    // Dr Souter's seeded price list holds SOUTER-001 to SOUTER-004 (catch-up Phases 19a and 20).
+    expect(o.ok && o.value.contract.aaCode).toBe('SOUTER-005')
   })
 
   it('is office only', () => {

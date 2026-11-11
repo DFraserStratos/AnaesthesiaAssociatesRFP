@@ -71,7 +71,8 @@ test('Clear leaves the Procedure with no RVG code and its text untouched', async
   await openEllison(page)
   await card(page).getByRole('button', { name: 'Clear' }).click()
   await expect(card(page)).toContainText('No RVG code')
-  await expect(card(page)).toContainText('Choose')
+  // Catch-up Phase 20: Ellison's Contract prices from RVG units, so the code is required: "Add RVG code".
+  await expect(card(page)).toContainText('Add RVG code')
   await expect(page.locator('[data-shot=units-row-b]').first()).toContainText('No RVG code')
 })
 

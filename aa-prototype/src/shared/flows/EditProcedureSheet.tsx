@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
-import type { BillingRoute, PatientPaymentCategory, Procedure } from '../../domain/types'
-import { insurerPartyOptions } from '../../domain/billing/parties'
+import type { Procedure } from '../../domain/types'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
-import { FieldLabel, Button, Segmented, TextField } from '../ui'
+import { Button, FieldLabel, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { CONTRACT_CHANGE_CAPTION, ProcedureContractRow } from '../booking/ProcedureContractRow'
 
 interface EditProcedureSheetProps {
   open: boolean
@@ -13,36 +13,21 @@ interface EditProcedureSheetProps {
   onClose: () => void
 }
 
-const ROUTE_OPTIONS: { value: BillingRoute; label: string }[] = [
-  { value: 'hospital', label: 'Hospital' },
-  { value: 'billableParty', label: 'Billable party' },
-  { value: 'insurer', label: 'Insurer' },
-]
-
-const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
-  { value: 'selfFundedPostProcedure', label: 'Self-funded' },
-  { value: 'selfFundedPrepayment', label: 'Pre-payment' },
-  { value: 'insuredReimbursement', label: 'Reimbursement' },
-]
-
-/** Edit the primary procedure's operation + billing route via `editProcedure`. */
+/**
+ * Edit a Procedure's operation and reference (`editProcedure`); its Contract
+ * shows here with "Change", which opens the step rail (catch-up Phase 20):
+ * no route, insurer or payment category.
+ */
 export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProcedureSheetProps) {
   const { Overlay } = useSurface()
-  const parties = useAppStore((s) => s.masters.parties)
-  const insurerOptions = useMemo(() => insurerPartyOptions(parties), [parties])
+  const live = useAppStore((s) => s.schedule.procedures[procedure.id]) ?? procedure
   const [description, setDescription] = useState(procedure.description)
-  const [route, setRoute] = useState<BillingRoute>(procedure.billingRoute ?? 'hospital')
-  const [insurerId, setInsurerId] = useState(procedure.insurerId ?? '')
-  const [category, setCategory] = useState<PatientPaymentCategory>(procedure.patientPaymentCategory ?? 'selfFundedPostProcedure')
   const [billingReference, setBillingReference] = useState(procedure.billingReference ?? '')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setDescription(procedure.description)
-      setRoute(procedure.billingRoute ?? 'hospital')
-      setInsurerId(procedure.insurerId ?? '')
-      setCategory(procedure.patientPaymentCategory ?? 'selfFundedPostProcedure')
       setBillingReference(procedure.billingReference ?? '')
       setError(null)
     }
@@ -50,10 +35,10 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
 
   function save() {
     setError(null)
-    const patch: ProcedurePatch = { description: description.trim(), billingRoute: route }
-    patch.insurerId = (route === 'insurer' || route === 'hospital') && insurerId !== '' ? insurerId : undefined
-    patch.patientPaymentCategory = route === 'billableParty' ? category : undefined
-    patch.billingReference = route === 'hospital' && billingReference.trim() !== '' ? billingReference.trim() : undefined
+    const patch: ProcedurePatch = {
+      description: description.trim(),
+      billingReference: billingReference.trim() !== '' ? billingReference.trim() : undefined,
+    }
     const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
     if (!outcome.ok) {
       setError(outcome.message)
@@ -67,39 +52,19 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Edit operation</div>
         <TextField label="Operation" value={description} onChange={setDescription} />
-        <Segmented label="Billing route" value={route} options={ROUTE_OPTIONS} onChange={setRoute} />
-
-        {(route === 'insurer' || route === 'hospital') && (
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>{route === 'insurer' ? 'Insurer' : 'Insurer (optional)'}</FieldLabel>
-            <select
-              value={insurerId}
-              onChange={(e) => setInsurerId(e.target.value)}
-              style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
-            >
-              <option value="">Select an insurer</option>
-              {insurerOptions.map(({ insurerId: id, party }) => (
-                <option key={id} value={id}>
-                  {party.name}
-                </option>
-              ))}
-            </select>
-            {route === 'hospital' && (
-              <span style={{ fontSize: 13, color: neutral.slate }}>
-                Informational only: records the patient's insurer for office reference. The hospital is still invoiced.
-              </span>
-            )}
-          </label>
-        )}
-
-        {route === 'billableParty' && (
-          <Segmented label="Payment category" value={category} options={CATEGORY_OPTIONS} onChange={setCategory} />
-        )}
-
-        {route === 'hospital' && (
-          <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract / approval ref" />
-        )}
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <FieldLabel>Contract</FieldLabel>
+          <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px', background: neutral.bg }}>
+            <ProcedureContractRow
+              procedure={live}
+              actor={actor}
+              canEdit={false}
+              shot="edit-procedure-contract"
+              {...(actor.role === 'anaesthetist' ? { caption: CONTRACT_CHANGE_CAPTION } : {})}
+            />
+          </div>
+        </div>
+        <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract or approval reference" />
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
             {error}

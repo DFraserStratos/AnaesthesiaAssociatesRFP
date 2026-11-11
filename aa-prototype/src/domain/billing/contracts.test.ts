@@ -4,7 +4,6 @@ import {
   contractMatchesQuery,
   contractRefusal,
   contractSearch,
-  interimRouteContract,
   isRvgKind,
   linkFits,
   nextAaCode,
@@ -193,18 +192,6 @@ describe('linkFits (US-04.2.1; A38, A39)', () => {
   })
 })
 
-describe('interimRouteContract (INTERIM until Phase 20)', () => {
-  it("is the Party's first Active plain RVG Contract by AA code, never a rate, linked or system Contract", () => {
-    const plain = mkContract({ id: 'plain', aaCode: 'TST-002' })
-    const rate = mkContract({ id: 'rate', aaCode: 'TST-001', pricing: { kind: 'rvgContractRate', unitRate: 25 } })
-    const off = mkContract({ id: 'off', aaCode: 'TST-000', status: 'disabled' })
-    const all = Object.fromEntries([plain, rate, off, NO_CONTRACT].map((c) => [c.id, c]))
-    expect(interimRouteContract(all, HOSPITAL.id)?.id).toBe('plain')
-    expect(interimRouteContract(all, AA.id)).toBeUndefined()
-    expect(interimRouteContract(all, undefined)).toBeUndefined()
-  })
-})
-
 describe('noPriceInForce: "Needs a price" (catch-up Phase 19a)', () => {
   const fixed = mkContract({ id: 'con-3', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-04-01', price: 800 }] } })
   it('is true on a fixed price before its first range, and on any open price; never on an RVG kind', () => {
@@ -291,12 +278,5 @@ describe('contractMatchesQuery: invoice description and default RVG code (catch-
 describe('review-pass fixes (catch-up Phase 18)', () => {
   it('nextAaCode counts a code an office typed with a stray space', () => {
     expect(nextAaCode('CES', ['CES-001', 'CES- 002'])).toBe('CES-003')
-  })
-
-  it('interimRouteContract falls back to a Disabled plain RVG Contract (a Disabled Contract still bills, D81)', () => {
-    const off = mkContract({ id: 'off', status: 'disabled' })
-    expect(interimRouteContract({ off }, HOSPITAL.id)?.id).toBe('off')
-    const on = mkContract({ id: 'on', aaCode: 'TST-009' })
-    expect(interimRouteContract({ off, on }, HOSPITAL.id)?.id).toBe('on')
   })
 })

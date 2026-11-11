@@ -104,9 +104,12 @@ test('secondary-screen and bottom-sheet highlights stay aligned', async ({ page 
   await page.waitForTimeout(300)
   await page.getByText('Add a booking', { exact: false }).first().click()
   await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
-  await page.getByText('Billing route', { exact: true }).scrollIntoViewIfNeeded()
-  const formSegment = page.locator('[role="dialog"] [data-sliding-segmented-control]').first()
-  await expectHighlightAligned(formSegment)
+  // Catch-up Phase 20: the billing-route segmented control left this sheet (the
+  // Contract is chosen on the step rail), so the sheet now carries no segment to
+  // align; shoot its Contract row instead.
+  await page.locator('[data-shot=manual-contract]').scrollIntoViewIfNeeded()
+  await expect(page.locator('[data-shot=manual-contract]')).toContainText('Not chosen')
+  await expect(page.locator('[role="dialog"] [data-sliding-segmented-control]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/mobile-native-sheet-segment.png', fullPage: true })
 })
 

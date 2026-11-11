@@ -89,11 +89,8 @@ function existingDraft(entry: AuditEntry): AuditDraft {
 
 function procedureSetup(procedure: Procedure): Record<string, unknown> {
   const after: Record<string, unknown> = {
-    billingRoute: procedure.billingRoute,
     governingContractId: procedure.governingContractId,
-    insurerId: procedure.insurerId,
     billablePartyId: procedure.billablePartyId,
-    patientPaymentCategory: procedure.patientPaymentCategory,
     prepaymentDetail: procedure.prepaymentDetail,
     billingReference: procedure.billingReference,
     isAdditional: procedure.isAdditional,

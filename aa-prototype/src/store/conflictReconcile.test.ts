@@ -78,7 +78,7 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
     step('phone-book onto a free session', () => {
       const out = assignListToSlot(api, OFFICE, slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'), { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
       if (out.ok) phoneList = out.value.listId
-      return out.ok ? createBooking(api, OFFICE, phoneList, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test', billingRoute: 'hospital' }) : out
+      return out.ok ? createBooking(api, OFFICE, phoneList, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test' }) : out
     })
     let holidayId = ''
     step('add a holiday', () => {

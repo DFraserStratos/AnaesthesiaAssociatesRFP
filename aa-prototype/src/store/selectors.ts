@@ -7,6 +7,18 @@
  */
 
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
+import { procedureRequiresPrepayment } from '../domain/billing/invoiceBuild'
+import {
+  contractRailFor,
+  railAnswersFor,
+  railAnswersText,
+  rvgCodeToFill,
+  type ContractRailView,
+  type RailActor,
+  type RailContext,
+  type RailMasters,
+} from '../domain/billing/contractRail'
+import { billedPartyFor } from '../domain/billing/whoIsBilled'
 import type {
   AssignedList,
   DraftList,
@@ -30,6 +42,7 @@ import type {
   Patient,
   Procedure,
   ProcedureId,
+  RailAnswers,
   ScheduleSettings,
   Session,
   Slot,
@@ -609,12 +622,17 @@ export function patientHasOutstandingPriorEpisode(
 // flips the case live; Phase 09 seeds a paid case so the cleared path demos now.
 // ---------------------------------------------------------------------------
 
-/** True when a non-cancelled procedure requires pre-payment (derived, never stored). */
-export function bookingRequiresPrepayment(state: Pick<AppState, 'schedule'>, bookingId: string): boolean {
+/**
+ * True when a non-cancelled Booking has a Procedure on a prepaid Contract
+ * billed to a person (derived, never stored). INTERIM until Phase 27, which
+ * builds the prepayment lifecycle on the prepaid Contract (catch-up Phase 20;
+ * D23). No gate (D5).
+ */
+export function bookingRequiresPrepayment(state: Pick<AppState, 'schedule' | 'masters'>, bookingId: string): boolean {
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined || booking.cancellation !== undefined) return false
-  return proceduresForBooking(state, bookingId).some(
-    (p) => p.billingRoute === 'billableParty' && p.patientPaymentCategory === 'selfFundedPrepayment',
+  return proceduresForBooking(state, bookingId).some((p) =>
+    procedureRequiresPrepayment(p, p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined),
   )
 }
 
@@ -675,10 +693,13 @@ export type PrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
  * no invoice raised yet; `outstanding` = invoice raised, unpaid; `paid` = the
  * pre-invoice cleared. Never a completion gate (catch-up Phase 15a; D5).
  */
-export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing'>, bookingId: string): PrepaymentStatus {
-  if (!bookingRequiresPrepayment(state, bookingId)) return 'none'
+export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>, bookingId: string): PrepaymentStatus {
+  const raised = prePaymentInvoicesForBooking(state, bookingId).length > 0
+  // A prepayment already invoiced stays on the record when the Contract moves
+  // off prepaid (catch-up Phase 20 review): it is still owed until paid.
+  if (!bookingRequiresPrepayment(state, bookingId) && !raised) return 'none'
   if (paidPrePaymentCaseForBooking(state, bookingId) !== undefined) return 'paid'
-  if (prePaymentInvoicesForBooking(state, bookingId).length > 0) return 'outstanding'
+  if (raised) return 'outstanding'
   return 'required'
 }
 
@@ -1814,4 +1835,140 @@ export function moveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): List
 /** The slices a single-Booking move reads (catch-up Phase 32a): Phase 32's, plus the Bookings. No preference or tier. */
 export function bookingMoveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): BookingMoveInput {
   return { ...moveInputOf(state), bookings: state.schedule.bookings }
+}
+
+// ---------------------------------------------------------------------------
+// The step rail (catch-up Phase 20; US-04.3.8, US-04.3.2, US-04.3.4)
+// ---------------------------------------------------------------------------
+
+/** The masters the step rail reads. */
+export function railMastersOf(state: Pick<AppState, 'masters'>): RailMasters {
+  const m = state.masters
+  return { contracts: m.contracts, parties: m.parties, fundingTags: m.fundingTags, rvgGroups: m.rvgGroups, surgeons: m.surgeons }
+}
+
+/** A List as the step rail sees it: its date, billing hospital (never AA rooms), surgeon and anaesthetist. */
+export function railContextForList(state: Pick<AppState, 'masters'>, list: List): RailContext {
+  const ctx: RailContext = { listDateISO: list.dateISO }
+  const hospitalId = listHospitalFor(list, state.masters.hospitals).listHospitalId
+  if (hospitalId !== undefined) ctx.hospitalId = hospitalId
+  if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
+  if (list.anaesthetistId !== undefined) ctx.anaesthetistId = list.anaesthetistId
+  return ctx
+}
+
+/** The rail context of the List a Procedure sits on. */
+export function railContextForProcedure(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): RailContext | undefined {
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  return list !== undefined ? railContextForList(state, list) : undefined
+}
+
+/** The rail for a Procedure at the given answers (default: its answers so far, or its Contract's). */
+export function contractRailForProcedure(
+  state: Pick<AppState, 'masters' | 'schedule'>,
+  procedureId: string,
+  answers: RailAnswers | undefined,
+  opts: { query?: string; actor: RailActor },
+): ContractRailView | undefined {
+  const ctx = railContextForProcedure(state, procedureId)
+  if (ctx === undefined) return undefined
+  return contractRailFor(railMastersOf(state), ctx, answers, opts)
+}
+
+/** The rail for a Booking being created on a List (the creation forms' twin). */
+export function contractRailForNewBooking(
+  state: Pick<AppState, 'masters' | 'schedule'>,
+  listId: string,
+  answers: RailAnswers | undefined,
+  opts: { query?: string; actor: RailActor },
+): ContractRailView | undefined {
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return undefined
+  return contractRailFor(railMastersOf(state), railContextForList(state, list), answers, opts)
+}
+
+/** Where the rail opens for a Procedure: its answers so far, else the answers its Contract implies. */
+export function railStartFor(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): RailAnswers | undefined {
+  const procedure = state.schedule.procedures[procedureId]
+  if (procedure === undefined) return undefined
+  if (procedure.governingContractId !== undefined) return railAnswersFor(state.masters, procedure.governingContractId)
+  return procedure.railAnswers
+}
+
+/** Derived, never stored (US-03.3.1, US-04.3.4): the RVG code is the anaesthetist's to fill in. */
+export function rvgCodeToFillFor(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): boolean {
+  const procedure = state.schedule.procedures[procedureId]
+  const lines = Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId)
+  return procedure !== undefined && rvgCodeToFill(state.masters, procedure, lines)
+}
+
+/** Who a Procedure bills (INTERIM until Phase 21's payer on the Booking). */
+export function billedPartyForProcedure(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): CounterpartyRef | undefined {
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  if (procedure === undefined || booking === undefined) return undefined
+  const contract = procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined
+  return billedPartyFor(procedure, contract, state.masters.parties, booking.patientId)
+}
+
+export interface NeedsInvoiceDestinationRow {
+  bookingId: string
+  procedureId: string
+  listId: string
+  dateISO: string
+  session: List['session']
+  hospitalId?: string
+  patientName: string
+  /** "Patient › Standard", or "Not started". */
+  answersText: string
+}
+
+/**
+ * The office's "Needs an invoice destination" list (US-04.3.4): every
+ * non-cancelled Booking with a Procedure that has no Contract, on any date, in
+ * date and session order, one row per Booking (its first such Procedure), with
+ * the answers so far. Draft Lists (no anaesthetist yet) are the office's own
+ * queue and are left off.
+ */
+export function needsInvoiceDestinationBookings(state: Pick<AppState, 'masters' | 'schedule'>): NeedsInvoiceDestinationRow[] {
+  const rows: NeedsInvoiceDestinationRow[] = []
+  const seen = new Set<string>()
+  const procedures = Object.values(state.schedule.procedures).sort((a, b) => a.id.localeCompare(b.id))
+  for (const procedure of procedures) {
+    if (procedure.governingContractId !== undefined || seen.has(procedure.bookingId)) continue
+    const booking = state.schedule.bookings[procedure.bookingId]
+    if (booking === undefined || booking.cancellation !== undefined) continue
+    const list = state.schedule.lists[booking.listId]
+    if (list === undefined || list.anaesthetistId === undefined || list.removedAtISO !== undefined) continue
+    seen.add(booking.id)
+    const ctx = railContextForList(state, list)
+    const row: NeedsInvoiceDestinationRow = {
+      bookingId: booking.id,
+      procedureId: procedure.id,
+      listId: list.id,
+      dateISO: list.dateISO,
+      session: list.session,
+      patientName: state.masters.patients[booking.patientId]?.name ?? booking.patientId,
+      answersText: railAnswersText(state.masters, ctx, procedure.railAnswers),
+    }
+    if (list.hospitalId !== undefined) row.hospitalId = list.hospitalId
+    rows.push(row)
+  }
+  return rows.sort(
+    (a, b) =>
+      a.dateISO.localeCompare(b.dateISO) ||
+      compareSessions(a.session, b.session) ||
+      a.bookingId.localeCompare(b.bookingId) ||
+      a.procedureId.localeCompare(b.procedureId),
+  )
+}
+
+/** The quiet cue on a List row (catch-up Phase 20): a Procedure needs an invoice destination, or its RVG code. */
+export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>, bookingId: string): string | undefined {
+  const procs = proceduresForBooking(state, bookingId)
+  if (procs.some((p) => p.governingContractId === undefined)) return 'Needs an invoice destination'
+  if (procs.some((p) => rvgCodeToFillFor(state, p.id))) return 'RVG code to fill in'
+  return undefined
 }

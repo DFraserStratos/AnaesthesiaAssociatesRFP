@@ -63,6 +63,7 @@ export const PRICED_ITEM = {
   souterRhinoplasty: 'CT-SOUTER-RHINO',
   souterBleph: 'CT-SOUTER-BLEPH',
   souterBreastAug: 'CT-SOUTER-BREAST',
+  souterRhinoCosmetic: 'CT-SOUTER-RHINO-COS',
 } as const
 
 /** The fields a seeded priced item carries (the rest default as `buildContracts` sets them). */
@@ -107,14 +108,16 @@ const merivale = (id: string, name: string, priceExGst: number): SeedPricedItem 
 })
 
 /** Dr Souter's own price list: one prepaid Contract per item, kept by the office, every range above zero. */
-const souter = (item: Pick<SeedPricedItem, 'id' | 'name' | 'pricing'> & { defaultRvgGroupId?: string }): SeedPricedItem => ({
+const souter = (
+  item: Pick<SeedPricedItem, 'id' | 'name' | 'pricing'> & { defaultRvgGroupId?: string; specialtyIds?: string[] },
+): SeedPricedItem => ({
   ...item,
   invoiceDescription: item.name,
   holderId: PARTY.souter,
   billsTo: 'payer',
   prepaid: true,
   linkedAnaesthetistId: ANAE.souter,
-  specialtyIds: [SPC.plasticSurgery],
+  specialtyIds: item.specialtyIds ?? [SPC.plasticSurgery],
 })
 
 export const PRICED_ITEMS: readonly SeedPricedItem[] = [
@@ -157,4 +160,13 @@ export const PRICED_ITEMS: readonly SeedPricedItem[] = [
   souter({ id: PRICED_ITEM.souterRhinoplasty, name: 'Rhinoplasty', pricing: fixed(['2026-01-01', 1200], ['2026-09-01', 1300]), defaultRvgGroupId: RVG_GROUP.aaRhinoplasty }),
   souter({ id: PRICED_ITEM.souterBleph, name: 'Blepharoplasty, upper lids', pricing: fixed(['2026-01-01', 900]) }),
   souter({ id: PRICED_ITEM.souterBreastAug, name: 'Breast augmentation', pricing: fixed(['2026-01-01', 1450]) }),
+  // Catch-up Phase 20: the cosmetic component of a septorhinoplasty, done with an
+  // ENT surgeon, so it fits Mr Nand's Lists too. Nair's full prepayment is on it,
+  // at the figure she prepaid ($238.50 ex GST).
+  souter({
+    id: PRICED_ITEM.souterRhinoCosmetic,
+    name: 'Rhinoplasty, cosmetic component',
+    pricing: fixed(['2026-01-01', 238.5]),
+    specialtyIds: [SPC.plasticSurgery, SPC.ent],
+  }),
 ]

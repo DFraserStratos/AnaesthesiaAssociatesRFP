@@ -44,12 +44,12 @@ export const FIELD_LABELS: Record<string, string> = {
   // --- Procedure -----------------------------------------------------------
   bookingId: 'Booking',
   description: 'Description',
-  billingRoute: 'Billing route',
-  governingContractId: 'Governing contract',
-  insurerId: 'Insurer',
-  billablePartyId: 'Billable party',
-  patientPaymentCategory: 'Payment category',
-  prepaymentDetail: 'Pre-payment',
+  governingContractId: 'Contract',
+  railAnswers: 'Invoice destination so far',
+  enteredPrice: 'Typed price',
+  billablePartyId: 'Payer',
+  billsHolderInterim: 'Billed to the holder',
+  prepaymentDetail: 'Prepayment',
   billingReference: 'Billing reference',
   isAdditional: 'Additional procedure',
   // Catch-up Phase 19b: a Procedure's modifiers, by code, never by hidden id.

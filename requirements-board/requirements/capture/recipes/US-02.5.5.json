@@ -6,7 +6,7 @@
     {
       "name": "card-history",
       "app": "admin",
-      "caption": "Booking history, every change with who, when and the field movements, including billing route and contract",
+      "caption": "Booking history, every change with who, when and the field movements, including the Contract",
       "start": "/admin/day/2026-07-21/bookings/BK0008",
       "states": [
         {

@@ -175,7 +175,6 @@ function applyEffect(
         ...(parsed.patient.ethnicityCode !== undefined ? { ethnicityCode: parsed.patient.ethnicityCode } : {}),
       },
       operation: parsed.operation ?? 'Procedure (from feed)',
-      billingRoute: 'hospital',
       ...(parsed.scheduledTime !== undefined ? { scheduledTime: parsed.scheduledTime } : {}),
       correlationRef: { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId },
       // Interim until Phase 33 routes hospital rows through the matching screen:
@@ -503,7 +502,6 @@ export function ingestPdfRow(
       ...(row.ethnicityCode !== undefined ? { ethnicityCode: row.ethnicityCode } : {}),
     },
     operation: row.operation,
-    billingRoute: 'hospital',
     ...(row.scheduledTime !== '' ? { scheduledTime: row.scheduledTime } : {}),
     source: 'surgeonPdf',
   })

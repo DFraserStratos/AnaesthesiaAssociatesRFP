@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   PARTY_REFUSAL_MESSAGES,
-  insurerPartyFor,
   partyRefusal,
   routeCounterpartyForParty,
   suggestCodePrefix,
@@ -87,17 +86,6 @@ describe('routeCounterpartyForParty (INTERIM until Phase 21)', () => {
     expect(routeCounterpartyForParty({ ...bareInsurer, legacyCounterparty: { kind: 'insurer', id: 'I-ACU' } })).toEqual({ kind: 'insurer', id: 'I-ACU' })
     expect(routeCounterpartyForParty(bareInsurer)).toBeUndefined()
     expect(routeCounterpartyForParty(undefined)).toBeUndefined()
-  })
-})
-
-describe('insurerPartyFor', () => {
-  it('finds the insurer Party behind an insurer id, and no other kind', () => {
-    const nib: Party = { ...bareInsurer, id: 'py-nib', legacyCounterparty: { kind: 'insurer', id: 'I-NIB' } }
-    const notInsurer: Party = { ...bareInsurer, id: 'py-f', kind: 'funder', legacyCounterparty: { kind: 'insurer', id: 'I-F' } }
-    const parties = { [nib.id]: nib, [notInsurer.id]: notInsurer }
-    expect(insurerPartyFor(parties, 'I-NIB')).toBe(nib)
-    expect(insurerPartyFor(parties, 'I-F')).toBeUndefined()
-    expect(insurerPartyFor(parties, 'I-NONE')).toBeUndefined()
   })
 })
 

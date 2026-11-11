@@ -16,7 +16,7 @@ import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
 import { feeFor } from '../billing/fee'
 import { contractRefusal, noContractRvg } from '../billing/contracts'
-import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
+import { billingReferenceMissing, validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
 import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
@@ -586,9 +586,10 @@ describe('scenario states', () => {
     expect(seed.audit.some((a) => a.entityId === marker.entityId && a.action === 'booking.cancel')).toBe(true)
   })
 
-  it('exactly the two marked hospital-route procedures are missing billing references', () => {
-    const missing = Object.values(seed.schedule.procedures).filter(
-      (p) => p.billingRoute === 'hospital' && p.billingReference === undefined,
+  it('exactly the two marked holder-billed procedures are missing billing references', () => {
+    // Catch-up Phase 20: a reference is expected where the Contract bills a hospital or surgeon holder.
+    const missing = Object.values(seed.schedule.procedures).filter((p) =>
+      billingReferenceMissing(p, seed.masters.contracts, seed.masters.parties),
     )
     const expected = [
       SEED_MARKERS['missingBillingRef1']?.entityId,
@@ -701,14 +702,15 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
     expect(seed.schedule.lists['LD-003']).toMatchObject({ hospitalId: HOSP.ces, surgeonId: SURG.reid, dateISO: '2026-07-27', session: 'AM', draft: { sinceISO: '2026-07-17T09:50:00' } })
   })
 
-  it('LD-002 holds two active Bookings with a procedure each, on no prepaid category, and fits Souter\'s open Wed 22 PM', () => {
+  it('LD-002 holds two active Bookings with a procedure each, on no prepaid Contract, and fits Souter\'s open Wed 22 PM', () => {
     const bookings = Object.values(seed.schedule.bookings).filter((b) => b.listId === 'LD-002')
     expect(bookings.map((b) => b.id)).toEqual(['BK0160', 'BK0161'])
     for (const b of bookings) {
       expect(b.cancellation).toBeUndefined()
       const procs = proceduresForBooking(seed, b.id)
       expect(procs).toHaveLength(1)
-      expect(procs[0]).toMatchObject({ billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPostProcedure' })
+      // Catch-up Phase 20: on No contract · RVG, billing the patient (no prepaid Contract).
+      expect(procs[0]).toMatchObject({ governingContractId: 'CT-NO-CONTRACT' })
       expect(procs[0]!.rvgGroupId).toBeDefined()
     }
     expect(seed.schedule.lists['LD-002']).toMatchObject({ dateISO: '2026-07-22', session: 'PM', hospitalId: HOSP.forte })
@@ -801,6 +803,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-SOUTER-RHINO': 'SOUTER-001',
       'CT-SOUTER-BLEPH': 'SOUTER-002',
       'CT-SOUTER-BREAST': 'SOUTER-003',
+      // Catch-up Phase 20: Nair's prepaid item, on Dr Souter's price list.
+      'CT-SOUTER-RHINO-COS': 'SOUTER-004',
     })
     const codes = Object.values(contracts).map((c) => c.aaCode)
     expect(new Set(codes).size).toBe(codes.length)
@@ -815,7 +819,7 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id)).toEqual(['CT-NO-CONTRACT'])
     // Prepaid: Dr Souter's price list (catch-up Phase 19a) and the system's Prepaid · Fixed price (Phase 18a).
     expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
-      ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
+      ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
     )
     expect(Object.values(contracts).some((c) => c.status !== 'active')).toBe(false)
   })

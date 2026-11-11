@@ -5,7 +5,7 @@ import { accent, elevation, neutral, radius, semantic } from '../../../theme/tok
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
-import { editRefusal, officeAlertRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
+import { bookingContractCue, editRefusal, officeAlertRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
@@ -31,6 +31,7 @@ interface BookingRow {
   patientName: string
   nhi: string | undefined
   operation: string
+  cue: string | undefined
 }
 
 export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBooking }: ListDetailScreenProps) {
@@ -75,6 +76,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
     )
   }
 
+  // The cue's reads (catch-up Phase 20): the whole state, so the memo re-runs when they change.
+  const cueState = useAppStore((s) => s)
   const model = useMemo(() => {
     if (list === undefined) return undefined
     // Primary op per booking = the lowest-id (first-created) procedure's description.
@@ -94,12 +97,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           patientName: patient?.name ?? 'Unknown patient',
           nhi: patient?.nhi,
           operation: firstProcByBooking.get(booking.id)?.description || 'Procedure to capture',
+          // "Needs an invoice destination" or "RVG code to fill in" (catch-up Phase 20).
+          cue: booking.cancellation === undefined ? bookingContractCue(cueState, booking.id) : undefined,
         }
       })
     const active = rows.filter((r) => r.booking.cancellation === undefined)
     const done = active.filter((r) => r.booking.completed).length
     return { rows, activeCount: active.length, done }
-  }, [list, listId, bookingsRecord, proceduresRecord, patients])
+  }, [list, listId, bookingsRecord, proceduresRecord, patients, cueState])
 
   const warningsByBooking = useListWarnings(listId)
   // An authorised List is read only and shows its invoices (catch-up Phase 38a).
@@ -291,6 +296,9 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
                   </span>
                 )}
                 <span style={{ fontSize: 13, color: neutral.slate }}>{r.operation}</span>
+                {r.cue !== undefined && (
+                  <span data-shot="list-row-contract-cue" style={{ fontSize: 11.5, color: neutral.slate }}>{r.cue}</span>
+                )}
               </span>
               {cancelled ? (
                 <span style={{ fontSize: 11, fontWeight: 600, color: semantic.error.onTint, flex: 'none' }}>Cancelled</span>

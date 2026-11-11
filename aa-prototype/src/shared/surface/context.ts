@@ -18,6 +18,8 @@ export interface OverlayProps {
   children: ReactNode
   /** Hide the drag handle on mobile (sheet owns its own header chrome). */
   hideHandle?: boolean
+  /** A wider desktop dialog for a two-column body (the step rail, catch-up Phase 20); the mobile sheet ignores it. */
+  size?: 'default' | 'wide'
 }
 
 export interface FooterProps {

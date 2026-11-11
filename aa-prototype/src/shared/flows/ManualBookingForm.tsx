@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
-import type { BillingRoute, BookingSource, PatientPaymentCategory } from '../../domain/types'
-import { insurerPartyOptions } from '../../domain/billing/parties'
+import type { BookingSource, RailAnswers } from '../../domain/types'
+import { railAnswersFor, railAnswersText } from '../../domain/billing/contractRail'
 import { lookupNhi } from '../../domain/nzhis'
-import { createBooking, useAppStore, type Actor } from '../../store'
+import { createBooking, railActorOf, railContextForList, useAppStore, type Actor } from '../../store'
+import { ContractRail, type ContractRailPick } from './ContractRail'
 import { DemoBadge } from '../DemoBadge'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
-import { Button, Segmented, TextField, FieldLabel } from '../ui'
+import { Button, TextField, FieldLabel } from '../ui'
 
 /** Fields a photo extraction may pre-fill. */
 export interface ExtractionFields {
@@ -21,9 +22,6 @@ export interface ExtractionFields {
   /** The optional RVG code: an RVG group row by id (catch-up Phase 19). */
   rvgGroupId?: string
   scheduledTime?: string
-  billingRoute?: BillingRoute
-  insurerId?: string
-  patientPaymentCategory?: PatientPaymentCategory
   billingReference?: string
 }
 
@@ -43,23 +41,15 @@ type LookupState =
   | { kind: 'hit'; name: string; fullBooking: boolean }
   | { kind: 'miss' }
 
-const ROUTE_OPTIONS: { value: BillingRoute; label: string }[] = [
-  { value: 'hospital', label: 'Hospital' },
-  { value: 'billableParty', label: 'Billable party' },
-  { value: 'insurer', label: 'Insurer' },
-]
-
-const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
-  { value: 'selfFundedPostProcedure', label: 'Self-funded' },
-  { value: 'selfFundedPrepayment', label: 'Pre-payment' },
-  { value: 'insuredReimbursement', label: 'Reimbursement' },
-]
+/** Saved with no Contract: it waits on the office's list (US-04.3.4, catch-up Phase 20). */
+export const SAVED_WITHOUT_CONTRACT = 'Saved without a Contract, this Booking waits on Needs an invoice destination.'
 
 export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, attachment, source, onSaved }: ManualBookingFormProps) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const parties = useAppStore((s) => s.masters.parties)
-  const insurerOptions = useMemo(() => insurerPartyOptions(parties), [parties])
-  const billableParties = useAppStore((s) => s.masters.billableParties)
+  const masters = useAppStore((s) => s.masters)
+  const list = useAppStore((s) => s.schedule.lists[listId])
+  const railContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list) : undefined), [masters, list])
+  const billableParties = masters.billableParties
 
   const [nhi, setNhi] = useState(initial?.nhi ?? '')
   const [name, setName] = useState(initial?.name ?? '')
@@ -70,16 +60,18 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const [rvgGroupId, setRvgGroupId] = useState(initial?.rvgGroupId ?? '')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [scheduledTime, setScheduledTime] = useState(initial?.scheduledTime ?? '')
-  const [billingRoute, setBillingRoute] = useState<BillingRoute>(initial?.billingRoute ?? 'hospital')
-  const [insurerId, setInsurerId] = useState(initial?.insurerId ?? '')
+  // The Contract, never preselected (US-04.3.4): chosen on the step rail, or left for the office's list.
+  const [pick, setPick] = useState<ContractRailPick | undefined>(undefined)
+  const [answers, setAnswers] = useState<RailAnswers | undefined>(undefined)
+  const [railOpen, setRailOpen] = useState(false)
   const [billablePartyId, setBillablePartyId] = useState('')
-  const [category, setCategory] = useState<PatientPaymentCategory>(initial?.patientPaymentCategory ?? 'selfFundedPostProcedure')
   const [billingReference, setBillingReference] = useState(initial?.billingReference ?? '')
 
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
   const [error, setError] = useState<string | null>(null)
 
   const rvgGroup = rvgGroupId !== '' ? rvgGroups[rvgGroupId] : undefined
+  const pickedContract = pick !== undefined ? masters.contracts[pick.contractId] : undefined
 
   function runLookup() {
     const useEmptyPrefill = nhi.trim() === '' && emptyLookupPrefill !== undefined
@@ -95,9 +87,6 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         if (emptyLookupPrefill.operation !== undefined) setOperation(emptyLookupPrefill.operation)
         if (emptyLookupPrefill.rvgGroupId !== undefined) setRvgGroupId(emptyLookupPrefill.rvgGroupId)
         if (emptyLookupPrefill.scheduledTime !== undefined) setScheduledTime(emptyLookupPrefill.scheduledTime)
-        if (emptyLookupPrefill.billingRoute !== undefined) setBillingRoute(emptyLookupPrefill.billingRoute)
-        if (emptyLookupPrefill.insurerId !== undefined) setInsurerId(emptyLookupPrefill.insurerId)
-        if (emptyLookupPrefill.patientPaymentCategory !== undefined) setCategory(emptyLookupPrefill.patientPaymentCategory)
         if (emptyLookupPrefill.billingReference !== undefined) setBillingReference(emptyLookupPrefill.billingReference)
       }
       setLookup({ kind: 'hit', name: result.name, fullBooking: useEmptyPrefill })
@@ -127,10 +116,10 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       operation,
       ...(rvgGroupId !== '' ? { rvgGroupId } : {}),
       ...(scheduledTime.trim() !== '' ? { scheduledTime: scheduledTime.trim() } : {}),
-      billingRoute,
-      ...((billingRoute === 'insurer' || billingRoute === 'hospital') && insurerId !== '' ? { insurerId } : {}),
-      ...(billingRoute === 'billableParty' && billablePartyId !== '' ? { billablePartyId } : {}),
-      ...(billingRoute === 'billableParty' ? { patientPaymentCategory: category } : {}),
+      ...(pick !== undefined ? { governingContractId: pick.contractId } : {}),
+      ...(pick?.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {}),
+      ...(pick === undefined && answers !== undefined ? { railAnswers: answers } : {}),
+      ...(billablePartyId !== '' ? { billablePartyId } : {}),
       ...(billingReference.trim() !== '' ? { billingReference: billingReference.trim() } : {}),
       ...(attachment !== undefined ? { attachment } : {}),
       ...(source !== undefined ? { source } : {}),
@@ -243,59 +232,72 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       <TextField label="Scheduled time" value={scheduledTime} onChange={setScheduledTime} placeholder="e.g. 15:30" mono />
 
       <div style={{ height: 1, background: neutral.line }} />
-      <div style={{ fontSize: 17, fontWeight: 700 }}>Billing route</div>
-      <div style={{ fontSize: 13, color: neutral.slate, marginTop: -8 }}>
-        Set explicitly on the hospital's or surgeon's advice. The office can correct it later.
-      </div>
-      <Segmented value={billingRoute} options={ROUTE_OPTIONS} onChange={setBillingRoute} />
-
-      {(billingRoute === 'insurer' || billingRoute === 'hospital') && (
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>{billingRoute === 'insurer' ? 'Insurer' : 'Insurer (optional)'}</FieldLabel>
-          <select
-            value={insurerId}
-            onChange={(e) => setInsurerId(e.target.value)}
-            style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
-          >
-            <option value="">Select an insurer</option>
-            {insurerOptions.map(({ insurerId: id, party }) => (
-              <option key={id} value={id}>
-                {party.name}
-              </option>
-            ))}
-          </select>
-          {billingRoute === 'hospital' && (
-            <span style={{ fontSize: 13, color: neutral.slate }}>
-              Informational only: records the patient's insurer for office reference. The hospital is still invoiced.
+      <div style={{ fontSize: 17, fontWeight: 700 }}>Contract</div>
+      <div
+        data-shot="manual-contract"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '8px 12px' }}
+      >
+        {pickedContract !== undefined ? (
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{pickedContract.name}</span>
+            <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>
+              {pickedContract.aaCode}
+              {pick?.enteredPrice !== undefined ? ` · $${pick.enteredPrice.toFixed(2)}` : ''}
             </span>
-          )}
-        </label>
+          </span>
+        ) : (
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, color: neutral.mist }}>Not chosen</span>
+            {answers !== undefined && railContext !== undefined && (
+              <span style={{ fontSize: 12.5, color: neutral.slate }}>So far: {railAnswersText(masters, railContext, answers)}</span>
+            )}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => setRailOpen(true)}
+          disabled={railContext === undefined}
+          style={{ border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: accent.base, cursor: 'pointer', padding: '8px 4px', flex: 'none' }}
+        >
+          {pick !== undefined ? 'Change' : 'Choose'}
+        </button>
+      </div>
+      {pick === undefined && <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: -8 }}>{SAVED_WITHOUT_CONTRACT}</div>}
+      {railContext !== undefined && (
+        <ContractRail
+          open={railOpen}
+          actor={railActorOf(actor)}
+          context={railContext}
+          start={pick !== undefined ? railAnswersFor(masters, pick.contractId) : answers}
+          {...(pick !== undefined ? { currentContractId: pick.contractId } : {})}
+          {...(pick?.enteredPrice !== undefined ? { currentEnteredPrice: pick.enteredPrice } : {})}
+          onDone={(next) => {
+            setPick(next)
+            setAnswers(undefined)
+            return null
+          }}
+          onLeave={setAnswers}
+          onClose={() => setRailOpen(false)}
+        />
       )}
 
-      {billingRoute === 'billableParty' && (
-        <>
-          <Segmented label="Payment category" value={category} options={CATEGORY_OPTIONS} onChange={setCategory} />
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Billable party (defaults to the patient)</FieldLabel>
-            <select
-              value={billablePartyId}
-              onChange={(e) => setBillablePartyId(e.target.value)}
-              style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
-            >
-              <option value="">The patient pays</option>
-              {Object.values(billableParties).map((b) => (
-                <option key={b.hiddenInternalId} value={b.hiddenInternalId}>
-                  {b.name} ({b.relationshipToPatient})
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
-      )}
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <FieldLabel>Payer (defaults to the patient)</FieldLabel>
+        <select
+          value={billablePartyId}
+          onChange={(e) => setBillablePartyId(e.target.value)}
+          style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
+        >
+          <option value="">The patient pays</option>
+          {Object.values(billableParties).map((b) => (
+            <option key={b.hiddenInternalId} value={b.hiddenInternalId}>
+              {b.name} ({b.relationshipToPatient})
+            </option>
+          ))}
+        </select>
+      </label>
 
-      {billingRoute === 'hospital' && (
-        <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract / approval ref" />
-      )}
+      <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract or approval reference" />
 
       {error !== null && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>

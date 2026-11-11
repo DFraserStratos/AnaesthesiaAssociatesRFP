@@ -89,7 +89,7 @@
         {
           "steps": [],
           "highlight": [
-            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment balance\"))",
+            ".aa-invoice-doc div:has(> span:text-is(\"Prepayment balance\"))",
             "[data-shot=invoice-lines]",
             ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))"
           ]

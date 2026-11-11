@@ -211,7 +211,7 @@ describe('the displayed status', () => {
     const list = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     const keyOf = () => slotView(api.getState(), list.slotId)?.displayKey
     const start = keyOf()
-    const created = createBooking(api, OFFICE, list.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test', billingRoute: 'hospital' })
+    const created = createBooking(api, OFFICE, list.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test' })
     expect(created.ok).toBe(true)
     expect(keyOf()).toBe(start)
     const existing = bookingsForList(api.getState(), list.id).find((b) => b.cancellation === undefined && !b.completed)!
@@ -241,7 +241,7 @@ describe('the displayed status', () => {
     const api = store()
     const out = assign(api, SHARMA_PM)
     expect(out.ok).toBe(true)
-    if (out.ok) createBooking(api, OFFICE, out.value.listId, { patient: { name: 'Phone Patient', dobISO: '1980-02-02' }, operation: 'Appendicectomy', billingRoute: 'hospital' })
+    if (out.ok) createBooking(api, OFFICE, out.value.listId, { patient: { name: 'Phone Patient', dobISO: '1980-02-02' }, operation: 'Appendicectomy' })
     const state = api.getState()
     const admin = slotViewsForDate(state, TUE21).find((v) => v.slot.id === SHARMA_PM)!
     const personal = slotViewsForAnaesthetist(state, ANAE.sharma, TUE21, TUE21).find((v) => v.slot.id === SHARMA_PM)!
@@ -451,7 +451,7 @@ describe('the horizon setting', () => {
     const far = openSlotOn(api, '2026-11-02', 'AM')
     const assigned = assign(api, far.id)
     if (!assigned.ok) throw new Error('assign failed')
-    createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, operation: 'Hip', billingRoute: 'hospital' })
+    createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, operation: 'Hip' })
     const before = api.getState().schedule
     const out = setHorizonMonths(api, OFFICE, 3)
     expect(out).toMatchObject({
@@ -468,7 +468,7 @@ describe('the horizon setting', () => {
     const far = openSlotOn(api, '2026-11-03', 'AM')
     const assigned = assign(api, far.id)
     if (!assigned.ok) throw new Error('assign failed')
-    const booked = createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, operation: 'Hip', billingRoute: 'hospital' })
+    const booked = createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, operation: 'Hip' })
     if (booked.ok) cancelBooking(api, OFFICE, booked.value.bookingId, 'Changed plans')
     expect(setHorizonMonths(api, OFFICE, 3)).toMatchObject({ ok: false, code: 'listsBeyondHorizon' })
 

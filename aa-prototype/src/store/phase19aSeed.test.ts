@@ -41,7 +41,7 @@ describe('every fixed price is a Contract with valid ranges', () => {
     }
   })
 
-  it('no Procedure was moved onto a CES schedule item or Dr Souter’s price list', () => {
+  it('no Procedure was moved onto a CES schedule item, nor onto Dr Souter’s price list but Riley and Nair (catch-up Phase 20, figures unchanged)', () => {
     const ids = new Set<string>([
       PRICED_ITEM.cesCataractIol,
       PRICED_ITEM.cesBleph,
@@ -55,7 +55,8 @@ describe('every fixed price is a Contract with valid ranges', () => {
       PRICED_ITEM.souterBleph,
       PRICED_ITEM.souterBreastAug,
     ])
-    expect(Object.values(state.schedule.procedures).filter((p) => ids.has(p.governingContractId ?? ''))).toEqual([])
+    expect(Object.values(state.schedule.procedures).filter((p) => ids.has(p.governingContractId ?? '')).map((p) => p.id)).toEqual(['P0036'])
+    expect(state.schedule.procedures.P0036?.governingContractId).toBe(PRICED_ITEM.souterRhinoplasty)
   })
 })
 
@@ -119,7 +120,7 @@ describe("Dr Souter's own price list (US-04.2.14; D42, D30)", () => {
   const souter = Object.values(contracts).filter((c) => c.holderId === 'PY-SOUTER')
 
   it('one prepaid fixed-price Contract per item, linked to her, billing the payer, every range above zero', () => {
-    expect(souter.map((c) => c.name).sort()).toEqual(['Blepharoplasty, upper lids', 'Breast augmentation', 'Rhinoplasty'])
+    expect(souter.map((c) => c.name).sort()).toEqual(['Blepharoplasty, upper lids', 'Breast augmentation', 'Rhinoplasty', 'Rhinoplasty, cosmetic component'])
     for (const c of souter) {
       expect(c).toMatchObject({ prepaid: true, billsTo: 'payer', linkedAnaesthetistId: ANAE.souter, anaesthetistMayOverridePrice: false })
       expect(c.pricing.kind === 'fixed' && c.pricing.ranges.every((r) => r.price > 0)).toBe(true)

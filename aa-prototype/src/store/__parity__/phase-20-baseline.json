@@ -1,0 +1,1931 @@
+{
+  "procedures": [
+    {
+      "procedureId": "HP01",
+      "bookingId": "HBK01",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP02",
+      "bookingId": "HBK02",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP03",
+      "bookingId": "HBK03",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG103",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP04",
+      "bookingId": "HBK04",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP05",
+      "bookingId": "HBK05",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-CPH-D1",
+      "rvgGroupId": "RG070",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP06",
+      "bookingId": "HBK06",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP07",
+      "bookingId": "HBK07",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP08",
+      "bookingId": "HBK08",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP09",
+      "bookingId": "HBK09",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP10",
+      "bookingId": "HBK10",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP11",
+      "bookingId": "HBK11",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-CPH-D1",
+      "rvgGroupId": "RG070",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP12",
+      "bookingId": "HBK12",
+      "billedTo": "patient:PT0017",
+      "contract": "(none)",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP13",
+      "bookingId": "HBK13",
+      "billedTo": "billableParty:BP0001",
+      "contract": "(none)",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP14",
+      "bookingId": "HBK14",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP15",
+      "bookingId": "HBK15",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP16",
+      "bookingId": "HBK16",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP17",
+      "bookingId": "HBK17",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP18",
+      "bookingId": "HBK18",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG103",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP19",
+      "bookingId": "HBK19",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-CPH-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP20",
+      "bookingId": "HBK20",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-CPH-D1",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP21",
+      "bookingId": "HBK21",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP22",
+      "bookingId": "HBK22",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP23",
+      "bookingId": "HBK23",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP24",
+      "bookingId": "HBK24",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP25",
+      "bookingId": "HBK25",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP26",
+      "bookingId": "HBK26",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP27",
+      "bookingId": "HBK27",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP28",
+      "bookingId": "HBK28",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP29",
+      "bookingId": "HBK29",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-CPH-D1",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP30",
+      "bookingId": "HBK30",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-CPH-D1",
+      "rvgGroupId": "RG070",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP31",
+      "bookingId": "HBK31",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP32",
+      "bookingId": "HBK32",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP33",
+      "bookingId": "HBK33",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP34",
+      "bookingId": "HBK34",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG103",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP35",
+      "bookingId": "HBK35",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP36",
+      "bookingId": "HBK36",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP37",
+      "bookingId": "HBK37",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP38",
+      "bookingId": "HBK38",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP39",
+      "bookingId": "HBK39",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP40",
+      "bookingId": "HBK40",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SX-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP41",
+      "bookingId": "HBK41",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "HP42",
+      "bookingId": "HBK42",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0001",
+      "bookingId": "BK0001",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0002",
+      "bookingId": "BK0002",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG103",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0003",
+      "bookingId": "BK0003",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG090",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0004",
+      "bookingId": "BK0004",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG070",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0005",
+      "bookingId": "BK0005",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0006",
+      "bookingId": "BK0006",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0007",
+      "bookingId": "BK0007",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0008",
+      "bookingId": "BK0008",
+      "billedTo": "patient:PT0003",
+      "contract": "(none)",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0009",
+      "bookingId": "BK0009",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0010",
+      "bookingId": "BK0010",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0011",
+      "bookingId": "BK0011",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0012",
+      "bookingId": "BK0012",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-ACC",
+      "rvgGroupId": "RG099",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0013",
+      "bookingId": "BK0013",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0014",
+      "bookingId": "BK0014",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0015",
+      "bookingId": "BK0015",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG099",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0017",
+      "bookingId": "BK0017",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0018",
+      "bookingId": "BK0018",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0019",
+      "bookingId": "BK0019",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0020",
+      "bookingId": "BK0020",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0021",
+      "bookingId": "BK0021",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG087",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0022",
+      "bookingId": "BK0022",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0023",
+      "bookingId": "BK0022",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0024",
+      "bookingId": "BK0023",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0025",
+      "bookingId": "BK0024",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0026",
+      "bookingId": "BK0025",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0027",
+      "bookingId": "BK0026",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG100",
+      "baseUnitsSelected": 5,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0028",
+      "bookingId": "BK0027",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG101",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0029",
+      "bookingId": "BK0028",
+      "billedTo": "surgeon:S-DOYLE",
+      "contract": "CT-DOYLE-BAR",
+      "rvgGroupId": "RG085",
+      "baseUnitsSelected": 10,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0030",
+      "bookingId": "BK0028",
+      "billedTo": "patient:PT0015",
+      "contract": "CT-NO-CONTRACT",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0031",
+      "bookingId": "BK0029",
+      "billedTo": "billableParty:BP0002",
+      "contract": "CT-ARIA-HOURLY",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0032",
+      "bookingId": "BK0030",
+      "billedTo": "patient:PT0014",
+      "contract": "(none)",
+      "rvgGroupId": "RG104",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0033",
+      "bookingId": "BK0031",
+      "billedTo": "organisation:O-COS",
+      "contract": "CT-COS-ACC",
+      "rvgGroupId": "RG091",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0034",
+      "bookingId": "BK0032",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0035",
+      "bookingId": "BK0033",
+      "billedTo": "billableParty:BP0001",
+      "contract": "(none)",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0036",
+      "bookingId": "BK0034",
+      "billedTo": "patient:PT0017",
+      "contract": "(none)",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0037",
+      "bookingId": "BK0035",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0038",
+      "bookingId": "BK0036",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0039",
+      "bookingId": "BK0037",
+      "billedTo": "billableParty:BP0002",
+      "contract": "CT-ARIA-HOURLY",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0040",
+      "bookingId": "BK0038",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0041",
+      "bookingId": "BK0038",
+      "billedTo": "patient:PT0008",
+      "contract": "(none)",
+      "rvgGroupId": "RG095",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0042",
+      "bookingId": "BK0039",
+      "billedTo": "organisation:O-COS",
+      "contract": "CT-COS-ACC",
+      "rvgGroupId": "RG091",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0043",
+      "bookingId": "BK0040",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0044",
+      "bookingId": "BK0041",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0045",
+      "bookingId": "BK0042",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0046",
+      "bookingId": "BK0043",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0047",
+      "bookingId": "BK0044",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0048",
+      "bookingId": "BK0045",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0049",
+      "bookingId": "BK0046",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0050",
+      "bookingId": "BK0047",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0051",
+      "bookingId": "BK0048",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0052",
+      "bookingId": "BK0049",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0053",
+      "bookingId": "BK0050",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0054",
+      "bookingId": "BK0051",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0055",
+      "bookingId": "BK0052",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0056",
+      "bookingId": "BK0053",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0057",
+      "bookingId": "BK0054",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0058",
+      "bookingId": "BK0055",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0059",
+      "bookingId": "BK0056",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG087",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0060",
+      "bookingId": "BK0057",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0061",
+      "bookingId": "BK0058",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0062",
+      "bookingId": "BK0059",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0063",
+      "bookingId": "BK0060",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0064",
+      "bookingId": "BK0061",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0065",
+      "bookingId": "BK0062",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0066",
+      "bookingId": "BK0063",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0067",
+      "bookingId": "BK0064",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0068",
+      "bookingId": "BK0065",
+      "billedTo": "exception:noBillingRoute",
+      "contract": "exception:noBillingRoute",
+      "rvgGroupId": null,
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0069",
+      "bookingId": "BK0066",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0070",
+      "bookingId": "BK0067",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG104",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0071",
+      "bookingId": "BK0068",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0072",
+      "bookingId": "BK0069",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0073",
+      "bookingId": "BK0070",
+      "billedTo": "patient:PT0062",
+      "contract": "(none)",
+      "rvgGroupId": "RG104",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0074",
+      "bookingId": "BK0071",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0075",
+      "bookingId": "BK0072",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG068",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0076",
+      "bookingId": "BK0073",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0077",
+      "bookingId": "BK0074",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG066",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0078",
+      "bookingId": "BK0075",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0079",
+      "bookingId": "BK0076",
+      "billedTo": "patient:PT0068",
+      "contract": "(none)",
+      "rvgGroupId": "RG093",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0080",
+      "bookingId": "BK0077",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG104",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0081",
+      "bookingId": "BK0078",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0082",
+      "bookingId": "BK0079",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0083",
+      "bookingId": "BK0080",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG066",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0084",
+      "bookingId": "BK0081",
+      "billedTo": "patient:PT0073",
+      "contract": "(none)",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0085",
+      "bookingId": "BK0082",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0086",
+      "bookingId": "BK0083",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0087",
+      "bookingId": "BK0084",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0088",
+      "bookingId": "BK0085",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0089",
+      "bookingId": "BK0086",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0090",
+      "bookingId": "BK0087",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG091",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0091",
+      "bookingId": "BK0088",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0092",
+      "bookingId": "BK0089",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0093",
+      "bookingId": "BK0090",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0094",
+      "bookingId": "BK0091",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0095",
+      "bookingId": "BK0092",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0096",
+      "bookingId": "BK0093",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0097",
+      "bookingId": "BK0094",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0098",
+      "bookingId": "BK0095",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0099",
+      "bookingId": "BK0096",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0100",
+      "bookingId": "BK0097",
+      "billedTo": "patient:PT0089",
+      "contract": "(none)",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0101",
+      "bookingId": "BK0098",
+      "billedTo": "patient:PT0090",
+      "contract": "(none)",
+      "rvgGroupId": "RG088",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0102",
+      "bookingId": "BK0099",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0103",
+      "bookingId": "BK0100",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG104",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0104",
+      "bookingId": "BK0101",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0105",
+      "bookingId": "BK0102",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG101",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0106",
+      "bookingId": "BK0103",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG093",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0107",
+      "bookingId": "BK0104",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0108",
+      "bookingId": "BK0105",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0109",
+      "bookingId": "BK0106",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0110",
+      "bookingId": "BK0107",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0111",
+      "bookingId": "BK0108",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0112",
+      "bookingId": "BK0109",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0113",
+      "bookingId": "BK0110",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0114",
+      "bookingId": "BK0111",
+      "billedTo": "patient:PT0103",
+      "contract": "(none)",
+      "rvgGroupId": "RG090",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0115",
+      "bookingId": "BK0112",
+      "billedTo": "patient:PT0104",
+      "contract": "(none)",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0116",
+      "bookingId": "BK0113",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG017",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0117",
+      "bookingId": "BK0114",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0118",
+      "bookingId": "BK0115",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0119",
+      "bookingId": "BK0116",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG070",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0120",
+      "bookingId": "BK0117",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0121",
+      "bookingId": "BK0118",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0122",
+      "bookingId": "BK0119",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0123",
+      "bookingId": "BK0120",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG093",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0124",
+      "bookingId": "BK0121",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0125",
+      "bookingId": "BK0122",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0126",
+      "bookingId": "BK0123",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG070",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0127",
+      "bookingId": "BK0124",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG101",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0128",
+      "bookingId": "BK0125",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0129",
+      "bookingId": "BK0126",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG100",
+      "baseUnitsSelected": 4,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0130",
+      "bookingId": "BK0127",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG100",
+      "baseUnitsSelected": 4,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0131",
+      "bookingId": "BK0128",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG098",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0132",
+      "bookingId": "BK0129",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG101",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0133",
+      "bookingId": "BK0130",
+      "billedTo": "patient:PT0122",
+      "contract": "(none)",
+      "rvgGroupId": "RG090",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0134",
+      "bookingId": "BK0131",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG017",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0135",
+      "bookingId": "BK0132",
+      "billedTo": "patient:PT0124",
+      "contract": "(none)",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0136",
+      "bookingId": "BK0133",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0137",
+      "bookingId": "BK0134",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0138",
+      "bookingId": "BK0135",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0139",
+      "bookingId": "BK0136",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0140",
+      "bookingId": "BK0137",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG046",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0141",
+      "bookingId": "BK0138",
+      "billedTo": "hospital:H-SX",
+      "contract": "CT-SXAP",
+      "rvgGroupId": "RG092",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0142",
+      "bookingId": "BK0139",
+      "billedTo": "patient:PT0131",
+      "contract": "(none)",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0143",
+      "bookingId": "BK0140",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0144",
+      "bookingId": "BK0141",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0145",
+      "bookingId": "BK0142",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0146",
+      "bookingId": "BK0143",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG093",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0147",
+      "bookingId": "BK0144",
+      "billedTo": "hospital:H-CPH",
+      "contract": "CT-HNZ",
+      "rvgGroupId": "RG091",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0148",
+      "bookingId": "BK0145",
+      "billedTo": "patient:PT0137",
+      "contract": "(none)",
+      "rvgGroupId": "RG093",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0149",
+      "bookingId": "BK0146",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG097",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0150",
+      "bookingId": "BK0147",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0151",
+      "bookingId": "BK0148",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0152",
+      "bookingId": "BK0149",
+      "billedTo": "patient:PT0141",
+      "contract": "(none)",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0153",
+      "bookingId": "BK0150",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0154",
+      "bookingId": "BK0151",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG090",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0155",
+      "bookingId": "BK0152",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG103",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0156",
+      "bookingId": "BK0153",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG089",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0157",
+      "bookingId": "BK0154",
+      "billedTo": "hospital:H-FORTE",
+      "contract": "CT-FORTE-D1",
+      "rvgGroupId": "RG099",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0158",
+      "bookingId": "BK0155",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG091",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0159",
+      "bookingId": "BK0156",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG102",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0160",
+      "bookingId": "BK0157",
+      "billedTo": "hospital:H-STG",
+      "contract": "CT-STG-D1",
+      "rvgGroupId": "RG047",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0161",
+      "bookingId": "BK0158",
+      "billedTo": "insurer:I-NIB",
+      "contract": "CT-NIB-D1",
+      "rvgGroupId": "RG033",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0162",
+      "bookingId": "BK0159",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG007",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0163",
+      "bookingId": "BK0160",
+      "billedTo": "none",
+      "contract": "none",
+      "rvgGroupId": "RG093",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0164",
+      "bookingId": "BK0161",
+      "billedTo": "none",
+      "contract": "none",
+      "rvgGroupId": "RG094",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0165",
+      "bookingId": "BK0162",
+      "billedTo": "hospital:H-CES",
+      "contract": "CT-CES-D1",
+      "rvgGroupId": "RG096",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    },
+    {
+      "procedureId": "P0166",
+      "bookingId": "BK0163",
+      "billedTo": "patient:PT0129",
+      "contract": "CT-MER-FACELIFT",
+      "rvgGroupId": "RG004",
+      "baseUnitsSelected": null,
+      "fixedFee": null
+    }
+  ],
+  "prepayments": [
+    {
+      "bookingId": "BK0034",
+      "invoices": [
+        {
+          "kind": "prePayment",
+          "counterparty": "patient:PT0017",
+          "subtotal": 800,
+          "gst": 120,
+          "total": 920,
+          "lines": [
+            {
+              "description": "Pre-payment deposit",
+              "amount": 800
+            }
+          ]
+        }
+      ],
+      "accRecs": [
+        {
+          "amountDue": 920,
+          "status": "awaitingPayment"
+        }
+      ],
+      "accPays": [
+        {
+          "amountPayable": 920,
+          "status": "draft",
+          "anaesthetistId": "34821"
+        }
+      ]
+    },
+    {
+      "bookingId": "BK0038",
+      "invoices": [
+        {
+          "kind": "prePayment",
+          "counterparty": "patient:PT0008",
+          "subtotal": 238.5,
+          "gst": 35.78,
+          "total": 274.28,
+          "lines": [
+            {
+              "description": "Pre-payment, estimated full fee",
+              "amount": 238.5
+            }
+          ]
+        }
+      ],
+      "accRecs": [
+        {
+          "amountDue": 274.28,
+          "status": "paid"
+        }
+      ],
+      "accPays": [
+        {
+          "amountPayable": 274.28,
+          "status": "paid",
+          "anaesthetistId": "34821"
+        }
+      ]
+    }
+  ]
+}

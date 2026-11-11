@@ -18,12 +18,14 @@ import type {
   IntegrationCorrelationRef,
   AssignedList,
   Procedure,
+  RailAnswers,
 } from '../types'
 import { APPT, FEED } from '../integrations'
 import { slotRng } from './slotHash'
 import { projectedListId } from '../slots'
 import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
 import { CONTRACT } from './contracts'
+import { PRICED_ITEM } from './pricedItems'
 import { BP, PAT, genericPatientIds } from './patients'
 import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP, rvgGroupIdForLegacyCode } from './rvgGroups'
 import { compareSessions } from '../outOfHours'
@@ -50,7 +52,11 @@ export interface BookingScenarioIds {
   prepayment: string
   prepaymentPaid: string
   billingFailure: string
-  insuredReimbursement: string
+  aiaClaim: string
+  /** The Booking whose Contract the office left at Patient › Standard (catch-up Phase 20). */
+  railPickUp: string
+  /** A Booking that arrived with no Contract (the NHI-pending PDF Booking, catch-up Phase 20). */
+  needsDestination: string
   provisionalNoNhi: string
   repeatMitchell: [string, string]
   repeatWalker: [string, string]
@@ -155,6 +161,7 @@ function seedSourceFor(booking: Booking, list: AssignedList | undefined): Bookin
 /** Seeds Bookings on assigned Lists only (catch-up Phase 31: Draft Lists join the seed after this step). */
 export function buildBookings(seed: number, lists: readonly AssignedList[]): BookingsBuild {
   const listById = new Map(lists.map((l) => [l.id, l]))
+
   const bookings: Booking[] = []
   const procedures: Procedure[] = []
   const billingLines: BillingLine[] = []
@@ -266,11 +273,12 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
      * draws it, so the RNG sequence is unchanged.
      */
     asaClass?: 'AS1' | 'AS2' | 'AS3' | 'AS4'
-    billingRoute?: 'hospital' | 'billableParty' | 'insurer'
+    /** The Contract the office chose (catch-up Phase 20: exactly one per Procedure; none needs an invoice destination). */
     governingContractId?: string
-    insurerId?: string
     billablePartyId?: string
-    patientPaymentCategory?: 'selfFundedPostProcedure' | 'selfFundedPrepayment' | 'insuredReimbursement'
+    billsHolderInterim?: true
+    /** The step rail's answers so far on a Procedure with no Contract (catch-up Phase 20). */
+    railAnswers?: RailAnswers
     prepaymentDetail?: { type: 'full' | 'split'; depositAmount?: number }
     billingReference?: string
     isAdditional?: boolean
@@ -291,11 +299,10 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     if (spec.baseUnitsSelected !== undefined) procedure.baseUnitsSelected = spec.baseUnitsSelected
     if (spec.startISO !== undefined) procedure.anaestheticStartISO = spec.startISO
     if (spec.handoverISO !== undefined) procedure.handoverISO = spec.handoverISO
-    if (spec.billingRoute !== undefined) procedure.billingRoute = spec.billingRoute
     if (spec.governingContractId !== undefined) procedure.governingContractId = spec.governingContractId
-    if (spec.insurerId !== undefined) procedure.insurerId = spec.insurerId
     if (spec.billablePartyId !== undefined) procedure.billablePartyId = spec.billablePartyId
-    if (spec.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = spec.patientPaymentCategory
+    if (spec.billsHolderInterim === true) procedure.billsHolderInterim = true
+    if (spec.railAnswers !== undefined) procedure.railAnswers = spec.railAnswers
     if (spec.prepaymentDetail !== undefined) procedure.prepaymentDetail = spec.prepaymentDetail
     if (spec.billingReference !== undefined) procedure.billingReference = spec.billingReference
     if (spec.timeUnitsOverride !== undefined) {
@@ -354,7 +361,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       startISO: iso(TUE21, s.start),
       handoverISO: iso(TUE21, s.end),
       asaClass: s.asa,
-      billingRoute: 'hospital',
       governingContractId: CONTRACT.stgRvg,
       billingReference: `SG-2026-08${21 + i}`,
     })
@@ -380,7 +386,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE21, '13:02'),
     handoverISO: iso(TUE21, '14:18'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.sxap,
     billingReference: 'SX-2026-1201',
   })
@@ -398,8 +403,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE21, '14:20'),
     handoverISO: iso(TUE21, '15:05'),
     asaClass: 'AS1',
-    billingRoute: 'insurer',
-    insurerId: INS.nib,
     governingContractId: CONTRACT.nibRvg,
   })
 
@@ -416,8 +419,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE21, '15:12'),
     handoverISO: iso(TUE21, '15:58'),
     asaClass: 'AS1',
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPostProcedure',
+    governingContractId: CONTRACT.noContractRvg,
     // The mockup's "T adjusted +1 manually" story: captured T carries
     // overridden provenance (Phase 07's review flag keys off this).
     timeUnitsOverride: 4,
@@ -439,7 +441,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     // Margaret Ellison is 72 on 21 Jul 2026, so A1 (1 unit) is pre-applied from
     // her age (catch-up Phase 19b, US-03.3.8), keeping the pinned $344.50 fee;
     // it is no longer a claim.
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.sxap,
     billingReference: 'SX-2026-1204',
   })
@@ -474,7 +475,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       startISO: iso(MON20, s.start),
       handoverISO: iso(MON20, s.end),
       asaClass: s.asa,
-      billingRoute: 'hospital',
       governingContractId: s.acc === true ? CONTRACT.stgAcc : CONTRACT.stgRvg,
       ...(s.ref !== undefined ? { billingReference: s.ref } : {}),
     })
@@ -497,7 +497,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   addProcedure(cancelledBooking, {
     description: 'Cystoscopy',
     legacyCode: '36561',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0777',
   })
@@ -534,7 +533,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       startISO: iso(FRI17, s.start),
       handoverISO: iso(FRI17, s.end),
       asaClass: s.asa,
-      billingRoute: 'hospital',
       governingContractId: CONTRACT.healthNz,
       billingReference: s.ref,
     })
@@ -561,7 +559,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '08:05'),
     handoverISO: iso(MON20, '09:15'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2101',
   })
@@ -571,7 +568,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '09:15'),
     handoverISO: iso(MON20, '09:45'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2101',
     isAdditional: true,
@@ -591,7 +587,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '09:58'),
     handoverISO: iso(MON20, '11:00'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
   })
 
@@ -608,7 +603,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '11:12'),
     handoverISO: iso(MON20, '12:05'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2103',
   })
@@ -636,7 +630,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '14:00'),
     handoverISO: iso(MON20, '15:00'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0791',
   })
@@ -666,7 +659,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '15:15'),
     handoverISO: iso(MON20, '16:20'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0792',
   })
@@ -684,7 +676,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(MON20, '16:30'),
     handoverISO: iso(MON20, '17:25'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0793',
   })
@@ -701,7 +692,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // repair is on No contract · RVG, priced at RVG under today's
   // additional-procedure rule (time units only) until Phase 23. No contract ·
   // RVG is AA's and bills the payer, so until Phase 21 it rides the patient
-  // route (the hospital route cannot bill AA).
+  // way (AA, its holder, is never billed).
   const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
   const bariatricBooking = addBooking({
     listId: fitzTue14,
@@ -717,8 +708,10 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE14, '08:10'),
     handoverISO: iso(TUE14, '10:15'),
     asaClass: 'AS3',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.doyleBariatric,
+    // INTERIM until Phase 21: billed to Mr Doyle, as the retired contract-holder
+    // route billed it, though his price list bills the payer (D48).
+    billsHolderInterim: true,
     billingReference: 'BAR-2026-014',
   })
   addProcedure(bariatricBooking, {
@@ -727,8 +720,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE14, '10:15'),
     handoverISO: iso(TUE14, '10:45'),
     asaClass: 'AS3',
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPostProcedure',
     governingContractId: CONTRACT.noContractRvg,
     isAdditional: true,
   })
@@ -745,9 +736,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   const rateTimeProc = addProcedure(rateTimeBooking, {
     description: 'Abdominoplasty, individually arranged hourly rate (Aria Skin and Laser Clinic)',
-    billingRoute: 'billableParty',
     billablePartyId: BP.ariaClinic,
-    patientPaymentCategory: 'selfFundedPostProcedure',
     governingContractId: CONTRACT.ariaHourly,
   })
   addLine(rateTimeProc, {
@@ -758,8 +747,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     description: 'Anaesthesia, 3.0 hours at $480 per hour',
   })
 
-  // Insured reimbursement: the patient pays and claims back from AIA Health
-  // (informational only — NOT the direct-claim Insurer route).
+  // An AIA claim: the patient pays on No contract · RVG and claims back from AIA
+  // Health; AIA is named only in the description (catch-up Phase 20).
   const ruthThu16 = projectedListId(ANAE.rutherford, THU16, 'AM')
   const reimbursementBooking = addBooking({
     listId: ruthThu16,
@@ -774,8 +763,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(THU16, '08:20'),
     handoverISO: iso(THU16, '09:30'),
     asaClass: 'AS2',
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'insuredReimbursement',
+    governingContractId: CONTRACT.noContractRvg,
   })
 
   // COS externally held ACC contract (Rutherford, Thu 9 Jul, STG / Mr Hale).
@@ -793,7 +781,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(THU09, '08:05'),
     handoverISO: iso(THU09, '09:25'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.cosAcc,
     billingReference: 'ACC45-104772',
   })
@@ -813,7 +800,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(TUE14, '08:10'),
     handoverISO: iso(TUE14, '09:05'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.healthNz,
     billingReference: 'HNZ-2026-3102',
   })
@@ -832,9 +818,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   addProcedure(guardianBooking, {
     description: 'Strabismus correction, guardian to be invoiced',
     legacyCode: '42794',
-    billingRoute: 'billableParty',
+    governingContractId: CONTRACT.noContractRvg,
     billablePartyId: BP.guardian,
-    patientPaymentCategory: 'selfFundedPostProcedure',
   })
 
   // Pre-payment (split deposit) — the UNPAID exemplar, on Souter's own Fri 24
@@ -848,16 +833,13 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     patientId: PAT.riley,
     scheduledTime: '09:00',
   })
-  const prepaymentProc = addProcedure(prepaymentBooking, {
+  // Catch-up Phase 20: on Dr Souter's own prepaid price list (Rhinoplasty,
+  // $1,200 in force on 24 Jul), which is what requires the prepayment; the
+  // $1,200 is the Contract's price, no longer a typed billing line.
+  addProcedure(prepaymentBooking, {
     description: 'Rhinoplasty, self funded, pre-payment required',
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPrepayment',
+    governingContractId: PRICED_ITEM.souterRhinoplasty,
     prepaymentDetail: { type: 'split', depositAmount: 800 },
-  })
-  addLine(prepaymentProc, {
-    chargeBasis: 'fixed',
-    amount: 1200,
-    description: 'Anaesthesia professional fee, agreed self funded package',
   })
 
   // Provisional no-NHI patient (PDF pathway) + Sarah Mitchell's repeat episode
@@ -880,7 +862,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   addProcedure(mitchellRepeat, {
     description: 'Laparoscopic cholecystectomy',
     legacyCode: '20941',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2140',
   })
@@ -897,9 +878,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(rateTimeCaptureBooking, {
     description: 'Laser skin resurfacing, individually arranged hourly rate (Aria Skin and Laser Clinic)',
-    billingRoute: 'billableParty',
     billablePartyId: BP.ariaClinic,
-    patientPaymentCategory: 'selfFundedPostProcedure',
     governingContractId: CONTRACT.ariaHourly,
   })
 
@@ -922,7 +901,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(FRI24, '13:00'),
     handoverISO: iso(FRI24, '14:00'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2150',
   })
@@ -932,8 +910,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(FRI24, '14:00'),
     handoverISO: iso(FRI24, '15:00'),
     asaClass: 'AS1',
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPrepayment',
+    // Catch-up Phase 20: Dr Souter's prepaid price list, at the $238.50 she prepaid.
+    governingContractId: PRICED_ITEM.souterRhinoCosmetic,
     prepaymentDetail: { type: 'full' },
   })
 
@@ -958,7 +936,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(THU16, '08:05'),
     handoverISO: iso(THU16, '09:30'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.cosAcc,
     billingReference: 'ACC45-118844',
   })
@@ -975,7 +952,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(THU16, '09:50'),
     handoverISO: iso(THU16, '10:35'),
     asaClass: 'AS1',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0810',
   })
@@ -1002,16 +978,16 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
 
   const s13TimeBooking = addBooking({ listId: souterTue04AugAm, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
-  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', legacyCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0901' })
+  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', legacyCode: '49558', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0901' })
 
   const s13MoveBooking = addBooking({ listId: souterMon03AugPm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
-  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', legacyCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0902' })
+  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', legacyCode: '46360', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0902' })
 
   const s14Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
-  addProcedure(s14Booking, { description: 'Total hip replacement', legacyCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0903' })
+  addProcedure(s14Booking, { description: 'Total hip replacement', legacyCode: '47516', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0903' })
 
   const s15Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
-  addProcedure(s15Booking, { description: 'Cystoscopy', legacyCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0904' })
+  addProcedure(s15Booking, { description: 'Cystoscopy', legacyCode: '36561', governingContractId: CONTRACT.stgRvg, billingReference: 'SG-2026-0904' })
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
   // completed + valid, so index.ts marks the List SUBMITTED. The S14
@@ -1030,7 +1006,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(FRI17, '10:05'),
     handoverISO: iso(FRI17, '11:00'),
     asaClass: 'AS2',
-    billingRoute: 'hospital',
     governingContractId: CONTRACT.stgRvg,
     billingReference: 'SG-2026-0905',
   })
@@ -1053,7 +1028,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     addProcedure(booking, {
       description: rvg?.description ?? 'Eye procedure',
       legacyCode: code,
-      billingRoute: 'hospital',
       governingContractId: CONTRACT.cesRvg,
       billingReference: `CE-2026-05${41 + i}`,
     })
@@ -1073,13 +1047,16 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     addProcedure(booking, {
       description: rvg?.description ?? 'Acute procedure',
       legacyCode: code,
-      billingRoute: 'hospital',
       governingContractId: CONTRACT.healthNz,
       billingReference: `HNZ-2026-34${11 + i}`,
     })
   })
 
+  // Catch-up Phase 20: no Contract chosen yet, so each "Needs an invoice
+  // destination" and waits on the office's list. The office has answered the
+  // first as far as Patient › Standard, for Dr Souter to pick up and finish.
   const thu23Preop = projectedListId(ANAE.souter, THU23, 'PM')
+  let railPickUpBookingId = ''
   for (let i = 0; i < 6; i++) {
     const patient = takePatient()
     if (patient === null) break
@@ -1088,7 +1065,11 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       patientId: patient,
       scheduledTime: minutesToTime(13 * 60 + i * 40),
     })
-    addProcedure(booking, { description: 'Pre-op assessment' })
+    addProcedure(booking, {
+      description: 'Pre-op assessment',
+      ...(i === 0 ? { railAnswers: { destination: 'patient' as const, narrow: 'standard' } } : {}),
+    })
+    if (i === 0) railPickUpBookingId = booking.id
   }
 
   // -------------------------------------------------------------------------
@@ -1117,7 +1098,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     addProcedure(booking, {
       description: RVG_BY_CODE.get(s.code)?.description ?? 'Orthopaedic procedure',
       legacyCode: s.code,
-      billingRoute: 'hospital',
       governingContractId: CONTRACT.stgRvg,
       billingReference: s.ref,
     })
@@ -1187,15 +1167,14 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
         spec.startISO = iso(list.dateISO, minutesToTime(start))
         spec.handoverISO = iso(list.dateISO, minutesToTime(end))
       }
+      // The draw picks the Contract the office chose (catch-up Phase 20): nib's,
+      // No contract · RVG, or the hospital's. Drawn as before, so the RNG
+      // sequence is unchanged.
       if (routeDraw < 0.12) {
-        spec.billingRoute = 'insurer'
-        spec.insurerId = INS.nib
         spec.governingContractId = CONTRACT.nibRvg
       } else if (routeDraw < 0.2) {
-        spec.billingRoute = 'billableParty'
-        spec.patientPaymentCategory = 'selfFundedPostProcedure'
+        spec.governingContractId = CONTRACT.noContractRvg
       } else {
-        spec.billingRoute = 'hospital'
         // AA rooms is never a Contract holder (catch-up Phase 31): it falls back as no hospital did.
         const hospitalId = list.hospitalId === HOSP.aaRooms ? HOSP.stg : list.hospitalId
         spec.governingContractId = FILLER_CONTRACT_BY_HOSPITAL[hospitalId] ?? CONTRACT.stgRvg
@@ -1284,7 +1263,9 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       prepayment: prepaymentBooking.id,
       prepaymentPaid: prepaidBooking.id,
       billingFailure: failureBooking.id,
-      insuredReimbursement: reimbursementBooking.id,
+      aiaClaim: reimbursementBooking.id,
+      railPickUp: railPickUpBookingId,
+      needsDestination: provisionalBooking.id,
       provisionalNoNhi: provisionalBooking.id,
       repeatMitchell: [mitchellFirst.id, mitchellRepeat.id],
       repeatWalker: [whitakerBookings[0]?.id ?? '', amBookings[0]?.id ?? ''],

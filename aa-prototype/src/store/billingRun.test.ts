@@ -12,6 +12,8 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { handoffListCases, markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
 import { authoriseList, completeBooking, editProcedure, reassignBooking, submitList } from './lifecycle'
+import { setProcedureContract } from './contractSelectionActions'
+import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { addPriceRange, disableContract, editContract } from './contractActions'
 import { needsPriceMessage } from '../domain/billing/priceRanges'
 import { editAnaesthetist } from './mastersActions'
@@ -232,9 +234,9 @@ describe('charge bases and holders', () => {
     expect(lines[0]!.description).toContain('hours')
   })
 
-  it('the insured-reimbursement booking bills the PATIENT at standard rates (not the insurer)', () => {
+  it('the AIA claim booking is on No contract · RVG and bills the PATIENT at her anaesthetist rate (not the insurer)', () => {
     const api = store()
-    const bookingId = marker('insuredReimbursementBooking')
+    const bookingId = marker('aiaClaimBooking')
     stageAndBill(api, listOf(api, bookingId))
     const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
@@ -271,14 +273,11 @@ describe('split billing', () => {
     expect(lines[1]!.amount).toBe(53)
   })
 
-  it('different funders: rerouting the additional procedure to the patient yields TWO invoices (the §11 reading)', () => {
+  it('different funders: moving the additional procedure to No contract · RVG bills the patient, TWO invoices (the §11 reading)', () => {
     const api = store()
     const bookingId = marker('splitBillingBooking')
     const proc2 = proceduresForBooking(api.getState(), bookingId)[1]!
-    const edited = editProcedure(api, OFFICE, proc2.id, {
-      billingRoute: 'billableParty',
-      patientPaymentCategory: 'selfFundedPostProcedure',
-    })
+    const edited = setProcedureContract(api, OFFICE, proc2.id, CONTRACT.noContractRvg)
     expect(edited.ok).toBe(true)
     stageAndBill(api, listOf(api, bookingId))
     const invoices = invoicesForBooking(api, bookingId)
@@ -347,7 +346,8 @@ describe('contract lifecycle at billing time', () => {
     const api = store()
     const bookingId = marker('cosAccContractBooking')
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
-    expect(editProcedure(api, OFFICE, proc.id, { governingContractId: CONTRACT.cosFixed }).ok).toBe(true)
+    // No range in force, so never a rail candidate: staged as the demo actions do (catch-up Phase 20).
+    expect(setProcedureContract(api, DEMO_TRIGGER_ACTOR, proc.id, CONTRACT.cosFixed, { demoStage: true }).ok).toBe(true)
     const result = stageAndBill(api, listOf(api, bookingId))
     expect(result.exceptions).toHaveLength(1)
     expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective', message: needsPriceMessage(api.getState().masters.contracts[CONTRACT.cosFixed]!, api.getState().schedule.lists[listOf(api, bookingId)]!.dateISO, { named: true }) })
@@ -434,12 +434,12 @@ describe('invoice identity and delivery', () => {
 })
 
 describe('review-pass hardening (8th review)', () => {
-  it('a route-less booking moved onto a submitted list fails as a BillingCase, never a throw; authorise stays committed', () => {
+  it('a booking with no Contract moved onto a submitted list fails as a BillingCase, never a throw; authorise stays committed', () => {
     const api = store()
     const unwire = wireBillingRun(api)
     try {
-      // The seeded provisional PDF-referral booking has no billing route and no
-      // contract; the office may move it onto a SUBMITTED list (3rd review #7).
+      // The seeded provisional PDF-referral booking has no Contract ("Needs an
+      // invoice destination"); the office may move it onto a SUBMITTED list (3rd review #7).
       const provisional = Object.values(api.getState().schedule.bookings).find((c) => c.patientId === PAT.provisional)
       expect(provisional).toBeDefined()
       expect(reassignBooking(api, OFFICE, provisional!.id, MORRISON_LIST).ok).toBe(true)
@@ -448,7 +448,7 @@ describe('review-pass hardening (8th review)', () => {
       const gated = authoriseList(api, OFFICE, MORRISON_LIST)
       expect(gated.ok).toBe(false)
       if (!gated.ok) expect(gated.code).toBe('bookingsNotCompleted')
-      // A Booking marked complete with no route (the state this hardening covers)
+      // A Booking marked complete with no Contract (the state this hardening covers)
       // still fails as a BillingCase, never a throw.
       api.setState((s) => ({
         schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [provisional!.id]: { ...s.schedule.bookings[provisional!.id]!, completed: true } } },
@@ -462,7 +462,7 @@ describe('review-pass hardening (8th review)', () => {
       expect(failed).toHaveLength(1)
       expect(failed[0]!.bookingId).toBe(provisional!.id)
       expect(failed[0]!.failure).toMatchObject({
-        code: 'noBillingRoute',
+        code: 'noContract',
         procedureId: proceduresForBooking(state, provisional!.id)[0]!.id,
       })
     } finally {

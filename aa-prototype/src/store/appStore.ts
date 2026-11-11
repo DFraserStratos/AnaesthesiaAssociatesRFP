@@ -109,7 +109,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v36: catch-up Phase 19b, modifiers: `masters.modifiers` (the NZSA RVG
+/** v37: catch-up Phase 20, one Contract per Procedure: the route, the
+ *  Procedure's insurer and the payment category gone; every seeded Procedure on
+ *  one Contract (Riley and Nair on Dr Souter's prepaid price list, a new
+ *  `CT-SOUTER-RHINO-COS`), the route-less Bookings with none and the first
+ *  pre-op's `railAnswers`; `enteredPrice` and `billsHolderInterim`. Reseeds on load.
+ *  v36: catch-up Phase 19b, modifiers: `masters.modifiers` (the NZSA RVG
  *  2021 table as printed, generated from the catalogue, keyed by hidden id)
  *  replacing `masters.modifierCodes`; `Procedure.modifierClaims` and
  *  `removedModifierIds` replacing `asaClass` and `selectedModifierCodes`;
@@ -232,7 +237,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 36
+export const PERSIST_VERSION = 37
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

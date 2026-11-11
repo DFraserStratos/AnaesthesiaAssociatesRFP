@@ -29,7 +29,6 @@ export const SAMPLE_EXTRACTIONS: readonly SampleExtraction[] = [
       ethnicityCode: '21111',
       operation: 'Laparoscopic cholecystectomy',
       rvgGroupId: RVG_GROUP.a3!,
-      billingRoute: 'hospital',
     },
   },
   {
@@ -43,8 +42,6 @@ export const SAMPLE_EXTRACTIONS: readonly SampleExtraction[] = [
       ethnicityCode: '31111',
       operation: 'Right knee arthroscopy',
       rvgGroupId: RVG_GROUP.ll1!,
-      billingRoute: 'insurer',
-      insurerId: 'I-NIB',
     },
   },
 ] as const

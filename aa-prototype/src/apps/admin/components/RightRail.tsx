@@ -4,6 +4,7 @@ import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
 import { WarningsToDo } from './WarningsToDo'
+import { NeedsInvoiceDestinationCard } from './NeedsInvoiceDestinationCard'
 import { DraftListsCard } from './draftLists/DraftListsCard'
 import { NotificationsCard } from './NotificationsCard'
 import type { NotificationTarget } from '../../../store'
@@ -46,8 +47,10 @@ export function RightRail(props: RightRailProps) {
     <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
       {/* Rail order (Decisions log 2026-10-10): calendar, To-do (15a), Draft
-          Lists (31), the shared notification pool (32), notes, Awaiting review. */}
+          Lists (31), the shared notification pool (32), notes, Awaiting review;
+          "Needs an invoice destination" (20) under the To-do. */}
       <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})} />
+      <NeedsInvoiceDestinationCard onOpenBooking={props.onOpenBooking} />
       {props.onOpenDraftList !== undefined && props.onSeeAllDraftLists !== undefined && (
         <DraftListsCard onOpenDraftList={props.onOpenDraftList} onSeeAll={props.onSeeAllDraftLists} />
       )}

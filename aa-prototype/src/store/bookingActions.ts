@@ -8,13 +8,12 @@
  */
 
 import type {
-  BillingRoute,
   Attachment,
   Booking,
   BookingSource,
   IntegrationCorrelationRef,
-  PatientPaymentCategory,
   Procedure,
+  RailAnswers,
 } from '../domain/types'
 import {
   allocateId,
@@ -36,6 +35,9 @@ import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { placeListOnSlot } from './slotActions'
 import { fillFromContract } from '../domain/billing/startingValues'
 import { isRvgKind } from '../domain/billing/contracts'
+import { contractPickRefusal } from './contractSelectionActions'
+import { PREPAID_OFFICE_ONLY_MESSAGE, contractAllowedOn } from '../domain/billing/contractRail'
+import { railContextForList, railMastersOf } from './selectors'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -49,11 +51,18 @@ export interface CreateBookingInput {
   operation: string
   /** The optional RVG code: an RVG group row by id (catch-up Phase 19). Never changes `operation`. */
   rvgGroupId?: string
-  /** Explicit billing route (the RFP: set explicitly, never derived). */
-  billingRoute: BillingRoute
-  insurerId?: string
+  /**
+   * The Procedure's Contract, picked on the step rail (US-04.3.4): optional.
+   * With none it "Needs an invoice destination" and waits on the office's
+   * list; nothing is derived from the List (catch-up Phase 20).
+   */
+  governingContractId?: string
+  /** The amount typed on an open-price fallback (INTERIM until Phase 24). */
+  enteredPrice?: number
+  /** The step rail's answers so far, when no Contract was picked. */
+  railAnswers?: RailAnswers
+  /** INTERIM payer override until Phase 21 (a guardian or named payer). */
   billablePartyId?: string
-  patientPaymentCategory?: PatientPaymentCategory
   billingReference?: string
   notes?: string
   /** A photo/file to attach (the photo-capture path adds a `kind:'photo'` one). */
@@ -96,6 +105,16 @@ export function createBooking(
   }
   const pickRefused = rvgGroupPickRefusal(state.masters.rvgGroups, input.rvgGroupId, undefined)
   if (pickRefused !== null) return refuse(pickRefused.code, pickRefused.message)
+  // The anaesthetist is never on Prepaid, answers so far included (A17).
+  if (actor.role === 'anaesthetist' && input.railAnswers?.destination === 'patient' && input.railAnswers.narrow === 'prepaid') {
+    return refuse('prepaidOfficeOnly', PREPAID_OFFICE_ONLY_MESSAGE)
+  }
+  if (input.governingContractId !== undefined) {
+    const contractRefused = contractPickRefusal(state, actor, list, undefined, input.governingContractId, {
+      ...(input.enteredPrice !== undefined ? { enteredPrice: input.enteredPrice } : {}),
+    })
+    if (contractRefused !== null) return contractRefused
+  }
 
   // Shared intake dedupe — may reuse an existing Patient or create one. A bad
   // NHI is surfaced verbatim before any Booking is created.
@@ -140,15 +159,20 @@ export function createBooking(
       id: procedureId,
       bookingId,
       description: input.operation.trim(),
-      billingRoute: input.billingRoute,
       isAdditional: false,
       modifierClaims: [],
       removedModifierIds: [],
     }
     if (input.rvgGroupId !== undefined) procedure.rvgGroupId = input.rvgGroupId
-    if (input.insurerId !== undefined) procedure.insurerId = input.insurerId
+    if (input.governingContractId !== undefined) {
+      procedure.governingContractId = input.governingContractId
+      if (input.enteredPrice !== undefined) procedure.enteredPrice = input.enteredPrice
+      const fill = fillFromContract(procedure, s.masters.contracts[input.governingContractId], s.masters.rvgGroups)
+      if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
+    } else if (input.railAnswers !== undefined) {
+      procedure.railAnswers = input.railAnswers
+    }
     if (input.billablePartyId !== undefined) procedure.billablePartyId = input.billablePartyId
-    if (input.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = input.patientPaymentCategory
     if (input.billingReference !== undefined && input.billingReference.trim() !== '') {
       procedure.billingReference = input.billingReference.trim()
     }
@@ -164,7 +188,13 @@ export function createBooking(
         entityType: 'procedure',
         entityId: procedureId,
         action: 'procedure.create',
-        after: { description: procedure.description, billingRoute: input.billingRoute },
+        after: {
+          description: procedure.description,
+          ...(procedure.governingContractId !== undefined ? { governingContractId: procedure.governingContractId } : {}),
+          ...(procedure.enteredPrice !== undefined ? { enteredPrice: procedure.enteredPrice } : {}),
+          ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
+          ...(procedure.railAnswers !== undefined ? { railAnswers: procedure.railAnswers } : {}),
+        },
       },
     )
     return {
@@ -279,20 +309,17 @@ export function addPostOpAddendum(
       modifierClaims: [],
       removedModifierIds: [],
     }
-    // Inherit the funding context (the same episode); the post-op event bills
-    // its own B/T/M (not time-only — it is a distinct billable item).
-    if (first?.billingRoute !== undefined) procedure.billingRoute = first.billingRoute
-    if (first?.insurerId !== undefined) procedure.insurerId = first.insurerId
+    // The same episode's Contract (INTERIM until Phase 38b's additional
+    // invoice): an RVG-kind Contract is copied, with the payer override; a
+    // fixed, open or prepaid one is not (it is the whole price of the item it
+    // was chosen for, and a post-op event is never prepaid), so the addendum
+    // then needs an invoice destination. The post-op event bills its own
+    // B/T/M (not time-only: it is a distinct billable item).
     if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
-    if (first?.patientPaymentCategory !== undefined) {
-      // A post-op event is never itself pre-paid: an inherited selfFundedPrepayment
-      // downgrades to a post-procedure self-funded charge, else the addendum is born
-      // demanding a pre-payment it has no deposit/detail for (and cannot complete).
-      // prepaymentDetail is deliberately never inherited.
-      procedure.patientPaymentCategory =
-        first.patientPaymentCategory === 'selfFundedPrepayment' ? 'selfFundedPostProcedure' : first.patientPaymentCategory
+    // Only a Contract the step rail allows on the addendum's List (US-04.3.2).
+    if (first?.governingContractId !== undefined && contractAllowedOn(railMastersOf(s), railContextForList(s, placed.list), first.governingContractId)) {
+      inheritContract(procedure, first.governingContractId, s.masters)
     }
-    if (first?.governingContractId !== undefined) inheritContract(procedure, first.governingContractId, s.masters)
 
     metas.push(
       {
@@ -307,7 +334,16 @@ export function addPostOpAddendum(
           source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
         },
       },
-      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { bookingId, ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}) } },
+      {
+        entityType: 'procedure',
+        entityId: procedureId,
+        action: 'procedure.create',
+        after: {
+          bookingId,
+          ...(procedure.governingContractId !== undefined ? { governingContractId: procedure.governingContractId } : {}),
+          ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
+        },
+      },
     )
     return {
       schedule: {
@@ -324,17 +360,14 @@ export function addPostOpAddendum(
 }
 
 /**
- * A new Procedure inherits the Booking's Contract when it is priced from RVG
- * units, and that choice fills an empty RVG code from its default (catch-up
- * Phase 19a, DM-43), the same rule `editProcedure` applies. A fixed or open
- * price is never copied: a fixed price is the whole price of the item it was
- * chosen for (a combination is its own Contract, OQ-53), so copying it would
- * bill that item twice. The office (Phase 20's rail) chooses the new
- * Procedure's own Contract.
+ * A post-op addendum copies the original's Contract when it is priced from
+ * RVG units (and never a prepaid one), filling an empty RVG code from its
+ * default (catch-up Phase 19a, DM-43). A fixed or open price is never copied:
+ * it is the whole price of the item it was chosen for (OQ-53).
  */
 function inheritContract(procedure: Procedure, contractId: string, masters: AppState['masters']): void {
   const contract = masters.contracts[contractId]
-  if (contract !== undefined && !isRvgKind(contract.pricing.kind)) return
+  if (contract === undefined || !isRvgKind(contract.pricing.kind) || contract.prepaid) return
   procedure.governingContractId = contractId
   const fill = fillFromContract(procedure, masters.contracts[contractId], masters.rvgGroups)
   if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
@@ -347,12 +380,19 @@ function inheritContract(procedure: Procedure, contractId: string, masters: AppS
 /**
  * Add an additional Procedure to an existing Booking (Phase 04's "Add another
  * procedure"). Additional from the first (RFP split-billing rule): it bills
- * time units only — base and modifier units stay on the first procedure. The
- * skeleton is an empty additional Procedure: empty description, `isAdditional: true`, the
- * funding context (route / insurer / billable party / category / contract)
- * inherited from the Booking's FIRST procedure. Audited `procedure.create`.
+ * time units only; base and modifier units stay on the first procedure. The
+ * skeleton is an empty additional Procedure: empty description,
+ * `isAdditional: true`, the first Procedure's payer override copied
+ * (INTERIM until Phase 21). It picks its own Contract (US-03.2.3, catch-up
+ * Phase 20): the one given, checked as on the step rail, else none ("Needs an
+ * invoice destination"); never one stored silently. Audited `procedure.create`.
  */
-export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string): Outcome<{ procedureId: string }> {
+export function addProcedure(
+  api: AppStoreApi,
+  actor: Actor,
+  bookingId: string,
+  pick: { governingContractId?: string; enteredPrice?: number } = {},
+): Outcome<{ procedureId: string }> {
   const state = api.getState()
   const found = getBooking(state, bookingId)
   if (found === undefined) return refuse('notFound', 'Booking not found.')
@@ -368,6 +408,12 @@ export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string):
   if (rights !== null) return rights
 
   const first = proceduresForBooking(state, bookingId)[0]
+  if (pick.governingContractId !== undefined) {
+    const contractRefused = contractPickRefusal(state, actor, list, undefined, pick.governingContractId, {
+      ...(pick.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {}),
+    })
+    if (contractRefused !== null) return contractRefused
+  }
 
   let procedureId = ''
   const metas: MutationMeta[] = []
@@ -383,19 +429,27 @@ export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string):
       modifierClaims: [],
       removedModifierIds: [],
     }
-    // Inherit the funding context only (the same episode) — never the base /
-    // modifier / time specifics.
-    if (first?.billingRoute !== undefined) procedure.billingRoute = first.billingRoute
-    if (first?.insurerId !== undefined) procedure.insurerId = first.insurerId
+    // The same episode's payer override (INTERIM until Phase 21); never the
+    // base, modifier or time specifics.
     if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
-    if (first?.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = first.patientPaymentCategory
-    if (first?.governingContractId !== undefined) inheritContract(procedure, first.governingContractId, s.masters)
+    if (pick.governingContractId !== undefined) {
+      procedure.governingContractId = pick.governingContractId
+      if (pick.enteredPrice !== undefined) procedure.enteredPrice = pick.enteredPrice
+      const fill = fillFromContract(procedure, s.masters.contracts[pick.governingContractId], s.masters.rvgGroups)
+      if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
+    }
 
     metas.push({
       entityType: 'procedure',
       entityId: procedureId,
       action: 'procedure.create',
-      after: { bookingId, isAdditional: true, ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}) },
+      after: {
+        bookingId,
+        isAdditional: true,
+        ...(procedure.governingContractId !== undefined ? { governingContractId: procedure.governingContractId } : {}),
+        ...(procedure.enteredPrice !== undefined ? { enteredPrice: procedure.enteredPrice } : {}),
+        ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
+      },
     })
     return {
       schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: procedure } },

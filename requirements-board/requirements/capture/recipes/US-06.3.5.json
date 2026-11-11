@@ -1,24 +1,18 @@
 {
   "id": "US-06.3.5",
   "status": "partial",
-  "absentReason": "The pre-payment requirement is re-derived live whenever the procedure's payment category changes, as shown. The prepaid amount is not recalculated when procedures or the Contract change: the deposit or full-fee type is fixed on the procedure.",
+  "absentReason": "Whether a prepayment is required is re-derived live from the Procedure's Contract (a prepaid Contract requires it), as shown when the office moves Mrs Riley off Dr Souter's prepaid price list. The prepaid amount is not recalculated when procedures or the Contract change: the deposit or full-fee type is fixed on the procedure until Phase 27.",
   "shots": [
     {
       "name": "recheck-on-change",
       "app": "admin",
-      "caption": "Pre-payment requirement re-checked when the billing setup changes",
-      "start": "/admin/day/2026-07-24",
+      "caption": "Prepayment re-checked when the Contract changes",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
       "states": [
         {
           "state": "before",
-          "caption": "Payment category Pre-payment, so pre-payment is required",
+          "caption": "On Dr Souter's prepaid price list, so a prepayment is required",
           "steps": [
-            {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
-            },
-            {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
-            },
             {
               "wait": "[data-shot=booking-prepayment]"
             }
@@ -29,31 +23,27 @@
         },
         {
           "state": "after",
-          "caption": "Category changed to Self-funded, the prepayment warning is gone from the Booking",
+          "caption": "The office moves her to Patient › Standard: the prepayment warning is gone",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "click": "[data-rail-option=standard] >> nth=0"
             },
             {
-              "click": "role=button[name=\"Edit billing setup\"] >> nth=0"
+              "click": "[data-shot=contract-combo] >> nth=0"
             },
             {
-              "click": "[role=dialog] >> role=button[name=\"Self-funded\"]"
-            },
-            {
-              "click": "role=button[name=\"Save billing setup\"]"
+              "click": "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
             },
             {
               "wait": 600
-            },
-            {
-              "scroll": "text=\"Day view\" >> nth=0"
             }
           ],
-          "highlight": []
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ]
         }
       ]
     }

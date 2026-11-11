@@ -175,7 +175,7 @@ export const INS = {
 /**
  * INTERIM identities only (catch-up Phase 18, RV-39): every insurer is a Party
  * (`seed/parties.ts`). These bare records remain as the ids an insurer
- * Party's `legacyCounterparty` and `Procedure.insurerId` point at, so no
+ * Party's `legacyCounterparty` and billing lines' `funderOverride` point at, so no
  * counterparty moves. There is no direct-claims flag. Southern Cross Health
  * Society's id is new with its Party, so the insurer selects can name it.
  */

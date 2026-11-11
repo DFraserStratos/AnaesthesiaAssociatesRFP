@@ -397,7 +397,7 @@ describe('modifiers (catch-up Phase 19b)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v35 store with ASA classes and modifier codes and reseeds the RVG modifier table and the claims', () => {
-    expect(PERSIST_VERSION).toBe(36)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(36)
     const fresh = freshAppState()
     const { modifiers: _m, ...oldMasters } = fresh.masters
     const procedures = Object.fromEntries(
@@ -417,5 +417,28 @@ describe('modifiers (catch-up Phase 19b)', () => {
     expect(Object.values(s.masters.modifiers)).toHaveLength(30)
     expect(s.schedule.procedures.P0001).toMatchObject({ modifierClaims: [], removedModifierIds: [] })
     expect((s.schedule.procedures.P0001 as unknown as Record<string, unknown>)['asaClass']).toBeUndefined()
+  })
+})
+
+describe('one Contract per Procedure (catch-up Phase 20)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v36 store with billing routes and payment categories and reseeds every Procedure on one Contract', () => {
+    expect(PERSIST_VERSION).toBe(37)
+    const fresh = freshAppState()
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => [id, { ...p, billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPostProcedure' }]),
+    )
+    const stale = { ...fresh, schedule: { ...fresh.schedule, procedures } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 36 }))
+    const s = createAppStore({ persisted: true }).getState()
+    const riley = s.schedule.procedures.P0036 as unknown as Record<string, unknown>
+    expect(riley['billingRoute']).toBeUndefined()
+    expect(riley['patientPaymentCategory']).toBeUndefined()
+    expect(riley['governingContractId']).toBe('CT-SOUTER-RHINO')
   })
 })

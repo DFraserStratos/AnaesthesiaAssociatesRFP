@@ -1,49 +1,135 @@
 {
   "id": "US-03.4.1",
-  "status": "partial",
-  "absentReason": "The anaesthetist can change the billing route, insurer and billing reference (audited in booking history), which decides the Contract, but cannot pick the Contract itself from a filtered list, and the change is not flagged for office review.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "edit-operation",
       "app": "web",
-      "caption": "Edit the billing route on a procedure",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "Change the Contract until the office authorises the list",
+      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0023",
       "states": [
         {
+          "state": "rail",
           "steps": [
             {
-              "click": "[data-testid=procedure-header] >> text=\"Edit\""
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ],
+          "caption": "Change the Contract until the office authorises the list: a submitted List"
+        },
+        {
+          "state": "changed",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=patient] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "click": "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=capture-billing] >> nth=0"
           ],
-          "caption": "Edit operation: billing route, insurer and reference"
+          "caption": "Change the Contract until the office authorises the list: no reason asked, a typed price cleared"
         }
       ]
     },
     {
       "name": "edit-operation",
       "app": "mobile",
-      "caption": "Edit the billing route on a procedure",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "Change the Contract until the office authorises the list",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0023",
       "states": [
         {
+          "state": "rail",
           "steps": [
             {
-              "click": "[data-testid=procedure-header] >> text=\"Edit\""
+              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [role=dialog]"
+            "[data-shot=contract-picker]"
           ],
-          "caption": "Edit operation: billing route, insurer and reference"
+          "caption": "Change the Contract until the office authorises the list: a submitted List"
+        },
+        {
+          "state": "changed",
+          "steps": [
+            {
+              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=contract-rail-step-1]"
+            },
+            {
+              "click": "[data-rail-option=patient]"
+            },
+            {
+              "click": "[data-contract-id=CT-NO-CONTRACT]"
+            },
+            {
+              "click": "role=button[name=\"Use this Contract\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ],
+          "caption": "Change the Contract until the office authorises the list: no reason asked, a typed price cleared"
+        }
+      ]
+    },
+    {
+      "name": "prepaid",
+      "app": "web",
+      "caption": "Only the office moves a Procedure onto or off prepaid",
+      "start": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=contract-set-by-office]"
+          ],
+          "caption": "Only the office moves a Procedure onto or off prepaid"
+        }
+      ]
+    },
+    {
+      "name": "prepaid",
+      "app": "mobile",
+      "caption": "Only the office moves a Procedure onto or off prepaid",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=contract-set-by-office]"
+          ],
+          "caption": "Only the office moves a Procedure onto or off prepaid"
         }
       ]
     }

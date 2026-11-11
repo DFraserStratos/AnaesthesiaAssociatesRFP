@@ -8,6 +8,8 @@ interface DialogProps {
   children: ReactNode
   /** Accepted for signature parity with the mobile bottom sheet; unused on web. */
   hideHandle?: boolean
+  /** `wide` for a two-column body (the step rail). */
+  size?: 'default' | 'wide'
 }
 
 /** The open dialogs' root elements: Escape closes only the topmost (last in document order). */
@@ -28,7 +30,7 @@ function isTopmost(el: HTMLElement): boolean {
  * closes on Escape or a scrim click. `position:fixed; inset:0` so it centres over
  * the viewport regardless of where the detail panel sits.
  */
-export function Dialog({ open, onClose, children }: DialogProps) {
+export function Dialog({ open, onClose, children, size = 'default' }: DialogProps) {
   // The latest onClose, so the effect below runs only on open and close and a
   // re-render never moves this dialog up the stack.
   const onCloseRef = useRef(onClose)
@@ -68,7 +70,7 @@ export function Dialog({ open, onClose, children }: DialogProps) {
         aria-modal
         style={{
           position: 'relative',
-          width: 'min(520px, 100%)',
+          width: size === 'wide' ? 'min(760px, 100%)' : 'min(520px, 100%)',
           maxHeight: '86vh',
           overflow: 'auto',
           background: neutral.surface,

@@ -207,13 +207,16 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('Appendicectomy, laparoscopic')
   await expect(page.getByLabel('Operation')).toHaveValue('Appendicectomy, laparoscopic')
   await expect(page.getByLabel('Scheduled time')).toHaveValue('15:00')
-  await expect(page.getByLabel('Insurer (optional)')).toHaveValue('I-NIB')
+  // Catch-up Phase 20: no route or insurer; the Contract is never preselected (US-04.3.4).
+  await expect(page.locator('[data-shot=manual-contract]')).toContainText('Not chosen')
   await expect(page.getByLabel('Billing reference')).toHaveValue('STG-HALE-2107')
   await expect(page.getByText(/Patient and booking details pre-filled/)).toBeVisible()
 
   await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
-  await expect(page.getByText('Demo Patient', { exact: true })).toBeVisible()
+  await expect(page.getByText('Demo Patient', { exact: true }).first()).toBeVisible()
+  // Saved with no Contract, it waits on Admin Day's "Needs an invoice destination" (catch-up Phase 20).
+  await expect(page.locator('[data-shot=admin-needs-invoice-destination]')).toContainText('Demo Patient')
   // The session now holds a Private List (P5 closed): the block reads St George's.
   await page.keyboard.press('Escape')
   await expect(page.locator('button[data-slot-id="S-41267-2026-07-21-PM"]')).toContainText("St George's")

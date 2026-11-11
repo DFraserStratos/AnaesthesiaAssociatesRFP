@@ -19,7 +19,7 @@ sequenceDiagram
     A->>O: Submit completed List
     O->>O: Sanity-check and correct Bookings
     O->>B: Authorise whole List
-    B->>B: Resolve route, Contract, fee and invoice grouping
+    B->>B: Read each Procedure's Contract, fee and invoice grouping
     B->>X: Create ACCREC and draft ACCPAY
     X->>B: Payment webhook or reconciliation result
     B->>X: Authorise payable for disbursement
@@ -145,7 +145,7 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 - **Phone advice:** Kirsty creates the booking in Admin.
 - **No anaesthetist yet:** a request with no anaesthetist yet becomes a Draft List, which can take
   Bookings before it is assigned.
-- **Mobile/web manual Booking:** Dr Souter enters the missing Booking and its advised billing route.
+- **Mobile/web manual Booking:** Dr Souter enters the missing Booking and, if she knows it, its Contract on the step rail; otherwise it waits on the office's Needs an invoice destination list.
 - **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
 - **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
   NHI, so a re-ingest updates rather than duplicates).
@@ -364,9 +364,7 @@ Every active Booking in the List has been marked complete.
    completed again before the office can authorise.
 7. Kirsty opens the Review queue.
 8. She checks the full set of Bookings, including:
-   - billing route;
-   - Contract;
-   - Insurer;
+   - Contract, and who is billed;
    - billing reference;
    - calculated BTM and fee;
    - manual adjustment flags.
@@ -412,11 +410,10 @@ The List reaches `AUTHORISED`.
 ### Steps
 
 1. The Billing Engine iterates each active Booking and its Procedures.
-2. It resolves the explicit billing route per Procedure:
-   - the Contract's Party (a hospital or other Party);
-   - Billable Party, usually the patient;
-   - an insurer Party.
-3. It selects the Contract.
+2. It reads each Procedure's one Contract; a Procedure with none fails as "Needs an invoice
+   destination".
+3. The Contract says who is billed: its holder (a hospital, an insurer, a surgeon or group), or the
+   patient (or the payer named on the Procedure).
 4. It calculates the fee from the captured snapshot.
 5. It enforces time-only additional Procedures and conserved two-funder allocations.
 6. It groups lines by counterparty per Booking.

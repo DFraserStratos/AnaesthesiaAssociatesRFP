@@ -292,11 +292,11 @@ describe('addProcedure', () => {
     expect(procedure?.isAdditional).toBe(true)
     expect(procedure?.description).toBe('')
     expect(procedure?.rvgGroupId).toBeUndefined()
-    // The funding context mirrors the first procedure (the split Booking's
-    // second-procedure pattern). "Add another procedure" is the only way to add
-    // an additional Procedure; Copy makes a new Booking (catch-up Phase 15).
-    expect(procedure?.billingRoute).toBe(first?.billingRoute)
-    expect(procedure?.governingContractId).toBe(first?.governingContractId)
+    // It picks its own Contract on the step rail (catch-up Phase 20, US-03.2.3):
+    // none is inherited; only the payer override is copied. "Add another
+    // procedure" is the only way to add an additional Procedure.
+    expect(procedure?.governingContractId).toBeUndefined()
+    expect(procedure?.billablePartyId).toBe(first?.billablePartyId)
 
     const entry = auditForEntity(api.getState(), outcome.value.procedureId).at(-1)
     expect(entry?.action).toBe('procedure.create')
@@ -484,7 +484,7 @@ describe('uncompleteBooking', () => {
 })
 
 describe('completionBlockersFor', () => {
-  it('returns [] for a valid booking, and validationFailed with named failures once the route is stripped', () => {
+  it('returns [] for a valid booking, and validationFailed with named failures once the RVG code goes from its RVG Contract', () => {
     const api = store()
     const bookingId = taneBookingId(api)
     const state = api.getState()
@@ -493,13 +493,14 @@ describe('completionBlockersFor', () => {
     expect(completionBlockersFor(state, booking)).toEqual([])
 
     const procedureId = firstProcedureId(api, bookingId)
-    expect(editProcedure(api, OFFICE, procedureId, { billingRoute: undefined }).ok).toBe(true)
+    // Catch-up Phase 20: the RVG code is required on an RVG kind (US-03.3.1).
+    expect(editProcedure(api, OFFICE, procedureId, { rvgGroupId: undefined }).ok).toBe(true)
 
     const after = api.getState()
     const blockers = completionBlockersFor(after, after.schedule.bookings[bookingId]!)
     expect(blockers[0]?.code).toBe('validationFailed')
     const failures = blockers[0]?.details as BillingValidationFailure[]
-    expect(failures.some((f) => f.field === 'billingRoute')).toBe(true)
+    expect(failures.some((f) => f.field === 'rvgGroupId')).toBe(true)
   })
 
   it('never lists an unpaid prepayment: warnings are not blockers (catch-up Phase 15a; D5)', () => {

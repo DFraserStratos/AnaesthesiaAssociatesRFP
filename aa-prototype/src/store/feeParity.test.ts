@@ -110,6 +110,42 @@ fees.sort((a, b) => a.procedureId.localeCompare(b.procedureId))
 unitRows.sort((a, b) => a.procedureId.localeCompare(b.procedureId))
 invoices.sort((a, b) => a.bookingId.localeCompare(b.bookingId))
 
+// ---------------------------------------------------------------------------
+// Catch-up Phase 20 (DM-10, US-04.3.1): one Contract per Procedure, the route
+// gone. Its only on-purpose differences, exact; each is mapped back to the
+// fixtures' form here only when the row equals its declared value, and
+// asserted as declared in "Phase 20 one Contract per Procedure parity" below.
+//   - The seven Bookings that had no billing route now have no Contract: the
+//     run's exception is `noContract` ("Needs an invoice destination") where
+//     it was `noBillingRoute`. Nothing else about them changes.
+//   - Nair's prepaid-in-full Procedure (P0041) is on Dr Souter's prepaid price
+//     list at the $238.50 she prepaid: the same total and units, its line now
+//     a fixed price where it was RVG.
+// Every other row, every counterparty and every total holds as written.
+// ---------------------------------------------------------------------------
+
+const PHASE_20_NO_CONTRACT_BOOKINGS = new Set(['BK0035', 'BK0060', 'BK0061', 'BK0062', 'BK0063', 'BK0064', 'BK0065'])
+const NAIR_PREPAID_PROCEDURE = 'P0041'
+const NAIR_FEE_20 = { procedureId: NAIR_PREPAID_PROCEDURE, total: 238.5, billableUnits: 9, lines: [{ basis: 'fixed', amount: 238.5 }] }
+const NAIR_FEE_BEFORE_20 = { ...NAIR_FEE_20, lines: [{ basis: 'rvg', amount: 238.5 }] }
+
+const phase20Raw = {
+  fees: fees.map((r) => structuredClone(r)),
+  invoices: invoices.map((r) => structuredClone(r)),
+}
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+for (const rows of [fees, unitRows]) {
+  for (const row of rows) {
+    const { b: _b, t: _t, m: _m, ...feeRow } = row as UnitsRow
+    if (row.procedureId === NAIR_PREPAID_PROCEDURE && sameJson(feeRow, NAIR_FEE_20)) row.lines = NAIR_FEE_BEFORE_20.lines
+  }
+}
+for (const row of invoices) {
+  if (PHASE_20_NO_CONTRACT_BOOKINGS.has(row.bookingId) && row.result.kind === 'exception' && row.result.code === 'noContract') {
+    row.result = { kind: 'exception', code: 'noBillingRoute' }
+  }
+}
+
 const feeOf = (procedureId: string) => fees.find((f) => f.procedureId === procedureId)
 const invoicesOf = (bookingId: string) => invoices.find((i) => i.bookingId === bookingId)?.result
 
@@ -478,5 +514,24 @@ describe('Phase 19b modifier parity', () => {
   it('holds the pinned figures: Ellison $344.50 after capture (btmCapture.test.ts) and her pre-capture 8 units, $212; the Tue 21 PM List unmoved', () => {
     expect(feeOf('P0009')).toMatchObject({ total: 212, billableUnits: 8 })
     for (const id of ['P0006', 'P0007', 'P0008', 'P0009']) expect(MOVED_19B.has(id), id).toBe(false)
+  })
+})
+
+describe('Phase 20 one Contract per Procedure parity', () => {
+  it('declares its differences exactly: the seven route-less Bookings need an invoice destination; Nair is on a prepaid fixed price', () => {
+    for (const id of PHASE_20_NO_CONTRACT_BOOKINGS) {
+      expect(phase20Raw.invoices.find((i) => i.bookingId === id)?.result, id).toEqual({ kind: 'exception', code: 'noContract' })
+    }
+    expect(phase20Raw.fees.find((f) => f.procedureId === NAIR_PREPAID_PROCEDURE)).toEqual(NAIR_FEE_20)
+    expect(state.schedule.procedures[NAIR_PREPAID_PROCEDURE]?.governingContractId).toBe('CT-SOUTER-RHINO-COS')
+  })
+
+  it('every Procedure carries a Contract but the seven route-less Bookings', () => {
+    for (const p of Object.values(state.schedule.procedures)) {
+      const booking = state.schedule.bookings[p.bookingId]
+      if (booking === undefined || booking.cancellation !== undefined) continue
+      if (PHASE_20_NO_CONTRACT_BOOKINGS.has(p.bookingId)) expect(p.governingContractId, p.id).toBeUndefined()
+      else expect(p.governingContractId, p.id).toBeDefined()
+    }
   })
 })

@@ -234,9 +234,9 @@ export function modifierInputsOf(ctx: Pick<FeeContext, 'patientDobISO' | 'dateIS
  * Phase 19a) is the price of the range in force on the procedure date, the
  * whole price on any Procedure, primary or additional (BTM still computed for
  * reference); with no range in force the result `needsPrice`, with no amount
- * and never a fallback to RVG. Open price, and no Contract, price as RVG at
- * the anaesthetist's rate (the amount is typed as an override). The resolver
- * and validator own the refusal.
+ * and never a fallback to RVG. An open price is the amount typed on the
+ * Procedure (`enteredPrice`, catch-up Phase 20); with none it `needsPrice`
+ * (its RVG figure is working only). The resolver and validator own the refusal.
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule, modifierInputsOf(ctx))
@@ -258,11 +258,17 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
 
   const isFixed = contract !== undefined && pricing?.kind === 'fixed'
   const range = isFixed ? rangeInForce(contract, ctx.dateISO) : null
-  // An open price has no price of its own either: the RVG figure below is
+  // An open price has no price of its own: the amount typed on the Procedure
+  // is its price (catch-up Phase 20, US-04.3.9, US-05.2.5; INTERIM
+  // `enteredPrice` until Phase 24). With none typed, the RVG figure below is
   // working only, never shown as its price (catch-up Phase 19a).
-  let needsPrice = (isFixed && range === null) || pricing?.kind === 'open'
+  const typedOpenPrice = pricing?.kind === 'open' ? procedure.enteredPrice : undefined
+  let needsPrice = (isFixed && range === null) || (pricing?.kind === 'open' && typedOpenPrice === undefined)
 
-  if (isFixed) {
+  if (typedOpenPrice !== undefined) {
+    unitRate = null
+    lines.push({ chargeBasis: 'fixed', description: 'Typed price', amount: roundToCents(typedOpenPrice) })
+  } else if (isFixed) {
     unitRate = null
     if (range !== null) {
       lines.push({
@@ -320,7 +326,7 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
 
   const bases = new Set(lines.map((l) => l.chargeBasis))
   const chargeBasis: ChargeBasis | 'mixed' =
-    bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (isFixed ? 'fixed' : 'rvg'))
+    bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (isFixed || typedOpenPrice !== undefined ? 'fixed' : 'rvg'))
 
   return { btm, billableUnits, chargeBasis, unitRate, lines, subtotal, override: applied, total, needsPrice }
 }

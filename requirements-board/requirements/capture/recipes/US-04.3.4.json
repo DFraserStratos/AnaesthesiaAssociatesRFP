@@ -6,7 +6,7 @@
     {
       "name": "billing-setup",
       "app": "admin",
-      "caption": "Office billing setup on a Booking",
+      "caption": "The office sets the Contract at setup",
       "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {
@@ -15,11 +15,11 @@
           "highlight": [
             "[data-shot=office-billing-setup-1]"
           ],
-          "caption": "Office billing setup on a Booking · summary"
+          "caption": "The office sets the Contract at setup: Contract, who is billed and prepayment"
         },
         {
           "state": "edit",
-          "caption": "Edit billing setup, route, insurer and governing contract",
+          "caption": "The office sets the Contract at setup: Contract and payer",
           "steps": [
             {
               "click": "role=button[name=\"Edit billing setup\"]"
@@ -31,6 +31,148 @@
           "highlight": [
             "[role=dialog]"
           ]
+        }
+      ]
+    },
+    {
+      "name": "rvg-handoff",
+      "app": "admin",
+      "caption": "The office sets the Contract at setup",
+      "start": "/admin/day/2026-07-23/bookings/BK0060",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Use it\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-rail-outcome] >> nth=0"
+          ],
+          "caption": "The office sets the Contract at setup: an RVG Contract hands the RVG code to the anaesthetist"
+        }
+      ]
+    },
+    {
+      "name": "setup",
+      "app": "admin",
+      "caption": "The office sets the Contract at setup",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "button[data-slot-id=\"S-41267-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "select": "role=combobox[name=\"Hospital\"]",
+              "value": "H-STG"
+            },
+            {
+              "select": "role=combobox[name=\"Surgeon\"]",
+              "value": "S-HALE"
+            },
+            {
+              "click": "role=button[name=\"Continue to add booking\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=manual-contract]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=manual-contract]"
+          ],
+          "caption": "The office sets the Contract at setup: the phone-advice Booking's Contract row"
+        }
+      ]
+    },
+    {
+      "name": "needs-destination",
+      "app": "admin",
+      "caption": "Bookings without one wait on Needs an invoice destination",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=admin-needs-invoice-destination]"
+          ],
+          "caption": "Bookings without one wait on Needs an invoice destination"
+        }
+      ]
+    },
+    {
+      "name": "rvg-to-fill",
+      "app": "web",
+      "caption": "The anaesthetist fills in the RVG code",
+      "start": "/web/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Use it\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=rvg-code-to-fill]",
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "The anaesthetist fills in the RVG code"
+        }
+      ]
+    },
+    {
+      "name": "rvg-to-fill",
+      "app": "mobile",
+      "caption": "The anaesthetist fills in the RVG code",
+      "start": "/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Use this Contract\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=rvg-code-to-fill]"
+          ],
+          "caption": "The anaesthetist fills in the RVG code"
         }
       ]
     }

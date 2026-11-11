@@ -74,7 +74,7 @@ export function raisePreProcedureInvoice(
     )
   }
   if (!bookingRequiresPrepayment(state, bookingId)) {
-    return refuse('notPrepayment', 'This Booking has no self funded pre-payment procedure to invoice.')
+    return refuse('notPrepayment', 'This booking has no procedure on a prepaid Contract.')
   }
   if (prePaymentInvoicesForBooking(state, bookingId).length > 0) {
     return refuse('alreadyRaised', 'A pre-payment invoice has already been raised for this Booking.')
@@ -95,7 +95,7 @@ export function raisePreProcedureInvoice(
     return refuse(built.code, built.message)
   }
   if (built.invoices.length === 0) {
-    return refuse('notPrepayment', 'This Booking has no self funded pre-payment procedure to invoice.')
+    return refuse('notPrepayment', 'This booking has no procedure on a prepaid Contract.')
   }
 
   const invoiceIds: string[] = []

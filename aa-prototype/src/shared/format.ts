@@ -12,7 +12,7 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { BillingRoute, BookingSource, Hospital, List, Surgeon } from '../domain/types'
+import type { BookingSource, Hospital, List, Surgeon } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -42,21 +42,6 @@ export function hhmm(iso: string | undefined): string {
 /** "TUE 21 JUL · 08:00" for a local-naive ISO datetime ("·" when absent). */
 export function dateTimeMicroCap(iso: string | undefined): string {
   return iso !== undefined && iso.length >= 16 ? `${dayMicroCap(iso.slice(0, 10))} · ${hhmm(iso)}` : '·'
-}
-
-/**
- * RFP billing-route labels for the office surfaces (the authorisation review +
- * office billing setup), single-sourced so the two agree. The mobile capture
- * context (`BtmCaptureBlock`) keeps its own richer wording for the anaesthetist.
- */
-export const ROUTE_LABELS: Record<BillingRoute, string> = {
-  hospital: "Contract's Party",
-  billableParty: 'Billable party',
-  insurer: 'Insurer',
-}
-
-export function routeLabel(route: BillingRoute | undefined): string {
-  return route !== undefined ? ROUTE_LABELS[route] : 'Not set'
 }
 
 // The audit change string used to live here as `formatAuditChange`, rendering

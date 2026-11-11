@@ -10,6 +10,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { DEMO_TRIGGER_ACTOR, OFFICE_ACTOR } from './demoActors'
 import { proceduresForBooking } from './selectors'
 import { editProcedure } from './lifecycle'
+import { setProcedureContract } from './contractSelectionActions'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { clearWarning, openWarnings, warningsForBooking } from './warnings'
 import {
@@ -36,7 +37,7 @@ function setListState(api: BoundAppStore, listId: string, state: 'SUBMITTED' | '
   api.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...assigned(s.schedule.lists[listId]), state } } } })
 }
 
-const STAGED_FIELDS = ['billingRoute', 'patientPaymentCategory', 'prepaymentDetail', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const
+const STAGED_FIELDS = ['governingContractId', 'enteredPrice', 'prepaymentDetail', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const
 
 function seedFieldsOf(bookingId: string) {
   const seed = buildSeed()
@@ -84,8 +85,10 @@ describe('raise and clear on the demo day', () => {
       expect(warningsForBooking(state, id).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
     }
     expect([...new Set(openWarnings(state).map((r) => r.bookingId))].sort()).toEqual([AM_TARGET, PM_TARGET, RILEY].sort())
-    const stagedAudit = state.audit.filter((a) => a.action === 'procedure.update' && a.who === DEMO_TRIGGER_ACTOR.who)
+    // Catch-up Phase 20: the prepayment sample moves the Procedure onto a prepaid Contract (`procedure.contract`).
+    const stagedAudit = state.audit.filter((a) => (a.action === 'procedure.update' || a.action === 'procedure.contract') && a.who === DEMO_TRIGGER_ACTOR.who)
     expect(stagedAudit).toHaveLength(4)
+    expect(stagedAudit.filter((a) => a.action === 'procedure.contract')).toHaveLength(2)
     expect(stagedAudit.every((a) => a.source === 'demo' && a.role === 'system')).toBe(true)
     expect(daySampleRaiseRefusal(state)).toBe('Samples already raised')
     expect(stagedSampleBookings(state)).toEqual([AM_TARGET, PM_TARGET].sort())
@@ -194,13 +197,12 @@ describe('review fixes (convention 18)', () => {
   it('a real edit to the sample values is never a staged sample, and Clear sample warnings leaves it alone', () => {
     const api = createAppStore()
     const p = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
-    expect(
-      editProcedure(api, OFFICE_ACTOR, p.id, { billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPrepayment', prepaymentDetail: { type: 'full' } }).ok,
-    ).toBe(true)
+    // The office itself puts it on a prepaid Contract (catch-up Phase 20).
+    expect(setProcedureContract(api, OFFICE_ACTOR, p.id, 'CT-FIX-PATIENT-PREPAID', { enteredPrice: 500 }).ok).toBe(true)
     expect(stagedSampleBookings(api.getState())).toEqual([])
     expect(allSampleClearRefusal(api.getState())).toBe('Nothing staged')
     expect(clearAllSamples(api).ok).toBe(false)
-    expect(proceduresForBooking(api.getState(), AM_TARGET!)[0]!.patientPaymentCategory).toBe('selfFundedPrepayment')
+    expect(proceduresForBooking(api.getState(), AM_TARGET!)[0]!.governingContractId).toBe('CT-FIX-PATIENT-PREPAID')
   })
 
   it('a staged sample the office then edits is no longer the demo’s to revert', () => {

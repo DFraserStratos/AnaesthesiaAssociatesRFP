@@ -1,12 +1,12 @@
-import { contractLabel } from '../contracts/labels'
 import { useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
-import { billingReferenceMissing } from '../../domain/billing'
-import { useAppStore, type Actor } from '../../store'
+import { billingReferenceMissing, procedureRequiresPrepayment } from '../../domain/billing'
+import { billedPartyForProcedure, counterpartyName, useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
-import { ROUTE_LABELS } from '../format'
+import { formatCurrency } from '../format'
 import { EditBillingSetupSheet, PriceOverrideSheet, FunderAllocationSheet } from '../flows'
+import { ProcedureContractRow } from './ProcedureContractRow'
 
 interface OfficeBillingSetupProps {
   procedure: Procedure
@@ -18,34 +18,35 @@ interface OfficeBillingSetupProps {
   canEdit: boolean
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  selfFundedPostProcedure: 'Self-funded',
-  selfFundedPrepayment: 'Pre-payment',
-  insuredReimbursement: 'Reimbursement',
-}
-
 type Sheet = 'none' | 'setup' | 'override' | 'funder'
 
 /**
- * The office billing-setup section (Phase 06), rendered per procedure in
- * `BookingDetailBody` only for an `office` actor. Surfaces the full RFP billing
- * setup as summary rows and opens the three office editors: billing setup
- * (route / insurer / category / governing contract / reference / guardian),
- * the full typed price override, and per-line funder allocation. Mobile and
- * the anaesthetist web keep the read-only capture context line unchanged.
+ * The office billing-setup section (Phase 06; catch-up Phase 20), rendered per
+ * procedure in `BookingDetailBody` only for an `office` actor: the one
+ * Contract (chosen or changed on the step rail), who is billed (the Contract
+ * says; INTERIM until Phase 21), the reference, the price override, the
+ * funders (INTERIM until Phase 22) and whether a prepayment is required (from
+ * a prepaid Contract; INTERIM until Phase 27). "Edit billing setup" opens
+ * "Contract and payer" (the payer override and the reference).
  */
 export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }: OfficeBillingSetupProps) {
   const masters = useAppStore((s) => s.masters)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const [sheet, setSheet] = useState<Sheet>('none')
 
-  const route = procedure.billingRoute
-  const insurer = procedure.insurerId !== undefined ? masters.insurers[procedure.insurerId] : undefined
+  const schedule = useAppStore((s) => s.schedule)
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
-  const payer = procedure.billablePartyId !== undefined ? masters.billableParties[procedure.billablePartyId] : undefined
+  const holder = contract !== undefined ? masters.parties[contract.holderId] : undefined
+  const billed = billedPartyForProcedure({ masters, schedule }, procedure.id)
   const lines = Object.values(billingLinesRecord).filter((l) => l.procedureId === procedure.id)
   const funderLines = lines.filter((l) => l.funderOverride !== undefined)
-  const refMissing = billingReferenceMissing(procedure)
+  const refMissing = billingReferenceMissing(procedure, masters.contracts, masters.parties)
+  // Prepayment follows a prepaid Contract (INTERIM until Phase 27); read-only here.
+  const prepaymentText = !procedureRequiresPrepayment(procedure, contract)
+    ? 'Not required'
+    : procedure.prepaymentDetail?.type === 'split' && procedure.prepaymentDetail.depositAmount !== undefined
+      ? `Required · ${formatCurrency(procedure.prepaymentDetail.depositAmount)} seeded`
+      : 'Required · prepaid Contract'
 
   const overrideLabel = (() => {
     const o = procedure.priceOverride
@@ -63,21 +64,17 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
         </div>
       </div>
 
-      <Row label="Route">{route !== undefined ? ROUTE_LABELS[route] : <Missing>Not set</Missing>}</Row>
-      {route === 'insurer' && <Row label="Insurer">{insurer?.name ?? <Missing>Not set</Missing>}</Row>}
-      {route === 'hospital' && insurer !== undefined && <Row label="Insurer">{`${insurer.name} (informational)`}</Row>}
-      {route === 'billableParty' && (
-        <>
-          <Row label="Category">{procedure.patientPaymentCategory !== undefined ? CATEGORY_LABEL[procedure.patientPaymentCategory] : <Missing>Not set</Missing>}</Row>
-          <Row label="Payer">{payer !== undefined ? `${payer.name} (${payer.relationshipToPatient})` : 'Patient (default)'}</Row>
-        </>
-      )}
-      <Row label="Contract">{contract !== undefined ? contractLabel(contract, { withStatus: true }) : 'Not chosen yet'}</Row>
+      <Row label="Contract">
+        <ProcedureContractRow procedure={procedure} actor={actor} canEdit={false} shot="office-procedure-contract" />
+        {holder !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>Held by {holder.name}</span>}
+      </Row>
+      <Row label="Billed to">{billed !== undefined ? counterpartyName({ masters }, billed) : <Missing>Needs an invoice destination</Missing>}</Row>
       <Row label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</Row>
       <Row label="Override">{overrideLabel}</Row>
       <Row label="Funders">
         {funderLines.length === 0 ? `${lines.length} line${lines.length === 1 ? '' : 's'}, single funder` : `${funderLines.length} of ${lines.length} lines reallocated`}
       </Row>
+      <Row label="Prepayment">{prepaymentText}</Row>
 
       {canEdit && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
@@ -98,7 +95,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
       <span style={{ width: 84, flex: 'none', fontSize: 12, color: accent.pressed }}>{label}</span>
-      <span style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{children}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: neutral.ink, display: 'flex', flexDirection: 'column', gap: 2 }}>{children}</span>
     </div>
   )
 }

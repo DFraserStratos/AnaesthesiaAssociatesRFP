@@ -3,17 +3,16 @@
  * Phase 01 calculator (convention 9). The store's `billingRun.ts` orchestrates
  * (reads state, allocates ids, commits, audits); this module decides:
  *
- *  - which Contract governs each Procedure (catch-up Phase 18): the stored
- *    Contract, whatever its status (a Disabled Contract still prices and bills
- *    a Procedure already on it, D81); a dangling id, or a primary Procedure on
- *    a fixed-price Contract with no price for it, is a billing exception the
- *    office resolves in the billing monitor; with nothing stored, the hospital
- *    and insurer routes bill under that Party's plain RVG Contract (INTERIM
- *    until Phase 20's step rail);
- *  - who each Procedure (and each funder-overridden BillingLine) bills to —
- *    on the contract-holder route, the resolved Contract's holder Party,
- *    through its interim counterparty (INTERIM until Phase 21, which bills by
- *    the Contract's `billsTo`);
+ *  - which Contract governs each Procedure (catch-up Phase 20, DM-10): the one
+ *    stored Contract, whatever its status (a Disabled Contract still prices
+ *    and bills a Procedure already on it, D81); none (`noContract`, "Needs an
+ *    invoice destination"), a dangling id (`contractMissing`), or no price on
+ *    the date (`contractIneffective`: a fixed price with no range in force, or
+ *    an open price with no amount typed) is a billing exception the office
+ *    resolves in the billing monitor. Nothing is resolved from the List;
+ *  - who each Procedure (and each funder-overridden BillingLine) bills to:
+ *    the Contract says (`billedPartyFor`, INTERIM until Phase 21's payer on
+ *    the Booking);
  *  - how lines group into invoices: one invoice per Booking per distinct
  *    counterparty (§11 labelled reading — the RFP's "two separate invoices"
  *    split outcome arises when funders differ).
@@ -28,9 +27,10 @@ import type {
 } from '../types'
 import { feeFor, type FeeLine } from './fee'
 import { roundToCents, toCents } from './money'
-import { interimRouteContract, noRouteContractMessage, procedureNeedsPrice } from './contracts'
+import { procedureNeedsPrice } from './contracts'
 import { needsPriceMessage } from './priceRanges'
-import { hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty, type Party } from './parties'
+import { noRouteCounterpartyMessage, type Party } from './parties'
+import { billedPartyFor } from './whoIsBilled'
 import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
 
 /**
@@ -42,7 +42,7 @@ import { feeContextFor, type BookingBillingContext } from './validateBookingForB
 export const GST_RATE = 0.15
 
 export interface InvoiceBuildContext extends BookingBillingContext {
-  /** The Booking's patient — the Billable Party route's default payer (7th review A1). */
+  /** The Booking's patient: who a Contract that bills the payer bills by default (7th review A1). */
   patientId: string
   /**
    * EX-GST amounts already invoiced ahead of the procedure (Phase 09
@@ -62,97 +62,46 @@ export type ContractResolutionExceptionCode =
   | 'contractIneffective'
   | 'contractMissing'
   | 'noContract'
-  | 'noBillingRoute'
 
 export type ContractResolution =
   | { kind: 'resolved'; contract?: Contract }
   | { kind: 'exception'; code: ContractResolutionExceptionCode; message: string }
 
-/**
- * Nothing stored on the hospital or insurer route (INTERIM until Phase 20):
- * the Party's plain RVG Contract.
- */
-function routeContractFor(holder: Party | undefined, ctx: InvoiceBuildContext): ContractResolution {
-  const contract = interimRouteContract(ctx.contracts, holder?.id)
-  if (contract === undefined) {
-    return {
-      kind: 'exception',
-      code: 'noContract',
-      message: noRouteContractMessage(holder?.name ?? 'the counterparty'),
-    }
-  }
-  return { kind: 'resolved', contract }
-}
+/** The run's sentence for a Procedure with no Contract (US-04.3.4). */
+export const NEEDS_INVOICE_DESTINATION_MESSAGE = 'This procedure needs an invoice destination.'
 
 /** Which Contract governs this Procedure for billing (see the module header). */
 export function resolveContractForProcedure(procedure: Procedure, ctx: InvoiceBuildContext): ContractResolution {
-  const stored =
-    procedure.governingContractId !== undefined
-      ? ctx.contracts[procedure.governingContractId]
-      : undefined
-
-  // A stored reference to a Contract that is not there is an exception, never
-  // "nothing stored": it must not blur into the route's Contract and bill the
-  // wrong counterparty (8th review).
-  if (procedure.governingContractId !== undefined && stored === undefined) {
+  // No Contract: "Needs an invoice destination". The run fails the Booking as
+  // data, never throws (8th review); nothing is derived from the List.
+  if (procedure.governingContractId === undefined) {
+    return { kind: 'exception', code: 'noContract', message: NEEDS_INVOICE_DESTINATION_MESSAGE }
+  }
+  const stored = ctx.contracts[procedure.governingContractId]
+  // A stored reference to a Contract that is not there is an exception: it
+  // must never bill a guessed counterparty (8th review).
+  if (stored === undefined) {
     return {
       kind: 'exception',
       code: 'contractMissing',
       message: `The Contract ${procedure.governingContractId} on this procedure could not be found. Choose a Contract and retry.`,
     }
   }
-
-  if (stored !== undefined) {
-    // "Needs a price" (catch-up Phase 19a): a Procedure on a fixed-price
-    // Contract with no range in force on the List's date (or on an open
-    // price) cannot be invoiced, unless the office typed a fixed fee.
-    if (procedureNeedsPrice(stored, ctx.listDateISO, procedure)) {
-      return { kind: 'exception', code: 'contractIneffective', message: needsPriceMessage(stored, ctx.listDateISO, { named: true }) }
-    }
-    return { kind: 'resolved', contract: stored }
+  // "Needs a price" (catch-up Phase 19a): a fixed price with no range in force
+  // on the List's date, or an open price with no amount typed, cannot be
+  // invoiced, unless the office typed a fixed fee.
+  if (procedureNeedsPrice(stored, ctx.listDateISO, procedure)) {
+    return { kind: 'exception', code: 'contractIneffective', message: needsPriceMessage(stored, ctx.listDateISO, { named: true }) }
   }
-
-  // Nothing stored: the hospital and insurer routes bill under that Party's
-  // plain RVG Contract (INTERIM until Phase 20); the Billable Party route needs
-  // no Contract at all (standard rates).
-  if (procedure.billingRoute === 'hospital') {
-    if (ctx.listHospitalId === undefined) {
-      return {
-        kind: 'exception',
-        code: 'noContract',
-        message: 'No Contract is chosen and the List names no hospital to bill under.',
-      }
-    }
-    return routeContractFor(hospitalPartyFor(ctx.parties, ctx.listHospitalId), ctx)
-  }
-  if (procedure.billingRoute === 'insurer') {
-    if (procedure.insurerId === undefined) {
-      return {
-        kind: 'exception',
-        code: 'noContract',
-        message: 'No Contract is chosen and the procedure names no insurer to bill under.',
-      }
-    }
-    return routeContractFor(insurerPartyFor(ctx.parties, procedure.insurerId), ctx)
-  }
-  if (procedure.billingRoute === 'billableParty') return { kind: 'resolved' }
-
-  // No route and nothing stored: completion validation normally prevents this,
-  // but the office can move an incomplete Booking onto a SUBMITTED List (3rd
-  // review #7), so the run must fail the Booking as data, never throw (8th review).
-  return {
-    kind: 'exception',
-    code: 'noBillingRoute',
-    message: 'No billing route is set on this procedure. Complete its billing setup before rebilling.',
-  }
+  return { kind: 'resolved', contract: stored }
 }
 
 /**
- * Who the Procedure bills to. On the contract-holder route the counterparty
- * is the resolved contract's HOLDER — usually a hospital, but surgeon-held
- * (bariatric), group-held (TMJ, COS) and organisation-held contracts bill
- * their holder (1st review #5). The Billable Party route defaults to the
- * patient; a typed BillableParty record is the override (7th review A1).
+ * Who the Procedure bills to: the Contract says (`billedPartyFor`, INTERIM
+ * until Phase 21). A Contract that bills its holder bills that Party, usually
+ * a hospital, but surgeon-held, group-held (TMJ, COS) and insurer-held ones
+ * bill their holder (1st review #5); one that bills the payer bills the
+ * Procedure's payer override, else the patient (7th review A1).
  */
 export function counterpartyForProcedure(
   procedure: Procedure,
@@ -160,18 +109,7 @@ export function counterpartyForProcedure(
   patientId: string,
   parties: Readonly<Record<string, Party>>,
 ): CounterpartyRef | undefined {
-  if (procedure.billingRoute === 'insurer' && procedure.insurerId !== undefined) {
-    return { kind: 'insurer', id: procedure.insurerId }
-  }
-  if (procedure.billingRoute === 'billableParty') {
-    return procedure.billablePartyId !== undefined
-      ? { kind: 'billableParty', id: procedure.billablePartyId }
-      : { kind: 'patient', id: patientId }
-  }
-  // INTERIM until Phase 21: the route bills the resolved Contract's holder
-  // Party through its interim counterparty; never reads `billsTo`.
-  if (resolvedContract !== undefined) return routeCounterpartyForParty(parties[resolvedContract.holderId])
-  return undefined
+  return billedPartyFor(procedure, resolvedContract, parties, patientId)
 }
 
 /** Recipient class drives the document layout (RFP: two invoice layouts). */
@@ -254,8 +192,7 @@ export function buildInvoicesForBooking(
       }
     }
 
-    // Price with the RESOLVED contract — `feeContextFor` injects the STORED
-    // one; with nothing stored, the resolved one is the route's plain RVG Contract.
+    // Price with the resolved Contract (the stored one).
     const feeCtx = feeContextFor(procedure, ctx)
     if (contract !== undefined) feeCtx.contract = contract
     else delete feeCtx.contract
@@ -405,23 +342,35 @@ export function buildInvoicesForBooking(
 }
 
 /**
+ * INTERIM until Phase 27 (catch-up Phase 20; D23, US-04.3.4): a Procedure
+ * requires prepayment when its Contract is prepaid and it is billed to a
+ * person (the patient or the payer override), never a holder.
+ */
+export function procedureRequiresPrepayment(
+  procedure: Pick<Procedure, 'billablePartyId' | 'billsHolderInterim'>,
+  contract: Pick<Contract, 'prepaid' | 'billsTo'> | undefined,
+): boolean {
+  return contract?.prepaid === true && contract.billsTo === 'payer' && procedure.billsHolderInterim !== true
+}
+
+/**
  * Build the PRE-PAYMENT (pre-procedure) invoice boundaries for one Booking
- * (Phase 09; B7). Covers ONLY the patient-funded procedures — those on the
- * Billable Party route with the `selfFundedPrepayment` category; a mixed
- * booking's contract-holder procedures are untouched here (they bill normally
- * after authorisation). Two shapes:
+ * (Phase 09; B7). Covers ONLY the Procedures on a prepaid Contract billed to a
+ * person (INTERIM until Phase 27, catch-up Phase 20; D23); a mixed booking's
+ * other Procedures are untouched here (they bill normally after
+ * authorisation). Two shapes, from `prepaymentDetail` (INTERIM until 27):
  *
  *   - `split`: a flat AGREED deposit line (the `depositAmount` figure, never
  *     via `feeFor` — the deposit is a negotiated number, not a fraction of the
  *     estimated fee);
- *   - `full`:  the estimated full fee via `feeFor` (the same calculator the
- *     balance run uses, so the balance nets to exactly $0).
+ *   - `full`:  the full fee via `feeFor` on the prepaid Contract (the same
+ *     calculator the balance run uses, so the balance nets to exactly $0).
  *
  * Deposit lines are EX-GST subtotals (an $800 deposit invoices as
  * 800 / GST 120 / total 920); the later balance run subtracts the same ex-GST
  * figure from the ex-GST fee subtotal, so deposit + balance reconciles to the
- * full fee. Grouped by counterparty (the typed BillableParty else the
- * patient); always the patient layout.
+ * full fee. Grouped by counterparty (the payer override else the patient);
+ * always the patient layout.
  */
 export function buildPrePaymentInvoiceForBooking(
   booking: Booking,
@@ -432,13 +381,9 @@ export function buildPrePaymentInvoiceForBooking(
 
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
   for (const procedure of procedures) {
-    if (
-      procedure.billingRoute !== 'billableParty' ||
-      procedure.patientPaymentCategory !== 'selfFundedPrepayment'
-    ) {
-      continue
-    }
-    const counterparty = counterpartyForProcedure(procedure, undefined, ctx.patientId, ctx.parties)
+    const contract = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
+    if (contract === undefined || !procedureRequiresPrepayment(procedure, contract)) continue
+    const counterparty = counterpartyForProcedure(procedure, contract, ctx.patientId, ctx.parties)
     if (counterparty === undefined) continue
     const detail = procedure.prepaymentDetail
     if (detail?.type === 'split') {
@@ -450,11 +395,13 @@ export function buildPrePaymentInvoiceForBooking(
         line: { procedureId: procedure.id, description: 'Pre-payment deposit', amount },
       })
     } else {
-      // Full pre-payment: the estimated full fee via the same calculator the
-      // balance run uses.
-      const feeCtx = feeContextFor(procedure, ctx)
-      delete feeCtx.contract
-      const fee = feeFor(procedure, feeCtx)
+      // Full prepayment: the full fee on the prepaid Contract, via the same
+      // calculator the balance run uses.
+      const fee = feeFor(procedure, feeContextFor(procedure, ctx))
+      // No price yet (an open price with no amount typed): nothing to prepay.
+      if (fee.needsPrice) {
+        return { kind: 'exception', procedureId: procedure.id, code: 'contractIneffective', message: needsPriceMessage(contract, ctx.listDateISO, { named: true }) }
+      }
       const amount = roundToCents(fee.total)
       if (amount <= 0) continue
       const line: DraftInvoiceLine = {

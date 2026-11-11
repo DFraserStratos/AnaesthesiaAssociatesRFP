@@ -1,26 +1,137 @@
 {
   "id": "US-04.3.2",
-  "status": "partial",
-  "absentReason": "The office picks the Contract from No contract · RVG and every Active Contract, shown as its AA code and name under its holder; the list is not yet narrowed by the Booking (the step rail, Phase 20). The anaesthetist apps show the Contract read-only and have no Contract picker.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "contract-picker",
       "app": "admin",
-      "caption": "Contract picker in the office billing setup: No contract · RVG first, then each Contract by AA code and name",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "caption": "Only the Contracts that fit this List",
+      "start": "/admin/day/2026-07-22/bookings/BK0046",
+      "states": [
+        {
+          "state": "hospital",
+          "caption": "Only the Contracts that fit this List: Christchurch Eye Surgery's own, under its funding tags",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=hospital] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ]
+        },
+        {
+          "state": "surgeon",
+          "caption": "Only the Contracts that fit this List: Ms Lim's Lists offer the Merivale items linked to her and Mr Wolfenden",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=standard] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-contract-id=CT-MER-FACELIFT] >> nth=0"
+          ]
+        },
+        {
+          "state": "search",
+          "caption": "Only the Contracts that fit this List: typing the holder's code 8268 finds the cataract item",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=hospital] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=TAG-SXAP] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "fill": "[data-shot=contract-combo-list] input",
+              "value": "8268"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-combo-list]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "contract-picker",
+      "app": "web",
+      "caption": "The anaesthetist sees the same Contracts",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Edit billing setup\"]"
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
             },
             {
-              "wait": 500
+              "click": "[data-rail-option=hospital] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[role=dialog] label:has-text(\"Governing contract\")"
-          ]
+            "[data-shot=capture-billing] >> nth=0",
+            "[data-shot=contract-combo-list]"
+          ],
+          "caption": "The anaesthetist sees the same Contracts"
+        }
+      ]
+    },
+    {
+      "name": "contract-picker",
+      "app": "mobile",
+      "caption": "The anaesthetist sees the same Contracts",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-picker]"
+          ],
+          "caption": "The anaesthetist sees the same Contracts"
         }
       ]
     }

@@ -6,7 +6,7 @@
     {
       "name": "review-contracts",
       "app": "admin",
-      "caption": "Office review of each Booking's route, Contract, codes and flags",
+      "caption": "Office review of each Booking's Contract, who is billed, codes and flags",
       "start": "/admin/review/L-25490-2026-07-20-AM",
       "states": [
         {
@@ -37,7 +37,7 @@
         },
         {
           "state": "edit",
-          "caption": "Edit billing setup, choosing the route and Contract",
+          "caption": "Contract and payer, the Contract chosen on the step rail",
           "steps": [
             {
               "click": "role=button[name=\"Edit billing setup\"]"

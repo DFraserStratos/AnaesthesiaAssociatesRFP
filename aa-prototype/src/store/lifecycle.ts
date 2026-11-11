@@ -19,9 +19,8 @@
  *   - integration-sourced writes only while the List is ACTIVE.
  */
 
-import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
 import type { Booking, List, ListPhoneNote, Procedure } from '../domain/types'
-import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
+import { NEEDS_DESTINATION_FAILURE, validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import { pairingIssues } from '../domain/listPairing'
 import {
@@ -37,7 +36,6 @@ import type { AppState, AppStoreApi } from './appStore'
 import { billingContextForBooking, bookingsForList, proceduresForBooking } from './selectors'
 import { emitAppEvent } from './events'
 import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
-import { fillFromContract } from '../domain/billing/startingValues'
 import { claimsAuditView } from '../domain/billing/modifiers'
 import { reconciledForGroup } from './modifierFacts'
 
@@ -115,6 +113,10 @@ export function completionBlockersFor(state: AppState, booking: Booking): Comple
     return blockers
   }
   const failures = validateBookingForBilling(booking, proceduresForBooking(state, booking.id), ctx)
+  // A Procedure with no Contract refuses in its own words first (US-04.3.4).
+  if (failures.some((f) => f.message === NEEDS_DESTINATION_FAILURE)) {
+    blockers.push({ code: 'needsInvoiceDestination', message: NEEDS_DESTINATION_FAILURE })
+  }
   if (failures.length > 0) {
     blockers.push({
       code: 'validationFailed',
@@ -479,10 +481,48 @@ export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, r
   return ok(undefined)
 }
 
-export type ProcedurePatch = Partial<Omit<Procedure, 'id' | 'bookingId'>>
+/** The fields only the step rail writes (catch-up Phase 20). */
+const CONTRACT_FIELDS = ['governingContractId', 'railAnswers', 'enteredPrice', 'billsHolderInterim'] as const
+
+/** What `editProcedure` may change: never the Contract or what rides with it (the step rail's, catch-up Phase 20). */
+export type ProcedurePatch = Partial<Omit<Procedure, 'id' | 'bookingId' | (typeof CONTRACT_FIELDS)[number]>>
 
 export const MODIFIERS_THROUGH_ACTIONS_MESSAGE =
   'Modifiers are claimed, removed and put back one at a time, each claim with its explanation.'
+
+
+export const CONTRACT_THROUGH_RAIL_MESSAGE = 'Choose the Contract on the step rail.'
+
+/**
+ * The RVG row-change rule a patch carries (catch-up Phases 19 and 19b), shared
+ * by `editProcedure` and the step rail's `setProcedureContract`: a new code
+ * must be a row that can be picked; a new row starts from its own starting
+ * value (a chosen or typed base from the old row is cleared unless the patch
+ * sets one); and the included modifiers are re-derived in the same commit
+ * (`reconcileClaims`).
+ */
+export function withRvgRowChange<P extends Partial<Procedure>>(
+  state: AppState,
+  procedure: Procedure,
+  patch: P,
+): Outcome<{ patch: P; reconciled: ReturnType<typeof reconciledForGroup> | null }> {
+  if ('rvgGroupId' in patch) {
+    const pick = rvgGroupPickRefusal(state.masters.rvgGroups, patch.rvgGroupId, procedure.rvgGroupId)
+    if (pick !== null) return refuse(pick.code, pick.message)
+    if (patch.rvgGroupId !== procedure.rvgGroupId) {
+      patch = {
+        ...('baseUnitsSelected' in patch ? {} : { baseUnitsSelected: undefined }),
+        ...('baseUnitsCaptured' in patch ? {} : { baseUnitsCaptured: undefined }),
+        ...patch,
+      }
+    }
+  }
+  const reconciled =
+    'rvgGroupId' in patch && patch.rvgGroupId !== procedure.rvgGroupId
+      ? reconciledForGroup(state, procedure, patch.rvgGroupId)
+      : null
+  return ok({ patch, reconciled })
+}
 
 export function editProcedure(
   api: AppStoreApi,
@@ -510,42 +550,13 @@ export function editProcedure(
   if (patch.baseUnitsCaptured?.source === 'overridden' && !isRecordableBaseUnits(patch.baseUnitsCaptured.units)) {
     return refuse('baseUnitsInvalid', BASE_UNITS_WHOLE_MESSAGE)
   }
-  // Starting values (catch-up Phase 19a; DM-43, A15): choosing a Contract
-  // fills an empty RVG code from its default; a code already set (or set by
-  // this patch) is kept with its times and modifiers. The fill joins the patch
-  // before the row-change rule below, so a typed base value from before is
-  // cleared and base units come from the RVG group alone; no source is stored.
-  // Phase 20's rail calls the same.
-  if (patch.governingContractId !== undefined && patch.governingContractId !== procedure.governingContractId && !('rvgGroupId' in patch)) {
-    const fill = fillFromContract(procedure, state.masters.contracts[patch.governingContractId], state.masters.rvgGroups)
-    if (fill !== null) patch = { ...patch, ...fill }
-  }
-  if ('rvgGroupId' in patch) {
-    const pick = rvgGroupPickRefusal(state.masters.rvgGroups, patch.rvgGroupId, procedure.rvgGroupId)
-    if (pick !== null) return refuse(pick.code, pick.message)
-    // A new row starts from its own starting value, as `pickRvgGroup` does:
-    // a chosen or typed value from the old row is cleared unless this patch sets one.
-    if (patch.rvgGroupId !== procedure.rvgGroupId) {
-      patch = {
-        ...('baseUnitsSelected' in patch ? {} : { baseUnitsSelected: undefined }),
-        ...('baseUnitsCaptured' in patch ? {} : { baseUnitsCaptured: undefined }),
-        ...patch,
-      }
-    }
-  }
-  // A change of RVG group re-derives the included modifiers in the same
-  // commit: claims the new group includes, and removals that no longer apply,
-  // drop (catch-up Phase 19b, `reconcileClaims`).
-  const reconciled =
-    'rvgGroupId' in patch && patch.rvgGroupId !== procedure.rvgGroupId
-      ? reconciledForGroup(state, procedure, patch.rvgGroupId)
-      : null
-  // An open-price Contract is never chosen this way (catch-up Phase 18a): it
-  // has no price of its own, and Phase 20's "Other price" picks it with an amount.
-  if (patch.governingContractId !== undefined && patch.governingContractId !== procedure.governingContractId) {
-    const contract = state.masters.contracts[patch.governingContractId]
-    if (contract !== undefined && !contractChoosableForProcedure(contract)) return refuse('openPriceNotChosen', OPEN_PRICE_NOT_CHOSEN_MESSAGE)
-  }
+  // The Contract and what rides with it change only on the step rail
+  // (`setProcedureContract`, catch-up Phase 20), so no edit bypasses its guard.
+  if (CONTRACT_FIELDS.some((k) => k in (patch as Partial<Procedure>))) return refuse('contractThroughRail', CONTRACT_THROUGH_RAIL_MESSAGE)
+  const row = withRvgRowChange(state, procedure, patch)
+  if (!row.ok) return row
+  patch = row.value.patch
+  const reconciled = row.value.reconciled
 
   mutate(
     api,

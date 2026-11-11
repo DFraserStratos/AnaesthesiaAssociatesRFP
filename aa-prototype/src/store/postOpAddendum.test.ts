@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeBooking, editProcedure, submitList } from './lifecycle'
+import { setProcedureContract } from './contractSelectionActions'
 import { addPostOpAddendum } from './bookingActions'
 import { runBillingForList } from './billingRun'
 import { prepaymentStatusFor, proceduresForBooking } from './selectors'
@@ -119,18 +120,14 @@ describe('addPostOpAddendum', () => {
     expect(originalInvoicesAfter[0]).toEqual(originalInvoicesBefore[0] as Invoice)
   })
 
-  it('downgrades an inherited selfFundedPrepayment so the addendum is not spuriously gated', () => {
+  it('never copies a prepaid Contract, so the addendum is not spuriously gated (catch-up Phase 20)', () => {
     const api = store()
-    // Make the original episode a self-funded PRE-payment procedure, then lock it.
+    // Put the original episode on a prepaid Contract (Patient › Prepaid, Other price), then lock it.
     const original = originalOn(api, SHARMA_TUE14)
     const proc = proceduresForBooking(api.getState(), original)[0]!
-    expect(
-      editProcedure(api, OFFICE, proc.id, {
-        billingRoute: 'billableParty',
-        patientPaymentCategory: 'selfFundedPrepayment',
-        prepaymentDetail: { type: 'full' },
-      }).ok,
-    ).toBe(true)
+    expect(setProcedureContract(api, OFFICE, proc.id, 'CT-FIX-PATIENT-PREPAID', { enteredPrice: 500 }).ok).toBe(true)
+    expect(editProcedure(api, OFFICE, proc.id, { prepaymentDetail: { type: 'full' } }).ok).toBe(true)
+    expect(prepaymentStatusFor(api.getState(), original)).not.toBe('none')
     expect(submitList(api, OFFICE, SHARMA_TUE14).ok).toBe(true)
     expect(authoriseList(api, OFFICE, SHARMA_TUE14).ok).toBe(true)
 
@@ -138,10 +135,9 @@ describe('addPostOpAddendum', () => {
     expect(added.ok).toBe(true)
     if (!added.ok) return
     const addendumProc = proceduresForBooking(api.getState(), added.value.bookingId)[0]!
-    // Inherited the payer/route, but the category downgraded (a post-op event is
-    // never itself pre-paid) and no prepaymentDetail carried over.
-    expect(addendumProc.billingRoute).toBe('billableParty')
-    expect(addendumProc.patientPaymentCategory).toBe('selfFundedPostProcedure')
+    // A post-op event is never itself prepaid: the prepaid Contract is not
+    // copied (it needs an invoice destination) and no prepaymentDetail carries over.
+    expect(addendumProc.governingContractId).toBeUndefined()
     expect(addendumProc.prepaymentDetail).toBeUndefined()
     expect(prepaymentStatusFor(api.getState(), added.value.bookingId)).toBe('none')
   })

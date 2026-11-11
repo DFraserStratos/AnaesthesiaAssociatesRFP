@@ -32,7 +32,7 @@
         {
           "steps": [],
           "highlight": [
-            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment (pre-procedure)\"))",
+            ".aa-invoice-doc div:has(> span:text-is(\"Prepayment (before the procedure)\"))",
             "[data-shot=invoice-lines]"
           ]
         }
@@ -47,7 +47,7 @@
         {
           "steps": [],
           "highlight": [
-            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment (pre-procedure)\"))",
+            ".aa-invoice-doc div:has(> span:text-is(\"Prepayment (before the procedure)\"))",
             "[data-shot=invoice-lines]"
           ]
         }

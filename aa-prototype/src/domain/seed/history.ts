@@ -50,6 +50,7 @@ import { GST_RATE } from '../billing/invoiceBuild'
 import { xeroIndividualContactName } from '../xeroContact'
 import { ANAE, HOSP, ORG, SURG } from './cast'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
+import { CONTRACT, PLAIN_RVG_CONTRACT_BY_HOSPITAL } from './contracts'
 import { BP, genericPatientIds, PAT } from './patients'
 
 /** The masters buildHistory needs (structural — avoids a circular import of SeedMasters). */
@@ -446,17 +447,21 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       id: procId,
       bookingId,
       description: acc.description,
-      billingRoute: isPatientRoute(acc.counterparty) ? 'billableParty' : 'hospital',
+      // Catch-up Phase 20: the one Contract it was billed under. A patient or
+      // guardian bill was No contract · RVG; a holder bill, the List's
+      // hospital's plain RVG Contract (what the retired route resolved).
+      governingContractId: isPatientRoute(acc.counterparty)
+        ? CONTRACT.noContractRvg
+        : (PLAIN_RVG_CONTRACT_BY_HOSPITAL[listHospitalId] ?? CONTRACT.stgRvg),
       isAdditional: false,
       modifierClaims: [],
       removedModifierIds: [],
     }
     if (acc.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(acc.legacyCode)
     if (acc.counterparty.kind === 'billableParty') procedure.billablePartyId = acc.counterparty.id
-    if (isPatientRoute(acc.counterparty)) procedure.patientPaymentCategory = 'selfFundedPostProcedure'
-    // Historical contract-holder-route procedures carry a billing reference (they
-    // are billed + often paid), so they never read as the seeded "missing ref" gaps.
-    else procedure.billingReference = `HIST-${acc.key.toUpperCase()}`
+    // Historical holder-billed procedures carry a billing reference (they are
+    // billed + often paid), so they never read as the seeded "missing ref" gaps.
+    if (!isPatientRoute(acc.counterparty)) procedure.billingReference = `HIST-${acc.key.toUpperCase()}`
     build.procedures[procId] = procedure
 
     // --- billing mirror: Invoice + line + Case ---

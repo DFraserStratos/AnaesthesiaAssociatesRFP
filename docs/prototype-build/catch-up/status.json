@@ -2,22 +2,22 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "20"
+      "20a"
     ],
-    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a and 19b are done (2026-11-11). The Contracts track continues with 20, then 20a to 25 with 21a, in the ROADMAP's run order."
+    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b and 20 are done (2026-11-11). The Contracts track continues with 20a, then 21 to 25 with 21a, in the ROADMAP's run order."
   },
   "guidance": {
     "as_of": "2026-11-11",
-    "headline": "Start 20 now. Modifiers are built.",
-    "headline_sub": "19b (the NZSA RVG 2021 modifier table as printed, generated from the catalogue; modifiers as itemised claims, each with a short explanation; the age modifier and P1 on Neurosurgery and Spine codes pre-applied and removable, nothing locked; the ASA card and seed and the absorbed refusals gone; the Admin Modifiers tab) is done, after 18 to 19a. The Contracts track continues with 20 (one Contract per Procedure and the step rail), then 20a to 25, in the ROADMAP's run order.",
-    "parallel": "Only 20 is next in the run order. 17a and 26 have their dependencies met but come later in the run order (26 and 17a after the Contracts track), so run 20 on its own.",
+    "headline": "Start 20a now. One Contract per Procedure is built.",
+    "headline_sub": "20 (the billing route, payment category and the Procedure's insurer gone; one Contract per Procedure chosen on the step rail, inline on the Booking as the contract picker mock: where the invoice goes, then Payment type, the hospital's funding tag or the holder, then the Contract by typing, No contract · RVG first, or Other price; the anaesthetist on the same rail until AUTHORISED; Needs an invoice destination on Admin Day; prepayment from the prepaid Contract; every seeded figure unchanged) is done. The Contracts track continues with 20a (the procedure text, the invoice description and the Contract on each Procedure), then 21 to 25, in the ROADMAP's run order.",
+    "parallel": "Only 20a is next in the run order. 17a and 26 have their dependencies met but come later in the run order (26 and 17a after the Contracts track), so run 20a on its own.",
     "safe": {
-      "20": "Its dependencies (18a, 19a, 19b and 38a) are done. OQ-135 is still open, but the phase builds its stated default (D81) and logs it for the owner."
+      "20a": "Its dependency (20) is done. The Contract row it replaces is the Billing card's summary (ProcedureContractRow) and the card itself."
     },
     "wait": {
-      "20a": "Needs 20 first.",
       "26": "Its dependency (17) is done, but the run order puts it after the Contracts track (18 to 25).",
-      "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26."
+      "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26.",
+      "21": "Needs 20a first."
     }
   }
 }

@@ -1,15 +1,16 @@
 /**
  * Starting values from the Contract in the store (catch-up Phase 19a; DM-43,
- * US-04.2.18 "Default RVG code", A15): choosing a Contract through the office
- * billing setup (`editProcedure`) or adding a Procedure that inherits one
- * (`addProcedure`) fills an empty RVG code from the Contract's default; a code
- * already set is kept, with its times and modifiers.
+ * US-04.2.18 "Default RVG code", A15): choosing a Contract on the step rail
+ * (`setProcedureContract`, catch-up Phase 20) or adding a Procedure with its
+ * own pick (`addProcedure`) fills an empty RVG code from the Contract's
+ * default; a code already set is kept, with its times and modifiers.
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
 import { editProcedure } from './lifecycle'
+import { setProcedureContract } from './contractSelectionActions'
 import { addProcedure } from './bookingActions'
 import { proceduresForBooking } from './selectors'
 import { bookingFee, procedureFee } from '../shared/capture/feeContext'
@@ -30,17 +31,17 @@ describe('starting values from the Contract', () => {
     const api = createAppStore()
     const p = proceduresForBooking(api.getState(), RILEY)[0]!
     expect(p.rvgGroupId).toBeUndefined()
-    expect(editProcedure(api, OFFICE, p.id, { governingContractId: PRICED_ITEM.merFaceLift }).ok).toBe(true)
+    expect(setProcedureContract(api, OFFICE, p.id, PRICED_ITEM.merFaceLift).ok).toBe(true)
     const s = api.getState()
     const after = s.schedule.procedures[p.id]!
     expect(s.masters.rvgGroups[after.rvgGroupId!]?.code).toBe('H3')
-    // One audited update records the Contract and the code it filled.
-    expect(s.audit.at(-1)).toMatchObject({ action: 'procedure.update', after: { governingContractId: PRICED_ITEM.merFaceLift, rvgGroupId: after.rvgGroupId } })
+    // One audited change records the Contract and the code it filled.
+    expect(s.audit.at(-1)).toMatchObject({ action: 'procedure.contract', after: { governingContractId: PRICED_ITEM.merFaceLift, rvgGroupId: after.rvgGroupId } })
     const list = s.schedule.lists[s.schedule.bookings[RILEY]!.listId] as AssignedList
     const { fee } = procedureFee({ procedure: after, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: s.schedule.bookings[RILEY]!.patientId })
     expect(fee.btm.base.units).toBe(s.masters.rvgGroups[after.rvgGroupId!]!.baseUnits)
     expect(fee.btm.baseSource).toBe('rvgGroup')
-    // A fixed price: the units are for reference only (Riley's own $1,200 billing line stays beside it).
+    // A fixed price: the units are for reference only.
     expect(fee.lines[0]).toEqual({ chargeBasis: 'fixed', description: 'Contract price', amount: 3100 })
     expect(fee.lines.some((l) => l.chargeBasis === 'rvg')).toBe(false)
   })
@@ -49,7 +50,9 @@ describe('starting values from the Contract', () => {
     const api = createAppStore()
     const p = proceduresForBooking(api.getState(), ELLISON)[0]!
     expect(p.rvgGroupId).toBeDefined()
-    expect(editProcedure(api, OFFICE, p.id, { governingContractId: PRICED_ITEM.merFaceLift }).ok).toBe(true)
+    // Southern Cross RVG, given a default, is a candidate on Ellison's Southern Cross List.
+    expect(editContract(api, OFFICE, CONTRACT.sxRvg, { defaultRvgGroupId: RVG_GROUP.h3! }).ok).toBe(true)
+    expect(setProcedureContract(api, OFFICE, p.id, CONTRACT.sxRvg).ok).toBe(true)
     const after = api.getState().schedule.procedures[p.id]!
     expect(after.rvgGroupId).toBe(p.rvgGroupId)
     expect(after.anaestheticStartISO).toBe(p.anaestheticStartISO)
@@ -59,11 +62,11 @@ describe('starting values from the Contract', () => {
   it('a Contract with no default leaves an empty code empty', () => {
     const api = createAppStore()
     const p = proceduresForBooking(api.getState(), RILEY)[0]!
-    expect(editProcedure(api, OFFICE, p.id, { governingContractId: PRICED_ITEM.souterBreastAug }).ok).toBe(true)
+    expect(setProcedureContract(api, OFFICE, p.id, PRICED_ITEM.souterBreastAug).ok).toBe(true)
     expect(api.getState().schedule.procedures[p.id]!.rvgGroupId).toBeUndefined()
   })
 
-  it('a Procedure added to a Booking inherits an RVG-priced Contract and fills its RVG code from its default', () => {
+  it('a Procedure added to a Booking with its own RVG-priced Contract fills its RVG code from that default (US-03.2.3)', () => {
     const api = createAppStore()
     // Give Southern Cross Affiliated Provider (RVG at $26.50) a default, then add to an open Booking on it.
     expect(editContract(api, OFFICE, CONTRACT.sxap, { defaultRvgGroupId: RVG_GROUP.h3! }).ok).toBe(true)
@@ -73,7 +76,7 @@ describe('starting values from the Contract', () => {
       const l = b !== undefined ? s0.schedule.lists[b.listId] : undefined
       return p.governingContractId === CONTRACT.sxap && b !== undefined && !b.completed && b.cancellation === undefined && l?.state === 'ACTIVE'
     })!
-    const added = addProcedure(api, OFFICE, onSxap.bookingId)
+    const added = addProcedure(api, OFFICE, onSxap.bookingId, { governingContractId: CONTRACT.sxap })
     if (!added.ok) throw new Error(added.message)
     const p = api.getState().schedule.procedures[added.value.procedureId]!
     expect(p.governingContractId).toBe(CONTRACT.sxap)
@@ -81,7 +84,7 @@ describe('starting values from the Contract', () => {
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'procedure.create', after: { rvgGroupId: RVG_GROUP.h3 } })
   })
 
-  it('a fixed price is never copied onto a new Procedure, so the item is not billed twice', () => {
+  it('an added Procedure inherits no Contract, so a fixed-price item is not billed twice', () => {
     const api = createAppStore()
     const added = addProcedure(api, OFFICE, MERIVALE_FACE_LIFT_BOOKING_ID)
     if (!added.ok) throw new Error(added.message)
@@ -97,7 +100,7 @@ describe('starting values from the Contract', () => {
     const api = createAppStore()
     const p = proceduresForBooking(api.getState(), RILEY)[0]!
     expect(editProcedure(api, OFFICE, p.id, { baseUnitsCaptured: { units: 9, source: 'overridden' } }).ok).toBe(true)
-    expect(editProcedure(api, OFFICE, p.id, { governingContractId: PRICED_ITEM.merFaceLift }).ok).toBe(true)
+    expect(setProcedureContract(api, OFFICE, p.id, PRICED_ITEM.merFaceLift).ok).toBe(true)
     const after = api.getState().schedule.procedures[p.id]!
     expect(after.baseUnitsCaptured).toBeUndefined()
     expect(after.baseUnitsSelected).toBeUndefined()

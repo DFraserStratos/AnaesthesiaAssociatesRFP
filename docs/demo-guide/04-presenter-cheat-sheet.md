@@ -16,7 +16,9 @@
 | List | One anaesthetist's half-day AM or PM operating session; every List has exactly one hospital and one surgeon (AA rooms is a location) |
 | Draft List | A List with no anaesthetist yet, state DRAFT; the office assigns it |
 | Booking | One patient appointment inside a List |
-| Procedure | One clinical procedure inside a Booking; each resolves its own billing route |
+| Procedure | One clinical procedure inside a Booking; each carries exactly one Contract |
+| Invoice destination | Where a Procedure's invoice goes: the patient, the List's hospital, or a special Contract's holder. Worked out from the Contract, never stored; a Procedure with no Contract shows "Needs an invoice destination" |
+| Other price | The step rail's toggle onto the destination's open-price fallback (No contract · Fixed price, a hospital's tag, a holder), with the amount typed on the Procedure |
 | BTM | Base units + Time units + Modifier units |
 
 ## Terms not to use
@@ -94,21 +96,18 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 - A part interval always rounds up (confirmed with AA); the tiers are held as data (Admin → Master
   data → RVG groups shows the RVG time rule, read only). The anaesthetist enters start and finish only.
 
-### Three billing routes
+### One Contract per Procedure, on the step rail
 
-1. The Contract's Party (a hospital, or the Party that holds the Contract)
-2. Billable Party, usually the patient
-3. Insurer (nib, an insurer Party)
+1. **Where does the invoice go?** Patient, the List's hospital, or Special, each with its count.
+2. **Then narrow it down:** Payment type (Standard, then Prepaid) under Patient; the hospital's funding
+   tags; Special's holders.
+3. **The Contract**, typed to search, No contract · RVG pinned first under Patient › Standard, or
+   **Other price** with the amount typed.
 
-The route is explicit per Procedure. It is not inferred from flags.
-
-### Patient insurance distinction
-
-- **Insurer route:** nib is an insurer Party; there is no insurer master or direct-claims flag.
-- **Insured reimbursement:** AA invoices the patient; the patient seeks reimbursement from their
-  insurer.
-
-Do not treat these as the same workflow.
+The office sets it at booking setup; the anaesthetist sees the same rail and can finish or change it
+until the List is authorised, never onto or off a prepaid Contract. A Contract bills its holder or the
+patient as it says. A patient with insurance who pays AA is on No contract · RVG (or a price list) and
+claims back themselves; nib is billed only through nib's own Contract.
 
 ### Split billing
 
@@ -257,8 +256,9 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 
 - "Anaesthetists pick up open shifts."
 - "The app automatically chooses the clinical RVG code."
-- "ACC has its own billing route."
-- "Every insured patient is billed to an insurer."
+- "ACC has its own billing route." (ACC is a funding tag on a Contract.)
+- "Every insured patient is billed to an insurer." (Only a Contract held by the insurer bills it.)
+- "Choose a billing route." (There is none: the Contract decides where the invoice goes.)
 - "Authorisation means the patient has paid."
 - "Xero is the source for the mobile balance view."
 - "The prototype is connected to live hospital, Xero, NHI, email or OCR services."

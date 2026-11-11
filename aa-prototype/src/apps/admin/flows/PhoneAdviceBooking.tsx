@@ -24,8 +24,6 @@ const PHONE_ADVICE_LOOKUP_PREFILL = {
   rvgGroupId: RVG_GROUP.aaAppendicectomy!,
   operation: 'Appendicectomy, laparoscopic',
   scheduledTime: '15:00',
-  billingRoute: 'hospital',
-  insurerId: 'I-NIB',
   billingReference: 'STG-HALE-2107',
 } as const
 

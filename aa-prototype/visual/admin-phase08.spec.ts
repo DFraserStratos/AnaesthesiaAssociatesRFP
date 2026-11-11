@@ -383,13 +383,15 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
   expect((await alanRows.locator('td:nth-child(7)').allTextContents()).sort()).toEqual(["St George's", 'nib'])
   await page.screenshot({ path: 'visual/shots/a8-06-invoices-mixed.png', fullPage: true })
 
-  // Open the patient-layout invoice: insured-reimbursement wording.
+  // Open the patient-layout invoice: the AIA claim is No contract · RVG billed
+  // to the patient, so the note is payment on receipt (catch-up Phase 20; the
+  // insured-reimbursement wording went with the payment category).
   const patientRow = page.locator('tr', { hasText: 'Patient' }).filter({ hasText: 'AA-2026' }).first()
   await patientRow.getByRole('button', { name: 'View →' }).click()
   await page.waitForTimeout(300)
   await expect(page.getByText('TAX INVOICE')).toBeVisible()
-  await expect(page.getByText('Insured reimbursement')).toBeVisible()
-  await expect(page.getByText(/claim this invoice from your insurer/)).toBeVisible()
+  await expect(page.getByText('Payment is due on receipt of this invoice.')).toBeVisible()
+  await expect(page.getByText(/claim this invoice from your insurer/)).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
 
   // Direct-claim insurer invoices keep the upload handoff honest: status and

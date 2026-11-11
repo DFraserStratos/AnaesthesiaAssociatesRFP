@@ -1,19 +1,43 @@
 {
   "id": "US-04.3.1",
-  "status": "partial",
-  "absentReason": "Each procedure holds a single governing contract, set by the office. A procedure with no contract is not blocked from completion: it falls back to default pricing and the hospital default contract is resolved at billing.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "procedure-contract",
       "app": "admin",
-      "caption": "Office billing setup, one governing contract per procedure",
+      "caption": "Every Procedure carries exactly one Contract",
       "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {
+          "state": "contract",
           "steps": [],
           "highlight": [
+            "[data-shot=capture-billing] >> nth=0",
             "[data-shot=office-billing-setup-1]"
-          ]
+          ],
+          "caption": "Every Procedure carries exactly one Contract: its name and AA code, and who is billed"
+        },
+        {
+          "state": "refused",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-27/bookings/BK0035"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "text=\"This procedure needs an invoice destination.\" >> nth=0"
+          ],
+          "caption": "Every Procedure carries exactly one Contract: completion refuses one with none"
         }
       ]
     }

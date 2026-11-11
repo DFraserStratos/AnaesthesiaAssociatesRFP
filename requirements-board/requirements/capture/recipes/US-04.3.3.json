@@ -1,55 +1,97 @@
 {
   "id": "US-04.3.3",
   "status": "partial",
-  "absentReason": "Seeded hospital procedures carry the hospital's plain RVG Contract (St George's RVG); No contract · RVG is offered first in the office's Contract choice. The step rail that makes it the patient invoice's answer is Phase 20.",
+  "absentReason": "No contract · RVG is pinned first under Patient › Standard on the step rail and bills the patient, or the payer override on the Procedure; the payer named on the Booking (a parent, an employer) is Phase 21.",
   "shots": [
     {
-      "name": "default-contract",
+      "name": "no-contract-rvg",
       "app": "admin",
-      "caption": "Procedure on St George's RVG, the hospital's plain RVG Contract",
-      "start": "/admin/day/2026-07-21/bookings/BK0001",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-shot=office-billing-setup-1]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "default-contract",
-      "app": "web",
-      "caption": "The hospital's plain RVG Contract shown on the Booking",
-      "start": "/web/lists/L-34821-2026-07-21-AM/bookings/BK0001",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-testid=procedure-header] + div"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "default-contract",
-      "app": "mobile",
-      "caption": "The hospital's plain RVG Contract shown on the Booking",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0001",
+      "caption": "No contract · RVG, first under Patient › Standard",
+      "start": "/admin/day/2026-07-23/bookings/BK0060",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 450
+              "click": "[data-shot=contract-combo] >> nth=0"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] [data-testid=procedure-header] + div"
-          ]
+            "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
+          ],
+          "caption": "No contract · RVG, first under Patient › Standard"
+        }
+      ]
+    },
+    {
+      "name": "search-pinned",
+      "app": "admin",
+      "caption": "No contract · RVG stays first whatever is typed",
+      "start": "/admin/day/2026-07-23/bookings/BK0060",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "fill": "[data-shot=contract-combo-list] input",
+              "value": "face"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
+          ],
+          "caption": "No contract · RVG stays first whatever is typed"
+        }
+      ]
+    },
+    {
+      "name": "no-contract-rvg",
+      "app": "web",
+      "caption": "No contract · RVG, first under Patient › Standard",
+      "start": "/web/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
+          ],
+          "caption": "No contract · RVG, first under Patient › Standard"
+        }
+      ]
+    },
+    {
+      "name": "no-contract-rvg",
+      "app": "mobile",
+      "caption": "No contract · RVG, first under Patient › Standard",
+      "start": "/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-picker] [data-contract-id=CT-NO-CONTRACT]"
+          ],
+          "caption": "No contract · RVG, first under Patient › Standard"
         }
       ]
     }

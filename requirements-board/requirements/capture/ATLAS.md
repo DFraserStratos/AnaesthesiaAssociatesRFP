@@ -451,7 +451,7 @@ badge carries `data-shot=nav-badge-<section>`.
 **Souter, Tue 21 PM** (`L-34821-2026-07-21-PM`, "Southern Cross" on the mobile lists home)
 
 - Wiremu Tane: complete, lap chole 20941.
-- Susan Marsh: complete, nib insurer route.
+- Susan Marsh: complete, on nib's Contract (nib RVG), billed to nib.
 - David Chen: complete, self-funded. His time units were overridden manually, so the booking is
   read-only and shows "adjusted manually".
 - **Margaret Ellison** (`BK0009`): **pending**. Left total hip replacement, RVG code LL4 "Hip, total
@@ -586,6 +586,25 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Web:** stage it through the Admin steps in `setup`, then `start` at `/web/lists` (the row is
   `tr[data-shot=out-of-hours-row]`), `/web` (the week strip block `[data-slot-id="S-34821-2026-07-21-OOH"]`) or
   `/web/availability` (an Out-of-hours column on a day that has one).
+
+### One Contract per Procedure (catch-up Phase 20)
+
+- Every seeded Procedure carries one Contract; there is no billing route, payment category or
+  Procedure insurer. Who is billed follows the Contract: a hospital's Contract bills the hospital,
+  nib's bills nib, No contract · RVG (`CT-NO-CONTRACT`) and the surgeon or anaesthetist price lists
+  bill the patient (or the Procedure's payer, BP0001 guardian, BP0002 Aria). Doyle's bariatric primary
+  (BK0028, P0029) still bills Mr Doyle (interim until Phase 21).
+- Prepaid Contracts: Dr Souter's price list (`CT-SOUTER-RHINO` $1,200, `-BLEPH`, `-BREAST`, and
+  `CT-SOUTER-RHINO-COS` $238.50, plastic surgery and ENT). Riley (BK0034, P0036) is on the Rhinoplasty
+  and Nair's cosmetic component (BK0038, P0041) on `CT-SOUTER-RHINO-COS`.
+- "Needs an invoice destination" at reset (no Contract): BK0035 (Souter Mon 27 AM, the NHI-pending PDF
+  Booking) and the six pre-ops BK0060 to BK0065 (Souter Thu 23 PM, AA rooms). BK0060 carries the
+  answers so far Patient › Standard, for the anaesthetist's pick-up. S12 (MSG-STG-1001) adds Sarah
+  Mitchell with none.
+- Good rail Bookings: BK0046 (Souter Wed 22 AM, Christchurch Eye Surgery, Mr Whitford: Patient, the
+  hospital under SXAP, HNZ and ACC, Special); BK0009 (Southern Cross, one tag, SXAP fills itself in;
+  Other price is Southern Cross · SXAP · Fixed price); BK0034 (Ms Lim: Merivale's items under
+  Patient › Standard, Souter's list under Prepaid for the office); BK0023 (Mon 20 AM, SUBMITTED).
 
 ## Overlays that need clicks
 
@@ -733,8 +752,25 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
   session `select[data-shot=reassign-vacated]` defaults to Free and lists the availability statuses in use) "Confirm reassignment".
   `[data-testid=list-reassignment-overlay]` appears.
-- **Admin booking:** "Edit billing setup", "Price override" (placeholders `-10` and "Why the price
-  differs") and "Funder allocation".
+- **Admin booking:** "Edit billing setup" (opens "Contract and payer": the Contract row, Payer,
+  Billing reference, "Save payer and reference"), "Price override" (placeholders `-10` and "Why the
+  price differs") and "Funder allocation".
+- **The step rail (catch-up Phase 20), Admin and web:** inline on the Booking, the "Billing" card
+  `[data-shot=capture-billing]` (one per Procedure; `>> nth=0` for the first), no click to open. Steps
+  `[data-shot=contract-rail-step-1..3]` (click an answered one to change it; the later ones clear),
+  tiles `[data-rail-option=patient|hospital|special|standard|prepaid|<tag id>|<holder Party id>]`, then
+  the field `[data-shot=contract-combo]`, which drops down `[data-shot=contract-combo-list]` (its
+  search input, rows `[data-contract-id=<id>]`; choosing one sets it at once). A lone Contract offers
+  "Use it" (`contract-rail-only-contract`). The switch `[data-shot=contract-rail-other-price] [role=switch]`,
+  its amount `[data-shot=contract-rail-amount]` and "Use Other price"; the outcome line
+  `[data-shot=contract-rail-outcome]`; "Start again" `contract-rail-start-again`. The office setup,
+  "Contract and payer" and "Edit operation" show the Contract read-only.
+- **The step rail on mobile:** the Billing card's rows `[data-shot=billing-row-invoice-to]` and
+  `billing-row-contract` open the steps in a bottom sheet (`[data-shot=contract-picker]`), finished with
+  "Use this Contract" (Other price and its amount in the sheet too). "Add another procedure" adds the
+  Procedure at once; its own Billing card picks its Contract.
+- **Creation forms:** the manual and phone-advice forms have a Contract row
+  `[data-shot=manual-contract]` ("Choose"); saving without one is allowed.
 - **Review:**
   - "Log phone note" opens a textarea, then "Log note".
   - `role=button[name="Authorise for billing"] >> nth=0` opens the confirm.
@@ -763,6 +799,14 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,
+  `contract-rail-other-price`, `contract-rail-amount`, `contract-rail-outcome`, `contract-rail-enter-rvg`,
+  `contract-rail-pinned`, `contract-rail-only-option`; the Contract row `procedure-contract` (also
+  `office-procedure-contract`, `edit-procedure-contract`, `contract-and-payer-contract`),
+  `needs-invoice-destination`, `contract-set-by-office`, `contract-price-cleared`; the RVG cues
+  `rvg-code-to-fill`, `rvg-code-optional`, `list-row-contract-cue`; the Admin Day card
+  `admin-needs-invoice-destination` and its rows `needs-destination-row`; `contract-and-payer`,
+  `manual-contract`.
 - Out-of-hours sessions (catch-up Phase 32c): `out-of-hours-open` (the row control), `out-of-hours-open-sheet`,
   `daygrid-evening-block` (any block in the out-of-hours session, with `data-out-of-hours`; the after-hours zone
   behind it is `[data-after-hours]`), `drawer-session-draft-lists`, `drawer-close-out-of-hours`; the
@@ -964,6 +1008,11 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-validation-focus=true]`
 
 ## Demo control panel (`/demo/control`) and Demo actions
+
+- Catch-up Phase 20: the PWA-only "Office sets this Booking's Contract"
+  (`[data-shot=pwa-demo-action-office-sets-booking-contract]`) on a mobile Booking with a Procedure that
+  needs an invoice destination sets the List's hospital's first Contract on offer, else No contract ·
+  RVG, as the office. "Fire hospital message" now notes the new Booking arrives with no Contract.
 
 Since catch-up Phase 14 every demo action lives **on its own screen**, in the harness bar's
 "Demo actions" menu (`[data-shot=demo-actions]`, shown only where the screen registers entries),

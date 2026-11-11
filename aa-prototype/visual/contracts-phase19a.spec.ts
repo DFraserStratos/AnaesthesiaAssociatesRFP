@@ -86,7 +86,8 @@ test("phase 19a Dr Souter's price list, and the Contracts search by CAT, AP0126 
   await page.goto('/admin/masters?view=contracts&holder=PY-SOUTER')
   await page.waitForLoadState('networkidle')
   const rows = page.locator('[data-shot=contract-catalogue] tr[data-contract]')
-  await expect(rows).toHaveCount(3)
+  // Catch-up Phase 20 added Nair's item (SOUTER-004, Rhinoplasty, cosmetic component).
+  await expect(rows).toHaveCount(4)
   await expect(page.locator('tr[data-contract="CT-SOUTER-RHINO"]')).toContainText('$1,200.00 from 1 Jan 2026')
   await expect(page.locator('tr[data-contract="CT-SOUTER-RHINO"]')).toContainText('Prepaid')
   await page.screenshot({ path: 'visual/shots/p19a-08-souter-list.png', fullPage: true })
@@ -112,13 +113,17 @@ test("phase 19a Dr Souter's price list, and the Contracts search by CAT, AP0126 
 })
 
 test('phase 19a a default RVG code fills an empty Procedure', async ({ page }) => {
-  // Annette Riley's rhinoplasty (Fri 24 Jul) has no RVG code.
+  // Annette Riley's rhinoplasty (Fri 24 Jul) has no RVG code. Catch-up Phase 20:
+  // the office moves it off Dr Souter's prepaid list on the step rail, to
+  // Merivale's Face lift under Patient › Standard.
   await page.goto('/admin/day/2026-07-24/bookings/BK0034')
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('button', { name: 'No RVG code. Choose' }).first()).toBeVisible()
-  await page.getByRole('button', { name: 'Edit billing setup' }).first().click()
-  await page.getByLabel('Governing contract').selectOption('CT-MER-FACELIFT')
-  await page.getByRole('button', { name: 'Save billing setup' }).click()
+  // The Billing card is inline on the Booking: change step 2, then choose the Contract.
+  await page.locator('[data-shot=contract-rail-step-2]').first().click()
+  await page.locator('[data-rail-option=standard]').first().click()
+  await page.locator('[data-shot=contract-combo]').first().click()
+  await page.locator('[data-contract-id=CT-MER-FACELIFT]').first().click()
   await expect(page.getByRole('button', { name: /^RVG code H3, / }).first()).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p19a-12-default-fills.png', fullPage: true })
 })

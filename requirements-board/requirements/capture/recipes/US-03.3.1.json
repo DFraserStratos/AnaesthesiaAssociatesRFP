@@ -270,6 +270,94 @@
           "caption": "Any value is accepted; outside the range raises a warning for the office"
         }
       ]
+    },
+    {
+      "name": "contract-code",
+      "app": "web",
+      "caption": "Required on RVG Contracts, filled from the Contract's default",
+      "start": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "states": [
+        {
+          "state": "optional",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-procedure-code]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Required on RVG Contracts: on a fixed price it is optional, for reference"
+        },
+        {
+          "state": "default-filled",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0163"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=capture-procedure-code]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Required on RVG Contracts, filled from the Contract's default: Merivale's Face lift fills H3"
+        }
+      ]
+    },
+    {
+      "name": "contract-code",
+      "app": "mobile",
+      "caption": "Required on RVG Contracts, filled from the Contract's default",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "states": [
+        {
+          "state": "optional",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-procedure-code]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Required on RVG Contracts: on a fixed price it is optional, for reference"
+        },
+        {
+          "state": "default-filled",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0163"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=capture-procedure-code]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Required on RVG Contracts, filled from the Contract's default: Merivale's Face lift fills H3"
+        }
+      ]
     }
   ]
 }

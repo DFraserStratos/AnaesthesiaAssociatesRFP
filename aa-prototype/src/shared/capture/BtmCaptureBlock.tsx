@@ -12,21 +12,12 @@ import { OverrideCard } from './OverrideCard'
 import { BillingLinesCard } from './BillingLinesCard'
 import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
+import { rvgCodeToFill } from '../../domain/billing/contractRail'
+import { isRvgKind } from '../../domain/billing/contracts'
+import { BillingCard } from '../booking/BillingCard'
 
-const ROUTE_LABEL: Record<string, string> = {
-  hospital: "Hospital or the Contract's Party",
-  billableParty: 'Billable party',
-  insurer: 'Insurer',
-}
-
-/** Fields the read-only context line anchors (EditProcedureSheet owns them). */
-const CONTEXT_FIELDS = [
-  'billingRoute',
-  'insurerId',
-  'patientPaymentCategory',
-  'billablePartyId',
-  'prepaymentDetail',
-] as const
+/** Fields the Contract row anchors (the step rail and "Contract and payer" own them; catch-up Phase 20). */
+const CONTEXT_FIELDS = ['governingContractId', 'enteredPrice', 'billablePartyId', 'prepaymentDetail'] as const
 
 interface BtmCaptureBlockProps {
   procedure: Procedure
@@ -112,13 +103,13 @@ export function BtmCaptureBlock({
   ])
   const unanchored = shown.filter((f) => !anchored.has(f.field))
 
-  const contractName = contract?.name
-  const insurerName = procedure.insurerId !== undefined ? masters.insurers[procedure.insurerId]?.name : undefined
   const billablePartyName =
     procedure.billablePartyId !== undefined ? masters.billableParties[procedure.billablePartyId]?.name : undefined
-  const contextParts = [contractName, insurerName, billablePartyName, procedure.billingReference].filter(
+  const contextParts = [billablePartyName !== undefined ? `Payer ${billablePartyName}` : undefined, procedure.billingReference].filter(
     (p): p is string => p !== undefined,
   )
+  // Derived, never stored (US-03.3.1): an RVG-kind Contract with no RVG code yet.
+  const rvgToFill = contract !== undefined && rvgCodeToFill(masters, procedure, Object.values(billingLines).filter((l) => l.procedureId === procedure.id))
 
   // The store's edit gate (ACTIVE or SUBMITTED, own List for the anaesthetist; catch-up Phase 38a).
   const editable = procedure !== undefined && editRefusal(actor, list) === null
@@ -188,27 +179,19 @@ export function BtmCaptureBlock({
         )}
       </div>
 
-      {/* Read-only billing context line: route chip · contract · insurer ·
-          billable party · reference. Route-setting is office knowledge
-          (Phase 06); mobile corrects via the Edit sheet. */}
-      <div data-shot="procedure-contract" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span
-          style={{
-            padding: '4px 10px',
-            borderRadius: 999,
-            background: neutral.sunken,
-            fontSize: 12,
-            fontWeight: 600,
-            color: neutral.slate,
-            flex: 'none',
-          }}
+      {contextParts.length > 0 && <span style={{ fontSize: 12, color: neutral.mist }}>{contextParts.join(' · ')}</span>}
+
+      {/* The Procedure's one Contract (catch-up Phase 20): the Billing card, the
+          step rail inline for the office and, mirrored, the anaesthetist. */}
+      <BillingCard procedure={procedure} actor={actor} canEdit={editable} ordinal={ordinal} procedureCount={procedureCount} />
+      {rvgToFill && (
+        <div
+          data-shot="rvg-code-to-fill"
+          style={{ fontSize: 13, color: neutral.slate, background: neutral.sunken, borderRadius: 10, padding: '8px 12px' }}
         >
-          {procedure.billingRoute !== undefined ? ROUTE_LABEL[procedure.billingRoute] : 'Route not set'}
-        </span>
-        {contextParts.length > 0 && (
-          <span style={{ fontSize: 12, color: neutral.mist }}>{contextParts.join(' · ')}</span>
-        )}
-      </div>
+          {actor.role === 'anaesthetist' ? 'RVG code to fill in: add it on the code card below.' : 'The anaesthetist fills in the RVG code.'}
+        </div>
+      )}
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
@@ -226,6 +209,7 @@ export function BtmCaptureBlock({
         canCapture={canCapture}
         failures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
         onError={onError}
+        {...(rvgToFill ? { codeRole: 'required' as const } : contract !== undefined && !isRvgKind(contract.pricing.kind) ? { codeRole: 'reference' as const } : {})}
       />
 
       <TimesCard

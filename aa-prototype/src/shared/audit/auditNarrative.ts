@@ -171,7 +171,7 @@ function withReason(head: string, reason: unknown): string {
 }
 
 /** `list.ownerMove`'s route and cause values (catch-up Phase 32). A conflict's `cause` is a fact key, never one of these. */
-const OWN_MOVE_ROUTE_LABELS = { office: 'The office', colleague: 'A colleague' } as const
+const OWN_MOVE_WAY_LABELS = { office: 'The office', colleague: 'A colleague' } as const
 const OWN_MOVE_CAUSE_LABELS = { move: 'Moved by its anaesthetist', unavailable: 'Marked not available' } as const
 
 /**
@@ -223,7 +223,7 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     if (key === 'origin' && Object.hasOwn(ORIGIN_LABELS, value)) return ORIGIN_LABELS[value as DraftOrigin]
     if (key === 'state' && Object.hasOwn(LIST_STATE_LABELS, value)) return LIST_STATE_LABELS[value as ListState]
     // An anaesthetist's own move (catch-up Phase 32).
-    if (key === 'route' && Object.hasOwn(OWN_MOVE_ROUTE_LABELS, value)) return OWN_MOVE_ROUTE_LABELS[value as keyof typeof OWN_MOVE_ROUTE_LABELS]
+    if (key === 'route' && Object.hasOwn(OWN_MOVE_WAY_LABELS, value)) return OWN_MOVE_WAY_LABELS[value as keyof typeof OWN_MOVE_WAY_LABELS]
     if (key === 'cause' && Object.hasOwn(OWN_MOVE_CAUSE_LABELS, value)) return OWN_MOVE_CAUSE_LABELS[value as keyof typeof OWN_MOVE_CAUSE_LABELS]
     // Pairing words from the one label set (catch-up Phase 17).
     if (key === 'kind' && Object.hasOwn(PAIRING_LABELS.kind, value)) return PAIRING_LABELS.kind[value as keyof typeof PAIRING_LABELS.kind]

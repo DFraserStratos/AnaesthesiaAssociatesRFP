@@ -22,9 +22,11 @@ interface ContractSelectProps {
   /** The empty choice's words; omit to require a Contract. */
   emptyLabel?: string
   shot?: string
+  /** Only these Contracts (and the current one) are listed (the step rail's candidate rule, catch-up Phase 20). */
+  allowed?: (contractId: string) => boolean
 }
 
-export function ContractSelect({ value, onChange, selectStyle, label = 'Governing contract', emptyLabel, shot }: ContractSelectProps) {
+export function ContractSelect({ value, onChange, selectStyle, label = 'Governing contract', emptyLabel, shot, allowed }: ContractSelectProps) {
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
 
@@ -32,7 +34,7 @@ export function ContractSelect({ value, onChange, selectStyle, label = 'Governin
     // Never an open-price fallback (catch-up Phase 18a): it has no price of its
     // own, and Phase 20's "Other price" picks one with the amount typed.
     const listed = contractSearch('', { contracts, parties, filters: { status: 'all' } }).filter(
-      (c) => (c.status === 'active' || c.id === value) && contractChoosableForProcedure(c),
+      (c) => (c.status === 'active' || c.id === value) && contractChoosableForProcedure(c) && (allowed === undefined || c.id === value || allowed(c.id)),
     )
     const system = listed.filter((c) => c.systemRole !== undefined)
     const byHolder = new Map<string, typeof listed>()
@@ -42,7 +44,7 @@ export function ContractSelect({ value, onChange, selectStyle, label = 'Governin
       byHolder.set(name, [...(byHolder.get(name) ?? []), c])
     }
     return { system, byHolder: [...byHolder.entries()] }
-  }, [contracts, parties, value])
+  }, [contracts, parties, value, allowed])
 
   const option = (c: (typeof groups.system)[number]) => (
     <option key={c.id} value={c.id}>

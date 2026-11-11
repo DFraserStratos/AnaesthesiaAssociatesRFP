@@ -1,0 +1,152 @@
+{
+  "id": "US-04.3.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "step-rail",
+      "app": "admin",
+      "caption": "Where the invoice goes, then the Contract",
+      "start": "/admin/day/2026-07-22/bookings/BK0046",
+      "states": [
+        {
+          "state": "destination",
+          "caption": "Where the invoice goes, then the Contract: step 1 with each destination's count",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ]
+        },
+        {
+          "state": "payment-type",
+          "caption": "Where the invoice goes, then the Contract: Patient › Standard with No contract · RVG pinned first",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=patient] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0",
+            "[data-shot=contract-combo-list]"
+          ]
+        },
+        {
+          "state": "hospital-tag",
+          "caption": "Where the invoice goes, then the Contract: a hospital with one funding tag fills it in (Only option)",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-21/bookings/BK0009"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=hospital] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-rail-step-2] >> nth=0"
+          ]
+        },
+        {
+          "state": "contract",
+          "caption": "Where the invoice goes, then the Contract: a Christchurch Eye Surgery SXAP Contract chosen",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=hospital] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=TAG-SXAP] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "click": "[data-contract-id=CT-CES-SXAP-CATIOL] >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "step-rail",
+      "app": "mobile",
+      "caption": "The anaesthetist picks up the office's answers",
+      "start": "/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "states": [
+        {
+          "state": "picked-up",
+          "steps": [
+            {
+              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-picker]"
+          ],
+          "caption": "The anaesthetist picks up the office's answers at step 3"
+        }
+      ]
+    },
+    {
+      "name": "step-rail",
+      "app": "web",
+      "caption": "The anaesthetist picks up the office's answers",
+      "start": "/web/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "states": [
+        {
+          "state": "picked-up",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-billing] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ],
+          "caption": "The anaesthetist picks up the office's answers at step 3"
+        }
+      ]
+    }
+  ]
+}

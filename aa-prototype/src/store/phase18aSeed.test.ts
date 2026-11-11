@@ -128,6 +128,8 @@ describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
       'SOUTER-001:SPC-PLASTIC',
       'SOUTER-002:SPC-PLASTIC',
       'SOUTER-003:SPC-PLASTIC',
+      // Catch-up Phase 20: Nair's prepaid item, done with an ENT surgeon too.
+      'SOUTER-004:SPC-PLASTIC+SPC-ENT',
     ])
   })
 
@@ -201,7 +203,8 @@ describe('ACC is a funding tag (FT-05.5, US-05.5.1)', () => {
     expect(archived).toEqual(['HP04', 'HP06', 'HP26'])
     for (const id of archived) {
       const p = schedule.procedures[id]!
-      expect(p.governingContractId).toBeUndefined()
+      // Catch-up Phase 20: on their hospital's plain RVG Contract (one Contract per Procedure), never an ACC-tagged one.
+      expect(procedureAccFunded(masters, p), id).toBe(false)
       const theCase = Object.values(state.billing.cases).find((c) => c.bookingId === p.bookingId)
       expect(theCase?.archivedAccRelated, id).toBe(true)
     }

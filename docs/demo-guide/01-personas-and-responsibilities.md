@@ -222,7 +222,8 @@ allowing billing to proceed.
 
 ### Goals
 
-- Confirm that the billing route, Contract, Insurer and reference information make sense.
+- Set each Procedure's Contract at booking setup on the step rail (where the invoice goes, then the
+  Contract), and confirm the Contract, who is billed and the reference make sense at review.
 - Spot manually adjusted BTM values and other advisory flags.
 - Correct office-owned data without returning the List to the anaesthetist.
 - Authorise a clean List and know that it is now immutable.

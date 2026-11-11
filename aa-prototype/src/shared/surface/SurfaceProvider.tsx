@@ -208,6 +208,26 @@ function MobileBookingLayout({ contentRef, header, history, banners, context, ca
  * block has nowhere to travel.
  */
 function WebBookingLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: BookingLayoutSlots) {
+  // The rail starts level with the first capture card: measured, not a fixed
+  // lead-in, because the procedure title and its Contract row vary in height
+  // (catch-up Phase 20: the Contract row, its caption and the RVG cue).
+  const captureColRef = useRef<HTMLDivElement>(null)
+  const [railLead, setRailLead] = useState(74)
+  useLayoutEffect(() => {
+    const col = captureColRef.current
+    if (col === null) return undefined
+    const measure = () => {
+      const card = col.querySelector('[data-shot^="capture-"]')
+      if (card === null) return
+      const lead = Math.max(0, Math.round(card.getBoundingClientRect().top - col.getBoundingClientRect().top))
+      setRailLead((prev) => (prev === lead ? prev : lead))
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const ro = new ResizeObserver(measure)
+    ro.observe(col)
+    return () => ro.disconnect()
+  }, [])
   const commit =
     summary !== null ? (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -232,7 +252,7 @@ function WebBookingLayout({ contentRef, header, history, banners, context, captu
           </div>
         )}
 
-        <div style={{ gridColumn: 'span 8', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div ref={captureColRef} style={{ gridColumn: 'span 8', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {capture}
         </div>
 
@@ -243,10 +263,9 @@ function WebBookingLayout({ contentRef, header, history, banners, context, captu
             display: 'flex',
             flexDirection: 'column',
             gap: 12,
-            // The capture column opens with its procedure title and billing
-            // context. Offset the rail by that standard two-row lead-in so its
-            // black total panel starts level with the first capture-card pair.
-            paddingTop: 74,
+            // Offset by the measured lead-in so the total panel starts level
+            // with the first capture card.
+            paddingTop: railLead,
           }}
         >
           {commit !== null && (

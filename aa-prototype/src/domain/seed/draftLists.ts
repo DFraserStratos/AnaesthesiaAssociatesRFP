@@ -25,6 +25,7 @@ import type { RecurringClash } from './canvas'
 import { HOSP, SURG } from './cast'
 import { PAT } from './patients'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
+import { CONTRACT } from './contracts'
 
 /** Who logged the seeded requests. */
 const OFFICE = 'Kirsty W.'
@@ -122,8 +123,7 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       isAdditional: false,
       modifierClaims: [],
       removedModifierIds: [],
-      billingRoute: 'billableParty',
-      patientPaymentCategory: 'selfFundedPostProcedure',
+      governingContractId: CONTRACT.noContractRvg,
     })
     b += 1
     p += 1

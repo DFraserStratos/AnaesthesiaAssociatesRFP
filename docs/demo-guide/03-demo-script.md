@@ -141,7 +141,14 @@ working List rather than an empty one.
   without anyone re-keying it."
 - **Expected:** the message shows as processed; the List now carries a fourth Booking for Sarah Mitchell,
   slotted into her 08:30 place between the first two cases. Her NHI matched an existing record, so
-  intake reused it, no duplicate.
+  intake reused it, no duplicate. She arrives with no Contract, so in Admin she shows on Day's
+  **Needs an invoice destination** card, and her Booking reads "Needs an invoice destination".
+- **Click (the office sets it):** in **Admin Day view → Tue 28 Jul**, open her row on the **Needs an
+  invoice destination** card. On her Booking, the **Billing** card shows the steps inline: **Patient**
+  (Standard fills itself in) → **Choose the Contract** → **No contract · RVG**. She leaves the card. (On the PWA,
+  **Demo → Office sets this Booking's Contract** stands in for the office.)
+- **Say:** "The office answers what it knows first: where the invoice goes, then the Contract. Where
+  the Contract prices from the RVG, the code is the anaesthetist's."
 
 ### Beat 2: the Booking fills over the days before theatre
 
@@ -275,12 +282,19 @@ already seeded.
   - Choose **St George's Hospital** and **Mr T. Hale**; keep the default times (13:00 to 17:30).
   - Select **Continue to add booking → Look up**.
   - Pause on the populated booking.
+  - Under **Contract**, select **Choose**: **St George's** (the List's hospital) → its funding tag
+    (ACC, the only one, fills itself in) → the Contract → **Use this Contract**. Point out that an
+    RVG-priced Contract leaves the RVG code to the anaesthetist. Once saved, the same steps show on the
+    Booking's **Billing** card.
   - Select **Review → Save booking → Done**.
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks
   rather than pretending they disappear."
 - **Expected:** the lookup fills the complete booking and leaves every field editable. The session now
   holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
   availability finders show it as booked.
+- **Worth pointing at:** "Where does the invoice go, then the Contract. Each step only offers Contracts
+  that fit this List, and typing finds one among hundreds. Other price covers anything no price list has
+  yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
 - **Optional one-liner:** "Assign List does the same without a patient, for a session booked ahead."
 - **Optional pointer:** on the surgeon picker, show the separate **Not preferred with Dr Sharma** group.
   If time allows, select **Ms A. Reid** to show the soft amber warning and **Continue anyway**, then
@@ -535,9 +549,9 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
     - **AA-2026-0005 · Alan Prentice · nib · $152.38** and
       **AA-2026-0006 · Alan Prentice · St George's · $91.43** are the two invoices from the same
       Booking at 14:00.
-- **Say:** "The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per
-  Procedure, applies the governing Contract, and groups by counterparty. Xero follows as the
-  receivables and banking service."
+- **Say:** "The Billing Engine, not Xero, produces the invoice. It reads the one Contract on each
+  Procedure, bills its holder or the patient as the Contract says, and groups by who is billed. Xero
+  follows as the receivables and banking service."
 - **Expected:** invoice rows appear for both Lists, derived from the same captured data; one invoice
   for the split-billing Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave
   her main view (phone and web) as soon as the office authorises them, and their invoices show in her
@@ -645,7 +659,8 @@ actions** on the screen named in its beat.
     Open it: Annette Riley's row in the drawer carries the same outline.
   - In the right rail, the **To-do** card under the calendar lists her warning. Select **Clear**: it
     leaves the list, the outline drops, and her Booking shows who cleared it and when.
-- **Say:** "A warning, never a block, and no pop-up in the way. The anaesthetist sees it when they
+- **Say:** "Dr Souter's own price list is a prepaid Contract, so this booking needs paying first. A
+  warning, never a block, and no pop-up in the way. The anaesthetist sees it when they
   open the Booking, the night before, while the surgeon can still be told; the office sees it on its
   to-do list as a second check. AA decided not to block (OQ-57)."
 - **Expected:** completion and submit go through with no extra step; the warning shows in both apps

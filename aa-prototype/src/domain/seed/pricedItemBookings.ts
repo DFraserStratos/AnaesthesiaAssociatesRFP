@@ -53,8 +53,6 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
     isAdditional: false,
     modifierClaims: [],
     removedModifierIds: [],
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPostProcedure',
     governingContractId: PRICED_ITEM.merFaceLift,
   }
   const procedure: Procedure = { ...empty, ...fillFromContract(empty, faceLift, groups) }

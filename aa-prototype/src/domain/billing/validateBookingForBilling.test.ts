@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import { RVG_MODIFIER_MASTER, mkClaim } from './fixtures'
-import { validateBookingForBilling, type BookingBillingContext } from './validateBookingForBilling'
+import {
+  ADD_RVG_CODE_FAILURE,
+  CONTRACT_GONE_FAILURE,
+  NEEDS_DESTINATION_FAILURE,
+  TYPE_THE_PRICE_FAILURE,
+  validateBookingForBilling,
+  type BookingBillingContext,
+} from './validateBookingForBilling'
 import {
   BASE_RANGE_5_9,
   BASE_SINGLE_10,
@@ -15,18 +22,30 @@ import {
   START_0800,
 } from './fixtures'
 import type { BillingLine, Procedure } from '../types'
-import { INSURER_PARTY_MISSING_MESSAGE, noRouteCounterpartyMessage } from './parties'
-import { noRouteContractMessage } from './contracts'
+import { noRouteCounterpartyMessage } from './parties'
+
+/** The hospital's plain RVG Contract, billing its holder (catch-up Phase 20: every Procedure carries one Contract). */
+const PLAIN_RVG = mkContract({ id: 'con-plain', name: 'Test hospital RVG' })
+/** AA's No contract · RVG, billing the payer. */
+const NO_CONTRACT = mkContract({ id: 'con-ncr', aaCode: 'AA-RVG', name: 'No contract · RVG', holderId: 'party-aa', billsTo: 'payer', systemRole: 'noContractRvg' })
+/** A fixed price in force on the List's date. */
+const FIXED_IN_FORCE = mkContract({ id: 'con-fix-now', name: 'Fixed item', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 400 }] } })
+/** No contract · Fixed price, the Patient › Standard open-price fallback. */
+const OPEN_FALLBACK = mkContract({ id: 'con-open', name: 'No contract · Fixed price', holderId: 'party-aa', billsTo: 'payer', pricing: { kind: 'open' }, systemRole: 'openPriceFallback' })
+/** An anaesthetist's prepaid price list item, billing the payer. */
+const PREPAID = mkContract({ id: 'con-pre', name: 'Prepaid item', holderId: 'party-anaes', billsTo: 'payer', prepaid: true, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 1200 }] } })
+const CONTRACTS = Object.fromEntries([PLAIN_RVG, NO_CONTRACT, FIXED_IN_FORCE, OPEN_FALLBACK, PREPAID].map((c) => [c.id, c]))
 
 function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingContext {
   return {
     anaesthetist: mkAnaesthetist({ unitValue: 30 }),
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10, [BASE_RANGE_5_9.id]: BASE_RANGE_5_9 },
-    contracts: {},
-    // An insurer with an insurer Party ('ins-direct'); 'ins-noparty' has none (catch-up Phase 18, RV-39).
+    contracts: CONTRACTS,
     parties: {
       'party-hosp-1': mkParty(),
       'party-ins': mkParty({ id: 'party-ins', kind: 'insurer', name: 'Southern Health', codePrefix: 'SHI', hospitalId: undefined, legacyCounterparty: { kind: 'insurer', id: 'ins-direct' } }),
+      'party-aa': mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined }),
+      'party-anaes': mkParty({ id: 'party-anaes', kind: 'anaesthetist', name: 'Dr Test', codePrefix: 'DRT', hospitalId: undefined }),
     },
     billableParties: { 'bp-1': mkBillableParty() },
     billingLines: [],
@@ -38,9 +57,10 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
   }
 }
 
-/** A fully billable RVG procedure on the contract-holder route. */
+/** A fully billable RVG procedure on the hospital's plain RVG Contract. */
 function validProcedure(overrides: Partial<Procedure> = {}): Procedure {
   return mkProcedure({
+    governingContractId: PLAIN_RVG.id,
     rvgGroupId: 'RG-T-GA10',
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
@@ -61,11 +81,8 @@ describe('validateBookingForBilling — happy paths', () => {
     expect(validateBookingForBilling(booking, [validProcedure()], mkCtx())).toEqual([])
   })
 
-  it('BillableParty route with a patient present and NO override record PASSES (patient is the default payer)', () => {
-    const p = validProcedure({
-      billingRoute: 'billableParty',
-      patientPaymentCategory: 'selfFundedPostProcedure',
-    })
+  it('No contract · RVG with a patient present and NO override record PASSES (patient is the default payer)', () => {
+    const p = validProcedure({ governingContractId: NO_CONTRACT.id })
     expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
@@ -80,23 +97,27 @@ describe('validateBookingForBilling — happy paths', () => {
       },
     })
     // Deliberately broken procedure — still no failures because the Booking is cancelled.
-    const broken = mkProcedure({ billingRoute: undefined })
+    const broken = mkProcedure()
     expect(validateBookingForBilling(cancelled, [broken], mkCtx())).toEqual([])
   })
 })
 
 describe('validateBookingForBilling — required data', () => {
-  it('fails a missing billing route', () => {
-    const p = validProcedure({ billingRoute: undefined })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(fieldsOf(failures)).toContain('billingRoute')
+  it('fails a Procedure with no Contract: it needs an invoice destination (US-04.3.4)', () => {
+    const p = validProcedure({ governingContractId: undefined })
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toContainEqual({ procedureId: p.id, field: 'governingContractId', message: NEEDS_DESTINATION_FAILURE })
   })
 
-  it('does not demand an RVG code: it is optional (catch-up Phase 19; completion rules are Phase 21)', () => {
-    const p = mkProcedure({ rvgGroupId: undefined })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(fieldsOf(failures)).not.toContain('rvgGroupId')
-    expect(failures.some((f) => /RVG/.test(f.message))).toBe(false)
+  it('fails a Contract that no longer exists', () => {
+    const p = validProcedure({ governingContractId: 'con-gone' })
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toContainEqual({ procedureId: p.id, field: 'governingContractId', message: CONTRACT_GONE_FAILURE })
+  })
+
+  it('requires the RVG code on an RVG kind only; optional on a fixed price (US-03.3.1)', () => {
+    const rvg = mkProcedure({ governingContractId: NO_CONTRACT.id })
+    expect(validateBookingForBilling(booking, [rvg], mkCtx())).toContainEqual({ procedureId: rvg.id, field: 'rvgGroupId', message: ADD_RVG_CODE_FAILURE })
+    const fixed = mkProcedure({ governingContractId: FIXED_IN_FORCE.id })
+    expect(validateBookingForBilling(booking, [fixed], mkCtx())).toEqual([])
   })
 
   it('fails an RVG code that no longer points at a row', () => {
@@ -115,7 +136,7 @@ describe('validateBookingForBilling — required data', () => {
       amount: 150,
       description: 'Consult',
     }
-    const failures = validateBookingForBilling(booking, [mkProcedure()], mkCtx({ billingLines: [line] }))
+    const failures = validateBookingForBilling(booking, [mkProcedure({ governingContractId: FIXED_IN_FORCE.id })], mkCtx({ billingLines: [line] }))
     expect(failures).toEqual([])
   })
 
@@ -148,54 +169,25 @@ describe('validateBookingForBilling — required data', () => {
   })
 })
 
-describe('validateBookingForBilling — routes', () => {
-  it('fails the Insurer route without an insurer', () => {
-    const p = validProcedure({ billingRoute: 'insurer' })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('insurerId')
-  })
-
-  it('an insurer with no insurer Party is refused', () => {
-    const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-noparty' })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(failures).toContainEqual({ procedureId: p.id, field: 'insurerId', message: INSURER_PARTY_MISSING_MESSAGE })
-  })
-
-  it('passes the Insurer route with an insurer that has an insurer Party', () => {
-    // With nothing stored, it bills under the insurer Party's plain RVG Contract.
-    const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-direct' })
-    const ctx = mkCtx({ contracts: { 'con-ins': mkContract({ id: 'con-ins', holderId: 'party-ins' }) } })
-    expect(validateBookingForBilling(booking, [p], ctx)).toEqual([])
-  })
-
-  it('an informational insurer on the Hospital route passes clean, even without an insurer Party (03.4)', () => {
-    const p = validProcedure({ insurerId: 'ins-noparty' })
-    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
-  })
-
-  it('fails the BillableParty route without a patient payment category', () => {
-    const p = validProcedure({ billingRoute: 'billableParty' })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('patientPaymentCategory')
-  })
-
+describe('validateBookingForBilling — the payer override and an Other price', () => {
   it('fails an unresolvable billable-party override', () => {
-    const p = validProcedure({
-      billingRoute: 'billableParty',
-      patientPaymentCategory: 'selfFundedPostProcedure',
-      billablePartyId: 'bp-ghost',
-    })
+    const p = validProcedure({ governingContractId: NO_CONTRACT.id, billablePartyId: 'bp-ghost' })
     expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('billablePartyId')
+  })
+
+  it('an open-price fallback asks for its amount, and passes once one is typed (US-04.3.9)', () => {
+    const none = mkProcedure({ governingContractId: OPEN_FALLBACK.id })
+    expect(validateBookingForBilling(booking, [none], mkCtx())).toEqual([{ procedureId: none.id, field: 'enteredPrice', message: TYPE_THE_PRICE_FAILURE }])
+    expect(validateBookingForBilling(booking, [{ ...none, enteredPrice: 2000 }], mkCtx())).toEqual([])
   })
 })
 
 describe('validateBookingForBilling — pre-payment typing', () => {
-  const base = {
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPrepayment',
-  } as const
+  const base = { governingContractId: PREPAID.id } as const
 
-  it('requires a prepayment detail for the self funded pre-payment category', () => {
+  it('a prepaid Contract with no detail passes: the prepayment is the full fee (INTERIM until Phase 27)', () => {
     const p = validProcedure({ ...base })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('prepaymentDetail')
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
   it('a split pre-payment without a deposit amount fails', () => {
@@ -224,7 +216,8 @@ describe('validateBookingForBilling — rate x time gate (Method 3)', () => {
 
   it('passes under a contract that permits an individual arrangement', () => {
     const permitting = mkContract({ id: 'con-ia', permitsRateTime: true })
-    const p = mkProcedure({ governingContractId: 'con-ia' })
+    // An RVG kind carrying the arrangement still records its RVG code (catch-up Phase 20, US-03.3.1).
+    const p = validProcedure({ governingContractId: 'con-ia', modifierClaims: [] })
     const ctx = mkCtx({ contracts: { 'con-ia': permitting }, billingLines: [rateTimeLine] })
     expect(validateBookingForBilling(booking, [p], ctx)).toEqual([])
   })
@@ -235,7 +228,7 @@ describe('validateBookingForBilling — rate x time gate (Method 3)', () => {
     const ctx = mkCtx({ contracts: { 'con-std': nonPermitting }, billingLines: [rateTimeLine] })
     expect(fieldsOf(validateBookingForBilling(booking, [p], ctx))).toContain('billingLines')
 
-    const orphan = mkProcedure()
+    const orphan = mkProcedure({ governingContractId: 'con-gone' })
     const ctx2 = mkCtx({ billingLines: [rateTimeLine] })
     expect(fieldsOf(validateBookingForBilling(booking, [orphan], ctx2))).toContain('billingLines')
   })
@@ -299,27 +292,18 @@ describe('validateBookingForBilling — two-funder conservation', () => {
   })
 })
 
-describe("today's route needs (catch-up Phase 18 review pass)", () => {
-  const hospitalParty = mkParty()
-  const aaParty = mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined })
-  const plainRvg = mkContract({ id: 'con-plain' })
-  const aaHeld = mkContract({ id: 'con-aa', name: 'No contract · RVG', holderId: 'party-aa', billsTo: 'payer' })
-  const ctxWith = (contracts: Record<string, ReturnType<typeof mkContract>>) =>
-    mkCtx({ contracts, parties: { [hospitalParty.id]: hospitalParty, [aaParty.id]: aaParty }, listHospitalId: 'hosp-1' })
+describe('who the Contract bills needs a billing record (catch-up Phase 18 review pass; INTERIM until Phase 21)', () => {
+  const recordless = mkParty({ id: 'party-group', kind: 'surgeonGroup', name: 'Group', codePrefix: 'GRP', hospitalId: undefined })
+  const groupHeld = mkContract({ id: 'con-grp', name: 'Group RVG', holderId: 'party-group' })
 
-  it('a hospital-route Contract whose holder has no billing record fails with the resolver sentence', () => {
-    const p = validProcedure({ governingContractId: 'con-aa' })
-    expect(validateBookingForBilling(booking, [p], ctxWith({ 'con-aa': aaHeld })).find((f) => f.field === 'governingContractId')?.message).toBe(
-      noRouteCounterpartyMessage('No contract · RVG'),
-    )
+  it('a holder-billed Contract whose holder has no billing record fails with the resolver sentence', () => {
+    const p = validProcedure({ governingContractId: 'con-grp' })
+    const ctx = mkCtx({ contracts: { ...CONTRACTS, 'con-grp': groupHeld }, parties: { ...mkCtx().parties, [recordless.id]: recordless } })
+    expect(validateBookingForBilling(booking, [p], ctx).find((f) => f.field === 'governingContractId')?.message).toBe(noRouteCounterpartyMessage('Group RVG'))
   })
 
-  it("nothing stored on the hospital route needs the hospital Party's plain RVG Contract", () => {
-    const p = validProcedure()
-    expect(validateBookingForBilling(booking, [p], ctxWith({ 'con-plain': plainRvg }))).toEqual([])
-    expect(validateBookingForBilling(booking, [p], ctxWith({})).find((f) => f.field === 'governingContractId')?.message).toBe(
-      noRouteContractMessage('Test hospital'),
-    )
+  it('a Contract billing the payer bills the patient, so AA holding it needs no record', () => {
+    expect(validateBookingForBilling(booking, [validProcedure({ governingContractId: NO_CONTRACT.id })], mkCtx())).toEqual([])
   })
 })
 
@@ -350,12 +334,9 @@ describe('"Needs a price" on a fixed price with no range in force (catch-up Phas
     expect(fieldsOf(validateBookingForBilling(booking, [validProcedure({ anaestheticStartISO: undefined })], mkCtx()))).toContain('anaestheticStartISO')
   })
 
-  it("an office fixed fee never unlocks an open price (18a's rule stands until Phase 20)", () => {
-    const open = mkContract({ id: 'con-open', name: 'No contract · Fixed price', pricing: { kind: 'open' } })
-    const p = validProcedure({ governingContractId: 'con-open', priceOverride: { kind: 'fixedFee', amount: 500, reason: 'Typed' } })
-    expect(validateBookingForBilling(booking, [p], mkCtx({ contracts: { 'con-open': open } })).find((f) => f.field === 'governingContractId')?.message).toBe(
-      'Needs a price: No contract · Fixed price has no price of its own.',
-    )
+  it('an open price is never priced at RVG: with no amount typed it asks for one (catch-up Phase 20)', () => {
+    const p = validProcedure({ governingContractId: OPEN_FALLBACK.id })
+    expect(validateBookingForBilling(booking, [p], mkCtx()).find((f) => f.field === 'enteredPrice')?.message).toBe(TYPE_THE_PRICE_FAILURE)
   })
 })
 

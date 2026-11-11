@@ -35,9 +35,10 @@ function rowFor(bookingId: string, colleagueId: string) {
   return bookingMoveReceivers(input, bookingId, ANAE.souter, '').find((r) => r.anaesthetistId === colleagueId)
 }
 
+/** A Booking with a Procedure on a prepaid Contract (catch-up Phase 20: prepayment follows the Contract). */
 function prepaid(bookingId: string): boolean {
   return Object.values(seed.schedule.procedures).some(
-    (p) => p.bookingId === bookingId && p.billingRoute === 'billableParty' && p.patientPaymentCategory === 'selfFundedPrepayment',
+    (p) => p.bookingId === bookingId && p.governingContractId !== undefined && seed.masters.contracts[p.governingContractId]?.prepaid === true,
   )
 }
 

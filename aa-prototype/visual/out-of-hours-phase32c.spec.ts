@@ -185,6 +185,13 @@ test('4 · Mobile as Dr Souter: the List after PM, moon and 18:00; add a Booking
   await page.getByText('Evening Patient').first().click()
   await page.waitForTimeout(500)
   const bookingUrl = page.url()
+  // Catch-up Phase 20: saved with no Contract, so the anaesthetist chooses one
+  // on the step rail before it can complete: Patient › Standard › No contract · RVG.
+  // On the phone the Billing card's rows open the steps in a sheet.
+  await page.locator('[data-shot=billing-row-invoice-to]').click()
+  await page.locator('[data-rail-option=patient]').click()
+  await page.locator('[data-contract-id=CT-NO-CONTRACT]').click()
+  await page.getByRole('button', { name: 'Use this Contract' }).click()
   await page.getByRole('button', { name: 'Start now' }).click()
   await page.goto('/demo/control')
   await page.waitForLoadState('networkidle')

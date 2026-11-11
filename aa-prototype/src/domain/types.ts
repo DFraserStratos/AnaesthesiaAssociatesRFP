@@ -353,7 +353,7 @@ export interface OfficePrivateSlice {
 /**
  * INTERIM identity (catch-up Phase 18, RV-39): there is no Insurer master any
  * more. An insurer is a Party; this bare record stays only as the id a
- * Party's `legacyCounterparty` and `Procedure.insurerId` point at, so no
+ * Party's `legacyCounterparty` and billing lines' `funderOverride` point at, so no
  * counterparty or Xero contact moves (Phases 20 and 21 retire it).
  */
 export interface Insurer {
@@ -768,30 +768,29 @@ export interface Booking {
 // ---------------------------------------------------------------------------
 
 /**
- * 'hospital' is the RFP's name for the CONTRACT-HOLDER route — the holder may
- * equally be a surgeon or an organisation (1st review #5). Distinct from the
- * Insurer route (AA billing a direct-claim insurer itself).
- */
-export type BillingRoute = 'hospital' | 'billableParty' | 'insurer'
-
-/**
- * The RFP's three Billable-Party-route categories (2nd review #5) — they
- * determine recipient wording and payment workflow. Required by the validator
- * on that route (7th review A2).
- */
-export type PatientPaymentCategory =
-  | 'selfFundedPostProcedure'
-  | 'selfFundedPrepayment'
-  | 'insuredReimbursement'
-
-/**
- * Rides with `selfFundedPrepayment` (7th review B6): the RFP's full-vs-split
- * distinction. The Booking-level "pre-payment required" flag is DERIVED from the
- * booking's procedures, never stored separately.
+ * INTERIM (Phase 20): the split or full prepayment a Procedure on a prepaid
+ * Contract carries (7th review B6's typing). Read only when the Procedure's
+ * Contract is prepaid; the Booking-level "prepayment required" is derived
+ * from the Contract, never stored. Phase 27 removes it.
  */
 export interface PrepaymentDetail {
   type: 'full' | 'split'
   depositAmount?: number
+}
+
+/**
+ * The step rail's answers so far (US-04.3.8), held on a Procedure only while
+ * it has no Contract, so whoever opens it next (the office or the
+ * anaesthetist) carries on from there. Cleared when a Contract is set. Never a
+ * stored destination: once a Contract is chosen, where its invoice goes is
+ * worked out from the Contract (`destinationOf`).
+ *
+ * `narrow` is step 2's answer: `standard` or `prepaid` under Patient, a
+ * funding tag id under the hospital, a holder Party id under Special.
+ */
+export interface RailAnswers {
+  destination: 'patient' | 'hospital' | 'special'
+  narrow?: string
 }
 
 /** Typed price override — mandatory reason whenever present (7th review A6/B5). */
@@ -810,27 +809,38 @@ export interface Procedure {
   bookingId: BookingId
   description: string
   /**
-   * Unset until explicitly set (RFP: "set explicitly (by hospital advice, or
-   * by AA staff where the hospital does not specify)"; 3rd review #1) — the
-   * validator fails an unset route.
+   * The Procedure's one Contract (US-04.3.1, DM-10): set by the office at
+   * booking setup on the step rail, or by the anaesthetist until the List is
+   * AUTHORISED. None is "Needs an invoice destination" (US-04.3.4): the
+   * Booking waits on the office's list and completion refuses it. Written only
+   * through `setProcedureContract` (or a creation path given one), never
+   * `editProcedure`.
    */
-  billingRoute?: BillingRoute
   governingContractId?: ContractId
+  /** The step rail's answers so far while no Contract is set (US-04.3.8); cleared when one is. */
+  railAnswers?: RailAnswers
   /**
-   * The insurer billed on the Insurer route. May also be recorded as
-   * informational context on the Hospital route; the billing engine and
-   * validator read it only when `billingRoute === 'insurer'`.
+   * INTERIM (Phase 20): the amount typed on an open-price fallback (US-04.3.9),
+   * ex GST, in dollars like every other figure; read only while the Procedure's
+   * Contract is an open price, cleared by a Contract change. Phase 24
+   * generalises it.
    */
-  insurerId?: InsurerId
+  enteredPrice?: number
   /**
-   * OVERRIDE only — on the Billable Party route the payer defaults to the
-   * patient themself (RFP: "billableParty (→ Patient by default)"; 7th review
-   * A1/B15). Set only when someone else pays (e.g. a guardian).
+   * INTERIM override until Phase 21's payer on the Booking: someone other
+   * than the patient pays (a guardian, a named payer). Read by
+   * `billedPartyFor` only when the Contract bills the payer.
    */
   billablePartyId?: BillablePartyId
-  /** Required by the validator when `billingRoute === 'billableParty'`. */
-  patientPaymentCategory?: PatientPaymentCategory
-  /** Required when `patientPaymentCategory === 'selfFundedPrepayment'`. */
+  /**
+   * INTERIM until Phase 21 (one seeded Booking, Doyle's bariatric primary):
+   * the office billed this Contract's holder although the Contract bills the
+   * payer, as the retired contract-holder route did. `billedPartyFor` honours
+   * it; a Contract change clears it; nothing in the app sets it. Phase 21's
+   * payer on the Booking replaces it.
+   */
+  billsHolderInterim?: true
+  /** INTERIM (Phase 20): read only on a prepaid Contract; Phase 27 removes it. */
   prepaymentDetail?: PrepaymentDetail
   /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
   billingReference?: string

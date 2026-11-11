@@ -36,6 +36,9 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Procedures & billing lines -----------------------------------------
   'procedure.create': 'Procedure added',
   'procedure.update': 'Procedure updated',
+  'procedure.contract': 'Contract changed',
+  'procedure.railAnswers': 'Invoice destination so far',
+  'procedure.enteredPrice': 'Typed price changed',
   'procedure.remove': 'Procedure removed',
   'billingLine.add': 'Billing line added',
   'billingLine.update': 'Billing line updated',

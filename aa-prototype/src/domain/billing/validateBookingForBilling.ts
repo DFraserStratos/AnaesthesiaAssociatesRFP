@@ -25,8 +25,10 @@ import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
 import { claimCompletionProblems, preAppliedModifiersFor } from './modifiers'
 import { toCents } from './money'
-import { INSURER_PARTY_MISSING_MESSAGE, hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty } from './parties'
-import { interimRouteContract, isRvgKind, noRouteContractMessage, procedureNeedsPrice } from './contracts'
+import { noRouteCounterpartyMessage } from './parties'
+import { isRvgKind, procedureNeedsPrice } from './contracts'
+import { billedPartyFor } from './whoIsBilled'
+import { rvgCodeToFill } from './contractRail'
 import { needsPriceMessage } from './priceRanges'
 import type { RvgTimeRule } from './timeUnits'
 
@@ -47,18 +49,35 @@ export interface BillingValidationFailure {
 export const INDIVIDUAL_ARRANGEMENT_MESSAGE =
   'A rate and time billing line needs a governing contract that permits an individually arranged fee structure.'
 
+/** Completion's sentences for the Contract (catch-up Phase 20; US-04.3.4, US-04.3.9, US-03.3.1). */
+export const NEEDS_DESTINATION_FAILURE = 'This procedure needs an invoice destination.'
+export const CONTRACT_GONE_FAILURE = 'The selected Contract no longer exists. Choose another.'
+export const TYPE_THE_PRICE_FAILURE = 'Type the price for this procedure.'
+export const ADD_RVG_CODE_FAILURE = 'Add the RVG code for this procedure.'
+
+/** Who gives a contract or approval reference when billed: a hospital, a surgeon or a surgeons' organisation (INTERIM until Phase 21). */
+const REFERENCE_COUNTERPARTY_KINDS: ReadonlySet<string> = new Set(['hospital', 'surgeon', 'organisation'])
+
 /**
  * A4's "reference completeness" check, single-sourced (6th review #6): the
- * hospital's contract/approval reference is expected on the contract-holder
- * (`hospital`) route. True when it is absent/blank there. The office billing
- * setup and the Phase 07 authorisation-review FLAGS both read this one
- * predicate so they never drift.
+ * holder's contract or approval reference is expected when the Procedure
+ * bills a hospital or a surgeon holder (catch-up Phase 20, keyed on who the
+ * Contract bills, INTERIM until Phase 21); an insurer's Contract, a price list
+ * billing the payer, a clinic billing a payer record, an open-price fallback
+ * and No contract · RVG expect none. True when it is expected and absent or
+ * blank. The office billing setup and the authorisation-review flags both read
+ * this one predicate.
  */
-export function billingReferenceMissing(procedure: Procedure): boolean {
-  return (
-    procedure.billingRoute === 'hospital' &&
-    (procedure.billingReference === undefined || procedure.billingReference.trim() === '')
-  )
+export function billingReferenceMissing(
+  procedure: Pick<Procedure, 'billingReference' | 'governingContractId' | 'billsHolderInterim' | 'billablePartyId'>,
+  contracts: Readonly<Record<string, Contract>>,
+  parties: Readonly<Record<string, Party>>,
+): boolean {
+  const contract = procedure.governingContractId !== undefined ? contracts[procedure.governingContractId] : undefined
+  if (contract === undefined || contract.systemRole !== undefined) return false
+  const billed = billedPartyFor(procedure, contract, parties, '')
+  if (billed === undefined || !REFERENCE_COUNTERPARTY_KINDS.has(billed.kind)) return false
+  return procedure.billingReference === undefined || procedure.billingReference.trim() === ''
 }
 
 export interface BookingBillingContext {
@@ -67,15 +86,12 @@ export interface BookingBillingContext {
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
   /** Contract master, keyed by id (for `governingContractId`). */
   contracts: Readonly<Record<string, Contract>>
-  /** The Party master (catch-up Phase 18): holders, and the insurer Parties the Insurer route needs. */
+  /** The Party master (catch-up Phase 18): the Contracts' holders. */
   parties: Readonly<Record<string, Party>>
   billableParties: Readonly<Record<string, BillableParty>>
   /** ALL stored billing lines; filtered per procedure by `procedureId`. */
   billingLines: readonly BillingLine[]
-  /**
-   * The List's hospital (absent at AA's rooms): the hospital route's Party
-   * when no Contract is stored (INTERIM until Phase 20).
-   */
+  /** The List's billing hospital (absent at AA's rooms). */
   listHospitalId?: string
   /** The List's date: the procedure date that picks a fixed price's range in force (catch-up Phase 19a). */
   listDateISO: string
@@ -155,13 +171,28 @@ export function validateBookingForBilling(
       fail(id, 'modifierClaims', problem.message)
     }
 
-    // Route must be explicitly set.
-    if (procedure.billingRoute === undefined) {
-      fail(id, 'billingRoute', 'Set a billing route for this procedure.')
+    const contract =
+      procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
+
+    // Exactly one Contract (US-04.3.1, US-04.3.4): none is "Needs an invoice
+    // destination"; a dangling id must be chosen again.
+    if (procedure.governingContractId === undefined) {
+      fail(id, 'governingContractId', NEEDS_DESTINATION_FAILURE)
+    } else if (contract === undefined) {
+      fail(id, 'governingContractId', CONTRACT_GONE_FAILURE)
     }
 
-    // The RVG code is optional (catch-up Phase 19; completion rules are Phase
-    // 21's). One that is set must still point at a row.
+    // The RVG code is required on a Contract priced from RVG units, No
+    // contract · RVG included, and optional, for reference, on a fixed or open
+    // price (US-03.3.1; D12, D33): the one derived rule, `rvgCodeToFill`.
+    // Phase 21a splits completion out.
+    // A Procedure billed by its own rate x time line (Method 3) is priced
+    // without one.
+    if (contract !== undefined && rvgCodeToFill({ contracts: ctx.contracts }, procedure, storedLines)) {
+      fail(id, 'rvgGroupId', ADD_RVG_CODE_FAILURE)
+    }
+
+    // A code that is set must still point at a row.
     if (procedure.rvgGroupId !== undefined) {
       if (rvgGroup === undefined) {
         fail(id, 'rvgGroupId', 'The RVG code on this Procedure is no longer in the RVG groups. Choose it again.')
@@ -171,8 +202,7 @@ export function validateBookingForBilling(
       // On a fixed or open price the RVG code is for reference only and no
       // units are asked (catch-up Phase 19a; 21a collapses the form), so
       // missing times are not demanded there; recorded ones must still be in order.
-      const chosen = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-      const priceWithoutUnits = chosen !== undefined && !isRvgKind(chosen.pricing.kind)
+      const priceWithoutUnits = contract !== undefined && !isRvgKind(contract.pricing.kind)
       const start = procedure.anaestheticStartISO
       const handover = procedure.handoverISO
       if (start === undefined && !priceWithoutUnits) {
@@ -189,54 +219,20 @@ export function validateBookingForBilling(
       // the after-procedure `baseUnitsOutsideGuide` warning, never a refusal.
     }
 
-    // Insurer route: the insurer is named and has an insurer Party (RV-39: no
-    // insurer master and no direct-claims flag, catch-up Phase 18).
-    if (procedure.billingRoute === 'insurer') {
-      if (procedure.insurerId === undefined) {
-        fail(id, 'insurerId', 'Select the insurer for the Insurer route.')
-      } else if (insurerPartyFor(ctx.parties, procedure.insurerId) === undefined) {
-        fail(id, 'insurerId', INSURER_PARTY_MISSING_MESSAGE)
-      }
+    // The payer override must resolve when present (INTERIM until Phase 21).
+    if (procedure.billablePartyId !== undefined && ctx.billableParties[procedure.billablePartyId] === undefined) {
+      fail(id, 'billablePartyId', 'The billable party on this procedure could not be found.')
     }
 
-    // Billable Party route: category required; payer defaults to the PATIENT,
-    // so no override record is demanded (7th review A1/A2/B15). The typed
-    // override must resolve when present.
-    if (procedure.billingRoute === 'billableParty') {
-      if (procedure.patientPaymentCategory === undefined) {
-        fail(
-          id,
-          'patientPaymentCategory',
-          'Select a patient payment category for the Billable Party route.',
-        )
-      }
-      if (
-        procedure.billablePartyId !== undefined &&
-        ctx.billableParties[procedure.billablePartyId] === undefined
-      ) {
-        fail(id, 'billablePartyId', 'The billable party on this procedure could not be found.')
-      }
+    // A split prepayment on a prepaid Contract needs its deposit (7th review
+    // B6; INTERIM `prepaymentDetail` until Phase 27). No gate (D5).
+    if (
+      contract?.prepaid === true &&
+      procedure.prepaymentDetail?.type === 'split' &&
+      (procedure.prepaymentDetail.depositAmount === undefined || procedure.prepaymentDetail.depositAmount <= 0)
+    ) {
+      fail(id, 'prepaymentDetail', 'Enter the first payment amount for a split prepayment.')
     }
-
-    // Pre-payment typing (7th review B6): detail required, deposit when split.
-    if (procedure.patientPaymentCategory === 'selfFundedPrepayment') {
-      if (procedure.prepaymentDetail === undefined) {
-        fail(
-          id,
-          'prepaymentDetail',
-          'Choose full or split pre-payment for the self funded pre-payment category.',
-        )
-      } else if (
-        procedure.prepaymentDetail.type === 'split' &&
-        (procedure.prepaymentDetail.depositAmount === undefined ||
-          procedure.prepaymentDetail.depositAmount <= 0)
-      ) {
-        fail(id, 'prepaymentDetail', 'Enter the deposit amount for a split pre-payment.')
-      }
-    }
-
-    const contract =
-      procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
 
     // Method 3 gate (5th review #1): a rate x time line needs a governing
     // Contract that permits it (`permitsRateTime`, INTERIM until Phase 24).
@@ -246,30 +242,18 @@ export function validateBookingForBilling(
       }
     }
 
-    // What today's route needs to invoice (INTERIM until Phases 20 and 21), the
-    // billing resolver's own sentences: on the hospital route a stored
-    // Contract's holder needs a billing record; with nothing stored, the
-    // hospital's or insurer's Party needs a plain RVG Contract.
-    if (procedure.billingRoute === 'hospital' && contract !== undefined) {
-      if (routeCounterpartyForParty(ctx.parties[contract.holderId]) === undefined) {
-        fail(id, 'governingContractId', noRouteCounterpartyMessage(contract.name))
-      }
-    }
-    if ((procedure.billingRoute === 'hospital' || procedure.billingRoute === 'insurer') && procedure.governingContractId === undefined) {
-      const party =
-        procedure.billingRoute === 'hospital'
-          ? ctx.listHospitalId !== undefined ? hospitalPartyFor(ctx.parties, ctx.listHospitalId) : undefined
-          : procedure.insurerId !== undefined ? insurerPartyFor(ctx.parties, procedure.insurerId) : undefined
-      if (party !== undefined && interimRouteContract(ctx.contracts, party.id) === undefined) {
-        fail(id, 'governingContractId', noRouteContractMessage(party.name))
-      }
+    // Who the Contract bills needs a billing record (INTERIM until Phase 21),
+    // the billing resolver's own sentence.
+    if (contract !== undefined && billedPartyFor(procedure, contract, ctx.parties, booking.patientId) === undefined) {
+      fail(id, 'governingContractId', noRouteCounterpartyMessage(contract.name))
     }
 
-    // Any Procedure on a fixed-price Contract with no range in force on the
-    // List's date, or on an open price: "Needs a price" (catch-up Phase 19a;
-    // Phase 24 turns it into a price state on the ladder).
+    // A fixed price with no range in force on the List's date: "Needs a price"
+    // (catch-up Phase 19a). An open price with no amount typed asks for it
+    // (US-04.3.9; Phase 24's "Needs a price" replaces the sentence).
     if (contract !== undefined && procedureNeedsPrice(contract, ctx.listDateISO, procedure)) {
-      fail(id, 'governingContractId', needsPriceMessage(contract, ctx.listDateISO))
+      if (contract.pricing.kind === 'open') fail(id, 'enteredPrice', TYPE_THE_PRICE_FAILURE)
+      else fail(id, 'governingContractId', needsPriceMessage(contract, ctx.listDateISO))
     }
 
     // Price override always carries a reason (7th review A6/B5), and may not

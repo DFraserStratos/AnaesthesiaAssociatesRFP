@@ -1,8 +1,9 @@
 /**
  * Pure pre-payment invoice tests (Phase 09; B7): the pre-procedure invoice
- * covers only BillableParty-route `selfFundedPrepayment` procedures (a mixed
- * booking's contract-holder procedures are untouched); split raises the agreed
- * deposit, full raises the estimated fee; the later balance run nets the
+ * covers only Procedures on a prepaid Contract billed to a person (catch-up
+ * Phase 20, INTERIM until 27; a mixed booking's hospital-billed procedures
+ * are untouched); split raises the agreed deposit, full raises the fee on the
+ * prepaid Contract; the later balance run nets the
  * deposit off as a visible deduction line so deposit + balance reconciles to
  * the patient-funded portion's full fee (GST included), and a full
  * pre-payment leaves NO balance invoice.
@@ -29,11 +30,27 @@ import {
 } from './fixtures'
 
 const PARTY = mkParty()
+/** The anaesthetist's own Party, holding their prepaid price list. */
+const ANAES_PARTY = mkParty({ id: 'party-anaes', kind: 'anaesthetist', name: 'Dr Test', codePrefix: 'DRT', hospitalId: undefined })
 
 const LIST_DATE = '2026-07-21'
 
 /** The hospital's plain RVG Contract, so the mixed booking's hospital-route procedure resolves. */
 const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: "Test hospital RVG" })
+
+/** B10 + T11 (2h30m) + M0 = 21 units at $30 = $630 (the patient-funded fee). */
+const FULL_FEE = 630
+
+/** The anaesthetist's prepaid price list item at the full fee, billing the payer (catch-up Phase 20). */
+const PREPAID = mkContract({
+  id: 'con-pre',
+  aaCode: 'DRT-001',
+  name: 'Prepaid item',
+  holderId: ANAES_PARTY.id,
+  billsTo: 'payer',
+  prepaid: true,
+  pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: FULL_FEE }] },
+})
 
 function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContext {
   return {
@@ -42,8 +59,8 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     modifiers: RVG_MODIFIER_MASTER,
     anaesthetist: mkAnaesthetist(), // unitValue 30
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
-    contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },
-    parties: { [PARTY.id]: PARTY },
+    contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT, [PREPAID.id]: PREPAID },
+    parties: { [PARTY.id]: PARTY, [ANAES_PARTY.id]: ANAES_PARTY },
     billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,
@@ -53,9 +70,6 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     ...overrides,
   }
 }
-
-/** B10 + T11 (2h30m) + M0 = 21 units at $30 = $630 (the patient-funded fee). */
-const FULL_FEE = 630
 
 const PATIENT = { kind: 'patient' as const, id: 'pat-1' }
 /** The prePaidByProcedure ctx entry for proc-pp (default: raised to the patient). */
@@ -69,15 +83,14 @@ function prepaymentProc(overrides: Partial<ReturnType<typeof mkProcedure>> = {})
     rvgGroupId: BASE_SINGLE_10.id,
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
-    billingRoute: 'billableParty',
-    patientPaymentCategory: 'selfFundedPrepayment',
+    governingContractId: PREPAID.id,
     prepaymentDetail: { type: 'full' },
     ...overrides,
   })
 }
 
 describe('buildPrePaymentInvoiceForBooking', () => {
-  it('covers only BillableParty selfFundedPrepayment procedures (hospital procedures excluded)', () => {
+  it('covers only Procedures on a prepaid Contract billed to a person (hospital procedures excluded)', () => {
     const hospitalProc = mkProcedure({
       id: 'proc-h',
       rvgGroupId: BASE_SINGLE_10.id,
@@ -108,7 +121,7 @@ describe('buildPrePaymentInvoiceForBooking', () => {
     expect(invoice.total).toBe(920)
   })
 
-  it('full raises the estimated full fee via the calculator', () => {
+  it('full raises the full fee on the prepaid Contract via the calculator', () => {
     const result = buildPrePaymentInvoiceForBooking(mkBooking(), [prepaymentProc()], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!

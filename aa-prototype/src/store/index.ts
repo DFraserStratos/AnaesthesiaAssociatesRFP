@@ -357,3 +357,18 @@ export * from './selectors'
 // "Changed since submitted" cue, look-back and search (selectors only).
 export { incompleteBookingsOn } from './lifecycle'
 export * from './lookback'
+
+// The step rail's writes and reads (catch-up Phase 20).
+export { contractPickRefusal, railActorOf, setEnteredPrice, setProcedureContract, setRailAnswers } from './contractSelectionActions'
+export {
+  billedPartyForProcedure,
+  contractRailForNewBooking,
+  contractRailForProcedure,
+  needsInvoiceDestinationBookings,
+  railContextForList,
+  railContextForProcedure,
+  railMastersOf,
+  railStartFor,
+  rvgCodeToFillFor,
+  type NeedsInvoiceDestinationRow,
+} from './selectors'

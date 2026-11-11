@@ -21,7 +21,7 @@ import {
 } from './apps/mobile/routes'
 import {
   AdminAuditRoute,
-  AdminBillingRoute,
+  AdminBillingPage,
   AdminAaFeesRoute,
   AdminAaFeeSettingsRoute,
   AdminBookingDetailRoute,
@@ -118,7 +118,7 @@ export function AppRouter() {
               <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
             </Route>
             <Route path="billing">
-              <Route index element={<AdminBillingRoute />} />
+              <Route index element={<AdminBillingPage />} />
               <Route path="aa-fees" element={<AdminAaFeesRoute />} />
               <Route path="aa-fees/settings" element={<AdminAaFeeSettingsRoute />} />
             </Route>

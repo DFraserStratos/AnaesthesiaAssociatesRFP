@@ -4,8 +4,8 @@ import { Printer, Mail, Upload, Clock } from 'lucide-react'
 import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import { counterpartyName, invoiceLinesFor, markInvoiceEmailed, useAppStore } from '../../../store'
-import type { BillingCase, Invoice, PatientPaymentCategory } from '../../../domain/types'
-import { GST_RATE } from '../../../domain/billing'
+import type { BillingCase, Invoice } from '../../../domain/types'
+import { GST_RATE, procedureRequiresPrepayment } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 
@@ -19,7 +19,7 @@ interface InvoiceDocumentProps {
  * class — contract holder vs patient — with the RFP's agency wording on both
  * ("Agent" has a specific GST interpretation, so invoices go out from the
  * Billing Engine, not Xero). The patient layout reflects the Procedure's
- * `patientPaymentCategory` in its wording. No design mockup covers an invoice,
+ * prepaid Contract in its note (`patientInvoiceNote`). No design mockup covers an invoice,
  * so this extends the Design Language tokens: serif for the document voice,
  * mono for money, crimson only as the masthead identity.
  *
@@ -57,18 +57,15 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 
   const isPatientLayout = invoice.layout === 'patient'
   const isInsurerDirect = invoice.counterparty.kind === 'insurer'
-  // A grouped invoice can span procedures: list every distinct reference and
-  // note every distinct payment category, not just the first found.
+  // A grouped invoice can span procedures: list every distinct reference.
   const billingReferences = [
     ...new Set(procedures.map((p) => p.billingReference).filter((r): r is string => r !== undefined && r.trim() !== '')),
   ]
-  const paymentCategories: PatientPaymentCategory[] = (() => {
-    const distinct = [...new Set(procedures.map((p) => p.patientPaymentCategory).filter((c): c is PatientPaymentCategory => c !== undefined))]
-    return distinct.length > 0 ? distinct : ['selfFundedPostProcedure']
-  })()
-  // Pre-payment detail for the category note (deposit vs full, and this
-  // invoice's kind — the pre-invoice vs the post-procedure balance).
-  const prepaymentProc = procedures.find((p) => p.patientPaymentCategory === 'selfFundedPrepayment')
+  // The Procedure on a prepaid Contract, if any (INTERIM until Phase 27): the
+  // patient note's prepayment wording follows it (catch-up Phase 20).
+  const prepaymentProc = procedures.find((p) =>
+    procedureRequiresPrepayment(p, p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined),
+  )
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
   function doEmail() {
@@ -143,17 +140,13 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           </div>
         </div>
 
-        {/* Patient payment-category wording (patient layout only) — one note
-            per distinct category when a grouped invoice spans several. */}
-        {isPatientLayout && paymentCategories.map((category) => (
-          <PaymentCategoryNote
-            key={category}
-            category={category}
-            invoiceKind={invoice.kind}
-            prepaymentType={prepaymentProc?.prepaymentDetail?.type}
-            depositAmount={prepaymentProc?.prepaymentDetail?.depositAmount}
+        {/* The patient note (patient layout only): prepayment wording when a
+            Procedure is on a prepaid Contract, else payment on receipt. */}
+        {isPatientLayout && (
+          <PatientInvoiceNote
+            {...patientInvoiceNote(prepaymentProc !== undefined, invoice.kind, prepaymentProc?.prepaymentDetail?.type, prepaymentProc?.prepaymentDetail?.depositAmount)}
           />
-        ))}
+        )}
 
         {/* Lines */}
         <table data-shot="invoice-lines" style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -497,42 +490,39 @@ function TotalRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * The three RFP patient categories drive recipient wording (D4/M5). The
- * insured-reimbursement note is deliberately distinct from an Insurer-route
- * invoice: this document goes to the PATIENT, who claims from their own
- * insurer; AA never sends it on.
+ * The patient note on a patient-layout invoice (catch-up Phase 20): a Booking
+ * with a Procedure on a prepaid Contract gives the prepayment wording (the
+ * pre-procedure invoice, or the balance after it); otherwise payment is due on
+ * receipt. The insured-reimbursement wording went with the payment category
+ * (US-11.4.2 Retired).
  */
-function PaymentCategoryNote({
-  category,
-  invoiceKind,
-  prepaymentType,
-  depositAmount,
-}: {
-  category: PatientPaymentCategory
-  invoiceKind: 'standard' | 'prePayment'
-  prepaymentType?: 'full' | 'split'
-  depositAmount?: number
-}) {
-  const prepaymentText =
-    invoiceKind === 'prePayment'
-      ? prepaymentType === 'split'
-        ? `This pre-procedure invoice is the agreed deposit${depositAmount !== undefined ? ` of ${formatCurrency(depositAmount)}` : ''}. Payment is required before the procedure proceeds; the balance is invoiced after the procedure. The timing of pre-payment against the billing trigger is a discovery point for AA.`
-        : 'This pre-procedure invoice is the full estimated fee, payable before the procedure proceeds. The timing of pre-payment against the billing trigger is a discovery point for AA.'
-      : prepaymentType === 'split'
-        ? 'A pre-payment deposit has already been invoiced for this procedure. This invoice covers the balance.'
-        : 'This procedure was pre-paid; this invoice covers any remaining balance.'
-  const content =
-    category === 'insuredReimbursement'
-      ? {
-          badge: 'Insured reimbursement',
-          text: 'You may claim this invoice from your insurer. It is issued to you, and Anaesthesia Associates does not send it to your insurer.',
-        }
-      : category === 'selfFundedPrepayment'
-        ? { badge: invoiceKind === 'prePayment' ? 'Pre-payment (pre-procedure)' : 'Pre-payment balance', text: prepaymentText }
-        : {
-            badge: 'Self funded',
-            text: 'Payment is due on receipt of this invoice.',
-          }
+export function patientInvoiceNote(
+  requiresPrepayment: boolean,
+  invoiceKind: 'standard' | 'prePayment',
+  prepaymentType?: 'full' | 'split',
+  depositAmount?: number,
+): { badge: string; text: string } {
+  if (!requiresPrepayment) return { badge: 'Payment', text: 'Payment is due on receipt of this invoice.' }
+  if (invoiceKind === 'prePayment') {
+    return {
+      badge: 'Prepayment (before the procedure)',
+      text:
+        prepaymentType === 'split'
+          ? `This pre-procedure invoice is the agreed first payment${depositAmount !== undefined ? ` of ${formatCurrency(depositAmount)}` : ''}. Payment is required before the procedure proceeds; the balance is invoiced after the procedure.`
+          : 'This pre-procedure invoice is the full fee, payable before the procedure proceeds.',
+    }
+  }
+  return {
+    badge: 'Prepayment balance',
+    text:
+      prepaymentType === 'split'
+        ? 'A first payment has already been invoiced for this procedure. This invoice covers the balance.'
+        : 'This procedure was prepaid; this invoice covers any remaining balance.',
+  }
+}
+
+function PatientInvoiceNote({ badge, text }: { badge: string; text: string }) {
+  const content = { badge, text }
   return (
     <div style={{ background: neutral.sunken, borderRadius: radius.ctl, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: neutral.slate }}>{content.badge}</span>

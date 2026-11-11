@@ -57,7 +57,6 @@ export function mkProcedure(overrides: Partial<Procedure> = {}): Procedure {
     id: 'proc-1',
     bookingId: 'booking-1',
     description: 'Laparoscopic cholecystectomy',
-    billingRoute: 'hospital',
     isAdditional: false,
     modifierClaims: [],
     removedModifierIds: [],

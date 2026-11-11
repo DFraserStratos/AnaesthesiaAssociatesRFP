@@ -49,7 +49,6 @@ describe('createBooking', () => {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
       operation: 'Diagnostic laparoscopy',
       rvgGroupId: RVG_GROUP.a3!,
-      billingRoute: 'hospital',
       scheduledTime: '17:00',
     })
 
@@ -66,7 +65,8 @@ describe('createBooking', () => {
     const procs = proceduresForBooking(state, outcome.value.bookingId)
     expect(procs).toHaveLength(1)
     expect(procs[0]?.isAdditional).toBe(false)
-    expect(procs[0]?.billingRoute).toBe('hospital')
+    // Created with no Contract: it needs an invoice destination (catch-up Phase 20, US-04.3.4).
+    expect(procs[0]?.governingContractId).toBeUndefined()
 
     const actions = state.audit.map((a) => a.action)
     expect(actions).toContain('booking.create')
@@ -81,7 +81,6 @@ describe('createBooking', () => {
       patient: { nhi: 'cqy9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' },
       operation: 'Laparoscopic cholecystectomy',
       rvgGroupId: RVG_GROUP.a3!,
-      billingRoute: 'hospital',
     })
 
     expect(outcome.ok).toBe(true)
@@ -97,7 +96,6 @@ describe('createBooking', () => {
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
       patient: { nhi: 'AAA9999', name: 'Bad NHI', dobISO: '1990-01-01' },
       operation: 'Test',
-      billingRoute: 'hospital',
     })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('invalidNhi')
@@ -109,7 +107,6 @@ describe('createBooking', () => {
     const outcome = createBooking(api, MORRISON, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
       operation: 'Test',
-      billingRoute: 'hospital',
     })
     expect(outcome.ok).toBe(true)
     expect(api.getState().schedule.lists[MORRISON_LIST]?.state).toBe('SUBMITTED')
@@ -120,7 +117,6 @@ describe('createBooking', () => {
     const outcome = createBooking(api, SOUTER, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
       operation: 'Test',
-      billingRoute: 'hospital',
     })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('notOwnList')
@@ -133,7 +129,6 @@ describe('createBooking', () => {
     const outcome = createBooking(api, OFFICE, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
       operation: 'Test',
-      billingRoute: 'hospital',
     })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('listAuthorised')
@@ -148,7 +143,6 @@ describe('createBooking', () => {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
       operation: 'Diagnostic laparoscopy',
       rvgGroupId: RVG_GROUP.a3!,
-      billingRoute: 'hospital',
       scheduledTime: '11:30',
     })
     expect(outcome.ok).toBe(true)

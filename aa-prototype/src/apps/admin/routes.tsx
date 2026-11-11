@@ -277,7 +277,7 @@ export function AdminNotificationsRoute() {
   return <NotificationsScreen actor={ctx.actor} onOpen={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))} />
 }
 
-export function AdminBillingRoute() {
+export function AdminBillingPage() {
   const { actor } = useAdminOutlet()
   return <BillingMonitorScreen actor={actor} />
 }

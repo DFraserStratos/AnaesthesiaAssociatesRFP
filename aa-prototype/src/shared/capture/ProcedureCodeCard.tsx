@@ -17,6 +17,12 @@ interface ProcedureCodeCardProps {
   /** rvgGroupId / baseUnitsSelected failures (shown post-latch, verbatim). */
   failures: BillingValidationFailure[]
   onError: (message: string) => void
+  /**
+   * Catch-up Phase 20 (US-03.3.1): `required` on a Contract priced from RVG
+   * units with no code yet (the choose action reads "Add RVG code"); `reference`
+   * on a fixed or open price, where the code is optional, for reference only.
+   */
+  codeRole?: 'required' | 'reference'
 }
 
 /** The caption shown on any base-unit value outside the guide (D3: a warning for the office, never a block). */
@@ -40,6 +46,7 @@ export function ProcedureCodeCard({
   canCapture,
   failures,
   onError,
+  codeRole,
 }: ProcedureCodeCardProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
 
@@ -105,10 +112,15 @@ export function ProcedureCodeCard({
         )}
         {canCapture && (
           <span aria-hidden style={{ fontSize: 14, fontWeight: 600, color: accent.base, flex: 'none' }}>
-            {procedure.rvgGroupId !== undefined ? 'Change' : 'Choose'}
+            {procedure.rvgGroupId !== undefined ? 'Change' : codeRole === 'required' ? 'Add RVG code' : 'Choose'}
           </span>
         )}
       </button>
+      {codeRole === 'reference' && (
+        <span data-shot="rvg-code-optional" style={{ fontSize: 12.5, color: neutral.slate }}>
+          Optional, for reference: this Contract has its own price.
+        </span>
+      )}
 
       {rvgGroup?.baseUnitsRange !== undefined && !procedure.isAdditional && (
         <RangeUnitsRow procedure={procedure} rvgGroup={{ ...rvgGroup, baseUnitsRange: rvgGroup.baseUnitsRange }} canCapture={canCapture} onSelect={selectRangeUnits} />

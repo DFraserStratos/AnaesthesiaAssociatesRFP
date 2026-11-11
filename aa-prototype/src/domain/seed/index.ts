@@ -145,7 +145,7 @@ export interface SeedMasters {
   specialties: Record<string, Specialty>
   /** AA's funding tags in step-rail order (catch-up Phase 18a; US-13.4.5): SXAP, HNZ, ACC. */
   fundingTags: Record<string, FundingTag>
-  /** INTERIM identities behind insurer Parties and `Procedure.insurerId` (no view, no flag; Phases 20 and 21 retire them). */
+  /** INTERIM identities behind insurer Parties and `funderOverride` (no view, no flag; Phases 21 and 22 retire them). */
   insurers: Record<string, Insurer>
   /** INTERIM identity behind the COS surgeon-group Party (Phase 21 retires it). */
   organisations: Record<string, ContractHolderOrganisation>
@@ -934,7 +934,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: 'Billed under ACC orthopaedic services, the Canterbury Orthopaedic Surgeons rate Contract.',
     },
     accRelatedBooking: {
-      label: 'ACC related procedure (hospital route)',
+      label: 'ACC related procedure (a Contract with the ACC tag)',
       entityType: 'booking',
       entityId: scenario.accRelated,
       detail: "Billed under ACC elective services via St George's, which carries the ACC funding tag; sources W4's ACC column once invoiced.",
@@ -963,11 +963,23 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: scenario.billingFailure,
       detail: 'Ropata Thu 16, SUBMITTED. Fails when it is pointed at COS ACC fixed fees, which has no price for its procedure; its sibling still invoices.',
     },
-    insuredReimbursementBooking: {
-      label: 'Insured reimbursement booking',
+    needsInvoiceDestinationBooking: {
+      label: 'Needs an invoice destination (no Contract)',
       entityType: 'booking',
-      entityId: scenario.insuredReimbursement,
-      detail: 'Patient pays and claims from AIA Health; AA does not invoice AIA.',
+      entityId: scenario.needsDestination,
+      detail: 'Souter Mon 27 AM, the NHI-pending PDF Booking: arrived with no Contract, so it waits on the Admin Day card until the office sets one.',
+    },
+    railPickUpBooking: {
+      label: 'Step rail left at Patient › Standard',
+      entityType: 'booking',
+      entityId: scenario.railPickUp,
+      detail: 'Souter Thu 23 PM, the first pre-op: the office answered Patient › Standard; Dr Souter picks it up on mobile or web and finishes it.',
+    },
+    aiaClaimBooking: {
+      label: 'AIA claim booking (No contract · RVG)',
+      entityType: 'booking',
+      entityId: scenario.aiaClaim,
+      detail: 'Patient pays on No contract · RVG and claims from AIA Health; AA does not invoice AIA.',
     },
     provisionalNoNhiPatient: {
       label: 'Provisional patient (NHI pending)',
@@ -991,13 +1003,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Missing billing reference 1 of 2',
       entityType: 'procedure',
       entityId: scenario.missingRefProcedures[0],
-      detail: 'Hospital route procedure flagged for a missing billing reference.',
+      detail: 'Procedure billed to the hospital, flagged for a missing billing reference.',
     },
     missingBillingRef2: {
       label: 'Missing billing reference 2 of 2',
       entityType: 'procedure',
       entityId: scenario.missingRefProcedures[1],
-      detail: 'Hospital route procedure flagged for a missing billing reference.',
+      detail: 'Procedure billed to the hospital, flagged for a missing billing reference.',
     },
     allDayBooking: {
       label: 'All day booking (Rutherford)',

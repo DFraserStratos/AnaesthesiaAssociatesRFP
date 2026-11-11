@@ -393,7 +393,7 @@
         <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Schedule</div><div class="flip-face flip-back">The rolling four-month calendar</div></div></button>
         <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">List</div><div class="flip-face flip-back">One half-day AM or PM session</div></div></button>
         <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Booking</div><div class="flip-face flip-back">One patient appointment in a List</div></div></button>
-        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Procedure</div><div class="flip-face flip-back">One procedure; sets its own billing route</div></div></button>
+        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Procedure</div><div class="flip-face flip-back">One procedure; carries exactly one Contract</div></div></button>
         <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">BTM</div><div class="flip-face flip-back">Base + Time + Modifier units, the fee recipe</div></div></button>
       </div>
       <p class="flip-hint">Flip all five, then move on.</p>
@@ -494,7 +494,9 @@
     <tr><td>List</td><td>One anaesthetist's half-day AM or PM operating session; every List has exactly one hospital and one surgeon (AA rooms is a location)</td></tr>
     <tr><td>Draft List</td><td>A List with no anaesthetist yet, state DRAFT; the office assigns it</td></tr>
     <tr><td>Booking</td><td>One patient appointment inside a List</td></tr>
-    <tr><td>Procedure</td><td>One clinical procedure inside a Booking; each resolves its own billing route</td></tr>
+    <tr><td>Procedure</td><td>One clinical procedure inside a Booking; each carries exactly one Contract</td></tr>
+    <tr><td>Invoice destination</td><td>Where a Procedure's invoice goes: the patient, the List's hospital, or a special Contract's holder. Worked out from the Contract, never stored; with no Contract it shows "Needs an invoice destination"</td></tr>
+    <tr><td>Other price</td><td>The step rail's toggle onto the destination's open-price fallback, with the amount typed on the Procedure</td></tr>
     <tr><td>BTM</td><td>Base units + Time units + Modifier units</td></tr>
   </table></div>
 
@@ -950,6 +952,9 @@
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>In Mobile Lists, open the Tue 28 Jul St George's AM session and read its three booked cases (07:45, 09:45, 11:15).</li><li>Mobile Lists &#8594; Demo actions &#8594; Fire hospital message &#8594; S12 · New booking · MSG-STG-1001 &#8594; Run (alternative: Integrations &#8594; S12 · New booking &#8594; Replay).</li><li>Pause on the result line.</li><li>Reopen the Tue 28 AM List.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Hospitals may still send HL7 v2, but the target is FHIR-native. Messages are mapped per hospital, processed near real time and audited. This booking created a Booking without re-keying."</span></div>
       <div class="row"><span class="k">Expect</span><span>The List now carries a fourth Booking for Sarah Mitchell, slotted into her 08:30 place between the first two cases; her NHI matched an existing record, so intake reused it.</span></div>
+      <div class="row"><span class="k">Expect</span><span>Sarah Mitchell arrives with no Contract: in Admin she shows on Day's <strong>Needs an invoice destination</strong> card.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day view &#8594; Tue 28 Jul &#8594; her row on Needs an invoice destination. On her Booking the Billing card shows the steps inline: Patient (Standard fills itself in) &#8594; Choose the Contract &#8594; No contract · RVG. She leaves the card. (On the PWA, Demo &#8594; Office sets this Booking's Contract.)</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The office answers what it knows first: where the invoice goes, then the Contract. Where the Contract prices from the RVG, the code is the anaesthetist's."</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Booking fills over the days</h4>
@@ -996,7 +1001,8 @@
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open Dr Priya Sharma's Tue 21 PM Free session &#8594; Book (phone advice).</li><li>Choose St George's Hospital and Mr T. Hale; keep the default times (13:00 to 17:30).</li><li>Continue to add booking &#8594; Look up.</li><li>Pause on the populated booking.</li><li>Review &#8594; Save booking &#8594; Done.</li></ul></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open Dr Priya Sharma's Tue 21 PM Free session &#8594; Book (phone advice).</li><li>Choose St George's Hospital and Mr T. Hale; keep the default times (13:00 to 17:30).</li><li>Continue to add booking &#8594; Look up.</li><li>Pause on the populated booking.</li><li>Contract &#8594; Choose: St George's &#8594; its funding tag (fills itself in) &#8594; the Contract &#8594; Use this Contract. An RVG-priced Contract leaves the RVG code to the anaesthetist.</li><li>Review &#8594; Save booking &#8594; Done.</li></ul></div>
+      <div class="row"><span class="k">Worth pointing at</span><span>"Where does the invoice go, then the Contract. Each step only offers Contracts that fit this List, and typing finds one among hundreds. Other price covers anything no price list has yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Phone and PDF stay first-class channels. The design improves those fallbacks rather than pretending they disappear."</span></div>
       <div class="row"><span class="k">Expect</span><span>The lookup fills the complete booking and leaves it editable. The session now holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the availability finders show it as booked.</span></div>
       <div class="row"><span class="k">Optional</span><span>"Assign List does the same without a patient, for a session booked ahead."</span></div>
@@ -1076,7 +1082,7 @@
     <div class="beat">
       <h4>Beat 1 · authorise and generate invoices</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Review queue.</li><li>Process the two Melanie Lists: authorise Forte AM, then use Next in queue to authorise St George's PM.</li><li>View invoices &#8594; <strong>AA-2026-0002 · Brian Holt</strong> &#8594; View.</li><li>Pause on the invoice, then Email invoice &#8594; All invoices.</li><li>Locate the fixed comparison rows and pause:<ul><li><strong>AA-2026-0002 · Brian Holt · Forte Health · $365.70</strong> is the one-invoice, same-funder split Booking (it read $396.18 before catch-up Phase 19b: his ASA II no longer seeds a modifier unit, the RVG table pricing ASA I or II at 0).</li><li><strong>AA-2026-0005 · Alan Prentice · nib · $152.38</strong> and <strong>AA-2026-0006 · Alan Prentice · St George's · $91.43</strong> are the two invoices from the same Booking at 14:00.</li></ul></li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It reads the one Contract on each Procedure, bills its holder or the patient as the Contract says, and groups by who is billed. Xero follows as receivables and banking."</span></div>
       <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as soon as the office authorises them, and their invoices show in her Balances at once, with no Next morning needed.</span></div>
     </div>
     <div class="beat">
@@ -1114,7 +1120,7 @@
     </div>
     <div class="beat"><h4>Beat 1 · prepayment warning</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Dr Souter Fri 24 Jul AM: the small triangle on Annette Riley's row (a marker; tapping it does nothing of its own).</li><li>Open her Booking: Prepayment required is at the top, Before procedure, Strong, with no scroll.</li><li>Mark complete: it completes. Mark list completed &#8594; Submit to office: the usual sheet, straight through.</li><li>Admin Day &#8594; Fri 24: the Souter AM red outline, carried down to her row in the drawer; the To-do card under the calendar &#8594; Clear.</li><li>Optionally, Admin Day &#8594; Tue 21 &#8594; Demo actions &#8594; Raise sample warnings, then Clear sample warnings.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A warning, never a block, and no pop-up in the way. The anaesthetist sees it when they open the Booking, the night before, while the surgeon can still be told; the office sees it on its to-do list as a second check. AA decided not to block (OQ-57)."</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Dr Souter's own price list is a prepaid Contract, so this booking needs paying first. A warning, never a block, and no pop-up in the way. The anaesthetist sees it when they open the Booking, the night before, while the surgeon can still be told; the office sees it on its to-do list as a second check. AA decided not to block (OQ-57)."</span></div>
       <div class="row"><span class="k">Expect</span><span>Completion and submit go through with no extra step; the warning shows in both apps and leaves the to-do list when cleared; no override.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · post-op addendum</h4>
@@ -1215,15 +1221,14 @@
 
   <div class="grid2">
     <div class="card">
-      <h3>Three billing routes</h3>
-      <ol class="tight"><li>The Contract's Party (a hospital, or the Party that holds the Contract)</li><li>Billable Party, usually the patient</li><li>Insurer (nib, an insurer Party)</li></ol>
-      <p style="font-size:13px;color:var(--slate)">Explicit per Procedure, not inferred from flags.</p>
+      <h3>One Contract per Procedure, on the step rail</h3>
+      <ol class="tight"><li>Where does the invoice go? Patient, the List's hospital, or Special</li><li>Then Payment type (Standard, Prepaid), the hospital's funding tag, or the holder</li><li>The Contract, typed to search, No contract · RVG first; or Other price</li></ol>
+      <p style="font-size:13px;color:var(--slate)">The office sets it at setup; the anaesthetist sees the same rail until the List is authorised, never onto or off prepaid.</p>
     </div>
     <div class="card">
       <h3>Patient insurance distinction</h3>
-      <p style="font-size:13px"><strong>Insurer route:</strong> nib is an insurer Party; there is no
-      insurer master or direct-claims flag. <strong>Insured reimbursement:</strong> AA invoices the patient, who claims
-      from their insurer. Not the same workflow.</p>
+      <p style="font-size:13px">nib is billed only through nib's own Contract. A patient with insurance who pays AA is on
+      No contract · RVG (or a price list) and claims back themselves. Not the same workflow.</p>
     </div>
     <div class="card">
       <h3>Split billing</h3>
@@ -1311,7 +1316,7 @@
       <ul class="tight">
         <li>"Anaesthetists pick up open shifts."</li>
         <li>"The app automatically chooses the clinical RVG code."</li>
-        <li>"ACC has its own billing route."</li>
+        <li>"ACC has its own billing route." (ACC is a funding tag on a Contract.)</li><li>"Choose a billing route." (The Contract decides where the invoice goes.)</li>
         <li>"Authorisation means the patient has paid."</li>
         <li>"Xero is the source for the mobile balance view."</li>
         <li>"The prototype is connected to live hospital, Xero, NHI, email or OCR services."</li>

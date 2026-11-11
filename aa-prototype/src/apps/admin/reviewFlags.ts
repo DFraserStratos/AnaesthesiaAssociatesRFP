@@ -8,7 +8,7 @@
  * reference completeness" (RFP.md:898) and says mobile validation reduces the
  * office's burden — so we build only the RFP-grounded flags:
  *   (a) a Booking not marked completed          (neutral — a moved-in incomplete Booking is visible)
- *   (b) a missing billing reference on the hospital (contract-holder) route (neutral)
+ *   (b) a missing billing reference where the Contract bills a hospital or surgeon holder (neutral)
  *   (c) removed in catch-up Phase 18 (RV-37): no ACC advisory; ACC is priced
  *       as an ordinary Contract, and the ACC chip and column stay
  *   (d) any manually-overridden B/T/M unit, with the delta vs the natural
@@ -19,7 +19,7 @@
  * them here.
  */
 
-import type { Booking, Procedure, RvgGroup, RvgTimeRule } from '../../domain/types'
+import type { Booking, Contract, Party, Procedure, RvgGroup, RvgTimeRule } from '../../domain/types'
 import { resolveBtm, type BtmBreakdown, type FeeResult, type ModifierInputs } from '../../domain/billing/fee'
 import { billingReferenceMissing } from '../../domain/billing'
 
@@ -43,6 +43,9 @@ export interface ReviewProcedureInput {
 export interface ReviewBookingInput {
   booking: Booking
   procedures: readonly ReviewProcedureInput[]
+  /** The Contracts and their holders, for the reference check (catch-up Phase 20). */
+  contracts: Readonly<Record<string, Contract>>
+  parties: Readonly<Record<string, Party>>
   /** The RVG time rule held as data (`masters.rvgTimeRule`), for the natural T. */
   timeRule: RvgTimeRule
   /**
@@ -68,7 +71,7 @@ function naturalBtm(
 }
 
 /** Flags for a single Booking. A cancelled Booking yields none (excluded from review). */
-export function reviewFlagsForBooking({ booking, procedures, timeRule, modifierInputs }: ReviewBookingInput): ReviewFlag[] {
+export function reviewFlagsForBooking({ booking, procedures, contracts, parties, timeRule, modifierInputs }: ReviewBookingInput): ReviewFlag[] {
   if (booking.cancellation !== undefined) return []
   const flags: ReviewFlag[] = []
 
@@ -82,8 +85,8 @@ export function reviewFlagsForBooking({ booking, procedures, timeRule, modifierI
   // later warning rule is (21's insurer-will-pay at office review among them).
 
   for (const { procedure, fee, rvgGroup } of procedures) {
-    // (b) missing billing reference on the contract-holder route.
-    if (billingReferenceMissing(procedure)) {
+    // (b) missing billing reference where the Contract bills a hospital or surgeon holder.
+    if (billingReferenceMissing(procedure, contracts, parties)) {
       flags.push({ tone: 'neutral', text: 'No billing reference', bookingId: booking.id, procedureId: procedure.id })
     }
     // (d) manual B/T/M override provenance, with the delta vs the natural value.
