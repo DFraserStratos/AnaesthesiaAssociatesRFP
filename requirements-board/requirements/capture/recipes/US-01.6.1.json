@@ -87,7 +87,7 @@
               "value": "1971-04-09"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"Operation description\"]",
+              "fill": "[role=dialog] [data-shot=procedure-description] input",
               "value": "Cataract extraction, left eye"
             },
             {

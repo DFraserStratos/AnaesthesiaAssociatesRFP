@@ -628,13 +628,6 @@ export interface ListBase {
    */
   billedAtISO?: IsoDateTime
   notes?: string
-  /**
-   * Files or photos attached to the List as a whole (US-03.1.3; catch-up
-   * Phase 15). Optional so the generated canvas Lists carry nothing; absent
-   * reads as empty. Written only through `addAttachment` / `removeAttachment`,
-   * and it travels with the List when the List is reassigned.
-   */
-  attachments?: Attachment[]
   /** Present on a Draft List, and kept after it is assigned (catch-up Phase 31). */
   draft?: DraftTrail
   /** A removed Draft List (US-01.6.4): soft, audited; it stays DRAFT and leaves every view but History. */
@@ -709,18 +702,6 @@ export interface BookingCancellation {
   atISO: IsoDateTime
 }
 
-export interface Attachment {
-  id: string
-  name: string
-  kind: 'photo' | 'pdf' | 'other'
-  /**
-   * A data URL for a picked or bundled image, so an attachment renders inline
-   * (Phase 03). Demo tradeoff: data URLs persist into localStorage — acceptable
-   * for the small bundled/sample photos this prototype attaches.
-   */
-  dataUrl?: string
-}
-
 /**
  * The catalogue's live Booking sources (domain model, Booking > Sources;
  * DM-39). The domain model's bullet still lists a copy of another Booking and a
@@ -756,7 +737,6 @@ export interface Booking {
    */
   source?: BookingSource
   cancellation?: BookingCancellation
-  attachments: Attachment[]
   notes?: string
   /** Stamped in lockstep with every audit entry (7th review A8). */
   lastModifiedBy: string
@@ -800,6 +780,50 @@ export type PriceOverride =
   | { kind: 'percentAdjustment'; percent: number; reason: string }
 
 /**
+ * Where a Procedure's text came from (catch-up Phase 20a; US-02.5.7, DM-51):
+ * the surgeon's rooms (a PDF list or an email), the hospital (its download or
+ * feed), or entered by hand (phone advice, the anaesthetist's own entry).
+ * `unrecorded` is for seeded history whose channel was never kept.
+ */
+export type ProcedureTextSource =
+  | 'surgeonPdf'
+  | 'email'
+  | 'hospitalDownload'
+  | 'hospitalFeed'
+  | 'phone'
+  | 'anaesthetist'
+  | 'unrecorded'
+
+/**
+ * The Procedure's one text, exactly as received (US-02.5.7, DM-51): stored
+ * character for character, never trimmed or reworded. `from` names the
+ * sender where known (the hospital, the person who typed it).
+ */
+export interface ProcedureText {
+  text: string
+  source: ProcedureTextSource
+  receivedAtISO: IsoDateTime
+  from?: string
+}
+
+/** Where the invoice description's value came from (US-08.4.6, D37). */
+export type InvoiceDescriptionOrigin = 'rooms' | 'entered' | 'hospital' | 'contract' | 'edited'
+
+/**
+ * The wording the invoice prints for a Procedure (US-08.4.6, DM-51): a field
+ * of its own with its provenance. Set by the order of defaults
+ * (`startingInvoiceDescription`), applied by `refreshInvoiceDescription`, and
+ * changed by hand only by the office (`setInvoiceDescription`), whose edit
+ * always wins (D73). `editedOver` is the default's text when the office
+ * edited, so the view can tell a newer default has arrived since (a cue only).
+ */
+export interface InvoiceDescription {
+  text: string
+  origin: InvoiceDescriptionOrigin
+  editedOver?: string
+}
+
+/**
  * Procedure — the unit of billing on a Booking. Captured BTM inputs persist AS
  * DATA, not just computed totals (7th review A3; RFP design principle 10: an
  * invoice must be reproducible against what was true when raised).
@@ -807,7 +831,21 @@ export type PriceOverride =
 export interface Procedure {
   id: ProcedureId
   bookingId: BookingId
-  description: string
+  /**
+   * The procedure text, exactly as received (catch-up Phase 20a; US-02.5.7,
+   * DM-51). Written only by `createBooking` and `replaceProcedureText`; never
+   * edited (`editProcedure` refuses it). A replaced text goes to the Booking's
+   * change history as the `procedure.procedureText.replace` audit entry, never
+   * a second field here. Null when none was received.
+   */
+  procedureText: ProcedureText | null
+  /**
+   * The invoice description (catch-up Phase 20a; US-08.4.6, D37, D73). Null
+   * when there is nothing to print yet. Changed only through
+   * `refreshInvoiceDescription` (by the store actions) and the office's
+   * `setInvoiceDescription` / `applyDefaultInvoiceDescription`.
+   */
+  invoiceDescription: InvoiceDescription | null
   /**
    * The Procedure's one Contract (US-04.3.1, DM-10): set by the office at
    * booking setup on the step rail, or by the anaesthetist until the List is

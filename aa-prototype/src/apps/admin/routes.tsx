@@ -209,6 +209,7 @@ export function AdminReviewRoute() {
         onBack={() => navigate('/admin/review')}
         onOpen={(next) => navigate(`/admin/review/${next}`)}
         onViewInvoices={() => navigate('/admin/invoices')}
+        onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
       />
     </RequireEntity>
   )

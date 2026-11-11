@@ -25,8 +25,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.complete': 'Booking completed',
   'booking.uncomplete': 'Booking reopened for amendment',
   'booking.cancel': 'Booking cancelled',
-  'booking.attachmentAdd': 'Attachment added',
-  'booking.attachmentRemove': 'Attachment removed',
   'booking.reassign': 'Booking moved to another list',
   'booking.warningCleared': 'Warning cleared',
   'booking.warningSampleUnstaged': 'Sample warning removed',
@@ -40,14 +38,16 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.railAnswers': 'Invoice destination so far',
   'procedure.enteredPrice': 'Typed price changed',
   'procedure.remove': 'Procedure removed',
+  // Catch-up Phase 20a (US-02.5.7, US-08.4.6).
+  'procedure.procedureText.replace': 'Procedure text replaced',
+  'procedure.invoiceDescription.set': 'Invoice description changed',
+  'procedure.invoiceDescription.applyDefault': 'Newer description used on the invoice',
   'billingLine.add': 'Billing line added',
   'billingLine.update': 'Billing line updated',
   'billingLine.remove': 'Billing line removed',
 
   // --- Lists ---------------------------------------------------------------
   'list.update': 'List updated',
-  'list.attachmentAdd': 'List attachment added',
-  'list.attachmentRemove': 'List attachment removed',
   'list.submit': 'List submitted',
   'list.authorise': 'List authorised',
   'list.billed': 'List billed',

@@ -22,7 +22,7 @@ interface ProcedureContractRowProps {
   canEdit: boolean
   /** Shown under the anaesthetist's row: the office sees any change at review. */
   caption?: string
-  /** The capture hook (default `procedure-contract`; the office setup uses its own). */
+  /** The capture hook (default `procedure-contract-row`; the procedure stack's Contract part owns `procedure-contract`, catch-up Phase 20a). */
   shot?: string
 }
 
@@ -36,10 +36,11 @@ export const SET_BY_THE_OFFICE = 'Set by the office'
  * name and AA code with a teal "Change", or "Needs an invoice destination"
  * with the answers so far and a teal "Choose". Both open the step rail at the
  * same point for the office and the anaesthetist. A prepaid Contract reads
- * "Set by the office" for the anaesthetist (A17). Kept as one component that
- * Phase 20a's Contract stack replaces.
+ * "Set by the office" for the anaesthetist (A17). On the Booking the procedure
+ * stack shows the Contract (catch-up Phase 20a); this row stays in the edit
+ * sheets ("Contract and payer", "Edit procedure").
  */
-export function ProcedureContractRow({ procedure, actor, canEdit, caption, shot = 'procedure-contract' }: ProcedureContractRowProps) {
+export function ProcedureContractRow({ procedure, actor, canEdit, caption, shot = 'procedure-contract-row' }: ProcedureContractRowProps) {
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
   const [open, setOpen] = useState(false)

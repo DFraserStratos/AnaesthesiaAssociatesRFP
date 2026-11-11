@@ -35,7 +35,7 @@ describe('creation paths stamp their source', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, SEED_LIST_IDS.souterPm21, {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
-      operation: 'Diagnostic laparoscopy',
+      sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       source: 'anaesthetistAdHoc',
     })
     if (!outcome.ok) throw new Error(outcome.message)
@@ -48,7 +48,7 @@ describe('creation paths stamp their source', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, SEED_LIST_IDS.souterPm21, {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
-      operation: 'Diagnostic laparoscopy',
+      sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
     })
     if (!outcome.ok) throw new Error(outcome.message)
     expect(api.getState().schedule.bookings[outcome.value.bookingId]).not.toHaveProperty('source')

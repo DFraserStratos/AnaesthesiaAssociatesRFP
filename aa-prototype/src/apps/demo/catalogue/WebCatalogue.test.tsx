@@ -32,7 +32,7 @@ describe('the Web component catalogue', () => {
       expect(row(name), name).not.toBeNull()
     }
     expect(within(document.getElementById('lib-tanstack') as HTMLElement).getByText('Accounts tables (tfoot totals)')).toBeInTheDocument()
-    expect(within(document.getElementById('lib-custom') as HTMLElement).getByText('AttachmentStrip')).toBeInTheDocument()
+    expect(within(document.getElementById('lib-custom') as HTMLElement).getByText('AvailabilityGrid')).toBeInTheDocument()
     expect(document.querySelectorAll('[data-catalogue-row]').length).toBeGreaterThanOrEqual(40)
   })
 

@@ -39,7 +39,7 @@ function newBookingIds(before: Set<string>): string[] {
 function saveManual() {
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ad Hoc Patient' } })
   fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-05-05' } })
-  fireEvent.change(screen.getByLabelText('Operation'), { target: { value: 'Diagnostic laparoscopy' } })
+  fireEvent.change(screen.getByLabelText('Procedure description'), { target: { value: 'Diagnostic laparoscopy' } })
   fireEvent.click(screen.getByRole('button', { name: 'Save booking' }))
 }
 
@@ -88,7 +88,11 @@ describe('AddBookingFlow', () => {
     expect(created).toHaveLength(1)
     const booking = useAppStore.getState().schedule.bookings[created[0]!]
     expect(booking?.source).toBe(source)
-    expect(booking?.attachments.map((a) => a.kind)).toEqual(['photo'])
+    // The photo demo only prefills the form (catch-up Phase 20a: attachments removed, RV-01).
+    expect(booking).not.toHaveProperty('attachments')
+    const first = Object.values(useAppStore.getState().schedule.procedures).find((p) => p.bookingId === created[0])
+    // An anaesthetist's entry is the anaesthetist's; the office's defaults to Told by Phone.
+    expect(first?.procedureText).toMatchObject({ source: actor.role === 'office' ? 'phone' : 'anaesthetist' })
   })
 
   it('a repeat Future-scope request while the photo prong is open restarts it at the card picker', () => {
@@ -112,5 +116,47 @@ describe('AddBookingFlow', () => {
     )
     expect(screen.queryByRole('button', { name: 'Save booking' })).toBeNull()
     expect(screen.getAllByRole('img', { name: /^Sample paper card/ }).length).toBeGreaterThan(0)
+  })
+})
+
+describe('the Procedure description field (catch-up Phase 20a; US-02.4.1)', () => {
+  function fillPatient() {
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Typed Patient' } })
+    fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-05-05' } })
+  }
+  const newestProcedure = (before: Set<string>) => {
+    const created = newBookingIds(before)
+    expect(created).toHaveLength(1)
+    return Object.values(useAppStore.getState().schedule.procedures).find((p) => p.bookingId === created[0])!
+  }
+
+  it("an anaesthetist's save stores the text exactly as typed, leading and trailing spaces kept, with Anaesthetist", () => {
+    const before = new Set(bookingsForList(useAppStore.getState(), LIST).map((b) => b.id))
+    renderFlow(SOUTER_ACTOR)
+    fillPatient()
+    fireEvent.change(screen.getByLabelText('Procedure description'), { target: { value: ' L TKJR ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save booking' }))
+    const p = newestProcedure(before)
+    expect(p.procedureText).toMatchObject({ text: ' L TKJR ', source: 'anaesthetist', from: SOUTER_ACTOR.who })
+    expect(p.invoiceDescription).toEqual({ text: ' L TKJR ', origin: 'entered' })
+  })
+
+  it('the office chooses Told by Email', () => {
+    const before = new Set(bookingsForList(useAppStore.getState(), LIST).map((b) => b.id))
+    renderFlow(OFFICE_ACTOR)
+    fillPatient()
+    fireEvent.change(screen.getByLabelText('Procedure description'), { target: { value: 'RTK' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Email' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save booking' }))
+    expect(newestProcedure(before).procedureText).toMatchObject({ text: 'RTK', source: 'email' })
+  })
+
+  it('refuses a save with neither a description nor an RVG code', () => {
+    const before = new Set(bookingsForList(useAppStore.getState(), LIST).map((b) => b.id))
+    renderFlow(SOUTER_ACTOR)
+    fillPatient()
+    fireEvent.click(screen.getByRole('button', { name: 'Save booking' }))
+    expect(screen.getByText('Type the procedure as told, or choose an RVG code.')).toBeInTheDocument()
+    expect(newBookingIds(before)).toHaveLength(0)
   })
 })

@@ -205,16 +205,30 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.getByLabel('Phone')).toHaveValue('021 555 0190')
   await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('A3')
   await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('Appendicectomy, laparoscopic')
-  await expect(page.getByLabel('Operation')).toHaveValue('Appendicectomy, laparoscopic')
+  await expect(page.getByLabel('Procedure description')).toHaveValue('Appendicectomy, laparoscopic')
   await expect(page.getByLabel('Scheduled time')).toHaveValue('15:00')
   // Catch-up Phase 20: no route or insurer; the Contract is never preselected (US-04.3.4).
   await expect(page.locator('[data-shot=manual-contract]')).toContainText('Not chosen')
   await expect(page.getByLabel('Billing reference')).toHaveValue('STG-HALE-2107')
   await expect(page.getByText(/Patient and booking details pre-filled/)).toBeVisible()
 
+  // Catch-up Phase 20a: the procedure description as told, Told by Phone by default (US-02.4.1).
+  await expect(page.getByRole('button', { name: 'Phone', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
   await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByText('Demo Patient', { exact: true }).first()).toBeVisible()
+  // Stored exactly as told, with Phone, and it starts the invoice description ("As entered").
+  const readSaved = () => page.evaluate(() => {
+    const key = Object.keys(localStorage).find((k) => k.includes('aa'))!
+    const st = JSON.parse(localStorage.getItem(key)!).state
+    const p = Object.values(st.schedule.procedures as Record<string, { procedureText: { text: string; source: string } | null; invoiceDescription: { origin: string } | null; bookingId: string }>).find(
+      (x) => st.masters.patients[st.schedule.bookings[x.bookingId].patientId]?.name === 'Demo Patient',
+    )
+    return p !== undefined ? { text: p.procedureText?.text, source: p.procedureText?.source, origin: p.invoiceDescription?.origin } : null
+  })
+  // The store persists on a short debounce.
+  await expect.poll(readSaved).toEqual({ text: 'Appendicectomy, laparoscopic', source: 'phone', origin: 'entered' })
   // Saved with no Contract, it waits on Admin Day's "Needs an invoice destination" (catch-up Phase 20).
   await expect(page.locator('[data-shot=admin-needs-invoice-destination]')).toContainText('Demo Patient')
   // The session now holds a Private List (P5 closed): the block reads St George's.

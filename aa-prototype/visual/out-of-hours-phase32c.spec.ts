@@ -174,7 +174,7 @@ test('4 · Mobile as Dr Souter: the List after PM, moon and 18:00; add a Booking
   await page.getByLabel('NHI').fill('ZZZ0016')
   await page.getByLabel('Name').fill('Evening Patient')
   await page.getByLabel('Date of birth').fill('1980-02-02')
-  await page.getByLabel('Operation').fill('Appendicectomy, laparoscopic')
+  await page.getByLabel('Procedure description').fill('Appendicectomy, laparoscopic')
   await page.getByRole('button', { name: 'Choose an RVG code' }).click()
   await page.getByPlaceholder('Search RVG code or description').fill('appendicectomy')
   await page.locator('button[data-rvg-code=A3]', { hasText: 'Appendicectomy, laparoscopic' }).click()

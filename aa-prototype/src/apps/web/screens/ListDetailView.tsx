@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
-import { bookingContractCue, editRefusal, removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
+import { bookingContractCue, editRefusal, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
@@ -12,7 +12,7 @@ import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
 import { Panel } from '../components'
-import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
@@ -30,7 +30,7 @@ interface BookingRow {
   time: string
   patientName: string
   nhi: string
-  operation: string
+  procedure: string
   extraProcedures: number
   /** "Needs an invoice destination" or "RVG code to fill in" (catch-up Phase 20). */
   cue: string | undefined
@@ -65,7 +65,6 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const cueState = useAppStore((s) => s)
   const masters = useAppStore((s) => s.masters)
   const [addOpen, setAddOpen] = useState(false)
-  const [attachOpen, setAttachOpen] = useState(false)
   const [submitSheet, setSubmitSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
   // Catch-up Phase 32: her own move, and the notice when a colleague moved it to her.
   const movable = useIsMovable(listId, actor.anaesthetistId)
@@ -104,7 +103,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           time: booking.scheduledTime ?? '·',
           patientName: masters.patients[booking.patientId]?.name ?? 'Unknown patient',
           nhi: masters.patients[booking.patientId]?.nhi ?? 'NHI pending',
-          operation: procs[0]?.description || 'Procedure to capture',
+          procedure: procs[0] !== undefined ? procedureLabel(procs[0], masters.rvgGroups, 1) : 'Procedure to capture',
           extraProcedures: Math.max(0, procs.length - 1),
           cue: booking.cancellation === undefined ? bookingContractCue(cueState, booking.id) : undefined,
           units: totals.units,
@@ -142,7 +141,6 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
     .join(' · ')
   // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
   const canEdit = editRefusal(actor, list) === null
-  const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
@@ -257,7 +255,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                       <div className="mono" style={{ fontSize: 11.5, color: neutral.mist, marginTop: 2 }}>{r.nhi}</div>
                     </Td>
                     <Td>
-                      {r.operation}
+                      {r.procedure}
                       {r.extraProcedures > 0 && (
                         <span style={{ color: neutral.mist }}> · +{r.extraProcedures} more</span>
                       )}
@@ -329,23 +327,6 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
         </Panel>
       )}
 
-      {/* List attachments (US-03.1.3): the web List detail's second panel, the
-          Booking detail's panel pattern. Hidden when the List is locked and
-          holds none. */}
-      {(canEdit || listAttachments.length > 0) && (
-        <div data-shot="list-attachments">
-          <Panel title="List attachments" action={canEdit ? <AddAttachmentButton onClick={() => setAttachOpen(true)} /> : undefined}>
-            <AttachmentStrip
-              attachments={listAttachments}
-              canRemove={canEdit}
-              onRemove={(id) => removeAttachment(useAppStore, actor, { kind: 'list', id: listId }, id)}
-              emptyText="No attachments on this List."
-            />
-          </Panel>
-        </div>
-      )}
-
-      <AddAttachmentSheet open={attachOpen} target={{ kind: 'list', id: listId }} actor={actor} onClose={() => setAttachOpen(false)} />
       <AddBookingFlow open={addOpen} listId={listId} actor={actor} onClose={() => setAddOpen(false)} onCreated={() => undefined} />
       {submitSheet !== 'none' && (
         <SubmitListSheet open listId={listId} actor={actor} mode={submitSheet} onClose={() => setSubmitSheet('none')} onSubmitted={() => setSubmitSheet('none')} />

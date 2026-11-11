@@ -109,6 +109,20 @@ until the List is authorised, never onto or off a prepaid Contract. A Contract b
 patient as it says. A patient with insurance who pays AA is on No contract · RVG (or a price list) and
 claims back themselves; nib is billed only through nib's own Contract.
 
+### Procedure text and the invoice description
+
+- **Procedure text:** one per Procedure, exactly as received. The hospital's replaces the surgeon's
+  rooms' when it arrives, and the original stays in the Booking's history; a hand-entered Booking keeps
+  what was typed or told. Nobody edits it.
+- **Invoice description:** what the invoice prints, by its order of defaults: the procedure text, then a
+  filled-in Contract invoice description on top; never the RVG code. The office can edit it at any time
+  until the List is authorised, and the edit always wins; a newer description shows as a cue with
+  **Use it**.
+- **On every Booking screen:** the procedure text, the invoice description, the Contract (name, holder,
+  who is invoiced, pricing basis with its figure) and the RVG code where the Contract prices from RVG
+  units. The running fee stays hidden from the anaesthetist.
+- No attachments on Bookings or Lists. The demo's procedure wording is illustrative (AI-made), not AA's.
+
 ### Split billing
 
 - A second/additional Procedure in the same episode (**Add another procedure**) is time-only; Brian Holt
@@ -469,6 +483,12 @@ Say:
 - Each funding tag may name its funder (Southern Cross Health Society for SXAP, Health NZ for HNZ,
   ACC for ACC), for suggesting a path later.
 - A specialty or tag in use cannot be removed; rename it instead.
+
+### 14. The Contract's invoice description on top (not yet put to AA)
+
+- Ben and Vanessa agreed the hospital's text replaces the rooms' (5 November). The Contract's own
+  invoice description taking precedence over both on the invoice (D37, extended 5 November) has not
+  been put to Ben and Vanessa yet; present it as a discovery point.
 
 ## Likely evaluator questions
 

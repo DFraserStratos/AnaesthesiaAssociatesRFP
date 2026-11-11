@@ -98,7 +98,7 @@ export type KeptReason = 'hasBookings' | 'hasRecords' | 'submitted' | 'authorise
 
 export const KEPT_REASON_LABELS: Record<KeptReason, string> = {
   hasBookings: 'with Bookings',
-  hasRecords: 'with notes or attachments',
+  hasRecords: 'with notes',
   movedByOffice: 'moved by the office',
   submitted: 'submitted',
   authorised: 'authorised',
@@ -170,8 +170,8 @@ function keptReason(list: List, recurringBookingId: string, booked: ReadonlySet<
   if (list.state === 'SUBMITTED') return 'submitted'
   if (list.state === 'AUTHORISED') return 'authorised'
   if (booked.has(list.id)) return 'hasBookings'
-  // Office records on the List (a phone note, an attachment, a cleared conflict) are never thrown away or overwritten.
-  if ((list.phoneNotes ?? []).length > 0 || (list.attachments ?? []).length > 0 || (list.conflictClears ?? []).length > 0) return 'hasRecords'
+  // Office records on the List (a phone note, a cleared conflict) are never thrown away or overwritten.
+  if ((list.phoneNotes ?? []).length > 0 || (list.conflictClears ?? []).length > 0) return 'hasRecords'
   return null
 }
 

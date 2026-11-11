@@ -15,6 +15,7 @@
  */
 
 import {
+  replaceProcedureText,
   AA_FEE_RUN_ACTOR,
   BCTI_SEED_MONTH,
   BCTI_SEED_TARGET,
@@ -103,6 +104,16 @@ import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { sessionText } from '../../domain/outOfHours'
+import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
+import {
+  cannedMessageForBooking,
+  defaultHospitalDescription,
+  firstProcedureOf,
+  hospitalDescriptionChoices,
+  hospitalDescriptionOutcome,
+  hospitalDescriptionRefusal,
+  hospitalDescriptionText,
+} from './procedureTextTriggers'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -134,8 +145,11 @@ function pairingOf(state: AppState, hospitalId: string, surgeonId: string): stri
 }
 const dayLabel = (dateISO: string) => format(parseISO(dateISO), 'EEE d MMM')
 const ADMIN_CONFLICTS = '/admin/conflicts'
+/** The hospital's download, as the demo stands it in (catch-up Phase 20a): an integration write, so a locked List refuses it. */
+const HOSPITAL_DOWNLOAD_ACTOR = { who: 'Hospital booking download', role: 'system' as const, source: 'integration' as const }
 const ADMIN_BOOKING = '/admin/day/:dateISO/bookings/:bookingId'
 const MOBILE_BOOKING = '/mobile/lists/:listId/bookings/:bookingId'
+const WEB_BOOKING = '/web/lists/:listId/bookings/:bookingId'
 /** Where the sample warnings show (Admin in the bar; the mobile Booking in the bar and the PWA). */
 const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as const
 
@@ -538,6 +552,41 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       }
     },
     indexPath: () => '/admin/audit',
+  },
+
+  // ── Admin · Booking detail: a hospital description arrives (catch-up Phase 20a) ──
+  {
+    id: 'hospital-description-arrives',
+    label: 'Hospital description arrives',
+    description:
+      "The hospital's download brings a description for the Booking on screen (AR-35's illustrative wording, not AA's), through the one replace path: the procedure text becomes the hospital's and the rooms' goes to the History. The invoice description follows it, unless the Contract's own description or an office edit holds; an edit then shows a newer description cue. Try it on Wiremu Tane's lap chole (Dr Souter, Tue 21 PM).",
+    screen: 'Admin · Booking detail',
+    routes: [ADMIN_BOOKING],
+    surfaces: ['bar'],
+    choices: () => hospitalDescriptionChoices().map(({ id, label }) => ({ id, label })),
+    defaultChoice: (state, ctx) => defaultHospitalDescription(firstProcedureOf(state, ctx.params['bookingId'])),
+    disabledReason: (state, ctx, choiceId) =>
+      hospitalDescriptionRefusal(
+        firstProcedureOf(state, ctx.params['bookingId']),
+        hospitalDescriptionText(choiceId ?? defaultHospitalDescription(firstProcedureOf(state, ctx.params['bookingId']))),
+      ),
+    run: (api, ctx, choiceId) => {
+      const procedure = firstProcedureOf(api.getState(), ctx.params['bookingId'])
+      const text = hospitalDescriptionText(choiceId ?? defaultHospitalDescription(procedure))
+      const refused = hospitalDescriptionRefusal(procedure, text)
+      if (refused !== null || procedure === undefined || text === undefined) return { ok: false, message: refused ?? 'Nothing to replace.' }
+      const state = api.getState()
+      const booking = state.schedule.bookings[procedure.bookingId]
+      const hospitalId = booking !== undefined ? state.schedule.lists[booking.listId]?.hospitalId : undefined
+      const from = hospitalId !== undefined ? state.masters.hospitals[hospitalId]?.name : undefined
+      const hadText = procedure.procedureText !== null
+      const res = replaceProcedureText(api, HOSPITAL_DOWNLOAD_ACTOR, procedure.id, { text, source: 'hospitalDownload', ...(from !== undefined ? { from } : {}) })
+      if (!res.ok) return { ok: false, message: `Refused: ${res.message}` }
+      const after = api.getState().schedule.procedures[procedure.id]
+      const cue = after !== undefined && newerInvoiceDescription(after, api.getState().masters.contracts) !== undefined
+      return { ok: true, message: hospitalDescriptionOutcome(text, after?.invoiceDescription?.origin, cue, hadText) }
+    },
+    indexPath: () => '/admin/day/2026-07-21/bookings/BK0006',
   },
 
   // ── Admin · Review and Booking detail (seed-scoped) ──────────────────────
@@ -1241,23 +1290,29 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'fire-hospital-message',
     label: 'Fire hospital message',
     description:
-      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). A new Booking arrives with no Contract and waits on Admin Day's Needs an invoice destination until the office sets one. Also on Admin · Integrations and the Integrations simulator.",
+      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). A new Booking arrives with no Contract and waits on Admin Day's Needs an invoice destination until the office sets one. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital description replaces the rooms' text, the original kept in the History. Also on Admin · Integrations and the Integrations simulator.",
     screen: 'Mobile · Lists',
-    routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
+    routes: [...MOBILE_LISTS, WEB_BOOKING, ADMIN_BOOKING, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
     surfaces: ['bar', 'pwa'],
     badge: 'future-scope',
     choices: () => CANNED_MESSAGES.map((m) => ({ id: m.id, label: `${m.label} · ${m.id}` })),
-    defaultChoice: (_state, ctx) => ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
+    // On a Booking, the message addressed to it (catch-up Phase 20a); else the simulator's pick or the S1 create.
+    defaultChoice: (state, ctx) =>
+      cannedMessageForBooking(state, ctx.params['bookingId']) ?? ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
     disabledReason: () => null,
     run: (api, _ctx, choiceId) => {
       const selectedId = choiceId ?? DEFAULT_MESSAGE_ID
+      const replacesBefore = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length
       const res = processMessage(api, selectedId)
       useDemoTriggerMemory.getState().rememberMessage(selectedId)
+      const replaced = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length > replacesBefore
       return {
         ok: res.ok,
-        message: res.ok
-          ? `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`
-          : `Refused: ${res.message}`,
+        message: !res.ok
+          ? `Refused: ${res.message}`
+          : replaced
+            ? `Fired ${selectedId}: the hospital's description replaced the rooms' text; the original is in the History.`
+            : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
       }
     },
     indexPath: () => '/mobile/lists',

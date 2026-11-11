@@ -24,6 +24,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking, withRvgRowChange } from './lifecycle'
 import { railContextForList, railMastersOf } from './selectors'
 import { claimsAuditView } from '../domain/billing/modifiers'
+import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 
 /** The rail's actor for a store actor: the anaesthetist, or the office (system and integration act as the office). */
 export function railActorOf(actor: Actor): RailActor {
@@ -128,6 +129,8 @@ export function setProcedureContract(
   for (const key of Object.keys(patch) as (keyof Procedure)[]) {
     if (patch[key] === undefined) delete next[key]
   }
+  // The invoice description follows the Contract's (US-08.4.6, D37) unless the office edited it (D73).
+  next.invoiceDescription = refreshedInvoiceDescriptionFor(next, state.masters.contracts)
 
   const view = (p: Procedure) => ({
     governingContractId: p.governingContractId,
@@ -135,6 +138,7 @@ export function setProcedureContract(
     enteredPrice: p.enteredPrice,
     priceOverride: p.priceOverride,
     railAnswers: p.railAnswers,
+    invoiceDescription: p.invoiceDescription?.text ?? null,
   })
   mutate(
     api,

@@ -48,7 +48,7 @@ function stubFee(btm: BtmBreakdown = ZERO_BTM): FeeResult {
 }
 
 function proc(over: Partial<Procedure> = {}): Procedure {
-  return { id: 'P1', bookingId: 'BK1', description: 'Test op', isAdditional: false, modifierClaims: [], removedModifierIds: [], ...over }
+  return { id: 'P1', bookingId: 'BK1', procedureText: null, invoiceDescription: null, isAdditional: false, modifierClaims: [], removedModifierIds: [], ...over }
 }
 
 function booking(over: Partial<Booking> = {}): Booking {
@@ -73,10 +73,10 @@ describe('reviewFlags (pure)', () => {
   })
 
   it('(c) raises no ACC flag on any Contract (catch-up Phase 18, RV-37), whatever the text says', () => {
-    const bp = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', governingContractId: 'con-ncr' }), fee: stubFee() }] })
+    const bp = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, booking: booking(), procedures: [{ procedure: proc({ procedureText: { text: 'ACL reconstruction, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' }, governingContractId: 'con-ncr' }), fee: stubFee() }] })
     expect(bp.some((f) => f.text.startsWith('ACC'))).toBe(false)
 
-    const hospitalAcc = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, booking: booking(), procedures: [{ procedure: proc({ description: 'ACL reconstruction, ACC claim', governingContractId: 'con-hosp', billingReference: 'R' }), fee: stubFee() }] })
+    const hospitalAcc = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, booking: booking(), procedures: [{ procedure: proc({ procedureText: { text: 'ACL reconstruction, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' }, governingContractId: 'con-hosp', billingReference: 'R' }), fee: stubFee() }] })
     expect(hospitalAcc.some((f) => f.text.startsWith('ACC'))).toBe(false)
   })
 

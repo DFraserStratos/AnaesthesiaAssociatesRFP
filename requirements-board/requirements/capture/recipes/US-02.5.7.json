@@ -1,0 +1,163 @@
+{
+  "id": "US-02.5.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "procedure-text",
+      "app": "web",
+      "caption": "The procedure text as received",
+      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0043",
+      "states": [
+        {
+          "state": "rooms",
+          "caption": "The procedure text as the rooms sent it",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        },
+        {
+          "state": "hospital-update",
+          "caption": "The hospital's text replaces it",
+          "steps": [
+            {
+              "trigger": "fire-hospital-message"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text",
+      "app": "mobile",
+      "caption": "The procedure text as received",
+      "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0043",
+      "states": [
+        {
+          "state": "rooms",
+          "caption": "The procedure text as the rooms sent it",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-stack]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        },
+        {
+          "state": "hospital-update",
+          "caption": "The hospital's text replaces it",
+          "steps": [
+            {
+              "trigger": "fire-hospital-message"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=procedure-stack]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text",
+      "app": "admin",
+      "caption": "The procedure text as received",
+      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "states": [
+        {
+          "state": "rooms",
+          "caption": "The procedure text as the rooms sent it",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        },
+        {
+          "state": "hospital-update",
+          "caption": "The hospital's text replaces it",
+          "steps": [
+            {
+              "trigger": "fire-hospital-message"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text-history",
+      "app": "web",
+      "caption": "The rooms' original stays in the Booking's history",
+      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text-history",
+      "app": "mobile",
+      "caption": "The rooms' original stays in the Booking's history",
+      "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

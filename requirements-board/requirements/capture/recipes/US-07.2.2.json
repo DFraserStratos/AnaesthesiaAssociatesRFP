@@ -6,7 +6,7 @@
     {
       "name": "review-contracts",
       "app": "admin",
-      "caption": "Office review of each Booking's Contract, who is billed, codes and flags",
+      "caption": "Office review of each Procedure's text and Contract, with the flags",
       "start": "/admin/review/L-25490-2026-07-20-AM",
       "states": [
         {

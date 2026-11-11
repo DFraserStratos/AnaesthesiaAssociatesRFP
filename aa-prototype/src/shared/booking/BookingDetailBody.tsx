@@ -22,17 +22,18 @@ import {
   railMastersOf,
   setRailAnswers,
   raisePreProcedureInvoice,
-  removeAttachment,
+  applyDefaultInvoiceDescription,
   uncompleteBooking,
   useAppStore,
   useToday,
   type Actor,
 } from '../../store'
 import { Button } from '../ui'
+import { TextAction } from '../ui/TextAction'
 import { useSurface, type BookingTotalLine } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, procedureFee } from '../capture'
 import { ageYears, BOOKING_SOURCE_LABELS, formatDob, nhiBadge } from '../format'
-import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../attachments'
+import { procedureLabel } from '../../domain/billing/procedureStack'
 import {
   CancelBookingSheet,
   EditPatientSheet,
@@ -41,6 +42,7 @@ import {
   OfficeAlertLine,
   EditProcedureSheet,
   RemoveProcedureSheet,
+  EditInvoiceDescriptionSheet,
   movedToYouByLine,
   useBookingMovedToMeNotice,
 } from '../flows'
@@ -68,9 +70,9 @@ type SheetState =
   | 'none'
   | 'cancel'
   | 'patient'
-  | 'attachment'
   | { kind: 'procedure'; procedureId: string }
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
+  | { kind: 'invoiceDescription'; procedureId: string }
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -120,7 +122,7 @@ const officeActionStyle: React.CSSProperties = {
 /**
  * The booking-detail body (Phase 05 extraction). Everything from the old mobile
  * `BookingDetailScreen` below the header: the patient / scheduled-time /
- * attachments / notes sections, the per-procedure BTM capture blocks (ordinal
+ * notes sections, the per-procedure BTM capture blocks (ordinal
  * ordered), the live `validateBookingForBilling` + the showValidation latch, the
  * cancel / add-procedure / complete / amend handlers, the edit sheets,
  * the completion overlay, and the complete/amend bar. Both mobile's
@@ -251,7 +253,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     if (procedures.length > 1) {
       lines = procedures.map((procedure, index) => {
         const line: BookingTotalLine = {
-          label: procedure.description === '' ? `Procedure ${index + 1}` : procedure.description,
+          label: procedureLabel(procedure, masters.rvgGroups, index + 1),
           amount: views[index]!.fee.total,
         }
         // A fixed price is the whole price on any Procedure (catch-up Phase 19a).
@@ -323,13 +325,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     const labels: Record<string, string> = {}
     procedures.forEach((procedure, index) => {
       const scope = `Procedure ${index + 1}`
-      labels[procedure.id] = procedure.description === '' ? scope : `${scope} · ${procedure.description}`
+      const label = procedureLabel(procedure, masters.rvgGroups, index + 1)
+      labels[procedure.id] = label === scope ? scope : `${scope} · ${label}`
       for (const line of Object.values(billingLinesRecord)) {
         if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
       }
     })
     return labels
-  }, [procedures, billingLinesRecord])
+  }, [procedures, billingLinesRecord, masters.rvgGroups])
 
   // "Add another procedure" (US-03.2.3, catch-up Phase 20): the new Procedure
   // picks its own Contract on the step rail, opened on the first Procedure's
@@ -382,10 +385,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   function saveNotes() {
     if (notes === (booking!.notes ?? '')) return
     run(editBooking(useAppStore, actor, bookingId, { notes }))
-  }
-
-  function removeBookingAttachment(attachmentId: string) {
-    return removeAttachment(useAppStore, actor, { kind: 'booking', id: bookingId }, attachmentId)
   }
 
   // "Add another procedure" (US-03.2.3): the new Procedure picks its own
@@ -620,14 +619,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         </div>
       )}
 
-      {/* Attachments (US-03.1.3): written only through addAttachment / removeAttachment. */}
-      <Section
-        label="Attachments"
-        action={canEdit ? <AddAttachmentButton onClick={() => setSheet('attachment')} /> : undefined}
-      >
-        <AttachmentStrip attachments={booking.attachments} canRemove={canEdit} onRemove={removeBookingAttachment} emptyText="No attachments." />
-      </Section>
-
       {/* Notes for the office */}
       <Section label="Notes for the office">
         {canEdit ? (
@@ -653,9 +644,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           procedures are listed and priced once the office assigns the List (catch-up Phase 31). */}
       {!cancelled && list.state === 'DRAFT' && procedures.length > 0 && (
         <Section label={`Procedures (${procedures.length})`}>
-          {procedures.map((procedure) => (
+          {procedures.map((procedure, index) => (
             <div key={procedure.id} style={{ fontSize: 14, color: neutral.ink }}>
-              {procedure.description}
+              {procedureLabel(procedure, masters.rvgGroups, index + 1)}
               {procedure.rvgGroupId !== undefined && masters.rvgGroups[procedure.rvgGroupId] !== undefined && (
                 <span className="mono" style={{ marginLeft: 8, fontSize: 12, color: neutral.slate }}>{masters.rvgGroups[procedure.rvgGroupId]!.code}</span>
               )}
@@ -680,6 +671,21 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
               onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
               onRemove={() => setSheet({ kind: 'removeProcedure', procedureId: procedure.id, ordinal: index + 1 })}
               onError={setError}
+              // The office edits the invoice description at any time until AUTHORISED (US-08.4.6, D73).
+              {...(actor.role === 'office' && canEdit
+                ? {
+                    stackActions: (
+                      <TextAction shot="edit-invoice-description-action" onClick={() => setSheet({ kind: 'invoiceDescription', procedureId: procedure.id })}>
+                        Edit invoice description
+                      </TextAction>
+                    ),
+                    newerAction: (
+                      <TextAction small shot="use-newer-description" label={`Use the newer invoice description for procedure ${index + 1}`} onClick={() => run(applyDefaultInvoiceDescription(useAppStore, actor, procedure.id))}>
+                        Use it
+                      </TextAction>
+                    ),
+                  }
+                : {})}
             />
             {actor.role === 'office' && (
               <OfficeBillingSetup
@@ -807,7 +813,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         }
       />
 
-      <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'booking', id: bookingId }} actor={actor} onClose={() => setSheet('none')} />
       {actor.role === 'anaesthetist' && moveMounted && (
         <MoveBookingToColleagueSheet
           open={moveOpen}
@@ -835,6 +840,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           actor={actor}
           onClose={() => setSheet('none')}
         />
+      )}
+      {typeof sheet === 'object' && sheet.kind === 'invoiceDescription' && (
+        <EditInvoiceDescriptionSheet open procedureId={sheet.procedureId} actor={actor} onClose={() => setSheet('none')} />
       )}
       {typeof sheet === 'object' && sheet.kind === 'removeProcedure' && proceduresRecord[sheet.procedureId] !== undefined && (
         <RemoveProcedureSheet

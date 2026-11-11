@@ -166,7 +166,8 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       sendingFacility: 'STG',
       appointmentId: APPT.s12,
       scheduled: { dateISO: STG_LIST.dateISO, time: '08:30' },
-      operation: { code: 'A3', description: 'Appendicectomy, laparoscopic' },
+      // AR-35 row 14 (AI-made, illustrative; catch-up Phase 20a): the hospital's shorthand as received.
+      operation: { code: 'A3', description: 'lap appy ?conv to open' },
       patient: { nhi: 'CQY9304', nhiField: 'PID-2', localId: 'SG-880021', name: { family: 'Mitchell', given: 'Sarah' }, dobISO: '1988-04-12', ethnicity: '11111' },
     }),
   },
@@ -309,7 +310,8 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.s14,
       scheduled: { dateISO: STG_MODIFY_LIST.dateISO, time: '12:15' },
       note: 'Bumped 15 min at surgeon request',
-      operation: { code: 'LL4', description: 'Total hip replacement' },
+      // AR-35 row 27 (illustrative; catch-up Phase 20a): the hospital's fuller wording replaces the rooms' row 26.
+      operation: { code: 'LL4', description: 'WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC' },
       patient: { nhi: 'ZAK8873', nhiField: 'PID-2', localId: 'SG-880260', name: { family: 'Foster', given: 'Diane' }, dobISO: '1958-09-19', ethnicity: '11111' },
     }),
   },

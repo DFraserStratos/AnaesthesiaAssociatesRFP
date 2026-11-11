@@ -15,6 +15,7 @@ import { projectedListId } from '../slots'
 import { ANAE } from './cast'
 import { CONTRACT } from './contracts'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
+import { seedText } from './procedureText'
 
 export const ACCEPTANCE_BEAT_LIST_ID = projectedListId(ANAE.beaumont, '2026-07-31', 'AM')
 export const ACCEPTANCE_BEAT_PATIENT_ID = 'PT0120'
@@ -34,14 +35,14 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     completed: false,
     // Christchurch Eye Surgery Lists arrive as the surgeon's PDF (the seed's source rule).
     source: 'surgeonPdf',
-    attachments: [],
     lastModifiedBy: 'Kirsty W.',
     lastModifiedAtISO: '2026-07-20T16:40:00',
   }
   const procedure: Procedure = {
     id: `P${String(next.procedure).padStart(4, '0')}`,
     bookingId,
-    description: 'Cataract extraction with IOL',
+    procedureText: seedText('Cataract extraction with IOL'),
+    invoiceDescription: null,
     rvgGroupId: rvgGroupIdForLegacyCode('42702'),
     isAdditional: false,
     modifierClaims: [],

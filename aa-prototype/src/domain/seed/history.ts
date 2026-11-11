@@ -52,6 +52,7 @@ import { ANAE, HOSP, ORG, SURG } from './cast'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { CONTRACT, PLAIN_RVG_CONTRACT_BY_HOSPITAL } from './contracts'
 import { BP, genericPatientIds, PAT } from './patients'
+import { seedText } from './procedureText'
 
 /** The masters buildHistory needs (structural — avoids a circular import of SeedMasters). */
 export interface HistoryMasters {
@@ -439,14 +440,14 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       completed: true,
       completedAtISO: acc.raisedISO,
       ...(acc.scheduledTime !== undefined ? { scheduledTime: acc.scheduledTime } : {}),
-      attachments: [],
       lastModifiedBy: 'Billing run',
       lastModifiedAtISO: acc.raisedISO,
     }
     const procedure: Procedure = {
       id: procId,
       bookingId,
-      description: acc.description,
+      procedureText: seedText(acc.description),
+      invoiceDescription: null,
       // Catch-up Phase 20: the one Contract it was billed under. A patient or
       // guardian bill was No contract · RVG; a holder bill, the List's
       // hospital's plain RVG Contract (what the retired route resolved).

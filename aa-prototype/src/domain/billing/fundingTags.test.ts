@@ -76,7 +76,7 @@ describe('procedureAccFunded (FT-05.5, US-05.5.1)', () => {
   })
 
   it('never reads the procedure text, and no stored Contract is never ACC', () => {
-    expect(procedureAccFunded(masters, mkProcedure({ description: 'ACL reconstruction, ACC claim', governingContractId: 'plain' }))).toBe(false)
-    expect(procedureAccFunded(masters, mkProcedure({ description: 'ACC knee reconstruction' }))).toBe(false)
+    expect(procedureAccFunded(masters, mkProcedure({ procedureText: { text: 'ACL reconstruction, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' }, governingContractId: 'plain' }))).toBe(false)
+    expect(procedureAccFunded(masters, mkProcedure({ procedureText: { text: 'ACC knee reconstruction', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' } }))).toBe(false)
   })
 })

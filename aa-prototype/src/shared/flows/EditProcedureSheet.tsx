@@ -4,6 +4,7 @@ import type { Procedure } from '../../domain/types'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
 import { Button, FieldLabel, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { PROCEDURE_TEXT_SOURCE_LABELS } from '../format'
 import { CONTRACT_CHANGE_CAPTION, ProcedureContractRow } from '../booking/ProcedureContractRow'
 
 interface EditProcedureSheetProps {
@@ -14,20 +15,20 @@ interface EditProcedureSheetProps {
 }
 
 /**
- * Edit a Procedure's operation and reference (`editProcedure`); its Contract
- * shows here with "Change", which opens the step rail (catch-up Phase 20):
- * no route, insurer or payment category.
+ * Edit a Procedure's reference (`editProcedure`); its Contract shows here
+ * (changed on the step rail, catch-up Phase 20). The procedure text is shown
+ * read-only at the top: it is kept exactly as received and nobody edits it
+ * (US-02.5.7, catch-up Phase 20a); edits change the RVG code (its own card)
+ * and the Contract, never the text.
  */
 export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProcedureSheetProps) {
   const { Overlay } = useSurface()
   const live = useAppStore((s) => s.schedule.procedures[procedure.id]) ?? procedure
-  const [description, setDescription] = useState(procedure.description)
   const [billingReference, setBillingReference] = useState(procedure.billingReference ?? '')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
-      setDescription(procedure.description)
       setBillingReference(procedure.billingReference ?? '')
       setError(null)
     }
@@ -36,7 +37,6 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
   function save() {
     setError(null)
     const patch: ProcedurePatch = {
-      description: description.trim(),
       billingReference: billingReference.trim() !== '' ? billingReference.trim() : undefined,
     }
     const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
@@ -50,8 +50,21 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Edit operation</div>
-        <TextField label="Operation" value={description} onChange={setDescription} />
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Edit procedure</div>
+        <div data-shot="edit-procedure-text" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <FieldLabel>Procedure text</FieldLabel>
+          <div
+            className="mono"
+            style={{ fontSize: 13.5, lineHeight: 1.45, color: live.procedureText !== null ? neutral.ink : neutral.mist, overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}
+          >
+            {live.procedureText !== null ? live.procedureText.text : 'No description received'}
+          </div>
+          {live.procedureText !== null && (
+            <div style={{ fontSize: 12, color: neutral.mist }}>
+              {PROCEDURE_TEXT_SOURCE_LABELS[live.procedureText.source]} · kept as received
+            </div>
+          )}
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Contract</FieldLabel>
           <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px', background: neutral.bg }}>
@@ -70,8 +83,8 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
             {error}
           </div>
         )}
-        <Button variant="primary" block onClick={save} disabled={description.trim() === ''}>
-          Save operation
+        <Button variant="primary" block onClick={save}>
+          Save
         </Button>
       </div>
     </Overlay>

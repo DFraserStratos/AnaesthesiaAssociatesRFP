@@ -26,6 +26,7 @@ import { HOSP, SURG } from './cast'
 import { PAT } from './patients'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { CONTRACT } from './contracts'
+import { seedText } from './procedureText'
 
 /** Who logged the seeded requests. */
 const OFFICE = 'Kirsty W.'
@@ -94,8 +95,8 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
   next: { booking: number; procedure: number }
 } {
   const specs = [
-    { patientId: PAT.gray, time: '13:30', description: 'Tonsillectomy', code: '41764', note: 'Secretary\'s email: "adult tonsils, recurrent tonsillitis"' },
-    { patientId: PAT.sinclair, time: '15:00', description: 'Septoplasty', code: '41789', note: 'Secretary\'s email: "septum, blocked left side"' },
+    { patientId: PAT.gray, time: '13:30', description: 'adult tonsils, recurrent tonsillitis', code: '41764', note: 'Secretary\'s email: "adult tonsils, recurrent tonsillitis"' },
+    { patientId: PAT.sinclair, time: '15:00', description: 'septum, blocked left side', code: '41789', note: 'Secretary\'s email: "septum, blocked left side"' },
   ]
   const bookings: Booking[] = []
   const procedures: Procedure[] = []
@@ -110,7 +111,6 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       scheduledTime: spec.time,
       completed: false,
       source: 'admin',
-      attachments: [],
       notes: spec.note,
       lastModifiedBy: OFFICE,
       lastModifiedAtISO: '2026-07-20T17:10:00',
@@ -118,7 +118,9 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
     procedures.push({
       id: `P${String(p).padStart(4, '0')}`,
       bookingId,
-      description: spec.description,
+      // The secretary's email wording, as received (catch-up Phase 20a; Phase 31's note stood in for it).
+      procedureText: seedText(spec.description, 'email'),
+      invoiceDescription: null,
       rvgGroupId: rvgGroupIdForLegacyCode(spec.code),
       isAdditional: false,
       modifierClaims: [],

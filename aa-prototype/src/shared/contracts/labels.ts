@@ -5,6 +5,7 @@
  */
 
 import type { BillsTo, Contract, ContractPricing, ContractStatus, DeliveryMethod, PartyKind, PricingKind } from '../../domain/types'
+import type { PricingBasis, StackSurface } from '../../domain/billing/procedureStack'
 
 export const PARTY_KIND_LABEL: Record<PartyKind, string> = {
   aa: 'Anaesthesia Associates',
@@ -59,4 +60,30 @@ export const STATUS_LABEL: Record<ContractStatus, string> = {
 export function contractLabel(contract: Pick<Contract, 'aaCode' | 'name' | 'status'>, options: { withStatus?: boolean } = {}): string {
   const label = `${contract.aaCode} · ${contract.name}`
   return options.withStatus === true && contract.status === 'disabled' ? `${label} (disabled)` : label
+}
+
+/** Whole dollars with thousands separators ("$3,565"); cents only when there are any. */
+function priceFigure(n: number): string {
+  const digits = Math.round(n * 100) % 100 === 0 ? 0 : 2
+  return '$' + n.toLocaleString('en-NZ', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+/**
+ * A Procedure's pricing basis with its figure, for the procedure stack (catch-up Phase 20a;
+ * US-03.1.2): "RVG at your rate", "RVG less 10%", "Fixed price $3,565", "Other price $2,000".
+ * The RVG kinds share pricingLabel's words; the basis, never the computed fee.
+ */
+export function formatPricingBasis(basis: PricingBasis, surface: StackSurface): string {
+  switch (basis.kind) {
+    case 'rvgAnaesthetistRate':
+      return surface === 'anaesthetist' ? 'RVG at your rate' : PRICING_KIND_LABEL.rvgAnaesthetistRate
+    case 'rvgContractRate':
+      return pricingLabel({ kind: 'rvgContractRate', unitRate: basis.perUnit })
+    case 'rvgDiscount':
+      return pricingLabel({ kind: 'rvgDiscount', discountPct: basis.percent })
+    case 'fixed':
+      return basis.amount !== null ? PRICING_KIND_LABEL.fixed + ' ' + priceFigure(basis.amount) : PRICING_KIND_LABEL.fixed + ', none in force on this date'
+    case 'open':
+      return basis.amount !== null ? 'Other price ' + priceFigure(basis.amount) : 'Other price, amount to enter'
+  }
 }

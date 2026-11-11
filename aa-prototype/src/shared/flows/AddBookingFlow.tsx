@@ -28,7 +28,7 @@ type Mode = AddBookingMode | 'done'
 
 /** The display-only Booking source (DM-39): the office's phone advice is an
  *  office entry; an anaesthetist adds ad hoc. The Future-scope photo demo is an
- *  ad hoc Booking with a photo attachment, so it stamps the same. */
+ *  ad hoc Booking that only prefills the form (catch-up Phase 20a: no attachment), so it stamps the same. */
 function sourceFor(actor: Actor): BookingSource {
   return actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc'
 }

@@ -109,7 +109,11 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v37: catch-up Phase 20, one Contract per Procedure: the route, the
+/** v38: catch-up Phase 20a, procedure text (US-02.5.7, US-08.4.6): `Procedure.description`
+ *  replaced by one `procedureText` (the hospital's replacing the rooms', the replaced text in
+ *  the audit history) and an `invoiceDescription`; attachments removed (RV-01); AR-35's
+ *  illustrative wording seeded; MSG-STG-1001 and MSG-STG-1012 reworded.
+ *  v37: catch-up Phase 20, one Contract per Procedure: the route, the
  *  Procedure's insurer and the payment category gone; every seeded Procedure on
  *  one Contract (Riley and Nair on Dr Souter's prepaid price list, a new
  *  `CT-SOUTER-RHINO-COS`), the route-less Bookings with none and the first
@@ -237,7 +241,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 37
+export const PERSIST_VERSION = 38
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

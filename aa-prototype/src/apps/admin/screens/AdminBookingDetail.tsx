@@ -8,6 +8,7 @@ import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -68,7 +69,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
           </div>
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
-            {primary?.description || 'Operation to capture'} · {hospitalName}
+            {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>

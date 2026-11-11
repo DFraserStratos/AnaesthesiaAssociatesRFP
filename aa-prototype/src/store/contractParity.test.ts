@@ -13,6 +13,10 @@
  *  - Riley (BK0034) and Nair (BK0038's P0041) are on Dr Souter's prepaid price
  *    list, which is what now requires their prepayment;
  *  - the seven route-less Bookings' exception is `noContract`.
+ *  - catch-up Phase 20a: its appended Bookings (AR-35's illustrative wording)
+ *    are additions, and Diane Foster's S14 target (forward, uncaptured, never
+ *    invoiced) is its one recorded exception, re-seeded on No contract · RVG
+ *    with its RVG code cleared.
  * Every billed party, starting value, prepayment build, ledger line and Xero
  * pair holds as written (Doyle's bariatric primary through the labelled
  * `billsHolderInterim`, until Phase 21).
@@ -21,9 +25,18 @@
 import { describe, expect, it } from 'vitest'
 import baseline from './__parity__/phase-20-baseline.json'
 import { captureBaseline, type Phase20Baseline, type ProcedureParityRow } from './__parity__/phase20Capture'
+import { SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 
 const before = baseline as Phase20Baseline
-const now = captureBaseline()
+/** Catch-up Phase 20a's additions and its one recorded exception (Foster's S14 target), set aside. */
+const ADDED_20A = new Set(SOURCE_WORDING_BOOKING_IDS)
+const FOSTER_20A = SEED_MARKERS.integrationS14!.entityId
+const captured = captureBaseline()
+const now = {
+  ...captured,
+  procedures: captured.procedures.filter((r) => !ADDED_20A.has(r.bookingId) && r.bookingId !== FOSTER_20A),
+}
+const beforeRows = before.procedures.filter((r) => r.bookingId !== FOSTER_20A)
 
 const DECLARED_CONTRACT: Record<string, string> = {
   P0036: 'CT-SOUTER-RHINO',
@@ -46,8 +59,9 @@ function asBefore(row: ProcedureParityRow): ProcedureParityRow {
 
 describe('Phase 20 contract parity', () => {
   it('holds every seeded Procedure: billed party, starting values and fixed fee, bar the declared Contract moves', () => {
-    expect(now.procedures.length).toBe(before.procedures.length)
-    expect(now.procedures.map(asBefore)).toEqual(before.procedures)
+    expect(now.procedures.length).toBe(beforeRows.length)
+    expect(now.procedures.map(asBefore)).toEqual(beforeRows)
+    expect(captured.procedures.filter((r) => ADDED_20A.has(r.bookingId))).toHaveLength(ADDED_20A.size)
   })
 
   it('every billed party is identical, the declared exception rename aside', () => {

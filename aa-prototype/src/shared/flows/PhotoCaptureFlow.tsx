@@ -92,7 +92,6 @@ export function PhotoCaptureFlow({ listId, actor, source, onSaved }: PhotoCaptur
         listId={listId}
         actor={actor}
         initial={step.sample.fields}
-        attachment={{ name: `Paper card ${step.sample.id}`, kind: 'photo', dataUrl: step.sample.imageUrl }}
         source={source}
         onSaved={onSaved}
       />

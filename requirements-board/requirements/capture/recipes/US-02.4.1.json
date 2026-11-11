@@ -1,7 +1,7 @@
 {
   "id": "US-02.4.1",
-  "status": "partial",
-  "absentReason": "Manual entry is built and is the sheet's one way in; the optional 'as given' field kept as the Procedure's source wording is not built yet (Phase 20a)",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "add-card",
@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "manual",
-          "caption": "Add a Booking: enter the patient and operation",
+          "caption": "Add a Booking to my List: the patient, the RVG code and the procedure as written",
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
@@ -22,6 +22,31 @@
           ],
           "highlight": [
             "[role=dialog]"
+          ]
+        },
+        {
+          "state": "procedure-description",
+          "caption": "The procedure as written on the hospital's list is kept exactly as typed",
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "[role=dialog] [data-shot=procedure-description] input",
+              "value": "RTK"
+            },
+            {
+              "scroll": "[role=dialog] [data-shot=procedure-description]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-shot=procedure-description]"
           ]
         }
       ]
@@ -34,7 +59,7 @@
       "states": [
         {
           "state": "manual",
-          "caption": "Add a Booking: enter the patient and operation",
+          "caption": "Add a Booking to my List: the patient, the RVG code and the procedure as written",
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
@@ -45,6 +70,31 @@
           ],
           "highlight": [
             "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "procedure-description",
+          "caption": "The procedure as written on the hospital's list is kept exactly as typed",
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] [data-shot=procedure-description] input",
+              "value": "RTK"
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [role=dialog] [data-shot=procedure-description]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog] [data-shot=procedure-description]"
           ]
         }
       ]

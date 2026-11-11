@@ -21,6 +21,7 @@ import { ANAE } from './cast'
 import { CONTRACTS } from './contracts'
 import { PRICED_ITEM } from './pricedItems'
 import { RVG_GROUPS } from './rvgGroups'
+import { seedText } from './procedureText'
 
 export const MERIVALE_BOOKING_LIST_ID = projectedListId(ANAE.souter, '2026-08-10', 'PM')
 /** A generated patient with one past Booking, so no scripted patient gains another. */
@@ -40,7 +41,6 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
     completed: false,
     // The seed's source rule: St George's sends a feed, so its Bookings are hospital downloads.
     source: 'hospitalDownload',
-    attachments: [],
     lastModifiedBy: 'Kirsty W.',
     lastModifiedAtISO: '2026-07-20T15:10:00',
   }
@@ -49,7 +49,8 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
   const empty: Procedure = {
     id: `P${String(next.procedure).padStart(4, '0')}`,
     bookingId,
-    description: 'Face lift',
+    procedureText: seedText('Face lift'),
+    invoiceDescription: null,
     isAdditional: false,
     modifierClaims: [],
     removedModifierIds: [],

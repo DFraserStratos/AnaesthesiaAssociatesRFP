@@ -35,8 +35,6 @@ export const FIELD_LABELS: Record<string, string> = {
   ruleId: 'Warning rule',
   strength: 'Strength',
   warning: 'Warning',
-  attachments: 'Attachments',
-  attachmentId: 'Attachment',
   notes: 'Notes for the office',
   lastModifiedBy: 'Last modified by',
   lastModifiedAtISO: 'Last modified at',
@@ -44,6 +42,8 @@ export const FIELD_LABELS: Record<string, string> = {
   // --- Procedure -----------------------------------------------------------
   bookingId: 'Booking',
   description: 'Description',
+  // Catch-up Phase 20a (US-02.5.7): the one procedure text, as received.
+  procedureText: 'Procedure text',
   governingContractId: 'Contract',
   railAnswers: 'Invoice destination so far',
   enteredPrice: 'Typed price',

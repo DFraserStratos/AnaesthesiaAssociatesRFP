@@ -118,7 +118,7 @@ describe('hospital holidays: edit and delete (US-01.5.1)', () => {
 describe('accept and flag on Booking paths (US-01.5.2 AC1)', () => {
   it('a Booking created on, or moved onto, a conflicted List is accepted; the List stays flagged', () => {
     const api = store()
-    const created = createBooking(api, OFFICE, MORRISON_PM, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test' })
+    const created = createBooking(api, OFFICE, MORRISON_PM, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
     expect(created.ok).toBe(true)
     expect(api.getState().schedule.lists[MORRISON_PM]!.conflicts).toHaveLength(1)
     const souterBooking = Object.values(api.getState().schedule.bookings).find((b) => b.listId === SEED_LIST_IDS.souterAm21 && b.cancellation === undefined)!

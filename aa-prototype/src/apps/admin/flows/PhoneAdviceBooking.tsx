@@ -22,7 +22,7 @@ interface PhoneAdviceBookingProps {
 const PHONE_ADVICE_LOOKUP_PREFILL = {
   nhi: 'DEM1239',
   rvgGroupId: RVG_GROUP.aaAppendicectomy!,
-  operation: 'Appendicectomy, laparoscopic',
+  description: 'Appendicectomy, laparoscopic',
   scheduledTime: '15:00',
   billingReference: 'STG-HALE-2107',
 } as const

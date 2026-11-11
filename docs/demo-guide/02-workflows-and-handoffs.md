@@ -137,15 +137,19 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 3. Patient appointments are represented as time-ordered Bookings inside the List.
 4. Each Booking points to a patient and contains one or more Procedures.
 5. Later messages or office actions can add, reschedule, modify, move or soft-cancel a Booking while the
-   List remains `ACTIVE`.
+   List remains `ACTIVE`. Each Booking holds its procedure text as received from each channel; when the
+   hospital's text arrives it replaces the surgeon's rooms' text, and the original stays in the
+   Booking's history.
 6. Every change writes `lastModifiedBy/At` and append-only audit history.
 
 ### Manual fallback paths
 
-- **Phone advice:** Kirsty creates the booking in Admin.
+- **Phone advice:** Kirsty creates the booking in Admin, typing the procedure as she was told it
+  (kept exactly as typed, Told by Phone or Email).
 - **No anaesthetist yet:** a request with no anaesthetist yet becomes a Draft List, which can take
   Bookings before it is assigned.
-- **Mobile/web manual Booking:** Dr Souter enters the missing Booking and, if she knows it, its Contract on the step rail; otherwise it waits on the office's Needs an invoice destination list.
+- **Mobile/web manual Booking:** Dr Souter enters the missing Booking, with the procedure as written on
+  the hospital's list (kept exactly as typed) and, if she knows it, its Contract on the step rail; otherwise it waits on the office's Needs an invoice destination list.
 - **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
 - **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
   NHI, so a re-ingest updates rather than duplicates).

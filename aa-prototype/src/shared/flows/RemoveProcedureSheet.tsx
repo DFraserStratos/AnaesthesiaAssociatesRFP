@@ -3,6 +3,7 @@ import { neutral, radius, semantic } from '../../theme/tokens'
 import { removeProcedure, useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
 import { useSurface } from '../surface'
+import { procedureLabel } from '../../domain/billing/procedureStack'
 
 interface RemoveProcedureSheetProps {
   open: boolean
@@ -28,6 +29,7 @@ interface RemoveProcedureSheetProps {
 export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClose, onRemoved }: RemoveProcedureSheetProps) {
   const { Overlay } = useSurface()
   const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
+  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const lineCount = useAppStore(
     (s) => Object.values(s.schedule.billingLines).filter((l) => l.procedureId === procedureId).length,
   )
@@ -38,7 +40,7 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
   }, [open])
 
   if (procedure === undefined) return null
-  const name = procedure.description === '' ? `Procedure ${ordinal}` : procedure.description
+  const name = procedureLabel(procedure, rvgGroups, ordinal)
 
   function submit() {
     setError(null)

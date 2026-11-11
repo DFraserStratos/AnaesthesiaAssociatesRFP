@@ -4,15 +4,14 @@ import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
 import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/scheduleTerms'
-import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
+import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, procedureStackViewFor, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
-import { HistorySheet } from '../../../shared/booking'
+import { HistorySheet, ProcedureStack } from '../../../shared/booking'
 import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
 import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange } from '../../../shared/format'
-import { AttachmentStrip } from '../../../shared/attachments'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
 import { EditListSheet } from '../flows/EditListSheet'
@@ -45,7 +44,7 @@ type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | 'history' | 'assign' | 'ti
  * The Admin Day drawer for one session (catch-up Phase 28; was the List
  * drawer). A session holding a List shows the List in place of the session's
  * status: header with the List's state and kind, Needs attention, Session,
- * Bookings, Attachments, and Edit list, Reassign list, Change status and
+ * Bookings, and Edit list, Reassign list, Change status and
  * History. An empty session shows its status (Free, Unavailable or Holiday),
  * its times and note, and Assign List, Book (phone advice), Edit times, Change
  * status and History; a session marked not available offers no Assign or Book
@@ -118,6 +117,7 @@ function ListBody({
   const listId = list.id
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const masters = useAppStore((s) => s.masters)
+  const schedule = useAppStore((s) => s.schedule)
   const warningsByBooking = useListWarnings(listId)
 
   const bookings = Object.values(bookingsRecord)
@@ -195,7 +195,7 @@ function ListBody({
                   data-shot={outline !== undefined ? 'drawer-booking-warning' : undefined}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     gap: 8,
                     padding: '8px 10px',
@@ -206,12 +206,26 @@ function ListBody({
                     opacity: cancelled ? 0.5 : 1,
                   }}
                 >
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: '1 1 auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: neutral.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{patient?.name ?? 'Unknown'}</span>
                       <WarningTriangle warnings={warnings} size="sm" />
                     </div>
                     <div style={{ fontSize: 11, color: neutral.slate }}>{cancelled ? 'Cancelled' : booking.completed ? 'Completed' : 'In progress'}</div>
+                    {/* Each Procedure's stack, compact (catch-up Phase 20a; US-03.1.9). */}
+                    {!cancelled && (
+                      <div data-shot="drawer-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                        {Object.values(schedule.procedures)
+                          .filter((p) => p.bookingId === booking.id)
+                          .sort((a, b) => a.id.localeCompare(b.id))
+                          .map((p, i, all) => {
+                            const view = procedureStackViewFor({ masters, schedule }, p.id, 'office')
+                            return view === undefined ? null : (
+                              <ProcedureStack key={p.id} view={view} density="compact" surface="office" heading={all.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
+                            )
+                          })}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
                     <DrawerLink onClick={() => onOpenBooking(booking.id)}>Open</DrawerLink>
@@ -222,14 +236,6 @@ function ListBody({
             })}
           </Section>
 
-          {/* The List's own attachments (US-03.1.3), read-only by design in the
-              drawer: the phase adds no Admin attach UI, although the store's
-              rights would let the office attach on ACTIVE and SUBMITTED. */}
-          <div data-shot="admin-list-attachments">
-            <Section label={`Attachments (${(list.attachments ?? []).length})`}>
-              <AttachmentStrip attachments={list.attachments ?? []} canRemove={false} emptyText="No attachments on this List." />
-            </Section>
-          </div>
         </div>
 
         {/* Actions */}

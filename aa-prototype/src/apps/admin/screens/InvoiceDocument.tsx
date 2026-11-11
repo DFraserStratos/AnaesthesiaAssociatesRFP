@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
+import { invoiceLineGroups } from '../../../domain/billing/procedureStack'
 import type { CSSProperties, ReactNode } from 'react'
 import { Printer, Mail, Upload, Clock } from 'lucide-react'
 import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
@@ -158,12 +159,24 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             </tr>
           </thead>
           <tbody>
-            {lines.map((line) => (
-              <tr key={line.id}>
-                <td style={docCell}>{line.description}</td>
-                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.units ?? ''}</td>
-                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(line.amount)}</td>
-              </tr>
+            {/* One heading row per Procedure: its invoice description (catch-up Phase 20a, US-08.4.6). */}
+            {invoiceLineGroups(lines, proceduresRecord).map((group, gi) => (
+              <Fragment key={group.procedureId ?? `loose-${gi}`}>
+                {group.heading !== undefined && (
+                  <tr data-shot="invoice-procedure-heading">
+                    <td colSpan={3} style={{ ...docCell, fontWeight: 600, color: neutral.ink, paddingTop: gi === 0 ? undefined : 14 }}>
+                      {group.heading}
+                    </td>
+                  </tr>
+                )}
+                {group.lines.map((line) => (
+                  <tr key={line.id}>
+                    <td style={{ ...docCell, ...(group.heading !== undefined ? { paddingLeft: 18 } : {}) }}>{line.description}</td>
+                    <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.units ?? ''}</td>
+                    <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(line.amount)}</td>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
           </tbody>
         </table>

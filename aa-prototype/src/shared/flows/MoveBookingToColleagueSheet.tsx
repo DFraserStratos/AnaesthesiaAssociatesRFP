@@ -17,6 +17,7 @@ import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
 import { Initials } from './moveSheetParts'
 import { sessionText } from '../../domain/outOfHours'
+import { procedureLabel } from '../../domain/billing/procedureStack'
 
 /**
  * Move to a colleague: an anaesthetist hands one Booking to a colleague free in
@@ -91,7 +92,10 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
         booking,
         list,
         patientName: s.masters.patients[booking.patientId]?.name ?? 'Patient',
-        procedure: (procedures.find((p) => !p.isAdditional) ?? procedures[0])?.description,
+        procedure: (() => {
+          const first = procedures.find((p) => !p.isAdditional) ?? procedures[0]
+          return first !== undefined ? procedureLabel(first, s.masters.rvgGroups, 1) : undefined
+        })(),
         bookingsOnList: Object.values(s.schedule.bookings).filter((b) => b.listId === list.id && b.cancellation === undefined).length,
         prepaid: bookingRequiresPrepayment(s, bookingId),
       })

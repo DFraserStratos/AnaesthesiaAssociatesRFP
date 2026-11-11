@@ -6,10 +6,10 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowLeftRight, BellRing, ChevronLeft, Paperclip } from 'lucide-react'
+import { ArrowLeftRight, BellRing, ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius } from '../../../../theme/tokens'
 import { motion } from '../../../../theme/motion'
-import type { Attachment, AssignedList } from '../../../../domain/types'
+import type { AssignedList } from '../../../../domain/types'
 import type { Warning } from '../../../../domain/warnings/types'
 import type { ListProgress } from '../../../../domain/listProgress'
 import { listProgress } from '../../../../domain/listProgress'
@@ -31,7 +31,6 @@ import {
 import { Button, FormError, Segmented, SlidingSegmentedControl, TextArea, TextField } from '../../../../shared/ui'
 import { OutOfHoursMoon, OutOfHoursPill, useBookingSearch } from '../../../../shared/schedule'
 import { AlertOfficeSheet, MovedToYouPanel, SubmitListSheet, useBookingsMovedToMe, useMovedToMe } from '../../../../shared/flows'
-import { AttachmentStrip } from '../../../../shared/attachments'
 import { AvailabilityEditor, SeriesList, useAvailabilityMonth } from '../../../../shared/availability'
 import { TimesCard } from '../../../../shared/capture/TimesCard'
 import { CaptureSection, NudgeButton, StepperButton, Caption } from '../../../../shared/capture/ui'
@@ -64,6 +63,7 @@ import {
   type Filter,
 } from './recreations'
 import { useMobilePersona, type SeedPicks } from './persona'
+import { procedureLabel } from '../../../../domain/billing/procedureStack'
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -506,6 +506,7 @@ export function BookingCardExample({ picks }: { picks: SeedPicks }) {
   const bookings = useAppStore((s) => s.schedule.bookings)
   const procedures = useAppStore((s) => s.schedule.procedures)
   const patients = useAppStore((s) => s.masters.patients)
+  const rvgGroupsForLabels = useAppStore((s) => s.masters.rvgGroups)
   const rows = useMemo(() => {
     if (picks.listId === null) return []
     return Object.values(bookings)
@@ -515,9 +516,9 @@ export function BookingCardExample({ picks }: { picks: SeedPicks }) {
       .map((b) => {
         const proc = Object.values(procedures).filter((p) => p.bookingId === b.id).sort((x, y) => x.id.localeCompare(y.id))[0]
         const patient = patients[b.patientId]
-        return { id: b.id, time: b.scheduledTime ?? '·', patientName: patient?.name ?? 'Unknown patient', nhi: patient?.nhi, operation: proc?.description || 'Procedure to capture' }
+        return { id: b.id, time: b.scheduledTime ?? '·', patientName: patient?.name ?? 'Unknown patient', nhi: patient?.nhi, operation: proc !== undefined ? procedureLabel(proc, rvgGroupsForLabels, 1) : 'Procedure to capture' }
       })
-  }, [picks.listId, bookings, procedures, patients])
+  }, [picks.listId, bookings, procedures, patients, rvgGroupsForLabels])
   const [states, setStates] = useState<Record<string, BookingCardState>>({})
   const next: Record<BookingCardState, BookingCardState> = { capture: 'done', done: 'cancelled', cancelled: 'capture' }
   if (rows.length === 0) return <Missing what="Bookings" />
@@ -672,26 +673,6 @@ export function MovedToYouPanelExample() {
   )
 }
 
-const svgThumb = (fill: string, label: string) =>
-  `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="${fill}"/><text x="60" y="66" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#172320">${label}</text></svg>`)}`
-
-const SAMPLE_ATTACHMENTS: Attachment[] = [
-  { id: 'a1', name: 'Consent form', kind: 'photo', dataUrl: svgThumb('#E6F1EF', 'Photo') },
-  { id: 'a2', name: 'Referral letter', kind: 'pdf', dataUrl: svgThumb('#F3F4F2', 'Letter') },
-  { id: 'a3', name: 'Theatre list', kind: 'photo', dataUrl: svgThumb('#FBEFD9', 'List') },
-]
-
-export function AttachmentStripExample() {
-  const [items, setItems] = useState<Attachment[]>(SAMPLE_ATTACHMENTS)
-  return (
-    <div style={col}>
-      <AttachmentStrip attachments={items} canRemove onRemove={(id) => { setItems((xs) => xs.filter((x) => x.id !== id)); return { ok: true } }} emptyText="No attachments on this List." />
-      <Button variant="pill" onClick={() => setItems(SAMPLE_ATTACHMENTS)}>
-        <Paperclip size={14} aria-hidden /> Put them back
-      </Button>
-    </div>
-  )
-}
 
 export function SeriesListExample() {
   const { actor, anaesthetistId } = useMobilePersona()

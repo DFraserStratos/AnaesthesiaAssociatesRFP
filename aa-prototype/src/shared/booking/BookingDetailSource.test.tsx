@@ -45,7 +45,9 @@ describe('Booking source line', () => {
     const historyId = Object.keys(useAppStore.getState().schedule.bookings).find((id) => id.startsWith('HBK'))!
     expect(useAppStore.getState().schedule.bookings[historyId]?.source).toBeUndefined()
     const { container } = renderBooking(historyId)
-    expect(screen.getAllByText(/Attachments/).length).toBeGreaterThan(0)
+    // The Booking renders (its notes section), with no source line and no attachments (catch-up Phase 20a).
+    expect(screen.getAllByText(/Notes for the office/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Attachments/)).toBeNull()
     expect(container.querySelector('[data-shot="booking-source"]')).toBeNull()
   })
 })

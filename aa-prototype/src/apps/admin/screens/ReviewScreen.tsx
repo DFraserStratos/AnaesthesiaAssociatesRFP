@@ -10,11 +10,12 @@ import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
-import { billedPartyFor } from '../../../domain/billing/whoIsBilled'
-import { counterpartyName } from '../../../store/selectors'
+import { procedureStackViewFor } from '../../../store/selectors'
+import { ProcedureStack } from '../../../shared/booking/ProcedureStack'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
 
 interface ReviewScreenProps {
   listId: string
@@ -24,13 +25,15 @@ interface ReviewScreenProps {
   onOpen: (listId: string) => void
   /** Jump to the Invoices section. */
   onViewInvoices: () => void
+  /** Open a Booking on the Admin Booking detail, where the office edits its invoice description (catch-up Phase 20a). */
+  onOpenBooking?: (dateISO: string, bookingId: string) => void
 }
 
 const cellStyle = adminCell()
 const headCellStyle = adminHead()
 const nowrapCell = { ...cellStyle, whiteSpace: 'nowrap' as const }
 const numCell = { ...nowrapCell, textAlign: 'right' as const }
-const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Code', 'Times', 'B · T · M', 'Units', 'Fee'])
+const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units', 'Fee'])
 
 /**
  * The sanity-check authorisation review (Phase 07). The mockup's anatomy
@@ -42,7 +45,7 @@ const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Code', 'Times', 'B · T · M', 
  * column shows who each Booking bills (catch-up Phase 20). FLAGS come from
  * the RFP-grounded `reviewFlags` helper (no invented duration-outlier flag).
  */
-export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: ReviewScreenProps) {
+export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, onOpenBooking }: ReviewScreenProps) {
   const { Overlay } = useSurface()
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
@@ -87,15 +90,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
-      // Who is billed (INTERIM until Phase 21): the Contract says; "Mixed" when Procedures differ.
-      const billed = new Map<string, string>()
-      for (const p of procs) {
-        const contract = p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined
-        const ref = billedPartyFor(p, contract, masters.parties, booking.patientId)
-        if (ref !== undefined) billed.set(`${ref.kind}:${ref.id}`, counterpartyName({ masters }, ref))
-      }
-      const anyMissing = procs.some((p) => p.governingContractId === undefined)
-      const billedText = anyMissing ? 'Needs an invoice destination' : billed.size > 1 ? 'Mixed' : ([...billed.values()][0] ?? 'Needs an invoice destination')
+      // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
+      // Procedures column and for who is billed ("Mixed" when Procedures differ; INTERIM until Phase 21).
+      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord } }, p.id, 'office')!)
+      const billed = new Set(stackViews.map((v) => v.contract?.invoiced?.name).filter((n): n is string => n !== undefined))
+      const anyMissing = stackViews.some((v) => v.contract === null)
+      const billedText = anyMissing ? 'Needs an invoice destination' : billed.size > 1 ? 'Mixed' : ([...billed][0] ?? 'Needs an invoice destination')
       const procIds = new Set(procs.map((p) => p.id))
       const lineIds = Object.values(billingLinesRecord).filter((l) => procIds.has(l.procedureId)).map((l) => l.id)
       const entityIds = [booking.id, ...procs.map((p) => p.id), ...lineIds]
@@ -106,14 +106,15 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         const labels: Record<string, string> = {}
         procs.forEach((procedure, index) => {
           const scope = `Procedure ${index + 1}`
-          labels[procedure.id] = procedure.description === '' ? scope : `${scope} · ${procedure.description}`
+          const label = procedureLabel(procedure, masters.rvgGroups, index + 1)
+          labels[procedure.id] = label === scope ? scope : `${scope} · ${label}`
           for (const line of Object.values(billingLinesRecord)) {
             if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
           }
         })
         entityLabels = labels
       }
-      return { booking, primary, primaryView, totals, flags, billedText, procCount: procs.length, entityIds, entityLabels }
+      return { booking, primary, primaryView, totals, flags, billedText, procCount: procs.length, entityIds, entityLabels, stackViews }
     })
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
   const warningsByBooking = useListWarnings(listId)
@@ -276,13 +277,13 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1120 }}>
           <thead>
             <tr>
-              {['Time', 'Patient', 'Billed to', 'Contract', 'Code', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
-                <th key={h} style={{ ...headCellStyle, textAlign: i === 7 || i === 8 ? 'right' : 'left', whiteSpace: REVIEW_NOWRAP_HEADINGS.has(h) ? 'nowrap' : undefined }}>{h}</th>
+              {['Time', 'Patient', 'Billed to', 'Procedures', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
+                <th key={h} style={{ ...headCellStyle, textAlign: i === 6 || i === 7 ? 'right' : 'left', whiteSpace: REVIEW_NOWRAP_HEADINGS.has(h) ? 'nowrap' : undefined }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, totals, flags, billedText, procCount, entityIds, entityLabels }) => {
+            {rows.map(({ booking, primary, primaryView, totals, flags, billedText, entityIds, entityLabels, stackViews }) => {
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -306,11 +307,17 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                         <span style={{ fontSize: 11, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>Not complete</span>
                       )}
                     </div>
-                    <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'} · {primary?.description ?? 'Procedure'}{procCount > 1 ? ` · +${procCount - 1} more` : ''}</div>
+                    <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'}</div>
                   </td>
                   <td style={cellStyle}>{billedText}</td>
-                  <td style={cellStyle}>{primaryView?.contract?.name ?? 'None'}</td>
-                  <td className="mono" title={primaryView?.rvgGroup?.description} style={{ ...nowrapCell, color: accent.base }}>{primaryView?.rvgGroup?.code ?? '·'}</td>
+                  {/* Every Procedure's stack, compact (catch-up Phase 20a; US-07.2.2, US-03.1.9). */}
+                  <td data-shot="review-procedures" style={{ ...cellStyle, minWidth: 260, maxWidth: 340 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {stackViews.map((view, i) => (
+                        <ProcedureStack key={i} view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
+                      ))}
+                    </div>
+                  </td>
                   <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
                   <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
@@ -322,6 +329,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                       ))}
                       {authorised && <Lock size={13} aria-hidden style={{ color: neutral.mist }} />}
                       <button onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>History</button>
+                      {/* The Admin Booking, where the office edits the invoice description (catch-up Phase 20a). */}
+                      {onOpenBooking !== undefined && <button data-shot="review-open-booking" onClick={() => onOpenBooking(list.dateISO, booking.id)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Open</button>}
                     </div>
                   </td>
                 </tr>

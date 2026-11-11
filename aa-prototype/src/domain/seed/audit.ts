@@ -120,7 +120,6 @@ function bookingContext(booking: Booking): Record<string, unknown> {
     bookingType: booking.bookingType,
     addendumOfBookingId: booking.addendumOfBookingId,
     notes: booking.notes,
-    attachments: booking.attachments.length > 0 ? booking.attachments : undefined,
   }
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
 }
@@ -220,7 +219,7 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
         role: bookingRole,
         source: bookingSource,
         action: 'procedure.create',
-        after: { bookingId: booking.id, description: procedure.description },
+        after: { bookingId: booking.id, procedureText: procedure.procedureText },
         atISO: procedureBaseISO,
       })
 

@@ -196,8 +196,8 @@ function activeBookingsOn(state: Pick<AppState, 'schedule'>, listId: string): Bo
 function procedureNames(procedures: readonly Procedure[]): string[] {
   return [...procedures]
     .sort((a, b) => Number(a.isAdditional) - Number(b.isAdditional) || a.id.localeCompare(b.id))
-    .map((p) => p.description)
-    .filter((d) => d !== '')
+    .map((p) => p.procedureText?.text ?? '')
+    .filter((d) => d.trim() !== '')
 }
 
 function proceduresByBooking(state: Pick<AppState, 'schedule'>): Map<string, Procedure[]> {

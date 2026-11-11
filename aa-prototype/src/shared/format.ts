@@ -12,7 +12,7 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { BookingSource, Hospital, List, Surgeon } from '../domain/types'
+import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -204,4 +204,33 @@ export const BOOKING_SOURCE_LABELS: Record<BookingSource, string> = {
   surgeonPdf: 'Surgeon PDF',
   admin: 'Office entry',
   anaesthetistAdHoc: 'Added by anaesthetist',
+}
+
+// ---------------------------------------------------------------------------
+// The procedure stack's words (catch-up Phase 20a; US-03.1.9, US-08.4.6)
+// ---------------------------------------------------------------------------
+
+/** Where a procedure text came from, as the Booking's meta line says it. */
+export const PROCEDURE_TEXT_SOURCE_LABELS: Record<ProcedureTextSource, string> = {
+  surgeonPdf: "Surgeon's rooms PDF",
+  email: 'Email',
+  hospitalDownload: 'Hospital download',
+  hospitalFeed: 'Hospital feed',
+  phone: 'Phone',
+  anaesthetist: 'Anaesthetist',
+  unrecorded: 'Source not recorded',
+}
+
+/** Where the invoice description's value came from. */
+export const INVOICE_DESCRIPTION_ORIGIN_LABELS: Record<InvoiceDescriptionOrigin, string> = {
+  rooms: "From the surgeon's rooms",
+  entered: 'As entered',
+  hospital: 'From the hospital',
+  contract: 'From the Contract',
+  edited: 'Edited by the office',
+}
+
+/** A received text's day, as its meta line shows it ("Mon 20 Jul"). */
+export function receivedDay(iso: string): string {
+  return shortDay(iso.slice(0, 10))
 }

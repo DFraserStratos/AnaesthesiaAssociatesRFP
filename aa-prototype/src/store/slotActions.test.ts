@@ -20,7 +20,6 @@ import {
 } from './slotActions'
 import { authoriseList, cancelBooking, completeBooking, reassignBooking, submitList } from './lifecycle'
 import { addPostOpAddendum, createBooking } from './bookingActions'
-import { addAttachment } from './attachmentActions'
 import { pushListToSlot } from './listMoveActions'
 import { advanceClockDays } from './clockActions'
 import { endPairingPreference, selectPairingPreferences } from './officePrivate'
@@ -211,7 +210,7 @@ describe('the displayed status', () => {
     const list = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     const keyOf = () => slotView(api.getState(), list.slotId)?.displayKey
     const start = keyOf()
-    const created = createBooking(api, OFFICE, list.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test' })
+    const created = createBooking(api, OFFICE, list.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
     expect(created.ok).toBe(true)
     expect(keyOf()).toBe(start)
     const existing = bookingsForList(api.getState(), list.id).find((b) => b.cancellation === undefined && !b.completed)!
@@ -241,7 +240,7 @@ describe('the displayed status', () => {
     const api = store()
     const out = assign(api, SHARMA_PM)
     expect(out.ok).toBe(true)
-    if (out.ok) createBooking(api, OFFICE, out.value.listId, { patient: { name: 'Phone Patient', dobISO: '1980-02-02' }, operation: 'Appendicectomy' })
+    if (out.ok) createBooking(api, OFFICE, out.value.listId, { patient: { name: 'Phone Patient', dobISO: '1980-02-02' }, sourceText: { text: 'Appendicectomy', source: 'anaesthetist' } })
     const state = api.getState()
     const admin = slotViewsForDate(state, TUE21).find((v) => v.slot.id === SHARMA_PM)!
     const personal = slotViewsForAnaesthetist(state, ANAE.sharma, TUE21, TUE21).find((v) => v.slot.id === SHARMA_PM)!
@@ -451,33 +450,26 @@ describe('the horizon setting', () => {
     const far = openSlotOn(api, '2026-11-02', 'AM')
     const assigned = assign(api, far.id)
     if (!assigned.ok) throw new Error('assign failed')
-    createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, operation: 'Hip' })
+    createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, sourceText: { text: 'Hip', source: 'anaesthetist' } })
     const before = api.getState().schedule
     const out = setHorizonMonths(api, OFFICE, 3)
     expect(out).toMatchObject({
       ok: false,
       code: 'listsBeyondHorizon',
-      message: '1 List after Wed 21 Oct 2026 holds Bookings or attachments (cancelled Bookings count). Move them first, or keep the longer horizon.',
+      message: '1 List after Wed 21 Oct 2026 holds Bookings (cancelled Bookings count). Move them first, or keep the longer horizon.',
     })
     expect(api.getState().schedule).toBe(before)
     expect(api.getState().appSettings.schedule.horizonMonths).toBe(4)
   })
 
-  it('a cancelled Booking or a List attachment beyond the new end also blocks shortening (nothing orphaned or lost)', () => {
+  it('a cancelled Booking beyond the new end also blocks shortening (nothing orphaned)', () => {
     const api = store()
     const far = openSlotOn(api, '2026-11-03', 'AM')
     const assigned = assign(api, far.id)
     if (!assigned.ok) throw new Error('assign failed')
-    const booked = createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, operation: 'Hip' })
+    const booked = createBooking(api, OFFICE, assigned.value.listId, { patient: { name: 'Far Patient', dobISO: '1960-03-03' }, sourceText: { text: 'Hip', source: 'anaesthetist' } })
     if (booked.ok) cancelBooking(api, OFFICE, booked.value.bookingId, 'Changed plans')
     expect(setHorizonMonths(api, OFFICE, 3)).toMatchObject({ ok: false, code: 'listsBeyondHorizon' })
-
-    const api2 = store()
-    const far2 = openSlotOn(api2, '2026-11-03', 'AM')
-    const a2 = assign(api2, far2.id)
-    if (!a2.ok) throw new Error('assign failed')
-    expect(addAttachment(api2, OFFICE, { kind: 'list', id: a2.value.listId }, { name: 'Theatre list', kind: 'pdf', dataUrl: 'data:,x' }).ok).toBe(true)
-    expect(setHorizonMonths(api2, OFFICE, 3)).toMatchObject({ ok: false, code: 'listsBeyondHorizon' })
   })
 
   it('shortening audits the ids of the empty Lists it dropped, and the same value is no change', () => {

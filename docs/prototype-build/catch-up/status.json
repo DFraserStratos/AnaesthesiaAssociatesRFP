@@ -2,22 +2,22 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "20a"
+      "21"
     ],
-    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b and 20 are done (2026-11-11). The Contracts track continues with 20a, then 21 to 25 with 21a, in the ROADMAP's run order."
+    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b, 20 and 20a are done (2026-11-12). The Contracts track continues with 21, then 21a to 25, in the ROADMAP's run order."
   },
   "guidance": {
-    "as_of": "2026-11-11",
-    "headline": "Start 20a now. One Contract per Procedure is built.",
-    "headline_sub": "20 (the billing route, payment category and the Procedure's insurer gone; one Contract per Procedure chosen on the step rail, inline on the Booking as the contract picker mock: where the invoice goes, then Payment type, the hospital's funding tag or the holder, then the Contract by typing, No contract · RVG first, or Other price; the anaesthetist on the same rail until AUTHORISED; Needs an invoice destination on Admin Day; prepayment from the prepaid Contract; every seeded figure unchanged) is done. The Contracts track continues with 20a (the procedure text, the invoice description and the Contract on each Procedure), then 21 to 25, in the ROADMAP's run order.",
-    "parallel": "Only 20a is next in the run order. 17a and 26 have their dependencies met but come later in the run order (26 and 17a after the Contracts track), so run 20a on its own.",
+    "as_of": "2026-11-12",
+    "headline": "Start 21 now. The procedure text and the invoice description are built.",
+    "headline_sub": "20a (one procedure text per Procedure, exactly as received, the hospital's replacing the rooms' with the original in the History; an invoice description by the order of defaults that the office's edit always overrides, printed on the invoice; one procedure stack on every Booking screen, Admin Review and the List drawer; attachments removed; AR-35's illustrative wording seeded; every seeded figure unchanged) is done. The Contracts track continues with 21 (the payer, insurer or funder, and who is billed), then 21a to 25, in the ROADMAP's run order.",
+    "parallel": "Only 21 is next in the run order. 17a and 26 have their dependencies met but come later in the run order (26 and 17a after the Contracts track), so run 21 on its own.",
     "safe": {
-      "20a": "Its dependency (20) is done. The Contract row it replaces is the Billing card's summary (ProcedureContractRow) and the card itself."
+      "21": "Its dependency (20a) is done. It re-points 20a's whoIsInvoicedFor to the holder's Party or the payer on the Booking, and replaces 20's billablePartyId and billsHolderInterim."
     },
     "wait": {
       "26": "Its dependency (17) is done, but the run order puts it after the Contracts track (18 to 25).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26.",
-      "21": "Needs 20a first."
+      "21a": "Needs 21 first."
     }
   }
 }

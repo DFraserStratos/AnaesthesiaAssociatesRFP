@@ -302,3 +302,66 @@ describe('the pairing rule on the feed (catch-up Phase 31; US-01.3.1)', () => {
     expect(bookingsForList(api.getState(), STG_LIST)).toHaveLength(before)
   })
 })
+
+describe('the procedure text from every intake path (catch-up Phase 20a; US-02.5.7)', () => {
+  const firstProc = (api: BoundAppStore, bookingId: string) =>
+    Object.values(api.getState().schedule.procedures).filter((p) => p.bookingId === bookingId).sort((a, b) => a.id.localeCompare(b.id))[0]!
+
+  it('S12 stores the SCH-7 text verbatim as the hospital feed\'s, from the hospital', () => {
+    const api = store()
+    expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
+    const booking = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12 })!
+    expect(firstProc(api, booking.id).procedureText).toMatchObject({ text: 'lap appy ?conv to open', source: 'hospitalFeed', from: "St George's" })
+    expect(firstProc(api, booking.id).invoiceDescription).toEqual({ text: 'lap appy ?conv to open', origin: 'hospital' })
+  })
+
+  it('FHIR-SX-2001 stores Appointment.description', () => {
+    const api = store()
+    expect(processMessage(api, 'FHIR-SX-2001').ok).toBe(true)
+    const created = api.getState().audit.filter((a) => a.action === 'procedure.create').at(-1)!
+    const p = api.getState().schedule.procedures[created.entityId]!
+    expect(p.procedureText?.source).toBe('hospitalFeed')
+    expect(p.procedureText?.text.length).toBeGreaterThan(0)
+  })
+
+  it('MSG-STG-1012 replaces Foster\'s rooms\' "WLE MM" with the hospital\'s wording, keeps "WLE MM" in the history, switches the invoice description; a replay changes nothing', () => {
+    const api = store()
+    const target = SEED_MARKERS['integrationS14']!.entityId
+    expect(firstProc(api, target).procedureText).toMatchObject({ text: 'WLE MM', source: 'surgeonPdf' })
+    expect(firstProc(api, target).rvgGroupId).toBeUndefined()
+    expect(processMessage(api, 'MSG-STG-1012').ok).toBe(true)
+    const p = firstProc(api, target)
+    expect(p.procedureText).toMatchObject({ text: 'WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC', source: 'hospitalFeed' })
+    expect(p.invoiceDescription).toMatchObject({ origin: 'hospital', text: p.procedureText!.text })
+    expect(p.rvgGroupId).toBeUndefined()
+    expect(p.governingContractId).toBe('CT-NO-CONTRACT')
+    const replace = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace' && a.entityId === p.id)
+    expect(replace).toHaveLength(1)
+    expect(replace[0]!.before).toMatchObject({ procedureText: { text: 'WLE MM', source: 'surgeonPdf' } })
+    expect(replace[0]!.source).toBe('integration')
+    // The time and note change as before.
+    expect(api.getState().schedule.bookings[target]!.scheduledTime).toBe('12:15')
+    // A replay applies again: the identical text changes nothing.
+    expect(reprocessMessage(api, rowFor(api, 'MSG-STG-1012')!.id).ok).toBe(true)
+    expect(firstProc(api, target).procedureText?.text).toBe(p.procedureText!.text)
+    expect(api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace' && a.entityId === p.id)).toHaveLength(1)
+  })
+
+  it('a PDF row creates with the rooms\' text; a later different row replaces a rooms\' text but never a hospital\'s; an identical row changes nothing', () => {
+    const api = store()
+    const pdf = SURGEON_PDFS.find((p) => p.id === 'PDF-OKAFOR-0729')!
+    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
+    const [, r2] = pdf.rows
+    const created = ingestPdfRow(api, OFFICE, listId, r2!)
+    expect(created.ok).toBe(true)
+    if (!created.ok) return
+    const id = created.value.bookingId
+    expect(firstProc(api, id).procedureText).toMatchObject({ text: r2!.operation, source: 'surgeonPdf' })
+    const reworded = { ...r2!, operation: `${r2!.operation}, mesh` }
+    expect(ingestPdfRow(api, OFFICE, listId, reworded).ok).toBe(true)
+    expect(firstProc(api, id).procedureText?.text).toBe(reworded.operation)
+    const audits = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length
+    expect(ingestPdfRow(api, OFFICE, listId, reworded).ok).toBe(true)
+    expect(api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length).toBe(audits)
+  })
+})

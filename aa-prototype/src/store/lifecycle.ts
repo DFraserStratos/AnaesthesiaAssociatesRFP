@@ -443,13 +443,12 @@ export function cancelBooking(api: AppStoreApi, actor: Actor, bookingId: string,
 // editBooking / editProcedure (the guarded patch entry points)
 // ---------------------------------------------------------------------------
 
-/** Attachments are not patchable: `addAttachment` / `removeAttachment` own them (catch-up Phase 15). */
+/** The Booking fields `editBooking` may change. */
 const BOOKING_PATCH_KEYS = ['scheduledTime', 'notes'] as const
 export type BookingPatch = Partial<Pick<Booking, (typeof BOOKING_PATCH_KEYS)[number]>>
 
 export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, rawPatch: BookingPatch): Outcome {
-  // Only the patchable keys pass, even from an untyped caller: attachments go
-  // through `addAttachment` / `removeAttachment`.
+  // Only the patchable keys pass, even from an untyped caller.
   const patch: BookingPatch = Object.fromEntries(
     BOOKING_PATCH_KEYS.filter((k) => k in rawPatch).map((k) => [k, rawPatch[k]]),
   )
@@ -484,8 +483,20 @@ export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, r
 /** The fields only the step rail writes (catch-up Phase 20). */
 const CONTRACT_FIELDS = ['governingContractId', 'railAnswers', 'enteredPrice', 'billsHolderInterim'] as const
 
-/** What `editProcedure` may change: never the Contract or what rides with it (the step rail's, catch-up Phase 20). */
-export type ProcedurePatch = Partial<Omit<Procedure, 'id' | 'bookingId' | (typeof CONTRACT_FIELDS)[number]>>
+/**
+ * The procedure text and the invoice description (catch-up Phase 20a): the
+ * text changes only through `replaceProcedureText`, the invoice description
+ * only through its own actions, so no edit path touches either.
+ */
+const TEXT_FIELDS = ['procedureText', 'invoiceDescription'] as const
+
+/** What `editProcedure` may change: never the Contract or what rides with it (the step rail's, catch-up Phase 20), nor the two texts (20a). */
+export type ProcedurePatch = Partial<
+  Omit<Procedure, 'id' | 'bookingId' | (typeof CONTRACT_FIELDS)[number] | (typeof TEXT_FIELDS)[number]>
+>
+
+export const PROCEDURE_TEXT_NOT_EDITABLE_MESSAGE =
+  'The procedure text is kept as received, and the invoice description is changed by the office on its own.'
 
 export const MODIFIERS_THROUGH_ACTIONS_MESSAGE =
   'Modifiers are claimed, removed and put back one at a time, each claim with its explanation.'
@@ -553,6 +564,8 @@ export function editProcedure(
   // The Contract and what rides with it change only on the step rail
   // (`setProcedureContract`, catch-up Phase 20), so no edit bypasses its guard.
   if (CONTRACT_FIELDS.some((k) => k in (patch as Partial<Procedure>))) return refuse('contractThroughRail', CONTRACT_THROUGH_RAIL_MESSAGE)
+  // Nobody edits the procedure text (US-02.5.7); the invoice description has its own office actions (US-08.4.6).
+  if (TEXT_FIELDS.some((k) => k in (patch as Partial<Procedure>))) return refuse('procedureTextNotEditable', PROCEDURE_TEXT_NOT_EDITABLE_MESSAGE)
   const row = withRvgRowChange(state, procedure, patch)
   if (!row.ok) return row
   patch = row.value.patch

@@ -3,9 +3,9 @@ import { ArrowLeftRight, BellRing, ChevronLeft, Lock, MoreHorizontal, Plus } fro
 import { format, parseISO } from 'date-fns'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
-import type { Booking } from '../../../domain/types'
+import type { Booking, Procedure } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
-import { bookingContractCue, editRefusal, officeAlertRefusal, removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
+import { bookingContractCue, editRefusal, officeAlertRefusal, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
@@ -13,7 +13,7 @@ import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { AlertOfficeEntry, AlertOfficeSheet, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { slotTimeRange, locationName } from '../../../shared/format'
-import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
@@ -30,7 +30,7 @@ interface BookingRow {
   time: string
   patientName: string
   nhi: string | undefined
-  operation: string
+  procedure: string
   cue: string | undefined
 }
 
@@ -50,7 +50,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const moved = useMovedToMeNotice(listId, actor.anaesthetistId)
   // Alert the office (catch-up Phase 32b): a string, so the selector stays stable between renders.
   const alertRefusal = useAppStore((s) => officeAlertRefusal(s, actor, { listId })?.code ?? null)
-  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm' | 'attachment' | 'options' | 'alert'>('none')
+  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm' | 'options' | 'alert'>('none')
   const [showSubmitted, setShowSubmitted] = useState(false)
 
   useEffect(() => {
@@ -80,11 +80,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const cueState = useAppStore((s) => s)
   const model = useMemo(() => {
     if (list === undefined) return undefined
-    // Primary op per booking = the lowest-id (first-created) procedure's description.
-    const firstProcByBooking = new Map<string, { id: string; description: string }>()
+    // Primary op per booking = the lowest-id (first-created) procedure's label (catch-up Phase 20a).
+    const firstProcByBooking = new Map<string, Procedure>()
     for (const p of Object.values(proceduresRecord)) {
       const current = firstProcByBooking.get(p.bookingId)
-      if (current === undefined || p.id < current.id) firstProcByBooking.set(p.bookingId, { id: p.id, description: p.description })
+      if (current === undefined || p.id < current.id) firstProcByBooking.set(p.bookingId, p)
     }
     const rows: BookingRow[] = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId)
@@ -96,7 +96,10 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           time: booking.scheduledTime ?? '·',
           patientName: patient?.name ?? 'Unknown patient',
           nhi: patient?.nhi,
-          operation: firstProcByBooking.get(booking.id)?.description || 'Procedure to capture',
+          procedure: (() => {
+            const first = firstProcByBooking.get(booking.id)
+            return first !== undefined ? procedureLabel(first, cueState.masters.rvgGroups, 1) : 'Procedure to capture'
+          })(),
           // "Needs an invoice destination" or "RVG code to fill in" (catch-up Phase 20).
           cue: booking.cancellation === undefined ? bookingContractCue(cueState, booking.id) : undefined,
         }
@@ -155,7 +158,6 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   }
   // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
   const canEdit = editRefusal(actor, list) === null
-  const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
@@ -295,7 +297,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
                     {r.nhi}
                   </span>
                 )}
-                <span style={{ fontSize: 13, color: neutral.slate }}>{r.operation}</span>
+                <span style={{ fontSize: 13, color: neutral.slate }}>{r.procedure}</span>
                 {r.cue !== undefined && (
                   <span data-shot="list-row-contract-cue" style={{ fontSize: 11.5, color: neutral.slate }}>{r.cue}</span>
                 )}
@@ -330,28 +332,6 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           >
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Invoices</span>
             <ListInvoices rows={invoices} />
-          </section>
-        )}
-
-        {/* List attachments (US-03.1.3): files for the List as a whole. Hidden
-            when the List is locked and holds none, so a read-only List does not
-            grow an empty section. */}
-        {(canEdit || listAttachments.length > 0) && (
-          <section
-            data-shot="list-attachments"
-            aria-label="List attachments"
-            style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>List attachments</span>
-              {canEdit && <AddAttachmentButton onClick={() => setSheet('attachment')} />}
-            </div>
-            <AttachmentStrip
-              attachments={listAttachments}
-              canRemove={canEdit}
-              onRemove={(id) => removeAttachment(useAppStore, actor, { kind: 'list', id: listId }, id)}
-              emptyText="No attachments on this List."
-            />
           </section>
         )}
 
@@ -498,7 +478,6 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
         onClose={() => setSheet('none')}
       />
       {sheet === 'alert' && <AlertOfficeSheet open actor={actor} target={{ listId }} onClose={() => setSheet('none')} />}
-      <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'list', id: listId }} actor={actor} onClose={() => setSheet('none')} />
       {(sheet === 'blockers' || sheet === 'confirm') && (
         <SubmitListSheet
           open

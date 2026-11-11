@@ -116,6 +116,24 @@ way back from `ACTIVE`. The pairing rule is one helper, `pairingIssues` (`domain
 every List names exactly one hospital (or the AA rooms location, `locationType: 'aaRooms'`, never a
 Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA apps.
 
+## A Procedure's texts and the procedure stack (catch-up Phase 20a)
+
+- **`Procedure.procedureText`** `{ text, source, receivedAtISO, from? }`: one text, exactly as received
+  (the rooms' PDF or email, the hospital's download or feed, or typed: phone, email, the anaesthetist).
+  `createBooking` writes it (`sourceText`); after that only `replaceProcedureText` changes it, and the
+  replaced text goes to the Booking's change history (`procedure.procedureText.replace`). A rooms' text
+  never replaces a hospital's; an identical text changes nothing. Nobody edits it by hand.
+- **`Procedure.invoiceDescription`** `{ text, origin, editedOver? }`: what the invoice prints, by the order
+  of defaults (`startingInvoiceDescription`): the procedure text, replaced by the Contract's invoice
+  description where it is filled in; never the RVG code. `refreshInvoiceDescription` applies it whenever
+  the text or the Contract changes; the office's `setInvoiceDescription` always wins, and a newer default
+  shows as a cue ("Use it": `applyDefaultInvoiceDescription`).
+- **`domain/billing/procedureStack.ts`** is the one place for the view, `whoIsInvoicedFor`,
+  `pricingBasisFor`, the two invoice-description helpers and `procedureLabel`;
+  **`shared/booking/ProcedureStack`** renders the view on every Booking screen, Admin Review and the List
+  drawer (the store's `procedureStackViewFor` builds it).
+- The seed carries AR-35's illustrative, AI-made wording (`domain/seed/sourceWording.ts`), not AA's data.
+
 ## Folder map (`src/`)
 
 - **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/` (Bookings in
@@ -127,8 +145,9 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
   Slot and List actions (`slotActions.ts`: assign, move and reassign, availability, session
   times, default times, the horizon, cover markers, and the Draft List internals), the Draft List
-  actions (`draftListActions.ts`) and their demo bodies (`draftListDemo.ts`), Booking creation (`bookingActions.ts`), Booking and List attachments
-  (`attachmentActions.ts`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
+  actions (`draftListActions.ts`) and their demo bodies (`draftListDemo.ts`), Booking creation (`bookingActions.ts`), the procedure text
+  and invoice description (`procedureTextActions.ts`: `replaceProcedureText`, `setInvoiceDescription`,
+  `applyDefaultInvoiceDescription`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
   three top-level files: `<App>.tsx` is the app's **layout** route (nav, persona actor, shared
@@ -138,8 +157,8 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
 - **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index), the Xero +
   billing-monitor simulator, the integration simulator, and the seed-data inspector.
-- **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the attachment
-  strip and simulated picker in `attachments/`, schedule rows, flows, status chips, the legacy
+- **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the
+  procedure stack `booking/ProcedureStack`, schedule rows, flows, status chips, the legacy
   `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output,
   `scheduleTerms.ts`: every Draft List word, in one place).
 - **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
@@ -429,8 +448,8 @@ seconds later, rather than orphaning it, so the story can carry on from where th
   demo worlds, each with its own localStorage. Closing that needs a real backend.
 - **No real camera.** `PhotoCaptureFlow`, a Future-scope demo reached only from the mobile List's
   Demo actions ("Photo capture (Future scope)"; US-02.4.4 is Future Work), picks between two bundled
-  SVG "paper cards" (`src/assets/samplePaperCards.ts`), and the attachment sheet's simulated file picker offers the
-  bundled samples in `src/assets/sampleAttachments.ts`; there is no `<input type="file">`, no `FileReader` and no
+  SVG "paper cards" (`src/assets/samplePaperCards.ts`) that only prefill the form (attachments were
+  removed in catch-up Phase 20a); there is no `<input type="file">`, no `FileReader` and no
   `getUserMedia` anywhere in `src/`.
 - **No push notifications.** iOS 16.4+ supports them for installed PWAs, so "a new list was assigned
   to you" is a strong future demo beat, but it needs a real push service.

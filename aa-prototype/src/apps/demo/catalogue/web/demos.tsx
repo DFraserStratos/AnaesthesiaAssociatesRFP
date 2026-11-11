@@ -29,7 +29,6 @@ import { NameSearchBox, SlidingSegmentedControl, type SlidingSegmentVariant } fr
 import { drSurname, formatCurrency, locationName, mondayOf, shiftWeeks } from '../../../../shared/format'
 import { ListInvoices, useBookingSearch, useListInvoices } from '../../../../shared/schedule'
 import { AddBookingFlow, AlertOfficeEntry, MovedToYouPanel, SubmitListSheet, useMovableLists } from '../../../../shared/flows'
-import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../../shared/attachments'
 import { AvailabilityEditor, ResultLine, SeriesList } from '../../../../shared/availability'
 import { HistoryTimeline } from '../../../../shared/booking'
 import { sortAuditNewestFirst } from '../../../../shared/audit'
@@ -521,17 +520,6 @@ export function SubmitListSheetDemo({ f }: F) {
   )
 }
 
-export function AddAttachmentDemo({ f }: F) {
-  const [open, setOpen] = useState(false)
-  if (f.detailListId === undefined) return <Missing what="active List" />
-  return (
-    <>
-      <AddAttachmentButton onClick={() => setOpen(true)} />
-      <AddAttachmentSheet open={open} target={{ kind: 'list', id: f.detailListId }} actor={f.actor} onClose={() => setOpen(false)} />
-    </>
-  )
-}
-
 // ---------------------------------------------------------------------------
 // Search and dates
 // ---------------------------------------------------------------------------
@@ -770,30 +758,6 @@ export function ResultLineDemo() {
         <KnobButton onClick={() => setLine(null)}>Clear</KnobButton>
       </div>
       <ResultLine line={line} />
-    </>
-  )
-}
-
-export function AttachmentStripDemo({ f }: F) {
-  const [items, setItems] = useState(f.attachments)
-  const [canRemove, setCanRemove] = useState<'yes' | 'no'>('yes')
-  return (
-    <>
-      <Knobs label="Editable" value={canRemove} options={[{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No (locked)' }]} onChange={setCanRemove} />
-      <AttachmentStrip
-        attachments={items}
-        canRemove={canRemove === 'yes'}
-        onRemove={(id) => {
-          setItems((prev) => prev.filter((a) => a.id !== id))
-          return { ok: true }
-        }}
-        emptyText="No attachments on this List."
-      />
-      {items.length < f.attachments.length && (
-        <div style={{ marginTop: 8 }}>
-          <KnobButton onClick={() => setItems(f.attachments)}>Put them back</KnobButton>
-        </div>
-      )}
     </>
   )
 }

@@ -631,7 +631,7 @@ function MobileBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
   const answers = contract !== undefined ? railAnswersText(masters, context, start) : procedure.railAnswers !== undefined ? railAnswersText(masters, context, procedure.railAnswers) : undefined
   return (
     <CaptureSection label={cardLabel(ordinal, procedureCount)} shot="billing">
-      <div className="aa-rail-scope" data-shot="procedure-contract" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="aa-rail-scope" data-shot="billing-contract-rows" style={{ display: 'flex', flexDirection: 'column' }}>
         {contract === undefined && (
           <div data-shot="needs-invoice-destination" style={{ fontSize: 13.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px', marginBottom: 8 }}>
             {NEEDS_INVOICE_DESTINATION}

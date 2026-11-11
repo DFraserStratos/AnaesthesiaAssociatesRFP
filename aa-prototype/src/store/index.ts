@@ -180,7 +180,13 @@ export {
   type OpenWarningRow,
   type ListWarningSummary,
 } from './warnings'
-export { addAttachment, removeAttachment, type AttachmentFile, type AttachmentTarget } from './attachmentActions'
+export {
+  applyDefaultInvoiceDescription,
+  INVOICE_DESCRIPTION_BLANK_MESSAGE,
+  PROCEDURE_TEXT_BLANK_MESSAGE,
+  replaceProcedureText,
+  setInvoiceDescription,
+} from './procedureTextActions'
 export {
   addBillingLine,
   removeBillingLine,

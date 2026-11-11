@@ -428,7 +428,7 @@ describe('one Contract per Procedure (catch-up Phase 20)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v36 store with billing routes and payment categories and reseeds every Procedure on one Contract', () => {
-    expect(PERSIST_VERSION).toBe(37)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(37)
     const fresh = freshAppState()
     const procedures = Object.fromEntries(
       Object.entries(fresh.schedule.procedures).map(([id, p]) => [id, { ...p, billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPostProcedure' }]),
@@ -440,5 +440,32 @@ describe('one Contract per Procedure (catch-up Phase 20)', () => {
     expect(riley['billingRoute']).toBeUndefined()
     expect(riley['patientPaymentCategory']).toBeUndefined()
     expect(riley['governingContractId']).toBe('CT-SOUTER-RHINO')
+  })
+})
+
+describe('procedure text and invoice description (catch-up Phase 20a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v37 store with Procedure descriptions and attachments and reseeds the procedure texts', () => {
+    expect(PERSIST_VERSION).toBe(38)
+    const fresh = freshAppState()
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        const { procedureText: _t, invoiceDescription: _d, ...old } = p
+        return [id, { ...old, description: 'Old wording' }]
+      }),
+    )
+    const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).map(([id, b]) => [id, { ...b, attachments: [] }]))
+    const stale = { ...fresh, schedule: { ...fresh.schedule, procedures, bookings } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 37 }))
+    const s = createAppStore({ persisted: true }).getState()
+    const first = s.schedule.procedures.P0001 as unknown as Record<string, unknown>
+    expect(first['description']).toBeUndefined()
+    expect(first['procedureText']).not.toBeUndefined()
+    expect(s.schedule.bookings.BK0001 as unknown as Record<string, unknown>).not.toHaveProperty('attachments')
   })
 })

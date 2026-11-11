@@ -290,7 +290,7 @@ describe('addProcedure', () => {
 
     const procedure = api.getState().schedule.procedures[outcome.value.procedureId]
     expect(procedure?.isAdditional).toBe(true)
-    expect(procedure?.description).toBe('')
+    expect(procedure?.procedureText).toBeNull()
     expect(procedure?.rvgGroupId).toBeUndefined()
     // It picks its own Contract on the step rail (catch-up Phase 20, US-03.2.3):
     // none is inherited; only the payer override is copied. "Add another

@@ -68,7 +68,7 @@ test('capture: Ellison BTM block', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/m4-01-booking-top.png', fullPage: true })
   // Scroll the phone frame's content to the capture block. What the scroll
   // shows is the masthead folded to its nav row above the Mark complete dock.
-  await page.getByText('RVG code', { exact: true }).scrollIntoViewIfNeeded()
+  await page.getByText('RVG code', { exact: true }).last().scrollIntoViewIfNeeded()
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/m4-01-btm-block.png', fullPage: true })
   // The Modifiers section (catch-up Phase 19b): A1 pre-applied from her age, nothing else.

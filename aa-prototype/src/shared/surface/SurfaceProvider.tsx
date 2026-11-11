@@ -192,7 +192,7 @@ function MobileBookingLayout({ contentRef, header, history, banners, context, ca
  *            pins the Booking calculation (office Bookings) with a separate,
  *            matching-width complete/amend bar below it, or the bar alone on an
  *            anaesthetist Booking; patient
- *            / time / attachments / notes and quiet actions follow.
+ *            / time / notes and quiet actions follow.
  *
  * The commit block is `sticky`, so the calculation or completion
  * action stays in place while the capture column scrolls under it. It carries

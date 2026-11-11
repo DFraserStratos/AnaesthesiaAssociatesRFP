@@ -18,7 +18,7 @@ import phase18Fixture from './__parity__/phase-18-baseline.json'
 import phase19Fixture from './__parity__/phase-19-baseline.json'
 import phase19aFixture from './__parity__/phase-19a-baseline.json'
 import phase19bFixture from './__parity__/phase-19b-baseline.json'
-import { MERIVALE_FACE_LIFT_BOOKING_ID, SEED_MARKERS } from '../domain/seed'
+import { MERIVALE_FACE_LIFT_BOOKING_ID, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 import { freshAppState } from './appStore'
 import { billingContextForBooking, bookingsForList, prePaidByProcedure, proceduresForBooking } from './selectors'
 import { procedureFee } from '../shared/capture/feeContext'
@@ -243,7 +243,20 @@ const MOVED_BOOKINGS_19B = new Set(
 const ADDED_BOOKINGS: Record<string, string> = {
   // Catch-up Phase 19a: the unedited Face lift on Merivale's combination Contract.
   [MERIVALE_FACE_LIFT_BOOKING_ID]: "Phase 19a · Merivale's Face lift",
+  // Catch-up Phase 20a: AR-35's illustrative wording (the "RTK" Booking and the expert rows), uncaptured.
+  ...Object.fromEntries(SOURCE_WORDING_BOOKING_IDS.map((id) => [id, "Phase 20a · AR-35's illustrative wording"])),
 }
+
+/**
+ * The one recorded Phase 20a exception: Diane Foster's S14 target (forward
+ * ACTIVE List, uncaptured, never invoiced) is re-seeded to the rooms' "WLE MM"
+ * with its RVG code cleared, on No contract · RVG. No S1 to S5 figure reads it.
+ */
+const FOSTER_BOOKING_20A = SEED_MARKERS.integrationS14!.entityId
+const FOSTER_PROCEDURE_20A = Object.values(state.schedule.procedures).find((p) => p.bookingId === FOSTER_BOOKING_20A)!.id
+/** Phase 20a's appended Bookings and their Procedures (named additions). */
+const ADDED_BOOKINGS_20A = new Set(SOURCE_WORDING_BOOKING_IDS)
+const ADDED_PROCEDURES_20A = new Set(Object.values(state.schedule.procedures).filter((p) => ADDED_BOOKINGS_20A.has(p.bookingId)).map((p) => p.id))
 
 function addedProcedureIds(): Set<string> {
   return new Set(
@@ -260,10 +273,10 @@ function addedProcedureIds(): Set<string> {
 function withDeltas<F extends { procedureId: string }>(fixture: { fees: F[]; invoices: InvoiceRow[] }): { fees: F[]; invoices: InvoiceRow[] } {
   return {
     fees: fixture.fees
-      .filter((f) => !MOVED_19B.has(f.procedureId))
+      .filter((f) => !MOVED_19B.has(f.procedureId) && f.procedureId !== FOSTER_PROCEDURE_20A)
       .map((f) => (f.procedureId === HERNIA_FEE.procedureId ? { ...f, ...HERNIA_FEE } : f)),
     invoices: fixture.invoices
-      .filter((i) => !MOVED_BOOKINGS_19B.has(i.bookingId))
+      .filter((i) => !MOVED_BOOKINGS_19B.has(i.bookingId) && i.bookingId !== FOSTER_BOOKING_20A)
       .map((i) => (i.bookingId === 'BK0028' ? { ...i, result: HERNIA_INVOICES } : i)),
   }
 }
@@ -272,8 +285,8 @@ function withDeltas<F extends { procedureId: string }>(fixture: { fees: F[]; inv
 function current<F extends { procedureId: string }>(rows: F[]): { fees: F[]; invoices: InvoiceRow[] } {
   const added = addedProcedureIds()
   return {
-    fees: rows.filter((f) => !added.has(f.procedureId) && !MOVED_19B.has(f.procedureId)),
-    invoices: invoices.filter((i) => ADDED_BOOKINGS[i.bookingId] === undefined && !MOVED_BOOKINGS_19B.has(i.bookingId)),
+    fees: rows.filter((f) => !added.has(f.procedureId) && !MOVED_19B.has(f.procedureId) && f.procedureId !== FOSTER_PROCEDURE_20A),
+    invoices: invoices.filter((i) => ADDED_BOOKINGS[i.bookingId] === undefined && !MOVED_BOOKINGS_19B.has(i.bookingId) && i.bookingId !== FOSTER_BOOKING_20A),
   }
 }
 
@@ -361,6 +374,8 @@ describe('Phase 19a price range parity', () => {
     }
     scripted.delete('BK0028') // the declared difference, asserted above
     scripted.delete(MERIVALE_FACE_LIFT_BOOKING_ID) // a named addition, asserted below
+    scripted.delete(FOSTER_BOOKING_20A) // Phase 20a's one recorded exception (uncaptured, forward)
+    for (const id of ADDED_BOOKINGS_20A) scripted.delete(id) // Phase 20a's named additions (the "RTK" marker)
     for (const id of MOVED_BOOKINGS_19B) scripted.delete(id) // Phase 19b's moves, proved in its own case
     expect(scripted.size).toBeGreaterThan(10)
     for (const bookingId of scripted) {
@@ -405,7 +420,7 @@ describe('Phase 19a price range parity', () => {
   it("adds one Booking, named: Merivale's Face lift at its range in force, $3,100 ex GST, to the patient", () => {
     expect(fixtureInvoices(MERIVALE_FACE_LIFT_BOOKING_ID)).toBeUndefined()
     const [proc] = proceduresForBooking(state, MERIVALE_FACE_LIFT_BOOKING_ID)
-    expect(proc).toMatchObject({ governingContractId: 'CT-MER-FACELIFT', description: 'Face lift' })
+    expect(proc).toMatchObject({ governingContractId: 'CT-MER-FACELIFT', procedureText: { text: 'Face lift' } })
     // The RVG code was filled from the Contract's default, H3; its units are for reference only.
     expect(state.masters.rvgGroups[proc!.rvgGroupId!]?.code).toBe('H3')
     expect(feeOf(proc!.id)).toMatchObject({ total: 3100, lines: [{ basis: 'fixed', amount: 3100 }] })
@@ -442,8 +457,8 @@ describe('Phase 19b modifier parity', () => {
   })
 
   it('every row Phase 19b does not move is byte-identical', () => {
-    for (const row of unitRows.filter((r) => !MOVED_19B.has(r.procedureId))) expect(row, row.procedureId).toEqual(before(row.procedureId))
-    for (const inv of invoices.filter((i) => !MOVED_BOOKINGS_19B.has(i.bookingId))) {
+    for (const row of unitRows.filter((r) => !MOVED_19B.has(r.procedureId) && r.procedureId !== FOSTER_PROCEDURE_20A && !ADDED_PROCEDURES_20A.has(r.procedureId))) expect(row, row.procedureId).toEqual(before(row.procedureId))
+    for (const inv of invoices.filter((i) => !MOVED_BOOKINGS_19B.has(i.bookingId) && i.bookingId !== FOSTER_BOOKING_20A && !ADDED_BOOKINGS_20A.has(i.bookingId))) {
       expect(inv, inv.bookingId).toEqual(fixture.invoices.find((i) => i.bookingId === inv.bookingId))
     }
   })
@@ -491,6 +506,7 @@ describe('Phase 19b modifier parity', () => {
 
   it('every invoice that moved contains a moved Procedure, and only its counterparties carry it', () => {
     for (const inv of invoices) {
+      if (inv.bookingId === FOSTER_BOOKING_20A || ADDED_BOOKINGS_20A.has(inv.bookingId)) continue // Phase 20a's exception and additions
       const was = fixture.invoices.find((i) => i.bookingId === inv.bookingId)
       if (JSON.stringify(inv) === JSON.stringify(was)) continue
       expect(MOVED_BOOKINGS_19B.has(inv.bookingId), inv.bookingId).toBe(true)

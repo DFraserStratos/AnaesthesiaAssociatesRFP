@@ -23,6 +23,7 @@
  * directly or wire explicitly and unsubscribe.
  */
 
+import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
 import { noRouteCounterpartyMessage } from '../domain/billing/parties'
 import { billedPartyFor } from '../domain/billing/whoIsBilled'
@@ -330,6 +331,8 @@ export function chooseContractForFailedBooking(
   for (const key of Object.keys(row.value.patch) as (keyof Procedure)[]) {
     if (row.value.patch[key] === undefined) delete next[key]
   }
+  // The invoice description follows the Contract (US-08.4.6, D37) unless the office edited it (D73).
+  next.invoiceDescription = refreshedInvoiceDescriptionFor(next, state.masters.contracts)
   mutate(
     api,
     actor,
@@ -337,8 +340,8 @@ export function chooseContractForFailedBooking(
       entityType: 'procedure',
       entityId: procedureId,
       action: 'procedure.contract',
-      before: { governingContractId: procedure.governingContractId, enteredPrice: procedure.enteredPrice, priceOverride: procedure.priceOverride, rvgGroupId: procedure.rvgGroupId },
-      after: { governingContractId: next.governingContractId, enteredPrice: next.enteredPrice, priceOverride: next.priceOverride, rvgGroupId: next.rvgGroupId },
+      before: { governingContractId: procedure.governingContractId, enteredPrice: procedure.enteredPrice, priceOverride: procedure.priceOverride, rvgGroupId: procedure.rvgGroupId, invoiceDescription: procedure.invoiceDescription?.text ?? null },
+      after: { governingContractId: next.governingContractId, enteredPrice: next.enteredPrice, priceOverride: next.priceOverride, rvgGroupId: next.rvgGroupId, invoiceDescription: next.invoiceDescription?.text ?? null },
     },
     (s) => ({
       schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } },

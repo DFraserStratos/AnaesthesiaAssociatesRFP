@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import { billingReferenceMissing, procedureRequiresPrepayment } from '../../domain/billing'
-import { billedPartyForProcedure, counterpartyName, useAppStore, type Actor } from '../../store'
+import { useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
 import { formatCurrency } from '../format'
 import { EditBillingSetupSheet, PriceOverrideSheet, FunderAllocationSheet } from '../flows'
-import { ProcedureContractRow } from './ProcedureContractRow'
 
 interface OfficeBillingSetupProps {
   procedure: Procedure
@@ -22,11 +21,11 @@ type Sheet = 'none' | 'setup' | 'override' | 'funder'
 
 /**
  * The office billing-setup section (Phase 06; catch-up Phase 20), rendered per
- * procedure in `BookingDetailBody` only for an `office` actor: the one
- * Contract (chosen or changed on the step rail), who is billed (the Contract
- * says; INTERIM until Phase 21), the reference, the price override, the
+ * procedure in `BookingDetailBody` only for an `office` actor: the reference, the price override, the
  * funders (INTERIM until Phase 22) and whether a prepayment is required (from
- * a prepaid Contract; INTERIM until Phase 27). "Edit billing setup" opens
+ * a prepaid Contract; INTERIM until Phase 27). The Contract, its holder and who
+ * is invoiced are the procedure stack's (catch-up Phase 20a), so they are not
+ * repeated here. "Edit billing setup" opens
  * "Contract and payer" (the payer override and the reference).
  */
 export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }: OfficeBillingSetupProps) {
@@ -34,10 +33,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const [sheet, setSheet] = useState<Sheet>('none')
 
-  const schedule = useAppStore((s) => s.schedule)
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
-  const holder = contract !== undefined ? masters.parties[contract.holderId] : undefined
-  const billed = billedPartyForProcedure({ masters, schedule }, procedure.id)
   const lines = Object.values(billingLinesRecord).filter((l) => l.procedureId === procedure.id)
   const funderLines = lines.filter((l) => l.funderOverride !== undefined)
   const refMissing = billingReferenceMissing(procedure, masters.contracts, masters.parties)
@@ -64,11 +60,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
         </div>
       </div>
 
-      <Row label="Contract">
-        <ProcedureContractRow procedure={procedure} actor={actor} canEdit={false} shot="office-procedure-contract" />
-        {holder !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>Held by {holder.name}</span>}
-      </Row>
-      <Row label="Billed to">{billed !== undefined ? counterpartyName({ masters }, billed) : <Missing>Needs an invoice destination</Missing>}</Row>
+      {/* The Contract, its holder and who is invoiced show in the procedure stack above (catch-up Phase 20a). */}
       <Row label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</Row>
       <Row label="Override">{overrideLabel}</Row>
       <Row label="Funders">

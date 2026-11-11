@@ -64,7 +64,6 @@ export function clockISO(clock: DemoClockState): string {
 const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   audit: { prefix: 'A', pad: 4 },
   booking: { prefix: 'BK', pad: 4 },
-  attachment: { prefix: 'AT', pad: 4 },
   procedure: { prefix: 'P', pad: 4 },
   billingLine: { prefix: 'BL', pad: 4 },
   patient: { prefix: 'PT', pad: 4 },

@@ -431,7 +431,7 @@ export function assignListToSlot(
  * Move a List into another Slot on the same day and session (US-01.4.1's
  * technical discussion: change the owner reference, consume the covering
  * anaesthetist's Slot, return the vacated Slot to available). The List keeps
- * its id, Bookings, phone notes, attachments and history; its `slotId` and
+ * its id, Bookings, phone notes and history; its `slotId` and
  * denormalised fields change; it loses its recurring-booking provenance (a
  * move is an edit, so no projection removes or rewrites it). A holiday
  * conflict stays (the date and hospital move with the List). The target must
@@ -847,8 +847,8 @@ export interface HorizonChangePreview {
   listsDropped: number
   /**
    * Lists after the new end that hold a Booking (cancelled ones included, as
-   * their record points at the List) or an attachment: a shorten is refused
-   * while any stands, so no record is orphaned and no file lost.
+   * their record points at the List): a shorten is refused while any stands,
+   * so no record is orphaned.
    */
   listsWithBookings: number
 }
@@ -866,7 +866,7 @@ export function previewHorizonChange(
   }
   const beyond = Object.values(state.schedule.lists).filter((l) => l.dateISO > toEndISO && l.state !== 'DRAFT')
   const booked = new Set(Object.values(state.schedule.bookings).map((b) => b.listId))
-  const withBookings = beyond.filter((l) => booked.has(l.id) || (l.attachments ?? []).length > 0).length
+  const withBookings = beyond.filter((l) => booked.has(l.id)).length
   return {
     direction: 'shorten',
     fromEndISO,
@@ -899,7 +899,7 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
     const n = preview.listsWithBookings
     return refuse(
       'listsBeyondHorizon',
-      `${n} ${n === 1 ? 'List' : 'Lists'} after ${format(parseISO(preview.toEndISO), 'EEE d MMM yyyy')} ${n === 1 ? 'holds' : 'hold'} Bookings or attachments (cancelled Bookings count). Move them first, or keep the longer horizon.`,
+      `${n} ${n === 1 ? 'List' : 'Lists'} after ${format(parseISO(preview.toEndISO), 'EEE d MMM yyyy')} ${n === 1 ? 'holds' : 'hold'} Bookings (cancelled Bookings count). Move them first, or keep the longer horizon.`,
     )
   }
 

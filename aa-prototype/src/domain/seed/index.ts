@@ -10,7 +10,6 @@
  */
 
 import type {
-  Attachment,
   Anaesthetist,
   AuditEntry,
   BillableParty,
@@ -86,7 +85,8 @@ import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftLis
 import { buildSeedAudit } from './audit'
 import { ACCEPTANCE_BEAT_LIST_ID, seedBookingMoveBookings } from './bookingMoves'
 import { MERIVALE_BOOKING_LIST_ID, seedPricedItemBookings } from './pricedItemBookings'
-import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
+import { finaliseSeedProcedureTexts } from './procedureText'
+import { seedSourceWordingBookings } from './sourceWordingBookings'
 
 export {
   canvasAnaesthetists,
@@ -393,16 +393,6 @@ interface SeedBuild {
   clashes: RecurringClash[]
 }
 
-/** Dr Souter's Tue 28 Jul AM List (St George's), S1's destination List. */
-const SEED_LIST_ATTACHMENT_LIST_ID = projectedListId(ANAE.souter, '2026-07-28', 'AM')
-/** Its seeded attachment: `AT0001`, so the store's counter continues at 2. */
-const SEED_LIST_ATTACHMENT: Attachment = {
-  id: 'AT0001',
-  name: "Theatre list · St George's",
-  kind: 'pdf',
-  dataUrl: SAMPLE_THEATRE_LIST,
-}
-
 function buildSeedInternal(): SeedBuild {
   const slotStatuses = byId(SEED_SLOT_STATUSES, (s) => s.key)
   const canvasMasters: CanvasMasters = {
@@ -479,10 +469,6 @@ function buildSeedInternal(): SeedBuild {
   const proceduresRec = byId(bookingsBuild.procedures, (p) => p.id)
   const billingLinesRec = byId(bookingsBuild.billingLines, (l) => l.id)
   for (const [id, l] of Object.entries(history.lists)) lists[id] = l
-  // The one seeded List attachment (US-03.1.3; catch-up Phase 15), so List
-  // attachments show after Reset: the theatre list on S1's destination List.
-  const theatreList = lists[SEED_LIST_ATTACHMENT_LIST_ID]
-  if (theatreList !== undefined) lists[theatreList.id] = { ...theatreList, attachments: [SEED_LIST_ATTACHMENT] }
   for (const [id, c] of Object.entries(history.bookings)) bookingsRec[id] = c
   for (const [id, p] of Object.entries(history.procedures)) proceduresRec[id] = p
   // Draft Lists (catch-up Phase 31): the office's waiting requests, and every
@@ -505,6 +491,12 @@ function buildSeedInternal(): SeedBuild {
   const pricedItemBookings = seedPricedItemBookings(moveBookings.next)
   for (const b of pricedItemBookings.bookings) bookingsRec[b.id] = b
   for (const p of pricedItemBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 20a: AR-35's illustrative wording on new Bookings, after every other id.
+  const wordingBookings = seedSourceWordingBookings(pricedItemBookings.next, (listId) => lists[listId]?.dateISO ?? DEMO_TODAY)
+  for (const b of wordingBookings.bookings) bookingsRec[b.id] = b
+  for (const p of wordingBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 20a: each seeded Procedure's text source and time, and its invoice description.
+  finaliseSeedProcedureTexts(proceduresRec, bookingsRec, lists, byId(CONTRACTS, (c) => c.id))
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
   const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
@@ -513,6 +505,8 @@ function buildSeedInternal(): SeedBuild {
   const audit = buildSeedAudit({
     existing: [
       ...bookingsBuild.audit,
+      // Catch-up Phase 20a: the hospital's download replaced the rooms' "RTK" (AR-35 rows 1 and 2, illustrative).
+      { ...wordingBookings.replaceAudit, id: 'seed-rtk-replace' },
       ...seedDraftListAudit(seededDraftLists),
       {
         id: 'seed-sickness-return',
@@ -542,7 +536,8 @@ function buildSeedInternal(): SeedBuild {
     anaesthetists: anaesthetistsRec,
     lists,
     bookings: bookingsRec,
-    procedures: proceduresRec,
+    // The "RTK" Procedure was created with the rooms' text; the replace row (in `existing`) records the hospital's.
+    procedures: { ...proceduresRec, [wordingBookings.rtkProcedureId]: { ...proceduresRec[wordingBookings.rtkProcedureId]!, procedureText: wordingBookings.rtkRoomsText } },
     billingLines: billingLinesRec,
   })
 
@@ -591,8 +586,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: pricedItemBookings.next.booking,
-      procedure: pricedItemBookings.next.procedure,
+      booking: wordingBookings.next.booking,
+      procedure: wordingBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
@@ -600,7 +595,6 @@ function buildSeedInternal(): SeedBuild {
       list: 1,
       hospital: 1,
       contract: 1,
-      attachment: 2,
       slotStatus: 1,
       availabilitySeries: 1,
     },
@@ -776,6 +770,22 @@ export const MERIVALE_FACE_LIFT_BOOKING_ID: string = (() => {
   const found = Object.values(SEED_BUILD.state.schedule.bookings).find((b) => b.listId === MERIVALE_BOOKING_LIST_ID)
   if (found === undefined) throw new Error('seed: the Merivale Face lift Booking is missing')
   return found.id
+})()
+
+/**
+ * The Bookings catch-up Phase 20a appended to carry AR-35's illustrative
+ * wording (`seed/sourceWordingBookings.ts`): every Booking after the Merivale
+ * Face lift. The parity suites name them as additions.
+ */
+export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID)
+  .sort()
+
+/** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
+export const RTK_BOOKING_ID: string = (() => {
+  const found = Object.values(SEED_BUILD.state.schedule.procedures).find((p) => p.procedureText?.text === 'right total knee')
+  if (found === undefined) throw new Error('seed: the "right total knee" Booking is missing')
+  return found.bookingId
 })()
 
 /** The pristine seed state. Deterministic: two calls are deep-equal. */
@@ -1047,12 +1057,6 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: scenario.integrationS15,
       detail: "Souter Tue 4 Aug AM (St George's); the S15 message soft-cancels it.",
     },
-    listAttachment: {
-      label: 'List attachment (theatre list PDF)',
-      entityType: 'list',
-      entityId: SEED_LIST_ATTACHMENT_LIST_ID,
-      detail: "Souter Tue 28 Jul AM (St George's); the List carries the seeded theatre-list PDF.",
-    },
     integrationLockedTarget: {
       label: 'Integration booking · locked target (SUBMITTED list)',
       entityType: 'booking',
@@ -1077,5 +1081,12 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityType: 'booking',
     entityId: MERIVALE_FACE_LIFT_BOOKING_ID,
     detail: 'Souter Mon 10 Aug PM, Ms Lim; unedited, $3,100 from 1 Jun 2026. Add a price range before 10 Aug in the Contract editor and it re-prices.',
+  },
+  // Catch-up Phase 20a: the hospital's text replaced the rooms' (AR-35 rows 1 and 2, illustrative).
+  procedureTextReplaced: {
+    label: 'Procedure text replaced (right total knee, was RTK)',
+    entityType: 'booking',
+    entityId: RTK_BOOKING_ID,
+    detail: "Souter Tue 4 Aug AM (St George's), 09:30; the rooms' RTK is in its History.",
   },
 }

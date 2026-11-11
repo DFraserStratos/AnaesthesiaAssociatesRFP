@@ -37,7 +37,8 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppState, AppStoreApi, BoundAppStore } from './appStore'
 import { createBooking } from './bookingActions'
 import { pairingRefusal } from './slotActions'
-import { cancelBooking, editBooking, editProcedure, reassignBooking, type BookingPatch } from './lifecycle'
+import { cancelBooking, editBooking, reassignBooking, type BookingPatch } from './lifecycle'
+import { replaceProcedureText } from './procedureTextActions'
 import { bookingsOnListByNhi, findBookingByCorrelation, listInSlot, proceduresForBooking, slotFor } from './selectors'
 
 export const MAX_ATTEMPTS = 3
@@ -147,6 +148,27 @@ function updateMessageRow(
 // Effect application (routes a parsed message to the audited write-paths)
 // ---------------------------------------------------------------------------
 
+function hospitalNameOf(api: AppStoreApi, hospitalId: string | undefined): string | undefined {
+  return hospitalId !== undefined ? api.getState().masters.hospitals[hospitalId]?.name : undefined
+}
+
+/**
+ * A modify message's text (S13, S14): when it differs from the Booking's
+ * first Procedure's, the hospital's replaces it through `replaceProcedureText`
+ * (the held text goes to the change history); an identical text, or none,
+ * changes nothing. Never the RVG code or the Contract. Phase 23's primary
+ * Procedure becomes the target.
+ */
+function replaceFromFeed(api: AppStoreApi, actor: Actor, bookingId: string, parsed: ParsedMessage): Outcome<{ replaced: boolean }> {
+  if (parsed.operation === undefined || parsed.operation.trim() === '') return ok({ replaced: false })
+  const state = api.getState()
+  const first = proceduresForBooking(state, bookingId)[0]
+  if (first === undefined) return ok({ replaced: false })
+  const list = state.schedule.lists[state.schedule.bookings[bookingId]?.listId ?? '']
+  const from = hospitalNameOf(api, list?.hospitalId)
+  return replaceProcedureText(api, actor, first.id, { text: parsed.operation, source: 'hospitalFeed', ...(from !== undefined ? { from } : {}) })
+}
+
 function applyEffect(
   api: AppStoreApi,
   actor: Actor,
@@ -174,7 +196,13 @@ function applyEffect(
         dobISO: parsed.patient.dobISO ?? '',
         ...(parsed.patient.ethnicityCode !== undefined ? { ethnicityCode: parsed.patient.ethnicityCode } : {}),
       },
-      operation: parsed.operation ?? 'Procedure (from feed)',
+      // The hospital's text exactly as the feed carried it (US-02.5.7; OQ-13:
+      // SCH-7 and FHIR Appointment.description stand in for the hospital's
+      // field). No invented wording: a message with none creates a Procedure
+      // with no text. Phase 33 moves hospital rows behind the matching screen.
+      ...(parsed.operation !== undefined
+        ? { sourceText: { text: parsed.operation, source: 'hospitalFeed' as const, from: hospitalNameOf(api, list.hospitalId) } }
+        : {}),
       ...(parsed.scheduledTime !== undefined ? { scheduledTime: parsed.scheduledTime } : {}),
       correlationRef: { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId },
       // Interim until Phase 33 routes hospital rows through the matching screen:
@@ -223,6 +251,8 @@ function applyEffect(
         const timed = editBooking(api, actor, booking.id, { scheduledTime: parsed.scheduledTime })
         if (!timed.ok) return timed
       }
+      const text = replaceFromFeed(api, actor, booking.id, parsed)
+      if (!text.ok) return text
       return ok({ bookingId: booking.id })
     }
     // Same-List reschedule: a scheduledTime change.
@@ -230,6 +260,8 @@ function applyEffect(
     if (parsed.scheduledTime !== undefined) patch.scheduledTime = parsed.scheduledTime
     const retimed = editBooking(api, actor, booking.id, patch)
     if (!retimed.ok) return retimed
+    const text = replaceFromFeed(api, actor, booking.id, parsed)
+    if (!text.ok) return text
     return ok({ bookingId: booking.id })
   }
 
@@ -239,6 +271,8 @@ function applyEffect(
     if (parsed.note !== undefined) patch.notes = parsed.note
     const modified = editBooking(api, actor, booking.id, patch)
     if (!modified.ok) return modified
+    const text = replaceFromFeed(api, actor, booking.id, parsed)
+    if (!text.ok) return text
     return ok({ bookingId: booking.id })
   }
 
@@ -456,8 +490,8 @@ export function correctEthnicityCode(api: AppStoreApi, actor: Actor, patientId: 
 
 /**
  * Ingest one reviewed PDF row onto a List. A row whose NHI matches a Booking
- * already on that List UPDATES it (scheduled time + operation) rather than
- * duplicating; otherwise a new Booking is created (patient via the shared
+ * already on that List UPDATES it (scheduled time; the text through
+ * `replaceProcedureText`, catch-up Phase 20a) rather than duplicating; otherwise a new Booking is created (patient via the shared
  * `upsertPatient`). Office-actor; a bad NHI refuses so the office must fix it in
  * review first.
  */
@@ -486,10 +520,12 @@ export function ingestPdfRow(
       const timed = editBooking(api, actor, existing.id, { scheduledTime: row.scheduledTime })
       if (!timed.ok) return timed
     }
+    // The rooms' text through the one write path (US-02.5.7): it replaces a
+    // different rooms' text, never a hospital's; an identical row changes nothing.
     const first = proceduresForBooking(state, existing.id)[0]
     if (first !== undefined && row.operation.trim() !== '') {
-      const desc = editProcedure(api, actor, first.id, { description: row.operation.trim() })
-      if (!desc.ok) return desc
+      const text = replaceProcedureText(api, actor, first.id, { text: row.operation, source: 'surgeonPdf' })
+      if (!text.ok) return text
     }
     return ok({ bookingId: existing.id, outcome: 'updated' })
   }
@@ -501,7 +537,7 @@ export function ingestPdfRow(
       dobISO: row.dobISO,
       ...(row.ethnicityCode !== undefined ? { ethnicityCode: row.ethnicityCode } : {}),
     },
-    operation: row.operation,
+    sourceText: { text: row.operation, source: 'surgeonPdf' },
     ...(row.scheduledTime !== '' ? { scheduledTime: row.scheduledTime } : {}),
     source: 'surgeonPdf',
   })

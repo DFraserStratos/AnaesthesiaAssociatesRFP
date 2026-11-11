@@ -55,7 +55,7 @@
               "wait": 400
             },
             {
-              "fill": "[role=dialog] [placeholder=\"Operation description\"]",
+              "fill": "[role=dialog] [data-shot=procedure-description] input",
               "value": "Laparoscopic cholecystectomy"
             },
             {
@@ -121,7 +121,7 @@
               "wait": 400
             },
             {
-              "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"Operation description\"]",
+              "fill": "[data-aa-mobile-product] [role=dialog] [data-shot=procedure-description] input",
               "value": "Laparoscopic cholecystectomy"
             },
             {

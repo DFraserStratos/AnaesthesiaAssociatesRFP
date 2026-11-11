@@ -8,6 +8,7 @@ import { isAssignedList } from '../../../domain/draftLists'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
 
 interface BookingDetailScreenProps {
   bookingId: string
@@ -116,7 +117,7 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
           {!collapsed ? history : null}
         </div>
         <span style={{ minWidth: 0, fontSize: 12, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {primary?.description || 'Operation to capture'} · {hospitalName}
+          {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
         </span>
       </div>
     </div>

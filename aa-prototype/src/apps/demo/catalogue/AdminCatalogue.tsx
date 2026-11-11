@@ -69,6 +69,7 @@ import {
   SurgeonPickerExample,
   WarningsToDoExample,
 } from './admin/storeExamples'
+import { ProcedureStackExample } from './procedureStackExample'
 
 const A = 'Admin'
 const AW = 'Admin · Web'
@@ -288,6 +289,9 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="custom">
+        <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={AWM} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
+          <ProcedureStackExample />
+        </CatalogueRow>
         <CatalogueRow name="DayGrid" source="apps/admin/components/DayGrid.tsx" usedIn={A} what={`The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the ${DRAFT_LIST} band and the filter footer. Cut down to 10 rows.`} replaceWith="Custom on primitives (grid roles, Tooltip, TanStack Virtual)" note="Blocks open the real SlotDrawer, and its actions write to the demo store." height={620}>
           <DayGridExample />
         </CatalogueRow>

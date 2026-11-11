@@ -6,6 +6,7 @@
  * every snapshot.
  */
 
+import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
 import { procedureRequiresPrepayment } from '../domain/billing/invoiceBuild'
 import {
@@ -1971,4 +1972,30 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
   if (procs.some((p) => p.governingContractId === undefined)) return 'Needs an invoice destination'
   if (procs.some((p) => rvgCodeToFillFor(state, p.id))) return 'RVG code to fill in'
   return undefined
+}
+
+/**
+ * One Procedure's procedure stack view (catch-up Phase 20a; US-03.1.9): the
+ * store's masters, Booking and List handed to the one pure module. The
+ * `ProcedureStack` component renders what this returns and derives nothing.
+ */
+export function procedureStackViewFor(
+  state: Pick<AppState, 'masters'> & { schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> },
+  procedureId: string,
+  surface: StackSurface,
+): ProcedureStackView | undefined {
+  const procedure = state.schedule.procedures[procedureId]
+  if (procedure === undefined) return undefined
+  const booking = state.schedule.bookings[procedure.bookingId]
+  if (booking === undefined) return undefined
+  const list = state.schedule.lists[booking.listId]
+  return procedureStackView(procedure, {
+    contracts: state.masters.contracts,
+    parties: state.masters.parties,
+    rvgGroups: state.masters.rvgGroups,
+    patientId: booking.patientId,
+    dateISO: list?.dateISO ?? '',
+    surface,
+    nameOf: (ref) => counterpartyName(state, ref),
+  })
 }

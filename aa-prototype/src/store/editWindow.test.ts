@@ -63,7 +63,7 @@ describe('the edit window (D63)', () => {
 
     const draft = createBooking(api, SOUTER, draftListId(api), {
       patient: { name: 'X', dobISO: '1990-01-01' },
-      operation: 'Test',
+      sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(draft.ok).toBe(false)
     if (!draft.ok) expect(draft.code).toBe('notOwnList')
@@ -126,7 +126,7 @@ describe('authorise is completion-gated (catch-up Phase 38a)', () => {
     const api = store()
     const added = createBooking(api, SOUTER, MON_AM, {
       patient: { name: 'Late Addition', dobISO: '1980-02-02' },
-      operation: 'Arthroscopy',
+      sourceText: { text: 'Arthroscopy', source: 'anaesthetist' },
     })
     expect(added.ok).toBe(true)
     const refused = authoriseList(api, OFFICE, MON_AM)

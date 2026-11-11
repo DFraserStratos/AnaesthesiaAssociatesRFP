@@ -1,18 +1,23 @@
 {
   "id": "US-03.1.2",
-  "status": "partial",
-  "absentReason": "The applied Contract is shown read-only on each procedure of the booking, but not on the List view before the session.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "procedure-contract",
       "app": "web",
-      "caption": "Contract shown on the procedure",
+      "caption": "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
-          "steps": [],
+          "state": "before",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
           "highlight": [
-            "[data-shot=capture-billing] >> nth=0"
+            "[data-shot=procedure-contract] >> nth=0"
           ]
         }
       ]
@@ -20,18 +25,40 @@
     {
       "name": "procedure-contract",
       "app": "mobile",
-      "caption": "Contract shown on the procedure",
+      "caption": "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure",
       "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
+          "state": "before",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 350
+              "scroll": "[data-shot=procedure-contract]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=capture-billing] >> nth=0"
+            "[data-shot=procedure-contract] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-contract",
+      "app": "web",
+      "caption": "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure",
+      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0023",
+      "states": [
+        {
+          "state": "after",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-contract] >> nth=0"
           ]
         }
       ]

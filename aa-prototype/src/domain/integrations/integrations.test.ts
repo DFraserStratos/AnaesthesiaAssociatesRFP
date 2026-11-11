@@ -30,7 +30,7 @@ describe('HL7 mapping-driven extractor', () => {
     expect(parsed.patient.name).toBe('Sarah Mitchell')
     expect(parsed.patient.dobISO).toBe('1988-04-12')
     expect(parsed.appointmentId).toBe(APPT.s12)
-    expect(parsed.operation).toBe('Appendicectomy, laparoscopic')
+    expect(parsed.operation).toBe('lap appy ?conv to open')
     expect(parsed.scheduledDateISO).toBe('2026-07-28')
     expect(parsed.scheduledTime).toBe('08:30')
   })
@@ -58,6 +58,7 @@ describe('HL7 mapping-driven extractor', () => {
   it('reads the S14 note and S15 cancellation reason from their fixed positions', () => {
     const s14 = extractViaMapping(cannedMessage('MSG-STG-1012')!.raw!, feed(FEED.stg).fieldMapping)
     expect(s14.note).toBe('Bumped 15 min at surgeon request')
+    expect(s14.operation).toBe('WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC')
     const s15 = extractViaMapping(cannedMessage('MSG-STG-1013')!.raw!, feed(FEED.stg).fieldMapping)
     expect(s15.cancelReason).toContain('Cancelled by St George')
   })

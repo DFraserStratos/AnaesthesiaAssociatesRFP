@@ -29,8 +29,8 @@
 import type { ContractPricing, ContractStatus, DeliveryMethod, PartyKind } from '../../domain/types'
 import { DELIVERY_LABEL, PARTY_KIND_LABEL, PRICING_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../contracts/labels'
 import { format, parseISO } from 'date-fns'
-import type { AuditEntry, BookingSource, DraftOrigin, ListState, RequestSource } from '../../domain/types'
-import { BOOKING_SOURCE_LABELS, LIST_STATE_LABELS, formatCurrency } from '../format'
+import type { AuditEntry, BookingSource, DraftOrigin, ListState, ProcedureTextSource, RequestSource } from '../../domain/types'
+import { BOOKING_SOURCE_LABELS, LIST_STATE_LABELS, PROCEDURE_TEXT_SOURCE_LABELS, formatCurrency } from '../format'
 import { ORIGIN_LABELS, SOURCE_LABELS, UNASSIGNED } from '../scheduleTerms'
 import { fieldLabel } from './fieldLabels'
 import { PAIRING_LABELS, isPriorityTier, tierLabel } from '../../domain/pairingPreferences'
@@ -244,6 +244,15 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     return value.length === 1 ? '1 item' : `${value.length} items`
   }
   if (isRecord(value)) {
+    // A procedure text with its source and time (catch-up Phase 20a): "'RTK' (Surgeon's rooms PDF, 14 Jul 09:00)".
+    if (key === 'procedureText' && typeof value.text === 'string') {
+      const source = typeof value.source === 'string' && Object.hasOwn(PROCEDURE_TEXT_SOURCE_LABELS, value.source)
+        ? PROCEDURE_TEXT_SOURCE_LABELS[value.source as ProcedureTextSource]
+        : undefined
+      const at = typeof value.receivedAtISO === 'string' && DATE_TIME.test(value.receivedAtISO) ? format(parseISO(value.receivedAtISO), 'd MMM HH:mm') : undefined
+      const meta = [source, at].filter((p): p is string => p !== undefined).join(', ')
+      return meta === '' ? `'${value.text}'` : `'${value.text}' (${meta})`
+    }
     // An RVG group's published range (catch-up Phase 19): "10 to 12".
     if (key === 'baseUnitsRange' && typeof value.min === 'number' && typeof value.max === 'number') return `${value.min} to ${value.max}`
     // A Contract's pricing (catch-up Phase 18): "RVG at $95.00 per unit".

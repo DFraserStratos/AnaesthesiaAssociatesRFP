@@ -9,7 +9,7 @@ import { ContractRail, type ContractRailPick } from './ContractRail'
 import { DemoBadge } from '../DemoBadge'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
-import { Button, TextField, FieldLabel } from '../ui'
+import { Button, TextField, FieldLabel, Segmented } from '../ui'
 
 /** Fields a photo extraction may pre-fill. */
 export interface ExtractionFields {
@@ -18,7 +18,8 @@ export interface ExtractionFields {
   dobISO?: string
   phone?: string
   ethnicityCode?: string
-  operation?: string
+  /** The procedure as told or written (catch-up Phase 20a): kept exactly as typed. */
+  description?: string
   /** The optional RVG code: an RVG group row by id (catch-up Phase 19). */
   rvgGroupId?: string
   scheduledTime?: string
@@ -30,7 +31,6 @@ interface ManualBookingFormProps {
   actor: Actor
   initial?: ExtractionFields
   emptyLookupPrefill?: ExtractionFields & { nhi: string }
-  attachment?: { name: string; kind: 'photo' | 'pdf' | 'other'; dataUrl?: string }
   /** How this Booking entered the system (display-only, DM-39); the add flow passes it. */
   source?: BookingSource
   onSaved: (result: { bookingId: string; reused: boolean }) => void
@@ -44,7 +44,7 @@ type LookupState =
 /** Saved with no Contract: it waits on the office's list (US-04.3.4, catch-up Phase 20). */
 export const SAVED_WITHOUT_CONTRACT = 'Saved without a Contract, this Booking waits on Needs an invoice destination.'
 
-export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, attachment, source, onSaved }: ManualBookingFormProps) {
+export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, source, onSaved }: ManualBookingFormProps) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const masters = useAppStore((s) => s.masters)
   const list = useAppStore((s) => s.schedule.lists[listId])
@@ -56,7 +56,11 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const [dob, setDob] = useState(initial?.dobISO ?? '')
   const [phone, setPhone] = useState(initial?.phone ?? '')
   const [ethnicityCode, setEthnicityCode] = useState(initial?.ethnicityCode ?? '')
-  const [operation, setOperation] = useState(initial?.operation ?? '')
+  // The procedure as told or written, stored exactly as typed (US-02.4.1): no trim, no fill from an RVG code.
+  const [description, setDescription] = useState(initial?.description ?? '')
+  // The office's channel for what it was told (catch-up Phase 20a): Phone by default.
+  const [toldBy, setToldBy] = useState<'phone' | 'email'>('phone')
+  const isOffice = actor.role === 'office'
   const [rvgGroupId, setRvgGroupId] = useState(initial?.rvgGroupId ?? '')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [scheduledTime, setScheduledTime] = useState(initial?.scheduledTime ?? '')
@@ -84,7 +88,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       if (result.phone !== undefined) setPhone(result.phone)
       setEthnicityCode(result.ethnicityCode)
       if (useEmptyPrefill) {
-        if (emptyLookupPrefill.operation !== undefined) setOperation(emptyLookupPrefill.operation)
+        if (emptyLookupPrefill.description !== undefined) setDescription(emptyLookupPrefill.description)
         if (emptyLookupPrefill.rvgGroupId !== undefined) setRvgGroupId(emptyLookupPrefill.rvgGroupId)
         if (emptyLookupPrefill.scheduledTime !== undefined) setScheduledTime(emptyLookupPrefill.scheduledTime)
         if (emptyLookupPrefill.billingReference !== undefined) setBillingReference(emptyLookupPrefill.billingReference)
@@ -95,12 +99,10 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     }
   }
 
-  /** Pick (or clear) the optional RVG code; typed Operation text is never overwritten, only an empty one filled. */
+  /** Pick (or clear) the optional RVG code. A picked code is not wording received: the description is never filled from it. */
   function pickCode(id: string | null) {
     setPickerOpen(false)
     setRvgGroupId(id ?? '')
-    const group = id !== null ? rvgGroups[id] : undefined
-    if (group !== undefined && operation.trim() === '') setOperation(group.description)
   }
 
   function save() {
@@ -113,7 +115,10 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         ...(phone.trim() !== '' ? { phone: phone.trim() } : {}),
         ...(ethnicityCode.trim() !== '' ? { ethnicityCode: ethnicityCode.trim() } : {}),
       },
-      operation,
+      // Stored exactly as typed; a whitespace-only text stores nothing (createBooking).
+      ...(description !== ''
+        ? { sourceText: { text: description, source: isOffice ? toldBy : ('anaesthetist' as const), from: actor.who } }
+        : {}),
       ...(rvgGroupId !== '' ? { rvgGroupId } : {}),
       ...(scheduledTime.trim() !== '' ? { scheduledTime: scheduledTime.trim() } : {}),
       ...(pick !== undefined ? { governingContractId: pick.contractId } : {}),
@@ -121,7 +126,6 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       ...(pick === undefined && answers !== undefined ? { railAnswers: answers } : {}),
       ...(billablePartyId !== '' ? { billablePartyId } : {}),
       ...(billingReference.trim() !== '' ? { billingReference: billingReference.trim() } : {}),
-      ...(attachment !== undefined ? { attachment } : {}),
       ...(source !== undefined ? { source } : {}),
     })
     if (!outcome.ok) {
@@ -133,7 +137,8 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     onSaved({ bookingId: outcome.value.bookingId, reused: lastPatientAudit?.action === 'patient.reuse' })
   }
 
-  const canSave = name.trim() !== '' && dob !== '' && operation.trim() !== ''
+  // The procedure or an RVG code is checked on save, so the refusal says which (createBooking).
+  const canSave = name.trim() !== '' && dob !== ''
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -167,7 +172,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       <TextField label="Phone" value={phone} onChange={setPhone} type="tel" placeholder="Optional" />
 
       <div style={{ height: 1, background: neutral.line }} />
-      <div style={{ fontSize: 17, fontWeight: 700 }}>Operation</div>
+      <div style={{ fontSize: 17, fontWeight: 700 }}>Procedure</div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} data-shot="manual-rvg-code">
         <FieldLabel>RVG code (optional)</FieldLabel>
@@ -228,7 +233,27 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         onPick={pickCode}
         onClose={() => setPickerOpen(false)}
       />
-      <TextField label="Operation" value={operation} onChange={setOperation} placeholder="Operation description" />
+      <div data-shot="procedure-description" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <TextField
+          label="Procedure description"
+          value={description}
+          onChange={setDescription}
+          placeholder={isOffice ? 'As the rooms or the hospital said it' : 'As written on the list'}
+          mono
+          hint={isOffice ? 'The procedure as it was told or written to you, kept exactly as typed.' : "The procedure as written on the hospital's list, kept exactly as typed."}
+        />
+        {isOffice && (
+          <Segmented
+            label="Told by"
+            value={toldBy}
+            options={[
+              { value: 'phone', label: 'Phone' },
+              { value: 'email', label: 'Email' },
+            ]}
+            onChange={setToldBy}
+          />
+        )}
+      </div>
       <TextField label="Scheduled time" value={scheduledTime} onChange={setScheduledTime} placeholder="e.g. 15:30" mono />
 
       <div style={{ height: 1, background: neutral.line }} />
@@ -310,7 +335,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       </Button>
       {!canSave && (
         <div style={{ fontSize: 12, color: neutral.mist, textAlign: 'center', marginTop: -8 }}>
-          Name, date of birth and operation are required.
+          Name and date of birth are required.
         </div>
       )}
       <div style={{ height: 8 }} />

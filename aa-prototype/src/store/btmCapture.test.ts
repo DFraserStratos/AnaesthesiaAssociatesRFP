@@ -135,7 +135,8 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
     const procedure: Procedure = {
       id: 'P-TEST',
       bookingId: 'C-TEST',
-      description: 'Laparoscopic cholecystectomy',
+      procedureText: null,
+      invoiceDescription: null,
       isAdditional: false,
       modifierClaims: [],
       removedModifierIds: [],

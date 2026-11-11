@@ -43,7 +43,7 @@ describe('editRecurringBooking', () => {
     const api = store()
     const rb = rutherfordMonday(api)
     const target = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-08-10')!
-    expect(createBooking(api, OFFICE, target.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test' }).ok).toBe(true)
+    expect(createBooking(api, OFFICE, target.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } }).ok).toBe(true)
     const bookedBefore = assigned(api.getState().schedule.lists[target.id])
     const auditBefore = api.getState().audit.length
     const out = editRecurringBooking(api, OFFICE, rb.id, { surgeonId: SURG.lim })
@@ -161,7 +161,7 @@ describe('retireRecurringBooking', () => {
     const api = store()
     const rb = rutherfordMonday(api)
     const late = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-09-14')!
-    createBooking(api, OFFICE, late.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test' })
+    createBooking(api, OFFICE, late.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
     const out = retireRecurringBooking(api, OFFICE, rb.id, '2026-08-31')
     expect(out.ok).toBe(true)
     if (!out.ok) return

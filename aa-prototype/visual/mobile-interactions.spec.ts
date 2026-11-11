@@ -123,7 +123,7 @@ test('Start now becomes the travelling Finish action without a validation-focus 
 
   await page.getByLabel('Name').fill('Timer Motion Test')
   await page.getByLabel('Date of birth').fill('1980-01-01')
-  await page.getByLabel('Operation').fill('Timer interaction review')
+  await page.getByLabel('Procedure description').fill('Timer interaction review')
   await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByText('Timer Motion Test', { exact: true }).click()

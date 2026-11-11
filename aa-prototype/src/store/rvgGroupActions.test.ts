@@ -116,13 +116,13 @@ describe('pickRvgGroup (the RVG code on a Procedure)', () => {
   it('sets, changes and clears the code in one audited commit; the text received is never touched', () => {
     const api = createAppStore()
     const p = ellison(api)
-    const description = p.description
+    const procedureText = p.procedureText
     expect(pickRvgGroup(api, SOUTER, p.id, RVG_GROUP.h4!).ok).toBe(true)
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'procedure.update', before: { rvgGroupId: p.rvgGroupId }, after: { rvgGroupId: RVG_GROUP.h4 } })
-    expect(ellison(api)).toMatchObject({ rvgGroupId: RVG_GROUP.h4, description })
+    expect(ellison(api)).toMatchObject({ rvgGroupId: RVG_GROUP.h4, procedureText })
     expect(pickRvgGroup(api, SOUTER, p.id, null).ok).toBe(true)
     expect(ellison(api).rvgGroupId).toBeUndefined()
-    expect(ellison(api).description).toBe(description)
+    expect(ellison(api).procedureText).toEqual(procedureText)
     expect(feeOf(api, p.id).btm.baseSource).toBe('none')
   })
 
@@ -153,10 +153,10 @@ describe('pickRvgGroup (the RVG code on a Procedure)', () => {
 
   it('createBooking carries an optional RVG code, refusing an unknown or retired row', () => {
     const api = createAppStore()
-    const input = { patient: { name: 'Test Patient', dobISO: '1980-01-01' }, operation: 'Brow lift' }
+    const input = { patient: { name: 'Test Patient', dobISO: '1980-01-01' }, sourceText: { text: 'Brow lift', source: 'anaesthetist' as const } }
     const made = createBooking(api, SOUTER, SOUTER_PM, { ...input, rvgGroupId: RVG_GROUP.h3! })
     expect(made.ok).toBe(true)
-    if (made.ok) expect(proceduresForBooking(api.getState(), made.value.bookingId)[0]).toMatchObject({ rvgGroupId: RVG_GROUP.h3, description: 'Brow lift' })
+    if (made.ok) expect(proceduresForBooking(api.getState(), made.value.bookingId)[0]).toMatchObject({ rvgGroupId: RVG_GROUP.h3, procedureText: { text: 'Brow lift' } })
     expect(createBooking(api, SOUTER, SOUTER_PM, { ...input, rvgGroupId: 'RG999' })).toMatchObject({ ok: false, code: 'rvgGroupNotFound' })
     retireRvgGroup(api, OFFICE, RVG_GROUP.h3!)
     expect(createBooking(api, SOUTER, SOUTER_PM, { ...input, rvgGroupId: RVG_GROUP.h3! })).toMatchObject({ ok: false, code: 'rvgGroupRetired' })

@@ -91,7 +91,7 @@ export interface BookingLayoutSlots {
   history: ReactNode
   /** Booking-wide notices: warnings, cancelled, post-op, prepayment, refusals. */
   banners: ReactNode
-  /** Patient, scheduled time, attachments, notes for the office. */
+  /** Patient, scheduled time, notes for the office. */
   context: ReactNode
   /** The per-procedure BTM capture blocks plus Add another procedure. */
   capture: ReactNode

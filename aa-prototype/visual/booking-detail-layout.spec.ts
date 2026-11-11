@@ -2,9 +2,8 @@ import { test, expect, type Page } from '@playwright/test'
 
 /**
  * Desktop booking-detail regressions that only a browser can catch: the paired
- * capture cards matching heights, and the attachment add/remove cycle through
- * the simulated picker, on a Booking and on a whole List (US-03.1.3). Ids are
- * store-allocated since catch-up Phase 15 (`attachmentActions.test.ts`).
+ * capture cards matching heights and the header layout (moved here from the
+ * attachments spec when catch-up Phase 20a removed attachments, RV-01).
  */
 
 async function openEllison(page: Page): Promise<void> {
@@ -13,7 +12,7 @@ async function openEllison(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Lists', exact: true }).click()
   await page.getByText('Southern Cross').first().click()
   await page.getByText('Margaret Ellison').first().click()
-  await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
+  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
 }
 
 /** The office Booking: the only desktop Booking that carries the Booking total. */
@@ -81,66 +80,18 @@ test('desktop header actions are grouped with the records they act on', async ({
   const pageHeader = page.getByTestId('web-booking-header')
   await expect(pageHeader.getByRole('button', { name: 'History' })).toBeVisible()
 
+  // The procedure stack's heading row (catch-up Phase 20a) holds Edit beside the stack it acts on.
   const procedureHeader = page.getByTestId('procedure-header')
-  const procedureTitle = procedureHeader.getByText('Left total hip replacement', { exact: true })
+  await expect(procedureHeader.getByText('Procedure', { exact: true })).toBeVisible()
   const edit = procedureHeader.getByRole('button', { name: 'Edit' })
-  const titleBox = await procedureTitle.boundingBox()
+  await expect(edit).toBeVisible()
+  const headerBox = await procedureHeader.boundingBox()
+  const stackBox = await page.locator('[data-shot=procedure-stack]').first().boundingBox()
   const editBox = await edit.boundingBox()
-
-  expect(titleBox).not.toBeNull()
+  expect(headerBox).not.toBeNull()
+  expect(stackBox).not.toBeNull()
   expect(editBox).not.toBeNull()
-  expect(editBox!.x - (titleBox!.x + titleBox!.width)).toBeLessThanOrEqual(12)
+  // Edit sits on the heading row, within the stack's own width.
+  expect(editBox!.x + editBox!.width).toBeLessThanOrEqual(stackBox!.x + stackBox!.width + 1)
 })
 
-test('Booking attachments: the simulated picker attaches a photo and a PDF, and both remove', async ({ page }) => {
-  await openEllison(page)
-  const section = page.locator('[data-shot="booking-attachments"]')
-  await expect(section.getByText('No attachments.')).toBeVisible()
-
-  await section.getByRole('button', { name: 'Add attachment' }).click()
-  const sheet = page.locator('[data-shot="add-attachment-sheet"]')
-  await expect(sheet.getByText('Simulated file picker')).toBeVisible()
-  await expect(sheet.getByRole('group', { name: 'Take a photo' })).toBeVisible()
-  await expect(sheet.getByRole('group', { name: 'Choose a file' })).toBeVisible()
-  await sheet.getByRole('group', { name: 'Take a photo' }).getByRole('button').first().click()
-  await expect(sheet).toHaveCount(0)
-
-  await section.getByRole('button', { name: 'Add attachment' }).click()
-  await page.locator('[data-shot="add-attachment-sheet"]').getByRole('button', { name: /Surgeon's letter/ }).click()
-  await expect(section.getByRole('button', { name: /^Remove / })).toHaveCount(2)
-  await expect(section.getByText('PDF', { exact: true })).toBeVisible()
-
-  // Hidden until the thumbnail is hovered, but mounted the whole time so a
-  // keyboard can still reach it.
-  const removePhoto = section.getByRole('button', { name: 'Remove Booking card photo A' })
-  await expect(removePhoto).toHaveCSS('opacity', '0')
-  await removePhoto.hover()
-  await expect(removePhoto).toHaveCSS('opacity', '1')
-  await removePhoto.click()
-  await section.getByRole('button', { name: "Remove Surgeon's letter" }).click()
-  await expect(section.getByText('No attachments.')).toBeVisible()
-
-  // Each add and remove is in the Booking's history.
-  await page.getByRole('button', { name: 'History' }).first().click()
-  const history = page.getByRole('dialog')
-  await expect(history.getByText('Attachment added').first()).toBeVisible()
-  await expect(history.getByText('Attachment removed').first()).toBeVisible()
-})
-
-test('List attachments: the seeded theatre list shows on web, a second attaches, and Admin reads both', async ({ page }) => {
-  await page.goto('/web/lists/L-34821-2026-07-28-AM')
-  await page.waitForLoadState('networkidle')
-  const section = page.locator('[data-shot="list-attachments"]')
-  await expect(section.getByText('List attachments')).toBeVisible()
-  await expect(section.getByRole('img', { name: "Theatre list · St George's" })).toBeVisible()
-  await section.getByRole('button', { name: 'Add attachment' }).click()
-  await page.locator('[data-shot="add-attachment-sheet"]').getByRole('button', { name: /Consent form/ }).click()
-  await expect(section.getByRole('img')).toHaveCount(2)
-
-  await page.goto('/admin/day/2026-07-28')
-  await page.waitForLoadState('networkidle')
-  await page.locator('[data-list-id="L-34821-2026-07-28-AM"]').click() // Souter's St George's AM (the rail card also names St George's since catch-up Phase 31)
-  const drawer = page.locator('[data-shot="admin-list-attachments"]')
-  await expect(drawer.getByText('Attachments (2)')).toBeVisible()
-  await expect(drawer.getByRole('button')).toHaveCount(0)
-})

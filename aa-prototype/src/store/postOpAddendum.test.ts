@@ -100,7 +100,6 @@ describe('addPostOpAddendum', () => {
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     expect(
       editProcedure(api, OFFICE, proc.id, {
-        description: 'Acute pain service review, post-op',
         rvgGroupId: RVG_GROUP.aaCystoscopy!,
         anaestheticStartISO: '2026-07-21T14:00:00',
         handoverISO: '2026-07-21T14:40:00',

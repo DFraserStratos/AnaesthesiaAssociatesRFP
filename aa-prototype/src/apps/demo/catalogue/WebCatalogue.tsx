@@ -3,6 +3,7 @@ import { MoveListPromptProvider } from '../../../shared/flows/MoveListPrompt'
 import { CataloguePage, CatalogueRow, LibraryGroup } from './CatalogueKit'
 import { useWebFixtures } from './web/fixtures'
 import * as D from './web/demos'
+import { ProcedureStackExample } from './procedureStackExample'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -96,9 +97,6 @@ export function WebCatalogue() {
           <CatalogueRow name="SubmitListSheet" source="shared/flows/SubmitListSheet.tsx" usedIn={WM} what="The submit flow's sheet. In blockers mode it lists each Booking still to finish and why." replaceWith="shadcn Dialog (AlertDialog for the confirm step)" note="Only blockers mode is offered here; confirm mode submits the List for real.">
             <D.SubmitListSheetDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="AddAttachmentButton · AddAttachmentSheet" source="shared/attachments/AddAttachmentSheet.tsx" usedIn={ALL} what="The Add attachment action and its sheet for photographing or choosing a file for the List." replaceWith="shadcn Button + Dialog" note="Adding an attachment writes to the demo data (store mutation).">
-            <D.AddAttachmentDemo f={f} />
-          </CatalogueRow>
           <CatalogueRow name="WebSearchField" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="The Lists page's pill search box for a patient name or NHI, with a clear button once you type." replaceWith="shadcn Input Group (search)" note="One of three search inputs (with NameSearchBox and mobile's LookbackSearchRow); merge into one.">
             <D.WebSearchFieldDemo />
           </CatalogueRow>
@@ -144,7 +142,7 @@ export function WebCatalogue() {
           <CatalogueRow name="Accounts tables (tfoot totals)" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="Overdue, Payments, GST activity and AA fees, each a table; Overdue, GST and AA fees close with totals in a tfoot." replaceWith="TanStack Table + shadcn Table (footer)" note="The real AccountsScreen; its sub-tabs switch the table. Totals rows have no row headers." height={560}>
             <D.AccountsDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="List detail Bookings table" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="A List's Bookings with time, patient and NHI, procedure, units, fee and status, then a totals row; plus the page's actions and panels." replaceWith="TanStack Table + shadcn Table" note="The real ListDetailView in a scrolling stage. Rows have no keyboard handle at all today. Move, alert, attachments and add a booking open real flows that change the demo data." height={700}>
+          <CatalogueRow name="List detail Bookings table" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="A List's Bookings with time, patient and NHI, procedure, units, fee and status, then a totals row; plus the page's actions and panels." replaceWith="TanStack Table + shadcn Table" note="The real ListDetailView in a scrolling stage. Rows have no keyboard handle at all today. Move, alert and add a booking open real flows that change the demo data." height={700}>
             <D.ListDetailDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="ListInvoices" source="shared/schedule/ListInvoices.tsx" usedIn={WM} what="An authorised List's invoices, read only: number, who it went to, when, total and paid state." replaceWith="shadcn Table (plain)" note="A styled list today; a small static table, no TanStack features needed.">
@@ -198,6 +196,9 @@ export function WebCatalogue() {
         </LibraryGroup>
 
         <LibraryGroup id="custom">
+          <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={ALL} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
+            <ProcedureStackExample />
+          </CatalogueRow>
           <CatalogueRow name="Cell (AvailabilityGrid)" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there." replaceWith="Custom cell on a grid + shadcn Tooltip" note="Recreated: local to AvailabilityGrid.tsx. Non-actionable cells are disabled buttons, unreachable by keyboard.">
             <D.AvailabilityCellDemo f={f} />
           </CatalogueRow>
@@ -206,9 +207,6 @@ export function WebCatalogue() {
           </CatalogueRow>
           <CatalogueRow name="HistoryTimeline" source="shared/booking/HistoryTimeline.tsx" usedIn={ALL} what="A record's audit trail in plain English, newest first, under day headings, with coalesced runs that expand. Shown for the seeded Booking with the longest history." replaceWith="Custom, its expandable groups on shadcn Collapsible" note="The ledger layout is ours; only the expand and collapse is a library job." height={460}>
             <D.HistoryTimelineDemo f={f} />
-          </CatalogueRow>
-          <CatalogueRow name="AttachmentStrip" source="shared/attachments/AttachmentStrip.tsx" usedIn={ALL} what="Attachment thumbnails, a PDF chip on PDFs, and a remove control on each that fades in on hover and stays reachable by keyboard." replaceWith="Custom (consider a Dropzone)" note="Removals are held locally here, nothing saved.">
-            <D.AttachmentStripDemo f={f} />
           </CatalogueRow>
         </LibraryGroup>
       </MoveListPromptProvider>

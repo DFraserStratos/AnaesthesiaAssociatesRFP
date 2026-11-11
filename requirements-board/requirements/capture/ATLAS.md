@@ -228,7 +228,6 @@ Hooks already added:
 | Booking | `BK0001`… | Seed order. `BK0001`..`BK0005` are Souter Tue 21 AM (BK0001 Hemi Walker). `BK0006` Wiremu Tane, `BK0007` Susan Marsh, `BK0008` David Chen, `BK0009` **Margaret Ellison** (pending). Verify with one run. |
 | History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. Catch-up Phase 38a appended `HBK14` to `HBK42` on twelve Lists keyed by date and session, `L-HIST-2026-01-12-PM` to `L-HIST-2026-03-27-AM`, all paid before April. |
 | Pinned history List | `L-HIST-2026-03-13-AM` | `SEED_LOOKBACK`: Fri 13 Mar 2026 AM, St George's, Mr P. Doyle, three Bookings (Sarah Mitchell `HBK36`), invoices `AA-2026-H36` to `H38`, paid. |
-| Attachment | `AT0001`… | Store-allocated. `AT0001` is the seeded theatre-list PDF on Souter Tue 28 AM. |
 | Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is the seeded paid pre-payment. Runtime invoices start at `INV0002` once a list is authorised. |
 | Xero pair | `XRB0` | The seeded pre-payment. History pairs are `XRH01`… and runtime pairs `XR0001`…. |
 
@@ -246,7 +245,7 @@ Hooks already added:
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target. |
 | Delaney Fri 17 | `L-27731-2026-07-17-AM` | SUBMITTED. Integration-locked target. |
-| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Carries the seeded List attachment "Theatre list · St George's" (PDF). |
+| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
 | Souter Tue 4 Aug AM | `L-34821-2026-08-04-AM` | Targets for S13, S14 and S15. |
 | Souter Mon 3 Aug PM | `L-34821-2026-08-03-PM` | Source list for the S13 move. |
 
@@ -474,8 +473,24 @@ its detail (`[data-shot=booking-source]`): St George's, Southern Cross and Chris
 "Hospital download", Forte Health and Christchurch Eye Surgery "Surgeon PDF". History Bookings show
 none. A Booking added on the List reads "Added by anaesthetist", one from phone advice "Office entry".
 
-**List attachments:** Souter Tue 28 AM (`L-34821-2026-07-28-AM`) carries the seeded theatre-list PDF,
-shown under "List attachments" on mobile and web and read-only in the Admin List drawer.
+**Procedure text and invoice description** (catch-up Phase 20a; US-02.5.7, US-03.1.9, US-08.4.6). Every
+Procedure holds one `procedureText` as received and an `invoiceDescription`; both show in the procedure
+stack on each Booking. The wording below is **AI-made, illustrative demo data from AR-35, not AA's**.
+- `BK0164` (Sione Davies, Souter Tue 4 Aug AM, 09:30, LL4, St George's RVG): "right total knee"
+  (Hospital download, from St George's); its History holds "Procedure text replaced" naming "RTK"
+  (Surgeon's rooms PDF). Seed marker `procedureTextReplaced`.
+- `BK0043` (Diane Foster, Souter Tue 4 Aug AM, 11:00, No contract · RVG, no RVG code): "WLE MM"
+  (rooms) until MSG-STG-1012 replaces it with "WLE MM, left shoulder + flap repair + SNB + excision SCC
+  and flap, left sternum + BCC" (Hospital feed); her time moves to 12:15.
+- The expert rows: Souter Tue 28 Jul PM (`L-34821-2026-07-28-PM`) `BK0165` "gastro/colon" and `BK0166`
+  "blephs"; Thu 30 Jul AM (`L-34821-2026-07-30-AM`) `BK0167` "hystero D&C" (P1), `BK0168` "L3-5
+  decomp + fusion" (S9b, email) and `BK0169` "EUA +/- cysto +/- biopsy". All on No contract · RVG.
+- `BK0006` Wiremu Tane (Tue 21 PM, SXAP): the rooms' "lap chole +/- IOC", the demo Booking for
+  `hospital-description-arrives`. `BK0003` reads "L TKJR", `BK0008` Chen "R inguinal hernia mesh",
+  Morrison's TURPs "TURP" (hospital).
+- `BK0028` Doyle (Fitzgerald Tue 14 Jul AM): its Contract's invoice description "Gastric bypass, laparoscopic"
+  ("From the Contract").
+- No attachments anywhere (US-03.1.3 Retired; removed in Phase 20a).
 
 **Admin day, Tue 21**
 
@@ -687,11 +702,14 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Add AA modifier** (Master data, Modifiers, catch-up Phase 19b): `role=button[name="Add AA modifier"]`
   opens `[data-shot=add-aa-modifier]` (Code, Units, Modifying factor; "Add modifier").
 - **Add billing line:** `role=button[name="Add billing line"]`.
-- **Add attachment** (catch-up Phase 15): `role=button[name="Add attachment"]` inside
-  `[data-shot=booking-attachments]` or `[data-shot=list-attachments]` opens
-  `[data-shot=add-attachment-sheet]`, badged "Simulated file picker", with two groups:
-  `role=group[name="Take a photo"]` and `role=group[name="Choose a file"]`. Clicking a sample attaches
-  it and closes the sheet. Remove buttons are named `Remove <name>` and show on hover or focus.
+- **Edit invoice description** (catch-up Phase 20a, Admin Booking only): `[data-shot=edit-invoice-description-action]`
+  on the procedure stack's heading row opens `[data-shot=edit-invoice-description]` (the procedure text
+  read-only, a textarea, "Save invoice description"). Over an office edit, a later description shows the
+  cue `[data-shot=procedure-newer-description]` with "Use it" (`[data-shot=use-newer-description]`).
+- **History, replaced text:** the History sheet lists "Procedure text replaced" with the old and new text
+  and their sources (`role=button[name="History"]`).
+- **Procedure description** (the manual form, catch-up Phase 20a): `[data-shot=procedure-description] input`
+  replaces the old "Operation description" field; the office also sees "Told by" Phone or Email.
 - **History:** `role=button[name="History"]` opens a dialog titled "Booking history". On mobile it is
   inside `[data-testid=mobile-booking-header-actions]`.
 - **Cancel booking:** "Cancel booking", then fill `role=textbox[name="Reason"]`, then confirm.
@@ -801,10 +819,11 @@ the exception: use the `trigger` step)
 
 - Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,
   `contract-rail-other-price`, `contract-rail-amount`, `contract-rail-outcome`, `contract-rail-enter-rvg`,
-  `contract-rail-pinned`, `contract-rail-only-option`; the Contract row `procedure-contract` (also
-  `office-procedure-contract`, `edit-procedure-contract`, `contract-and-payer-contract`),
+  `contract-rail-pinned`, `contract-rail-only-option`; the Contract row `procedure-contract-row` in the
+  sheets (`edit-procedure-contract`, `contract-and-payer-contract`); the mobile Billing rows
+  `billing-contract-rows`,
   `needs-invoice-destination`, `contract-set-by-office`, `contract-price-cleared`; the RVG cues
-  `rvg-code-to-fill`, `rvg-code-optional`, `list-row-contract-cue`; the Admin Day card
+  `rvg-code-optional`, `list-row-contract-cue`; the Admin Day card
   `admin-needs-invoice-destination` and its rows `needs-destination-row`; `contract-and-payer`,
   `manual-contract`.
 - Out-of-hours sessions (catch-up Phase 32c): `out-of-hours-open` (the row control), `out-of-hours-open-sheet`,
@@ -920,11 +939,17 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   the List drawer). `daygrid-block-prepayment` and the "Pre-payment flagged" filter are gone: the
   filter is "Has warnings".
 
-**`data-shot` hooks for attachments and source** (use as `[data-shot=...]`)
+**`data-shot` hooks for the procedure stack and source** (use as `[data-shot=...]`; catch-up Phase 20a)
 
-- `booking-attachments` (the Booking's Attachments section), `list-attachments` (mobile and web List
-  detail), `admin-list-attachments` (Admin List drawer, read-only), `add-attachment-sheet` (the
-  simulated file picker), `booking-source` (the source line)
+- `procedure-stack` (the whole stack, on every Booking screen; compact in Admin Review's
+  `review-procedures` cell and the List drawer's `drawer-procedure-stack`), its parts `procedure-text`,
+  `procedure-invoice-description`, `procedure-contract` (the Contract part: name, holder, who is
+  invoiced, pricing basis) and `procedure-rvg-code` ("RVG code to choose", or "for the anaesthetist to
+  fill in" on Admin; absent on a fixed or open price with none picked); `procedure-newer-description`;
+  `procedure-description` (the manual form); `edit-procedure-text` (read-only in Edit procedure);
+  `invoice-procedure-heading` (one heading row per Procedure in `invoice-lines`); `review-open-booking`.
+  `data-testid=procedure-header` is the stack's heading row, with Edit, Remove and (Admin) Edit invoice
+  description. The attachment hooks are gone. `booking-source` (the source line)
 
 **Web**
 
@@ -1050,7 +1075,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
 | `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
-| `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
+| `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`), whose text replaces the rooms' (catch-up Phase 20a) |
+| `/admin/day/<date>/bookings/<id>` | `hospital-description-arrives` (choice `ar35-row-2`, `-12`, `-20`, `-25`) | Catch-up Phase 20a, bar only, no badge. AR-35's illustrative hospital wording replaces the procedure text through `replaceProcedureText`; defaults to the row paired with the rooms' text (row 12 on Tane's `BK0006`). Disabled when the Booking already holds that text |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
 | `/admin/day/<date>`, `/admin/notifications` | `colleague-moves-list-to-office` (choice `one` or `busy`) | Catch-up Phase 32. A colleague returns one of their Lists to the office as themselves (the date in the URL, or the next with a candidate; vacated Unavailable): a Draft List and `NT0001`. `busy` stages eight moves from today, alternating returns and hand-ons, so the Notifications page has two pages (`NT0008` is a hand-on naming both). Bar only |

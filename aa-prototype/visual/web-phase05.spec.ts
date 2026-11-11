@@ -31,7 +31,7 @@ test('web phase 05 walkthrough', async ({ page }) => {
   // Drill into a booking → shared booking body + BTM capture.
   await page.getByText('Margaret Ellison').first().click()
   await page.waitForTimeout(300)
-  await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
+  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
   // No ASA card (catch-up Phase 19b): Ellison's A1 is pre-applied from her age.
   await expect(page.getByText('ASA status')).toHaveCount(0)
   await expect(page.locator('[data-shot="capture-modifier-applied"][data-modifier-code="A1"]')).toBeVisible()

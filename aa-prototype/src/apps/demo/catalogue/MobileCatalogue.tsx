@@ -1,6 +1,7 @@
 import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './CatalogueKit'
 import { useMobilePersona, useSeedPicks } from './mobile/persona'
 import * as Ex from './mobile/examples'
+import { ProcedureStackExample } from './procedureStackExample'
 
 const M = 'Mobile'
 const SW = 'Admin · Web · Mobile'
@@ -295,6 +296,9 @@ export function MobileCatalogue() {
       </LibraryGroup>
 
       <LibraryGroup id="custom">
+        <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={SW} stage="mobile" height={520} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
+          <ProcedureStackExample layout="stacked" />
+        </CatalogueRow>
         <CatalogueRow name="BottomTabBar" source="apps/mobile/MobileApp.tsx" usedIn={M} stage="mobile" height={220}
           what="The four-tab bar at the foot of the phone: Lists, Availability, Balances, More, frosted, hidden once you drill in."
           replaceWith="Custom nav of links with aria-current"
@@ -347,12 +351,6 @@ export function MobileCatalogue() {
           what="The moon that stands in the session column where an AM or PM List shows its session."
           replaceWith="Custom (lucide icon, keep)">
           <Ex.OutOfHoursMoonExample />
-        </CatalogueRow>
-        <CatalogueRow name="AttachmentStrip" source="shared/attachments/AttachmentStrip.tsx" usedIn={SW} stage="mobile" height={260}
-          what="Thumbnails of a List's or Booking's attachments, each with a remove mark (always shown on a phone, with a 44px target)."
-          replaceWith="Custom; consider shadcn Attachment or a Dropzone"
-          note="Local sample attachments; removing them changes nothing in the store.">
-          <Ex.AttachmentStripExample />
         </CatalogueRow>
       </LibraryGroup>
     </CataloguePage>

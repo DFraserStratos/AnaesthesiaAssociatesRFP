@@ -315,7 +315,8 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
                   <RowField label="NHI" value={row.nhi} mono onChange={(v) => updateRow(row.id, { nhi: v })} width={110} invalid={nhiVerdict?.valid === false} />
                   <RowField label="Name" value={row.name} onChange={(v) => updateRow(row.id, { name: v })} width={150} />
                   <RowField label="Time" value={row.scheduledTime} mono onChange={(v) => updateRow(row.id, { scheduledTime: v })} width={70} />
-                  <RowField label="Operation" value={row.operation} onChange={(v) => updateRow(row.id, { operation: v })} width={210} />
+                  {/* The rooms' wording is ingested exactly as printed (catch-up Phase 20a, US-02.5.7): read-only here. */}
+                  <RowField label="Procedure text" value={row.operation} mono readOnly width={210} />
                 </div>
                 {row.deliberateError !== undefined && result === undefined && nhiVerdict?.valid === false && (
                   <div style={{ fontSize: 12, color: semantic.warning.onTint }}>{row.deliberateError}</div>
@@ -343,15 +344,16 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
   )
 }
 
-function RowField({ label, value, onChange, width, mono, invalid }: { label: string; value: string; onChange: (v: string) => void; width: number; mono?: boolean; invalid?: boolean }) {
+function RowField({ label, value, onChange, width, mono, invalid, readOnly }: { label: string; value: string; onChange?: (v: string) => void; width: number; mono?: boolean; invalid?: boolean; readOnly?: boolean }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>{label}</span>
       <input
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        readOnly={readOnly === true}
+        onChange={(e) => onChange?.(e.target.value)}
         className={mono === true ? 'mono' : undefined}
-        style={{ font: 'inherit', ...(mono === true ? { fontFamily: "'Spline Sans Mono', ui-monospace, monospace" } : {}), fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${invalid === true ? semantic.error.solid : neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, width }}
+        style={{ font: 'inherit', ...(mono === true ? { fontFamily: "'Spline Sans Mono', ui-monospace, monospace" } : {}), fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${invalid === true ? semantic.error.solid : readOnly === true ? neutral.line : neutral.lineStrong}`, background: readOnly === true ? neutral.bg : neutral.surface, color: neutral.ink, width }}
       />
     </label>
   )

@@ -29,6 +29,7 @@
  * its invoice description and default RVG code, set through the edit.
  */
 
+import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import type { Contract, PriceRange } from '../domain/types'
 import { contractRefusal, nextAaCode, normaliseAaCode, type ContractRefusalContext } from '../domain/billing/contracts'
 import {
@@ -225,9 +226,29 @@ function save(api: AppStoreApi, actor: Actor, contractId: string, apply: (prev: 
     // A disable implies no new destination; an edit or a re-enable may.
     if (audit.action === 'contract.disable') return { masters: { ...s.masters, contracts } }
     const kept = withFallbacks(s, contracts, s.counters, metas)
-    return { masters: { ...s.masters, contracts: kept.contracts }, counters: kept.counters }
+    // The Contract's invoice description is a default (US-08.4.6, D37): its Procedures still open for
+    // edit follow a change, unless the office edited theirs (D73). Authorised ones keep what they printed.
+    const procedures = prev.invoiceDescription !== next.invoiceDescription ? refreshedOnContract(s, contractId, kept.contracts) : null
+    return {
+      masters: { ...s.masters, contracts: kept.contracts },
+      counters: kept.counters,
+      ...(procedures !== null ? { schedule: { ...s.schedule, procedures } } : {}),
+    }
   })
   return ok(undefined)
+}
+
+/** Every Procedure on the Contract, on a List not yet authorised, with its invoice description refreshed. */
+function refreshedOnContract(s: AppState, contractId: string, contracts: AppState['masters']['contracts']): AppState['schedule']['procedures'] {
+  const out = { ...s.schedule.procedures }
+  for (const [id, p] of Object.entries(out)) {
+    if (p.governingContractId !== contractId) continue
+    const booking = s.schedule.bookings[p.bookingId]
+    const list = booking !== undefined ? s.schedule.lists[booking.listId] : undefined
+    if (list === undefined || list.state === 'AUTHORISED' || booking?.cancellation !== undefined) continue
+    out[id] = { ...p, invoiceDescription: refreshedInvoiceDescriptionFor(p, contracts) }
+  }
+  return out
 }
 
 /** Edit a Contract in place. Audited `contract.update` with the changed fields before and after. */

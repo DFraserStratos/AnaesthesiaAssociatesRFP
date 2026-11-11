@@ -42,6 +42,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | 19a | Catch-up · Price ranges, the Contract's own fields and starting values | DONE | 2026-11-11 | Session 1: parity fixture first (`store/__parity__/phase-19a-baseline.json` from the untouched code; the 18, 19 and 19a fixtures byte-identical, compared with the declared hernia difference and the named Merivale addition); `domain/billing/priceRanges.ts` (`PriceRange` inside the fixed kind's pricing, `rangeInForce`, implied ends, `validatePriceRanges`, words), the Contract's `invoiceDescription` and `defaultRvgGroupId`, the search over both; `ContractPrice`, `matchContractPrice`, `contractPrices` and `procedureOrdinal` gone; the fee path reads the range in force on the List's date (`needsPrice` with none); the seed as priced items (Doyle, CES, the hernia on No contract · RVG). Session 2: range store actions (office only, audited), Merivale's combinations and Dr Souter's prepaid list, the Merivale Booking BK0163, `fillFromContract`, the editor's Invoice and codes and Price ranges, the list's in-force summary, "Needs a price" on money surfaces, the RVG time rule as data (`masters.rvgTimeRule`, panel, T caption), the Control Panel callout gone; PERSIST 34 to 35; 1853 Vitest + 171 Playwright; 4-lens review-fix pass; capture 279/279 |
 | 19b | Catch-up · Modifiers: the RVG table, pre-applied age and included modifiers, explanations | DONE | 2026-11-11 | Session 1: parity fixture first (`store/__parity__/phase-19b-baseline.json` with each row's facts); the NZSA RVG 2021 modifier table generated from AR-34 (`npm run rvg:modifiers`, drift guard); one rule module `domain/billing/modifiers.ts` (age bands, pre-applied age and included modifiers, claim refusals, the M total); `Procedure.modifierClaims`/`removedModifierIds`, `RvgGroup.includedModifierIds`/`noAgeModifier`, `masters.modifiers`; every fee assembler passes the DOB, date and master; modifier store actions; the explanation backstop; seed: no ASA seed, 20 AS3 claims, P1 on the 20 CSV groups, Ellison's A1 pre-applied, the Spine Booking BK0158; PERSIST 35 to 36. Session 2: the Modifiers ledger and the picker with an inline explanation (mobile, web, Admin), the Admin Modifiers tab and Add AA modifier, RVG groups' Included modifiers, S5 staging; 1897 Vitest + 179 Playwright; 4-lens review-fix pass; capture 280/280 |
 | 20 | Catch-up · One Contract per Procedure and the step rail | DONE | 2026-11-11 | Route, payment category and the Procedure's insurer gone; one Contract per Procedure on the decided step rail (`domain/billing/contractRail.ts`, `shared/flows/ContractRail.tsx`) for the office and, mirrored, the anaesthetist until AUTHORISED; "Needs an invoice destination" card and completion refusal; who is billed interim (`billedPartyFor`); prepayment from the prepaid Contract; figures pinned (`phase-20-baseline.json`, `contractParity.test.ts`) and unchanged; `PERSIST_VERSION` 36 → 37 |
+| 20a | Catch-up · Procedure text, the invoice description and the Contract on each Procedure | DONE | 2026-11-11 | One verbatim `Procedure.procedureText` replaces `description` (the hospital's replaces the rooms', the replaced text in the History as `procedure.procedureText.replace`; `replaceProcedureText` the one write path after create); `Procedure.invoiceDescription` by the order of defaults, the office's edit always wins (D73) with a newer-description cue; one pure module `domain/billing/procedureStack.ts` and one `ProcedureStack` component on every Booking screen, Admin Review and the List drawer; invoice heading rows; attachments removed (RV-01); AR-35's illustrative wording seeded (6 Bookings appended, BK0164 to BK0169); `PERSIST_VERSION` 37 → 38 |
 | 38a | Catch-up · Edit until AUTHORISED, the main view and search | DONE | 2026-11-10 | The anaesthetist edits own ACTIVE and SUBMITTED Lists until AUTHORISED (RV-19, D63), audited, last change stands; Review's "Changed since submitted" cue; `authoriseList` completion-gated; one exit `hasLeftMainView` (AUTHORISED) and `LIST_PROGRESS_LABEL` (`domain/listProgress.ts`); invoices in Balances at once (next-day rule gone); `mainViewFor`: mobile and web main views from today with an earlier group; pure search (`domain/bookingSearch.ts`), `store/lookback.ts` selectors, shared `MonthGrid`, mobile search and date sheet, web search and Go to date (`?q=`, `?day=`); authorised List detail shows its invoices; 12 history Lists for Dr Souter Jan to Mar 2026 (29 Bookings, `SEED_LOOKBACK`), no money figure moved; PERSIST 26 to 27; Vitest 1450, Playwright 134; 3-lens review-fix pass; capture 265/265 recipes |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
@@ -216,7 +217,7 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-10-02 · "Play the office" defaults OFF, badged when on; "Office authorises this List" is the handset stand-in** (RV-22). Only a stored `'on'` reads ON (absent, corrupt or unreadable storage reads OFF); the More card says it is a scaffold and shows a "Simulated office" badge while on, and the Demo chip carries an "Office auto" marker. The per-List PWA-only entry calls the shared `authoriseAsSimulatedOffice` (`src/store/officeStandIn.ts`), which the timer also uses. Office stand-ins declare the PWA surface only; the framed build never auto-authorises.
 - **2026-10-02 · HL7/FHIR tooling carries interim Future-scope badges until Phase 34** (RV-05, RV-06). The Integrations simulator header, the Admin Integrations Messages and Feed config tabs (tab label and panel note) and the two hospital-message demo actions are badged; Surgeon PDFs, Data quality and Validators stay unbadged (in scope). S1 carries the caveat in the Control Panel and the demo guide.
 - **2026-10-02 · FT-13.5 is demonstrated as simulated audit rows; no sign-in splash.** "Simulate sign-in attempts" on Admin Audit appends five audit-only `mutate()` rows (entity `account`): provisioned with no credential access, Admin sign-in with MFA passed, a failed attempt, a self-service password reset (source anaesthetist: Dr Souter resets her own), and an Apple social-login sign-in on mobile. The IDaaS is not built; a splash, MFA screen or social buttons are out of scope unless the owner asks.
-- **2026-09-28 · Anaesthetist Card shows no calculation; the Off / Units / Fee control is removed** (user decision; supersedes the 2026-07-29 Off / Units / Fee entry below). The anaesthetist Card is fixed at the former **Off** behaviour on Mobile and Anaesthetist Web: no Card total, only Mark complete pinned, and the completion overlay shows the tick and "Card complete" alone. Office Admin Cards keep the full fee panel. Removed: the harness-bar `CardCalculationControl`, the PWA More panel's Card calculation card, `shell.cardCalculationMode` / `setCardCalculationMode`, the phone `CardTotalStrip` dock (dead once only anaesthetists use mobile; the mobile surface's `CardTotal` now renders nothing), and the Units display path in `CardTotalPanel`. No `PERSIST_VERSION` bump: a stale `cardCalculationMode` key in a persisted shell slice is carried by `backfillMerge` but never read. Demo guide S1 Beat 3, workflows, cheat sheet, README and master HTML updated.
+- **2026-09-28 · Anaesthetist Card shows no calculation; the Off / Units / Fee control is removed** (**SUPERSEDED IN PART 2026-11-11 by catch-up Phase 20a (4):** the Contract's pricing basis now shows; the fee stays hidden) (user decision; supersedes the 2026-07-29 Off / Units / Fee entry below). The anaesthetist Card is fixed at the former **Off** behaviour on Mobile and Anaesthetist Web: no Card total, only Mark complete pinned, and the completion overlay shows the tick and "Card complete" alone. Office Admin Cards keep the full fee panel. Removed: the harness-bar `CardCalculationControl`, the PWA More panel's Card calculation card, `shell.cardCalculationMode` / `setCardCalculationMode`, the phone `CardTotalStrip` dock (dead once only anaesthetists use mobile; the mobile surface's `CardTotal` now renders nothing), and the Units display path in `CardTotalPanel`. No `PERSIST_VERSION` bump: a stale `cardCalculationMode` key in a persisted shell slice is carried by `backfillMerge` but never read. Demo guide S1 Beat 3, workflows, cheat sheet, README and master HTML updated.
 - **2026-07-29 · Anaesthetist Card calculation has a persistent Off / Units / Fee presentation control** (user decision; superseded 2026-09-28). The global harness now shows all three directly selectable modes immediately before the app switcher. Fee is the default and preserves the signed-off full Card total; Units keeps the ticking unit count in a compact ink strip while removing rates, dollar totals, fee breakdowns, override-price notes and procedure-value chips; Off removes the calculation object and leaves only the completion action pinned. Mobile measures the resulting dock height, while the Anaesthetist Web rail keeps the units panel or button-only state sticky and aligned with the first capture cards. The completion animation follows the same privacy level. The choice persists across routes, app switches, reloads and Demo reset. Office Admin Cards deliberately keep the full fee presentation even when the global anaesthetist choice is Off or Units. This is a shell/presentation preference only: billing maths, domain data, lifecycle, audit, seed and `PERSIST_VERSION` are unchanged; current-version stores missing the new shell field backfill to Fee.
 - **2026-07-29 · Every seeded Card carries a rich deterministic History trail** (user request; supersedes the 2026-07-23 minimal-seed decision below). A pristine reset now composes audit history over the FINAL schedule graph, including the Phase-10 historical billing Cards: each Card has a booking/create row, scheduling context where present, Procedure create and billing-setup rows, captured clinical values where present, BillingLine adds where present, and its completion or cancellation lifecycle fact. Existing pinned lifecycle audit remains authoritative and is deduplicated; generic and historical completed Cards gain their previously absent completion entry. Booking times are deterministically placed 6 to 14 days before the List with stable per-Card minutes and capped before the pinned reset clock, ordinary booking/setup provenance is Kirsty W. / office, integration-origin Cards retain system / integration provenance, and capture/completion provenance names the List anaesthetist. The combined seed log is chronologically sorted and reallocated as one sequential `A####` space so runtime mutation ids continue without collision. The result is **906** pristine entries across **170 Cards / 173 Procedures**; every Card History merges **4 to 9 rows**, instead of most Cards being empty. S5 still adds its three live Chen edits on top, but any Card can now demo History cold. The global viewer's existing 500-row cap and filters handle the larger feed. `PERSIST_VERSION` advances 9 → 10 so returning browsers receive the new audit graph and counter. The Data inspector empty state and S5 Markdown/HTML guide are updated. Regression coverage walks every Card, Procedure and fee line, proves completion/cancellation uniqueness, covers the historical `HC01`, chronological ids, pre-reset booking times and next-counter continuity, and keeps S5's live deltas pinned. Verified with `npm run build`, `npm run test` (**549** Vitest tests across 45 files), `npm run lint`, and the focused admin Phase-07 Playwright review/History flow; the rendered multi-day booking-to-completion ledger was visually checked.
 - **2026-07-21 · Design run adopted as visual starting point** (user decision). Outputs in `docs/design/`; convention 17 added. Entries below capture its rulings.
@@ -366,6 +367,11 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-11-11 · Catch-up Phase 20 (5): readings this phase picks.** The answers so far stored as `railAnswers` (only those the person gave); a creation form never preselects and may save without a Contract; an added Procedure opens the rail on the first's answers with its Contract ticked when it still fits, and copies the payer override; a hospital, surgeon or reassign change re-defaults nothing; the PWA stand-in picks the List's hospital's first Contract on offer, else No contract · RVG; the route-less seeded Bookings arrive with no Contract (7 on the list at reset); a raised prepayment stays outstanding after a move off prepaid; the billing monitor's Contract change follows the rail's candidate rule; the billing-failure demo stages a non-candidate through an audited demo-only path; D81's default (a Disabled Contract stays and bills, no flag; OQ-135 open).
 - **2026-11-11 · Catch-up Phase 20 (7): the step rail is inline on the Booking, as the contract picker mock** (owner review, 2026-11-11; supersedes the phase plan's "bottom sheet on mobile, Dialog on web and Admin"). A Billing card per Procedure on Admin and web; on the phone, Billing rows opening the steps in a sheet. Look and interaction follow the mock's "A. Step rail"; no code shared with it.
 - **2026-11-11 · Catch-up Phase 20 (6): interims, with the phases that replace them.** Who is billed with the `billablePartyId` override and `billsHolderInterim` (21); `funderOverride` (22); `enteredPrice` (24); prepayment from the prepaid Contract with `prepaymentDetail` (27).
+- **2026-11-11 · Catch-up Phase 20a (1): one procedure text per Procedure** (US-02.5.7, DM-51; supersedes the Phase 11 PDF ingest "UPDATES it (scheduled time + operation)" behaviour for the operation half, and the side-by-side reading of AR-35's points #6 to #9 until 5 November). `Procedure.description` is replaced by `procedureText { text, source, receivedAtISO, from? }`, stored exactly as received (no trim) from every intake path: S12 (`hospitalFeed`, from the hospital, no invented fallback), S13 and S14 (replace after the time change), the PDF ingest (create `surgeonPdf`, update through the replace), the manual form and phone advice (`sourceText`: anaesthetist, or the office's Told by Phone or Email) and the Future-scope photo prefill. After create only `replaceProcedureText` changes it: a different text replaces (no check against the wording), an identical one changes nothing, a rooms' text never replaces a hospital's (our reading, logged), a blank is refused; the replaced text goes to the Booking's change history (`procedure.procedureText.replace`, `before` the old text with its source and time), never a second field. `ProcedurePatch` excludes it and `editProcedure` refuses it; nobody edits it by hand. A person's entry needs a text or an RVG code ("Type the procedure as told, or choose an RVG code."); an integration's may carry neither.
+- **2026-11-11 · Catch-up Phase 20a (2): the invoice description by its order of defaults** (US-08.4.6; D37 extended 5 November, D73 answered). A field of its own, `invoiceDescription { text, origin, editedOver? }` (null when there is nothing to print): the procedure text (rooms', hospital's, or a hand-entered Booking's as `entered`), replaced by the chosen Contract's invoice description where filled in; never the RVG code (`startingInvoiceDescription` takes none). `refreshInvoiceDescription` applies it on every text replace and Contract change (`setProcedureContract`, the billing monitor's change, `addProcedure`, the addendum, and a Contract's own description being edited, for Procedures not yet AUTHORISED) and always keeps an office edit (no provisional label). The view's newer cue shows only over an edit, when the default differs from `editedOver`; "Use it" (`applyDefaultInvoiceDescription`) applies it. The office edits (`setInvoiceDescription`) as free text until AUTHORISED (D63); saving the wording unchanged is no edit. The invoice prints one heading row per Procedure (`invoiceLineGroups`); line text, amounts, totals and Xero unchanged. The general procedure's invoice wording is gone with the procedure master.
+- **2026-11-11 · Catch-up Phase 20a (3): one component** (US-03.1.9, US-03.1.2). `ProcedureStack` (`shared/booking`, PWA-safe) renders one `ProcedureStackView` from `domain/billing/procedureStack.ts` (built by the store's `procedureStackViewFor`): full density on the shared Booking detail (mobile, web, Admin, PWA; heading row `procedure-header` with Edit, Remove and the office's Edit invoice description), compact in Admin Review's Procedures column (replacing Contract and Code) and the Admin List drawer rows. "Who is invoiced" (`whoIsInvoicedFor`, wrapping 20's `billedPartyFor`) and "pricing basis" (`pricingBasisFor`) are one function each, for 21 and 24 to re-point. `OfficeBillingSetup` no longer repeats the Contract, holder or billed party.
+- **2026-11-11 · Catch-up Phase 20a (4): supersedes in part 2026-09-28 "Anaesthetist Card shows no calculation".** The running fee and the Booking total stay hidden from the anaesthetist; the Contract's name, holder, who is invoiced and pricing basis with its figure now show (US-03.1.2, US-03.1.9 over US-15.0.1's Proposed note).
+- **2026-11-11 · Catch-up Phase 20a (5): attachments removed** (RV-01; US-03.1.3 Retired). Booking and List attachments (mobile, web, the Admin drawer), the store actions, the `Attachment` type, the `AT` prefix, the seeded theatre-list PDF, the sample assets, the catalogue rows and the Playwright spec are gone; supersedes the Phase 15 List attachments and Booking attachments rulings.
 
 ## Discovered for later — handoff list
 
@@ -2708,3 +2714,180 @@ and 11 recipes re-pointed.
   price (`/admin/day/2026-07-21/bookings/BK0009`), the Admin Day card (`/admin/day/2026-07-21`), the
   phone-advice Contract row (S2 Beat 2), a change after submit
   (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0023`).
+
+### Catch-up Phase 20a · Procedure text, the invoice description and the Contract on each Procedure (2026-11-11)
+
+**Drift check** (`plan-state.mjs --diff` with the phase doc's 19 IDs, against `fbdd555`): US-02.5.5, US-04.2.18, US-04.3.8
+and US-07.2.2 changed in runner-written screenshot frontmatter and captions only; `domain-model.md` only in 32c's
+out-of-hours Slot passages. No requirement drift; no stop condition (the procedure text is live; US-03.1.3 stays
+Retired). OQ-103 (D37) and OQ-130 (D73) built as answered, no provisional label anywhere. OQ-13: the simulated feeds'
+SCH-7 and `Appointment.description` stand in for the hospital text.
+
+**Names reused (never a second copy):** 18's `pricing.kind` (`rvgAnaesthetistRate`, `rvgContractRate` `unitRate`,
+`rvgDiscount` `discountPct`, `fixed` ranges, `open`), `isRvgKind`, `aaCode`, `holderId` → Parties, `CT-NO-CONTRACT`;
+19's `rvgGroupId` and `rvgGroups.ts`; 19a's `Contract.invoiceDescription`, `defaultRvgGroupId`, `rangeInForce`,
+`fillFromContract`; 20's `billedPartyFor` (`whoIsBilled.ts`), `setProcedureContract`, `enteredPrice`,
+`BillingCard`, `ProcedureContractRow`, the parity fixtures. `replaceProcedureText` keeps the name Phase 33
+expects. Phase 20 was DONE; `PERSIST_VERSION` was 37, now **38** (comment line and a migrate test).
+
+**Step plan as run.** Session 1 (items 1 to 8): baseline; the model; `domain/billing/procedureStack.ts`; the store
+(`store/procedureTextActions.ts`, `createBooking`'s `sourceText`); every intake path; the reader sweep to
+`procedureLabel`; attachments removed; the seed (`seed/procedureText.ts` finalise pass, `seed/sourceWording.ts`,
+`seed/sourceWordingBookings.ts`); tests. Ended green (build, build:pwa, 1,995 Vitest) with no figure moved.
+Session 2 (items 9 to 16): `shared/booking/ProcedureStack.tsx` (frontend-design skill first, inside the design
+system); placement; the Procedure description field; invoice heading rows; the triggers; copy; the guide; ATLAS.
+
+**Inventories.** Wording grep: 232 lines before; after, no Procedure-wording `description` reader remains. Accepted
+leftovers: the intake carriers named `operation` (HL7/FHIR `ParsedMessage.operation`, `PdfRow.operation`, the
+canned messages, `feeds.ts` mappings), `NotesCard`'s "Operation notes" placeholder, and RVG group / billing-line /
+status descriptions. Attachment grep: 46 files before; after, only `AddBookingFlow.tsx` (a comment: "no
+attachment"), `appStore.ts` (version-history comments), and tests asserting absence
+(`BookingDetailSource.test.tsx`, `AddBookingFlow.test.tsx`, `persistMigrate.test.ts`, `booking-detail-layout.spec.ts`
+header comment).
+
+**Placement as built** (AR-35 "Illustrative source wording", AI-made, labelled so in `sourceWording.ts`; only "As
+received" and "RVG code" used):
+
+| AR-35 row(s) | Where | Id |
+|---|---|---|
+| 14 `lap appy ?conv to open` | MSG-STG-1001's SCH-7; Sarah Mitchell arrives with it (Hospital feed). AR-35 says email: our reuse, logged | runtime |
+| 6, 8 | Souter Tue 28 AM 07:45 (rooms PDF) and 11:15 (email); 09:45 keeps "Shoulder arthroscopy" | BK0066, BK0068 |
+| 1 replaced by 2 | Souter Tue 4 Aug AM 09:30, Sione Davies (PT0022), LL4, St George's RVG (no invoice description); seeded replace audit row "RTK" → "right total knee" from St George's | **BK0164** (P0167) |
+| 26, then 27 | Diane Foster's S14 target, "WLE MM", No contract · RVG, RVG code cleared; MSG-STG-1012 now carries row 27 | BK0043 (P0046) |
+| 15, 17 | Souter Tue 28 Jul PM: "gastro/colon" (PT0023), "blephs" (PT0024), no code | **BK0165**, **BK0166** |
+| 21, 34, 35 | Souter Thu 30 Jul AM: "hystero D&C" P1 (PT0025), "L3-5 decomp + fusion" S9b with its included P1 (PT0026, email), "EUA +/- cysto +/- biopsy" (PT0027) | **BK0167**, **BK0168**, **BK0169** |
+| 3, 11, 13, 25 | "L TKJR" (Tue 21 AM), Wiremu Tane "lap chole +/- IOC", Chen "R inguinal hernia mesh" (Tue 21 PM), Morrison's TURPs "TURP" (hospital) | BK0003, BK0006, BK0008, BK0010/BK0013 |
+
+LD-002's two Draft List Bookings now hold the secretary's email wording as their text (Phase 31's note stood in for
+it). New Bookings are appended after every existing one, with generated patients that have no other Booking that
+day; all on a Contract. Every seeded Procedure's invoice description is `startingInvoiceDescription`'s; the seed shows
+rooms, hospital (BK0164), contract (Doyle BK0028, "Gastric bypass, laparoscopic") and entered origins.
+
+**Recorded exceptions.** Diane Foster's S14 target (forward ACTIVE, uncaptured, never invoiced) is re-seeded on No
+contract · RVG with its code cleared: the one parity exclusion. **Seeded audit ids after the first new row shift**
+(the seed audit stays chronological and every `booking.create` must precede the reset clock, so rows dated 17 to 20
+Jul cannot sort last): nothing in the guide, recipes, specs or ATLAS names a seeded audit id. No BK, P, billing line
+or counter id that existed moved.
+
+**Parity.** `feeParity` and `contractParity` hold every figure, counterparty and invoice from the 18 to 20 fixtures,
+with the six appended Bookings named as additions and Foster's the one declared exclusion; `canvasGolden` gains the
+six rows. No fixture regenerated.
+
+**Built (beyond the decisions logged).** `EditProcedureSheet` ("Edit procedure") shows the text read-only; the
+Integration Monitor's staged PDF row text is read-only (ingested as printed). `ProcedureStack`: the four parts
+joined by a hairline rail, label beside value on web and Admin, stacked on a phone; the received text in mono
+between mist quotes with whitespace kept; still-to-choose parts dashed mist; compact rows with hidden labels and a
+`title`. Admin Review: a Procedures column for every Procedure (Contract and Code columns gone), Billed to read from
+the views, an "Open" link to the Admin Booking. The List drawer rows: the compact stack per Procedure. Triggers:
+"Fire hospital message" also on the web and Admin Booking routes, defaulting to the message addressed to the
+Booking (MSG-STG-1012 on Foster's); new "Hospital description arrives" (Admin Booking, bar only). Catalogue rows for
+`ProcedureStack` in all three catalogues. README section.
+
+**Manual test checklist** (run with Playwright against the running app; screenshots checked by eye):
+- Reset; mobile (PWA, 375 px) Tue 4 Aug AM "right total knee" Booking: text "right total knee" (Hospital download)
+  alone, invoice description "From the hospital", Contract St George's RVG, held by and invoiced St George's, "RVG
+  at your rate", LL4; History "Procedure text replaced" 'RTK' (Surgeon's rooms PDF, 14 Jul 09:00) → 'right total
+  knee'; capture cards uncrowded. **Pass.**
+- Same Booking on web and Admin: same parts ("RVG at the anaesthetist's rate" on Admin); Office billing setup shows
+  only Reference, Override, Funders, Prepayment. Riley (fixed $1,200): no RVG part. Foster on Admin "RVG code: for
+  the anaesthetist to fill in", on web and mobile "RVG code to choose". Tane "RVG at $26.50 per unit". **Pass.**
+  (No seeded Booking sits on an open-price Contract; "Other price $2,000" is covered by the component and module tests.)
+- No Contract: Sarah Mitchell after MSG-STG-1001 reads "Needs an invoice destination" on Admin and web with her text.
+  **Pass.**
+- Order of defaults: Tane "lap chole +/- IOC" From the surgeon's rooms; Hospital description arrives (default row
+  12) → "lap chole", From the hospital, History shows the replace. Doyle "From the Contract" stays after the action.
+  Foster shows "WLE MM", never a group name. **Pass, with one reading:** no newer cue shows under a Contract's
+  description (it is still the default under D37; the cue is for an office edit). The checklist line expected a
+  cue there.
+- Edit invoice description on the "right total knee" Booking: saves, text unchanged; the action over it leaves the
+  edit with the cue; "Use it" applies it; History shows "Invoice description changed" and "Newer description used on
+  the invoice"; no "provisional" anywhere; no edit action for the anaesthetist on web. **Pass.**
+- Foster on the PWA: Demo sheet defaults to MSG-STG-1012; Run replaces "WLE MM" with row 27, invoice description
+  follows; a second Run changes nothing. **Pass.**
+- S1: web Tue 28 AM shows three cases at 07:45, 09:45, 11:15, two in rooms' wording; Sarah arrives fourth with "lap
+  appy ?conv to open" (Hospital feed); no List attachments panel. **Pass.**
+- No attachments on Booking, List or drawer pages (0 pages mention them); the photo demo still prefills the
+  description ("Laparoscopic cholecystectomy"). **Pass.**
+- Expert rows on web, the Admin drawer and the Booking screens; 15, 17, 35 "RVG code to choose"; 34 S9b with "P1
+  included 0". **Pass.**
+- Web Add a booking: neither refused ("Type the procedure as told, or choose an RVG code."); " L TKJR " with LL4
+  stored exactly with Anaesthetist, invoice description "As entered". **Pass.**
+- S2 phone advice: Look up fills the Procedure description, Told by Phone pressed; saved as `phone`, `entered`
+  (`admin-phase06.spec.ts`). **Pass.**
+- Edit procedure: text read-only, the only input is the billing reference. **Pass.**
+- Admin Review (Souter Mon 20 AM, Brian Holt's two Procedures) and the Tue 4 Aug AM drawer show compact stacks for
+  every Procedure. **Pass.**
+- Authorise Dr Morrison's Mon 20 List, open INV0002: heading "TURP" above its fee line, $455.00 unchanged. **Pass.**
+- S1 to S5 figures: by the parity suites (pass). Data: no Procedure carries `description`, no Booking `attachments`
+  (migrate test). **Pass.**
+- Copy: no en or em dash in added strings; no Card, slot, as given, provisional or DRAFT; teal actions only, no
+  crimson in the component. **Pass.**
+- Builds and suites: below. **Pass.**
+
+**Tests.** Vitest 1,949 → 2,023 (new: `procedureStack.test.ts` 25, `procedureText.test.ts` 22,
+`sourceWording.test.ts` 11, `ProcedureStack.test.tsx` 12, `procedureTextTriggers.test.ts` 8, intake 4, form 3, a
+migrate case; removed: `attachmentActions.test.ts` and one horizon case). Playwright 179 → 177 (the two attachment
+tests gone; the four layout tests kept in `booking-detail-layout.spec.ts`; specs re-pointed to "Procedure
+description" and the scoped RVG code card). Baseline Playwright had one load-flaky 19b test, green on rerun.
+
+**Adversarial review (convention 18):** three Opus reviewers (bugs and correctness, plan adherence, quality). Fixed,
+with tests: a Contract's edited invoice description now reaches its Procedures on Lists not yet authorised (unless
+edited); the billing monitor's Contract change audits the invoice description; saving the invoice description
+unchanged is no edit; the seeded hospital text carries its sender; the trigger's outcome no longer always says "the
+rooms' text"; its default skips a wording already held. Also fixed: the pricing basis now shares
+`shared/contracts/labels.ts` (`formatPricingBasis` beside `pricingLabel`); the capture block reads only the three
+records the view needs; theme tokens for mono and micro; hidden labels on compact rows; an accessible name on "Use
+it"; stale comments; `procedureStack` exported through `domain/billing`; the refusal "The procedure text cannot be
+blank." (item 4's "as given" conflicted with item 14's ban); catalogue rows. Logged, not fixed: the anaesthetist's
+Billing card (20's rail) still restates its Contract and price under the stack; mist labels are below WCAG AA
+contrast (the design system's label colour); strings repeated across modules ("Needs an invoice destination", "No
+description received"); the seed's placeholder source and time before the finalise pass; the Contract part shows the
+name before its AA code rather than `contractLabel`'s order; `InvoicedParty.kind` and `contract.id` are for Phase 21;
+"Hospital description arrives" acts on the first Procedure (no screen publishes a selection yet).
+
+**Catalogue screenshots (convention 19).** `recipe-status.mjs 20a`: US-02.5.7, US-03.1.9 and US-08.4.6 had none. Created US-02.5.7 (`captured`: `procedure-text` rooms and hospital-update on web, mobile (PWA Demo sheet) and Admin from Foster; `procedure-text-history` on web and mobile from BK0164), US-03.1.9 (`partial`, Phase 33 adds the matching screen: `procedure-stack` on web, mobile and Admin, `not-matched` on BK0166, `office-hand-off` on Foster, `review-stack`) and US-08.4.6 (`captured`: rooms, hospital, edited with the cue, contract on Doyle BK0028, printed on INV0002 after authorising Morrison Mon 20). Updated US-03.1.2 (`captured`, `before` BK0009 web and mobile, `after` BK0023 on the SUBMITTED Mon 20 AM List) and US-02.4.1 (`captured`, the `procedure-description` state). US-03.1.3 `absent` ("Retired: removed in Phase 20a"). Re-pointed: US-04.3.4 (`rvg-code-to-fill` → `procedure-rvg-code`), US-07.2.2 (`review-contracts` re-captioned), US-08.1.2 (Review now has nine columns), US-11.1.3 and US-01.6.1 (the Procedure description field). `node scripts/capture.ts --dry` 283/285 (US-08.1.2 fixed; US-01.4.7 a screenshot timeout, green in the full run), then a full `npm run capture`: 285/285 recipes OK, 631 shots, 0 failed (a second full run after the basis line lost its tabular numerals). REPORT before: captured 162 (148 stories) / partial 51 / absent 69 / failed 0 / no recipe 33 (616 shots). After: 165 (151) / 50 / 70 / 0 / 30 (631 shots); the 30 without a recipe are owned by later phases. Shots checked by eye: US-08.4.6 edited and printed, US-02.5.7 mobile hospital-update, US-03.1.9 admin and Review. ATLAS updated (the stack hooks, seed data with the AR-35 ids, the overlays, both triggers; attachment hooks and the theatre-list PDF removed). `npm run verify:board` green.
+
+**Demo guide:** 03 (S1 Beat 1 wording and Sarah's arrival text; Beat 2's attachments aside replaced by the "right
+total knee" aside and the optional MSG-STG-1012 fire; Beat 3 reads the text first; S2 Beat 2 Expected and the "What
+the invoice will say" aside), 04 (Procedure text section; discovery point 14), 02, 01, README and
+`master-demo-guide.html`; AR-35's wording called illustrative. The Control Panel's S1 text names neither, so
+unchanged.
+
+**Handoffs:**
+- **21:** re-point `whoIsInvoicedFor` to the holder's Party or the payer on the Booking (`InvoicedParty.kind` is there
+  for it); Review's Billed to reads the views. **21a:** Review's flags beside the Procedures column.
+- **22, 27:** print the invoice description on each line (today one heading row per Procedure, `invoiceLineGroups`).
+- **23:** the primary Procedure becomes the intake target for the text (today the first).
+- **24:** re-point `pricingBasisFor` to the one price precedence.
+- **33:** put `ProcedureStack` on every matching row; apply a row's text through `replaceProcedureText` (name kept), so
+  the invoice description follows through `refreshInvoiceDescription` (or the cue where edited); add a "Hospital
+  sheet" source if needed; the S12 create path is today's stand-in.
+- **35:** the history screen reads `procedure.procedureText.replace`'s `before`; there is no `addSourceText` or "Add a
+  description"; reuse `setInvoiceDescription`, `applyDefaultInvoiceDescription` and `EditInvoiceDescriptionSheet` for
+  the amend flow until AUTHORISED.
+- **43:** the generator builds `procedureText` and `invoiceDescription` through the same types (`seedText`,
+  `finaliseSeedProcedureTexts`). **43a:** keep `ProcedureStack` on the anaesthetist screens. **44:** rewrite S1 around
+  the text, the Contract choice and the invoice description.
+
+**For the owner's review:**
+- The stack on the Booking (Mobile, Web, Admin: Dr Souter's Tue 4 Aug AM "right total knee", `BK0164`) and in Admin
+  Review (`/admin/review/L-34821-2026-07-20-AM`): does the layout read clearly, and should the anaesthetist see the
+  same parts as the office (US-03.1.9 Verify)?
+- The hospital's text replaces the rooms' with the original in the change history (Ben, Vanessa and Donald, 5
+  November; not yet put to Greg). Our readings: a rooms' text arriving after the hospital's does not replace it; the
+  office cannot add to or reword the text, so "Add a description" is not built.
+- The anaesthetist now sees the Contract's name, holder, who is invoiced and pricing basis (US-03.1.2) against
+  US-15.0.1's Proposed note; the running fee stays hidden.
+- D37's order (the Contract's description on top) and D73 (the office's edit always wins, cue and "Use it" kept),
+  built with no label; the Contract's description on top has not been put to Ben and Vanessa. Our readings: a
+  hand-entered text stands in for the rooms' at the bottom; the edit stops at AUTHORISED (D63) although US-08.4.6 says
+  "at any time"; no cue under a Contract's description (the checklist expected one); editing a Contract's description
+  updates its open Procedures' invoice descriptions.
+- Attachments removed (RV-01).
+- AR-35 reused on sources its table did not name (row 14 on a feed) and rows 26 and 27 paired as one Booking's rooms
+  and hospital wording; LD-002's Bookings carry the secretary's email wording; the new Bookings' display source
+  follows the seed's hospital rule while their text keeps AR-35's channel.
+- Seeded audit ids from the first new row onward shifted (the trail stays chronological); no other id moved.
+- The office's photo-demo prefill takes its Told by default (Phone).
+- `ui-library-preview/` (untracked) imports the removed attachment components through its rows, so its build will
+  need those rows dropped; `aa-prototype` was not edited for it.

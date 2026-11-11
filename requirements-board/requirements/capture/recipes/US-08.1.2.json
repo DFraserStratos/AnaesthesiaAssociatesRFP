@@ -13,7 +13,7 @@
           "steps": [],
           "highlight": [
             "[data-testid=review-detail-table-shell] thead th:nth-child(4)",
-            "[data-testid=review-detail-table-shell] tbody tr:has(td:nth-child(10)) td:nth-child(4)"
+            "[data-testid=review-detail-table-shell] tbody tr:has(td:nth-child(9)) td:nth-child(4)"
           ]
         }
       ]

@@ -47,7 +47,7 @@ describe('createBooking', () => {
 
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
-      operation: 'Diagnostic laparoscopy',
+      sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       rvgGroupId: RVG_GROUP.a3!,
       scheduledTime: '17:00',
     })
@@ -79,7 +79,7 @@ describe('createBooking', () => {
 
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
       patient: { nhi: 'cqy9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' },
-      operation: 'Laparoscopic cholecystectomy',
+      sourceText: { text: 'Laparoscopic cholecystectomy', source: 'anaesthetist' },
       rvgGroupId: RVG_GROUP.a3!,
     })
 
@@ -95,7 +95,7 @@ describe('createBooking', () => {
     const bookingsBefore = Object.keys(api.getState().schedule.bookings).length
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
       patient: { nhi: 'AAA9999', name: 'Bad NHI', dobISO: '1990-01-01' },
-      operation: 'Test',
+      sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('invalidNhi')
@@ -106,7 +106,7 @@ describe('createBooking', () => {
     const api = store()
     const outcome = createBooking(api, MORRISON, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
-      operation: 'Test',
+      sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(true)
     expect(api.getState().schedule.lists[MORRISON_LIST]?.state).toBe('SUBMITTED')
@@ -116,7 +116,7 @@ describe('createBooking', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
-      operation: 'Test',
+      sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('notOwnList')
@@ -128,7 +128,7 @@ describe('createBooking', () => {
     expect(authoriseList(api, OFFICE, MORRISON_LIST).ok).toBe(true)
     const outcome = createBooking(api, OFFICE, MORRISON_LIST, {
       patient: { name: 'X', dobISO: '1990-01-01' },
-      operation: 'Test',
+      sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('listAuthorised')
@@ -141,7 +141,7 @@ describe('createBooking', () => {
     const amList = marker('designDayAmList')
     const outcome = createBooking(api, SOUTER, amList, {
       patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
-      operation: 'Diagnostic laparoscopy',
+      sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       rvgGroupId: RVG_GROUP.a3!,
       scheduledTime: '11:30',
     })

@@ -8,11 +8,11 @@
  */
 
 import type {
-  Attachment,
   Booking,
   BookingSource,
   IntegrationCorrelationRef,
   Procedure,
+  ProcedureTextSource,
   RailAnswers,
 } from '../domain/types'
 import {
@@ -27,7 +27,7 @@ import {
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
-import { newAttachment } from './attachmentActions'
+import { isBlankText, procedureTextOf, refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
 import { isOpenSlot } from '../domain/slotStatus'
@@ -47,9 +47,14 @@ export interface CreateBookingInput {
   /** Patient details — routed through the shared `upsertPatient` dedupe. */
   patient: PatientIntakeDetails
   scheduledTime?: string
-  /** The procedure/operation description. */
-  operation: string
-  /** The optional RVG code: an RVG group row by id (catch-up Phase 19). Never changes `operation`. */
+  /**
+   * The procedure text as received or as typed (catch-up Phase 20a;
+   * US-02.5.7, US-02.4.1): stored exactly as given (no trim), with its
+   * source and sender; a blank text stores nothing. The name Phases 33 and 35
+   * use.
+   */
+  sourceText?: { text: string; source: ProcedureTextSource; from?: string }
+  /** The optional RVG code: an RVG group row by id (catch-up Phase 19). Never changes the text. */
   rvgGroupId?: string
   /**
    * The Procedure's Contract, picked on the step rail (US-04.3.4): optional.
@@ -65,8 +70,6 @@ export interface CreateBookingInput {
   billablePartyId?: string
   billingReference?: string
   notes?: string
-  /** A photo/file to attach (the photo-capture path adds a `kind:'photo'` one). */
-  attachment?: { name: string; kind: Attachment['kind']; dataUrl?: string }
   /**
    * Integration provenance (Phase 11): the `{sourceFeedId, externalAppointmentId}`
    * correlation ref an HL7/FHIR create stamps, so later S13/S14/S15 messages
@@ -82,9 +85,11 @@ export interface CreateBookingInput {
   source?: BookingSource
 }
 
+export const PROCEDURE_OR_CODE_REQUIRED_MESSAGE = 'Type the procedure as told, or choose an RVG code.'
+
 /**
  * Create an ad-hoc Booking (the manual and photo paths share this — the photo path
- * simply pre-fills `input` and passes an attachment). Runs the shared
+ * simply pre-fills `input`). Runs the shared
  * `upsertPatient` first (NHI dedupe: reuse or create), then creates the Booking
  * and its first Procedure (`isAdditional:false`), audited `booking.create` +
  * `procedure.create`. The patient audit comes from `upsertPatient`.
@@ -100,8 +105,12 @@ export function createBooking(
   if (list === undefined) return refuse('notFound', 'List not found.')
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
-  if (input.operation.trim() === '') {
-    return refuse('operationRequired', 'An operation description is required.')
+  // A person's entry needs something to show: the text as told, or an RVG
+  // code (D33: the code is optional). An integration's message may carry
+  // neither; it creates a Procedure with no text (no invented wording).
+  const hasText = input.sourceText !== undefined && !isBlankText(input.sourceText.text)
+  if (actor.source !== 'integration' && !hasText && input.rvgGroupId === undefined) {
+    return refuse('procedureOrCodeRequired', PROCEDURE_OR_CODE_REQUIRED_MESSAGE)
   }
   const pickRefused = rvgGroupPickRefusal(state.masters.rvgGroups, input.rvgGroupId, undefined)
   if (pickRefused !== null) return refuse(pickRefused.code, pickRefused.message)
@@ -134,19 +143,11 @@ export function createBooking(
     const procedureId = procAlloc.id
     const atISO = clockISO(s.clock)
 
-    const attachments: Attachment[] = []
-    if (input.attachment !== undefined) {
-      const built = newAttachment(counters, input.attachment)
-      counters = built.counters
-      attachments.push(built.attachment)
-    }
-
     const booking: Booking = {
       id: bookingId,
       listId,
       patientId,
       completed: false,
-      attachments,
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
@@ -158,7 +159,11 @@ export function createBooking(
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
-      description: input.operation.trim(),
+      procedureText:
+        input.sourceText !== undefined && hasText
+          ? procedureTextOf(input.sourceText.text, input.sourceText.source, atISO, input.sourceText.from)
+          : null,
+      invoiceDescription: null,
       isAdditional: false,
       modifierClaims: [],
       removedModifierIds: [],
@@ -176,6 +181,8 @@ export function createBooking(
     if (input.billingReference !== undefined && input.billingReference.trim() !== '') {
       procedure.billingReference = input.billingReference.trim()
     }
+    // The order of defaults (US-08.4.6, D37): the text, or the Contract's invoice description; never the RVG code.
+    procedure.invoiceDescription = refreshedInvoiceDescriptionFor(procedure, s.masters.contracts)
 
     metas.push(
       {
@@ -189,7 +196,8 @@ export function createBooking(
         entityId: procedureId,
         action: 'procedure.create',
         after: {
-          description: procedure.description,
+          procedureText: procedure.procedureText,
+          ...(procedure.invoiceDescription !== null ? { invoiceDescription: procedure.invoiceDescription.text } : {}),
           ...(procedure.governingContractId !== undefined ? { governingContractId: procedure.governingContractId } : {}),
           ...(procedure.enteredPrice !== undefined ? { enteredPrice: procedure.enteredPrice } : {}),
           ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
@@ -296,7 +304,6 @@ export function addPostOpAddendum(
       addendumOfBookingId: originalBookingId,
       // Interim until Phase 39 replaces the addendum: the source follows the actor.
       source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
-      attachments: [],
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
@@ -304,7 +311,8 @@ export function addPostOpAddendum(
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
-      description: '',
+      procedureText: null,
+      invoiceDescription: null,
       isAdditional: false,
       modifierClaims: [],
       removedModifierIds: [],
@@ -320,6 +328,8 @@ export function addPostOpAddendum(
     if (first?.governingContractId !== undefined && contractAllowedOn(railMastersOf(s), railContextForList(s, placed.list), first.governingContractId)) {
       inheritContract(procedure, first.governingContractId, s.masters)
     }
+    // No text arrives with an addendum; a copied Contract's invoice description applies (D37).
+    procedure.invoiceDescription = refreshedInvoiceDescriptionFor(procedure, s.masters.contracts)
 
     metas.push(
       {
@@ -381,7 +391,7 @@ function inheritContract(procedure: Procedure, contractId: string, masters: AppS
  * Add an additional Procedure to an existing Booking (Phase 04's "Add another
  * procedure"). Additional from the first (RFP split-billing rule): it bills
  * time units only; base and modifier units stay on the first procedure. The
- * skeleton is an empty additional Procedure: empty description,
+ * skeleton is an empty additional Procedure: no procedure text,
  * `isAdditional: true`, the first Procedure's payer override copied
  * (INTERIM until Phase 21). It picks its own Contract (US-03.2.3, catch-up
  * Phase 20): the one given, checked as on the step rail, else none ("Needs an
@@ -424,7 +434,8 @@ export function addProcedure(
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
-      description: '',
+      procedureText: null,
+      invoiceDescription: null,
       isAdditional: true,
       modifierClaims: [],
       removedModifierIds: [],
@@ -438,6 +449,8 @@ export function addProcedure(
       const fill = fillFromContract(procedure, s.masters.contracts[pick.governingContractId], s.masters.rvgGroups)
       if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
     }
+    // An added Procedure has no text of its own; the chosen Contract's invoice description applies (D37).
+    procedure.invoiceDescription = refreshedInvoiceDescriptionFor(procedure, s.masters.contracts)
 
     metas.push({
       entityType: 'procedure',

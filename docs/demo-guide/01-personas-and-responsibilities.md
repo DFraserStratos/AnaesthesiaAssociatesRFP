@@ -29,7 +29,8 @@ Bookings and capture the data AA needs for billing.
 - See the hospital, surgeon, patient Bookings and procedure times.
 - Respond to late changes without phoning AA for every detail.
 - Capture accurate Base, Time and Modifier data with minimal typing.
-- Add a missing Booking when the hospital and device disagree.
+- Add a missing Booking when the hospital and device disagree, typing the procedure as written on the
+  hospital's list.
 - Complete work and hand the whole List to the AA office.
 - See availability, and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session (it becomes a new List of theirs).
@@ -57,7 +58,8 @@ Bookings and capture the data AA needs for billing.
    after her PM List, in an evening session the office opened. She captures and submits its Bookings as
    on any List, and marks that evening session available or not like AM and PM; she does not open one
    herself (she rings the office).
-9. Create a missing Booking manually.
+9. Create a missing Booking manually, with its procedure description as told or written (kept exactly
+   as typed).
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
 
@@ -159,7 +161,7 @@ short-notice cover.
 1. Use the one-day dashboard as the operational control tower.
 2. Navigate dates and read the status-coloured AM/PM grid.
 3. Open a List and review its Bookings.
-4. Create a phone-advice booking on a suitable List.
+4. Create a phone-advice booking on a suitable List, typing the procedure as it was told (kept exactly as typed, Told by Phone or Email).
 5. Edit List context, including hospital, surgeon and actual start/end times.
 6. Move a single Booking to a different List for a routine reschedule.
 7. Find a Free replacement anaesthetist and reassign the entire List for illness cover.

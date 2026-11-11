@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { APP_CONFIG } from '../../../../shell/appConfig'
 import { isAssignedList } from '../../../../domain/draftLists'
-import type { AssignedList, Attachment, Booking } from '../../../../domain/types'
+import type { AssignedList, Booking } from '../../../../domain/types'
 import { movedToMe, useAppStore, useToday, type Actor } from '../../../../store'
 
 /**
@@ -28,8 +28,6 @@ export interface WebFixtures {
   historyEntityId: string | undefined
   /** Someone with "Moved to you" notices (the persona when nobody has one). */
   movedToId: string
-  /** A few real attachments from the seed. */
-  attachments: Attachment[]
 }
 
 const byDateSession = (a: AssignedList, b: AssignedList) => a.dateISO.localeCompare(b.dateISO) || a.session.localeCompare(b.session) || a.id.localeCompare(b.id)
@@ -93,9 +91,6 @@ export function useWebFixtures(): WebFixtures {
         .sort()
         .find((id) => movedToMe({ notifications }, id, todayISO).length > 0) ?? anaesthetistId
 
-    const attachments: Attachment[] = []
-    for (const l of mine) for (const a of l.attachments ?? []) attachments.push(a)
-    for (const b of Object.values(bookings).sort((x, y) => x.id.localeCompare(y.id))) for (const a of b.attachments) attachments.push(a)
 
     return {
       detailListId: detail?.id,
@@ -105,7 +100,6 @@ export function useWebFixtures(): WebFixtures {
       searchSeed,
       historyEntityId: historyEntityId ?? capture?.bookingId,
       movedToId,
-      attachments: attachments.slice(0, 3),
     }
   }, [lists, bookings, procedures, patients, audit, notifications, anaesthetists, anaesthetistId, todayISO])
 

@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
-import { accent, neutral, semantic } from '../../theme/tokens'
+import { useMemo, useState, type ReactNode } from 'react'
+import { accent, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { editRefusal, useAppStore, type Actor } from '../../store'
+import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { procedureFee } from './feeContext'
 import { ProcedureCodeCard } from './ProcedureCodeCard'
@@ -15,6 +15,7 @@ import { Caption, FailureNotes } from './ui'
 import { rvgCodeToFill } from '../../domain/billing/contractRail'
 import { isRvgKind } from '../../domain/billing/contracts'
 import { BillingCard } from '../booking/BillingCard'
+import { ProcedureStack } from '../booking/ProcedureStack'
 
 /** Fields the Contract row anchors (the step rail and "Contract and payer" own them; catch-up Phase 20). */
 const CONTEXT_FIELDS = ['governingContractId', 'enteredPrice', 'billablePartyId', 'prepaymentDetail'] as const
@@ -37,6 +38,10 @@ interface BtmCaptureBlockProps {
    *  Booking's first procedure, which `removeProcedure` refuses to delete. */
   onRemove?: (() => void) | undefined
   onError: (message: string) => void
+  /** Extra actions on the stack's heading row (the office's Edit invoice description; catch-up Phase 20a). */
+  stackActions?: ReactNode
+  /** The newer-description cue's action ("Use it", office only). */
+  newerAction?: ReactNode
 }
 
 /**
@@ -76,8 +81,10 @@ export function BtmCaptureBlock({
   onEdit,
   onRemove,
   onError,
+  stackActions,
+  newerAction,
 }: BtmCaptureBlockProps) {
-  const { Pair } = useSurface()
+  const { Pair, variant } = useSurface()
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
@@ -103,36 +110,40 @@ export function BtmCaptureBlock({
   ])
   const unanchored = shown.filter((f) => !anchored.has(f.field))
 
-  const billablePartyName =
-    procedure.billablePartyId !== undefined ? masters.billableParties[procedure.billablePartyId]?.name : undefined
-  const contextParts = [billablePartyName !== undefined ? `Payer ${billablePartyName}` : undefined, procedure.billingReference].filter(
-    (p): p is string => p !== undefined,
-  )
-  // Derived, never stored (US-03.3.1): an RVG-kind Contract with no RVG code yet.
+  // Derived, never stored (US-03.3.1): an RVG-kind Contract with no RVG code yet; the stack's
+  // RVG part says so, and the code card below asks for it.
   const rvgToFill = contract !== undefined && rvgCodeToFill(masters, procedure, Object.values(billingLines).filter((l) => l.procedureId === procedure.id))
 
   // The store's edit gate (ACTIVE or SUBMITTED, own List for the anaesthetist; catch-up Phase 38a).
   const editable = procedure !== undefined && editRefusal(actor, list) === null
 
+  // The procedure stack's view (catch-up Phase 20a): the one pure module, through the store's selector.
+  // Only the three records the view reads, so a write elsewhere does not rebuild it.
+  const procedures = useAppStore((s) => s.schedule.procedures)
+  const bookings = useAppStore((s) => s.schedule.bookings)
+  const lists = useAppStore((s) => s.schedule.lists)
+  const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
+  const stackView = useMemo(
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, procedure.id, stackSurface],
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Header: PROCEDURE n · description · Edit */}
-      <div
-        data-testid="procedure-header"
-        style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: procedureCount > 1 && ordinal > 1 ? 8 : 0 }}
-      >
-        <div style={{ flex: '0 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {procedureCount > 1 && (
-            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist }}>
-              PROCEDURE {ordinal}
-            </span>
-          )}
-          <span style={{ fontSize: 16, fontWeight: 600, color: procedure.description === '' ? neutral.mist : neutral.ink }}>
-            {procedure.description === '' ? 'Operation to capture' : procedure.description}
-          </span>
-        </div>
-        {editable && (
-          <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 14, flex: 'none' }}>
+      {/* The procedure stack (catch-up Phase 20a; US-03.1.9): the procedure text, the invoice
+          description, the Contract and the RVG code, from one view. Its heading row keeps
+          `procedure-header` with Edit and Remove in its actions. */}
+      <ProcedureStack
+        view={stackView!}
+        density="full"
+        surface={stackSurface}
+        layout={variant === 'mobile' ? 'stacked' : 'columns'}
+        heading={procedureCount > 1 ? `Procedure ${ordinal}` : 'Procedure'}
+        {...(editable || stackActions !== undefined
+          ? {
+              actions: (
+                <>
+            {editable && (
             <button
               type="button"
               data-validation-procedure-id={procedure.id}
@@ -154,10 +165,11 @@ export function BtmCaptureBlock({
             >
               Edit
             </button>
+            )}
             {/* Additional procedures only: the Booking's first is its anchor and
                 `removeProcedure` refuses it, so never show an action that
                 cannot work. */}
-            {onRemove !== undefined && canCapture && ordinal > 1 && (
+            {editable && onRemove !== undefined && canCapture && ordinal > 1 && (
               <button
                 type="button"
                 onClick={onRemove}
@@ -175,23 +187,17 @@ export function BtmCaptureBlock({
                 Remove
               </button>
             )}
-          </div>
-        )}
-      </div>
-
-      {contextParts.length > 0 && <span style={{ fontSize: 12, color: neutral.mist }}>{contextParts.join(' · ')}</span>}
+                  {stackActions}
+                </>
+              ),
+            }
+          : {})}
+        {...(newerAction !== undefined ? { newerAction } : {})}
+      />
 
       {/* The Procedure's one Contract (catch-up Phase 20): the Billing card, the
           step rail inline for the office and, mirrored, the anaesthetist. */}
       <BillingCard procedure={procedure} actor={actor} canEdit={editable} ordinal={ordinal} procedureCount={procedureCount} />
-      {rvgToFill && (
-        <div
-          data-shot="rvg-code-to-fill"
-          style={{ fontSize: 13, color: neutral.slate, background: neutral.sunken, borderRadius: 10, padding: '8px 12px' }}
-        >
-          {actor.role === 'anaesthetist' ? 'RVG code to fill in: add it on the code card below.' : 'The anaesthetist fills in the RVG code.'}
-        </div>
-      )}
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
