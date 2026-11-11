@@ -9,7 +9,8 @@ import {
   SOUTER_ACTOR,
   authoriseList,
   editBooking,
-  editProcedure,
+  claimModifier,
+  removeModifier,
   proceduresForBooking,
   resetDemo,
   useAppStore,
@@ -17,6 +18,7 @@ import {
   useToday,
 } from '../../store'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
+import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, type DemoTrigger } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
@@ -304,10 +306,15 @@ const SCENARIOS: readonly Scenario[] = [
       const chenBookingId = SEED_MARKERS['overriddenTimeUnitsBooking']?.entityId ?? ''
       const chenProcedure = proceduresForBooking(useAppStore.getState(), chenBookingId)[0]
       if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Booking was not found to stage the audit trail.' }
+      // An ASA III modifier claimed with its explanation, the office note, then
+      // the claim removed: the trail shows both, and the fee ends where it started
+      // (catch-up Phase 19b; the ASA grade is one optional modifier).
+      const as3 = rvgModifierByCode(useAppStore.getState().masters.modifiers, 'AS3')
+      if (as3 === undefined) return { ok: false, message: 'Reset done, but the RVG modifier AS3 was not found to stage the audit trail.' }
       const staged = [
-        editProcedure(useAppStore, SOUTER_ACTOR, chenProcedure.id, { asaClass: 'AS2' }),
+        claimModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, { modifierId: as3.id, explanation: 'Pre-op review: ASA III' }),
         editBooking(useAppStore, OFFICE_ACTOR, chenBookingId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
-        editProcedure(useAppStore, SOUTER_ACTOR, chenProcedure.id, { asaClass: 'AS1' }),
+        removeModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, as3.id),
       ]
       const refused = staged.find((r) => !r.ok)
       if (refused !== undefined && !refused.ok) return { ok: false, message: `Reset done, but staging the audit trail was refused: ${refused.message}` }

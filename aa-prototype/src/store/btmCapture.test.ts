@@ -62,6 +62,8 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
       anaesthetist,
       dateISO: list.dateISO,
       timeRule: state.masters.rvgTimeRule,
+      patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
+      modifiers: state.masters.modifiers,
       nonRvgLines,
     }
     if (contract !== undefined) ctx.contract = contract
@@ -128,24 +130,24 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
     expect(souter.unitValue).toBe(26.5)
     expect(strand.unitValue).toBe(42)
 
-    // B6 (A3, lap chole) + T2 (30 min) + M0 (AS1) = 8 units, no contract → the
+    // B6 (A3, lap chole) + T2 (30 min) + M0 (no modifier, no patient) = 8 units, no contract → the
     // anaesthetist's OWN unit value applies.
     const procedure: Procedure = {
       id: 'P-TEST',
       bookingId: 'C-TEST',
       description: 'Laparoscopic cholecystectomy',
       isAdditional: false,
-      selectedModifierCodes: [],
+      modifierClaims: [],
+      removedModifierIds: [],
       rvgGroupId: RVG_GROUP.a3!,
-      asaClass: 'AS1',
       anaestheticStartISO: '2026-07-21T09:00:00',
       handoverISO: '2026-07-21T09:30:00',
     }
     const rvgGroup = masters.rvgGroups[RVG_GROUP.a3!]
     if (rvgGroup === undefined) throw new Error('missing RVG group')
 
-    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule })
-    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule })
+    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule, patientDobISO: undefined, modifiers: masters.modifiers })
+    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule, patientDobISO: undefined, modifiers: masters.modifiers })
     expect(souterFee.billableUnits).toBe(8)
     expect(souterFee.total).toBe(212)
     expect(strandFee.billableUnits).toBe(8)
@@ -215,14 +217,14 @@ describe('B/T/M provenance semantics (the reset link contract)', () => {
       }).ok,
     ).toBe(true)
     let procedure = api.getState().schedule.procedures[procedureId]!
-    let btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''], api.getState().masters.rvgTimeRule)
+    let btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''], api.getState().masters.rvgTimeRule, { modifiers: api.getState().masters.modifiers })
     expect(btm.time).toEqual({ units: 5, source: 'overridden' })
 
     // "Use seeded value": clearing the capture re-derives from the stamps
     // (no handover seeded → 0 time units, seeded provenance).
     expect(editProcedure(api, SOUTER, procedureId, { timeUnitsCaptured: undefined }).ok).toBe(true)
     procedure = api.getState().schedule.procedures[procedureId]!
-    btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''], api.getState().masters.rvgTimeRule)
+    btm = resolveBtm(procedure, api.getState().masters.rvgGroups[procedure.rvgGroupId ?? ''], api.getState().masters.rvgTimeRule, { modifiers: api.getState().masters.modifiers })
     expect(btm.time).toEqual({ units: 0, source: 'seeded' })
   })
 })

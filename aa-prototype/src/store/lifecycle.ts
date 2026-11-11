@@ -38,6 +38,8 @@ import { billingContextForBooking, bookingsForList, proceduresForBooking } from 
 import { emitAppEvent } from './events'
 import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { fillFromContract } from '../domain/billing/startingValues'
+import { claimsAuditView } from '../domain/billing/modifiers'
+import { reconciledForGroup } from './modifierFacts'
 
 // ---------------------------------------------------------------------------
 // Shared checks
@@ -479,6 +481,9 @@ export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, r
 
 export type ProcedurePatch = Partial<Omit<Procedure, 'id' | 'bookingId'>>
 
+export const MODIFIERS_THROUGH_ACTIONS_MESSAGE =
+  'Modifiers are claimed, removed and put back one at a time, each claim with its explanation.'
+
 export function editProcedure(
   api: AppStoreApi,
   actor: Actor,
@@ -492,6 +497,11 @@ export function editProcedure(
   if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
+  // Modifier claims and removals change only through the modifier actions
+  // (catch-up Phase 19b), so no claim is ever saved without its explanation.
+  if ('modifierClaims' in patch || 'removedModifierIds' in patch) {
+    return refuse('modifiersThroughActions', MODIFIERS_THROUGH_ACTIONS_MESSAGE)
+  }
   // Any whole base-unit value of 0 or more is accepted (D3, catch-up Phase 19):
   // no range check here; an out-of-range value only warns the office.
   if ('baseUnitsSelected' in patch && patch.baseUnitsSelected !== undefined && !isRecordableBaseUnits(patch.baseUnitsSelected)) {
@@ -523,6 +533,13 @@ export function editProcedure(
       }
     }
   }
+  // A change of RVG group re-derives the included modifiers in the same
+  // commit: claims the new group includes, and removals that no longer apply,
+  // drop (catch-up Phase 19b, `reconcileClaims`).
+  const reconciled =
+    'rvgGroupId' in patch && patch.rvgGroupId !== procedure.rvgGroupId
+      ? reconciledForGroup(state, procedure, patch.rvgGroupId)
+      : null
   // An open-price Contract is never chosen this way (catch-up Phase 18a): it
   // has no price of its own, and Phase 20's "Other price" picks it with an amount.
   if (patch.governingContractId !== undefined && patch.governingContractId !== procedure.governingContractId) {
@@ -537,13 +554,16 @@ export function editProcedure(
       entityType: 'procedure',
       entityId: procedureId,
       action: 'procedure.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, procedure[k as keyof Procedure]])),
-      after: patch,
+      before: {
+        ...Object.fromEntries(Object.keys(patch).map((k) => [k, procedure[k as keyof Procedure]])),
+        ...(reconciled !== null ? claimsAuditView(procedure, state.masters.modifiers) : {}),
+      },
+      after: { ...patch, ...(reconciled !== null ? claimsAuditView(reconciled, state.masters.modifiers) : {}) },
     },
     (s) => ({
       schedule: {
         ...s.schedule,
-        procedures: { ...s.schedule.procedures, [procedureId]: { ...procedure, ...patch } },
+        procedures: { ...s.schedule.procedures, [procedureId]: { ...procedure, ...patch, ...(reconciled ?? {}) } },
       },
     }),
   )

@@ -1,37 +1,6 @@
 {
   "id": "US-05.2.3",
-  "status": "captured",
-  "absentReason": "",
-  "shots": [
-    {
-      "name": "absorbed-positioning",
-      "app": "web",
-      "caption": "Positioning not added on a hip replacement, whose base code already includes it",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-shot=capture-modifiers] button:has-text(\"Positioning\")",
-            "[data-shot=capture-modifiers] >> text=/already includes P1/"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "absorbed-positioning",
-      "app": "mobile",
-      "caption": "Positioning not added on a hip replacement, whose base code already includes it",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-testid=slide-booking] [data-shot=capture-modifiers] button:has-text(\"Positioning\")",
-            "[data-testid=slide-booking] [data-shot=capture-modifiers] >> text=/already includes P1/"
-          ]
-        }
-      ]
-    }
-  ]
+  "status": "absent",
+  "absentReason": "Retired: a modifier the base units include is now shown selected at 0 and removable (US-05.1.4, Phase 19b)",
+  "shots": []
 }

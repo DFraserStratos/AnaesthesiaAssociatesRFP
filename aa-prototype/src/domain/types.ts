@@ -794,8 +794,6 @@ export interface PrepaymentDetail {
   depositAmount?: number
 }
 
-export type AsaClass = 'AS1' | 'AS2' | 'AS3' | 'AS4'
-
 /** Typed price override — mandatory reason whenever present (7th review A6/B5). */
 export type PriceOverride =
   | { kind: 'fixedFee'; amount: number; reason: string }
@@ -844,9 +842,14 @@ export interface Procedure {
   isAdditional: boolean
 
   // --- captured BTM inputs (data, not derivation) ---
-  asaClass?: AsaClass
-  /** Modifier codes as selected (chips in Phase 04). */
-  selectedModifierCodes: string[]
+  /**
+   * The optional modifiers claimed, each with a short explanation (catch-up
+   * Phase 19b, DM-44). Written only through the modifier store actions, never
+   * `editProcedure`. The age and included modifiers are derived, not stored.
+   */
+  modifierClaims: ModifierClaim[]
+  /** The pre-applied modifiers (age, included) the anaesthetist removed. */
+  removedModifierIds: ModifierId[]
   /**
    * The RVG code, optional (catch-up Phase 19): a reference to one RVG group
    * row by its hidden id. The Procedure's `description` stays the text received.
@@ -909,19 +912,19 @@ export type {
   RvgGroupId,
 } from './billing/rvgGroups'
 
-export type ModifierGroup = 'PA' | 'A' | 'AS' | 'ASE' | 'OB' | 'P' | 'AI' | 'POSTOP'
-
 /**
- * Modifier master row. Unit values are DEMO-PLAUSIBLE figures within the RFP's
- * stated ranges, NOT an authoritative NZSA schedule (Decisions log 2026-07-22;
- * discovery item). The table lives in `billing/modifierCodes.ts`.
+ * Modifiers (catch-up Phase 19b; the rule module is domain/billing/modifiers.ts):
+ * the master (the NZSA RVG 2021 table as printed, plus AA's own), a Procedure's
+ * claims, and the derived itemised rows pricing and the UI read.
  */
-export interface ModifierCode {
-  code: string
-  group: ModifierGroup
-  units: number
-  description: string
-}
+export type {
+  Modifier,
+  ModifierClaim,
+  ModifierId,
+  ModifierOrigin,
+  ProcedureModifier,
+} from './billing/modifiers'
+import type { ModifierClaim, ModifierId } from './billing/modifiers'
 
 // ---------------------------------------------------------------------------
 // Scheduling masters

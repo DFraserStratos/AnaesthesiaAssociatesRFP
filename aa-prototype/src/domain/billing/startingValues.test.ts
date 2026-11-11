@@ -5,7 +5,7 @@ import { feeFor } from './fee'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import type { RvgGroup } from '../types'
 
-const H3: RvgGroup = { id: 'rg-h3', code: 'H3', description: 'Moderate procedures', anatomy: 'Head', baseUnits: 6, modifierUnits: 0, retired: false }
+const H3: RvgGroup = { id: 'rg-h3', code: 'H3', description: 'Moderate procedures', anatomy: 'Head', baseUnits: 6, modifierUnits: 0, retired: false, includedModifierIds: [] }
 const OLD: RvgGroup = { ...H3, id: 'rg-old', code: 'X9', retired: true }
 const GROUPS = { [H3.id]: H3, [OLD.id]: OLD, [BASE_SINGLE_10.id]: BASE_SINGLE_10 }
 
@@ -32,7 +32,7 @@ describe('fillFromContract (DM-43; US-04.2.18 "Default RVG code"; A15)', () => {
 
   it("on a fixed price the filled code's units never reach the fee (reference only)", () => {
     const filled = mkProcedure({ rvgGroupId: H3.id, anaestheticStartISO: '2026-07-21T08:00:00', handoverISO: '2026-07-21T10:00:00' })
-    const fee = feeFor(filled, { anaesthetist: mkAnaesthetist(), contract: faceLift, rvgGroup: H3, dateISO: '2026-07-21', timeRule: DEFAULT_RVG_TIME_RULE })
+    const fee = feeFor(filled, { anaesthetist: mkAnaesthetist(), contract: faceLift, rvgGroup: H3, dateISO: '2026-07-21', timeRule: DEFAULT_RVG_TIME_RULE, patientDobISO: undefined, modifiers: {} })
     expect(fee.btm.base.units).toBe(6) // base units from the RVG group alone
     expect(fee.total).toBe(3100)
     expect(fee.lines.map((l) => l.chargeBasis)).toEqual(['fixed'])

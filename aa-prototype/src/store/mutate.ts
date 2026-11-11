@@ -97,6 +97,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   holiday: { prefix: 'HHN', pad: 3 },
   // Catch-up Phase 19: runtime RVG groups (seeded ones are RG###). Never shown.
   rvgGroup: { prefix: 'RGN', pad: 3 },
+  // Catch-up Phase 19b: AA's own modifiers added by the office (seeded RVG rows are MOD-RVG-<code>). Never shown.
+  modifier: { prefix: 'MOD-AA-', pad: 3 },
   // Billing run (Phase 08). `invoiceNumber` is the human-facing remittance
   // key (unique, RFP), separate from the invoice's entity id. The year is
   // deliberately pinned like DEMO_TODAY — the demo lives in July 2026.

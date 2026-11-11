@@ -92,7 +92,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
       .map((booking) => {
         const procs = procsByBooking.get(booking.id) ?? []
-        const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0, needsPrice: false }
+        const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord, booking.patientId) : { units: 0, total: 0, needsPrice: false }
         // What it was invoiced at: the same invoices the Invoices panel lists.
         const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {

@@ -55,9 +55,6 @@
           "wait": 300
         },
         {
-          "click": "role=button[name=\"I\"] >> nth=0"
-        },
-        {
           "click": "role=button[name=\"Mark complete\"]"
         },
         {

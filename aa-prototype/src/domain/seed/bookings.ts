@@ -25,8 +25,9 @@ import { projectedListId } from '../slots'
 import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
 import { CONTRACT } from './contracts'
 import { BP, PAT, genericPatientIds } from './patients'
-import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, rvgGroupIdForLegacyCode } from './rvgGroups'
+import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP, rvgGroupIdForLegacyCode } from './rvgGroups'
 import { compareSessions } from '../outOfHours'
+import { claimsForSeedAsa } from './modifiers'
 
 // ---------------------------------------------------------------------------
 // Result & scenario id shapes
@@ -61,6 +62,8 @@ export interface BookingScenarioIds {
   integrationS14: string
   integrationS15: string
   integrationLockedTarget: string
+  /** The generated, uncaptured future Booking re-coded to a Spine group (P1 included; catch-up Phase 19b). */
+  includedModifier: string
 }
 
 export interface BookingsBuild {
@@ -256,8 +259,13 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     baseUnitsSelected?: number
     startISO?: string
     handoverISO?: string
+    /**
+     * The ASA grade the original build recorded (catch-up Phase 19b, RV-22):
+     * never stored; mapped to a claim by `claimsForSeedAsa` (AS3 and AS4 claim
+     * their code with an explanation, AS1 and AS2 nothing). The generator still
+     * draws it, so the RNG sequence is unchanged.
+     */
     asaClass?: 'AS1' | 'AS2' | 'AS3' | 'AS4'
-    selectedModifierCodes?: string[]
     billingRoute?: 'hospital' | 'billableParty' | 'insurer'
     governingContractId?: string
     insurerId?: string
@@ -276,13 +284,13 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       bookingId: booking.id,
       description: spec.description,
       isAdditional: spec.isAdditional ?? false,
-      selectedModifierCodes: spec.selectedModifierCodes ?? [],
+      modifierClaims: claimsForSeedAsa(spec.asaClass),
+      removedModifierIds: [],
     }
     if (spec.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(spec.legacyCode)
     if (spec.baseUnitsSelected !== undefined) procedure.baseUnitsSelected = spec.baseUnitsSelected
     if (spec.startISO !== undefined) procedure.anaestheticStartISO = spec.startISO
     if (spec.handoverISO !== undefined) procedure.handoverISO = spec.handoverISO
-    if (spec.asaClass !== undefined) procedure.asaClass = spec.asaClass
     if (spec.billingRoute !== undefined) procedure.billingRoute = spec.billingRoute
     if (spec.governingContractId !== undefined) procedure.governingContractId = spec.governingContractId
     if (spec.insurerId !== undefined) procedure.insurerId = spec.insurerId
@@ -428,9 +436,9 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     // pins moved to btmCapture.test.ts (Decisions log 2026-07-23).
     startISO: iso(TUE21, '16:05'),
     asaClass: 'AS1',
-    // Age-extreme modifier (Margaret Ellison, over 70): A1 = 1 unit, keeping
-    // the pinned $344.50 fee (RVG-over-mockup relabel, 2026-07-23 review fix).
-    selectedModifierCodes: ['A1'],
+    // Margaret Ellison is 72 on 21 Jul 2026, so A1 (1 unit) is pre-applied from
+    // her age (catch-up Phase 19b, US-03.3.8), keeping the pinned $344.50 fee;
+    // it is no longer a claim.
     billingRoute: 'hospital',
     governingContractId: CONTRACT.sxap,
     billingReference: 'SX-2026-1204',
@@ -1137,6 +1145,9 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       : a.dateISO.localeCompare(b.dateISO),
   )
 
+  /** The generated future Procedures, in generation order (for the post-generation pass below). */
+  const generatedFuture: { list: AssignedList; procedure: Procedure }[] = []
+
   function fillList(list: AssignedList, count: number, capture: 'past' | 'today' | 'future', rng: () => number): void {
     const sessionStart = list.session === 'AM' ? 7 * 60 + 45 : 13 * 60 + 5
     let cursor = sessionStart
@@ -1190,7 +1201,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
         spec.governingContractId = FILLER_CONTRACT_BY_HOSPITAL[hospitalId] ?? CONTRACT.stgRvg
         spec.billingReference = `${REF_PREFIX[hospitalId] ?? 'SG'}-2026-${4000 + procN}`
       }
-      addProcedure(booking, spec)
+      const procedure = addProcedure(booking, spec)
+      if (capture === 'future') generatedFuture.push({ list, procedure })
     }
   }
 
@@ -1234,6 +1246,17 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     futureBudget -= count
   }
 
+  // The included modifier on a Spine group (catch-up Phase 19b, US-05.1.4):
+  // the first generated, uncaptured future Booking on a Dr Souter List (no
+  // run-sheet beat counts it) is re-coded to S3a, whose base units include P1.
+  // Its procedure text stays as generated. It is uncaptured and unbilled; only
+  // its estimate moves with the S3a base (7 to 10 base units).
+  // No RNG draw: the generated Bookings are otherwise identical.
+  const spineTarget = generatedFuture.find(({ list }) => list.anaesthetistId === ANAE.souter)
+  if (spineTarget === undefined) throw new Error('No generated future Booking on a Dr Souter List to re-code to a Spine group')
+  spineTarget.procedure.rvgGroupId = RVG_GROUP.s3a!
+  delete spineTarget.procedure.baseUnitsSelected
+
   // Booking.source (catch-up Phase 15, DM-39): optional and display-only, so
   // nothing reads it. Stamped deterministically (no RNG draw) on every Booking
   // built here; the generated history Bookings in `history.ts` stay unset.
@@ -1271,6 +1294,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       integrationS14: s14Booking.id,
       integrationS15: s15Booking.id,
       integrationLockedTarget: lockedTargetBooking.id,
+      includedModifier: spineTarget.procedure.bookingId,
     },
     next: { booking: bookingN + 1, procedure: procN + 1, billingLine: lineN + 1, audit: auditN + 1 },
   }

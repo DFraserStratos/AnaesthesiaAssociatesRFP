@@ -352,7 +352,6 @@ describe('RVG groups (catch-up Phase 19)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v33 store with the flat RVG code table and reseeds the RVG groups', () => {
-    expect(PERSIST_VERSION).toBe(35)
     const fresh = freshAppState()
     const { rvgGroups: _g, ...oldMasters } = fresh.masters
     const stale = { ...fresh, masters: { ...oldMasters, rvgCodes: { '20941': { code: '20941' } } } }
@@ -372,7 +371,6 @@ describe('price ranges (catch-up Phase 19a)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v34 store with the fixed-price rows and reseeds the ranges, the two fields and the time rule', () => {
-    expect(PERSIST_VERSION).toBe(35)
     const fresh = freshAppState()
     const { rvgTimeRule: _r, ...oldMasters } = fresh.masters
     const contracts = Object.fromEntries(
@@ -388,5 +386,36 @@ describe('price ranges (catch-up Phase 19a)', () => {
     expect(s.masters.rvgTimeRule.tiers).toHaveLength(2)
     expect(s.masters.contracts['CT-DOYLE-BAR']?.pricing).toMatchObject({ kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-07-28', price: 2950 }] })
     expect(s.masters.contracts['CT-MER-FACELIFT']?.defaultRvgGroupId).not.toBeNull()
+  })
+})
+
+describe('modifiers (catch-up Phase 19b)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v35 store with ASA classes and modifier codes and reseeds the RVG modifier table and the claims', () => {
+    expect(PERSIST_VERSION).toBe(36)
+    const fresh = freshAppState()
+    const { modifiers: _m, ...oldMasters } = fresh.masters
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        const { modifierClaims: _c, removedModifierIds: _r, ...old } = p
+        return [id, { ...old, asaClass: 'AS2', selectedModifierCodes: [] }]
+      }),
+    )
+    const stale = {
+      ...fresh,
+      masters: { ...oldMasters, modifierCodes: { AS2: { code: 'AS2', group: 'AS', units: 1, description: 'ASA II' } } },
+      schedule: { ...fresh.schedule, procedures },
+    }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 35 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect((s.masters as unknown as Record<string, unknown>)['modifierCodes']).toBeUndefined()
+    expect(Object.values(s.masters.modifiers)).toHaveLength(30)
+    expect(s.schedule.procedures.P0001).toMatchObject({ modifierClaims: [], removedModifierIds: [] })
+    expect((s.schedule.procedures.P0001 as unknown as Record<string, unknown>)['asaClass']).toBeUndefined()
   })
 })

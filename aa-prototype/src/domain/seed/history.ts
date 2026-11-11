@@ -448,7 +448,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       description: acc.description,
       billingRoute: isPatientRoute(acc.counterparty) ? 'billableParty' : 'hospital',
       isAdditional: false,
-      selectedModifierCodes: [],
+      modifierClaims: [],
+      removedModifierIds: [],
     }
     if (acc.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(acc.legacyCode)
     if (acc.counterparty.kind === 'billableParty') procedure.billablePartyId = acc.counterparty.id

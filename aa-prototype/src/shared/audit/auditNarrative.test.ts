@@ -79,9 +79,9 @@ describe('auditFieldChanges', () => {
 
   it('diffs over the union of both sides, so an after-only key is not lost', () => {
     const changes = auditFieldChanges(
-      entry({ id: 'A0104', before: { asaClass: 'AS2' }, after: { asaClass: 'AS3', billingReference: 'REF-9' } }),
+      entry({ id: 'A0104', before: { intNotes: 'Grade 2 view' }, after: { intNotes: 'Grade 3 view', billingReference: 'REF-9' } }),
     )
-    expect(changes.map((c) => c.key)).toEqual(['asaClass', 'billingReference'])
+    expect(changes.map((c) => c.key)).toEqual(['intNotes', 'billingReference'])
     expect(changes[1]).toEqual({ key: 'billingReference', label: 'Billing reference', before: NOT_SET, after: 'REF-9' })
   })
 
@@ -89,11 +89,11 @@ describe('auditFieldChanges', () => {
     const changes = auditFieldChanges(
       entry({
         id: 'A0105',
-        before: { asaClass: 'AS2', selectedModifierCodes: ['OB3'] },
-        after: { asaClass: 'AS2', selectedModifierCodes: ['OB3', 'P1'] },
+        before: { intNotes: 'Grade 2 view', removedModifierIds: ['OB3'] },
+        after: { intNotes: 'Grade 2 view', removedModifierIds: ['OB3', 'P1'] },
       }),
     )
-    expect(changes.map((c) => c.key)).toEqual(['selectedModifierCodes'])
+    expect(changes.map((c) => c.key)).toEqual(['removedModifierIds'])
     expect(changes[0]).toMatchObject({ before: 'OB3', after: 'OB3, P1' })
   })
 
@@ -117,8 +117,8 @@ describe('auditFieldChanges', () => {
 describe('formatAuditValue', () => {
   it('never stringifies JSON for the shapes the store stores', () => {
     expect(formatAuditValue('baseUnitsCaptured', { units: 3, source: 'overridden' })).toBe('3')
-    expect(formatAuditValue('selectedModifierCodes', ['OB3', 'P1', 'AI1'])).toBe('OB3, P1, AI1')
-    expect(formatAuditValue('selectedModifierCodes', [])).toBe('none')
+    expect(formatAuditValue('removedModifierIds', ['OB3', 'P1', 'AI1'])).toBe('OB3, P1, AI1')
+    expect(formatAuditValue('removedModifierIds', [])).toBe('none')
     expect(formatAuditValue('priceOverride', { kind: 'fixedFee', amount: 850, reason: 'Agreed by phone' })).toBe(
       'Fixed fee $850.00 · Agreed by phone',
     )
@@ -178,7 +178,7 @@ describe('coalesceAudit', () => {
   it('never merges across a different field, actor, entity or timestamp', () => {
     const groups = coalesceAudit([
       tap('A0061', 4, 3),
-      entry({ id: 'A0062', before: { asaClass: 'AS2' }, after: { asaClass: 'AS3' } }), // other field
+      entry({ id: 'A0062', before: { intNotes: 'Grade 2 view' }, after: { intNotes: 'Grade 3 view' } }), // other field
       entry({ id: 'A0063', entityId: 'P0013', before: { baseUnitsCaptured: { units: 4, source: 'overridden' } }, after: { baseUnitsCaptured: { units: 3, source: 'overridden' } } }), // other procedure
       entry({ id: 'A0064', who: 'Kate Ngata', role: 'office', source: 'office', before: { baseUnitsCaptured: { units: 3, source: 'overridden' } }, after: { baseUnitsCaptured: { units: 2, source: 'overridden' } } }), // other actor
       { ...tap('A0065', 2, 1), atISO: '2026-07-21T09:30:00' }, // other time
@@ -190,8 +190,8 @@ describe('coalesceAudit', () => {
   it('leaves multi-field patches alone (no single value to state a net for)', () => {
     const multi = entry({
       id: 'A0071',
-      before: { asaClass: 'AS2', billingReference: undefined },
-      after: { asaClass: 'AS3', billingReference: 'REF-9' },
+      before: { intNotes: 'Grade 2 view', billingReference: undefined },
+      after: { intNotes: 'Grade 3 view', billingReference: 'REF-9' },
     })
     const groups = coalesceAudit([multi, { ...multi, id: 'A0072' }])
     expect(groups).toHaveLength(2)

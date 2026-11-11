@@ -144,6 +144,13 @@ export const ACTION_LABELS: Record<string, string> = {
   'rvgGroup.update': 'RVG group updated',
   'rvgGroup.retire': 'RVG group retired',
   'rvgGroup.restore': 'RVG group restored',
+  // Catch-up Phase 19b (US-03.3.4, US-03.3.8, US-05.1.4, US-05.1.5).
+  'procedure.modifierClaim': 'Modifier claimed',
+  'procedure.modifierExplanation': 'Modifier explanation changed',
+  'procedure.modifierUnclaim': 'Modifier claim removed',
+  'procedure.modifierRemove': 'Pre-applied modifier removed',
+  'procedure.modifierRestore': 'Pre-applied modifier put back',
+  'modifier.create': "AA's own modifier added",
 
   // --- Contracts -----------------------------------------------------------
   'contract.create': 'Contract created',

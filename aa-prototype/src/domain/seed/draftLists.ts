@@ -120,7 +120,8 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       description: spec.description,
       rvgGroupId: rvgGroupIdForLegacyCode(spec.code),
       isAdditional: false,
-      selectedModifierCodes: [],
+      modifierClaims: [],
+      removedModifierIds: [],
       billingRoute: 'billableParty',
       patientPaymentCategory: 'selfFundedPostProcedure',
     })

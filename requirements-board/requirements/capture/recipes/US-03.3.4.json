@@ -4,79 +4,185 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "asa",
+      "name": "modifiers",
       "app": "web",
-      "caption": "ASA score seeds the modifier units",
+      "caption": "Modifiers are itemised, each claim with its explanation",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
-          "state": "asa-1",
-          "steps": [],
-          "highlight": [
-            "[data-shot=capture-asa-status]"
-          ],
-          "caption": "ASA I seeds no modifier units"
-        },
-        {
-          "state": "asa-3",
+          "state": "applied",
           "steps": [
             {
-              "click": "[data-shot=capture-asa-status] >> text=\"III\""
+              "scroll": "[data-shot=capture-modifiers]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=capture-asa-status]"
+            "[data-shot=capture-modifier-applied]"
           ],
-          "caption": "ASA III seeds extra modifier units"
-        }
-      ]
-    },
-    {
-      "name": "asa",
-      "app": "mobile",
-      "caption": "ASA score seeds the modifier units",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
-      "states": [
+          "caption": "Age is pre-applied and can be removed"
+        },
         {
-          "state": "asa-1",
+          "state": "claiming",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 350
+              "scroll": "[data-shot=capture-modifiers]"
             },
             {
-              "wait": 900
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-asa-status]"
+            "[role=dialog] [data-shot=modifier-explanation]"
           ],
-          "caption": "ASA I seeds no modifier units"
+          "caption": "Claiming a modifier asks for a short explanation"
         },
         {
-          "state": "asa-3",
+          "state": "claimed",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 350
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on pre-op review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-shot=capture-asa-status] >> text=\"III\""
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifier-claim]"
+          ],
+          "caption": "Each claimed modifier is itemised with its explanation"
+        }
+      ]
+    },
+    {
+      "name": "modifiers",
+      "app": "mobile",
+      "caption": "Modifiers are itemised, each claim with its explanation",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "applied",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
             },
             {
               "wait": 900
             }
           ],
           "highlight": [
-            "[data-shot=capture-asa-status]"
+            "[data-testid=slide-booking] [data-shot=capture-modifier-applied]"
           ],
-          "caption": "ASA III seeds extra modifier units"
+          "caption": "Age is pre-applied and can be removed"
+        },
+        {
+          "state": "claiming",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
+            },
+            {
+              "wait": 900
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog] [data-shot=modifier-explanation]"
+          ],
+          "caption": "Claiming a modifier asks for a short explanation"
+        },
+        {
+          "state": "claimed",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
+            },
+            {
+              "wait": 900
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on pre-op review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=capture-modifier-claim]"
+          ],
+          "caption": "Each claimed modifier is itemised with its explanation"
         }
       ]
     }

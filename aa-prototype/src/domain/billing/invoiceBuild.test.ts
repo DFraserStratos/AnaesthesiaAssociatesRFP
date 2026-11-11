@@ -27,6 +27,7 @@ import {
   mkContract,
   mkParty,
   mkProcedure,
+  RVG_MODIFIER_MASTER,
 } from './fixtures'
 import type { BillingLine, Contract, Party } from '../types'
 
@@ -48,6 +49,9 @@ const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: 'Test hospital RVG' }
 
 function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContext {
   return {
+    // No patient date of birth: no age modifier (catch-up Phase 19b).
+    patientDobISO: undefined,
+    modifiers: RVG_MODIFIER_MASTER,
     anaesthetist: mkAnaesthetist(),
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT },

@@ -39,14 +39,30 @@
               "wait": 700
             },
             {
-              "click": "[aria-label=\"ASA physical status\"] >> text=\"III\""
+              "click": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review after submitting"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
             },
             {
               "wait": 700
             }
           ],
           "highlight": [
-            "[aria-label=\"ASA physical status\"]"
+            "[data-testid=slide-booking] [data-shot=capture-modifier-claim]"
           ]
         }
       ]
@@ -66,14 +82,36 @@
               "wait": 700
             },
             {
-              "click": "[aria-label=\"ASA physical status\"] >> text=\"III\""
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review after submitting"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
             },
             {
               "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[aria-label=\"ASA physical status\"]"
+            "[data-shot=capture-modifier-claim]"
           ]
         }
       ]

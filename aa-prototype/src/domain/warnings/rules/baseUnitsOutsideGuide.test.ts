@@ -3,12 +3,12 @@ import type { Booking, List, Procedure, RvgGroup } from '../../types'
 import type { WarningFacts } from '../types'
 import { baseUnitsOutsideGuideRule } from './baseUnitsOutsideGuide'
 
-const H4: RvgGroup = { id: 'g-h4', code: 'H4', description: 'Complex procedures', anatomy: 'Head', baseUnits: 10, baseUnitsRange: { min: 10, max: 12 }, modifierUnits: 0, retired: false }
-const H1: RvgGroup = { id: 'g-h1', code: 'H1', description: 'Minor procedures', anatomy: 'Head', baseUnits: 4, modifierUnits: 0, retired: false }
+const H4: RvgGroup = { id: 'g-h4', code: 'H4', description: 'Complex procedures', anatomy: 'Head', baseUnits: 10, baseUnitsRange: { min: 10, max: 12 }, modifierUnits: 0, retired: false, includedModifierIds: [] }
+const H1: RvgGroup = { id: 'g-h1', code: 'H1', description: 'Minor procedures', anatomy: 'Head', baseUnits: 4, modifierUnits: 0, retired: false, includedModifierIds: [] }
 const GROUPS = { [H4.id]: H4, [H1.id]: H1 }
 
 const proc = (id: string, patch: Partial<Procedure>): Procedure =>
-  ({ id, bookingId: 'BK1', description: 'x', isAdditional: false, selectedModifierCodes: [], ...patch }) as Procedure
+  ({ id, bookingId: 'BK1', description: 'x', isAdditional: false, modifierClaims: [], removedModifierIds: [], ...patch }) as Procedure
 
 function facts(procedures: Procedure[], rvgGroups: WarningFacts['rvgGroups'] | 'none' = GROUPS): WarningFacts {
   return {

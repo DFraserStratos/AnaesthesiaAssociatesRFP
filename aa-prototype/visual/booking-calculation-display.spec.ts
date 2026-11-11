@@ -11,7 +11,7 @@ async function openMobileEllison(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.getByText('Margaret Ellison', { exact: false }).first().click()
-  await expect(page.getByText('ASA status', { exact: true })).toBeVisible()
+  await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
   await page.waitForTimeout(600)
 }
 
@@ -20,7 +20,7 @@ async function openWebEllison(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross').first().click()
   await page.getByText('Margaret Ellison').first().click()
-  await expect(page.getByText('ASA status', { exact: true })).toBeVisible()
+  await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
   await page.waitForTimeout(200)
 }
 
@@ -57,12 +57,12 @@ test('mobile anaesthetist Booking pins Mark complete alone and completes without
   await expect(overlay.getByText(/\$/)).toHaveCount(0)
 })
 
-test('web anaesthetist Booking rail carries Mark complete alone, level with ASA and sticky', async ({ page }) => {
+test('web anaesthetist Booking rail carries Mark complete alone, level with the first capture card and sticky', async ({ page }) => {
   await openWebEllison(page)
 
   await expect(page.getByTestId('booking-calculation')).toHaveCount(0)
   const complete = page.getByRole('button', { name: 'Mark complete' })
-  const asa = await page.getByText('ASA status', { exact: true }).locator('..').boundingBox()
+  const asa = await page.getByText('RVG code', { exact: true }).locator('..').boundingBox()
   const completeBox = await complete.boundingBox()
   expect(asa).not.toBeNull()
   expect(completeBox).not.toBeNull()

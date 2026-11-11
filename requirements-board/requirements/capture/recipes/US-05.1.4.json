@@ -1,35 +1,129 @@
 {
   "id": "US-05.1.4",
-  "status": "partial",
-  "absentReason": "Phase 19b replaces absorbed positioning with the included P1, pre-applied and removable, on Neurosurgery and Spine codes.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "absorbed-positioning",
-      "app": "web",
-      "caption": "Positioning is struck through on a hip replacement, which already includes it",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "name": "rvg-included",
+      "app": "admin",
+      "caption": "P1 is included in every Neurosurgery and Spine group's base units",
+      "start": "/admin/masters?view=rvgGroups",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "scroll": "tr[data-rvg-group-code=S3a]"
+            },
+            {
+              "wait": 400
+            }
+          ],
           "highlight": [
-            "[data-shot=capture-modifiers] button:has-text(\"Positioning\")",
-            "[data-shot=capture-modifiers] >> text=/already includes P1/"
+            "tr[data-rvg-group-code=H7A] [data-shot=masters-rvg-included]",
+            "tr[data-rvg-group-code=S3a] [data-shot=masters-rvg-included]"
           ]
         }
       ]
     },
     {
-      "name": "absorbed-positioning",
-      "app": "mobile",
-      "caption": "Positioning is struck through on a hip replacement, which already includes it",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "name": "included-applied",
+      "app": "web",
+      "caption": "P1 is included in a Spine code's base units, shown selected at 0",
+      "start": "/web/lists/L-34821-2026-07-27-PM/bookings/BK0158",
       "states": [
         {
-          "steps": [],
+          "state": "selected",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "wait": 500
+            }
+          ],
           "highlight": [
-            "[data-testid=slide-booking] [data-shot=capture-modifiers] button:has-text(\"Positioning\")",
-            "[data-testid=slide-booking] [data-shot=capture-modifiers] >> text=/already includes P1/"
-          ]
+            "[data-shot=capture-modifier-applied]"
+          ],
+          "caption": "P1 shows selected at 0 units, and can be removed"
+        },
+        {
+          "state": "not-addable",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[role=dialog] [data-modifier-code=P1]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-modifier-code=P1]"
+          ],
+          "caption": "An included modifier cannot be added twice"
+        }
+      ]
+    },
+    {
+      "name": "included-applied",
+      "app": "mobile",
+      "caption": "P1 is included in a Spine code's base units, shown selected at 0",
+      "start": "/mobile/lists/L-34821-2026-07-27-PM/bookings/BK0158",
+      "states": [
+        {
+          "state": "selected",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=capture-modifier-applied]"
+          ],
+          "caption": "P1 shows selected at 0 units, and can be removed"
+        },
+        {
+          "state": "not-addable",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
+            },
+            {
+              "wait": 900
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [role=dialog] [data-modifier-code=P1]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog] [data-modifier-code=P1]"
+          ],
+          "caption": "An included modifier cannot be added twice"
         }
       ]
     }

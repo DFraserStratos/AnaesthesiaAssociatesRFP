@@ -181,7 +181,13 @@ working List rather than an empty one.
   once and the masthead folds to a nav row to make room. If Mark complete finds missing data, the Booking
   moves directly to the first incomplete control and focuses it. Optionally, in the type-ahead type
   **H1** (every H1 row, each with its description and base units) or **T2** (three rows share the code,
-  told apart by description and units).
+  told apart by description and units). Modifiers: there is no ASA step; only the age modifier and a
+  modifier the base units include are pre-applied, and either can be removed; anything else the
+  anaesthetist claims, ASA included, asks for a short reason when it is claimed (open Margaret Ellison on
+  Dr Souter's Tue 21 Jul PM List for the pre-applied A1, from her age of 72). For an included
+  modifier, open Callum Graham on her Mon 27 Jul PM List (RVG code S3a): P1 shows selected at 0 and
+  cannot be added twice. S2 Beat 3c moves that List to Dr Ropata, so show it before then or after a
+  Reset.
 
 **Discovery point:** settled: a part time interval always rounds up under the RVG tiers (confirmed with
 AA, OQ-75); the tiers are held as data, shown read only under **Admin → Master data → RVG groups**, and
@@ -523,8 +529,9 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
   - Select **View invoices → AA-2026-0002 · Brian Holt → View**.
   - Pause on the invoice, then select **Email invoice → All invoices**.
   - Locate the fixed comparison rows and pause:
-    - **AA-2026-0002 · Brian Holt · Forte Health · $396.18** is the one-invoice,
-      same-funder split Booking.
+    - **AA-2026-0002 · Brian Holt · Forte Health · $365.70** is the one-invoice,
+      same-funder split Booking. (It read $396.18 before catch-up Phase 19b: his ASA II no longer
+      seeds a modifier unit, because the RVG table prices ASA I or II at 0.)
     - **AA-2026-0005 · Alan Prentice · nib · $152.38** and
       **AA-2026-0006 · Alan Prentice · St George's · $91.43** are the two invoices from the same
       Booking at 14:00.
@@ -723,8 +730,9 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   with who, role, source and before/after. The captured inputs stay reproducible, not just the final
   total."
 - **Expected:** a multi-entry trail from booking and Procedure setup through capture and completion,
-  followed by the staged anaesthetist and office edits. Every row shows who, role, source and
-  before/after, and the manual time-unit adjustment retains overridden provenance. Any other Booking
+  followed by the staged anaesthetist and office edits: an ASA III modifier claimed with its explanation,
+  the office note, then the claim removed, so Chen's fee ends where it started. Every row shows who, role,
+  source and before/after, and the manual time-unit adjustment retains overridden provenance. Any other Booking
   can also be opened to demonstrate its seeded history without staging first.
 
 ### Beat 2: NHI dual-format validator
@@ -781,9 +789,11 @@ each change is in **Admin → Audit** (entity type **rvgGroup**).
 **Discovery points:** the RVG groups are seeded as published with AA's own rows beside them (demo-sized;
 the full set loads at go-live), and the same code can sit on several rows, told apart by description and
 base units; the RVG code on a Procedure is optional, picked by type-ahead; a ranged group holds its
-published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the demo-plausible
-modifier values (not an
-authoritative NZSA schedule); and the concurrency model (single-user by design, audited
+published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the RVG modifier
+table as printed (values that are not plain numbers are entered at capture); only the age and included
+modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are
+still to confirm (OQ-95); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
+loaded; and the concurrency model (single-user by design, audited
 last-write-wins, with the multi-source reality shown via the audit trail and live integration updates).
 
 ---

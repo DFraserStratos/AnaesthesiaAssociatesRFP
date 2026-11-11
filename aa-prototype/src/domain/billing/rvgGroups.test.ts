@@ -22,6 +22,7 @@ const row = (id: string, code: string, baseUnits: number, extra: Partial<RvgGrou
   anatomy: 'Head',
   baseUnits,
   modifierUnits: 0,
+  includedModifierIds: [],
   retired: false,
   ...extra,
 })

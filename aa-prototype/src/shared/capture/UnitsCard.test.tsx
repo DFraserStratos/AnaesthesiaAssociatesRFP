@@ -21,7 +21,7 @@ function Harness() {
   const state = useAppStore.getState()
   const procedure = proceduresForBooking(state, bookingId)[0]!
   const group = procedure.rvgGroupId !== undefined ? state.masters.rvgGroups[procedure.rvgGroupId] : undefined
-  const btm = resolveBtm(procedure, group, state.masters.rvgTimeRule)
+  const btm = resolveBtm(procedure, group, state.masters.rvgTimeRule, { modifiers: state.masters.modifiers })
   return (
     <SurfaceProvider variant="mobile">
       <UnitsCard procedure={procedure} btm={btm} rvgGroup={group} actor={SOUTER} canCapture isAdditional={false} onError={() => undefined} />

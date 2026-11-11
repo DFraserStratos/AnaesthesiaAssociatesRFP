@@ -99,6 +99,8 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     billingLines: Object.values(seed.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: seed.masters.rvgTimeRule,
+    patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,
+    modifiers: seed.masters.modifiers,
     patientId: booking.patientId,
   }
   // AA rooms is a location, never a Contract holder (catch-up Phase 31).

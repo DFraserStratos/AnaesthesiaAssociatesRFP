@@ -37,7 +37,7 @@ describe('starting values from the Contract', () => {
     // One audited update records the Contract and the code it filled.
     expect(s.audit.at(-1)).toMatchObject({ action: 'procedure.update', after: { governingContractId: PRICED_ITEM.merFaceLift, rvgGroupId: after.rvgGroupId } })
     const list = s.schedule.lists[s.schedule.bookings[RILEY]!.listId] as AssignedList
-    const { fee } = procedureFee({ procedure: after, list, masters: s.masters, billingLines: s.schedule.billingLines })
+    const { fee } = procedureFee({ procedure: after, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: s.schedule.bookings[RILEY]!.patientId })
     expect(fee.btm.base.units).toBe(s.masters.rvgGroups[after.rvgGroupId!]!.baseUnits)
     expect(fee.btm.baseSource).toBe('rvgGroup')
     // A fixed price: the units are for reference only (Riley's own $1,200 billing line stays beside it).
@@ -53,7 +53,7 @@ describe('starting values from the Contract', () => {
     const after = api.getState().schedule.procedures[p.id]!
     expect(after.rvgGroupId).toBe(p.rvgGroupId)
     expect(after.anaestheticStartISO).toBe(p.anaestheticStartISO)
-    expect(after.selectedModifierCodes).toEqual(p.selectedModifierCodes)
+    expect(after.modifierClaims).toEqual(p.modifierClaims)
   })
 
   it('a Contract with no default leaves an empty code empty', () => {
@@ -90,7 +90,7 @@ describe('starting values from the Contract', () => {
     expect(p.rvgGroupId).toBeUndefined()
     const s = api.getState()
     const list = s.schedule.lists[s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.listId] as AssignedList
-    expect(bookingFee(proceduresForBooking(s, MERIVALE_FACE_LIFT_BOOKING_ID), list, s.masters, s.schedule.billingLines).total).toBe(3100)
+    expect(bookingFee(proceduresForBooking(s, MERIVALE_FACE_LIFT_BOOKING_ID), list, s.masters, s.schedule.billingLines, s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.patientId).total).toBe(3100)
   })
 
   it('a typed base value from before the fill is cleared, so B comes from the RVG group alone', () => {

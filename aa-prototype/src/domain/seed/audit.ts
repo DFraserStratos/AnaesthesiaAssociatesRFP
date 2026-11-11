@@ -22,6 +22,10 @@ import type {
   Procedure,
 } from '../types'
 import { DEMO_TODAY } from '../clock'
+import { claimAuditView } from '../billing/modifiers'
+import { SEED_MODIFIERS } from './modifiers'
+
+const SEED_MODIFIER_MASTER = Object.fromEntries(SEED_MODIFIERS.map((m) => [m.id, m]))
 
 interface SeedAuditInput {
   existing: readonly AuditEntry[]
@@ -95,7 +99,6 @@ function procedureSetup(procedure: Procedure): Record<string, unknown> {
     isAdditional: procedure.isAdditional,
     rvgGroupId: procedure.rvgGroupId,
     baseUnitsSelected: procedure.baseUnitsSelected,
-    selectedModifierCodes: procedure.selectedModifierCodes,
     priceOverride: procedure.priceOverride,
   }
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
@@ -103,7 +106,6 @@ function procedureSetup(procedure: Procedure): Record<string, unknown> {
 
 function procedureCapture(procedure: Procedure): Record<string, unknown> {
   const after: Record<string, unknown> = {
-    asaClass: procedure.asaClass,
     baseUnitsCaptured: procedure.baseUnitsCaptured,
     timeUnitsCaptured: procedure.timeUnitsCaptured,
     modifierUnitsCaptured: procedure.modifierUnitsCaptured,
@@ -270,6 +272,24 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
           atISO: capturedAtISO,
         })
       }
+
+      // Each seeded claim, with its explanation (catch-up Phase 19b), as the
+      // store's claimModifier writes it.
+      procedure.modifierClaims.forEach((claim) => {
+        push({
+          entityType: 'procedure',
+          entityId: procedure.id,
+          who: anaesthetist,
+          role: 'anaesthetist',
+          source: 'anaesthetist',
+          action: 'procedure.modifierClaim',
+          after: claimAuditView(claim, SEED_MODIFIER_MASTER),
+          atISO:
+            booking.completedAtISO !== undefined
+              ? shiftISO(booking.completedAtISO, -2 - procedureIndex)
+              : booking.lastModifiedAtISO,
+        })
+      })
     })
 
     const completedKey = `booking|${booking.id}|booking.complete`

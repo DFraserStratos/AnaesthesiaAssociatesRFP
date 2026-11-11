@@ -28,7 +28,7 @@ import type {
   List,
   AvailabilitySeries,
   SlotStatus,
-  ModifierCode,
+  Modifier,
   Patient,
   RecurringBooking,
   Procedure,
@@ -44,7 +44,7 @@ import type {
   SurgeonRoom,
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
-import { MODIFIER_CODES } from '../billing/modifierCodes'
+import { SEED_MODIFIERS } from './modifiers'
 import { DEFAULT_RVG_TIME_RULE } from '../billing/timeUnits'
 import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type RecurringClash } from './canvas'
 import { projectedListId, slotIdFor } from '../slots'
@@ -158,7 +158,12 @@ export interface SeedMasters {
   rvgTimeRule: RvgTimeRule
   /** The RVG groups (catch-up Phase 19; US-05.1.1): the NZSA RVG 2021 as published plus AA's own, keyed by hidden id. */
   rvgGroups: Record<string, RvgGroup>
-  modifierCodes: Record<string, ModifierCode>
+  /**
+   * The modifier master (catch-up Phase 19b; US-05.1.5): the NZSA RVG 2021
+   * table as printed, generated from the catalogue, plus AA's own, keyed by
+   * hidden id (codes repeat across tables).
+   */
+  modifiers: Record<string, Modifier>
   /** The availability statuses (catch-up Phase 29; US-01.2.2): a user-maintained master keyed by fixed ID. */
   slotStatuses: Record<string, SlotStatus>
   recurringBookings: Record<string, RecurringBooking>
@@ -556,7 +561,7 @@ function buildSeedInternal(): SeedBuild {
       contracts: byId(CONTRACTS, (c) => c.id),
       rvgTimeRule: { ...DEFAULT_RVG_TIME_RULE, tiers: DEFAULT_RVG_TIME_RULE.tiers.map((t) => ({ ...t })) },
       rvgGroups: byId(RVG_GROUPS, (g) => g.id),
-      modifierCodes: byId(MODIFIER_CODES, (m) => m.code),
+      modifiers: byId(SEED_MODIFIERS, (m) => m.id),
       slotStatuses,
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
@@ -1041,6 +1046,12 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityType: 'booking',
       entityId: scenario.integrationLockedTarget,
       detail: 'Delaney Fri 17 (SUBMITTED); the locked-target S14 message parks as manual intervention, booking unchanged.',
+    },
+    includedModifierBooking: {
+      label: 'Included modifier · P1 on a Spine group (S3a)',
+      entityType: 'booking',
+      entityId: scenario.includedModifier,
+      detail: 'Souter Mon 27 Jul PM; RVG code S3a, whose base units include P1: P1 shows selected at 0 units, removable, never added twice.',
     },
   }
 }

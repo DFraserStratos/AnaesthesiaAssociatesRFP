@@ -20,7 +20,7 @@
  */
 
 import type { Booking, Procedure, RvgGroup, RvgTimeRule } from '../../domain/types'
-import { resolveBtm, type BtmBreakdown, type FeeResult } from '../../domain/billing/fee'
+import { resolveBtm, type BtmBreakdown, type FeeResult, type ModifierInputs } from '../../domain/billing/fee'
 import { billingReferenceMissing } from '../../domain/billing'
 
 export type FlagTone = 'neutral' | 'warn'
@@ -45,19 +45,30 @@ export interface ReviewBookingInput {
   procedures: readonly ReviewProcedureInput[]
   /** The RVG time rule held as data (`masters.rvgTimeRule`), for the natural T. */
   timeRule: RvgTimeRule
+  /**
+   * The modifier inputs (the patient's date of birth, the List's date, the
+   * master), for the natural M: the same as every fee assembler passes (catch-up
+   * Phase 19b).
+   */
+  modifierInputs: ModifierInputs
 }
 
 /** The natural (non-overridden) B/T/M computation, to diff a manual override against. */
-function naturalBtm(procedure: Procedure, rvgGroup: RvgGroup | undefined, timeRule: RvgTimeRule): BtmBreakdown {
+function naturalBtm(
+  procedure: Procedure,
+  rvgGroup: RvgGroup | undefined,
+  timeRule: RvgTimeRule,
+  modifierInputs: ModifierInputs,
+): BtmBreakdown {
   const stripped: Procedure = { ...procedure }
   delete stripped.baseUnitsCaptured
   delete stripped.timeUnitsCaptured
   delete stripped.modifierUnitsCaptured
-  return resolveBtm(stripped, rvgGroup, timeRule)
+  return resolveBtm(stripped, rvgGroup, timeRule, modifierInputs)
 }
 
 /** Flags for a single Booking. A cancelled Booking yields none (excluded from review). */
-export function reviewFlagsForBooking({ booking, procedures, timeRule }: ReviewBookingInput): ReviewFlag[] {
+export function reviewFlagsForBooking({ booking, procedures, timeRule, modifierInputs }: ReviewBookingInput): ReviewFlag[] {
   if (booking.cancellation !== undefined) return []
   const flags: ReviewFlag[] = []
 
@@ -76,7 +87,7 @@ export function reviewFlagsForBooking({ booking, procedures, timeRule }: ReviewB
       flags.push({ tone: 'neutral', text: 'No billing reference', bookingId: booking.id, procedureId: procedure.id })
     }
     // (d) manual B/T/M override provenance, with the delta vs the natural value.
-    const nat = naturalBtm(procedure, rvgGroup, timeRule)
+    const nat = naturalBtm(procedure, rvgGroup, timeRule, modifierInputs)
     const components: { label: string; units: number; source: string; natural: number }[] = [
       { label: 'B', units: fee.btm.base.units, source: fee.btm.base.source, natural: nat.base.units },
       { label: 'T', units: fee.btm.time.units, source: fee.btm.time.source, natural: nat.time.units },

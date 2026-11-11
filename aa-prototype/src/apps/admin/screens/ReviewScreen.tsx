@@ -69,12 +69,17 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const procs = Object.values(proceduresRecord)
         .filter((p) => p.bookingId === booking.id)
         .sort((a, b) => a.id.localeCompare(b.id))
-      const views = procs.map((p) => procedureFee({ procedure: p, list, masters, billingLines: billingLinesRecord }))
-      const totals = bookingFee(procs, list, masters, billingLinesRecord)
+      const views = procs.map((p) => procedureFee({ procedure: p, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId }))
+      const totals = bookingFee(procs, list, masters, billingLinesRecord, booking.patientId)
       const flags = reviewFlagsForBooking({
         booking,
         procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, rvgGroup: views[i]!.rvgGroup })),
         timeRule: masters.rvgTimeRule,
+        modifierInputs: {
+          patientDobISO: masters.patients[booking.patientId]?.dobISO,
+          procedureDateISO: list.dateISO,
+          modifiers: masters.modifiers,
+        },
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]

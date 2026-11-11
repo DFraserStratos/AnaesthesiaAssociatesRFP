@@ -1,15 +1,8 @@
 import { accent, neutral, semantic } from '../../theme/tokens'
 import type { CapturedUnits, Procedure, RvgGroup } from '../../domain/types'
-import {
-  ASA_SEED_UNITS,
-  describeTimeRule,
-  getModifierCode,
-  type BtmBreakdown,
-  type RefusedModifier,
-} from '../../domain/billing'
+import { describeTimeRule, resolveStartingUnits, type BillingValidationFailure, type BtmBreakdown, type ProcedureModifier } from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
-import { ModifierChips } from './ModifierChips'
-import { MODIFIER_CHIP_LABELS } from './modifierLabels'
+import { ModifiersSection } from './ModifiersSection'
 import { CaptureSection, StepperButton } from './ui'
 
 type UnitsField = 'baseUnitsCaptured' | 'timeUnitsCaptured' | 'modifierUnitsCaptured'
@@ -21,11 +14,13 @@ interface UnitsCardProps {
   actor: Actor
   canCapture: boolean
   isAdditional: boolean
+  /** This Procedure's `modifierClaims` failures (the completion backstop, after the latch). */
+  modifierFailures?: readonly BillingValidationFailure[]
   onError: (message: string) => void
 }
 
 /**
- * The B / T / M stepper rows + modifier chips (mockup screen 3). Rows read the
+ * The B / T / M stepper rows and the itemised modifiers (mockup screen 3). Rows read the
  * RESOLVED values from the calculator's BtmBreakdown; a step always writes the
  * whole CapturedUnits from the resolved value ({units: resolved ± 1,
  * source: 'overridden'}, floor 0) — never from local state. Provenance is
@@ -34,7 +29,7 @@ interface UnitsCardProps {
  * link is the only way back. On an additional procedure B and M render
  * value + caption with no buttons (the split-billing rule is structural).
  */
-export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, onError }: UnitsCardProps) {
+export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, modifierFailures = [], onError }: UnitsCardProps) {
   // The RVG time tiers held as data (catch-up Phase 19a; US-05.2.2): the T caption's title words the rule.
   const timeRule = useAppStore((s) => s.masters.rvgTimeRule)
   function write(patch: ProcedurePatch) {
@@ -51,7 +46,8 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
     write({ [field]: undefined })
   }
 
-  const mBreakdown = modifierBreakdown(procedure, btm.refusedModifiers)
+  // The starting modifier units come from the one resolver answer (Phase 19a's), as the fee does.
+  const mBreakdown = modifierBreakdown(btm.modifierItems, rvgGroup !== undefined ? resolveStartingUnits({ group: rvgGroup }).modifier.units : 0)
 
   return (
     <CaptureSection label="Units" gap={14}>
@@ -85,11 +81,12 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
         onStep={(delta) => step('modifierUnitsCaptured', btm.modifiers.units, delta)}
         onReset={canCapture && !isAdditional ? () => reset('modifierUnitsCaptured') : undefined}
       />
-      <ModifierChips
+      <ModifiersSection
         procedure={procedure}
-        rvgGroup={rvgGroup}
+        items={btm.modifierItems}
         actor={actor}
-        disabled={!canCapture || isAdditional}
+        editable={canCapture && !isAdditional}
+        failures={modifierFailures}
         onError={onError}
       />
     </CaptureSection>
@@ -97,25 +94,19 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
 }
 
 /**
- * "AS1 +0 · A1 very old +1" — the M row's seeded composition. Codes the
- * calculator REFUSED (included by the RVG group, or a sibling in a band it has
- * already counted) are left out, so the caption can never credit units the M
- * total excludes.
+ * The M row's caption from the itemised modifiers (catch-up Phase 19b;
+ * `BtmBreakdown.modifierItems`): "A1 age +1 · P1 included 0 · AS3 +2". A
+ * refused duplicate adds nothing and is left out, so the caption never credits
+ * units the M total excludes. A starting value from the RVG group is named
+ * first when it is not 0.
  */
-function modifierBreakdown(procedure: Procedure, refused: readonly RefusedModifier[]): string {
-  const isRefused = (code: string) => refused.some((r) => r.code === code)
-  const parts: string[] = []
-  if (procedure.asaClass !== undefined && !isRefused(procedure.asaClass)) {
-    parts.push(`${procedure.asaClass} +${ASA_SEED_UNITS[procedure.asaClass]}`)
-  }
-  for (const code of procedure.selectedModifierCodes) {
-    if (code === procedure.asaClass) continue
-    if (isRefused(code)) continue
-    const modifier = getModifierCode(code)
-    if (modifier === undefined) continue
-    const label = MODIFIER_CHIP_LABELS[code]
-    parts.push(`${code}${label !== undefined ? ` ${label.toLowerCase()}` : ''} +${modifier.units}`)
-  }
+function modifierBreakdown(items: readonly ProcedureModifier[], start: number): string {
+  const parts = items
+    .filter((i) => i.refused === undefined)
+    .map((i) =>
+      i.origin === 'age' ? `${i.code} age +${i.units}` : i.origin === 'included' ? `${i.code} included 0` : `${i.code} +${i.units}`,
+    )
+  if (start !== 0) parts.unshift(`Starting value ${start} from the RVG group`)
   return parts.length > 0 ? parts.join(' · ') : 'None applied'
 }
 

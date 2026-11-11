@@ -142,7 +142,8 @@ export function createBooking(
       description: input.operation.trim(),
       billingRoute: input.billingRoute,
       isAdditional: false,
-      selectedModifierCodes: [],
+      modifierClaims: [],
+      removedModifierIds: [],
     }
     if (input.rvgGroupId !== undefined) procedure.rvgGroupId = input.rvgGroupId
     if (input.insurerId !== undefined) procedure.insurerId = input.insurerId
@@ -275,7 +276,8 @@ export function addPostOpAddendum(
       bookingId,
       description: '',
       isAdditional: false,
-      selectedModifierCodes: [],
+      modifierClaims: [],
+      removedModifierIds: [],
     }
     // Inherit the funding context (the same episode); the post-op event bills
     // its own B/T/M (not time-only — it is a distinct billable item).
@@ -378,7 +380,8 @@ export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string):
       bookingId,
       description: '',
       isAdditional: true,
-      selectedModifierCodes: [],
+      modifierClaims: [],
+      removedModifierIds: [],
     }
     // Inherit the funding context only (the same episode) — never the base /
     // modifier / time specifics.

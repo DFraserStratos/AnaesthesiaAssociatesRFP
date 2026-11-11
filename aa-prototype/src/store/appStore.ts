@@ -109,7 +109,14 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v35: catch-up Phase 19a, price ranges: a fixed price holds `ranges`,
+/** v36: catch-up Phase 19b, modifiers: `masters.modifiers` (the NZSA RVG
+ *  2021 table as printed, generated from the catalogue, keyed by hidden id)
+ *  replacing `masters.modifierCodes`; `Procedure.modifierClaims` and
+ *  `removedModifierIds` replacing `asaClass` and `selectedModifierCodes`;
+ *  `RvgGroup.includedModifierIds` (P1 on the 20 Neurosurgery and Spine rows)
+ *  and `noAgeModifier` replacing the interim `includesModifierCodes`; the
+ *  seeded AS3 claims and the Spine Booking. Reseeds on load.
+ *  v35: catch-up Phase 19a, price ranges: a fixed price holds `ranges`,
  *  every Contract an `invoiceDescription` and `defaultRvgGroupId`,
  *  `masters.contractPrices` gone and `masters.rvgTimeRule` new; the priced
  *  items (Doyle, CES, Merivale, Dr Souter), the hernia on No contract · RVG
@@ -225,7 +232,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 35
+export const PERSIST_VERSION = 36
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

@@ -33,8 +33,9 @@ function ellison(api: BoundAppStore) {
 function feeOf(api: BoundAppStore, procedureId: string) {
   const s = api.getState()
   const p = s.schedule.procedures[procedureId]!
-  const list = assigned(s.schedule.lists[s.schedule.bookings[p.bookingId]!.listId])
-  return procedureFee({ procedure: p, list, masters: s.masters, billingLines: s.schedule.billingLines }).fee
+  const booking = s.schedule.bookings[p.bookingId]!
+  const list = assigned(s.schedule.lists[booking.listId])
+  return procedureFee({ procedure: p, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }).fee
 }
 
 describe('the office maintains the RVG groups', () => {
@@ -45,7 +46,7 @@ describe('the office maintains the RVG groups', () => {
     if (!added.ok) return
     expect(added.value.id).toBe('RGN001')
     const row = api.getState().masters.rvgGroups[added.value.id]!
-    expect(row).toEqual({ id: 'RGN001', code: 'H3', description: 'Brow lift', anatomy: 'Head', baseUnits: 5, modifierUnits: 0, retired: false })
+    expect(row).toEqual({ id: 'RGN001', code: 'H3', description: 'Brow lift', anatomy: 'Head', baseUnits: 5, modifierUnits: 0, retired: false, includedModifierIds: [] })
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'rvgGroup.create', entityType: 'rvgGroup', entityId: 'RGN001', who: 'Kirsty W.' })
     expect(searchRvgGroups('brow', api.getState().masters.rvgGroups).map((g) => g.id)).toEqual(['RGN001'])
   })

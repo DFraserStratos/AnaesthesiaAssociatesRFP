@@ -234,6 +234,18 @@ export { createParty, editParty, partyContractFacts, type PartyFields } from './
 // Catch-up Phase 18a: AA's specialties and funding tags (Admin Master data).
 export { createSpecialty, renameSpecialty, removeSpecialty } from './specialtyActions'
 export { createRvgGroup, editRvgGroup, retireRvgGroup, restoreRvgGroup, pickRvgGroup } from './rvgGroupActions'
+// Catch-up Phase 19b: modifiers claimed with an explanation, pre-applied ones removed and put back, AA's own added.
+export {
+  claimModifier,
+  editModifierExplanation,
+  removeModifier,
+  restoreModifier,
+  addAaModifier,
+  type ClaimInput,
+  type AaModifierInput,
+} from './modifierActions'
+export { modifierFactsFor } from './modifierFacts'
+export { MODIFIERS_THROUGH_ACTIONS_MESSAGE } from './lifecycle'
 export { createFundingTag, editFundingTag, moveFundingTagInList, removeFundingTag, type FundingTagFields } from './fundingTagActions'
 export {
   createContract,

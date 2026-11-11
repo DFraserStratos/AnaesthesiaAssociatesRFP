@@ -14,6 +14,8 @@ import type {
   BillingLine,
   Booking,
   Contract,
+  Modifier,
+  ModifierId,
   Party,
   Procedure,
   RvgGroup,
@@ -21,6 +23,7 @@ import type {
 } from '../types'
 import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
+import { claimCompletionProblems, preAppliedModifiersFor } from './modifiers'
 import { toCents } from './money'
 import { INSURER_PARTY_MISSING_MESSAGE, hospitalPartyFor, insurerPartyFor, noRouteCounterpartyMessage, routeCounterpartyForParty } from './parties'
 import { interimRouteContract, isRvgKind, noRouteContractMessage, procedureNeedsPrice } from './contracts'
@@ -78,6 +81,13 @@ export interface BookingBillingContext {
   listDateISO: string
   /** The RVG time rule held as data (`masters.rvgTimeRule`, catch-up Phase 19a). */
   timeRule: RvgTimeRule
+  /**
+   * The Booking's patient's date of birth (catch-up Phase 19b): the age
+   * modifier is pre-applied from it on the List's date.
+   */
+  patientDobISO: string | undefined
+  /** The modifier master (`masters.modifiers`, catch-up Phase 19b). */
+  modifiers: Readonly<Record<ModifierId, Modifier>>
 }
 
 /**
@@ -99,6 +109,8 @@ export function feeContextFor(
     anaesthetist: ctx.anaesthetist,
     dateISO: ctx.listDateISO,
     timeRule: ctx.timeRule,
+    patientDobISO: ctx.patientDobISO,
+    modifiers: ctx.modifiers,
     nonRvgLines,
   }
   if (contract !== undefined) feeCtx.contract = contract
@@ -128,6 +140,20 @@ export function validateBookingForBilling(
     const id = procedure.id
     const storedLines = ctx.billingLines.filter((l) => l.procedureId === id)
     const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
+
+    // Each claimed modifier needs its short explanation (and its units where the
+    // RVG value is not a plain number): US-03.6.1's backstop, finished by Phase
+    // 21. Pre-applied modifiers need none; a Procedure with no modifier passes.
+    const preApplied = preAppliedModifiersFor({
+      ...(ctx.patientDobISO !== undefined ? { patientDobISO: ctx.patientDobISO } : {}),
+      procedureDateISO: ctx.listDateISO,
+      ...(rvgGroup !== undefined ? { group: rvgGroup } : {}),
+      modifiers: ctx.modifiers,
+      removedModifierIds: procedure.removedModifierIds,
+    })
+    for (const problem of claimCompletionProblems(procedure.modifierClaims, ctx.modifiers, preApplied)) {
+      fail(id, 'modifierClaims', problem.message)
+    }
 
     // Route must be explicitly set.
     if (procedure.billingRoute === undefined) {

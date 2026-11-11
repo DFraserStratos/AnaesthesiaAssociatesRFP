@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { accent, neutral, radius } from '../../../../theme/tokens'
 import type { RecurringBooking } from '../../../../domain/types'
-import { modifierBandOf } from '../../../../domain/billing'
 import {
   applyRecurringBookingsToCanvas,
   eligibleArchiveContactIds,
@@ -21,7 +20,7 @@ import { sessionText } from '../../../../domain/outOfHours'
 
 /**
  * The Master data views catch-up Phase 17 did not change, moved out of the
- * old single file as they were: recurring bookings, the code tables, list
+ * old single file as they were: recurring bookings, list
  * statuses, and Xero & archiving. (Contracts and Parties have their own files
  * since catch-up Phase 18.)
  */
@@ -119,27 +118,6 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
             </tr>
           )
         })}
-      </Table>
-    </>
-  )
-}
-
-export function ModifierCodesView() {
-  const modifierCodes = useAppStore((s) => s.masters.modifierCodes)
-  const rows = Object.values(modifierCodes).sort((a, b) => a.code.localeCompare(b.code))
-  return (
-    <>
-      <Header title="Modifier codes" sub="Modifier-unit reference (view only). Demo-plausible values within the RFP ranges. Selection reads the RFP's per-group example ranges as one code per group, which the RFP implies rather than states: a question for AA." />
-      <Table heads={['Code', 'Group', 'Selection', 'Units', 'Description']} rightAlign={[3]}>
-        {rows.map((m) => (
-          <tr key={m.code}>
-            <td className="mono" style={cellStyle}>{m.code}</td>
-            <td style={cellStyle}>{m.group}</td>
-            <td style={cellStyle}>{modifierBandOf(m.code) !== undefined ? 'Pick one' : 'Adds on top'}</td>
-            <td className="mono" style={{ ...cellStyle, textAlign: 'right' }}>{m.units}</td>
-            <td style={cellStyle}>{m.description}</td>
-          </tr>
-        ))}
       </Table>
     </>
   )

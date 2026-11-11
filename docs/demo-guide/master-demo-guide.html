@@ -787,9 +787,10 @@
 
   <details><summary>4 · Capture BTM and complete a Booking</summary><div class="details-body">
     <p>Per Procedure: optionally pick an RVG code by typing (on a ranged group the starting figure can be changed; a value outside the guide raises an office warning, never a block), record start and handover, and the system computes tiered
-    Time units (1/15 min for the first two hours, then 1/10 min), plus ASA and modifiers, at the
-    anaesthetist's own value per unit. A positioning modifier is blocked if the base code already absorbs
-    it; an additional Procedure is time-only. When every active Booking is complete, the List is submittable.
+    Time units (1/15 min for the first two hours, then 1/10 min), plus the modifiers, at the
+    anaesthetist's own value per unit. The age modifier, and P1 on Neurosurgery and Spine codes (included in
+    their base units, at 0), are pre-applied and removable; any other modifier, ASA included, is claimed with
+    a short reason, with no stacking limit; the same modifier is never added twice. An additional Procedure is time-only. When every active Booking is complete, the List is submittable.
     <span class="chip ready">Ready</span></p>
   </div></details>
 
@@ -962,7 +963,7 @@
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Tue 28 St George's List &#8594; Sarah Mitchell.</li><li>Her Booking arrives with no RVG code: on the RVG code card select Choose, type <strong>appendicectomy</strong> and pick <strong>A3 · Appendicectomy, laparoscopic · B 5</strong> &#8594; Start now.</li><li>Without leaving Sarah: live clock &#8594; +1 hour &#8594; close the popup &#8594; Finish now.</li><li>Mark complete.</li><li>Optional, to show the completion gate: Mark list completed · 3 to finish.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"She captures the billing inputs, not just a dollar figure: Base plus tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every Booking is complete, so one of four submits nothing yet. That gate is why the List is the unit of approval."</span></div>
       <div class="row"><span class="k">Expect</span><span>The RVG code card reads A3 · Appendicectomy, laparoscopic · Base 5 units · from the RVG group, and B reads 5. Sarah changes the List from 0 of 4 complete to 1 of 4. The List action reads <strong>Mark list completed · 3 to finish</strong>; tapping it opens the Bookings still to finish sheet, naming each remaining Booking with what it needs. The List stays ACTIVE. S2 Beat 4 carries the submitted-to-authorised handoff from the seeded Review queue.</span></div>
-      <div class="row"><span class="k">Point at</span><span>Only <strong>Mark complete</strong> is pinned to the bottom of the phone; the anaesthetist captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll once and the masthead folds to make room. If Mark complete finds missing data, the Booking moves directly to the first incomplete control and focuses it. Optionally type <strong>H1</strong> (every H1 row with its description and base units) or <strong>T2</strong> (three rows share the code) in the type-ahead.</span></div>
+      <div class="row"><span class="k">Point at</span><span>Only <strong>Mark complete</strong> is pinned to the bottom of the phone; the anaesthetist captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll once and the masthead folds to make room. If Mark complete finds missing data, the Booking moves directly to the first incomplete control and focuses it. Optionally type <strong>H1</strong> (every H1 row with its description and base units) or <strong>T2</strong> (three rows share the code) in the type-ahead. Modifiers: no ASA step; only the age modifier and a modifier the base units include are pre-applied, and either can be removed; anything else, ASA included, asks for a short reason when claimed (open Margaret Ellison on Dr Souter's Tue 21 Jul PM List for the pre-applied A1). For an included modifier, Callum Graham on her Mon 27 Jul PM List (S3a) shows P1 selected at 0; S2 Beat 3c moves that List, so show it first or after a Reset.</span></div>
     </div>
     <div class="callout">Discovery, settled: a part time interval always rounds up under the RVG tiers (confirmed with AA, OQ-75); the tiers are held as data, shown read only under Admin &#8594; Master data &#8594; RVG groups, and the T row reads "From start and finish stamps · RVG time tiers".</div>
   </div></details>
@@ -1074,7 +1075,7 @@
     </div>
     <div class="beat">
       <h4>Beat 1 · authorise and generate invoices</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Review queue.</li><li>Process the two Melanie Lists: authorise Forte AM, then use Next in queue to authorise St George's PM.</li><li>View invoices &#8594; <strong>AA-2026-0002 · Brian Holt</strong> &#8594; View.</li><li>Pause on the invoice, then Email invoice &#8594; All invoices.</li><li>Locate the fixed comparison rows and pause:<ul><li><strong>AA-2026-0002 · Brian Holt · Forte Health · $396.18</strong> is the one-invoice, same-funder split Booking.</li><li><strong>AA-2026-0005 · Alan Prentice · nib · $152.38</strong> and <strong>AA-2026-0006 · Alan Prentice · St George's · $91.43</strong> are the two invoices from the same Booking at 14:00.</li></ul></li></ul></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Review queue.</li><li>Process the two Melanie Lists: authorise Forte AM, then use Next in queue to authorise St George's PM.</li><li>View invoices &#8594; <strong>AA-2026-0002 · Brian Holt</strong> &#8594; View.</li><li>Pause on the invoice, then Email invoice &#8594; All invoices.</li><li>Locate the fixed comparison rows and pause:<ul><li><strong>AA-2026-0002 · Brian Holt · Forte Health · $365.70</strong> is the one-invoice, same-funder split Booking (it read $396.18 before catch-up Phase 19b: his ASA II no longer seeds a modifier unit, the RVG table pricing ASA I or II at 0).</li><li><strong>AA-2026-0005 · Alan Prentice · nib · $152.38</strong> and <strong>AA-2026-0006 · Alan Prentice · St George's · $91.43</strong> are the two invoices from the same Booking at 14:00.</li></ul></li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
       <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as soon as the office authorises them, and their invoices show in her Balances at once, with no Next morning needed.</span></div>
     </div>
@@ -1148,7 +1149,7 @@
     <div class="beat"><h4>Beat 1 · audit trail of a much-edited Booking</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 21 Jul &#8594; Dr Souter PM.</li><li>David Chen &#8594; History.</li><li>Pause on the audit trail.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every change, including automated ones, writes an append-only entry with who, role, source and before/after. The captured inputs stay reproducible, not just the total."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A multi-entry trail from booking and Procedure setup through capture and completion, followed by the staged edits. Every row shows who, role, source and before/after, and the time-unit adjustment retains overridden provenance. Any other Booking can also demonstrate seeded history without staging first.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A multi-entry trail from booking and Procedure setup through capture and completion, followed by the staged edits (an ASA III modifier claimed with its explanation, the office note, then the claim removed). Every row shows who, role, source and before/after, and the time-unit adjustment retains overridden provenance. Any other Booking can also demonstrate seeded history without staging first.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · NHI dual-format validator</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Integrations &#8594; Demo actions &#8594; Fire hospital message &#8594; MSG-STG-1002 (new-format NHI) &#8594; Run.</li><li>Optional: add a Booking manually and try both NHI formats.</li></ul></div>
@@ -1166,7 +1167,7 @@
       <div class="row"><span class="k">Expect</span><span>The audit entry shows the pricing before and after; no invoice changes. The Face lift's first range now reads 1 Jun 2026 to 30 Jun 2026 and the new one From 1 Jul 2026 (In force today); Sophie Matthews' Booking total reads $3200.00; the audit shows Price range added.</span></div>
     </div>
     <div class="callout">Worth pointing at (optional): Admin &#8594; Master data &#8594; Contracts. Merivale's three combination Contracts (search H3: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own Contract; fee extras are events, not Contracts) and Dr Souter's own prepaid price list (holder Dr Melanie Souter: one Contract per item, every price above zero; a zero price is refused). Search CAT to find the cataract items by name and the holder's code HNZCATall. Admin &#8594; Master data &#8594; RVG groups. The NZSA RVG 2021 groups as published under their anatomy headings, AA's own beside them and unmarked; both T2s and both P6s are separate rows; H4 reads 10 · range 10 to 12. Add, edit, retire and restore a group: each change is in Admin &#8594; Audit (entity type rvgGroup).</div>
-    <div class="callout warn">Discovery: the RVG groups as published with AA's own beside them (demo-sized; the full set loads at go-live), the same code on several rows told apart by description and base units; an optional RVG code picked by type-ahead; a ranged group holding its published range, shown to the anaesthetist, starting at its lower figure (OQ-101); demo-plausible modifier values (not an authoritative NZSA schedule); the concurrency model (single-user, audited last-write-wins, shown via audit + live integration updates).</div>
+    <div class="callout warn">Discovery: the RVG groups as published with AA's own beside them (demo-sized; the full set loads at go-live), the same code on several rows told apart by description and base units; an optional RVG code picked by type-ahead; a ranged group holding its published range, shown to the anaesthetist, starting at its lower figure (OQ-101); the RVG modifier table as printed (values that are not plain numbers entered at capture); only the age and included modifiers pre-applied, nothing else pre-filled (settled, Ben, 27 October); the age bands still to confirm (OQ-95); no stacking limit; AA's own modifiers (Vanessa's list) not yet loaded; the concurrency model (single-user, audited last-write-wins, shown via audit + live integration updates).</div>
   </div></details>
 
   <h2>Recommended run orders</h2>
@@ -1207,11 +1208,8 @@
     <li>The anaesthetist picks the RVG code by typing; it is optional, and the system does not infer it.</li>
     <li>A ranged group starts at its starting figure; any value is accepted, and one outside the guide raises a warning for the office after the procedure, never a block.</li>
     <li>Base units sit on the RVG group alone; a Contract states none and may only name a default RVG code. Choosing a Contract fills an empty RVG code from its default; a Procedure that has one keeps it.</li>
-    <li>Positioning cannot be charged again if the base code already includes it.</li>
-    <li>Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so each band
-      is a segmented control: picking a sibling replaces it, and picking the live segment again clears the
-      band. The codes that genuinely stack (pre-assessment follow-up, emergency, positioning, awake
-      intubation, post-op care) stay as chips under "Also applies".</li>
+    <li>P1 (non-supine positioning) is included, pre-applied at 0 (removable), on every Neurosurgery and Spine code, so it cannot be added twice; the age modifier is pre-applied from the date of birth, removable.</li>
+    <li>Every other modifier, ASA included, is claimed with a short reason; modifiers stack with no limit, and the same modifier is never added twice.</li>
     <li>A part interval always rounds up (confirmed with AA); the tiers are held as data (the RVG time rule under Master data, RVG groups, read only). The anaesthetist enters start and finish only.</li>
   </ul>
 
@@ -1384,12 +1382,12 @@
     <div class="card"><h3>9 · Concurrency</h3><p style="font-size:14px">Several sources can change a Booking.
       The prototype is single-user with audited last-write-wins; production concurrency is a discovery
       topic, shown via the audit trail and live integration updates.</p></div>
-    <div class="card"><h3>10 · Modifier values</h3><p style="font-size:14px">The RFP names
-      example ranges, not a certified NZSA table. The prototype values are demo-plausible and not
-      authoritative. Codes in the same band (pre-assessment, age, ASA,
-      BMI) are one per procedure, so tapping a sibling replaces it: those per-group ranges only add up if one
-      code applies. The RFP implies that rather than stating it, and a pre-assessment follow-up (PA5) stacks
-      on top, which is a question for AA.</p></div>
+    <div class="card"><h3>10 · Modifier values</h3><p style="font-size:14px">The modifier
+      table is the NZSA RVG 2021 table as printed (30 codes, Admin &#8594; Master data &#8594; Modifiers); values
+      that are not plain numbers ("2 + Time", "4-6") are entered at capture. Only the age modifier and a
+      modifier the base units include are pre-applied, both removable; nothing else is pre-filled. The age
+      bands are still to confirm with AA (OQ-95). Modifiers stack with no limit; AA's own (Vanessa's list)
+      are not loaded yet, and the office can add one.</p></div>
     <div class="card"><h3>11 · Open vs genuinely overdue balances</h3><p style="font-size:14px">The billing
       monitor's "Prior balance" intake flag reads any open (unpaid) prior episode. The RFP asks whether to
       distinguish open from genuinely overdue; invoices carry a raised date but no due date, so the

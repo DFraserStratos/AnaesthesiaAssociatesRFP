@@ -264,7 +264,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web` | Dashboard: "Kia ora, Dr Souter", week strip, receivables aging, productivity, leave, "Offer cover". Add `?week=YYYY-MM-DD` (a Monday) to show another week. |
 | `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 20 Jul AM and PM), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]`, name "Search your Bookings") and "Go to date" (`[data-testid=web-lists-go-to-date]`). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. A SUBMITTED List stays editable (catch-up Phase 38a). An AUTHORISED List shows "Invoiced · read only" (`list-authorised-status`), an Invoiced column in place of Units and Fee, and the Invoices panel (`list-invoices`). |
-| `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
+| `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: RVG code, times, units and the itemised modifiers, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
 | `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
@@ -287,7 +287,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
@@ -312,7 +312,7 @@ badge carries `data-shot=nav-badge-<section>`.
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
   More.
 - The slide layers are `[data-testid=slide-home|slide-list|slide-booking]` on Lists and `[data-testid=slide-availability|slide-calendar]` on Availability. All stay mounted, so
-  scope selectors to the top layer, for example `[data-testid=slide-booking] >> text="ASA status"`.
+  scope selectors to the top layer, for example `[data-testid=slide-booking] >> text="RVG code"`.
 
 **Simulators** (`src/apps/demo/`)
 
@@ -455,10 +455,19 @@ badge carries `data-shot=nav-badge-<section>`.
 - David Chen: complete, self-funded. His time units were overridden manually, so the booking is
   read-only and shows "adjusted manually".
 - **Margaret Ellison** (`BK0009`): **pending**. Left total hip replacement, RVG code LL4 "Hip, total
-  replacement, primary" (AA's row, B 7, includes positioning until Phase 19b), A1 modifier,
-  start 16:05.
+  replacement, primary" (AA's row, B 7; includes no modifier), 72 on 21 Jul so A1 is **pre-applied
+  from her age** (`capture-modifier-applied`, removable, "Put back"), no claims, start 16:05. Her
+  M is 1; after Finish now at 17:20 the Admin Booking reads 13 units, $344.50.
   - "Finish now" stamps the end time.
   - The list can't be submitted until she is complete.
+- **The Spine Booking** (catch-up Phase 19b, marker `includedModifierBooking`): `BK0158`, Callum
+  Graham, Dr Souter's Mon 27 Jul PM List (`L-34821-2026-07-27-PM`), uncaptured, RVG code S3a (B 10),
+  so **P1 shows pre-applied at 0** ("Included in the base units of S3a. Cannot be added twice.").
+  Its procedure text is still the generated "Knee, total replacement". S2 Beat 3c moves this List to
+  Dr Ropata, so shoot it from a fresh store.
+- **Seeded modifier claims:** every Procedure the old seed graded ASA III claims AS3 with "ASA III,
+  severe systemic disease on pre-op review"; there is no ASA seed and no other claim. Patients 70 and
+  over get A1 (80 and over A2) pre-applied on their procedure date.
 
 **Booking source** (catch-up Phase 15): every scenario Booking shows one quiet "SOURCE · …" line on
 its detail (`[data-shot=booking-source]`): St George's, Southern Cross and Christchurch Public read
@@ -646,6 +655,18 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   <description>" opens `[data-shot=rvg-group-sheet]` (RVG code, Anatomy heading, Description, Base
   units, Modifier units, a range checkbox with Range from and Range to); Retire opens
   `[data-shot=rvg-group-retire]`.
+- **Modifier picker** (catch-up Phase 19b): `[data-shot=capture-modifiers] [data-shot=modifier-add]`
+  ("Add a modifier") opens `[data-shot=modifier-picker]` (a bottom sheet on mobile, a dialog on web
+  and Admin; on mobile scope with `[data-aa-mobile-product] [role=dialog]`). Rows are buttons with
+  `data-modifier-code` (for example `[data-modifier-code=AS3]`), under the printed blocks; applied
+  rows read "Applied" and are `aria-disabled`. Clicking a row opens `[data-shot=modifier-explanation]`
+  inline: a textarea with placeholder "A short reason, as an insurer would ask", for a modifier printed
+  as other than a plain number `[data-shot=modifier-units]` ("Fewer units", "More units"), Cancel and
+  `role=button[name="Claim"]` (disabled until there is text). On mobile Claim closes the sheet; on web
+  it stays open with "AS3 claimed." (press Escape to close). The mobile sheet has no Escape: its handle
+  is `role=button[name="Close sheet"]`.
+- **Add AA modifier** (Master data, Modifiers, catch-up Phase 19b): `role=button[name="Add AA modifier"]`
+  opens `[data-shot=add-aa-modifier]` (Code, Units, Modifying factor; "Add modifier").
 - **Add billing line:** `role=button[name="Add billing line"]`.
 - **Add attachment** (catch-up Phase 15): `role=button[name="Add attachment"]` inside
   `[data-shot=booking-attachments]` or `[data-shot=list-attachments]` opens
@@ -891,6 +912,15 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   Contract keeps at least one price range)"), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
   failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first,
   and never a Fixed price fallback.
+- Modifiers (catch-up Phase 19b): `capture-modifiers` (the ledger inside the Units card; also the
+  completion anchor for `modifierClaims`), `capture-modifier-applied` (a pre-applied row, with
+  `data-modifier-code`), `capture-modifier-claim` (a claimed row), `capture-modifier-removed` (the
+  "Removed: A1. Put back" line), `modifier-add`, `modifier-picker`, `modifier-explanation`,
+  `modifier-units`; Admin `masters-modifiers`, `masters-modifiers-rvg` (the 30-row table, rows
+  `tr[data-modifier-code=…]`), `masters-modifiers-aa`, `masters-modifiers-provisional` (the one OQ-95
+  note), `add-aa-modifier`, and on the RVG groups table `masters-rvg-included` (the "P1 · 0" cell on
+  the 20 Neurosurgery and Spine rows). `capture-asa-status` is gone (no ASA card), as are the
+  segmented modifier bands and "Also applies" chips.
 - RVG groups (catch-up Phase 19): `masters-rvg-groups`, `rvg-group-sheet`, `rvg-group-retire`,
   `rvg-group-search`, `rvg-type-ahead`, `rvg-anatomy`, `rvg-base-units`, `rvg-range-units`,
   `rvg-outside-guide`, `rvg-code-clear`, `manual-rvg-code`; the capture card keeps

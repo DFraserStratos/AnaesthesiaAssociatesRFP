@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
+import { RVG_MODIFIER_MASTER, mkClaim } from './fixtures'
 import { validateBookingForBilling, type BookingBillingContext } from './validateBookingForBilling'
 import {
   BASE_RANGE_5_9,
@@ -31,6 +32,8 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
     billingLines: [],
     listDateISO: '2026-07-21',
     timeRule: DEFAULT_RVG_TIME_RULE,
+    patientDobISO: undefined,
+    modifiers: RVG_MODIFIER_MASTER,
     ...overrides,
   }
 }
@@ -41,7 +44,8 @@ function validProcedure(overrides: Partial<Procedure> = {}): Procedure {
     rvgGroupId: 'RG-T-GA10',
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
-    asaClass: 'AS3',
+    // An ASA III claim with its explanation (catch-up Phase 19b): 2 units as printed.
+    modifierClaims: [mkClaim('AS3', 'ASA III on pre-op review')],
     ...overrides,
   })
 }
@@ -281,7 +285,7 @@ describe('validateBookingForBilling — two-funder conservation', () => {
   ]
 
   it('an allocation that conserves the procedure fee passes', () => {
-    const ctx = mkCtx({ billingLines: allocation(220) })
+    const ctx = mkCtx({ billingLines: allocation(190) })
     expect(validateBookingForBilling(booking, [validProcedure()], ctx)).toEqual([])
   })
 
@@ -290,7 +294,7 @@ describe('validateBookingForBilling — two-funder conservation', () => {
     const failures = validateBookingForBilling(booking, [validProcedure()], ctx)
     expect(failures).toHaveLength(1)
     expect(failures[0]?.field).toBe('billingLines')
-    expect(failures[0]?.message).toContain('$720.00')
+    expect(failures[0]?.message).toContain('$690.00')
     expect(failures[0]?.message).toContain('$700.00')
   })
 })
@@ -352,5 +356,23 @@ describe('"Needs a price" on a fixed price with no range in force (catch-up Phas
     expect(validateBookingForBilling(booking, [p], mkCtx({ contracts: { 'con-open': open } })).find((f) => f.field === 'governingContractId')?.message).toBe(
       'Needs a price: No contract · Fixed price has no price of its own.',
     )
+  })
+})
+
+describe('the modifier explanation backstop (catch-up Phase 19b; US-03.6.1, finished by Phase 21)', () => {
+  it('fails a claim with a blank explanation, anchored to modifierClaims, and passes once it has one', () => {
+    const blank = validProcedure({ modifierClaims: [mkClaim('AS3', '  ')] })
+    const failures = validateBookingForBilling(booking, [blank], mkCtx())
+    expect(failures).toEqual([{ procedureId: 'proc-1', field: 'modifierClaims', message: 'Add a short explanation for AS3, or remove it.' }])
+    expect(validateBookingForBilling(booking, [validProcedure()], mkCtx())).toEqual([])
+  })
+
+  it('fails a claim missing the units its printed value needs', () => {
+    const failures = validateBookingForBilling(booking, [validProcedure({ modifierClaims: [mkClaim('PA3', 'Seen in clinic')] })], mkCtx())
+    expect(failures.map((f) => f.message)).toEqual(['Enter the units for PA3 (RVG: 2 + Time, at least 2), or remove it.'])
+  })
+
+  it('passes a Procedure with no modifier at all (FT-03.3: none is a valid answer)', () => {
+    expect(validateBookingForBilling(booking, [validProcedure({ modifierClaims: [] })], mkCtx())).toEqual([])
   })
 })

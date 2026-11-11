@@ -29,7 +29,7 @@ import { Header, Table, TextAction } from './chrome'
 import { cellStyle, headCellStyle, rowCellStyle } from './tableStyles'
 import { describeTimeRule } from '../../../../domain/billing/timeUnits'
 
-const COLUMNS = ['Code', 'Description', 'Base units', '', '']
+const COLUMNS = ['Code', 'Description', 'Base units', 'Included modifiers', '', '']
 
 type StatusFilter = 'active' | 'all'
 
@@ -40,6 +40,7 @@ function baseUnitsCell(g: RvgGroup): string {
 
 export function RvgGroupsView({ actor }: { actor: Actor }) {
   const groups = useAppStore((s) => s.masters.rvgGroups)
+  const modifiers = useAppStore((s) => s.masters.modifiers)
   const [query, setQuery] = useState('')
   const [anatomy, setAnatomy] = useState('')
   const [status, setStatus] = useState<StatusFilter>('active')
@@ -130,7 +131,7 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
           )}
         </div>
       ) : (
-        <Table heads={COLUMNS} rightAlign={[2, 4]} shot="masters-rvg-groups">
+        <Table heads={COLUMNS} rightAlign={[2, 5]} shot="masters-rvg-groups">
           {sections.map(([heading, rows]) => [
             <tr key={`h-${heading}`} data-rvg-anatomy={heading}>
               <td colSpan={COLUMNS.length} style={{ ...rowCellStyle, background: neutral.bg, paddingTop: 10, paddingBottom: 8 }}>
@@ -142,6 +143,16 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
                 <td className="mono" style={{ ...rowCellStyle, fontWeight: 600, whiteSpace: 'nowrap', color: g.retired ? neutral.mist : neutral.ink }}>{g.code}</td>
                 <td style={{ ...rowCellStyle, color: g.retired ? neutral.mist : neutral.ink }}>{g.description}</td>
                 <td className="mono" style={{ ...rowCellStyle, textAlign: 'right', whiteSpace: 'nowrap', color: g.retired ? neutral.mist : neutral.ink }}>{baseUnitsCell(g)}</td>
+                {/* The modifiers the base units include (catch-up Phase 19b, US-05.1.4): P1 at 0 on the Neurosurgery and Spine rows. */}
+                <td style={rowCellStyle} data-shot={g.includedModifierIds.length > 0 ? 'masters-rvg-included' : undefined}>
+                  <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+                    {g.includedModifierIds.map((id) => (
+                      <Pill key={id} size="small">
+                        <span className="mono">{modifiers[id]?.code ?? '?'} · 0</span>
+                      </Pill>
+                    ))}
+                  </span>
+                </td>
                 <td style={rowCellStyle}>{g.retired && <Pill>Retired</Pill>}</td>
                 <td style={{ ...rowCellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-flex', gap: 12 }}>

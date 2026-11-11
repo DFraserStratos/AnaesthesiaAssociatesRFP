@@ -16,7 +16,8 @@
     "icons": "node scripts/generate-icons.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
-    "preview:pwa": "vite preview --config vite.pwa.config.ts"
+    "preview:pwa": "vite preview --config vite.pwa.config.ts",
+    "rvg:modifiers": "node scripts/generate-rvg-modifiers.mjs"
   },
   "dependencies": {
     "date-fns": "^4.4.0",

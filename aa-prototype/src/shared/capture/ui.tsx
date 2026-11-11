@@ -71,15 +71,19 @@ export function StepperButton({
   glyph,
   onClick,
   disabled,
+  label,
 }: {
   glyph: '−' | '+'
   onClick: () => void
   disabled?: boolean
+  /** The accessible name ("Fewer units"); the glyph alone names nothing. */
+  label?: string
 }) {
   const isDisabled = disabled === true
   return (
     <button
       type="button"
+      aria-label={label}
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
       style={{

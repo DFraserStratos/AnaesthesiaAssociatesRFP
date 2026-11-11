@@ -22,6 +22,9 @@ import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
 import { ANATOMY_HEADINGS, baseUnitsFor } from '../billing/rvgGroups'
 import { AA_OWN_ROW_KEYS, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP, RVG_GROUPS } from './rvgGroups'
+import { seedModifierId } from './modifiers'
+import { RVG_INCLUDED_MODIFIERS } from './rvgModifiers.generated'
+import { ageInCompletedYears, ageModifierCodeFor, preAppliedModifiersFor } from '../billing/modifiers'
 import { displayStatusKey, projectedListId, slotIdFor } from '../slots'
 
 /** Pre-horizon backdrop history (the store's `isBackdropList`; the domain test does not import the store). */
@@ -48,6 +51,8 @@ function billingContextFor(state: SeedState, booking: Booking): BookingBillingCo
     billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: state.masters.rvgTimeRule,
+    patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
+    modifiers: state.masters.modifiers,
   }
   return ctx
 }
@@ -453,6 +458,8 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
         anaesthetist,
         dateISO: list.dateISO,
         timeRule: seed.masters.rvgTimeRule,
+        patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,
+        modifiers: seed.masters.modifiers,
         nonRvgLines,
       }
       if (contract !== undefined) ctx.contract = contract
@@ -476,7 +483,8 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     expect(marsh && feeForBooking(marsh.id)).toEqual({ totals: [185.5], unitSums: [7] })
     expect(chen && feeForBooking(chen.id)).toEqual({ totals: [238.5], unitSums: [9] })
     // Ellison seeds PRE-capture (no handover — the live Finish-now demo booking):
-    // B7 + T0 + M1 (A1 + AS1) = 8 units at the SXAP $26.50. The post-capture
+    // B7 + T0 + M1 (A1, pre-applied from her age of 72; catch-up Phase 19b)
+    // = 8 units at the SXAP $26.50. The post-capture
     // $344.50/13u and 41u/$1,086.50 mockup pins live in btmCapture.test.ts,
     // after a simulated Finish-now at 17:20 (Decisions log 2026-07-23).
     expect(ellison && feeForBooking(ellison.id)).toEqual({ totals: [212], unitSums: [8] })
@@ -898,15 +906,15 @@ describe('the RVG groups (catch-up Phase 19; US-05.1.1, US-05.1.3, RV-41)', () =
     }
   })
 
-  it('the interim included P1 sits only on the rows remapped from the legacy absorbing codes', () => {
-    const absorbing = ['47516', '47519', '48939'].map((c) => LEGACY_CODE_TO_RVG_GROUP[c]!.groupId)
-    const withP1 = groups.filter((g) => g.includesModifierCodes !== undefined).map((g) => g.id).sort()
-    expect(withP1).toEqual([...absorbing].sort())
-    for (const g of groups.filter((x) => x.includesModifierCodes !== undefined)) expect(g.includesModifierCodes).toEqual(['P1'])
-    // No legacy code that did not absorb shares a row that does.
-    for (const [code, entry] of Object.entries(LEGACY_CODE_TO_RVG_GROUP)) {
-      if (!['47516', '47519', '48939'].includes(code)) expect(absorbing).not.toContain(entry.groupId)
+  it('P1 is included on exactly the 20 published Neurosurgery and Spine rows from the CSV, and on no hip or shoulder row (catch-up Phase 19b)', () => {
+    const p1 = seedModifierId('P1')
+    const withIncluded = groups.filter((g) => g.includedModifierIds.length > 0)
+    expect(withIncluded.map((g) => g.code).sort()).toEqual(RVG_INCLUDED_MODIFIERS.map((r) => r.rvgCode).sort())
+    for (const g of withIncluded) expect(g.includedModifierIds).toEqual([p1])
+    for (const code of ['47516', '47519', '48939']) {
+      expect(seed.masters.rvgGroups[LEGACY_CODE_TO_RVG_GROUP[code]!.groupId]!.includedModifierIds).toEqual([])
     }
+    expect(groups.filter((g) => g.noAgeModifier === true).map((g) => g.code).sort()).toEqual(['H6b', 'P2', 'P2']) // AA's own P2 row too
   })
 
   it('a published row is used for a legacy code only where its base units equal the legacy figure', () => {
@@ -926,5 +934,78 @@ describe('the RVG groups (catch-up Phase 19; US-05.1.1, US-05.1.3, RV-41)', () =
       expect(AA_OWN_ROW_KEYS.some((k) => RVG_GROUP[k] === g.id), code).toBe(false)
       expect(g.baseUnits, code).toBe(units)
     }
+  })
+})
+
+describe('modifiers (catch-up Phase 19b)', () => {
+  const procedures = Object.values(seed.schedule.procedures)
+  const factsOf = (p: Procedure) => {
+    const booking = seed.schedule.bookings[p.bookingId]!
+    const list = seed.schedule.lists[booking.listId]!
+    const group = p.rvgGroupId !== undefined ? seed.masters.rvgGroups[p.rvgGroupId] : undefined
+    return {
+      patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,
+      procedureDateISO: list.dateISO,
+      ...(group !== undefined ? { group } : {}),
+      modifiers: seed.masters.modifiers,
+      removedModifierIds: p.removedModifierIds,
+    }
+  }
+
+  it('the master is the 30 RVG rows as printed, with no AS2, PO1 or PO2, and no AA row', () => {
+    const all = Object.values(seed.masters.modifiers)
+    expect(all).toHaveLength(30)
+    expect(all.every((m) => m.source === 'rvg')).toBe(true)
+    for (const code of ['AS2', 'PO1', 'PO2']) expect(all.map((m) => m.code)).not.toContain(code)
+    expect(seed.masters.modifiers[seedModifierId('AS3')]?.units).toBe(2)
+  })
+
+  it('every seeded claim resolves, has an explanation and duplicates no pre-applied modifier; nothing is removed', () => {
+    let claims = 0
+    for (const p of procedures) {
+      expect(p.removedModifierIds, p.id).toEqual([])
+      const preApplied = preAppliedModifiersFor(factsOf(p as Procedure))
+      for (const c of p.modifierClaims) {
+        claims += 1
+        expect(seed.masters.modifiers[c.modifierId], p.id).toBeDefined()
+        expect(c.explanation.trim(), p.id).not.toBe('')
+        expect(preApplied.map((r) => r.modifierId), p.id).not.toContain(c.modifierId)
+      }
+    }
+    expect(claims).toBeGreaterThan(10)
+  })
+
+  it('claims only AS3 and AS4 from the old ASA grades; Ellison claims nothing and has A1 pre-applied', () => {
+    const codes = new Set(procedures.flatMap((p) => p.modifierClaims.map((c) => seed.masters.modifiers[c.modifierId]!.code)))
+    expect([...codes].sort()).toEqual(['AS3'])
+    const ellison = seed.schedule.procedures.P0009!
+    expect(ellison.modifierClaims).toEqual([])
+    expect(preAppliedModifiersFor(factsOf(ellison)).map((r) => r.code)).toEqual(['A1'])
+  })
+
+  it('the Spine Booking marker is a generated, uncaptured future Booking on a Dr Souter List, on S3a with P1 included', () => {
+    const marker = SEED_MARKERS['includedModifierBooking']!
+    const booking = seed.schedule.bookings[marker.entityId]!
+    const list = assigned(seed.schedule.lists[booking.listId])
+    expect(list.anaesthetistId).toBe(ANAE.souter)
+    expect(list.dateISO > DEMO_TODAY).toBe(true)
+    expect(booking.completed).toBe(false)
+    const [p] = proceduresForBooking(seed, booking.id)
+    expect(seed.masters.rvgGroups[p!.rvgGroupId!]?.code).toBe('S3a')
+    expect(p!.anaestheticStartISO).toBeUndefined()
+    expect(preAppliedModifiersFor(factsOf(p!)).map((r) => [r.code, r.units, r.origin])).toEqual([['P1', 0, 'included']])
+  })
+
+  it('reports the patients in each age band on their procedure date (for the PROGRESS entry)', () => {
+    const counts: Record<string, number> = { A1: 0, A2: 0, none: 0 }
+    for (const p of procedures) {
+      const f = factsOf(p as Procedure)
+      const age = f.patientDobISO !== undefined ? ageInCompletedYears(f.patientDobISO, f.procedureDateISO) : undefined
+      const code = age !== undefined ? ageModifierCodeFor(age) : undefined
+      counts[code ?? 'none']! += 1
+    }
+    // Generated DOBs run 1938 to 2007, so nobody is under 2.
+    expect(counts.A1! + counts.A2!).toBeGreaterThan(20)
+    console.info(`Phase 19b age bands over ${procedures.length} seeded Procedures: A1 ${counts.A1}, A2 ${counts.A2}, none ${counts.none}`)
   })
 })

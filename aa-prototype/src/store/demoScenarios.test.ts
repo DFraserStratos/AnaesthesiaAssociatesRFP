@@ -11,7 +11,9 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { wireBillingRun } from './billingRun'
-import { authoriseList, editBooking, editProcedure } from './lifecycle'
+import { authoriseList, editBooking } from './lifecycle'
+import { claimModifier, removeModifier } from './modifierActions'
+import { seedModifierId } from '../domain/seed/modifiers'
 import { ingestPdfRow, processMessage } from './integrationActions'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
@@ -89,7 +91,9 @@ describe('S3 · money end-to-end', () => {
       expect(split[0]).toMatchObject({
         invoiceNumber: 'AA-2026-0002',
         counterparty: { kind: 'hospital', id: HOSP.forte },
-        total: 396.18,
+        // $396.18 until catch-up Phase 19b: Holt's ASA II seeded 1 modifier unit;
+        // ASA I or II is worth 0 in the RVG table: 12 units, not 13, at $26.50 = $318 + GST.
+        total: 365.7,
       })
       const pair = invoicesFor(SEED_MARKERS['twoFunderBooking']?.entityId ?? '')
       expect(pair).toHaveLength(2)
@@ -145,9 +149,10 @@ describe('S5 · compliance tour', () => {
     const seededBookingRows = auditForEntity(api.getState(), chenBookingId).length
     const seededProcedureRows = auditForEntity(api.getState(), procedure.id).length
 
-    expect(editProcedure(api, SOUTER, procedure.id, { asaClass: 'AS2' }).ok).toBe(true)
+    const as3 = seedModifierId('AS3')
+    expect(claimModifier(api, SOUTER, procedure.id, { modifierId: as3, explanation: 'Pre-op review: ASA III' }).ok).toBe(true)
     expect(editBooking(api, OFFICE, chenBookingId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }).ok).toBe(true)
-    expect(editProcedure(api, SOUTER, procedure.id, { asaClass: 'AS1' }).ok).toBe(true)
+    expect(removeModifier(api, SOUTER, procedure.id, as3).ok).toBe(true)
 
     // The Booking History starts rich, then merges these staged Booking + Procedure
     // rows after the pristine trail in append order.
@@ -158,13 +163,13 @@ describe('S5 · compliance tour', () => {
     ).toEqual(['booking.update'])
     const procedureRows = auditForEntity(api.getState(), procedure.id)
     const stagedProcedureRows = procedureRows.slice(seededProcedureRows)
-    expect(stagedProcedureRows.map((a) => a.action)).toEqual(['procedure.update', 'procedure.update'])
+    expect(stagedProcedureRows.map((a) => a.action)).toEqual(['procedure.modifierClaim', 'procedure.modifierUnclaim'])
     expect(stagedProcedureRows[0]?.role).toBe('anaesthetist')
-    expect(stagedProcedureRows[0]?.before).toEqual({ asaClass: 'AS1' })
-    expect(stagedProcedureRows[0]?.after).toEqual({ asaClass: 'AS2' })
+    expect(stagedProcedureRows[0]?.after).toMatchObject({ modifier: expect.stringMatching(/^AS3 · /), explanation: 'Pre-op review: ASA III' })
+    expect(stagedProcedureRows[1]?.before).toMatchObject({ explanation: 'Pre-op review: ASA III' })
 
-    // Staging is state-neutral where it matters: ASA back to AS1, override provenance intact.
-    expect(api.getState().schedule.procedures[procedure.id]?.asaClass).toBe('AS1')
+    // Staging is state-neutral where it matters: no claim left, override provenance intact.
+    expect(api.getState().schedule.procedures[procedure.id]?.modifierClaims).toEqual([])
     expect(api.getState().schedule.procedures[procedure.id]?.timeUnitsCaptured).toEqual({ units: 4, source: 'overridden' })
   })
 

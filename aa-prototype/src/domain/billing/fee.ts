@@ -16,8 +16,8 @@ import type {
 } from '../types'
 import { roundToCents } from './money'
 import { rangeInForce } from './priceRanges'
-import { modifierUnits, type RefusedModifier } from './modifierUnits'
-import { baseUnitsFor, type BaseUnitsSource, type GuideValue, type RvgGroup } from './rvgGroups'
+import { procedureModifiers, type Modifier, type ModifierId, type ProcedureModifier } from './modifiers'
+import { baseUnitsFor, resolveStartingUnits, type BaseUnitsSource, type GuideValue, type RvgGroup } from './rvgGroups'
 import { timeUnitsFromMinutes, type RvgTimeRule } from './timeUnits'
 
 // ---------------------------------------------------------------------------
@@ -39,8 +39,13 @@ export interface BtmBreakdown {
   baseOutsideGuide: boolean
   time: ResolvedUnits
   modifiers: ResolvedUnits
-  /** Modifiers zeroed with a reason (absorbed by the base, or unknown). */
-  refusedModifiers: RefusedModifier[]
+  /**
+   * The itemised modifiers (catch-up Phase 19b): the pre-applied age and
+   * included rows, then the claims, each with its origin and units; a refused
+   * duplicate is listed with its reason and adds nothing. The UI, the units
+   * caption, Phase 23's split and Phase 25's snapshot read this one answer.
+   */
+  modifierItems: ProcedureModifier[]
   /** base + time + modifiers (before the isAdditional split rule). */
   totalUnits: number
 }
@@ -54,18 +59,36 @@ function capturedMinutes(procedure: Procedure): number {
 }
 
 /**
+ * What the modifier rules need beyond the Procedure (catch-up Phase 19b): the
+ * patient's date of birth and the procedure date (the List's) for the age
+ * modifier, and the modifier master. Every fee-context assembler passes the
+ * same inputs.
+ */
+export interface ModifierInputs {
+  patientDobISO?: string
+  procedureDateISO?: string
+  modifiers: Readonly<Record<ModifierId, Modifier>>
+}
+
+/**
  * Resolve B/T/M from the procedure's CAPTURED inputs (RFP principle 10 — the
  * inputs are data): seeded values are recomputed from the inputs; a captured
  * value with `overridden` provenance wins over the computation. Base comes
  * from the one starting-units answer (`baseUnitsFor`, catch-up Phase 19): the
  * typed override, else the chosen value on a ranged RVG group, else the
  * group's starting figure, else 0 with no RVG code. Any value is accepted (D3).
- * The group's modifier units (0 by default) join M; Phase 19b decides how
- * itemised modifiers combine with them. Time units follow the RVG time rule
+ * M is the group's starting modifier units (0 by default) plus the itemised
+ * modifiers from the one rule module (`modifiers.ts`, catch-up Phase 19b): the
+ * pre-applied age and included rows and the claims. Time units follow the RVG time rule
  * held as data (`masters.rvgTimeRule`, catch-up Phase 19a), from the start
  * and finish stamps only.
  */
-export function resolveBtm(procedure: Procedure, group: RvgGroup | undefined, timeRule: RvgTimeRule): BtmBreakdown {
+export function resolveBtm(
+  procedure: Procedure,
+  group: RvgGroup | undefined,
+  timeRule: RvgTimeRule,
+  modifierInputs: ModifierInputs,
+): BtmBreakdown {
   // Base
   const resolvedBase = baseUnitsFor({ procedure, ...(group !== undefined ? { group } : {}) })
   const base: ResolvedUnits = {
@@ -81,18 +104,20 @@ export function resolveBtm(procedure: Procedure, group: RvgGroup | undefined, ti
     time = { units: timeUnitsFromMinutes(capturedMinutes(procedure), timeRule), source: 'seeded' }
   }
 
-  // Modifiers — the captured ASA class seeds its AS code even when the chip
-  // selection doesn't repeat it (never double-counted when it does).
-  const selected =
-    procedure.asaClass !== undefined && !procedure.selectedModifierCodes.includes(procedure.asaClass)
-      ? [...procedure.selectedModifierCodes, procedure.asaClass]
-      : procedure.selectedModifierCodes
-  const computed = modifierUnits(selected, group)
+  // Modifiers: the starting value plus the itemised list (the manual
+  // adjustment, `modifierUnitsCaptured` overridden, still wins on the total).
+  const computed = procedureModifiers(procedure, {
+    ...(modifierInputs.patientDobISO !== undefined ? { patientDobISO: modifierInputs.patientDobISO } : {}),
+    ...(modifierInputs.procedureDateISO !== undefined ? { procedureDateISO: modifierInputs.procedureDateISO } : {}),
+    ...(group !== undefined ? { group } : {}),
+    modifiers: modifierInputs.modifiers,
+    start: group !== undefined ? resolveStartingUnits({ group }).modifier.units : 0,
+  })
   let modifiers: ResolvedUnits
   if (procedure.modifierUnitsCaptured?.source === 'overridden') {
     modifiers = { units: procedure.modifierUnitsCaptured.units, source: 'overridden' }
   } else {
-    modifiers = { units: computed.units + (group?.modifierUnits ?? 0), source: 'seeded' }
+    modifiers = { units: computed.units, source: 'seeded' }
   }
 
   return {
@@ -102,7 +127,7 @@ export function resolveBtm(procedure: Procedure, group: RvgGroup | undefined, ti
     baseOutsideGuide: resolvedBase.outsideGuide,
     time,
     modifiers,
-    refusedModifiers: computed.refused,
+    modifierItems: computed.items,
     totalUnits: base.units + time.units + modifiers.units,
   }
 }
@@ -133,6 +158,13 @@ export interface FeeContext {
   dateISO: string
   /** The RVG time rule held as data (`masters.rvgTimeRule`, catch-up Phase 19a). */
   timeRule: RvgTimeRule
+  /**
+   * The patient's date of birth (catch-up Phase 19b): the age modifier is
+   * pre-applied from it on `dateISO`. Undefined when no patient is known.
+   */
+  patientDobISO: string | undefined
+  /** The modifier master (`masters.modifiers`, catch-up Phase 19b). */
+  modifiers: Readonly<Record<ModifierId, Modifier>>
   /**
    * The procedure's captured NON-RVG billing lines (fixed / rate x time).
    * RVG-basis lines are never inputs — the calculator produces the RVG amount
@@ -183,6 +215,15 @@ export interface FeeResult {
   needsPrice: boolean
 }
 
+/** The modifier inputs a fee context carries (the procedure date is the List's). */
+export function modifierInputsOf(ctx: Pick<FeeContext, 'patientDobISO' | 'dateISO' | 'modifiers'>): ModifierInputs {
+  return {
+    ...(ctx.patientDobISO !== undefined ? { patientDobISO: ctx.patientDobISO } : {}),
+    procedureDateISO: ctx.dateISO,
+    modifiers: ctx.modifiers,
+  }
+}
+
 /**
  * Compute a procedure's fee.
  *
@@ -198,7 +239,7 @@ export interface FeeResult {
  * and validator own the refusal.
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
-  const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule)
+  const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule, modifierInputsOf(ctx))
   const billableUnits = splitBillingUnits(procedure, btm)
   const lines: FeeLine[] = []
 

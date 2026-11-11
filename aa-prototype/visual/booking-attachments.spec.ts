@@ -13,7 +13,7 @@ async function openEllison(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Lists', exact: true }).click()
   await page.getByText('Southern Cross').first().click()
   await page.getByText('Margaret Ellison').first().click()
-  await expect(page.getByText('ASA status', { exact: true })).toBeVisible()
+  await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
 }
 
 /** The office Booking: the only desktop Booking that carries the Booking total. */
@@ -40,13 +40,13 @@ async function expectSameHeight(page: Page, left: string, right: string): Promis
 
 test('paired capture cards match heights on the desktop', async ({ page }) => {
   await openEllison(page)
-  await expectSameHeight(page, 'ASA status', 'RVG code')
   await expectSameHeight(page, 'Adjustment and charge', 'Billing lines')
 })
 
-test('desktop Booking total starts level with the first capture-card pair', async ({ page }) => {
+test('desktop Booking total starts level with the first capture card', async ({ page }) => {
   await openAdminBooking(page)
-  const asa = await cardByLabel(page, 'ASA status').boundingBox()
+  // The RVG code card leads the capture block since the ASA card went (catch-up Phase 19b).
+  const asa = await cardByLabel(page, 'RVG code').boundingBox()
   const total = await page.getByText('BOOKING TOTAL', { exact: true }).locator('../../..').boundingBox()
 
   expect(asa).not.toBeNull()

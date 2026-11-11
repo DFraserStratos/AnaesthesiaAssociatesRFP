@@ -7,8 +7,8 @@
  * printed: code, a shortened description, the anatomy heading and base units,
  * with the printed range where there is one (the lower bound is the starting
  * figure, D35). They include every group the 8 October wording table maps to
- * (artifact AR-35), every Neurosurgery and Spine row (artifact AR-34's CSV, for
- * Phase 19b's included P1), both T2s and both P6s (the same code on separate
+ * (artifact AR-35), every Neurosurgery and Spine row (artifact AR-34's CSV; each
+ * includes P1, catch-up Phase 19b), both T2s and both P6s (the same code on separate
  * rows), every ranged row and at least one row under every heading. The
  * "4 + Time" rows (M3, CP1, CP4, CP5) are seeded with their number: time is
  * always charged on top.
@@ -22,13 +22,18 @@
  *
  * `LEGACY_CODE_TO_RVG_GROUP` is the one bridge from the invented five-digit
  * codes the seed generator still draws from (its RNG reads the legacy ranges,
- * so the generated Bookings are identical); it is seed-only, and Phase 19b
- * reseeds P1 and the modifier values on the same rows.
+ * so the generated Bookings are identical); it is seed-only. The hip and
+ * shoulder rows include no modifier (catch-up Phase 19b, RV-09): P1 is an
+ * ordinary claim there.
  *
  * No row draws from the seeded RNG.
  */
 
 import type { BaseUnitsRange, RvgGroup, RvgGroupId } from '../billing/rvgGroups'
+import { INCLUDED_MODIFIER_IDS_BY_RVG_CODE } from './modifiers'
+
+/** The published base codes already split by age (RVG p.7 and p.10): no age modifier on them. */
+const AGE_SPLIT_CODES = new Set(['H6b', 'P2'])
 
 interface Row {
   /** A seed-only name for the row (never a printed code; never shown). */
@@ -38,7 +43,6 @@ interface Row {
   anatomy: string
   baseUnits: number
   range?: BaseUnitsRange
-  includesModifierCodes?: string[]
 }
 
 const r = (key: string, code: string, anatomy: string, baseUnits: number, description: string, range?: [number, number]): Row => ({
@@ -165,8 +169,6 @@ const PUBLISHED: Row[] = [
   r('cp5', 'CP5', PAIN, 6, 'Regional blocks, plus time'),
 ]
 
-const P1 = ['P1']
-
 /**
  * AA's own rows (unmarked), one per pre-Phase 19 code with no published match.
  * The last three keep the interim included positioning of their legacy codes.
@@ -189,9 +191,9 @@ const AA_OWN: Row[] = [
   r('aaUreteroscopy', 'P2', PERI, 4, 'Ureteroscopy with lithotripsy'),
   r('aaSkinFlap', 'T1', THORAX, 4, 'Skin flap repair, complex', [4, 6]),
   r('aaBreastReduction', 'T2', THORAX, 6, 'Breast reduction'),
-  { ...r('aaHipReplacement', 'LL4', LL, 7, 'Hip, total replacement, primary'), includesModifierCodes: P1 },
-  { ...r('aaHipHemiarthroplasty', 'LL4', LL, 6, 'Hip, hemiarthroplasty'), includesModifierCodes: P1 },
-  { ...r('aaShoulderArthroscopy', 'UL3', UL, 5, 'Shoulder arthroscopy'), includesModifierCodes: P1 },
+  r('aaHipReplacement', 'LL4', LL, 7, 'Hip, total replacement, primary'),
+  r('aaHipHemiarthroplasty', 'LL4', LL, 6, 'Hip, hemiarthroplasty'),
+  r('aaShoulderArthroscopy', 'UL3', UL, 5, 'Shoulder arthroscopy'),
 ]
 
 const ALL_ROWS = [...PUBLISHED, ...AA_OWN]
@@ -208,7 +210,12 @@ export const RVG_GROUPS: readonly RvgGroup[] = ALL_ROWS.map((row, i) => ({
   ...(row.range !== undefined ? { baseUnitsRange: { ...row.range } } : {}),
   modifierUnits: 0,
   retired: false,
-  ...(row.includesModifierCodes !== undefined ? { includesModifierCodes: [...row.includesModifierCodes] } : {}),
+  // The modifiers the base units include (catch-up Phase 19b, US-05.1.4, D43):
+  // P1 on the 20 published Neurosurgery and Spine rows, from the catalogue's CSV.
+  includedModifierIds: i < PUBLISHED.length ? [...(INCLUDED_MODIFIER_IDS_BY_RVG_CODE.get(row.code) ?? [])] : [],
+  // The base codes the guide splits by age take no age modifier (D29's default,
+  // OQ-95 part 1), on every row that carries the code (AA's own P2 row too).
+  ...(AGE_SPLIT_CODES.has(row.code) ? { noAgeModifier: true } : {}),
 }))
 
 /** Seed-only names for the rows' ids (for the seed, fixtures and tests). */
@@ -275,7 +282,6 @@ export const LEGACY_CODE_TO_RVG_GROUP: Readonly<Record<string, LegacyRvgCode>> =
   '37623': legacy('aaUreteroscopy', 'Ureteroscopy with lithotripsy'),
   '45030': legacy('aaSkinFlap', 'Skin flap repair, complex', [4, 6]),
   '45200': legacy('aaBreastReduction', 'Breast reduction'),
-  // The legacy absorbing codes (interim included P1, Phase 19b's)
   '47516': legacy('aaHipReplacement', 'Hip, total replacement, primary'),
   '47519': legacy('aaHipHemiarthroplasty', 'Hip, hemiarthroplasty'),
   '48939': legacy('aaShoulderArthroscopy', 'Shoulder arthroscopy'),

@@ -5,7 +5,7 @@ import type { BillingValidationFailure } from '../../domain/billing'
 import { baseUnitsFor, baseUnitsText, isRecordableBaseUnits } from '../../domain/billing/rvgGroups'
 import { editProcedure, pickRvgGroup, useAppStore, type Actor } from '../../store'
 import { CodePickerSheet } from './CodePickerSheet'
-import { CaptureSection, Caption, FailureNotes, StepperButton } from './ui'
+import { CaptureSection, FailureNotes, StepperButton } from './ui'
 
 interface ProcedureCodeCardProps {
   procedure: Procedure
@@ -56,14 +56,7 @@ export function ProcedureCodeCard({
     if (!outcome.ok) onError(outcome.message)
   }
 
-  const includesP1 = rvgGroup?.includesModifierCodes?.includes('P1') === true
-  const footer =
-    includesP1 || failures.length > 0 ? (
-      <>
-        {includesP1 && <Caption>Includes positioning; P1 is not added separately.</Caption>}
-        <FailureNotes failures={failures} />
-      </>
-    ) : null
+  const footer = failures.length > 0 ? <FailureNotes failures={failures} /> : null
 
   return (
     <CaptureSection

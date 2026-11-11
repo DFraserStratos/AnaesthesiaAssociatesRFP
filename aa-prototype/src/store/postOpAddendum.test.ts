@@ -103,7 +103,6 @@ describe('addPostOpAddendum', () => {
         rvgGroupId: RVG_GROUP.aaCystoscopy!,
         anaestheticStartISO: '2026-07-21T14:00:00',
         handoverISO: '2026-07-21T14:40:00',
-        asaClass: 'AS1',
         billingReference: 'PO-2026-0001',
       }).ok,
     ).toBe(true)

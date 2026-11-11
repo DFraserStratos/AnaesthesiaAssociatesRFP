@@ -28,6 +28,7 @@
  */
 
 import type { Procedure } from '../types'
+import type { ModifierId } from './modifiers'
 
 /** Seeded `RG001`…; allocated at runtime `RGN001`. Never shown. */
 export type RvgGroupId = string
@@ -54,13 +55,17 @@ export interface RvgGroup {
   /** Retired rows are hidden from the picker and keep pricing the Procedures that carry them. */
   retired: boolean
   /**
-   * INTERIM (deleted by Phase 19b): the modifier codes this row already
-   * includes, so absorbed positioning keeps working until the included P1.
-   * Only the rows remapped from the legacy absorbing codes the seed still uses
-   * (47516, 47519, 48939; the other four of the seven were unused) carry it;
-   * nothing new sets it and Admin never shows it.
+   * The modifiers this row's base units already include (catch-up Phase 19b,
+   * US-05.1.4, D43): P1 on the 20 Neurosurgery and Spine rows, from the
+   * catalogue's included-modifiers CSV. Pre-applied at 0 units, removable,
+   * never added twice. Empty on every other row.
    */
-  includesModifierCodes?: string[]
+  includedModifierIds: ModifierId[]
+  /**
+   * The row is already split by age (H6b, P2), so no age modifier is
+   * pre-applied on it (D29's default; OQ-95 part 1).
+   */
+  noAgeModifier?: boolean
 }
 
 /**

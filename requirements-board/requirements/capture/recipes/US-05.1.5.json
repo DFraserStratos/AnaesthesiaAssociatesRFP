@@ -1,24 +1,41 @@
 {
   "id": "US-05.1.5",
-  "status": "partial",
-  "absentReason": "The modifier code master holds the A, AI, AS, ASE, OB, P, PA and post-op codes with unit values, view only. VM1, TTE1 to TTE2, PACU1, EAA1, POC1 to POC3 and NC1 to NC2 are not in the set.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "modifier-codes",
+      "name": "modifiers",
       "app": "admin",
-      "caption": "Modifier codes with group, selection rule and units",
-      "start": "/admin/masters",
+      "caption": "The RVG modifier table as printed, plus AA's own",
+      "start": "/admin/masters?view=modifiers",
       "states": [
         {
+          "state": "table",
           "steps": [
-            {
-              "click": "role=button[name=\"Modifier codes\"]"
-            },
             {
               "wait": 300
             }
           ],
-          "highlight": []
+          "highlight": [
+            "[data-shot=masters-modifiers-provisional]",
+            "tr[data-modifier-code=PA3]"
+          ],
+          "caption": "The RVG modifier table as printed, plus AA's own"
+        },
+        {
+          "state": "add-aa",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add AA modifier\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=add-aa-modifier]"
+          ],
+          "caption": "The office can add one of AA's own modifiers"
         }
       ]
     }

@@ -16,7 +16,7 @@ export type MastersView =
   | 'specialties'
   | 'fundingTags'
   | 'rvgGroups'
-  | 'modifierCodes'
+  | 'modifiers'
   | 'scheduleSettings'
   | 'availability-statuses'
   | 'xeroArchiving'
@@ -38,7 +38,8 @@ export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'surgeonGroups', label: 'Surgeon groups' },
   // Catch-up Phase 19 (US-05.1.1): the RVG groups as published plus AA's own; replaces the view-only RVG codes.
   { view: 'rvgGroups', label: 'RVG groups' },
-  { view: 'modifierCodes', label: 'Modifier codes' },
+  // Catch-up Phase 19b (US-05.1.5): the RVG modifier table as printed plus AA's own; replaces the demo Modifier codes.
+  { view: 'modifiers', label: 'Modifiers' },
   { view: 'scheduleSettings', label: 'Schedule settings' },
   // Catch-up Phase 29 (US-01.2.2): the user-maintained availability statuses; never "slot" in the UI (OQ-64).
   { view: 'availability-statuses', label: 'Availability statuses' },
@@ -55,5 +56,7 @@ export function parseMastersView(param: string | null): MastersView {
   if (param === 'insurers' || param === 'organisations') return 'parties'
   // The flat RVG code table became the RVG groups (catch-up Phase 19).
   if (param === 'rvgCodes') return 'rvgGroups'
+  // The demo Modifier codes table became Modifiers (catch-up Phase 19b).
+  if (param === 'modifierCodes') return 'modifiers'
   return MASTERS_NAV.find((n) => n.view === param)?.view ?? DEFAULT_MASTERS_VIEW
 }

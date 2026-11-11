@@ -202,6 +202,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       billingLines: Object.values(billingLinesRecord),
       listDateISO: list.dateISO,
       timeRule: masters.rvgTimeRule,
+      patientDobISO: masters.patients[booking.patientId]?.dobISO,
+      modifiers: masters.modifiers,
     }
     const hospital = listHospitalFor(list, masters.hospitals)
     if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
@@ -210,8 +212,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
 
   const bookingTotals = useMemo(() => {
     if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return { units: 0, total: 0, needsPrice: false }
-    return bookingFee(procedures, list, masters, billingLinesRecord)
-  }, [list, procedures, masters, billingLinesRecord])
+    return bookingFee(procedures, list, masters, billingLinesRecord, booking?.patientId)
+  }, [list, procedures, masters, billingLinesRecord, booking?.patientId])
 
   /**
    * The breakdown behind the pinned Booking total. Rows are per PROCEDURE on a
@@ -232,7 +234,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return empty
 
     const views = procedures.map((procedure) =>
-      procedureFee({ procedure, list, masters, billingLines: billingLinesRecord }),
+      procedureFee({ procedure, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId }),
     )
 
     const rateLabels = views.map(({ fee }) =>

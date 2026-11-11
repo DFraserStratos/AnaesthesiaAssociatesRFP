@@ -1,0 +1,97 @@
+{
+  "id": "US-03.3.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "age-applied",
+      "app": "web",
+      "caption": "A1 is applied from the patient's age and can be removed",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "applied",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifier-applied]"
+          ],
+          "caption": "A1 is applied from the patient's age and can be removed"
+        },
+        {
+          "state": "removed",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=capture-modifier-applied] >> text=\"Remove\""
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifier-removed]"
+          ],
+          "caption": "Removed, the age modifier can be put back"
+        }
+      ]
+    },
+    {
+      "name": "age-applied",
+      "app": "mobile",
+      "caption": "A1 is applied from the patient's age and can be removed",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "applied",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=capture-modifier-applied]"
+          ],
+          "caption": "A1 is applied from the patient's age and can be removed"
+        },
+        {
+          "state": "removed",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 620
+            },
+            {
+              "wait": 900
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=capture-modifier-applied] >> text=\"Remove\""
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=capture-modifier-removed]"
+          ],
+          "caption": "Removed, the age modifier can be put back"
+        }
+      ]
+    }
+  ]
+}

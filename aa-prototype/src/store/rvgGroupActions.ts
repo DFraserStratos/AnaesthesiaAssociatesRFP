@@ -26,6 +26,8 @@ import {
 import type { Procedure } from '../domain/types'
 import type { AppStoreApi } from './appStore'
 import { getBooking, editRefusal } from './lifecycle'
+import { reconciledForGroup } from './modifierFacts'
+import { claimsAuditView } from '../domain/billing/modifiers'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 
 const OFFICE_ONLY = 'Only the office can change the RVG groups.'
@@ -54,7 +56,8 @@ export function createRvgGroup(api: AppStoreApi, actor: Actor, input: RvgGroupIn
   mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'rvgGroup')
     id = alloc.id
-    const row: RvgGroup = { id, ...clean, retired: false }
+    // AA's own rows include no modifier (only the published Neurosurgery and Spine rows do, catch-up Phase 19b).
+    const row: RvgGroup = { id, ...clean, retired: false, includedModifierIds: [] }
     metas.push({ entityType: 'rvgGroup', entityId: id, action: 'rvgGroup.create', after: auditView(row), stampBookingId: null })
     return { masters: { ...s.masters, rvgGroups: { ...s.masters.rvgGroups, [id]: row } }, counters: alloc.counters }
   })
@@ -145,6 +148,11 @@ export function pickRvgGroup(api: AppStoreApi, actor: Actor, procedureId: string
   else next.rvgGroupId = nextId
   delete next.baseUnitsSelected
   delete next.baseUnitsCaptured
+  // A change of group re-derives the included modifiers: a claim the new
+  // group now includes, and a removal that no longer applies, drop in the same
+  // commit (catch-up Phase 19b, `reconcileClaims`).
+  const reconciled = reconciledForGroup(state, procedure, nextId)
+  if (reconciled !== null) Object.assign(next, reconciled)
 
   mutate(
     api,
@@ -157,8 +165,14 @@ export function pickRvgGroup(api: AppStoreApi, actor: Actor, procedureId: string
         rvgGroupId: procedure.rvgGroupId,
         baseUnitsSelected: procedure.baseUnitsSelected,
         baseUnitsCaptured: procedure.baseUnitsCaptured,
+        ...(reconciled !== null ? claimsAuditView(procedure, state.masters.modifiers) : {}),
       },
-      after: { rvgGroupId: nextId, baseUnitsSelected: undefined, baseUnitsCaptured: undefined },
+      after: {
+        rvgGroupId: nextId,
+        baseUnitsSelected: undefined,
+        baseUnitsCaptured: undefined,
+        ...(reconciled !== null ? claimsAuditView(reconciled, state.masters.modifiers) : {}),
+      },
     },
     (s) => ({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
   )

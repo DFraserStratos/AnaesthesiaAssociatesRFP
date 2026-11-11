@@ -70,7 +70,7 @@ describe('editAnaesthetist', () => {
 
     const feeArgs = () => {
       const s = api.getState()
-      return { procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[MORRISON_LIST]), ordinal: 1, masters: s.masters, billingLines: s.schedule.billingLines }
+      return { procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[MORRISON_LIST]), masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }
     }
     const before = procedureFee(feeArgs()).fee.total
     expect(before).toBeGreaterThan(0)

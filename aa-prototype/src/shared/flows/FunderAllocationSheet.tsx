@@ -56,16 +56,16 @@ export function FunderAllocationSheet({ open, procedure, list, actor, onClose }:
     [billingLinesRecord, procedure.id],
   )
 
+  const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
+
   const { feeTotal, needsPrice } = useMemo(() => {
     try {
-      const { fee } = procedureFee({ procedure, list, masters, billingLines: billingLinesRecord })
+      const { fee } = procedureFee({ procedure, list, masters, billingLines: billingLinesRecord, patientId })
       return { feeTotal: fee.total, needsPrice: fee.needsPrice }
     } catch {
       return { feeTotal: 0, needsPrice: false }
     }
-  }, [procedure, list, masters, billingLinesRecord])
-
-  const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
+  }, [procedure, list, masters, billingLinesRecord, patientId])
 
   const options = useMemo<FunderOption[]>(() => {
     const opts: FunderOption[] = [{ key: 'none', label: 'Default route (no override)', ref: null }]

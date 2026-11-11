@@ -68,10 +68,15 @@ test('capture: Ellison BTM block', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/m4-01-booking-top.png', fullPage: true })
   // Scroll the phone frame's content to the capture block. What the scroll
   // shows is the masthead folded to its nav row above the Mark complete dock.
-  await page.getByText('ASA status', { exact: true }).scrollIntoViewIfNeeded()
+  await page.getByText('RVG code', { exact: true }).scrollIntoViewIfNeeded()
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/m4-01-btm-block.png', fullPage: true })
-  await page.getByText('Modifiers', { exact: false }).first().scrollIntoViewIfNeeded()
+  // The Modifiers section (catch-up Phase 19b): A1 pre-applied from her age, nothing else.
+  const modifiers = page.locator('[data-shot="capture-modifiers"]')
+  await modifiers.scrollIntoViewIfNeeded()
+  await expect(modifiers.locator('[data-shot="capture-modifier-applied"]')).toHaveCount(1)
+  await expect(modifiers.locator('[data-shot="capture-modifier-applied"]')).toContainText("From the patient's age (72) on the procedure date")
+  await expect(modifiers.locator('[data-shot="capture-modifier-claim"]')).toHaveCount(0)
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'visual/shots/m4-01-modifiers.png', fullPage: true })
 })
@@ -83,11 +88,15 @@ test('capture: code picker sheet', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/m4-02-code-picker.png', fullPage: true })
 })
 
-test('capture: ASA III selected', async ({ page }) => {
+test('capture: ASA III claimed with its explanation', async ({ page }) => {
   await openEllison(page)
-  await page.getByRole('button', { name: 'III', exact: true }).click()
+  await page.locator('[data-shot="modifier-add"]').click()
+  await page.locator('[data-shot="modifier-picker"] [data-modifier-code="AS3"]').click()
+  await page.getByPlaceholder('A short reason, as an insurer would ask').fill('ASA III on pre-op review')
+  await page.getByRole('button', { name: 'Claim', exact: true }).click()
+  await expect(page.locator('[data-shot="capture-modifier-claim"][data-modifier-code="AS3"]')).toBeVisible()
   await page.waitForTimeout(150)
-  await page.screenshot({ path: 'visual/shots/m4-03-asa-selected.png', fullPage: true })
+  await page.screenshot({ path: 'visual/shots/m4-03-asa-claimed.png', fullPage: true })
 })
 
 test('capture: finish now, complete, submit walk', async ({ page }) => {

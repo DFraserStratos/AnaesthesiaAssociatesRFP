@@ -2,20 +2,20 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "19b"
+      "20"
     ],
-    "note": "32a, 38a, 32b, 32c, 18, 18a, 19 and 19a are done (2026-11-11). The Contracts track continues with 19b, then 20 to 25 with 21a, in the ROADMAP's run order."
+    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a and 19b are done (2026-11-11). The Contracts track continues with 20, then 20a to 25 with 21a, in the ROADMAP's run order."
   },
   "guidance": {
     "as_of": "2026-11-11",
-    "headline": "Start 19b now. Price ranges, the Contract's own fields and starting values are built.",
-    "headline_sub": "19a (every priced item a Contract of its own with backdatable price ranges, the range in force on the procedure date giving the price; each Contract's invoice description and default RVG code beside its holder reference code; Merivale's combinations and Dr Souter's prepaid price list as Contracts; an empty RVG code filled from the Contract's default; the RVG time tiers held as data) is done, after 18, 18a and 19. The Contracts track continues with 19b (modifiers), then 20 to 25, in the ROADMAP's run order.",
-    "parallel": "Only 19b is next in the run order. 17a and 26 have their dependencies met but come later in the run order (26 and 17a after the Contracts track), so run 19b on its own.",
+    "headline": "Start 20 now. Modifiers are built.",
+    "headline_sub": "19b (the NZSA RVG 2021 modifier table as printed, generated from the catalogue; modifiers as itemised claims, each with a short explanation; the age modifier and P1 on Neurosurgery and Spine codes pre-applied and removable, nothing locked; the ASA card and seed and the absorbed refusals gone; the Admin Modifiers tab) is done, after 18 to 19a. The Contracts track continues with 20 (one Contract per Procedure and the step rail), then 20a to 25, in the ROADMAP's run order.",
+    "parallel": "Only 20 is next in the run order. 17a and 26 have their dependencies met but come later in the run order (26 and 17a after the Contracts track), so run 20 on its own.",
     "safe": {
-      "19b": "Its dependency (19a, and through it 19, 18 and 18a) is done. OQ-95 part 1 (the age band boundaries) is still open, but the phase builds D29's default and keeps it in one place."
+      "20": "Its dependencies (18a, 19a, 19b and 38a) are done. OQ-135 is still open, but the phase builds its stated default (D81) and logs it for the owner."
     },
     "wait": {
-      "20": "Needs 19b first (it also reads 18a, 19a and 38a, all done).",
+      "20a": "Needs 20 first.",
       "26": "Its dependency (17) is done, but the run order puts it after the Contracts track (18 to 25).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26."
     }

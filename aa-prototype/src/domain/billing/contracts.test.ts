@@ -19,8 +19,8 @@ import { needsPriceMessage } from './priceRanges'
 
 /** A fixed price with one range from 1 Jan 2026. */
 const FIXED: ContractPricing = { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 500 }] }
-const H3: RvgGroup = { id: 'rg-h3', code: 'H3', description: 'Moderate procedures', anatomy: 'Head', baseUnits: 6, modifierUnits: 0, retired: false }
-const OLD: RvgGroup = { id: 'rg-old', code: 'X9', description: 'Retired row', anatomy: 'Head', baseUnits: 4, modifierUnits: 0, retired: true }
+const H3: RvgGroup = { id: 'rg-h3', code: 'H3', description: 'Moderate procedures', anatomy: 'Head', baseUnits: 6, modifierUnits: 0, retired: false, includedModifierIds: [] }
+const OLD: RvgGroup = { id: 'rg-old', code: 'X9', description: 'Retired row', anatomy: 'Head', baseUnits: 4, modifierUnits: 0, retired: true, includedModifierIds: [] }
 const GROUPS = { [H3.id]: H3, [OLD.id]: OLD }
 
 const HOSPITAL = mkParty()

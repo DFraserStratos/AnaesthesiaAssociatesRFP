@@ -307,13 +307,11 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 5. The system calculates tiered Time units:
    - 1 unit per 15 minutes for the first two hours;
    - 1 unit per 10 minutes after two hours.
-6. She records ASA and any other applicable modifiers.
-7. The system prevents a positioning modifier if the base code already includes it.
-8. Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so each
-   band is a segmented control and picking a sibling replaces it rather than adding to it (tapping
-   the live segment again clears the band). The codes that genuinely stack — a pre-assessment
-   follow-up, emergency, positioning, awake intubation, post-op care — stay as chips under
-   "Also applies", so the shape of the control tells you the rule before you touch it.
+6. The age modifier, and any modifier the procedure's base units include (P1 on Neurosurgery and
+   Spine codes), are pre-applied and removable; she claims any other modifier that applies, ASA
+   included, each with a short explanation.
+7. An included modifier shows at 0 units and cannot be added twice.
+8. Modifiers stack with no limit, each with its own reason; the same modifier is never added twice.
 9. Her Booking shows no units or fee; only Mark complete is pinned. The office sees the full billing
    total on the Admin Booking.
 10. She may record an allowed fixed or rate-by-time line, or an override with a reason.

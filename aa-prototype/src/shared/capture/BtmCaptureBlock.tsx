@@ -5,7 +5,6 @@ import type { BillingValidationFailure } from '../../domain/billing'
 import { editRefusal, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { procedureFee } from './feeContext'
-import { AsaCard } from './AsaCard'
 import { ProcedureCodeCard } from './ProcedureCodeCard'
 import { TimesCard } from './TimesCard'
 import { UnitsCard } from './UnitsCard'
@@ -51,8 +50,10 @@ interface BtmCaptureBlockProps {
 
 /**
  * One procedure's Outcome/BTM capture block (mockup screen 3 = the skin; the
- * Phase 01 calculator = the maths). Composition: context header → ASA →
- * procedure code → times → B/T/M + chips → override → billing lines → notes.
+ * Phase 01 calculator = the maths). Composition: context header → procedure
+ * code → times → B/T/M and the itemised modifiers → override → billing lines →
+ * notes. The ASA grade is one optional modifier, claimed in the modifiers
+ * ledger with its explanation.
  *
  * No money object of its own: Fee mode pins the Booking total in the desktop rail
  * or phone dock, and a per-procedure panel here would duplicate it. Units and
@@ -60,16 +61,17 @@ interface BtmCaptureBlockProps {
  * several procedures, the full pinned total names each one's contribution.
  *
  * Write strategy (the logged capture-UX decision):
- * write-through per tap for steppers / chips / ASA / nudges / stamps — each
+ * write-through per tap for steppers / modifier removals / nudges / stamps (a modifier
+ * claim writes only with its explanation, from the picker's local state) — each
  * tap is one real audited procedure.update and drives the fee tick —
  * commit-on-blur/Save for all free text. Never debounced.
  *
  * The order above is the capture order and never varies. What varies is the
- * grouping: the two short reference cards (ASA, procedure code) and the two
- * short money cards (override, billing lines) go through `useSurface().Pair`,
+ * grouping: the two short money cards (override, billing lines) go through
+ * `useSurface().Pair`,
  * so a desktop sets each pair side by side while the phone keeps them stacked.
  * Times and units stay full width on both — the stamps, the B/T/M rows and the
- * modifier chips all use the room a desktop gives them.
+ * modifier ledger all use the room a desktop gives them.
  */
 export function BtmCaptureBlock({
   procedure,
@@ -87,11 +89,12 @@ export function BtmCaptureBlock({
   const { Pair } = useSurface()
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
+  const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
   const [sheetHint, setSheetHint] = useState(false)
 
   const { fee, rvgGroup, contract, nonRvgLines } = useMemo(
-    () => procedureFee({ procedure, list, masters, billingLines }),
-    [procedure, list, masters, billingLines],
+    () => procedureFee({ procedure, list, masters, billingLines, patientId }),
+    [procedure, list, masters, billingLines, patientId],
   )
 
   const shown = showValidation ? failures : []
@@ -105,6 +108,7 @@ export function BtmCaptureBlock({
     'handoverISO',
     'billingLines',
     'priceOverride',
+    'modifierClaims',
   ])
   const unanchored = shown.filter((f) => !anchored.has(f.field))
 
@@ -214,19 +218,15 @@ export function BtmCaptureBlock({
         </div>
       )}
 
-      <Pair>
-        <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} locked={list.state === 'AUTHORISED'} onError={onError} />
-
-        <ProcedureCodeCard
-          procedure={procedure}
-          rvgGroup={rvgGroup}
-          rvgGroups={masters.rvgGroups}
-          actor={actor}
-          canCapture={canCapture}
-          failures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
-          onError={onError}
-        />
-      </Pair>
+      <ProcedureCodeCard
+        procedure={procedure}
+        rvgGroup={rvgGroup}
+        rvgGroups={masters.rvgGroups}
+        actor={actor}
+        canCapture={canCapture}
+        failures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
+        onError={onError}
+      />
 
       <TimesCard
         procedure={procedure}
@@ -243,6 +243,7 @@ export function BtmCaptureBlock({
         actor={actor}
         canCapture={canCapture}
         isAdditional={procedure.isAdditional}
+        modifierFailures={forFields(['modifierClaims'])}
         onError={onError}
       />
 

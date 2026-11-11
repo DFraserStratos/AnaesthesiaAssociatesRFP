@@ -1155,6 +1155,8 @@ export function billingContextForBooking(state: AppState, booking: Booking): Boo
     billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: state.masters.rvgTimeRule,
+    patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
+    modifiers: state.masters.modifiers,
   }
   const hospital = listHospitalFor(list, state.masters.hospitals)
   if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
@@ -1172,7 +1174,7 @@ export interface EntityCounts {
   specialties: number
   fundingTags: number
   rvgGroups: number
-  modifierCodes: number
+  modifiers: number
   recurringBookings: number
   slots: number
   patients: number
@@ -1197,7 +1199,7 @@ export function entityCounts(state: AppState): EntityCounts {
     specialties: Object.keys(state.masters.specialties).length,
     fundingTags: Object.keys(state.masters.fundingTags).length,
     rvgGroups: Object.keys(state.masters.rvgGroups).length,
-    modifierCodes: Object.keys(state.masters.modifierCodes).length,
+    modifiers: Object.keys(state.masters.modifiers).length,
     recurringBookings: Object.keys(state.masters.recurringBookings).length,
     patients: Object.keys(state.masters.patients).length,
     billableParties: Object.keys(state.masters.billableParties).length,

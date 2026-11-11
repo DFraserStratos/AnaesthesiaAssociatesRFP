@@ -1,7 +1,7 @@
 {
   "id": "US-13.4.1",
   "status": "partial",
-  "absentReason": "Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). Modifier codes are view only (Phase 19b's), and public holidays are held per hospital with no separate master calendar.",
+  "absentReason": "Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). The RVG modifier rows are as printed (AA's own can be added), and public holidays are held per hospital with no separate master calendar.",
   "shots": [
     {
       "name": "master-data",
@@ -121,10 +121,10 @@
         },
         {
           "state": "modifier-codes",
-          "caption": "Master data, modifier codes (view only)",
+          "caption": "Master data, modifiers (the RVG table as printed, plus AA's own)",
           "steps": [
             {
-              "click": "role=button[name=\"Modifier codes\"]"
+              "click": "[data-masters-view=modifiers]"
             },
             {
               "wait": 500

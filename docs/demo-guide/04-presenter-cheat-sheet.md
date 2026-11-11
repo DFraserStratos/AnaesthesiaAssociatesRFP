@@ -88,7 +88,9 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
   a warning for the office after the procedure, never a block.
 - Base units sit on the RVG group alone; a Contract states none and may only name a default RVG code.
   Choosing a Contract fills an empty RVG code from its default; a Procedure that has one keeps it.
-- Positioning cannot be charged again if the base code already includes it.
+- P1 (non-supine positioning) is included, pre-applied at 0 (removable), on every Neurosurgery and
+  Spine code, so it cannot be added twice; the age modifier is pre-applied from the date of birth,
+  removable. Every other modifier, ASA included, is claimed with a short reason.
 - A part interval always rounds up (confirmed with AA); the tiers are held as data (Admin → Master
   data → RVG groups shows the RVG time rule, read only). The anaesthetist enters start and finish only.
 
@@ -435,11 +437,12 @@ Say:
 
 ### 10. Modifier values
 
-- The RFP names example modifier ranges, not a certified full NZSA table.
-- The prototype values are demo-plausible and must not be described as authoritative.
-- Codes in the same band (pre-assessment, age, ASA, BMI) are one-per-procedure, so tapping a sibling
-  replaces it: those per-group ranges only add up if one code applies. The RFP implies the rule rather
-  than stating it, and a pre-assessment follow-up (PA5) stacks on top, which is a question for AA.
+- The modifier table is the NZSA RVG 2021 table as printed (30 codes, Admin → Master data →
+  Modifiers); values that are not plain numbers ("2 + Time", "4-6") are entered at capture.
+- Only the age modifier and a modifier the base units include are pre-applied, and both can be
+  removed; nothing else is pre-filled. The age bands are still to confirm with AA (OQ-95).
+- Modifiers stack with no limit (a policy matter for AA, not a system rule); the same modifier is
+  never added twice. AA's own modifiers (Vanessa's list) are not loaded yet; the office can add one.
 
 ### 11. Open versus genuinely overdue prior balances
 

@@ -31,13 +31,19 @@ test('web phase 05 walkthrough', async ({ page }) => {
   // Drill into a booking → shared booking body + BTM capture.
   await page.getByText('Margaret Ellison').first().click()
   await page.waitForTimeout(300)
-  await expect(page.getByText('ASA status')).toBeVisible()
   await expect(page.getByText('RVG code', { exact: true })).toBeVisible()
+  // No ASA card (catch-up Phase 19b): Ellison's A1 is pre-applied from her age.
+  await expect(page.getByText('ASA status')).toHaveCount(0)
+  await expect(page.locator('[data-shot="capture-modifier-applied"][data-modifier-code="A1"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/w-04-booking-detail.png', fullPage: true })
 
-  // A BTM edit: pick an ASA class (writes through the same guard as mobile).
-  await page.getByRole('button', { name: 'III', exact: true }).click()
-  await page.waitForTimeout(200)
+  // A BTM edit: claim ASA III with its explanation (writes through the same guard as mobile).
+  await page.locator('[data-shot="modifier-add"]').click()
+  await page.locator('[data-shot="modifier-picker"] [data-modifier-code="AS3"]').click()
+  await page.getByPlaceholder('A short reason, as an insurer would ask').fill('ASA III on pre-op review')
+  await page.getByRole('button', { name: 'Claim', exact: true }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('[data-shot="capture-modifier-claim"][data-modifier-code="AS3"]')).toContainText('ASA III on pre-op review')
   await page.screenshot({ path: 'visual/shots/w-05-btm-edit.png', fullPage: true })
 
   // Availability grid.

@@ -1,0 +1,7610 @@
+{
+  "fees": [
+    {
+      "procedureId": "HP01",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP02",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP03",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP04",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP05",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP06",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP07",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP08",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP09",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP10",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP11",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP12",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP13",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP14",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP15",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP16",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP17",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP18",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP19",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP20",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP21",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP22",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP23",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP24",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP25",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP26",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP27",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP28",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP29",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP30",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP31",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP32",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP33",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP34",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP35",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP36",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP37",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP38",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP39",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP40",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP41",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "HP42",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0001",
+      "total": 371,
+      "billableUnits": 14,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 371
+        }
+      ],
+      "b": 7,
+      "t": 6,
+      "m": 1
+    },
+    {
+      "procedureId": "P0002",
+      "total": 371,
+      "billableUnits": 14,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 371
+        }
+      ],
+      "b": 6,
+      "t": 5,
+      "m": 3
+    },
+    {
+      "procedureId": "P0003",
+      "total": 318,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 318
+        }
+      ],
+      "b": 7,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0004",
+      "total": 291.5,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 291.5
+        }
+      ],
+      "b": 6,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0005",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0006",
+      "total": 318,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 318
+        }
+      ],
+      "b": 6,
+      "t": 6,
+      "m": 0
+    },
+    {
+      "procedureId": "P0007",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0008",
+      "total": 238.5,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 238.5
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0009",
+      "total": 212,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 212
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0010",
+      "total": 455,
+      "billableUnits": 13,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 455
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 3
+    },
+    {
+      "procedureId": "P0011",
+      "total": 210,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 210
+        }
+      ],
+      "b": 3,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0012",
+      "total": 225,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 225
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0013",
+      "total": 350,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 350
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0014",
+      "total": 175,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 175
+        }
+      ],
+      "b": 3,
+      "t": 2,
+      "m": 0
+    },
+    {
+      "procedureId": "P0015",
+      "total": 245,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 245
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0016",
+      "total": 105,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 105
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0017",
+      "total": 253,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 253
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0018",
+      "total": 253,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 253
+        }
+      ],
+      "b": 6,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0019",
+      "total": 184,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 184
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0020",
+      "total": 207,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 207
+        }
+      ],
+      "b": 5,
+      "t": 3,
+      "m": 1
+    },
+    {
+      "procedureId": "P0021",
+      "total": 345,
+      "billableUnits": 15,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 345
+        }
+      ],
+      "b": 7,
+      "t": 5,
+      "m": 3
+    },
+    {
+      "procedureId": "P0022",
+      "total": 291.5,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 291.5
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0023",
+      "total": 53,
+      "billableUnits": 2,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 53
+        }
+      ],
+      "b": 4,
+      "t": 2,
+      "m": 1
+    },
+    {
+      "procedureId": "P0024",
+      "total": 291.5,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 291.5
+        }
+      ],
+      "b": 6,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0025",
+      "total": 265,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 265
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0026",
+      "total": 212,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 212
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0027",
+      "total": 291.5,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 291.5
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0028",
+      "total": 265,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 265
+        }
+      ],
+      "b": 6,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0029",
+      "total": 2800,
+      "billableUnits": 22,
+      "lines": [
+        {
+          "basis": "fixed",
+          "amount": 2800
+        }
+      ],
+      "b": 10,
+      "t": 9,
+      "m": 3
+    },
+    {
+      "procedureId": "P0030",
+      "total": 61,
+      "billableUnits": 2,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 61
+        }
+      ],
+      "b": 4,
+      "t": 2,
+      "m": 3
+    },
+    {
+      "procedureId": "P0031",
+      "total": 1440,
+      "billableUnits": 0,
+      "lines": [
+        {
+          "basis": "rateTime",
+          "amount": 1440
+        }
+      ],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0032",
+      "total": 352,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 352
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0033",
+      "total": 288,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 288
+        }
+      ],
+      "b": 5,
+      "t": 6,
+      "m": 1
+    },
+    {
+      "procedureId": "P0034",
+      "total": 207,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 207
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0035",
+      "total": 118,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 118
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0036",
+      "total": 1200,
+      "billableUnits": 0,
+      "lines": [
+        {
+          "basis": "fixed",
+          "amount": 1200
+        }
+      ],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0037",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0038",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0039",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0040",
+      "total": 212,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 212
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0041",
+      "total": 238.5,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 238.5
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0042",
+      "total": 288,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 288
+        }
+      ],
+      "b": 5,
+      "t": 6,
+      "m": 1
+    },
+    {
+      "procedureId": "P0043",
+      "total": 192.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 192.5
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0044",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0045",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0046",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0047",
+      "total": 79.5,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 79.5
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0048",
+      "total": 330,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 330
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0049",
+      "total": 79.5,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 79.5
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0050",
+      "total": 79.5,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 79.5
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0051",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0052",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0053",
+      "total": 79.5,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 79.5
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0054",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0055",
+      "total": 115,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 115
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0056",
+      "total": 115,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 115
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0057",
+      "total": 138,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 138
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0058",
+      "total": 92,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 92
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0059",
+      "total": 161,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 161
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0060",
+      "total": 92,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 92
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0061",
+      "total": 69,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 69
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0062",
+      "total": 115,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 115
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0063",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0064",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0065",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0066",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0067",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0068",
+      "total": 0,
+      "billableUnits": 0,
+      "lines": [],
+      "b": 0,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0069",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0070",
+      "total": 132.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132.5
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0071",
+      "total": 106,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 106
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0072",
+      "total": 230,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 230
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0073",
+      "total": 312,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 312
+        }
+      ],
+      "b": 5,
+      "t": 6,
+      "m": 1
+    },
+    {
+      "procedureId": "P0074",
+      "total": 207,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 207
+        }
+      ],
+      "b": 3,
+      "t": 6,
+      "m": 0
+    },
+    {
+      "procedureId": "P0075",
+      "total": 161,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 161
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0076",
+      "total": 308,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 308
+        }
+      ],
+      "b": 7,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0077",
+      "total": 252,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 252
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0078",
+      "total": 308,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 308
+        }
+      ],
+      "b": 6,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0079",
+      "total": 308,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 308
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 3
+    },
+    {
+      "procedureId": "P0080",
+      "total": 264,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 264
+        }
+      ],
+      "b": 5,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0081",
+      "total": 161,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 161
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0082",
+      "total": 161,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 161
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0083",
+      "total": 253,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 253
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 3
+    },
+    {
+      "procedureId": "P0084",
+      "total": 260,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 260
+        }
+      ],
+      "b": 3,
+      "t": 6,
+      "m": 1
+    },
+    {
+      "procedureId": "P0085",
+      "total": 260,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 260
+        }
+      ],
+      "b": 4,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0086",
+      "total": 274.5,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 274.5
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0087",
+      "total": 305,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 305
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 3
+    },
+    {
+      "procedureId": "P0088",
+      "total": 274.5,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 274.5
+        }
+      ],
+      "b": 3,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0089",
+      "total": 244,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 244
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 1
+    },
+    {
+      "procedureId": "P0090",
+      "total": 385,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 385
+        }
+      ],
+      "b": 5,
+      "t": 6,
+      "m": 0
+    },
+    {
+      "procedureId": "P0091",
+      "total": 315,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 315
+        }
+      ],
+      "b": 5,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0092",
+      "total": 280,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 280
+        }
+      ],
+      "b": 3,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0093",
+      "total": 350,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 350
+        }
+      ],
+      "b": 4,
+      "t": 6,
+      "m": 0
+    },
+    {
+      "procedureId": "P0094",
+      "total": 336,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 336
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0095",
+      "total": 336,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 336
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 1
+    },
+    {
+      "procedureId": "P0096",
+      "total": 336,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 336
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 1
+    },
+    {
+      "procedureId": "P0097",
+      "total": 236,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 236
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0098",
+      "total": 236,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 236
+        }
+      ],
+      "b": 3,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0099",
+      "total": 206.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 206.5
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0100",
+      "total": 360,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 360
+        }
+      ],
+      "b": 7,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0101",
+      "total": 330,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 330
+        }
+      ],
+      "b": 5,
+      "t": 6,
+      "m": 0
+    },
+    {
+      "procedureId": "P0102",
+      "total": 230,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 230
+        }
+      ],
+      "b": 4,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0103",
+      "total": 299,
+      "billableUnits": 13,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 299
+        }
+      ],
+      "b": 5,
+      "t": 5,
+      "m": 3
+    },
+    {
+      "procedureId": "P0104",
+      "total": 138,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 138
+        }
+      ],
+      "b": 3,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0105",
+      "total": 399,
+      "billableUnits": 14,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 399
+        }
+      ],
+      "b": 6,
+      "t": 5,
+      "m": 3
+    },
+    {
+      "procedureId": "P0106",
+      "total": 224,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 224
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0107",
+      "total": 256,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 256
+        }
+      ],
+      "b": 3,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0108",
+      "total": 352,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 352
+        }
+      ],
+      "b": 6,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0109",
+      "total": 352,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 352
+        }
+      ],
+      "b": 6,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0110",
+      "total": 378,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 378
+        }
+      ],
+      "b": 4,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0111",
+      "total": 378,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 378
+        }
+      ],
+      "b": 4,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0112",
+      "total": 420,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 420
+        }
+      ],
+      "b": 4,
+      "t": 5,
+      "m": 1
+    },
+    {
+      "procedureId": "P0113",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 0
+    },
+    {
+      "procedureId": "P0114",
+      "total": 504,
+      "billableUnits": 12,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 504
+        }
+      ],
+      "b": 7,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0115",
+      "total": 324.5,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 324.5
+        }
+      ],
+      "b": 4,
+      "t": 6,
+      "m": 1
+    },
+    {
+      "procedureId": "P0116",
+      "total": 253,
+      "billableUnits": 11,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 253
+        }
+      ],
+      "b": 6,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0117",
+      "total": 184,
+      "billableUnits": 8,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 184
+        }
+      ],
+      "b": 3,
+      "t": 5,
+      "m": 0
+    },
+    {
+      "procedureId": "P0118",
+      "total": 207,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 207
+        }
+      ],
+      "b": 4,
+      "t": 4,
+      "m": 1
+    },
+    {
+      "procedureId": "P0119",
+      "total": 265,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 265
+        }
+      ],
+      "b": 6,
+      "t": 4,
+      "m": 0
+    },
+    {
+      "procedureId": "P0120",
+      "total": 238.5,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 238.5
+        }
+      ],
+      "b": 5,
+      "t": 3,
+      "m": 1
+    },
+    {
+      "procedureId": "P0121",
+      "total": 265,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 265
+        }
+      ],
+      "b": 4,
+      "t": 3,
+      "m": 3
+    },
+    {
+      "procedureId": "P0122",
+      "total": 160,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 160
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0123",
+      "total": 160,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 160
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0124",
+      "total": 128,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 128
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0125",
+      "total": 160,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 160
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0126",
+      "total": 224,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 224
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0127",
+      "total": 207,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 207
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0128",
+      "total": 92,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 92
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0129",
+      "total": 137.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 137.5
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0130",
+      "total": 115,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 115
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0131",
+      "total": 69,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 69
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0132",
+      "total": 161,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 161
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0133",
+      "total": 300,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 300
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0134",
+      "total": 138,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 138
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0135",
+      "total": 183,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 183
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0136",
+      "total": 183,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 183
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0137",
+      "total": 118,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 118
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0138",
+      "total": 118,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 118
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0139",
+      "total": 118,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 118
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0140",
+      "total": 159,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 159
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0141",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0142",
+      "total": 210,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 210
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0143",
+      "total": 182,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 182
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0144",
+      "total": 140,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 140
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0145",
+      "total": 175,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 175
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0146",
+      "total": 245,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 245
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0147",
+      "total": 115,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 115
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0148",
+      "total": 120,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 120
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0149",
+      "total": 150,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 150
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0150",
+      "total": 147.5,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 147.5
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0151",
+      "total": 88.5,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 88.5
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0152",
+      "total": 210,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 210
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 1
+    },
+    {
+      "procedureId": "P0153",
+      "total": 132,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 132
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0154",
+      "total": 330,
+      "billableUnits": 10,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 330
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0155",
+      "total": 171,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 171
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0156",
+      "total": 114,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 114
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0157",
+      "total": 196,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 196
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0158",
+      "total": 160,
+      "billableUnits": 5,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 160
+        }
+      ],
+      "b": 5,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0159",
+      "total": 217,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 217
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0160",
+      "total": 279,
+      "billableUnits": 9,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 279
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 3
+    },
+    {
+      "procedureId": "P0161",
+      "total": 185.5,
+      "billableUnits": 7,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 185.5
+        }
+      ],
+      "b": 7,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0162",
+      "total": 118,
+      "billableUnits": 4,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 118
+        }
+      ],
+      "b": 4,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0165",
+      "total": 93,
+      "billableUnits": 3,
+      "lines": [
+        {
+          "basis": "rvg",
+          "amount": 93
+        }
+      ],
+      "b": 3,
+      "t": 0,
+      "m": 0
+    },
+    {
+      "procedureId": "P0166",
+      "total": 3100,
+      "billableUnits": 6,
+      "lines": [
+        {
+          "basis": "fixed",
+          "amount": 3100
+        }
+      ],
+      "b": 6,
+      "t": 0,
+      "m": 0
+    }
+  ],
+  "invoices": [
+    {
+      "bookingId": "BK0001",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 371,
+            "total": 426.65
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0002",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 371,
+            "total": 426.65
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0003",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 318,
+            "total": 365.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0004",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 291.5,
+            "total": 335.23
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0005",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0006",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 318,
+            "total": 365.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0007",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0008",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0003",
+            "subtotal": 238.5,
+            "total": 274.28
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0009",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 212,
+            "total": 243.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0010",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 455,
+            "total": 523.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0011",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 210,
+            "total": 241.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0012",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 225,
+            "total": 258.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0013",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 350,
+            "total": 402.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0014",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 175,
+            "total": 201.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0015",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 245,
+            "total": 281.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0016",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "BK0017",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 253,
+            "total": 290.95
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0018",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 253,
+            "total": 290.95
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0019",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 184,
+            "total": 211.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0020",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 207,
+            "total": 238.05
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0021",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 345,
+            "total": 396.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0022",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 344.5,
+            "total": 396.18
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0023",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 291.5,
+            "total": 335.23
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0024",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 265,
+            "total": 304.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0025",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 132.5,
+            "total": 152.38
+          },
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 79.5,
+            "total": 91.43
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0026",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 291.5,
+            "total": 335.23
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0027",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 265,
+            "total": 304.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0028",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "surgeon:S-DOYLE",
+            "subtotal": 2800,
+            "total": 3220
+          },
+          {
+            "counterparty": "patient:PT0015",
+            "subtotal": 61,
+            "total": 70.15
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0029",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "billableParty:BP0002",
+            "subtotal": 1440,
+            "total": 1656
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0030",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0014",
+            "subtotal": 352,
+            "total": 404.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0031",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "organisation:O-COS",
+            "subtotal": 288,
+            "total": 331.2
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0032",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 207,
+            "total": 238.05
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0033",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "billableParty:BP0001",
+            "subtotal": 118,
+            "total": 135.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0034",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0017",
+            "subtotal": 1200,
+            "total": 1380
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0035",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0036",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0037",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "BK0038",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 212,
+            "total": 243.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0039",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "organisation:O-COS",
+            "subtotal": 288,
+            "total": 331.2
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0040",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 192.5,
+            "total": 221.38
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0041",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0042",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0043",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0044",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 79.5,
+            "total": 91.43
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0045",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 330,
+            "total": 379.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0046",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 79.5,
+            "total": 91.43
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0047",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 79.5,
+            "total": 91.43
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0048",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0049",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0050",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 79.5,
+            "total": 91.43
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0051",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0052",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 115,
+            "total": 132.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0053",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 115,
+            "total": 132.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0054",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 138,
+            "total": 158.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0055",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 92,
+            "total": 105.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0056",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 161,
+            "total": 185.15
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0057",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 92,
+            "total": 105.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0058",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 69,
+            "total": 79.35
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0059",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 115,
+            "total": 132.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0060",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0061",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0062",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0063",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0064",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0065",
+      "result": {
+        "kind": "exception",
+        "code": "noBillingRoute"
+      }
+    },
+    {
+      "bookingId": "BK0066",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0067",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 132.5,
+            "total": 152.38
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0068",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0069",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 230,
+            "total": 264.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0070",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0062",
+            "subtotal": 312,
+            "total": 358.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0071",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 207,
+            "total": 238.05
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0072",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 161,
+            "total": 185.15
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0073",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 308,
+            "total": 354.2
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0074",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 252,
+            "total": 289.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0075",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 308,
+            "total": 354.2
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0076",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0068",
+            "subtotal": 308,
+            "total": 354.2
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0077",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 264,
+            "total": 303.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0078",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 161,
+            "total": 185.15
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0079",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 161,
+            "total": 185.15
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0080",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 253,
+            "total": 290.95
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0081",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0073",
+            "subtotal": 260,
+            "total": 299
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0082",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 260,
+            "total": 299
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0083",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 274.5,
+            "total": 315.68
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0084",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 305,
+            "total": 350.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0085",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 274.5,
+            "total": 315.68
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0086",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 244,
+            "total": 280.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0087",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 385,
+            "total": 442.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0088",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 315,
+            "total": 362.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0089",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 280,
+            "total": 322
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0090",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 350,
+            "total": 402.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0091",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 336,
+            "total": 386.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0092",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 336,
+            "total": 386.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0093",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 336,
+            "total": 386.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0094",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 236,
+            "total": 271.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0095",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 236,
+            "total": 271.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0096",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 206.5,
+            "total": 237.48
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0097",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0089",
+            "subtotal": 360,
+            "total": 414
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0098",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0090",
+            "subtotal": 330,
+            "total": 379.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0099",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 230,
+            "total": 264.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0100",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 299,
+            "total": 343.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0101",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 138,
+            "total": 158.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0102",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 399,
+            "total": 458.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0103",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 224,
+            "total": 257.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0104",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 256,
+            "total": 294.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0105",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 352,
+            "total": 404.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0106",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 352,
+            "total": 404.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0107",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 378,
+            "total": 434.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0108",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 378,
+            "total": 434.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0109",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 420,
+            "total": 483
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0110",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0111",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0103",
+            "subtotal": 504,
+            "total": 579.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0112",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0104",
+            "subtotal": 324.5,
+            "total": 373.18
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0113",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 253,
+            "total": 290.95
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0114",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 184,
+            "total": 211.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0115",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 207,
+            "total": 238.05
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0116",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 265,
+            "total": 304.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0117",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 238.5,
+            "total": 274.28
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0118",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 265,
+            "total": 304.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0119",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 160,
+            "total": 184
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0120",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 160,
+            "total": 184
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0121",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 128,
+            "total": 147.2
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0122",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 160,
+            "total": 184
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0123",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 224,
+            "total": 257.6
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0124",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 207,
+            "total": 238.05
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0125",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 92,
+            "total": 105.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0126",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 137.5,
+            "total": 158.13
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0127",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 115,
+            "total": 132.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0128",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 69,
+            "total": 79.35
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0129",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 161,
+            "total": 185.15
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0130",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0122",
+            "subtotal": 300,
+            "total": 345
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0131",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 138,
+            "total": 158.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0132",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0124",
+            "subtotal": 183,
+            "total": 210.45
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0133",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 183,
+            "total": 210.45
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0134",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 118,
+            "total": 135.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0135",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 118,
+            "total": 135.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0136",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 118,
+            "total": 135.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0137",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0138",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0139",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0131",
+            "subtotal": 210,
+            "total": 241.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0140",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 182,
+            "total": 209.3
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0141",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 140,
+            "total": 161
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0142",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 175,
+            "total": 201.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0143",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 245,
+            "total": 281.75
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0144",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 115,
+            "total": 132.25
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0145",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0137",
+            "subtotal": 120,
+            "total": 138
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0146",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 150,
+            "total": 172.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0147",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 147.5,
+            "total": 169.63
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0148",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 88.5,
+            "total": 101.78
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0149",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0141",
+            "subtotal": 210,
+            "total": 241.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0150",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 132,
+            "total": 151.8
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0151",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 330,
+            "total": 379.5
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0152",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 171,
+            "total": 196.65
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0153",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 114,
+            "total": 131.1
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0154",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-FORTE",
+            "subtotal": 196,
+            "total": 225.4
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0155",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 160,
+            "total": 184
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0156",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 217,
+            "total": 249.55
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0157",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 279,
+            "total": 320.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0158",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "insurer:I-NIB",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0159",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 118,
+            "total": 135.7
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0162",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CES",
+            "subtotal": 93,
+            "total": 106.95
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "BK0163",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "patient:PT0129",
+            "subtotal": 3100,
+            "total": 3565
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK01",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK02",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK03",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK04",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK05",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK06",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK07",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 132.5,
+            "total": 152.38
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK08",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK09",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK10",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK11",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK12",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK13",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK14",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK15",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK16",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK17",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK18",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK19",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK20",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 132.5,
+            "total": 152.38
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK21",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK22",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK23",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK24",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK25",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK26",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK27",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 185.5,
+            "total": 213.33
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK28",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK29",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 132.5,
+            "total": 152.38
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK30",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-CPH",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK31",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK32",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK33",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK34",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK35",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK36",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK37",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK38",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 132.5,
+            "total": 152.38
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK39",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 159,
+            "total": 182.85
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK40",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-SX",
+            "subtotal": 106,
+            "total": 121.9
+          }
+        ]
+      }
+    },
+    {
+      "bookingId": "HBK41",
+      "result": {
+        "kind": "invoices",
+        "invoices": []
+      }
+    },
+    {
+      "bookingId": "HBK42",
+      "result": {
+        "kind": "invoices",
+        "invoices": [
+          {
+            "counterparty": "hospital:H-STG",
+            "subtotal": 132.5,
+            "total": 152.38
+          }
+        ]
+      }
+    }
+  ],
+  "facts": [
+    {
+      "procedureId": "HP01",
+      "bookingId": "HBK01",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1979-08-22",
+      "procedureDateISO": "2026-06-26",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP02",
+      "bookingId": "HBK02",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1961-02-09",
+      "procedureDateISO": "2026-06-24",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP03",
+      "bookingId": "HBK03",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-11-30",
+      "procedureDateISO": "2026-06-22",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP04",
+      "bookingId": "HBK04",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1966-07-04",
+      "procedureDateISO": "2026-06-04",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP05",
+      "bookingId": "HBK05",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1971-12-18",
+      "procedureDateISO": "2026-05-27",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP06",
+      "bookingId": "HBK06",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-09-19",
+      "procedureDateISO": "2026-05-06",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP07",
+      "bookingId": "HBK07",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-04-12",
+      "procedureDateISO": "2026-04-14",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP08",
+      "bookingId": "HBK08",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1975-09-03",
+      "procedureDateISO": "2026-03-18",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP09",
+      "bookingId": "HBK09",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-04-02",
+      "procedureDateISO": "2026-06-30",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP10",
+      "bookingId": "HBK10",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1977-10-11",
+      "procedureDateISO": "2026-06-28",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP11",
+      "bookingId": "HBK11",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-03-25",
+      "procedureDateISO": "2026-06-15",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP12",
+      "bookingId": "HBK12",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1990-01-06",
+      "procedureDateISO": "2026-05-10",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP13",
+      "bookingId": "HBK13",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2014-06-30",
+      "procedureDateISO": "2026-05-08",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP14",
+      "bookingId": "HBK14",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1965-11-18",
+      "procedureDateISO": "2026-01-12",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP15",
+      "bookingId": "HBK15",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1946-07-23",
+      "procedureDateISO": "2026-01-12",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP16",
+      "bookingId": "HBK16",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1979-08-22",
+      "procedureDateISO": "2026-01-20",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP17",
+      "bookingId": "HBK17",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1957-01-22",
+      "procedureDateISO": "2026-01-20",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP18",
+      "bookingId": "HBK18",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1956-03-26",
+      "procedureDateISO": "2026-01-20",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP19",
+      "bookingId": "HBK19",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-04-01",
+      "procedureDateISO": "2026-01-29",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP20",
+      "bookingId": "HBK20",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1954-11-26",
+      "procedureDateISO": "2026-01-29",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP21",
+      "bookingId": "HBK21",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1987-06-12",
+      "procedureDateISO": "2026-02-03",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP22",
+      "bookingId": "HBK22",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-01-22",
+      "procedureDateISO": "2026-02-03",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP23",
+      "bookingId": "HBK23",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1994-10-27",
+      "procedureDateISO": "2026-02-03",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP24",
+      "bookingId": "HBK24",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2005-08-16",
+      "procedureDateISO": "2026-02-09",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP25",
+      "bookingId": "HBK25",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1999-07-27",
+      "procedureDateISO": "2026-02-09",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP26",
+      "bookingId": "HBK26",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1943-10-24",
+      "procedureDateISO": "2026-02-17",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP27",
+      "bookingId": "HBK27",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2000-05-02",
+      "procedureDateISO": "2026-02-17",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP28",
+      "bookingId": "HBK28",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1970-02-06",
+      "procedureDateISO": "2026-02-17",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP29",
+      "bookingId": "HBK29",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1956-06-07",
+      "procedureDateISO": "2026-02-26",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP30",
+      "bookingId": "HBK30",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1962-05-09",
+      "procedureDateISO": "2026-02-26",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP31",
+      "bookingId": "HBK31",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-04-02",
+      "procedureDateISO": "2026-03-03",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP32",
+      "bookingId": "HBK32",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1971-01-09",
+      "procedureDateISO": "2026-03-03",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP33",
+      "bookingId": "HBK33",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-03-01",
+      "procedureDateISO": "2026-03-03",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP34",
+      "bookingId": "HBK34",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2001-11-09",
+      "procedureDateISO": "2026-03-10",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP35",
+      "bookingId": "HBK35",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1995-11-20",
+      "procedureDateISO": "2026-03-10",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP36",
+      "bookingId": "HBK36",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-04-12",
+      "procedureDateISO": "2026-03-13",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP37",
+      "bookingId": "HBK37",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1995-01-07",
+      "procedureDateISO": "2026-03-13",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP38",
+      "bookingId": "HBK38",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1950-07-21",
+      "procedureDateISO": "2026-03-13",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP39",
+      "bookingId": "HBK39",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-11-23",
+      "procedureDateISO": "2026-03-24",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP40",
+      "bookingId": "HBK40",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1972-10-16",
+      "procedureDateISO": "2026-03-24",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP41",
+      "bookingId": "HBK41",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1957-10-27",
+      "procedureDateISO": "2026-03-27",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "HP42",
+      "bookingId": "HBK42",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-07-25",
+      "procedureDateISO": "2026-03-27",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0001",
+      "bookingId": "BK0001",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1975-09-03",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0002",
+      "bookingId": "BK0002",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1978-03-27",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0003",
+      "bookingId": "BK0003",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-11-01",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0004",
+      "bookingId": "BK0004",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1983-05-04",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0005",
+      "bookingId": "BK0005",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2005-03-19",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0006",
+      "bookingId": "BK0006",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1979-08-22",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0007",
+      "bookingId": "BK0007",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1961-02-09",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0008",
+      "bookingId": "BK0008",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-11-30",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0009",
+      "bookingId": "BK0009",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [
+        "A1"
+      ],
+      "patientDobISO": "1954-03-14",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0010",
+      "bookingId": "BK0010",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1955-02-17",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0011",
+      "bookingId": "BK0011",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1944-04-10",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0012",
+      "bookingId": "BK0012",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-10-06",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0013",
+      "bookingId": "BK0013",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1961-07-10",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0014",
+      "bookingId": "BK0014",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-11-12",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0015",
+      "bookingId": "BK0015",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1995-11-06",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0016",
+      "bookingId": "BK0016",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1963-06-13",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0017",
+      "bookingId": "BK0017",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1975-09-03",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0018",
+      "bookingId": "BK0018",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1997-12-10",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0019",
+      "bookingId": "BK0019",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1982-01-05",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0020",
+      "bookingId": "BK0020",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1978-09-21",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0021",
+      "bookingId": "BK0021",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-07-02",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "A5",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0022",
+      "bookingId": "BK0022",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1971-12-18",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0023",
+      "bookingId": "BK0022",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1971-12-18",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "A2",
+      "isAdditional": true,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0024",
+      "bookingId": "BK0023",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1941-04-21",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0025",
+      "bookingId": "BK0024",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1970-09-11",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0026",
+      "bookingId": "BK0025",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1966-07-04",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0027",
+      "bookingId": "BK0026",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1945-05-09",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "T1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0028",
+      "bookingId": "BK0027",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2003-01-24",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "T2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0029",
+      "bookingId": "BK0028",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-03-25",
+      "procedureDateISO": "2026-07-14",
+      "rvgCode": "A8",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0030",
+      "bookingId": "BK0028",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-03-25",
+      "procedureDateISO": "2026-07-14",
+      "rvgCode": "A2",
+      "isAdditional": true,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0031",
+      "bookingId": "BK0029",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-04-02",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0032",
+      "bookingId": "BK0030",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1977-10-11",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "UL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0033",
+      "bookingId": "BK0031",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-09-19",
+      "procedureDateISO": "2026-07-09",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0034",
+      "bookingId": "BK0032",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-04-12",
+      "procedureDateISO": "2026-07-14",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0035",
+      "bookingId": "BK0033",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2014-06-30",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0036",
+      "bookingId": "BK0034",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1990-01-06",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0037",
+      "bookingId": "BK0035",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1983-05-17",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0038",
+      "bookingId": "BK0036",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-04-12",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0039",
+      "bookingId": "BK0037",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-02-21",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0040",
+      "bookingId": "BK0038",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-11-08",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0041",
+      "bookingId": "BK0038",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1969-11-08",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "H3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0042",
+      "bookingId": "BK0039",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1992-01-27",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0043",
+      "bookingId": "BK0040",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1975-09-03",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0044",
+      "bookingId": "BK0041",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1971-12-18",
+      "procedureDateISO": "2026-08-04",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0045",
+      "bookingId": "BK0042",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1977-10-11",
+      "procedureDateISO": "2026-08-03",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0046",
+      "bookingId": "BK0043",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-09-19",
+      "procedureDateISO": "2026-08-04",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0047",
+      "bookingId": "BK0044",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1963-06-13",
+      "procedureDateISO": "2026-08-04",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0048",
+      "bookingId": "BK0045",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1966-07-04",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0049",
+      "bookingId": "BK0046",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1999-08-08",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0050",
+      "bookingId": "BK0047",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2002-06-28",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0051",
+      "bookingId": "BK0048",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1960-04-12",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0052",
+      "bookingId": "BK0049",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2003-08-08",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0053",
+      "bookingId": "BK0050",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1997-10-03",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0054",
+      "bookingId": "BK0051",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1941-11-06",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0055",
+      "bookingId": "BK0052",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1961-11-08",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0056",
+      "bookingId": "BK0053",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1981-03-22",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0057",
+      "bookingId": "BK0054",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1983-07-18",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0058",
+      "bookingId": "BK0055",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "2004-05-27",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0059",
+      "bookingId": "BK0056",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1966-07-13",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "A5",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0060",
+      "bookingId": "BK0057",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1947-07-08",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0061",
+      "bookingId": "BK0058",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-11-12",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0062",
+      "bookingId": "BK0059",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1960-07-16",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0063",
+      "bookingId": "BK0060",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1962-02-18",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0064",
+      "bookingId": "BK0061",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1947-01-15",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0065",
+      "bookingId": "BK0062",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1989-01-25",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0066",
+      "bookingId": "BK0063",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1948-05-10",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0067",
+      "bookingId": "BK0064",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1947-09-08",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0068",
+      "bookingId": "BK0065",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1962-09-13",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": null,
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0069",
+      "bookingId": "BK0066",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1992-04-16",
+      "procedureDateISO": "2026-07-28",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0070",
+      "bookingId": "BK0067",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1980-03-24",
+      "procedureDateISO": "2026-07-28",
+      "rvgCode": "UL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0071",
+      "bookingId": "BK0068",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1965-11-18",
+      "procedureDateISO": "2026-07-28",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0072",
+      "bookingId": "BK0069",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1946-07-23",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0073",
+      "bookingId": "BK0070",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1957-01-22",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "UL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0074",
+      "bookingId": "BK0071",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1956-03-26",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0075",
+      "bookingId": "BK0072",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-04-01",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "LL1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0076",
+      "bookingId": "BK0073",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1954-11-26",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0077",
+      "bookingId": "BK0074",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1987-06-12",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "V1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0078",
+      "bookingId": "BK0075",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-01-22",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0079",
+      "bookingId": "BK0076",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1994-10-27",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0080",
+      "bookingId": "BK0077",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2005-08-16",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "UL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0081",
+      "bookingId": "BK0078",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1999-07-27",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0082",
+      "bookingId": "BK0079",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1943-10-24",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0083",
+      "bookingId": "BK0080",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2000-05-02",
+      "procedureDateISO": "2026-07-20",
+      "rvgCode": "V1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0084",
+      "bookingId": "BK0081",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1970-02-06",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0085",
+      "bookingId": "BK0082",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1956-06-07",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0086",
+      "bookingId": "BK0083",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1962-05-09",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0087",
+      "bookingId": "BK0084",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1971-01-09",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0088",
+      "bookingId": "BK0085",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-03-01",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0089",
+      "bookingId": "BK0086",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2001-11-09",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0090",
+      "bookingId": "BK0087",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1995-11-20",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0091",
+      "bookingId": "BK0088",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1995-01-07",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0092",
+      "bookingId": "BK0089",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1950-07-21",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0093",
+      "bookingId": "BK0090",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-11-23",
+      "procedureDateISO": "2026-07-17",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0094",
+      "bookingId": "BK0091",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1972-10-16",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0095",
+      "bookingId": "BK0092",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1957-10-27",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0096",
+      "bookingId": "BK0093",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-07-25",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0097",
+      "bookingId": "BK0094",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1965-01-12",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0098",
+      "bookingId": "BK0095",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-05-06",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0099",
+      "bookingId": "BK0096",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1967-10-27",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0100",
+      "bookingId": "BK0097",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1952-12-02",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0101",
+      "bookingId": "BK0098",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1987-03-26",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0102",
+      "bookingId": "BK0099",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1991-07-15",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0103",
+      "bookingId": "BK0100",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1941-04-23",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "UL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0104",
+      "bookingId": "BK0101",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1984-03-04",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0105",
+      "bookingId": "BK0102",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1953-11-12",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "T2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0106",
+      "bookingId": "BK0103",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1940-04-19",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0107",
+      "bookingId": "BK0104",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1966-02-26",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0108",
+      "bookingId": "BK0105",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1943-01-13",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0109",
+      "bookingId": "BK0106",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1961-11-15",
+      "procedureDateISO": "2026-07-16",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0110",
+      "bookingId": "BK0107",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-04-24",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0111",
+      "bookingId": "BK0108",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1959-08-21",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0112",
+      "bookingId": "BK0109",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1944-11-17",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0113",
+      "bookingId": "BK0110",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1948-06-27",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0114",
+      "bookingId": "BK0111",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1989-12-20",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0115",
+      "bookingId": "BK0112",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1951-02-10",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0116",
+      "bookingId": "BK0113",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1964-09-24",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "N3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0117",
+      "bookingId": "BK0114",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2007-07-17",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0118",
+      "bookingId": "BK0115",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1977-11-21",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0119",
+      "bookingId": "BK0116",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1990-01-26",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0120",
+      "bookingId": "BK0117",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1984-10-19",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0121",
+      "bookingId": "BK0118",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1954-09-12",
+      "procedureDateISO": "2026-07-15",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0122",
+      "bookingId": "BK0119",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1943-09-22",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0123",
+      "bookingId": "BK0120",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-07-11",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0124",
+      "bookingId": "BK0121",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1997-02-06",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0125",
+      "bookingId": "BK0122",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1996-04-28",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0126",
+      "bookingId": "BK0123",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1959-01-04",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0127",
+      "bookingId": "BK0124",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1951-07-09",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "T2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0128",
+      "bookingId": "BK0125",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1988-06-20",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0129",
+      "bookingId": "BK0126",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1966-06-08",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "T1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0130",
+      "bookingId": "BK0127",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1956-06-24",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "T1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0131",
+      "bookingId": "BK0128",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1960-01-21",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "P1",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0132",
+      "bookingId": "BK0129",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1958-04-03",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "T2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0133",
+      "bookingId": "BK0130",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1968-08-23",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0134",
+      "bookingId": "BK0131",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1939-01-26",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "N3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0135",
+      "bookingId": "BK0132",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2003-09-13",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0136",
+      "bookingId": "BK0133",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1973-08-21",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0137",
+      "bookingId": "BK0134",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1948-08-08",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0138",
+      "bookingId": "BK0135",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1941-11-01",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0139",
+      "bookingId": "BK0136",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2007-11-05",
+      "procedureDateISO": "2026-07-21",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0140",
+      "bookingId": "BK0137",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1989-04-14",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0141",
+      "bookingId": "BK0138",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1982-05-15",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "UL2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0142",
+      "bookingId": "BK0139",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1963-06-03",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0143",
+      "bookingId": "BK0140",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1954-02-04",
+      "procedureDateISO": "2026-07-22",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0144",
+      "bookingId": "BK0141",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1950-12-19",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0145",
+      "bookingId": "BK0142",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1948-06-15",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0146",
+      "bookingId": "BK0143",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1991-07-06",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0147",
+      "bookingId": "BK0144",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1956-03-23",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0148",
+      "bookingId": "BK0145",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1987-10-08",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0149",
+      "bookingId": "BK0146",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1996-11-20",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "P4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0150",
+      "bookingId": "BK0147",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1972-10-02",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0151",
+      "bookingId": "BK0148",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1938-12-12",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0152",
+      "bookingId": "BK0149",
+      "asaClass": "AS2",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1973-05-02",
+      "procedureDateISO": "2026-07-23",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0153",
+      "bookingId": "BK0150",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1985-02-09",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0154",
+      "bookingId": "BK0151",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1998-04-07",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0155",
+      "bookingId": "BK0152",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1970-08-14",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0156",
+      "bookingId": "BK0153",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1961-01-14",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "A2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0157",
+      "bookingId": "BK0154",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "2000-07-11",
+      "procedureDateISO": "2026-07-24",
+      "rvgCode": "P2",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0158",
+      "bookingId": "BK0155",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1998-12-08",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": "LL3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0159",
+      "bookingId": "BK0156",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1975-12-01",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0160",
+      "bookingId": "BK0157",
+      "asaClass": "AS3",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1960-09-17",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": "A3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0161",
+      "bookingId": "BK0158",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1997-07-20",
+      "procedureDateISO": "2026-07-27",
+      "rvgCode": "LL4",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0162",
+      "bookingId": "BK0159",
+      "asaClass": "AS1",
+      "selectedModifierCodes": [],
+      "patientDobISO": "1975-01-15",
+      "procedureDateISO": "2026-07-28",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0165",
+      "bookingId": "BK0162",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1960-01-21",
+      "procedureDateISO": "2026-07-31",
+      "rvgCode": "H6a",
+      "isAdditional": false,
+      "modifierOverridden": false
+    },
+    {
+      "procedureId": "P0166",
+      "bookingId": "BK0163",
+      "asaClass": null,
+      "selectedModifierCodes": [],
+      "patientDobISO": "1989-04-14",
+      "procedureDateISO": "2026-08-10",
+      "rvgCode": "H3",
+      "isAdditional": false,
+      "modifierOverridden": false
+    }
+  ]
+}

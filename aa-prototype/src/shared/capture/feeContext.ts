@@ -10,7 +10,9 @@
  *   - the List's date picks a fixed price's range in force, and the RVG time
  *     rule is the masters' (catch-up Phase 19a),
  *   - nonRvgLines are this procedure's stored non-rvg lines (rvg-basis stored
- *     lines are never fee inputs).
+ *     lines are never fee inputs),
+ *   - the patient's date of birth and the modifier master feed the age and
+ *     included modifiers (catch-up Phase 19b), as in every other assembler.
  */
 
 import type { AssignedList, BillingLine, Contract, Procedure, RvgGroup } from '../../domain/types'
@@ -24,6 +26,8 @@ export interface ProcedureFeeArgs {
   list: AssignedList
   masters: AppState['masters']
   billingLines: Record<string, BillingLine>
+  /** The Booking's patient: the age modifier reads their date of birth (catch-up Phase 19b). */
+  patientId: string | undefined
 }
 
 export interface ProcedureFeeView {
@@ -34,7 +38,7 @@ export interface ProcedureFeeView {
   nonRvgLines: BillingLine[]
 }
 
-export function procedureFee({ procedure, list, masters, billingLines }: ProcedureFeeArgs): ProcedureFeeView {
+export function procedureFee({ procedure, list, masters, billingLines, patientId }: ProcedureFeeArgs): ProcedureFeeView {
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) {
     throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
@@ -52,6 +56,8 @@ export function procedureFee({ procedure, list, masters, billingLines }: Procedu
     anaesthetist,
     dateISO: list.dateISO,
     timeRule: masters.rvgTimeRule,
+    patientDobISO: patientId !== undefined ? masters.patients[patientId]?.dobISO : undefined,
+    modifiers: masters.modifiers,
     nonRvgLines,
   }
   if (contract !== undefined) ctx.contract = contract
@@ -77,12 +83,13 @@ export function bookingFee(
   list: AssignedList,
   masters: AppState['masters'],
   billingLines: Record<string, BillingLine>,
+  patientId: string | undefined,
 ): BookingFeeTotals {
   let units = 0
   let total = 0
   let needsPrice = false
   procedures.forEach((procedure) => {
-    const { fee } = procedureFee({ procedure, list, masters, billingLines })
+    const { fee } = procedureFee({ procedure, list, masters, billingLines, patientId })
     units += fee.billableUnits
     total += fee.total
     needsPrice ||= fee.needsPrice
