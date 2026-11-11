@@ -1,24 +1,23 @@
 /**
- * The procedure stack (catch-up Phase 20a; US-03.1.9, US-03.1.2, US-02.5.7,
- * US-08.4.6): one Procedure's procedure text, invoice description, Contract
- * and RVG code, read from one `ProcedureStackView`
- * (`domain/billing/procedureStack.ts`). It renders the view; it derives
- * nothing. Imports only domain types, theme and `shared/format`, so the PWA
- * purity rule holds.
+ * The procedure on a Booking (catch-up Phase 20a; US-02.5.7, US-03.1.9), read
+ * from one `ProcedureStackView` (`domain/billing/procedureStack.ts`). It
+ * renders the view; it derives nothing, and imports only domain types, theme
+ * and `shared/format`, so the PWA purity rule holds.
  *
- * Full density (Booking screens): the four parts joined by a hairline rail so
- * they read as one Procedure, stacked on a phone, label beside value on a wide
- * screen. Compact density (Review cells, List drawer rows): the same parts as
- * single lines with an ellipsis, the full text in a `title`.
- *
- * Still-to-choose parts are neutral (mist, dashed): never a status colour.
- * Teal is only for the actions the caller passes in.
+ * Full density (every Booking screen): one quiet card, as the contract picker
+ * mock draws it: the latest procedure text exactly as the outside system sent
+ * it (the surgeon's rooms, or the hospital's when it replaced them), with when
+ * and where it came from, three lines then "Show all". The Contract and the
+ * RVG code live in the Billing and RVG code cards below it; the invoice
+ * description shows on the invoice only. Compact density (Admin Review cells,
+ * List drawer rows): the text, the Contract with its pricing basis and the RVG
+ * code as single lines with an ellipsis, the full text in a `title`.
  */
 
-import type { ReactNode } from 'react'
-import { fontFamily, neutral, radius, type as typeScale } from '../../theme/tokens'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { accent, fontFamily, neutral, radius, type as typeScale } from '../../theme/tokens'
 import type { ProcedureStackView, StackSurface } from '../../domain/billing/procedureStack'
-import { INVOICE_DESCRIPTION_ORIGIN_LABELS, PROCEDURE_TEXT_SOURCE_LABELS, receivedDay } from '../format'
+import { PROCEDURE_TEXT_SOURCE_LABELS, receivedDay } from '../format'
 import { formatPricingBasis } from '../contracts/labels'
 
 export interface ProcedureStackProps {
@@ -26,39 +25,18 @@ export interface ProcedureStackProps {
   density: 'full' | 'compact'
   /** Whose words: "RVG at your rate" for the anaesthetist, "the anaesthetist's rate" for the office. */
   surface: StackSurface
-  /** Full density: label beside value (web and Admin) or above it (phone). */
+  /** Kept for callers; the card reads the same on every surface. */
   layout?: 'stacked' | 'columns'
   /** "Procedure" or "Procedure 2": with `actions`, the heading row (`procedure-header`). */
   heading?: string
-  /** The caller's actions on the heading row (Edit, Remove, Edit invoice description). */
+  /** The caller's actions on the heading row (Edit, Remove). */
   actions?: ReactNode
-  /** The caller's action on the newer-description cue ("Use it", office only). */
-  newerAction?: ReactNode
 }
 
 const MICRO = { fontSize: typeScale.micro.size, lineHeight: `${typeScale.micro.line}px`, fontWeight: typeScale.micro.weight, letterSpacing: typeScale.micro.tracking, textTransform: 'uppercase' as const, color: neutral.mist }
-const META = { fontSize: 12, lineHeight: '16px', color: neutral.mist }
 const MONO = fontFamily.mono
 /** Read by screen readers, not shown: the compact rows' part labels. */
 const VISUALLY_HIDDEN = { position: 'absolute' as const, width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' as const }
-
-function StillToChoose({ children }: { children: ReactNode }) {
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        fontSize: 13,
-        lineHeight: '18px',
-        color: neutral.mist,
-        border: `1px dashed ${neutral.lineStrong}`,
-        borderRadius: radius.ctl,
-        padding: '4px 10px',
-      }}
-    >
-      {children}
-    </span>
-  )
-}
 
 export function ProcedureStack(props: ProcedureStackProps) {
   return props.density === 'compact' ? <CompactStack {...props} /> : <FullStack {...props} />
@@ -68,125 +46,77 @@ export function ProcedureStack(props: ProcedureStackProps) {
 // Full density
 // ---------------------------------------------------------------------------
 
-function FullStack({ view, surface, layout = 'stacked', heading, actions, newerAction }: ProcedureStackProps) {
-  const columns = layout === 'columns'
-  const part = (label: string, shot: string, value: ReactNode) => (
-    <li
-      data-shot={shot}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: columns ? '148px minmax(0, 1fr)' : 'minmax(0, 1fr)',
-        columnGap: 16,
-        rowGap: 4,
-        alignItems: 'baseline',
-        padding: '10px 0 10px 16px',
-        position: 'relative',
-      }}
-    >
-      {/* The rail's node for this part. */}
-      <span aria-hidden style={{ position: 'absolute', left: -4, top: columns ? 15 : 14, width: 7, height: 7, borderRadius: 999, background: neutral.surface, border: `1.5px solid ${neutral.lineStrong}` }} />
-      <span style={MICRO}>{label}</span>
-      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>{value}</div>
-    </li>
-  )
-
+function FullStack({ view, heading, actions }: ProcedureStackProps) {
   const text = view.procedureText
-  const invoice = view.invoiceDescription
-  const contract = view.contract
-  const rvg = view.rvg
+  const [expanded, setExpanded] = useState(false)
+  const [clipped, setClipped] = useState(false)
+  const body = useRef<HTMLDivElement>(null)
+
+  // Three lines, then "Show all": a long hospital text never pushes the capture cards away.
+  useLayoutEffect(() => {
+    const el = body.current
+    if (el === null || expanded) return
+    const measure = () => setClipped(el.scrollHeight > el.clientHeight + 1)
+    measure()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [text?.text, expanded])
 
   return (
-    <div data-shot="procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {(heading !== undefined || actions !== undefined) && (
-        <div data-testid="procedure-header" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ ...MICRO, color: neutral.slate }}>{heading ?? 'Procedure'}</span>
-          {actions !== undefined && <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 14, flex: 'none' }}>{actions}</div>}
-        </div>
-      )}
-      <ol
-        aria-label={heading ?? 'Procedure'}
-        style={{ listStyle: 'none', margin: 0, padding: 0, marginLeft: 4, borderLeft: `1.5px solid ${neutral.line}` }}
-      >
-        {part(
-          'Procedure text',
-          'procedure-text',
-          text === null ? (
-            <StillToChoose>No description received</StillToChoose>
-          ) : (
-            <>
-              <span style={{ fontFamily: MONO, fontSize: 15, lineHeight: '22px', fontWeight: 500, color: neutral.ink, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                <span aria-hidden style={{ color: neutral.mist }}>“</span>
-                {text.text}
-                <span aria-hidden style={{ color: neutral.mist }}>”</span>
+    <section
+      data-shot="procedure-stack"
+      aria-label={heading ?? 'Procedure'}
+      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 16px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}
+    >
+      <div data-testid="procedure-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 24 }}>
+        <h3 style={{ ...MICRO, margin: 0 }}>{heading ?? 'Procedure'}</h3>
+        {actions !== undefined && <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 14, flex: 'none' }}>{actions}</div>}
+      </div>
+      <div data-shot="procedure-text" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {text === null ? (
+          <span style={{ fontSize: 15, lineHeight: '22px', color: neutral.mist }}>No procedure text received yet</span>
+        ) : (
+          <>
+            <div
+              ref={body}
+              style={{
+                fontSize: 16,
+                lineHeight: '23px',
+                fontWeight: 500,
+                color: neutral.ink,
+                whiteSpace: 'pre-wrap',
+                overflowWrap: 'anywhere',
+                ...(expanded ? {} : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }),
+              }}
+            >
+              {text.text}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: neutral.slate }}>
+                <span style={{ fontFamily: MONO }}>{receivedStamp(text.receivedAtISO)}</span> · {PROCEDURE_TEXT_SOURCE_LABELS[text.source]}
+                {text.from !== undefined ? `, ${text.from}` : ''}
               </span>
-              <span style={META}>
-                {PROCEDURE_TEXT_SOURCE_LABELS[text.source]}
-                {text.from !== undefined ? `, ${text.from}` : ''} · {receivedDay(text.receivedAtISO)}
-              </span>
-            </>
-          ),
-        )}
-        {part(
-          'Invoice description',
-          'procedure-invoice-description',
-          invoice === null ? (
-            <StillToChoose>Invoice description to choose</StillToChoose>
-          ) : (
-            <>
-              <span style={{ fontSize: 15, lineHeight: '22px', color: neutral.ink, overflowWrap: 'anywhere' }}>{invoice.text}</span>
-              <span style={META}>{INVOICE_DESCRIPTION_ORIGIN_LABELS[invoice.origin]}</span>
-              {invoice.newer !== undefined && (
-                <div
-                  data-shot="procedure-newer-description"
-                  role="status"
-                  style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 12px', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '8px 12px' }}
+              {(clipped || expanded) && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(!expanded)}
+                  style={{ flex: 'none', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base }}
                 >
-                  <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate, flex: '1 1 200px', minWidth: 0, overflowWrap: 'anywhere' }}>
-                    A newer description has arrived: ‘{invoice.newer.text}’ ({INVOICE_DESCRIPTION_ORIGIN_LABELS[invoice.newer.origin].toLowerCase()})
-                  </span>
-                  {newerAction}
-                </div>
+                  {expanded ? 'Show less' : 'Show all'}
+                </button>
               )}
-            </>
-          ),
+            </div>
+          </>
         )}
-        {part(
-          'Contract',
-          'procedure-contract',
-          contract === null ? (
-            <StillToChoose>Needs an invoice destination</StillToChoose>
-          ) : (
-            <>
-              <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '2px 10px' }}>
-                <span style={{ fontSize: 15, lineHeight: '22px', fontWeight: 600, color: neutral.ink }}>{contract.name}</span>
-                {contract.aaCode !== undefined && <span style={{ fontFamily: MONO, fontSize: 12, color: neutral.slate }}>{contract.aaCode}</span>}
-              </span>
-              <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate }}>Held by {contract.holderName}</span>
-              <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate }}>
-                Invoiced: {contract.invoiced !== null ? contract.invoiced.name : 'not yet known'}
-              </span>
-              <span style={{ fontSize: 13, lineHeight: '18px', fontWeight: 600, color: neutral.ink }}>
-                {formatPricingBasis(contract.basis, surface)}
-              </span>
-            </>
-          ),
-        )}
-        {rvg !== null &&
-          part(
-            'RVG code',
-            'procedure-rvg-code',
-            typeof rvg === 'string' ? (
-              <StillToChoose>{rvg === 'forAnaesthetist' ? 'RVG code: for the anaesthetist to fill in' : 'RVG code to choose'}</StillToChoose>
-            ) : (
-              <span style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-                <span style={{ fontFamily: MONO, fontSize: 14, fontWeight: 600, color: neutral.ink, flex: 'none' }}>{rvg.code}</span>
-                <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate, overflowWrap: 'anywhere' }}>{rvg.description}</span>
-              </span>
-            ),
-          )}
-      </ol>
-    </div>
+      </div>
+    </section>
   )
+}
+
+/** "20 Jul, 16:00": when the latest text arrived. */
+function receivedStamp(iso: string): string {
+  return `${receivedDay(iso).replace(/^\w+ /, '')}, ${iso.slice(11, 16)}`
 }
 
 // ---------------------------------------------------------------------------
@@ -205,7 +135,6 @@ function CompactStack({ view, surface, heading }: ProcedureStackProps) {
     </li>
   )
   const text = view.procedureText
-  const invoice = view.invoiceDescription
   const contract = view.contract
   const rvg = view.rvg
   const basis = contract !== null ? formatPricingBasis(contract.basis, surface) : ''
@@ -229,13 +158,6 @@ function CompactStack({ view, surface, heading }: ProcedureStackProps) {
           'No description received'
         ),
         text === null,
-      )}
-      {line(
-        'procedure-invoice-description',
-        'Invoice description',
-        invoice?.text ?? 'Invoice description to choose',
-        invoice !== null ? `Invoice: ${invoice.text}${invoice.newer !== undefined ? ' (newer description waiting)' : ''}` : 'Invoice description to choose',
-        invoice === null,
       )}
       {line(
         'procedure-contract',

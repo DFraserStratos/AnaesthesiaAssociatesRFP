@@ -6,7 +6,7 @@
     {
       "name": "procedure-contract",
       "app": "web",
-      "caption": "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure",
+      "caption": "The Contract on each Procedure, in its Billing card: where the invoice goes and the Contract with its price",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
@@ -17,7 +17,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=procedure-contract] >> nth=0"
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]
@@ -25,21 +25,21 @@
     {
       "name": "procedure-contract",
       "app": "mobile",
-      "caption": "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure",
+      "caption": "The Contract on each Procedure, in its Billing card: where the invoice goes and the Contract with its price",
       "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
           "steps": [
             {
-              "scroll": "[data-shot=procedure-contract]"
+              "scroll": "[data-shot=capture-billing]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=procedure-contract] >> nth=0"
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]
@@ -47,7 +47,7 @@
     {
       "name": "procedure-contract",
       "app": "web",
-      "caption": "The Contract on each Procedure: name, holder, who is invoiced and the pricing basis with its figure",
+      "caption": "The Contract on each Procedure, in its Billing card: where the invoice goes and the Contract with its price",
       "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0023",
       "states": [
         {
@@ -58,7 +58,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=procedure-contract] >> nth=0"
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]

@@ -163,14 +163,13 @@ working List rather than an empty one.
 - **Expected:** the clock reads Tuesday 28 July 2026, 9:00.
 - **Optional aside:** open Dr Souter's **Tue 4 Aug AM** List → the **09:30 "right total knee"** Booking
   (Sione Davies). Say: "The rooms sent 'RTK'; when the hospital's list arrived it replaced that with
-  'right total knee', and the original is in the Booking's history. The invoice description took the
-  hospital's wording, beside the Contract (who holds it, who is invoiced, how it is priced) and the RVG
-  code." Open **History** to show "Procedure text replaced" naming 'RTK' (Surgeon's rooms PDF). The
+  'right total knee', and the original is in the Booking's history. The Booking shows only the latest
+  text; the Contract and the RVG code sit in their own cards below it." Open **History** to show "Procedure text replaced" naming 'RTK' (Surgeon's rooms PDF). The
   wording is illustrative demo data, not AA's.
 - **Optional, live:** on the same List open **Diane Foster** (11:00, "WLE MM", RVG code to choose) →
   **Demo actions → Fire hospital message** (it defaults to **MSG-STG-1012**; Future-scope badge: HL7 is
   illustrative) → **Run**. The hospital's fuller wording replaces "WLE MM", the original goes to the
-  History and the invoice description follows; her time moves to 12:15 with the note. Firing it again
+  History; her time moves to 12:15 with the note. Firing it again
   changes nothing.
 
 ### Beat 3: capture BTM on mobile
@@ -186,8 +185,8 @@ working List rather than an empty one.
   - Select **Mark complete**.
   - Optional, to show the completion gate: back on the List, select
     **Mark list completed · 3 to finish**.
-- **Say:** "She sees what the hospital wrote, picks the RVG code, and the Contract part shows who is
-  invoiced and the pricing basis; the running fee stays hidden. The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
+- **Say:** "She sees what the hospital wrote, picks the RVG code, and the Billing card shows the
+  Contract; the running fee stays hidden. The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
   tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
   active Booking is complete, so one captured Booking out of four submits nothing yet. That gate is the
   reason the List is the unit of approval, not the Booking."
@@ -304,20 +303,18 @@ already seeded.
   rather than pretending they disappear."
 - **Expected:** the lookup fills the complete booking and leaves every field editable, including the
   **Procedure description** (what the caller said, kept exactly as typed, **Told by: Phone**). The saved
-  Booking shows that wording with "Phone", and it starts the invoice description ("As entered"). The session now
+  Booking's Procedure card shows that wording with "Phone". The session now
   holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
   availability finders show it as booked.
 - **Worth pointing at:** "Where does the invoice go, then the Contract. Each step only offers Contracts
   that fit this List, and typing finds one among hundreds. Other price covers anything no price list has
   yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
 - **Optional one-liner:** "Assign List does the same without a patient, for a session booked ahead."
-- **Optional office aside, "What the invoice will say":** **Admin Day → Tue 21** → Dr Souter's PM List
-  → **Wiremu Tane** (the rooms' "lap chole +/- IOC", illustrative) → **Demo actions → Hospital
-  description arrives** (defaults to "lap chole") → **Run**. The procedure text and the invoice
-  description move from the rooms' wording to the hospital's. Say: "A Contract's own invoice
-  description would win over both; the RVG code never does." Then **Edit invoice description**: the
-  office's free text, and a later hospital description leaves it with a "newer description" cue and
-  **Use it**: the office's edit always wins.
+- **Optional office aside, "the hospital's wording arrives":** **Admin Day → Tue 21** → Dr Souter's PM
+  List → **Wiremu Tane** (the rooms' "lap chole +/- IOC", illustrative) → **Demo actions → Hospital
+  description arrives** (defaults to "lap chole") → **Run**. The Procedure card now shows the hospital's
+  wording, the rooms' is in the History. Say: "The invoice prints a description of its own: the latest
+  text, or a Contract's own invoice wording where it has one; never the RVG code."
 - **Optional pointer:** on the surgeon picker, show the separate **Not preferred with Dr Sharma** group.
   If time allows, select **Ms A. Reid** to show the soft amber warning and **Continue anyway**, then
   return to **Mr T. Hale**. The scripted path is unchanged.

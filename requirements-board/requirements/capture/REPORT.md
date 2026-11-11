@@ -6,13 +6,13 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 165 | 151 |
-| Partial | 50 | 50 |
+| Captured | 164 | 150 |
+| Partial | 51 | 51 |
 | Absent from the app | 70 | 69 |
 | Failed recipe | 0 | 0 |
 | No recipe | 30 | 30 |
 
-631 screenshots. Items per app: admin 146, web 74, mobile 68, simulator 35.
+627 screenshots. Items per app: admin 146, web 74, mobile 68, simulator 35.
 
 ## Failed recipes (0)
 
@@ -91,7 +91,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (50)
+## Partial (51)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
 - **US-02.1.1** Import hospital bookings · No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.
@@ -127,6 +127,7 @@ None.
 - **US-08.4.2** Send to the invoice email · Emailing is simulated and records only the time sent; the invoice does not show or use an invoice email address captured on the booking, so sending to a guardian's address is not shown. Portal upload for an insurer is shown.
 - **US-08.4.4** Invoice reproducibility · Invoices are stored as snapshots that later contract edits do not change, but there is no action to regenerate a past invoice from the locked data and contract version.
 - **US-08.4.5** Anaesthetist as supplier, AA as agent · The invoice names the anaesthetist and states AA bills as agent, but it does not show the anaesthetist as supplier with their GST number.
+- **US-08.4.6** Invoice description on each Procedure · The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).
 - **US-08.6.1** Additional invoice for late charges · The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.
 - **US-09.1.4** ACCPAY as buyer-created tax invoice · The ACCPAY to the anaesthetist exists with payee, bill number and the full payable, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).
 - **US-09.4.1** Dedicated Xero organisation · The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.
@@ -177,7 +178,7 @@ None.
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (165)
+## Captured (164)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -291,7 +292,6 @@ None.
 - **US-08.3.2** Ledger is the system of record · web, mobile
 - **US-08.4.1** Generate invoice documents · admin
 - **US-08.4.3** Unique invoice numbers · simulator
-- **US-08.4.6** Invoice description on each Procedure · admin
 - **US-08.5.1** Report processing status · admin
 - **US-08.5.2** Booking-level vs List-level failure · admin
 - **US-09.1.1** Invoice pair creation and identification · simulator, admin

@@ -474,8 +474,8 @@ its detail (`[data-shot=booking-source]`): St George's, Southern Cross and Chris
 none. A Booking added on the List reads "Added by anaesthetist", one from phone advice "Office entry".
 
 **Procedure text and invoice description** (catch-up Phase 20a; US-02.5.7, US-03.1.9, US-08.4.6). Every
-Procedure holds one `procedureText` as received and an `invoiceDescription`; both show in the procedure
-stack on each Booking. The wording below is **AI-made, illustrative demo data from AR-35, not AA's**.
+Procedure holds one `procedureText` (the latest received) and an `invoiceDescription` (printed on the
+invoice only); the Booking's Procedure card shows the text. The wording below is **AI-made, illustrative demo data from AR-35, not AA's**.
 - `BK0164` (Sione Davies, Souter Tue 4 Aug AM, 09:30, LL4, St George's RVG): "right total knee"
   (Hospital download, from St George's); its History holds "Procedure text replaced" naming "RTK"
   (Surgeon's rooms PDF). Seed marker `procedureTextReplaced`.
@@ -489,7 +489,7 @@ stack on each Booking. The wording below is **AI-made, illustrative demo data fr
   `hospital-description-arrives`. `BK0003` reads "L TKJR", `BK0008` Chen "R inguinal hernia mesh",
   Morrison's TURPs "TURP" (hospital).
 - `BK0028` Doyle (Fitzgerald Tue 14 Jul AM): its Contract's invoice description "Gastric bypass, laparoscopic"
-  ("From the Contract").
+  is what its invoice will print.
 - No attachments anywhere (US-03.1.3 Retired; removed in Phase 20a).
 
 **Admin day, Tue 21**
@@ -702,10 +702,6 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Add AA modifier** (Master data, Modifiers, catch-up Phase 19b): `role=button[name="Add AA modifier"]`
   opens `[data-shot=add-aa-modifier]` (Code, Units, Modifying factor; "Add modifier").
 - **Add billing line:** `role=button[name="Add billing line"]`.
-- **Edit invoice description** (catch-up Phase 20a, Admin Booking only): `[data-shot=edit-invoice-description-action]`
-  on the procedure stack's heading row opens `[data-shot=edit-invoice-description]` (the procedure text
-  read-only, a textarea, "Save invoice description"). Over an office edit, a later description shows the
-  cue `[data-shot=procedure-newer-description]` with "Use it" (`[data-shot=use-newer-description]`).
 - **History, replaced text:** the History sheet lists "Procedure text replaced" with the old and new text
   and their sources (`role=button[name="History"]`).
 - **Procedure description** (the manual form, catch-up Phase 20a): `[data-shot=procedure-description] input`
@@ -941,15 +937,15 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 **`data-shot` hooks for the procedure stack and source** (use as `[data-shot=...]`; catch-up Phase 20a)
 
-- `procedure-stack` (the whole stack, on every Booking screen; compact in Admin Review's
-  `review-procedures` cell and the List drawer's `drawer-procedure-stack`), its parts `procedure-text`,
-  `procedure-invoice-description`, `procedure-contract` (the Contract part: name, holder, who is
-  invoiced, pricing basis) and `procedure-rvg-code` ("RVG code to choose", or "for the anaesthetist to
-  fill in" on Admin; absent on a fixed or open price with none picked); `procedure-newer-description`;
-  `procedure-description` (the manual form); `edit-procedure-text` (read-only in Edit procedure);
-  `invoice-procedure-heading` (one heading row per Procedure in `invoice-lines`); `review-open-booking`.
-  `data-testid=procedure-header` is the stack's heading row, with Edit, Remove and (Admin) Edit invoice
-  description. The attachment hooks are gone. `booking-source` (the source line)
+- `procedure-stack` (on every Booking screen, the small Procedure card at the top of the capture column:
+  the latest text only, as received, with when and where it came from, its text `procedure-text`; the
+  Contract is in the Billing card `capture-billing` and the RVG code in `capture-procedure-code`). Compact,
+  in Admin Review's `review-procedures` cell and the List drawer's `drawer-procedure-stack`, it also has
+  `procedure-contract` (Contract and pricing basis) and `procedure-rvg-code`. `procedure-description` (the
+  manual form); `edit-procedure-text` (read-only in Edit procedure); `invoice-procedure-heading` (one
+  heading row per Procedure in `invoice-lines`, the only place the invoice description shows);
+  `review-open-booking`. `data-testid=procedure-header` is the card's heading row, with Edit and Remove.
+  The attachment hooks are gone. `booking-source` (the source line)
 
 **Web**
 

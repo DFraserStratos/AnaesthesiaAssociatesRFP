@@ -208,16 +208,16 @@ function MobileBookingLayout({ contentRef, header, history, banners, context, ca
  * block has nowhere to travel.
  */
 function WebBookingLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: BookingLayoutSlots) {
-  // The rail starts level with the first capture card: measured, not a fixed
-  // lead-in, because the procedure title and its Contract row vary in height
-  // (catch-up Phase 20: the Contract row, its caption and the RVG cue).
+  // The rail starts level with the first card of the capture column (the
+  // Procedure card since catch-up Phase 20a, as the contract picker mock sets
+  // the top row): measured, not a fixed lead-in, because what sits above it varies.
   const captureColRef = useRef<HTMLDivElement>(null)
   const [railLead, setRailLead] = useState(74)
   useLayoutEffect(() => {
     const col = captureColRef.current
     if (col === null) return undefined
     const measure = () => {
-      const card = col.querySelector('[data-shot^="capture-"]')
+      const card = col.querySelector('[data-shot="procedure-stack"], [data-shot^="capture-"]')
       if (card === null) return
       const lead = Math.max(0, Math.round(card.getBoundingClientRect().top - col.getBoundingClientRect().top))
       setRailLead((prev) => (prev === lead ? prev : lead))

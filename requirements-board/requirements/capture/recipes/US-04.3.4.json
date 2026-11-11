@@ -141,7 +141,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=procedure-rvg-code]",
+            "[data-shot=capture-procedure-code]",
             "[data-shot=capture-procedure-code]"
           ],
           "caption": "The anaesthetist fills in the RVG code"
@@ -170,7 +170,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=procedure-rvg-code]"
+            "[data-shot=capture-procedure-code]"
           ],
           "caption": "The anaesthetist fills in the RVG code"
         }

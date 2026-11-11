@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { accent, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
@@ -38,10 +38,6 @@ interface BtmCaptureBlockProps {
    *  Booking's first procedure, which `removeProcedure` refuses to delete. */
   onRemove?: (() => void) | undefined
   onError: (message: string) => void
-  /** Extra actions on the stack's heading row (the office's Edit invoice description; catch-up Phase 20a). */
-  stackActions?: ReactNode
-  /** The newer-description cue's action ("Use it", office only). */
-  newerAction?: ReactNode
 }
 
 /**
@@ -81,10 +77,8 @@ export function BtmCaptureBlock({
   onEdit,
   onRemove,
   onError,
-  stackActions,
-  newerAction,
 }: BtmCaptureBlockProps) {
-  const { Pair, variant } = useSurface()
+  const { Pair } = useSurface()
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
@@ -137,9 +131,8 @@ export function BtmCaptureBlock({
         view={stackView!}
         density="full"
         surface={stackSurface}
-        layout={variant === 'mobile' ? 'stacked' : 'columns'}
         heading={procedureCount > 1 ? `Procedure ${ordinal}` : 'Procedure'}
-        {...(editable || stackActions !== undefined
+        {...(editable
           ? {
               actions: (
                 <>
@@ -187,12 +180,10 @@ export function BtmCaptureBlock({
                 Remove
               </button>
             )}
-                  {stackActions}
                 </>
               ),
             }
           : {})}
-        {...(newerAction !== undefined ? { newerAction } : {})}
       />
 
       {/* The Procedure's one Contract (catch-up Phase 20): the Billing card, the

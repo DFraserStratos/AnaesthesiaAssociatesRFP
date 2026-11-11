@@ -44,8 +44,8 @@ test('paired capture cards match heights on the desktop', async ({ page }) => {
 
 test('desktop Booking total starts level with the first capture card', async ({ page }) => {
   await openAdminBooking(page)
-  // The Billing card (the step rail) leads the capture block since catch-up Phase 20.
-  const asa = await page.locator('[data-shot=capture-billing]').first().boundingBox()
+  // The Procedure card leads the capture column since catch-up Phase 20a.
+  const asa = await page.locator('[data-shot=procedure-stack]').first().boundingBox()
   const total = await page.getByText('BOOKING TOTAL', { exact: true }).locator('../../..').boundingBox()
 
   expect(asa).not.toBeNull()

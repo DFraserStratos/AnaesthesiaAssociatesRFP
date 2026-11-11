@@ -62,8 +62,8 @@ test('web anaesthetist Booking rail carries Mark complete alone, level with the 
 
   await expect(page.getByTestId('booking-calculation')).toHaveCount(0)
   const complete = page.getByRole('button', { name: 'Mark complete' })
-  // The Billing card (the step rail) leads the capture block since catch-up Phase 20.
-  const asa = await page.locator('[data-shot=capture-billing]').first().boundingBox()
+  // The Procedure card leads the capture column since catch-up Phase 20a.
+  const asa = await page.locator('[data-shot=procedure-stack]').first().boundingBox()
   const completeBox = await complete.boundingBox()
   expect(asa).not.toBeNull()
   expect(completeBox).not.toBeNull()

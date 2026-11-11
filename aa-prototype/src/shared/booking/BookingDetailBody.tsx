@@ -22,14 +22,12 @@ import {
   railMastersOf,
   setRailAnswers,
   raisePreProcedureInvoice,
-  applyDefaultInvoiceDescription,
   uncompleteBooking,
   useAppStore,
   useToday,
   type Actor,
 } from '../../store'
 import { Button } from '../ui'
-import { TextAction } from '../ui/TextAction'
 import { useSurface, type BookingTotalLine } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, procedureFee } from '../capture'
 import { ageYears, BOOKING_SOURCE_LABELS, formatDob, nhiBadge } from '../format'
@@ -42,7 +40,6 @@ import {
   OfficeAlertLine,
   EditProcedureSheet,
   RemoveProcedureSheet,
-  EditInvoiceDescriptionSheet,
   movedToYouByLine,
   useBookingMovedToMeNotice,
 } from '../flows'
@@ -72,7 +69,6 @@ type SheetState =
   | 'patient'
   | { kind: 'procedure'; procedureId: string }
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
-  | { kind: 'invoiceDescription'; procedureId: string }
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -671,21 +667,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
               onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
               onRemove={() => setSheet({ kind: 'removeProcedure', procedureId: procedure.id, ordinal: index + 1 })}
               onError={setError}
-              // The office edits the invoice description at any time until AUTHORISED (US-08.4.6, D73).
-              {...(actor.role === 'office' && canEdit
-                ? {
-                    stackActions: (
-                      <TextAction shot="edit-invoice-description-action" onClick={() => setSheet({ kind: 'invoiceDescription', procedureId: procedure.id })}>
-                        Edit invoice description
-                      </TextAction>
-                    ),
-                    newerAction: (
-                      <TextAction small shot="use-newer-description" label={`Use the newer invoice description for procedure ${index + 1}`} onClick={() => run(applyDefaultInvoiceDescription(useAppStore, actor, procedure.id))}>
-                        Use it
-                      </TextAction>
-                    ),
-                  }
-                : {})}
             />
             {actor.role === 'office' && (
               <OfficeBillingSetup
@@ -840,9 +821,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           actor={actor}
           onClose={() => setSheet('none')}
         />
-      )}
-      {typeof sheet === 'object' && sheet.kind === 'invoiceDescription' && (
-        <EditInvoiceDescriptionSheet open procedureId={sheet.procedureId} actor={actor} onClose={() => setSheet('none')} />
       )}
       {typeof sheet === 'object' && sheet.kind === 'removeProcedure' && proceduresRecord[sheet.procedureId] !== undefined && (
         <RemoveProcedureSheet

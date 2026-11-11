@@ -343,7 +343,7 @@ const LABEL_MAX = 40
 
 /**
  * The short label every list, total, history scope and sheet title uses: the
- * Procedure's text, shortened and quoted; else its RVG code and description;
+ * Procedure's text, shortened; else its RVG code and description;
  * else "Procedure n".
  */
 export function procedureLabel(
@@ -355,7 +355,7 @@ export function procedureLabel(
   if (text !== undefined && !isBlankText(text)) {
     const flat = text.trim().replace(/\s+/g, ' ')
     const short = flat.length > LABEL_MAX ? `${flat.slice(0, LABEL_MAX - 1).trimEnd()}…` : flat
-    return `“${short}”`
+    return short
   }
   const group = procedure.rvgGroupId !== undefined ? rvgGroups[procedure.rvgGroupId] : undefined
   if (group !== undefined) return `${group.code} · ${group.description}`

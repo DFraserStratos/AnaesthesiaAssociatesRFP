@@ -195,11 +195,11 @@ describe('refreshInvoiceDescription: an admin\'s edit always wins (D73)', () => 
 })
 
 describe('procedureLabel', () => {
-  it('the text, shortened and quoted; else the RVG code and description; else "Procedure n"', () => {
-    expect(procedureLabel({ procedureText: rooms('RTK') }, masters.rvgGroups, 1)).toBe('“RTK”')
+  it('the text, shortened; else the RVG code and description; else "Procedure n"', () => {
+    expect(procedureLabel({ procedureText: rooms('RTK') }, masters.rvgGroups, 1)).toBe('RTK')
     const long = procedureLabel({ procedureText: hospital('WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC') }, masters.rvgGroups, 1)
     expect(long.length).toBeLessThanOrEqual(42)
-    expect(long.endsWith('…”')).toBe(true)
+    expect(long.endsWith('…')).toBe(true)
     expect(procedureLabel({ procedureText: null, rvgGroupId: RVG_GROUP.ll4! }, masters.rvgGroups, 2)).toMatch(/^LL4 · /)
     expect(procedureLabel({ procedureText: null }, masters.rvgGroups, 3)).toBe('Procedure 3')
   })

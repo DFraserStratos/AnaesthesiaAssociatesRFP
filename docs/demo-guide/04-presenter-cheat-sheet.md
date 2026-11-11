@@ -111,16 +111,14 @@ claims back themselves; nib is billed only through nib's own Contract.
 
 ### Procedure text and the invoice description
 
-- **Procedure text:** one per Procedure, exactly as received. The hospital's replaces the surgeon's
-  rooms' when it arrives, and the original stays in the Booking's history; a hand-entered Booking keeps
-  what was typed or told. Nobody edits it.
-- **Invoice description:** what the invoice prints, by its order of defaults: the procedure text, then a
-  filled-in Contract invoice description on top; never the RVG code. The office can edit it at any time
-  until the List is authorised, and the edit always wins; a newer description shows as a cue with
-  **Use it**.
-- **On every Booking screen:** the procedure text, the invoice description, the Contract (name, holder,
-  who is invoiced, pricing basis with its figure) and the RVG code where the Contract prices from RVG
-  units. The running fee stays hidden from the anaesthetist.
+- **Procedure text:** the latest plain text received, exactly as sent. The hospital's replaces the
+  surgeon's rooms' when it arrives (no switching between them), and the original stays in the Booking's
+  history; a hand-entered Booking keeps what was typed or told. Nobody edits it.
+- **On every Booking screen:** a small Procedure card with that text, when and where it came from. The
+  Contract is in the Billing card and the RVG code in its own card below it. The running fee stays
+  hidden from the anaesthetist.
+- **Invoice description:** shows on the invoice only: the procedure text, or a filled-in Contract
+  invoice description on top; never the RVG code. The office's own wording always wins.
 - No attachments on Bookings or Lists. The demo's procedure wording is illustrative (AI-made), not AA's.
 
 ### Split billing
