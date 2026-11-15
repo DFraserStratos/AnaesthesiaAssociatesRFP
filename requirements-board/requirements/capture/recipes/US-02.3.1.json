@@ -56,7 +56,7 @@
         {
           "steps": [
             {
-              "click": "role=button[name=\"Edit\"] >> nth=1"
+              "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
             },
             {
               "wait": 600

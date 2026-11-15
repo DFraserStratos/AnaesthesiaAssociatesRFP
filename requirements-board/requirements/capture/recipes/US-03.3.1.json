@@ -358,23 +358,20 @@
           "state": "optional",
           "steps": [
             {
-              "scroll": "[data-shot=rvg-code-add-reference]"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
-              "click": "[data-shot=rvg-code-add-reference]"
+              "wait": 600
             },
             {
-              "wait": 300
-            },
-            {
-              "scroll": "[data-shot=capture-procedure-code]"
+              "click": "[data-shot=billing-sheet] [data-shot=rvg-code-add-reference]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=capture-procedure-code]"
+            "[data-shot=billing-sheet] [data-shot=capture-procedure-code]"
           ],
           "caption": "Required on RVG Contracts: on a fixed price it is offered for reference only"
         },
@@ -388,14 +385,14 @@
               "wait": 800
             },
             {
-              "scroll": "[data-shot=capture-procedure-code]"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
-              "wait": 300
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=capture-procedure-code]"
+            "[data-shot=billing-sheet] [data-shot=capture-procedure-code]"
           ],
           "caption": "Required on RVG Contracts, filled from the Contract's default: Merivale's Face lift fills H3"
         }
