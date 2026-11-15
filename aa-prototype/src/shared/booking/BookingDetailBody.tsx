@@ -38,7 +38,6 @@ import {
   MoveBookingToColleagueSheet,
   AlertOfficeEntry,
   OfficeAlertLine,
-  EditProcedureSheet,
   RemoveProcedureSheet,
   movedToYouByLine,
   useBookingMovedToMeNotice,
@@ -67,7 +66,6 @@ type SheetState =
   | 'none'
   | 'cancel'
   | 'patient'
-  | { kind: 'procedure'; procedureId: string }
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
 
 function shiftTime(time: string, deltaMin: number): string {
@@ -664,7 +662,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
               canCapture={canCapture}
               failures={failures.filter((f) => f.procedureId === procedure.id)}
               showValidation={showValidation}
-              onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
               onRemove={() => setSheet({ kind: 'removeProcedure', procedureId: procedure.id, ordinal: index + 1 })}
               onError={setError}
             />
@@ -813,14 +810,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       <CancelBookingSheet open={sheet === 'cancel'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
-      )}
-      {typeof sheet === 'object' && sheet.kind === 'procedure' && proceduresRecord[sheet.procedureId] !== undefined && (
-        <EditProcedureSheet
-          open
-          procedure={proceduresRecord[sheet.procedureId]!}
-          actor={actor}
-          onClose={() => setSheet('none')}
-        />
       )}
       {typeof sheet === 'object' && sheet.kind === 'removeProcedure' && proceduresRecord[sheet.procedureId] !== undefined && (
         <RemoveProcedureSheet

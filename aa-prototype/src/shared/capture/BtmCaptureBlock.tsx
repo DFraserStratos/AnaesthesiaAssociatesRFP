@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { accent, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
@@ -11,11 +11,12 @@ import { OverrideCard } from './OverrideCard'
 import { BillingLinesCard } from './BillingLinesCard'
 import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
-import { BillingCard } from '../booking/BillingCard'
+import { BILLING_FAILURE_FIELDS, BillingCard } from '../booking/BillingCard'
 import { ProcedureStack } from '../booking/ProcedureStack'
 
 /** Fields the Contract row anchors (the step rail and "Contract and payer" own them; catch-up Phase 20). */
-const CONTEXT_FIELDS = ['governingContractId', 'enteredPrice', 'billablePartyId', 'prepaymentDetail'] as const
+// The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
+const CONTEXT_FIELDS = BILLING_FAILURE_FIELDS
 
 interface BtmCaptureBlockProps {
   procedure: Procedure
@@ -29,8 +30,6 @@ interface BtmCaptureBlockProps {
   /** This procedure's validation failures; rendered only after the latch. */
   failures: BillingValidationFailure[]
   showValidation: boolean
-  /** Open the EditProcedureSheet for THIS procedure. */
-  onEdit: () => void
   /** Open the RemoveProcedureSheet for THIS procedure. Never offered on the
    *  Booking's first procedure, which `removeProcedure` refuses to delete. */
   onRemove?: (() => void) | undefined
@@ -71,7 +70,6 @@ export function BtmCaptureBlock({
   canCapture,
   failures,
   showValidation,
-  onEdit,
   onRemove,
   onError,
 }: BtmCaptureBlockProps) {
@@ -79,7 +77,6 @@ export function BtmCaptureBlock({
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
-  const [sheetHint, setSheetHint] = useState(false)
 
   const { fee, rvgGroup, contract, nonRvgLines } = useMemo(
     () => procedureFee({ procedure, list, masters, billingLines, patientId }),
@@ -125,33 +122,10 @@ export function BtmCaptureBlock({
         density="full"
         surface={stackSurface}
         heading={procedureCount > 1 ? `Procedure ${ordinal}` : 'Procedure'}
-        {...(editable
+        {...(editable && onRemove !== undefined && canCapture && ordinal > 1
           ? {
               actions: (
                 <>
-            {editable && (
-            <button
-              type="button"
-              data-validation-procedure-id={procedure.id}
-              data-validation-fields={CONTEXT_FIELDS.join(' ')}
-              onClick={onEdit}
-              onMouseEnter={() => setSheetHint(true)}
-              onMouseLeave={() => setSheetHint(false)}
-              style={{
-                border: 'none',
-                background: 'none',
-                padding: 0,
-                fontFamily: 'inherit',
-                fontSize: 14,
-                fontWeight: 600,
-                color: contextFailures.length > 0 ? semantic.error.onTint : accent.base,
-                cursor: 'pointer',
-                textDecoration: sheetHint || contextFailures.length > 0 ? 'underline' : 'none',
-              }}
-            >
-              Edit
-            </button>
-            )}
             {/* Additional procedures only: the Booking's first is its anchor and
                 `removeProcedure` refuses it, so never show an action that
                 cannot work. */}

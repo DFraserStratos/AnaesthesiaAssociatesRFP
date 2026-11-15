@@ -15,7 +15,6 @@ export { MoveListPromptProvider, useMoveListPrompt, type MoveListPromptApi } fro
 export { MovedToYouPanel, movedToYouLine, movedToYouByLine } from './MovedToYouPanel'
 export { useMoveInput, useMoveTargets, sessionKey, useMovableSessions, useIsMovable, useMovableLists, useMovedToMe, useMovedToMeNotice, useBookingsMovedToMe, useBookingMovedToMeNotice, useBookingMoveEntries, useOwnBookingInView, type MovableSession } from './useListMoves'
 export { EditPatientSheet } from './EditPatientSheet'
-export { EditProcedureSheet } from './EditProcedureSheet'
 export { RemoveProcedureSheet } from './RemoveProcedureSheet'
 export { EditBillingSetupSheet } from './EditBillingSetupSheet'
 export { PriceOverrideSheet } from './PriceOverrideSheet'

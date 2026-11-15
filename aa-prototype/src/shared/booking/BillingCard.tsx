@@ -16,6 +16,7 @@ import {
 } from '../../domain/billing/contractRail'
 import { isRvgKind } from '../../domain/billing/contracts'
 import {
+  editProcedure,
   railActorOf,
   railContextForList,
   railMastersOf,
@@ -58,6 +59,13 @@ import { contractPriceText } from '../flows/ContractRail'
  */
 
 type Step = 1 | 2 | 3
+
+/**
+ * The Contract fields a completion failure points at: Mark complete focuses the
+ * Billing card for any of them (the Booking's procedure card has no Edit since
+ * catch-up Phase 20a's owner review).
+ */
+export const BILLING_FAILURE_FIELDS = ['governingContractId', 'enteredPrice', 'billablePartyId', 'prepaymentDetail'] as const
 
 interface BillingCardProps {
   procedure: Procedure
@@ -106,7 +114,11 @@ function cardLabel(ordinal?: number, count?: number): string {
 
 function InlineBillingCard(props: BillingCardProps) {
   return (
-    <CaptureSection label={cardLabel(props.ordinal, props.procedureCount)} shot="billing">
+    <CaptureSection
+      label={cardLabel(props.ordinal, props.procedureCount)}
+      shot="billing"
+      validationTarget={{ procedureId: props.procedure.id, fields: BILLING_FAILURE_FIELDS }}
+    >
       <BillingSteps {...props} layout="side" />
     </CaptureSection>
   )
@@ -359,7 +371,50 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
         <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 13.5 }}>{error}</div>
       )}
       {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
+      {railActor === 'anaesthetist' && <BillingReferenceField procedure={procedure} actor={actor} canEdit={canEdit} onError={onError} />}
     </div>
+  )
+}
+
+/**
+ * The hospital's approval or contract reference, for the anaesthetist (the
+ * office edits it in "Edit billing setup"). Saved on leaving the field,
+ * through `editProcedure`. INTERIM until Phase 21 puts the approval number on
+ * the Booking.
+ */
+function BillingReferenceField({ procedure, actor, canEdit, onError }: { procedure: Procedure; actor: Actor; canEdit: boolean; onError: (message: string) => void }) {
+  const stored = procedure.billingReference ?? ''
+  const [value, setValue] = useState(stored)
+  useEffect(() => setValue(stored), [stored])
+  if (!canEdit && stored === '') return null
+  function save() {
+    const next = value.trim()
+    if (next === stored) return
+    const outcome = editProcedure(useAppStore, actor, procedure.id, { billingReference: next !== '' ? next : undefined })
+    if (!outcome.ok) {
+      onError(outcome.message)
+      setValue(stored)
+    }
+  }
+  return (
+    <label data-shot="billing-reference" style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
+      <span style={{ fontSize: 13, color: neutral.slate, flex: 'none' }}>Billing reference</span>
+      {canEdit ? (
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={save}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+          }}
+          placeholder="The hospital's approval or contract reference"
+          className="mono"
+          style={{ flex: 1, minWidth: 0, fontSize: 14, padding: '8px 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, color: neutral.ink, fontFamily: 'inherit' }}
+        />
+      ) : (
+        <span className="mono" style={{ fontSize: 14, color: neutral.ink }}>{stored}</span>
+      )}
+    </label>
   )
 }
 
@@ -922,8 +977,9 @@ function MobileBillingCard(props: BillingCardProps) {
         {...(rvgGroup !== undefined && procedure.rvgGroupId !== undefined ? { sub: rvgGroup.description } : {})}
         todo={rvgTodo ? 'Choose the RVG code' : priceLine === undefined ? 'Follows the Contract' : undefined}
         todoAccent={rvgTodo}
-        last
+        last={railActor !== 'anaesthetist' || procedure.billingReference === undefined}
       />
+      {railActor === 'anaesthetist' && procedure.billingReference !== undefined && <SummaryRow label="Reference" value={procedure.billingReference} last />}
     </>
   )
 
@@ -937,7 +993,7 @@ function MobileBillingCard(props: BillingCardProps) {
         onClick={() => setOpen(true)}
         tabIndex={editable ? 0 : -1}
         data-validation-procedure-id={procedure.id}
-        data-validation-fields="rvgGroupId baseUnitsSelected"
+        data-validation-fields={['rvgGroupId', 'baseUnitsSelected', ...BILLING_FAILURE_FIELDS].join(' ')}
         className="aa-rail-focus"
         style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
       >

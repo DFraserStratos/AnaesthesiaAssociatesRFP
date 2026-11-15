@@ -715,7 +715,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **History:** `role=button[name="History"]` opens a dialog titled "Booking history". On mobile it is
   inside `[data-testid=mobile-booking-header-actions]`.
 - **Cancel booking:** "Cancel booking", then fill `role=textbox[name="Reason"]`, then confirm.
-- **Edit:** "Edit" in the Patient section, or inside `[data-testid=procedure-header]`.
+- **Edit:** "Edit" in the Patient section. The Procedure card has no Edit (catch-up Phase 20a); the anaesthetist's billing reference is `[data-shot=billing-reference] input`.
 - **Submit list:** "Mark list completed".
   - If blocked, the sheet "Bookings still to finish" opens.
   - If ready, a confirm sheet opens. Then "Submit to office" shows
@@ -957,9 +957,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   Contract and the RVG code `capture-procedure-code` are both in the Billing card `capture-billing`). Compact,
   in Admin Review's `review-procedures` cell and the List drawer's `drawer-procedure-stack`, it also has
   `procedure-contract` (Contract and pricing basis) and `procedure-rvg-code`. `procedure-description` (the
-  manual form); `edit-procedure-text` (read-only in Edit procedure); `invoice-procedure-heading` (one
+  manual form); `billing-reference` (the anaesthetist's billing reference field at the foot of the Billing card and its phone sheet; there is no Edit procedure sheet); `invoice-procedure-heading` (one
   heading row per Procedure in `invoice-lines`, the only place the invoice description shows);
-  `review-open-booking`. `data-testid=procedure-header` is the card's heading row, with Edit and Remove.
+  `review-open-booking`. `data-testid=procedure-header` is the card's heading row, with Remove on an added procedure only.
   The attachment hooks are gone. `booking-source` (the source line)
 
 **Web**

@@ -38,7 +38,7 @@ export const SET_BY_THE_OFFICE = 'Set by the office'
  * same point for the office and the anaesthetist. A prepaid Contract reads
  * "Set by the office" for the anaesthetist (A17). On the Booking the procedure
  * stack shows the Contract (catch-up Phase 20a); this row stays in the edit
- * sheets ("Contract and payer", "Edit procedure").
+ * sheet "Contract and payer".
  */
 export function ProcedureContractRow({ procedure, actor, canEdit, caption, shot = 'procedure-contract-row' }: ProcedureContractRowProps) {
   const masters = useAppStore((s) => s.masters)

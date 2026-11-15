@@ -257,7 +257,7 @@ None.
 - **US-04.3.4** Admin sets Contracts at booking setup · admin, web, mobile
 - **US-04.3.5** Contract locked at AUTHORISED · admin
 - **US-04.3.8** Where the invoice goes, then the Contract · admin, mobile, web
-- **US-04.3.9** Open-price fallbacks and the Other price toggle · admin, mobile
+- **US-04.3.9** The No contract backstops, RVG and Fixed price · admin, mobile
 - **US-05.1.1** RVG groups · admin, web, mobile
 - **US-05.1.3** Anatomy headings and AA groups · admin, web, mobile
 - **US-05.1.4** Modifiers already included in base units · admin, web, mobile

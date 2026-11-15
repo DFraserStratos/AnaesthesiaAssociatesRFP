@@ -80,18 +80,15 @@ test('desktop header actions are grouped with the records they act on', async ({
   const pageHeader = page.getByTestId('web-booking-header')
   await expect(pageHeader.getByRole('button', { name: 'History' })).toBeVisible()
 
-  // The procedure stack's heading row (catch-up Phase 20a) holds Edit beside the stack it acts on.
+  // The Procedure card is read-only: no Edit (catch-up Phase 20a, owner review). The
+  // anaesthetist's billing reference sits in the Billing card instead.
   const procedureHeader = page.getByTestId('procedure-header')
   await expect(procedureHeader.getByText('Procedure', { exact: true })).toBeVisible()
-  const edit = procedureHeader.getByRole('button', { name: 'Edit' })
-  await expect(edit).toBeVisible()
-  const headerBox = await procedureHeader.boundingBox()
-  const stackBox = await page.locator('[data-shot=procedure-stack]').first().boundingBox()
-  const editBox = await edit.boundingBox()
-  expect(headerBox).not.toBeNull()
-  expect(stackBox).not.toBeNull()
-  expect(editBox).not.toBeNull()
-  // Edit sits on the heading row, within the stack's own width.
-  expect(editBox!.x + editBox!.width).toBeLessThanOrEqual(stackBox!.x + stackBox!.width + 1)
+  await expect(procedureHeader.getByRole('button', { name: 'Edit' })).toHaveCount(0)
+  const reference = page.locator('[data-shot=billing-reference] input').first()
+  await expect(reference).toBeVisible()
+  await reference.fill('SX-TEST-0001')
+  await reference.press('Enter')
+  await expect(reference).toHaveValue('SX-TEST-0001')
 })
 
