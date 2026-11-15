@@ -700,6 +700,20 @@ names from the drift check):
     event invoice) and delete or re-point any spec that shot the old billing line sheet or card. The capture recipes,
     ATLAS.md and `npm run verify:board` are the Catalogue screenshots step below. Then the demo guide
     (below) and PROGRESS.
+15. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `NumberStepper` (U4) for the minutes stepper;
+      `TimeRangeFields` (U4) for the start and finish times; `OverlayHeader` and `SheetActions` (U2) for
+      `AddPrePostOpEventSheet` and `AddBillingEventSheet`; `Checkbox` (U4) for the invoice tick; the shared
+      segmented control for fixed fee or time; `Pill` (U3); `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: `AddBillingLineSheet` and
+      `BillingLinesCard` (`shared/capture/`) are deleted (item 5), not migrated, with their catalogue rows.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and
+      row `data-*` hook on the element recipes and specs target; update the catalogue rows
+      (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so
+      (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -952,6 +966,8 @@ review-and-fix pass (PROGRESS convention 18)**:
   Sharma step; the office stand-in is PWA only, one entry, and audited as the simulated office.
 - **Design and copy.** Bottom sheets with tappable rows on mobile; teal the only action colour; status
   pills on semantic tokens; mono dates, times and codes; no en or em dashes and no "slot" in app copy.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or
+  a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

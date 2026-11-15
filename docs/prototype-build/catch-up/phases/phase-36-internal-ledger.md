@@ -146,6 +146,9 @@ held for anaesthetists).
   flat Contract model, D1 to D11, no Contract lines, versions or staged changes), 23's per-Procedure units on invoice lines, 24's one price precedence with its recorded
   price source, and 26's disbursement destination and `missingBank` flag (display only: 26 holds no
   payment back).
+- Also UI unification Phase U6 (and through it U1 to U5), DONE first: the shared table kit, `PageHeader`,
+  `StatTile` and `Card`, with U4's compact `SelectField` and U5's `FilterPills`, which this phase builds
+  on.
 
 **Estimated:** 2 sessions. Session 1: work items 1 to 11 (figures pinned, model, pure ledger module,
 every creator with the stamped payee, payments, payables, handoff, the AA fee fold, selectors and the
@@ -1211,6 +1214,26 @@ read the same after the change, and a parity test proves it.
       shots is the Catalogue screenshots section below, run after the review pass (the capture runner
       writes the items' `images`; never edit a requirement's text or status).
     - Patch the demo guide (below).
+20. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: the table kit (`Th`, `Td`, `TableShell`,
+      `ClickableRow`, U6) for the pairs and out-of-balance tables, in place of the `tableChrome` cells
+      item 12 names; `PageHeader`, `StatTile` and `Card` (U6) for the header, tiles and unmatched
+      receipts card; `SelectField` compact (U4) for the anaesthetist select, and `FilterDateInput` (U4)
+      for any date filter; `FilterPills` (U5) for Open and All; `Notice`, `Pill`, `Avatar`, `EmptyState`
+      and `CountBadge` (U3) for the balance indicator, status pills, rows, empty states and the nav
+      badge; `OverlayHeader` and `SheetActions` (U2) for the two Dialogs; `TextAction` (U5) for Open and
+      the links; `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: none of the PLAN row's:
+      the Ledger screen is new and built on the kit from the start, and on the surfaces it re-points
+      (item 13) it changes reads and copy only; the Billing monitor's pills, buttons and filter bar are
+      Phase 37's, which restyles that screen.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1547,6 +1570,8 @@ explicitly supersedes.
   - The PWA stand-in is badged.
   - `pwaPurity` passes, `PERSIST_VERSION` is bumped by one, and the filler `rng()` order is
     unchanged.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section
+  8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

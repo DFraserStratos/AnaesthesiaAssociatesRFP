@@ -387,6 +387,24 @@ through the Phase 15 rename (Card to Booking). **Do not restore** the Off / Unit
     every Contract. **Readings:** the interim AUTHORISED and prepaid reads; the office's prepaid price
     read-only once raised (A16); a no-charge invoice has no payable or BCTI; `CT-ARIA-HOURLY` keeps
     its id.
+15. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `formatMoney` (U1) for every figure on
+      `PriceCard`, `BookingTotalStrip`, Review and the invoice; `OverlayHeader` and `SheetActions` (U2)
+      for `PricingSheet`; `Pill` (U3) for "No charge", "Needs a price" and the Contract override pills;
+      `TextField` with the amount type (U4) for the "Price $" field; `Button` and `TextAction` (U5) for
+      Save and "Use the computed price".
+    - This phase also migrates these existing copies on the screens it rebuilds: `PriceCard`
+      (`shared/capture/PriceCard.tsx`) is built on the amount field, and it replaces `OverrideCard`
+      (`shared/capture/OverrideCard.tsx`) and `PriceOverrideSheet`
+      (`shared/flows/PriceOverrideSheet.tsx`, which becomes `PricingSheet`) with one set of override
+      fields, not two.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -541,6 +559,8 @@ Do not re-raise what the Decisions log settles. **Steer them at:**
   disabled inputs pretending where she may not.
 - **Rate x time gone everywhere**; Aria at $26.50; parity identical apart from Fitzgerald;
   `PERSIST_VERSION` bumped each session; generator and canvas untouched.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section
+  8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

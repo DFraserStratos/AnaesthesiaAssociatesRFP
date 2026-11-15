@@ -109,7 +109,10 @@ and `INTEGRATED_HOSPITALS`) and, by build order rather than as a formal dependen
 Contract event fee, `ContractEventFee` in `masters.contractEventFees`, a fixed fee per event type on a
 Contract; its handoff asks 42's loader to accept it beside Contracts). Confirm 39b is
 DONE; if it is not, drop the event-fee sheet (work item 8) and log it for Phase 44. There is no
-dependency on 25: with no versions or staging, 25 only snapshots a Procedure at AUTHORISED.
+dependency on 25: with no versions or staging, 25 only snapshots a Procedure at AUTHORISED. Also UI
+unification Phase U6 (and through it U1 to U5), DONE first: the shared table kit, `PageHeader`,
+`StatTile` and `EmptyState`, with U4's `useCalendarKeys` and `MonthHeaderRow`, which this phase builds
+on.
 **Estimated:** 2 sessions. Session 1 is the model, seed, pure rules and store (work items 1 to 10) and
 stops green with every existing screen still rendering. Session 2 is the screens, the Seed load and
 Go-live views, the triggers, the shots and the demo guide (items 11 to 19).
@@ -1062,6 +1065,31 @@ green.**
       - any "Phase 42" string in rendered copy.
     - No en or em dash in any new string.
     - Then the demo guide updates below.
+20. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `PageHeader`, `StatTile` and the table kit
+      (`Th`, `Td`, `TableShell`, `GroupRow`, `ClickableRow`, U6); `EmptyState`, `Notice`, `ResultLine`
+      and `Pill` (U3); `Switch` (U4) for `ShowRetiredToggle`; `SelectField` compact (U4) for the masters
+      toolbars; `useCalendarKeys` and `MonthHeaderRow` (U4); `TextAction` (U5); `OverlayHeader`,
+      `SheetActions` and `ConfirmSheet` (U2) for the master sheets and the delete confirmation.
+    - This phase also migrates these existing copies on the screens it rebuilds: `MasterHeader` over
+      `PageHeader`, replacing the 16 masters `Header` sites (`masters/chrome.tsx`); the masters `Table`
+      (`masters/chrome.tsx`, `tableStyles.ts`) renamed onto `shared/table/` (`heads[]` to columns);
+      `GroupRow` for Contracts and RVG groups; `ClickableRow` on Anaesthetists, Surgeons, Parties and
+      Contracts; the empty cards (`ContractsView.tsx`, `RvgGroupsView.tsx`, `ModifiersView.tsx`) onto
+      `EmptyState`; the masters `TextAction` (`masters/chrome.tsx`) onto the shared one; the masters
+      result lines (`ReferenceViews.tsx`, `HolidaySheet.tsx`) onto `ResultLine`; the hospital calendar
+      (`HospitalCalendar`, `HospitalsView.tsx`) gains a today marker with `aria-current="date"` and
+      takes its header and arrow keys from `MonthHeaderRow` and `useCalendarKeys`; the Master data
+      sub-nav (`MasterData.tsx`) rendered from `masterViews.ts` with `aria-current`;
+      `ShowRetiredToggle`, `RetireSection` and `LoadResultBanner` on the shared parts; `catalogueRows`
+      using the post-rename catalogue row names.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1407,6 +1435,8 @@ review-and-fix pass (PROGRESS convention 18)**:
   sample fixtures are imported from `src/domain`, and `pwaPurity.test.ts` holds. The app says "Master
   data", never "reference tables", and never "slot". Teal is the only action colour, outcome pills
   carry words, the result panel follows Admin Review's table, and there are no en or em dashes.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md`
+  section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

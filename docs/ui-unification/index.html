@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI unification audit</title>
+<style>
+:root {
+  --bg:#F6F8F7; --surface:#FFFFFF; --sunken:#EEF1F0; --line:#E2E7E5; --line-strong:#C9D1CE;
+  --ink:#172320; --slate:#58635F; --mist:#8A9490;
+  --teal:#0D6E63; --teal-tint:#E1F0ED; --teal-on:#0A5A51; --crimson:#A91E3E;
+  --warn-tint:#FBF0DC; --warn-on:#8A5300; --err-tint:#FBE6E6; --err-on:#9B1C1C; --ok-tint:#E1F3E9; --ok-on:#157A49;
+  --stage:#F6F8F7; --r:14px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#111615; --surface:#19201E; --sunken:#212927; --line:#2C3633; --line-strong:#3D4945;
+    --ink:#ECF1EF; --slate:#A9B4B0; --mist:#7E8A86;
+    --teal:#5CC4B6; --teal-tint:#15322E; --teal-on:#8ADBCF; --crimson:#E0728A;
+    --warn-tint:#3A2E14; --warn-on:#F0C674; --err-tint:#3A1C1C; --err-on:#F2A0A0; --ok-tint:#16301F; --ok-on:#7FD3A2;
+    --stage:#F6F8F7;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 var(--font); -webkit-font-smoothing:antialiased; }
+code { font:0.88em var(--mono); background:var(--sunken); padding:1px 5px; border-radius:5px; overflow-wrap:anywhere; }
+a { color:var(--teal); }
+.wrap { max-width:1180px; margin:0 auto; padding:0 20px; }
+.mast { border-top:4px solid var(--crimson); background:var(--surface); border-bottom:1px solid var(--line); }
+.mast .wrap { padding-top:28px; padding-bottom:24px; }
+.eyebrow { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--mist); }
+h1 { font-size:30px; line-height:1.15; margin:6px 0 10px; letter-spacing:-.015em; text-wrap:balance; }
+.lede { max-width:68ch; color:var(--slate); margin:0; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:22px; }
+.tile { border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--surface); }
+.tile b { display:block; font:700 24px/1.1 var(--mono); font-variant-numeric:tabular-nums; }
+.tile span { font-size:12.5px; color:var(--slate); }
+nav.toc { display:flex; gap:16px; flex-wrap:wrap; margin-top:18px; font-size:13.5px; }
+h2 { font-size:21px; margin:44px 0 6px; letter-spacing:-.01em; }
+h2 + p { margin-top:0; color:var(--slate); max-width:72ch; }
+.top5 { display:grid; gap:10px; margin:16px 0 0; padding:0; list-style:none; counter-reset:t; }
+.top5 li { counter-increment:t; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 12px 50px; position:relative; }
+.top5 li::before { content:counter(t); position:absolute; left:14px; top:12px; width:24px; height:24px; border-radius:999px; background:var(--teal-tint); color:var(--teal-on); font:700 13px/24px var(--mono); text-align:center; }
+.top5 a { font-size:13px; white-space:nowrap; }
+.filters { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); padding:10px 0; margin-top:14px; }
+.filters .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.chip { font:600 12.5px var(--font); color:var(--slate); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 12px; cursor:pointer; }
+.chip i { font-style:normal; color:var(--mist); margin-left:4px; }
+.chip.on { background:var(--teal); border-color:var(--teal); color:#fff; }
+.chip.on i { color:#ffffffb0; }
+.chip:focus-visible, input:focus-visible, a:focus-visible { outline:3px solid color-mix(in srgb, var(--teal) 40%, transparent); outline-offset:2px; }
+input[type=search] { font:14px var(--font); padding:7px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); min-width:200px; flex:1 1 200px; max-width:320px; }
+.shown { font-size:12.5px; color:var(--mist); margin-left:auto; }
+.group { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); margin:18px 0; overflow:hidden; scroll-margin-top:70px; }
+.group > header { display:grid; grid-template-columns:auto 1fr; gap:4px 14px; padding:16px 18px 12px; align-items:start; }
+.rank { grid-row:span 2; width:36px; height:36px; border-radius:10px; background:var(--sunken); color:var(--slate); font:700 15px/36px var(--mono); text-align:center; }
+.group h3 { margin:0; font-size:18px; line-height:1.25; }
+.gid { font:600 13px var(--mono); color:var(--mist); margin-right:4px; }
+.job { margin:2px 0 0; color:var(--slate); font-size:14px; }
+.badges { grid-column:2; display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.b { font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:999px; background:var(--sunken); color:var(--slate); white-space:nowrap; }
+.b-phase { background:var(--teal-tint); color:var(--teal-on); }
+.b-bug { background:var(--err-tint); color:var(--err-on); }
+.b-q { background:var(--warn-tint); color:var(--warn-on); }
+.cols { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line); }
+.cols section { padding:14px 18px; }
+.cols .target { border-left:1px solid var(--line); background:color-mix(in srgb, var(--teal-tint) 45%, var(--surface)); }
+.cols h4 { margin:0 0 4px; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mist); font-weight:600; }
+.cols .target h4 { color:var(--teal-on); }
+.count { text-transform:none; letter-spacing:0; font:600 12px var(--mono); color:var(--slate); margin-left:6px; }
+.cols p { margin:0 0 8px; font-size:14px; }
+.canon-line { font-size:13.5px !important; }
+.gallery { display:flex; gap:14px; overflow-x:auto; padding:16px 18px; background:var(--stage); border-top:1px solid var(--line); align-items:flex-start; }
+figure { margin:0; flex:0 0 auto; max-width:min(440px, 82vw); }
+figure img { display:block; max-width:100%; height:auto; max-height:340px; object-fit:contain; object-position:top left; border:1px solid #E2E7E5; border-radius:10px; background:#fff; }
+figure.canon img { border:2px solid #0D6E63; }
+figcaption { font-size:12.5px; color:#58635F; margin-top:6px; line-height:1.35; }
+.app { font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1px 6px; border-radius:5px; background:#E2E7E5; color:#172320; margin-right:4px; }
+.std { display:inline-block; margin-left:6px; font-size:11px; font-weight:700; color:#0A5A51; background:#E1F0ED; padding:1px 7px; border-radius:999px; }
+.rowname { display:block; font:11px var(--mono); color:#8A9490; overflow-wrap:anywhere; }
+.noshot { margin:0; padding:14px 18px; border-top:1px solid var(--line); background:var(--sunken); font-size:13.5px; color:var(--slate); }
+.meta { margin:0; padding:4px 18px 14px; border-top:1px solid var(--line); }
+.meta > div { display:grid; grid-template-columns:120px 1fr; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.meta > div:last-child { border-bottom:0; }
+.meta dt { color:var(--mist); font-weight:600; font-size:12.5px; }
+.meta dd { margin:0; }
+.tbl { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-top:14px; }
+table { border-collapse:collapse; width:100%; font-size:14px; min-width:640px; }
+th, td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child > * { border-bottom:0; }
+thead th { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mist); font-weight:600; background:var(--bg); }
+tbody th { font:700 14px var(--mono); color:var(--teal-on); white-space:nowrap; }
+td span { color:var(--slate); font-size:13px; }
+.num { font-family:var(--mono); text-align:right; }
+ol.qs { list-style:none; padding:0; margin:10px 0 0; display:grid; gap:10px; }
+ol.qs li { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 12px 52px; position:relative; font-size:14.5px; }
+ol.qs li::before { content:attr(value); position:absolute; left:14px; top:12px; min-width:26px; height:24px; border-radius:8px; background:var(--warn-tint); color:var(--warn-on); font:700 13px/24px var(--mono); text-align:center; }
+.rec { margin-top:6px; font-size:13.5px; color:var(--slate); }
+.rec span { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ok-on); background:var(--ok-tint); padding:1px 7px; border-radius:999px; margin-right:6px; }
+#questions h3 { font-size:15px; margin:22px 0 0; color:var(--slate); }
+.bugshots { display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; }
+.bugshots figure { max-width:min(520px,100%); flex:1 1 300px; }
+.bugshots figcaption { color:var(--slate); }
+footer { color:var(--mist); font-size:13px; padding:40px 0 60px; }
+.empty { display:none; padding:30px; text-align:center; color:var(--mist); }
+@media (max-width:760px) {
+  h1 { font-size:25px; }
+  .cols { grid-template-columns:1fr; }
+  .cols .target { border-left:0; border-top:1px solid var(--line); }
+  .meta > div { grid-template-columns:1fr; gap:2px; }
+  .wrap { padding:0 16px; }
+  .filters .row { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .filters .chip { flex:0 0 auto; }
+  .filters input[type=search] { flex:0 0 170px; min-width:0; }
+  .shown { flex:0 0 auto; }
+  .group { scroll-margin-top:64px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+<div class="mast"><div class="wrap">
+  <div class="eyebrow">AA prototype · audit of 12 November 2026 · no code changed</div>
+  <h1>The components that should be one</h1>
+  <p class="lede">We are keeping our own design and code, not adopting a component library. This page shows every place the same job was built more than once across Admin, Anaesthetist Web and Anaesthetist Mobile, what each group becomes, and which existing look is the standard. Screenshots are the live component catalogue as it stood on 12 November.</p>
+  <div class="tiles">
+    <div class="tile"><b>36</b><span>groups to consolidate</span></div>
+    <div class="tile"><b>9</b><span>bugs confirmed along the way</span></div>
+    <div class="tile"><b>27</b><span>questions, all answered</span></div>
+    <div class="tile"><b>7</b><span>phases, about 12 sessions</span></div>
+    <div class="tile"><b>170</b><span>catalogue rows checked</span></div>
+  </div>
+  <nav class="toc"><a href="#top5">Top five</a><a href="#groups">All groups</a><a href="#bug">The Escape bug</a><a href="#questions">Answers</a><a href="#plan">Plan</a><a href="README.md">README.md</a><a href="PLAN.md">PLAN.md</a></nav>
+</div></div>
+
+<main class="wrap">
+<h2 id="top5">The five that matter most</h2>
+<ol class="top5">
+  <li><strong>Money prints three ways in one demo beat.</strong> "$3100.00" on the office Booking total, "$3,100.00" in Accounts and Invoices, "Fixed price $3,100" in the procedure stack. <a href="#U01">U01</a></li>
+  <li><strong>One Escape can lose a Contract form.</strong> Four overlays each handle Escape on their own; two of them fire together. Reproduced in the running app. <a href="#U02">U02</a></li>
+  <li><strong>Sheets, pills and notices are what every remaining phase adds.</strong> 64 hand-typed sheet titles, about 30 pill copies, 24 error box copies (17 silent to screen readers). <a href="#U03">U03</a> <a href="#U04">U04</a> <a href="#U05">U05</a> <a href="#U11">U11</a></li>
+  <li><strong>"White here, sunken there" has one cause.</strong> The mockups draw fields as grey wells on white sheets; the shared search box went white. One fill rule fixes search, selects and inputs. <a href="#U06">U06</a> <a href="#U07">U07</a> <a href="#U15">U15</a></li>
+  <li><strong>Tables and cards are the largest duplication by volume.</strong> Seven table cell implementations, ten table shells, about 30 card copies; two tables cannot be opened by keyboard. <a href="#U09">U09</a> <a href="#U10">U10</a> <a href="#U14">U14</a></li>
+</ol>
+
+<h2 id="groups">All groups, ranked</h2>
+<p>Ranked by duplication removed, how visible the inconsistency is in a demo, and how many remaining catch-up phases need the component. A teal frame marks the member whose look becomes the standard. Click a screenshot to open it full size.</p>
+<div class="filters"><div class="row">
+  <button class="chip on" data-f="all">All 36</button><button class="chip" data-f="U1">U1 · Tokens, money and date text <i>2</i></button><button class="chip" data-f="U2">U2 · Overlays <i>5</i></button><button class="chip" data-f="U3">U3 · Pills, badges and feedback <i>7</i></button><button class="chip" data-f="U4">U4 · Fields and search <i>7</i></button><button class="chip" data-f="U5">U5 · Buttons, tabs and toggles <i>8</i></button><button class="chip" data-f="U6">U6 · Tables, cards and page chrome <i>7</i></button>
+  <button class="chip" data-f="bug">Fixes a bug</button>
+  <button class="chip" data-f="q">Had a question</button>
+  <input type="search" id="q" placeholder="Filter groups" aria-label="Filter groups">
+  <span class="shown" id="shown" role="status"></span>
+</div></div>
+
+<article class="group" id="U01" data-phase="U1" data-bug="1" data-q="0" data-text="u01 money formatting formatting three helpers plus about 25 hand-written `$${x.tofixed(2)}` display sites and 8 message sites. the office booking total and the capture billing lines print &quot;$3100.00&quot;; accounts and invoices print &quot;$3,100.00&quot;; the procedure stack prints &quot;fixed price $3,100&quot;. all three appear in one scripted demo beat. `formatmoney(n, { cents, sign })` in the existing `domain/billing/money.ts`, re-exported from `shared/format.ts` as `formatcurrency`. grouped thousands everywhere.">
+  <header>
+    <div class="rank">1</div>
+    <div class="ttl"><h3><span class="gid">U01</span> Money formatting</h3><p class="job">Show an NZD amount.</p></div>
+    <div class="badges"><span class="b b-phase">U1</span><span class="b">Size S to M</span><span class="b">Visibility: High</span><span class="b b-bug">Fixes a bug</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">3 helpers, ~25 display sites, 8 message sites</span></h4><p>Three helpers plus about 25 hand-written <code>$${x.toFixed(2)}</code> display sites and 8 message sites. The office Booking total and the capture billing lines print "$3100.00"; Accounts and Invoices print "$3,100.00"; the procedure stack prints "Fixed price $3,100". All three appear in one scripted demo beat.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>formatMoney(n, { cents, sign })</code> in the existing <code>domain/billing/money.ts</code>, re-exported from <code>shared/format.ts</code> as <code>formatCurrency</code>. Grouped thousands everywhere.</p><p class="canon-line"><strong>Canonical look:</strong> The Accounts and Invoices format: "$3,100.00".</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/web/bookingtotalpanel-usetickingvalue.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/bookingtotalpanel-usetickingvalue.png" alt="BookingTotalPanel · useTickingValue in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Booking total: ungrouped<span class="rowname">BookingTotalPanel · useTickingValue</span></figcaption></figure><figure class="canon"><a href="shots/web/accounts-tables-tfoot-totals.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/accounts-tables-tfoot-totals.png" alt="Accounts tables (tfoot totals) in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Accounts: grouped<span class=std>Becomes the standard</span><span class="rowname">Accounts tables (tfoot totals)</span></figcaption></figure><figure class=""><a href="shots/admin/procedurestack.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/procedurestack.png" alt="ProcedureStack in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Procedure stack: whole dollars<span class="rowname">ProcedureStack</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>visual/contracts-phase19a.spec.ts</code> asserts the ungrouped figure and the demo script (03, line 811) tells the presenter to expect "$3200.00": update both in the same change.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 24, which puts the Booking total in front of the anaesthetist.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/D-dates-formatting.md">detail/D-dates-formatting.md</a>, G9 Money formatting</dd></div>
+  </dl>
+</article>
+<article class="group" id="U02" data-phase="U2" data-bug="1" data-q="0" data-text="u02 modal behaviour (escape, focus, trap) overlays four separate escape and focus implementations (dialog, bottomsheet, masterpanel, three drawer shells). only masterpanel moves focus in and back. nothing traps focus or makes the background inert. two window listeners both fire on one escape. `usemodallayer({ open, onclose, rootref })` in `shared/surface/`: one stack, one key listener that closes only the top layer, focus in and back, tab trap, scoped `inert`. no visual change. no portals (the phone frame is scaled).">
+  <header>
+    <div class="rank">2</div>
+    <div class="ttl"><h3><span class="gid">U02</span> Modal behaviour (Escape, focus, trap)</h3><p class="job">A surface that takes over the screen until dismissed.</p></div>
+    <div class="badges"><span class="b b-phase">U2</span><span class="b">Size M</span><span class="b">Visibility: High</span><span class="b b-bug">Fixes a bug</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">4 implementations behind about 66 overlays</span></h4><p>Four separate Escape and focus implementations (Dialog, BottomSheet, MasterPanel, three drawer shells). Only MasterPanel moves focus in and back. Nothing traps focus or makes the background inert. Two window listeners both fire on one Escape.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>useModalLayer({ open, onClose, rootRef })</code> in <code>shared/surface/</code>: one stack, one key listener that closes only the top layer, focus in and back, Tab trap, scoped <code>inert</code>. No visual change. No portals (the phone frame is scaled).</p><p class="canon-line"><strong>Canonical look:</strong> MasterPanel's focus handling plus Dialog's topmost check.</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/admin/dialog-usesurface-overlay.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/dialog-usesurface-overlay.png" alt="Dialog (useSurface().Overlay) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Dialog<span class="rowname">Dialog (useSurface().Overlay)</span></figcaption></figure><figure class="canon"><a href="shots/admin/masterpanel-panelgrid-panelsection.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/masterpanel-panelgrid-panelsection.png" alt="MasterPanel / PanelGrid / PanelSection in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> MasterPanel: the best focus handling<span class=std>Becomes the standard</span><span class="rowname">MasterPanel / PanelGrid / PanelSection</span></figcaption></figure><figure class=""><a href="shots/mobile/bottomsheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/bottomsheet.png" alt="BottomSheet in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> BottomSheet<span class="rowname">BottomSheet</span></figcaption></figure><figure class=""><a href="shots/admin/slotdrawer.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/slotdrawer.png" alt="SlotDrawer in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Drawer shell<span class="rowname">SlotDrawer</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep <code>role="dialog"</code> and <code>aria-modal</code> (8 Playwright specs, 4 Vitest files, the SlideStack edge-swipe guard). <code>inert</code> must preserve SlideStack's own parked layers.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 35, whose "Leave without saving?" needs one close path.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G1 Modal shell behaviour</dd></div>
+  </dl>
+</article>
+<article class="group" id="U03" data-phase="U2" data-bug="0" data-q="0" data-text="u03 sheet title and close overlays 64 titles typed by hand at 18/700 (strays at 17, 20, 22). only one overlay gives its dialog an accessible name. no web dialog has a visible close. `overlayheader { title, description }` in `shared/surface/`: an h2 whose id names the dialog; the web dialog shows the drawer&#x27;s corner x when a header is present.">
+  <header>
+    <div class="rank">3</div>
+    <div class="ttl"><h3><span class="gid">U03</span> Sheet title and close</h3><p class="job">The heading and one-line description at the top of every sheet and dialog.</p></div>
+    <div class="badges"><span class="b b-phase">U2</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">64 sites</span></h4><p>64 titles typed by hand at 18/700 (strays at 17, 20, 22). Only one overlay gives its dialog an accessible name. No web dialog has a visible close.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>OverlayHeader { title, description }</code> in <code>shared/surface/</code>: an h2 whose id names the dialog; the web Dialog shows the drawer's corner X when a header is present.</p><p class="canon-line"><strong>Canonical look:</strong> 18/700 title with a 13px slate description (63 of 64 today); the drawer corner X.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/clearconflictsheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/clearconflictsheet.png" alt="ClearConflictSheet in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin sheet<span class=std>Becomes the standard</span><span class="rowname">ClearConflictSheet</span></figcaption></figure><figure class=""><a href="shots/admin/codepickersheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/codepickersheet.png" alt="CodePickerSheet in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> 17/600 title<span class="rowname">CodePickerSheet</span></figcaption></figure><figure class=""><a href="shots/web/dialog-web-overlay.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/dialog-web-overlay.png" alt="Dialog (web Overlay) in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web dialog: no close<span class="rowname">Dialog (web Overlay)</span></figcaption></figure><figure class=""><a href="shots/mobile/listoptionssheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/listoptionssheet.png" alt="ListOptionsSheet in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile sheet<span class="rowname">ListOptionsSheet</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Text locators still match. Mechanical.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 22 so every new sheet starts on it (21 to 42 add about ten sheets).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G3 Overlay title, description and close affordance</dd></div>
+  </dl>
+</article>
+<article class="group" id="U04" data-phase="U3" data-bug="0" data-q="0" data-text="u04 label pill pills and badges about 30 private or inline pills beside the shared `pill`, in nine paddings and three weights. they exist because `pill` has only neutral and success tones. four outlined marker pills use two border alphas. `outofhourspill` is dead code. extend `shared/ui/pill.tsx`: `tone` neutral, success, warning, error; `size` sm, md, lg; `variant` tint or outline; `leading` slot. named one-line wrappers stay where they own a data attribute (tierpill, unassignedpill).">
+  <header>
+    <div class="rank">4</div>
+    <div class="ttl"><h3><span class="gid">U04</span> Label pill</h3><p class="job">A short passive word on a tint: record status, kind or tag, attention flag, small metric.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~30 definitions; 20 uses of the shared Pill</span></h4><p>About 30 private or inline pills beside the shared <code>Pill</code>, in nine paddings and three weights. They exist because <code>Pill</code> has only neutral and success tones. Four outlined marker pills use two border alphas. <code>OutOfHoursPill</code> is dead code.</p></section>
+    <section class="target"><h4>Becomes</h4><p>Extend <code>shared/ui/Pill.tsx</code>: <code>tone</code> neutral, success, warning, error; <code>size</code> sm, md, lg; <code>variant</code> tint or outline; <code>leading</code> slot. Named one-line wrappers stay where they own a data attribute (TierPill, UnassignedPill).</p><p class="canon-line"><strong>Canonical look:</strong> Today's Pill for inline use; the Admin Review mockup's 4px 10px 11/600 pill for table cells.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/pill.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/pill.png" alt="Pill in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Shared Pill<span class=std>Becomes the standard</span><span class="rowname">Pill</span></figcaption></figure><figure class=""><a href="shots/admin/masterpills.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/masterpills.png" alt="MasterPills in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Masters pills<span class="rowname">MasterPills</span></figcaption></figure><figure class=""><a href="shots/admin/tierpill-preferredpill-notpreferredpill.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/tierpill-preferredpill-notpreferredpill.png" alt="TierPill / PreferredPill / NotPreferredPill in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Tier, Preferred, Not preferred<span class="rowname">TierPill / PreferredPill / NotPreferredPill</span></figcaption></figure><figure class=""><a href="shots/admin/changedsincesubmittedpill.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/changedsincesubmittedpill.png" alt="ChangedSinceSubmittedPill in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Changed (outline)<span class="rowname">ChangedSinceSubmittedPill</span></figcaption></figure><figure class=""><a href="shots/admin/draftlistparts.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/draftlistparts.png" alt="DraftListParts in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Draft List pills<span class="rowname">DraftListParts</span></figcaption></figure><figure class=""><a href="shots/mobile/outofhourspill.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/outofhourspill.png" alt="OutOfHoursPill in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Unused<span class="rowname">OutOfHoursPill</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>data-tier</code>, <code>data-unassigned</code>, <code>data-list-state</code>, <code>data-progress</code>, <code>list-row-badge</code> are queried by tests. Migrate about 12 stable sites now; leave Review, Invoices, Billing monitor and Accounts to the phases that rebuild them.</dd></div>
+    <div><dt>When</dt><dd>As early as possible: 23 of the 28 remaining phases (21 included) add pills.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/B-pills-avatars.md">detail/B-pills-avatars.md</a>, G1 Tone label pill, G2 Outlined warning marker pill, G3 Teal-tint labels</dd></div>
+  </dl>
+</article>
+<article class="group" id="U05" data-phase="U3" data-bug="0" data-q="0" data-text="u05 error box feedback `formerror` exists, yet 24 hand copies repeat its look (20 exact, 4 near). 17 of them have no `role=&quot;alert&quot;`, so a screen reader never hears the refusal. the existing `formerror` (`shared/ui/field.tsx`) with `variant` box or inline, and `shot`.">
+  <header>
+    <div class="rank">5</div>
+    <div class="ttl"><h3><span class="gid">U05</span> Error box</h3><p class="job">Show a store refusal or validation message inside a sheet or form.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size S</span><span class="b">Visibility: Low (a11y)</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">24 copies, 4 inline refusal lines</span></h4><p><code>FormError</code> exists, yet 24 hand copies repeat its look (20 exact, 4 near). 17 of them have no <code>role="alert"</code>, so a screen reader never hears the refusal.</p></section>
+    <section class="target"><h4>Becomes</h4><p>The existing <code>FormError</code> (<code>shared/ui/Field.tsx</code>) with <code>variant</code> box or inline, and <code>shot</code>.</p><p class="canon-line"><strong>Canonical look:</strong> The current FormError box.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/fieldlabel-formerror.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/fieldlabel-formerror.png" alt="FieldLabel / FormError in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> FormError<span class=std>Becomes the standard</span><span class="rowname">FieldLabel / FormError</span></figcaption></figure><figure class=""><a href="shots/mobile/formerror.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/formerror.png" alt="FormError in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile<span class="rowname">FormError</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Low. No unscoped <code>getByRole('alert')</code> runs on a screen that holds a copy. Skip members deleted by Phases 22, 24, 34, 39b.</dd></div>
+    <div><dt>When</dt><dd>Early: almost every new sheet adds a refusal.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/C-fields-search.md">detail/C-fields-search.md</a>, G2 Error box</dd></div>
+  </dl>
+</article>
+<article class="group" id="U06" data-phase="U4" data-bug="0" data-q="1" data-text="u06 search box fields three implementations in five looks. the anaesthetist&#x27;s lists page search is a grey box on the phone and a white 38px pill on the web; the shared `namesearchbox` is a white 48px field. focus ring, clear button and escape-to-clear all differ. `namesearchbox` with `fill` well or surface, `testid`, `clearlabel`, a 44px touch clear.">
+  <header>
+    <div class="rank">6</div>
+    <div class="ttl"><h3><span class="gid">U06</span> Search box</h3><p class="job">A text box with a magnifier that narrows a list as you type, with a clear button.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size S</span><span class="b">Visibility: High</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">3 implementations; 2 call sites to swap, a fill prop on 10</span></h4><p>Three implementations in five looks. The anaesthetist's Lists page search is a grey box on the phone and a white 38px pill on the web; the shared <code>NameSearchBox</code> is a white 48px field. Focus ring, clear button and Escape-to-clear all differ.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>NameSearchBox</code> with <code>fill</code> well or surface, <code>testId</code>, <code>clearLabel</code>, a 44px touch clear.</p><p class="canon-line"><strong>Canonical look:</strong> NameSearchBox, filled per the field fill rule (grey well inside white containers, white on the page).</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/namesearchbox.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/namesearchbox.png" alt="NameSearchBox in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> NameSearchBox<span class=std>Becomes the standard</span><span class="rowname">NameSearchBox</span></figcaption></figure><figure class=""><a href="shots/web/websearchfield.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/websearchfield.png" alt="WebSearchField in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web Lists pill<span class="rowname">WebSearchField</span></figcaption></figure><figure class=""><a href="shots/mobile/lookbacksearchrow.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/lookbacksearchrow.png" alt="LookbackSearchRow in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile Lists: grey on grey<span class="rowname">LookbackSearchRow</span></figcaption></figure><figure class=""><a href="shots/web/namesearchbox.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/namesearchbox.png" alt="NameSearchBox in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> In a web sheet<span class="rowname">NameSearchBox</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep <code>data-testid</code> <code>mobile-lists-search</code> and <code>web-lists-search</code> (capture recipes). Renaming the web clear button breaks <code>ListsScreen.test.tsx:69</code>.</dd></div>
+    <div><dt>When</dt><dd>Standalone. Phases 33 and 40 add search fields.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/C-fields-search.md">detail/C-fields-search.md</a>, G1 Search input</dd></div>
+  </dl>
+</article>
+<article class="group" id="U07" data-phase="U4" data-bug="0" data-q="1" data-text="u07 select field fields 35 selects in about 9 style variants (heights 48, 44, 36, about 30; grey or white fill), two local copies of the field chrome and about 35 hand-written label wrappers. admin toolbars put a white search box beside selects filled with the page colour. 44px selects sit 4px off beside 48px segmented controls. `selectfield` in `shared/ui/field.tsx`: label, hint, `size` field or compact, `fill`, `hidelabel`, `shot` on the select itself. stays a native `&lt;select&gt;`.">
+  <header>
+    <div class="rank">7</div>
+    <div class="ttl"><h3><span class="gid">U07</span> Select field</h3><p class="job">A labelled native select in a form or a filter bar.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">35 selects in ~20 files</span></h4><p>35 selects in about 9 style variants (heights 48, 44, 36, about 30; grey or white fill), two local copies of the field chrome and about 35 hand-written label wrappers. Admin toolbars put a white search box beside selects filled with the page colour. 44px selects sit 4px off beside 48px segmented controls.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>SelectField</code> in <code>shared/ui/Field.tsx</code>: label, hint, <code>size</code> field or compact, <code>fill</code>, <code>hideLabel</code>, <code>shot</code> on the select itself. Stays a native <code>&lt;select&gt;</code>.</p><p class="canon-line"><strong>Canonical look:</strong> The field chrome TextField already uses, at 48px in sheets and one 36px compact toolbar size.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/contractselect-fieldchrome-select.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/contractselect-fieldchrome-select.png" alt="ContractSelect (fieldChrome select) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ContractSelect<span class=std>Becomes the standard</span><span class="rowname">ContractSelect (fieldChrome select)</span></figcaption></figure><figure class=""><a href="shots/admin/surgeonpicker.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/surgeonpicker.png" alt="SurgeonPicker in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> SurgeonPicker<span class="rowname">SurgeonPicker</span></figcaption></figure><figure class=""><a href="shots/admin/auditviewer.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/auditviewer.png" alt="AuditViewer in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Filter bar selects<span class="rowname">AuditViewer</span></figcaption></figure><figure class=""><a href="shots/admin/sessiontimesfields.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/sessiontimesfields.png" alt="SessionTimesFields in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Beside time fields<span class="rowname">SessionTimesFields</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>58 capture steps call <code>selectOption</code>, and recipes pin <code>data-shot</code> on the select, literal <code>aria-label="Hospital"</code> and positional <code>nth</code> selectors.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 37 (filter bars) and 42 (every masters toolbar).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/C-fields-search.md">detail/C-fields-search.md</a>, G3 Labelled select field</dd></div>
+  </dl>
+</article>
+<article class="group" id="U08" data-phase="U5" data-bug="0" data-q="1" data-text="u08 action button buttons the shared `button` has 145 uses, almost all in admin and shared flows; the web app, demo tools and shell never use it. about 35 product buttons and 20 demo or shell buttons re-type it. `actionbtn` exists twice. the teal-outlined secondary the mockups draw has no variant, so it is hand-rolled six times. four disabled treatments. extend `shared/ui/button.tsx`: `variant` adds outline (and danger if kept); `size` touch (default, unchanged), desktop (44, radius 12), compact (36); `disabledreason` printed beside the button; `shot`.">
+  <header>
+    <div class="rank">8</div>
+    <div class="ttl"><h3><span class="gid">U08</span> Action button</h3><p class="job">A labelled command button: filled teal primary, outlined secondary, teal-outlined secondary, tinted pill.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size M</span><span class="b">Visibility: High</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">145 Button uses; ~55 hand-rolled copies</span></h4><p>The shared <code>Button</code> has 145 uses, almost all in Admin and shared flows; the web app, demo tools and shell never use it. About 35 product buttons and 20 demo or shell buttons re-type it. <code>ActionBtn</code> exists twice. The teal-outlined secondary the mockups draw has no variant, so it is hand-rolled six times. Four disabled treatments.</p></section>
+    <section class="target"><h4>Becomes</h4><p>Extend <code>shared/ui/Button.tsx</code>: <code>variant</code> adds outline (and danger if kept); <code>size</code> touch (default, unchanged), desktop (44, radius 12), compact (36); <code>disabledReason</code> printed beside the button; <code>shot</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Today's Button for touch; the Admin Review mockup for desktop; Admin Day's Today button for compact.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/button.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/button.png" alt="Button in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Shared Button<span class=std>Becomes the standard</span><span class="rowname">Button</span></figcaption></figure><figure class=""><a href="shots/admin/drawerparts-section-row-drawerlink-actionbtn.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/drawerparts-section-row-drawerlink-actionbtn.png" alt="drawerParts (Section, Row, DrawerLink, ActionBtn) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ActionBtn<span class="rowname">drawerParts (Section, Row, DrawerLink, ActionBtn)</span></figcaption></figure><figure class=""><a href="shots/admin/daynav-with-sorttoggle.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/daynav-with-sorttoggle.png" alt="DayNav (with SortToggle) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Teal outline Today<span class="rowname">DayNav (with SortToggle)</span></figcaption></figure><figure class=""><a href="shots/web/submitaction.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/submitaction.png" alt="SubmitAction in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web submit<span class="rowname">SubmitAction</span></figcaption></figure><figure class=""><a href="shots/mobile/button-mobilebutton.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/button-mobilebutton.png" alt="Button (MobileButton) in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile<span class="rowname">Button (MobileButton)</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Default stays touch, so no existing call site changes size. Keep <code>data-validation-*</code> on Add billing line. Mobile press feedback stays in global.css.</dd></div>
+    <div><dt>When</dt><dd><code>disabledReason</code> and the desktop size before Phase 27. Skip Integrations, Billing monitor, InvoiceDocument and the Review header (rebuilt by 34, 37, 22, 21a).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/A-buttons.md">detail/A-buttons.md</a>, Action button (G1 + G6)</dd></div>
+  </dl>
+</article>
+<article class="group" id="U09" data-phase="U6" data-bug="1" data-q="0" data-text="u09 clickable table rows tables 12 product tables, two different ways of ignoring clicks on inner controls, web rows without the shared hover. the web list detail bookings table and the draft lists table have no keyboard way to open a row. `clickablerow` and `rowopenbutton` in `shared/table/`, using the existing `.aa-clickable-table-row` class and `isinteractiverowtarget`.">
+  <header>
+    <div class="rank">9</div>
+    <div class="ttl"><h3><span class="gid">U09</span> Clickable table rows</h3><p class="job">The mouse clicks a row to open a record; one real button or link in the row is the keyboard handle.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size S to M</span><span class="b">Visibility: Medium (a11y)</span><span class="b b-bug">Fixes a bug</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">12 tables</span></h4><p>12 product tables, two different ways of ignoring clicks on inner controls, web rows without the shared hover. The web List detail Bookings table and the Draft Lists table have no keyboard way to open a row.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>ClickableRow</code> and <code>RowOpenButton</code> in <code>shared/table/</code>, using the existing <code>.aa-clickable-table-row</code> class and <code>isInteractiveRowTarget</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Admin's ClickableTableRows pattern (already pinned by a test).</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/web/list-detail-bookings-table.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/list-detail-bookings-table.png" alt="List detail Bookings table in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> No keyboard handle<span class="rowname">List detail Bookings table</span></figcaption></figure><figure class="canon"><a href="shots/admin/reviewqueue-clickable-rows.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/reviewqueue-clickable-rows.png" alt="ReviewQueue (clickable rows) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin pattern<span class=std>Becomes the standard</span><span class="rowname">ReviewQueue (clickable rows)</span></figcaption></figure><figure class=""><a href="shots/web/lists-table-th-td-grouprow.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/lists-table-th-td-grouprow.png" alt="Lists table (Th · Td · GroupRow) in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web Lists<span class="rowname">Lists table (Th · Td · GroupRow)</span></figcaption></figure><figure class=""><a href="shots/web/webresultstable.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/webresultstable.png" alt="WebResultsTable in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web results<span class="rowname">WebResultsTable</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Pass through <code>data-list-id</code>, <code>data-slot-id</code>, <code>data-booking-id</code> and the row shot names.</dd></div>
+    <div><dt>When</dt><dd>The List detail keyboard handle is a one-line fix on a scripted screen: do it in U1. The rest with the table kit.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/G-tables-cards-chrome.md">detail/G-tables-cards-chrome.md</a>, G3 Clickable table rows</dd></div>
+  </dl>
+</article>
+<article class="group" id="U10" data-phase="U6" data-bug="0" data-q="1" data-text="u10 table cells and shell tables private `th`/`td` in four files plus style-object versions and admin&#x27;s `tablechrome`: seven cell implementations, four group rows, ten hand-rolled table shells. web tables follow the admin review mockup; admin&#x27;s own tables (10/700 headers, heavier rule, no shadow) drift from it. `shared/table/`: `th`, `td`, `grouprow`, `tableshell`, with a density context (comfortable for web, compact for admin).">
+  <header>
+    <div class="rank">10</div>
+    <div class="ttl"><h3><span class="gid">U10</span> Table cells and shell</h3><p class="job">Header cell, body cell, group row, and the bordered card around a table.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">7 cell implementations, 10 shells</span></h4><p>Private <code>Th</code>/<code>Td</code> in four files plus style-object versions and admin's <code>tableChrome</code>: seven cell implementations, four group rows, ten hand-rolled table shells. Web tables follow the Admin Review mockup; admin's own tables (10/700 headers, heavier rule, no shadow) drift from it.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>shared/table/</code>: <code>Th</code>, <code>Td</code>, <code>GroupRow</code>, <code>TableShell</code>, with a density context (comfortable for web, compact for admin).</p><p class="canon-line"><strong>Canonical look:</strong> The Admin Review mockup header (11/600 mist, line rule, sunken row dividers) with e1 on the shell.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/web/accounts-tables-tfoot-totals.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/accounts-tables-tfoot-totals.png" alt="Accounts tables (tfoot totals) in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web table<span class=std>Becomes the standard</span><span class="rowname">Accounts tables (tfoot totals)</span></figcaption></figure><figure class=""><a href="shots/admin/table-header-textaction-editcell.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/table-header-textaction-editcell.png" alt="Table / Header / TextAction / EditCell in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin masters table<span class="rowname">Table / Header / TextAction / EditCell</span></figcaption></figure><figure class=""><a href="shots/admin/auditviewer.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/auditviewer.png" alt="AuditViewer in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin audit table<span class="rowname">AuditViewer</span></figcaption></figure><figure class=""><a href="shots/web/webdaytable.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/webdaytable.png" alt="WebDayTable in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web day table<span class="rowname">WebDayTable</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>ClickableTableRows.test.tsx</code>, <code>columnheader</code> queries, the catalogue row "Lists table (Th · Td · GroupRow)". Masters go through <code>tableStyles.ts</code> internals only.</dd></div>
+    <div><dt>When</dt><dd>After Phase 25 and before 33, 36, 37, 42 (all table-heavy).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/G-tables-cards-chrome.md">detail/G-tables-cards-chrome.md</a>, G1 Table header and body cells, G2 Table shell</dd></div>
+  </dl>
+</article>
+<article class="group" id="U11" data-phase="U3" data-bug="0" data-q="0" data-text="u11 notice (callouts and notes) feedback three identical warning shells, two copies of a private demo `callout`, several near variants (attention boxes, the needs-destination boxes), and about 13 neutral notes in several box styles. `notice { tone, title, icon, live, shot }` in `shared/ui/`.">
+  <header>
+    <div class="rank">11</div>
+    <div class="ttl"><h3><span class="gid">U11</span> Notice (callouts and notes)</h3><p class="job">A non-blocking warning, info or neutral note inside a form, panel or page.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~25 sites</span></h4><p>Three identical warning shells, two copies of a private demo <code>Callout</code>, several near variants (attention boxes, the needs-destination boxes), and about 13 neutral notes in several box styles.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>Notice { tone, title, icon, live, shot }</code> in <code>shared/ui/</code>.</p><p class="canon-line"><strong>Canonical look:</strong> The ConflictCallout shell.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/conflictcallout.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/conflictcallout.png" alt="ConflictCallout in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ConflictCallout<span class=std>Becomes the standard</span><span class="rowname">ConflictCallout</span></figcaption></figure><figure class=""><a href="shots/admin/notpreferredwarning.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/notpreferredwarning.png" alt="NotPreferredWarning in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Pairing warning<span class="rowname">NotPreferredWarning</span></figcaption></figure><figure class=""><a href="shots/web/movedtoyoupanel.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/movedtoyoupanel.png" alt="MovedToYouPanel in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Moved to you note<span class="rowname">MovedToYouPanel</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Pass through <code>conflict-warning</code>, <code>pairing-warning</code>, <code>drawer-moved-here</code>, <code>booking-moved-to-you</code>, <code>contract-rail-outcome</code> and friends.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 22; phases 22, 27, 33, 35, 38b, 42, 43 all add banners.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G8 Callouts and notes</dd></div>
+  </dl>
+</article>
+<article class="group" id="U12" data-phase="U3" data-bug="0" data-q="1" data-text="u12 result line feedback about 11 result lines. eight are teal tint; everything else that says &quot;it worked&quot; (done steps, tickbadge, the success overlay, the review banner) is green. the live region is mounted together with its text, so screen readers may not announce it. `resultline { line, actions, ondismiss, shot }` in `shared/ui/`, with an always-mounted live region.">
+  <header>
+    <div class="rank">12</div>
+    <div class="ttl"><h3><span class="gid">U12</span> Result line</h3><p class="job">Confirm in place that an action happened.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size S</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~11 sites</span></h4><p>About 11 result lines. Eight are teal tint; everything else that says "it worked" (done steps, TickBadge, the success overlay, the Review banner) is green. The live region is mounted together with its text, so screen readers may not announce it.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>ResultLine { line, actions, onDismiss, shot }</code> in <code>shared/ui/</code>, with an always-mounted live region.</p><p class="canon-line"><strong>Canonical look:</strong> The success tint (the Design Language says teal is never status).</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/web/resultline.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/resultline.png" alt="ResultLine in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Teal result line<span class="rowname">ResultLine</span></figcaption></figure><figure class="canon"><a href="shots/admin/inline-success-banner-role-status.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/inline-success-banner-role-status.png" alt="Inline success banner (role=status) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin success banner<span class=std>Becomes the standard</span><span class="rowname">Inline success banner (role=status)</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>A colour change reshoots the availability and Admin capture screenshots.</dd></div>
+    <div><dt>When</dt><dd>Standalone. Fold the masters ones into Phase 42.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G9 Success / result line</dd></div>
+  </dl>
+</article>
+<article class="group" id="U13" data-phase="U5" data-bug="0" data-q="0" data-text="u13 text action buttons two different components both named `textaction` (shared and masters), plus `textactionstyle`, `linkbutton`, two `linkstyle`s and about 40 inline copies. font sizes run from 11.5 to 15. the shared `textaction` with `size` sm, md, lg, `flush`, `inline`, `disabledreason`, `shot`.">
+  <header>
+    <div class="rank">13</div>
+    <div class="ttl"><h3><span class="gid">U13</span> Text action</h3><p class="job">A borderless teal word that does one thing: Edit, Open, Clear, Show all, Remove.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~85 sites</span></h4><p>Two different components both named <code>TextAction</code> (shared and masters), plus <code>textActionStyle</code>, <code>LinkButton</code>, two <code>linkStyle</code>s and about 40 inline copies. Font sizes run from 11.5 to 15.</p></section>
+    <section class="target"><h4>Becomes</h4><p>The shared <code>TextAction</code> with <code>size</code> sm, md, lg, <code>flush</code>, <code>inline</code>, <code>disabledReason</code>, <code>shot</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Shared TextAction; 12.5 in tables, 14 in cards, 15 with a 44px target on mobile.</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/admin/table-header-textaction-editcell.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/table-header-textaction-editcell.png" alt="Table / Header / TextAction / EditCell in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Masters TextAction<span class="rowname">Table / Header / TextAction / EditCell</span></figcaption></figure><figure class=""><a href="shots/web/linkbutton.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/linkbutton.png" alt="LinkButton in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web LinkButton<span class="rowname">LinkButton</span></figcaption></figure><figure class=""><a href="shots/web/serieslist.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/serieslist.png" alt="SeriesList in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> SeriesList links<span class="rowname">SeriesList</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep the shot names and the row <code>aria-label</code>s. Masters views are refit by Phase 42: migrate them first or inside it.</dd></div>
+    <div><dt>When</dt><dd>Standalone; mechanical.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/A-buttons.md">detail/A-buttons.md</a>, Text action (G2)</dd></div>
+  </dl>
+</article>
+<article class="group" id="U14" data-phase="U6" data-bug="0" data-q="1" data-text="u14 card and panel chrome web `panel`, admin `profilecard`, the right rail&#x27;s `card` and four rail cards copying it, about 18 admin section cards and five mobile cards at radius 16 (the mockups use 14). about 30 real copies. `card` in `shared/ui/`: `title`, `action`, `elevation` flat or e1, `padding` panel or card, `flush`, `shot`. a real heading element.">
+  <header>
+    <div class="rank">14</div>
+    <div class="ttl"><h3><span class="gid">U14</span> Card and panel</h3><p class="job">A white bordered card grouping content, with an optional heading and action.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~30 copies</span></h4><p>Web <code>Panel</code>, admin <code>ProfileCard</code>, the right rail's <code>Card</code> and four rail cards copying it, about 18 admin section cards and five mobile cards at radius 16 (the mockups use 14). About 30 real copies.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>Card</code> in <code>shared/ui/</code>: <code>title</code>, <code>action</code>, <code>elevation</code> flat or e1, <code>padding</code> panel or card, <code>flush</code>, <code>shot</code>. A real heading element.</p><p class="canon-line"><strong>Canonical look:</strong> Web Panel (20px padding, e1) for main surfaces; the rail card (16px, flat) for rails and mobile.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/web/panel.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/panel.png" alt="Panel in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web Panel<span class=std>Becomes the standard</span><span class="rowname">Panel</span></figcaption></figure><figure class="canon"><a href="shots/admin/notificationscard.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/notificationscard.png" alt="NotificationsCard in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Rail card<span class=std>Becomes the standard</span><span class="rowname">NotificationsCard</span></figcaption></figure><figure class=""><a href="shots/admin/warningstodo.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/warningstodo.png" alt="WarningsToDo in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Rail card copy<span class="rowname">WarningsToDo</span></figcaption></figure><figure class=""><a href="shots/admin/profilechrome.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/profilechrome.png" alt="ProfileChrome in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ProfileCard<span class="rowname">ProfileChrome</span></figcaption></figure><figure class=""><a href="shots/mobile/hero-figure-card.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/hero-figure-card.png" alt="Hero figure card in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile, radius 16<span class="rowname">Hero figure card</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep the rail and profile shot names and <code>useResolveWithTick</code> focus return.</dd></div>
+    <div><dt>When</dt><dd>After Phase 25. Fix the mobile radius 16 before Phase 26 adds a card to More.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/G-tables-cards-chrome.md">detail/G-tables-cards-chrome.md</a>, G4 Titled card / panel</dd></div>
+  </dl>
+</article>
+<article class="group" id="U15" data-phase="U4" data-bug="0" data-q="0" data-text="u15 inputs, checkbox, switch and focus fields about 10 inputs bypass `textfield` at heights 36 to 48. four of seven checkboxes render browser blue. three switches. four focus looks, with the browser&#x27;s blue ring on textfield and every select. three textareas bypass `textarea`. hints at 12 and 12.5px, eight not tied to their field. `textfield` gains number, time, `min`, `max`, `invalid`, `size`, `fill`; new `checkbox` and `switch`; one `.aa-field:focus-visible` rule; `fieldhint`; `textarea` gains a counter and `arialabel`.">
+  <header>
+    <div class="rank">15</div>
+    <div class="ttl"><h3><span class="gid">U15</span> Inputs, checkbox, switch and focus</h3><p class="job">Single-line inputs, multi-line text, a boolean option, and how a field shows keyboard focus.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size S to M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~10 inputs, 7 checkboxes, 3 switches, 3 textareas, 11 hints</span></h4><p>About 10 inputs bypass <code>TextField</code> at heights 36 to 48. Four of seven checkboxes render browser blue. Three switches. Four focus looks, with the browser's blue ring on TextField and every select. Three textareas bypass <code>TextArea</code>. Hints at 12 and 12.5px, eight not tied to their field.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>TextField</code> gains number, time, <code>min</code>, <code>max</code>, <code>invalid</code>, <code>size</code>, <code>fill</code>; new <code>Checkbox</code> and <code>Switch</code>; one <code>.aa-field:focus-visible</code> rule; <code>FieldHint</code>; <code>TextArea</code> gains a counter and <code>ariaLabel</code>.</p><p class="canon-line"><strong>Canonical look:</strong> TextField's chrome; the Design Language focus ring that NameSearchBox already uses; teal <code>accent-color</code>.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/textfield.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/textfield.png" alt="TextField in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> TextField<span class=std>Becomes the standard</span><span class="rowname">TextField</span></figcaption></figure><figure class="canon"><a href="shots/admin/textarea.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/textarea.png" alt="TextArea in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> TextArea<span class=std>Becomes the standard</span><span class="rowname">TextArea</span></figcaption></figure><figure class="canon"><a href="shots/mobile/togglerow-switch.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/togglerow-switch.png" alt="ToggleRow (switch) in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Switch<span class=std>Becomes the standard</span><span class="rowname">ToggleRow (switch)</span></figcaption></figure><figure class=""><a href="shots/admin/slotstatussheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/slotstatussheet.png" alt="SlotStatusSheet in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Checkbox in a sheet<span class="rowname">SlotStatusSheet</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Must still work under the PWA 16px input rule. Keep <code>admin-notifications-show-resolved</code>, <code>move-booking-tell-office</code>.</dd></div>
+    <div><dt>When</dt><dd>Checkbox and Switch are needed by Phases 21, 27, 38b, 42.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/C-fields-search.md">detail/C-fields-search.md</a>, G4, G10, G11, G12, G13</dd></div>
+  </dl>
+</article>
+<article class="group" id="U16" data-phase="U5" data-bug="0" data-q="1" data-text="u16 segmented control toggles `slidingsegmentedcontrol` is shared and used 27 times through `segmented`. `sorttoggle` on admin day is a hand-built copy with no slide, no aria state and no design source. balances overrides the control into an ink look whose 0.18 shadow appears in no design file. keep `slidingsegmentedcontrol`; add `size` sm, `shape`; `sorttoggle` becomes a call site.">
+  <header>
+    <div class="rank">16</div>
+    <div class="ttl"><h3><span class="gid">U16</span> Segmented control</h3><p class="job">Pick exactly one of two to five short options in a joined track with a sliding highlight.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size S</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">1 hand-built copy, 3 override sites</span></h4><p><code>SlidingSegmentedControl</code> is shared and used 27 times through <code>Segmented</code>. <code>SortToggle</code> on Admin Day is a hand-built copy with no slide, no ARIA state and no design source. Balances overrides the control into an ink look whose 0.18 shadow appears in no design file.</p></section>
+    <section class="target"><h4>Becomes</h4><p>Keep <code>SlidingSegmentedControl</code>; add <code>size</code> sm, <code>shape</code>; <code>SortToggle</code> becomes a call site.</p><p class="canon-line"><strong>Canonical look:</strong> Today's teal segmented control.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/slidingsegmentedcontrol.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/slidingsegmentedcontrol.png" alt="SlidingSegmentedControl in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Shared control<span class=std>Becomes the standard</span><span class="rowname">SlidingSegmentedControl</span></figcaption></figure><figure class=""><a href="shots/admin/daynav-with-sorttoggle.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/daynav-with-sorttoggle.png" alt="DayNav (with SortToggle) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> SortToggle<span class="rowname">DayNav (with SortToggle)</span></figcaption></figure><figure class=""><a href="shots/admin/segmented.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/segmented.png" alt="Segmented in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin Segmented<span class="rowname">Segmented</span></figcaption></figure><figure class=""><a href="shots/mobile/segmented.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/segmented.png" alt="Segmented in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile<span class="rowname">Segmented</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep the segments as buttons with <code>aria-pressed</code>: 13 Playwright clicks, 11 group selectors and 16 capture steps find them that way.</dd></div>
+    <div><dt>When</dt><dd>Standalone; cheap. Phases 22, 33, 36, 39b add segmented choices.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/E-segmented-tabs-nav.md">detail/E-segmented-tabs-nav.md</a>, G1 Segmented control</dd></div>
+  </dl>
+</article>
+<article class="group" id="U17" data-phase="U5" data-bug="0" data-q="1" data-text="u17 underline tabs and page switch toggles the underline tab strip is defined four times, identically (13 call sites); routes and local panels are marked inconsistently. page switches are drawn three ways: segmented look (web availability), tint pills (draft lists), underline tabs (accounts, aa fees). `linetabs`, `linetablink` (routes, `aria-current`) and `linetab` (local panels) in `shared/ui/`, with a `badge` slot.">
+  <header>
+    <div class="rank">17</div>
+    <div class="ttl"><h3><span class="gid">U17</span> Underline tabs and page switch</h3><p class="job">Switch between sibling views of one page.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size S</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">4 definitions, 13 sites; 2 page switches</span></h4><p>The underline tab strip is defined four times, identically (13 call sites); routes and local panels are marked inconsistently. Page switches are drawn three ways: segmented look (Web Availability), tint pills (Draft Lists), underline tabs (Accounts, AA fees).</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>LineTabs</code>, <code>LineTabLink</code> (routes, <code>aria-current</code>) and <code>LineTab</code> (local panels) in <code>shared/ui/</code>, with a <code>badge</code> slot.</p><p class="canon-line"><strong>Canonical look:</strong> Today's ink underline tab.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/tablink-aa-fees.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/tablink-aa-fees.png" alt="TabLink (AA fees) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Underline tabs (routes)<span class=std>Becomes the standard</span><span class="rowname">TabLink (AA fees)</span></figcaption></figure><figure class=""><a href="shots/admin/tabbutton-integrations.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/tabbutton-integrations.png" alt="TabButton (Integrations) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Underline tabs (local)<span class="rowname">TabButton (Integrations)</span></figcaption></figure><figure class=""><a href="shots/web/subtabbutton.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/subtabbutton.png" alt="SubTabButton in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web sub-tabs<span class="rowname">SubTabButton</span></figcaption></figure><figure class=""><a href="shots/web/availabilitypageswitch.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/availabilitypageswitch.png" alt="AvailabilityPageSwitch in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Page switch, segmented look<span class="rowname">AvailabilityPageSwitch</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>data-draft-tab</code> must stay; <code>availability-phase29.spec.ts:85</code> finds the page switch as a group of buttons.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 34 (Intake tabs) and 38b (Review Events tab with a count).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/E-segmented-tabs-nav.md">detail/E-segmented-tabs-nav.md</a>, G3 Underline tab strip, G4 Page-view switch</dd></div>
+  </dl>
+</article>
+<article class="group" id="U18" data-phase="U2" data-bug="0" data-q="1" data-text="u18 sheet footer, confirm and done step overlays four desktop footer layouts across about 45 sheets. five confirm idioms; in-card confirms put the primary on the left. five near-identical &quot;done&quot; steps. `sheetactions { primary, secondary }` (the surface decides: stacked on the phone, one row on desktop), `confirmsheet`, `inlineconfirm`, `donestep`.">
+  <header>
+    <div class="rank">18</div>
+    <div class="ttl"><h3><span class="gid">U18</span> Sheet footer, confirm and done step</h3><p class="job">The commit and dismiss buttons at the foot of a sheet; asking before a consequential action; the end state of a flow.</p></div>
+    <div class="badges"><span class="b b-phase">U2</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~45 footers, ~15 confirms, 5 done steps</span></h4><p>Four desktop footer layouts across about 45 sheets. Five confirm idioms; in-card confirms put the primary on the left. Five near-identical "done" steps.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>SheetActions { primary, secondary }</code> (the surface decides: stacked on the phone, one row on desktop), <code>ConfirmSheet</code>, <code>InlineConfirm</code>, <code>DoneStep</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Stacked with the primary on top on the phone (Mobile Availability mockup); one row with the primary last on desktop (MasterPanel).</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/admin/clearconflictsheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/clearconflictsheet.png" alt="ClearConflictSheet in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Equal halves<span class="rowname">ClearConflictSheet</span></figcaption></figure><figure class=""><a href="shots/admin/slotstatussheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/slotstatussheet.png" alt="SlotStatusSheet in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin sheet footer<span class="rowname">SlotStatusSheet</span></figcaption></figure><figure class=""><a href="shots/web/submitlistsheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/submitlistsheet.png" alt="SubmitListSheet in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Shared sheet on web<span class="rowname">SubmitListSheet</span></figcaption></figure><figure class="canon"><a href="shots/mobile/submitlistsheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/submitlistsheet.png" alt="SubmitListSheet in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Stacked on the phone<span class=std>Becomes the standard</span><span class="rowname">SubmitListSheet</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Button-name locators unchanged. Keep <code>availability-series-confirm</code>, <code>holiday-delete-confirm</code>, <code>scenario-confirm</code>, the done-step shots.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 23 (Make primary confirm) and 35 (which rewrites almost every edit sheet).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G4, G6, G10; A-buttons.md Sheet footer pair (G9)</dd></div>
+  </dl>
+</article>
+<article class="group" id="U19" data-phase="U2" data-bug="0" data-q="0" data-text="u19 side panel (drawers) overlays three identical drawer shells plus masterpanel. `slotdrawer` re-declares all four `drawerparts` pieces privately, with drift. the drawers have no escape and no focus handling (already logged in progress). `sidepanel` in `apps/admin/components/` on the modal layer; slotdrawer imports `drawerparts`.">
+  <header>
+    <div class="rank">19</div>
+    <div class="ttl"><h3><span class="gid">U19</span> Side panel (drawers)</h3><p class="job">A right-docked desktop panel: scrim, header, scrolling body, actions.</p></div>
+    <div class="badges"><span class="b b-phase">U2</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">4 shells</span></h4><p>Three identical drawer shells plus MasterPanel. <code>SlotDrawer</code> re-declares all four <code>drawerParts</code> pieces privately, with drift. The drawers have no Escape and no focus handling (already logged in PROGRESS).</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>SidePanel</code> in <code>apps/admin/components/</code> on the modal layer; SlotDrawer imports <code>drawerParts</code>.</p><p class="canon-line"><strong>Canonical look:</strong> The drawer header with MasterPanel's h2, <code>aria-labelledby</code> and e3.</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/admin/slotdrawer.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/slotdrawer.png" alt="SlotDrawer in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> SlotDrawer<span class="rowname">SlotDrawer</span></figcaption></figure><figure class=""><a href="shots/admin/draftlistdrawer.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/draftlistdrawer.png" alt="DraftListDrawer in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> DraftListDrawer<span class="rowname">DraftListDrawer</span></figcaption></figure><figure class="canon"><a href="shots/admin/masterpanel-panelgrid-panelsection.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/masterpanel-panelgrid-panelsection.png" alt="MasterPanel / PanelGrid / PanelSection in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> MasterPanel<span class=std>Becomes the standard</span><span class="rowname">MasterPanel / PanelGrid / PanelSection</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep <code>data-testid="admin-list-drawer"</code> (9 specs), the drawer shots, <code>data-slot-id</code> and <code>data-list-id</code>. Adding <code>role="dialog"</code> adds matches to broad <code>[role=dialog]</code> locators.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 43a (HelpPanel uses the drawer pattern); 33a and 35 edit the drawers.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G2 Right-docked side panel</dd></div>
+  </dl>
+</article>
+<article class="group" id="U20" data-phase="U5" data-bug="1" data-q="1" data-text="u20 icon button buttons 13 private stepper definitions (weeknavbutton, iconbtn, navbutton, squarebtn, monthbutton, roundbutton and more) and 9 close or clear buttons. admin day&#x27;s previous and next buttons have no accessible name. three clear or remove buttons drop focus when they disappear. `iconbutton { label (required), size, shape, tone, bordered }` and a `closebutton` preset in `shared/ui/`.">
+  <header>
+    <div class="rank">20</div>
+    <div class="ttl"><h3><span class="gid">U20</span> Icon button</h3><p class="job">A button holding only an icon: bordered steppers and month or day navigation; borderless close and clear.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-bug">Fixes a bug</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~35 sites</span></h4><p>13 private stepper definitions (WeekNavButton, IconBtn, NavButton, SquareBtn, MonthButton, RoundButton and more) and 9 close or clear buttons. Admin Day's previous and next buttons have no accessible name. Three clear or remove buttons drop focus when they disappear.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>IconButton { label (required), size, shape, tone, bordered }</code> and a <code>CloseButton</code> preset in <code>shared/ui/</code>.</p><p class="canon-line"><strong>Canonical look:</strong> WeekNavButton and IconBtn on desktop (white, 1px line, slate icon); MonthButton on mobile.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/web/iconbtn-navbutton-weeknavbutton.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/iconbtn-navbutton-weeknavbutton.png" alt="IconBtn · NavButton · WeekNavButton in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Three web steppers<span class=std>Becomes the standard</span><span class="rowname">IconBtn · NavButton · WeekNavButton</span></figcaption></figure><figure class=""><a href="shots/web/day-stepper.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/day-stepper.png" alt="Day stepper in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Day stepper<span class="rowname">Day stepper</span></figcaption></figure><figure class=""><a href="shots/admin/minicalendar-rightrail.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/minicalendar-rightrail.png" alt="MiniCalendar (RightRail) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Calendar arrows<span class="rowname">MiniCalendar (RightRail)</span></figcaption></figure><figure class=""><a href="shots/mobile/stepperbutton.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/stepperbutton.png" alt="StepperButton in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Capture stepper (kept)<span class="rowname">StepperButton</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Two Playwright specs click the Admin Day button by the name "›"; update them with the label.</dd></div>
+    <div><dt>When</dt><dd>Standalone.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/A-buttons.md">detail/A-buttons.md</a>, Icon button (G4 + G5)</dd></div>
+  </dl>
+</article>
+<article class="group" id="U21" data-phase="U5" data-bug="0" data-q="0" data-text="u21 back link buttons 15 sites: five byte-identical desktop copies, three matching mobile copies, and two components both named `backlink` (slate and teal). `backlink { to | onclick, size }` in `shared/ui/`: a real link where a route exists.">
+  <header>
+    <div class="rank">21</div>
+    <div class="ttl"><h3><span class="gid">U21</span> Back link</h3><p class="job">Return to the parent screen.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size S</span><span class="b">Visibility: High</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">15 sites</span></h4><p>15 sites: five byte-identical desktop copies, three matching mobile copies, and two components both named <code>BackLink</code> (slate and teal).</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>BackLink { to | onClick, size }</code> in <code>shared/ui/</code>: a real link where a route exists.</p><p class="canon-line"><strong>Canonical look:</strong> The five identical desktop copies; the mobile 15px, 44px target version.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/web/back-link.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/back-link.png" alt="Back link in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web back link<span class=std>Becomes the standard</span><span class="rowname">Back link</span></figcaption></figure><figure class=""><a href="shots/admin/profilechrome.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/profilechrome.png" alt="ProfileChrome in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ProfileChrome BackLink<span class="rowname">ProfileChrome</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Playwright finds them by name ("Lists", "List", "Back to queue", "All invoices").</dd></div>
+    <div><dt>When</dt><dd>Standalone; small.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/A-buttons.md">detail/A-buttons.md</a>, Back link (G3)</dd></div>
+  </dl>
+</article>
+<article class="group" id="U22" data-phase="U6" data-bug="0" data-q="0" data-text="u22 eyebrow label chrome about 60 hand-written copies in about 40 files, at 11, 10.5 and 10px and weights 600 and 700. the shared `fieldlabel` already has the design&#x27;s look; the `type.micro` token is read by one file. `eyebrow { as, tone }` in `shared/ui/` reading `type.micro`; `fieldlabel` re-exports it.">
+  <header>
+    <div class="rank">22</div>
+    <div class="ttl"><h3><span class="gid">U22</span> Eyebrow label</h3><p class="job">The 11px caps tracked label above a value, a section or a field.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~60 sites in ~40 files</span></h4><p>About 60 hand-written copies in about 40 files, at 11, 10.5 and 10px and weights 600 and 700. The shared <code>FieldLabel</code> already has the design's look; the <code>type.micro</code> token is read by one file.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>Eyebrow { as, tone }</code> in <code>shared/ui/</code> reading <code>type.micro</code>; <code>FieldLabel</code> re-exports it.</p><p class="canon-line"><strong>Canonical look:</strong> FieldLabel: 11/600, 0.06em caps.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/fieldlabel-formerror.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/fieldlabel-formerror.png" alt="FieldLabel / FormError in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> FieldLabel<span class=std>Becomes the standard</span><span class="rowname">FieldLabel / FormError</span></figcaption></figure><figure class=""><a href="shots/admin/review-summary-tiles-reviewscreen.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/review-summary-tiles-reviewscreen.png" alt="Review summary tiles (ReviewScreen) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Review tiles, 10.5/700<span class="rowname">Review summary tiles (ReviewScreen)</span></figcaption></figure><figure class=""><a href="shots/mobile/mobileheader.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/mobileheader.png" alt="MobileHeader in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile header eyebrow<span class="rowname">MobileHeader</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Style only. Admin eyebrows at 700 lighten slightly.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 43a (InfoTip sits beside section labels).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/G-tables-cards-chrome.md">detail/G-tables-cards-chrome.md</a>, G6 Eyebrow / micro-cap label</dd></div>
+  </dl>
+</article>
+<article class="group" id="U23" data-phase="U6" data-bug="1" data-q="0" data-text="u23 session status block status built seven times. `blockfill()` is the one home for the rule, yet four sites re-derive the fill with three different left-bar treatments. the web week strip uses the plain tint, so a hatched status would show flat there. `statusblock` with `size`, `lines`, `as`; at minimum every site calls `blockfill`.">
+  <header>
+    <div class="rank">23</div>
+    <div class="ttl"><h3><span class="gid">U23</span> Session status block</h3><p class="job">Show one session in its status colour with the right treatment: solid with a left bar, hatched for Unavailable, dashed for Free.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-bug">Fixes a bug</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">7 builds, 4 bypassing `blockFill`</span></h4><p>Built seven times. <code>blockFill()</code> is the one home for the rule, yet four sites re-derive the fill with three different left-bar treatments. The web week strip uses the plain tint, so a hatched status would show flat there.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>StatusBlock</code> with <code>size</code>, <code>lines</code>, <code>as</code>; at minimum every site calls <code>blockFill</code>.</p><p class="canon-line"><strong>Canonical look:</strong> <code>blockFill()</code> in <code>shared/StatusBlock.tsx</code> (Design Language section 02).</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/statusblock.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/statusblock.png" alt="StatusBlock in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Shared StatusBlock<span class=std>Becomes the standard</span><span class="rowname">StatusBlock</span></figcaption></figure><figure class=""><a href="shots/web/weekstrip.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/weekstrip.png" alt="WeekStrip in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web week strip<span class="rowname">WeekStrip</span></figcaption></figure><figure class=""><a href="shots/web/cell-availabilitygrid.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/cell-availabilitygrid.png" alt="Cell (AvailabilityGrid) in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Availability cell<span class="rowname">Cell (AvailabilityGrid)</span></figcaption></figure><figure class=""><a href="shots/mobile/halfblock.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/halfblock.png" alt="HalfBlock in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile half block<span class="rowname">HalfBlock</span></figcaption></figure><figure class=""><a href="shots/mobile/colleague-am-pm-cells.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/colleague-am-pm-cells.png" alt="Colleague AM / PM cells in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Colleague cells<span class="rowname">Colleague AM / PM cells</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>DayGrid adds conflict and attention outlines on purpose: keep them. <code>data-slot-id</code> on blocks.</dd></div>
+    <div><dt>When</dt><dd>After Phase 25; not on any phase's path except DayGrid (33a, 43, 43a).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/J-completeness.md">detail/J-completeness.md</a>, N1 Session status block</dd></div>
+  </dl>
+</article>
+<article class="group" id="U24" data-phase="U4" data-bug="1" data-q="0" data-text="u24 contract chooser parts and step rail fields built twice: `contractrail` (phone sheet, add booking dialog) and `billingcard` (inline on admin and web). the &quot;other price&quot; card, the amount input, the option tiles and the step markers differ; the contract matcher is copied inline. the combo search shows no keyboard focus. `shared/contracts/railparts.tsx`: `otherpricecard`, `railoptiongroup`, `steprail`; one `contractmatchesquery`.">
+  <header>
+    <div class="rank">24</div>
+    <div class="ttl"><h3><span class="gid">U24</span> Contract chooser parts and step rail</h3><p class="job">The step rail's answer options, the Contract search, "Other price" with a typed amount, and the numbered step markers.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size M</span><span class="b">Visibility: Medium</span><span class="b b-bug">Fixes a bug</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">2 builds of 4 parts</span></h4><p>Built twice: <code>ContractRail</code> (phone sheet, Add booking dialog) and <code>BillingCard</code> (inline on Admin and web). The "Other price" card, the amount input, the option tiles and the step markers differ; the Contract matcher is copied inline. The combo search shows no keyboard focus.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>shared/contracts/railParts.tsx</code>: <code>OtherPriceCard</code>, <code>RailOptionGroup</code>, <code>StepRail</code>; one <code>contractMatchesQuery</code>.</p><p class="canon-line"><strong>Canonical look:</strong> ContractRail's parts for the fields; the inline Billing card's step markers (the mock's look).</p></section>
+  </div>
+  <p class="noshot">No catalogue row shows these members, so there is no screenshot. See the detail file for file and line.</p>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Keep <code>contract-combo</code>, <code>contract-rail-amount</code>, <code>contract-rail-other-price</code>, <code>contract-rail-step-{n}</code>, <code>data-rail-option</code>.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 23. Phase 21 is editing both files now and adds a "Suggested" pill to both copies.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/C-fields-search.md">detail/C-fields-search.md</a>, G7; E-segmented-tabs-nav.md G7, G8</dd></div>
+  </dl>
+</article>
+<article class="group" id="U25" data-phase="U3" data-bug="0" data-q="0" data-text="u25 avatar and persona chip pills and badges seven definitions over about 13 sites, five inline. `initials` (at 36 and 44px) and the shared `avatar`&#x27;s font rule (at 30 and 36px) are off the mockup sizes. the admin side nav types &quot;kw / kirsty w. / office&quot; as literals. one `shared/avatar.tsx`: `name`, `size`, `variant` elevated, tint or neutral, with the mockup font steps; `personachip` for the dark bars.">
+  <header>
+    <div class="rank">25</div>
+    <div class="ttl"><h3><span class="gid">U25</span> Avatar and persona chip</h3><p class="job">A person's initials in a disc beside a printed name.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size S</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">7 definitions, ~13 sites</span></h4><p>Seven definitions over about 13 sites, five inline. <code>Initials</code> (at 36 and 44px) and the shared <code>Avatar</code>'s font rule (at 30 and 36px) are off the mockup sizes. The admin side nav types "KW / Kirsty W. / Office" as literals.</p></section>
+    <section class="target"><h4>Becomes</h4><p>One <code>shared/Avatar.tsx</code>: <code>name</code>, <code>size</code>, <code>variant</code> elevated, tint or neutral, with the mockup font steps; <code>PersonaChip</code> for the dark bars.</p><p class="canon-line"><strong>Canonical look:</strong> Per mockup: elevated white on mobile (a Decisions-log ruling), crimson tint on web and admin.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/mobile/avatar.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/avatar.png" alt="Avatar in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Shared Avatar (mobile)<span class=std>Becomes the standard</span><span class="rowname">Avatar</span></figcaption></figure><figure class="canon"><a href="shots/web/webnav.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/webnav.png" alt="WebNav in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web nav persona<span class=std>Becomes the standard</span><span class="rowname">WebNav</span></figcaption></figure><figure class=""><a href="shots/admin/sidenav-with-rolesinfo.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/sidenav-with-rolesinfo.png" alt="SideNav (with RolesInfo) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Side nav persona<span class="rowname">SideNav (with RolesInfo)</span></figcaption></figure><figure class=""><a href="shots/mobile/mobileheader.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/mobileheader.png" alt="MobileHeader in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile header<span class="rowname">MobileHeader</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>No test selectors. Small pixel changes on the move sheets.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 26 (WebNav avatar becomes a button) and 36.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/B-pills-avatars.md">detail/B-pills-avatars.md</a>, G5 Avatar, G6 Persona chip</dd></div>
+  </dl>
+</article>
+<article class="group" id="U26" data-phase="U3" data-bug="0" data-q="0" data-text="u26 count badge and attention dot pills and badges three identical 18px rail count bubbles plus a 22px outlier that also shows &quot;0&quot;. the &quot;!&quot; disc is drawn inline in five places beside `conflictdot`; the grid&#x27;s &quot;!&quot; is read aloud into the block&#x27;s name. `countbadge { count, tone, srnoun, hideatzero }` and `attentiondot` (from `conflictdot`), which `warningtriangle` composes.">
+  <header>
+    <div class="rank">26</div>
+    <div class="ttl"><h3><span class="gid">U26</span> Count badge and attention dot</h3><p class="job">A small count beside a heading; a small warning disc or triangle.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size S</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">5 counts, ~8 discs</span></h4><p>Three identical 18px rail count bubbles plus a 22px outlier that also shows "0". The "!" disc is drawn inline in five places beside <code>ConflictDot</code>; the grid's "!" is read aloud into the block's name.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>CountBadge { count, tone, srNoun, hideAtZero }</code> and <code>AttentionDot</code> (from <code>ConflictDot</code>), which <code>WarningTriangle</code> composes.</p><p class="canon-line"><strong>Canonical look:</strong> The 18px rail bubble; the Admin Day mockup's 13px disc.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/warningstodo.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/warningstodo.png" alt="WarningsToDo in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Rail count<span class=std>Becomes the standard</span><span class="rowname">WarningsToDo</span></figcaption></figure><figure class=""><a href="shots/admin/notificationscard.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/notificationscard.png" alt="NotificationsCard in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> 22px outlier<span class="rowname">NotificationsCard</span></figcaption></figure><figure class="canon"><a href="shots/admin/conflictdot.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/conflictdot.png" alt="ConflictDot in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ConflictDot<span class=std>Becomes the standard</span><span class="rowname">ConflictDot</span></figcaption></figure><figure class=""><a href="shots/admin/warningtriangle.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/warningtriangle.png" alt="WarningTriangle in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> WarningTriangle<span class="rowname">WarningTriangle</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>admin-notifications-count</code>, <code>booking-warning</code>, <code>data-strength</code>, <code>daygrid-block-warnings</code>.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 33a (StubMarker reuses the triangle anatomy).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/B-pills-avatars.md">detail/B-pills-avatars.md</a>, G4 Count bubble, G7 "!" disc and warning markers</dd></div>
+  </dl>
+</article>
+<article class="group" id="U27" data-phase="U4" data-bug="0" data-q="0" data-text="u27 date fields, jump to date, time entry dates 20 native date inputs in seven style variants (44 and 48px in neighbouring admin sheets). `textfield` has no `min` or `max`, so horizon-bounded fields bypass it. admin day&#x27;s jump input has no label. three hand-built start and end time pairs. `textfield` gains `min`, `max`, `mono`, `density`; `filterdateinput`; `datejumpinput`; `timerangefields` (from sessiontimesfields). all stay native inputs.">
+  <header>
+    <div class="rank">27</div>
+    <div class="ttl"><h3><span class="gid">U27</span> Date fields, jump to date, time entry</h3><p class="job">A date in a form or filter bar; a toolbar control that jumps to a day; start and end times.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size M</span><span class="b">Visibility: Medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">20 date inputs, 2 jump inputs, 3 time pairs</span></h4><p>20 native date inputs in seven style variants (44 and 48px in neighbouring admin sheets). <code>TextField</code> has no <code>min</code> or <code>max</code>, so horizon-bounded fields bypass it. Admin Day's jump input has no label. Three hand-built start and end time pairs.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>TextField</code> gains <code>min</code>, <code>max</code>, <code>mono</code>, <code>density</code>; <code>FilterDateInput</code>; <code>DateJumpInput</code>; <code>TimeRangeFields</code> (from SessionTimesFields). All stay native inputs.</p><p class="canon-line"><strong>Canonical look:</strong> TextField's date field at 48px.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/admin/native-date-input-textfield-type-date.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/native-date-input-textfield-type-date.png" alt="Native date input (TextField type=date) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> TextField date<span class=std>Becomes the standard</span><span class="rowname">Native date input (TextField type=date)</span></figcaption></figure><figure class=""><a href="shots/admin/sessiontimesfields.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/sessiontimesfields.png" alt="SessionTimesFields in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Time pair<span class="rowname">SessionTimesFields</span></figcaption></figure><figure class=""><a href="shots/admin/daynav-with-sorttoggle.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/daynav-with-sorttoggle.png" alt="DayNav (with SortToggle) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Unlabelled jump input<span class="rowname">DayNav (with SortToggle)</span></figcaption></figure><figure class=""><a href="shots/web/webgotodate.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/webgotodate.png" alt="WebGoToDate in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web Go to date<span class="rowname">WebGoToDate</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Playwright reads <code>input[type="date"]</code> by position in five specs; keep order and <code>draft-list-date</code>, <code>admin-add-anaesthetist-start</code>.</dd></div>
+    <div><dt>When</dt><dd><code>FilterDateInput</code> before Phase 37; <code>TimeRangeFields</code> before 39b.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/D-dates-formatting.md">detail/D-dates-formatting.md</a>, G2, G3, G5</dd></div>
+  </dl>
+</article>
+<article class="group" id="U28" data-phase="U1" data-bug="0" data-q="1" data-text="u28 date text, timestamps, plurals formatting `&#x27;eee d mmm&#x27;` is typed out 34 times though `shortday` exists; five date-range shapes; five timestamp shapes (two in one file); 86 inline plural ternaries; minutes to hh:mm at 6 sites; `parseamount` exists in three versions with three rules. pure helpers in `domain/datetext.ts` (allowed by the domain-purity test), re-exported from `shared/format.ts`: `daterange`, `stamptext`, `plural`, `hhmm`.">
+  <header>
+    <div class="rank">28</div>
+    <div class="ttl"><h3><span class="gid">U28</span> Date text, timestamps, plurals</h3><p class="job">Turn a date, a timestamp, a count or a duration into words.</p></div>
+    <div class="badges"><span class="b b-phase">U1</span><span class="b">Size M</span><span class="b">Visibility: Low to medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~90 date sites, ~15 timestamps, 86 plurals</span></h4><p><code>'EEE d MMM'</code> is typed out 34 times though <code>shortDay</code> exists; five date-range shapes; five timestamp shapes (two in one file); 86 inline plural ternaries; minutes to HH:MM at 6 sites; <code>parseAmount</code> exists in three versions with three rules.</p></section>
+    <section class="target"><h4>Becomes</h4><p>Pure helpers in <code>domain/dateText.ts</code> (allowed by the domain-purity test), re-exported from <code>shared/format.ts</code>: <code>dateRange</code>, <code>stampText</code>, <code>plural</code>, <code>hhmm</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Existing helpers in <code>shared/format.ts</code>; shapes per the questions below.</p></section>
+  </div>
+  <p class="noshot">No catalogue row shows these members, so there is no screenshot. See the detail file for file and line.</p>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Most migrations change no output; Vitest string asserts unchanged.</dd></div>
+    <div><dt>When</dt><dd>Land the helpers first; migrate as files are touched.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/D-dates-formatting.md">detail/D-dates-formatting.md</a>, G7, G8, G10, G11; J-completeness.md Task 1(b) for <code>parseAmount</code></dd></div>
+  </dl>
+</article>
+<article class="group" id="U29" data-phase="U3" data-bug="0" data-q="0" data-text="u29 empty state feedback about 35 sites in three looks (inline line, card, centred on mobile), including three private `emptynote` copies. table empty rows and picker no-match lines are separate jobs. `emptystate { variant, title, action }` in `shared/ui/`; table rows use the table kit&#x27;s `emptyrow`.">
+  <header>
+    <div class="rank">29</div>
+    <div class="ttl"><h3><span class="gid">U29</span> Empty state</h3><p class="job">Say "nothing here" where a list or panel would be.</p></div>
+    <div class="badges"><span class="b b-phase">U3</span><span class="b">Size M</span><span class="b">Visibility: Low</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~35 sites</span></h4><p>About 35 sites in three looks (inline line, card, centred on mobile), including three private <code>EmptyNote</code> copies. Table empty rows and picker no-match lines are separate jobs.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>EmptyState { variant, title, action }</code> in <code>shared/ui/</code>; table rows use the table kit's <code>EmptyRow</code>.</p><p class="canon-line"><strong>Canonical look:</strong> The RvgGroupsView empty card.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/mobile/emptycard.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/emptycard.png" alt="EmptyCard in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile EmptyCard<span class=std>Becomes the standard</span><span class="rowname">EmptyCard</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Low. Keep <code>conflicts-empty</code>, <code>draft-lists-empty</code>.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 33 (the Matching screen starts empty).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G12 Empty states</dd></div>
+  </dl>
+</article>
+<article class="group" id="U30" data-phase="U2" data-bug="0" data-q="0" data-text="u30 popover overlays the open, outside-click and escape code is written five times (demoactionsmenu, democlockmenu, demoresetbutton, appswitcher, the contract combo). the combo does not return focus. `usepopover` and `popoverpanel` in `shared/ui/`, consulting the modal stack.">
+  <header>
+    <div class="rank">30</div>
+    <div class="ttl"><h3><span class="gid">U30</span> Popover</h3><p class="job">A small panel under a trigger, closed by an outside click or Escape.</p></div>
+    <div class="badges"><span class="b b-phase">U2</span><span class="b">Size S</span><span class="b">Visibility: Low</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">5 copies</span></h4><p>The open, outside-click and Escape code is written five times (DemoActionsMenu, DemoClockMenu, DemoResetButton, AppSwitcher, the Contract combo). The combo does not return focus.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>usePopover</code> and <code>PopoverPanel</code> in <code>shared/ui/</code>, consulting the modal stack.</p><p class="canon-line"><strong>Canonical look:</strong> The DemoClockMenu panel.</p></section>
+  </div>
+  <p class="noshot">No catalogue row shows these members, so there is no screenshot. See the detail file for file and line.</p>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>DemoActionsMenu.test.tsx</code>, <code>DemoResetButton.test.tsx</code>, <code>shell-clock.spec.ts</code>, <code>demo-actions.spec.ts</code>.</dd></div>
+    <div><dt>When</dt><dd>Before Phase 43a: its InfoTip is the product's first popover.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/F-overlays-feedback.md">detail/F-overlays-feedback.md</a>, G5 Anchored popovers and menus</dd></div>
+  </dl>
+</article>
+<article class="group" id="U31" data-phase="U6" data-bug="0" data-q="0" data-text="u31 page header, stat tile, label and value rows chrome 20 page headers typed by hand (plus the masters `header`, 16 uses). two stat tile builds (plus the balances hero card). label and value rows built seven times with label columns from 72 to 96px. `pageheader`, `stattile` (quiet and outlined), `defrow` in a `deflist`.">
+  <header>
+    <div class="rank">31</div>
+    <div class="ttl"><h3><span class="gid">U31</span> Page header, stat tile, label and value rows</h3><p class="job">A page title row; a summary figure tile; "label value" pairs in drawers and detail screens.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size S each</span><span class="b">Visibility: Low to medium</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">20 headers, 2 tile builds, 7 row builds</span></h4><p>20 page headers typed by hand (plus the masters <code>Header</code>, 16 uses). Two stat tile builds (plus the Balances hero card). Label and value rows built seven times with label columns from 72 to 96px.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>PageHeader</code>, <code>StatTile</code> (quiet and outlined), <code>DefRow</code> in a <code>DefList</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Per mockup: 28/34 title on web, 24/30 on admin; both tile looks stay; drawerParts <code>Row</code> at 80px.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/web/stattile.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/stattile.png" alt="StatTile in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web StatTile<span class=std>Becomes the standard</span><span class="rowname">StatTile</span></figcaption></figure><figure class="canon"><a href="shots/admin/review-summary-tiles-reviewscreen.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/review-summary-tiles-reviewscreen.png" alt="Review summary tiles (ReviewScreen) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Review tiles<span class=std>Becomes the standard</span><span class="rowname">Review summary tiles (ReviewScreen)</span></figcaption></figure><figure class="canon"><a href="shots/admin/drawerparts-section-row-drawerlink-actionbtn.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/drawerparts-section-row-drawerlink-actionbtn.png" alt="drawerParts (Section, Row, DrawerLink, ActionBtn) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Drawer rows<span class=std>Becomes the standard</span><span class="rowname">drawerParts (Section, Row, DrawerLink, ActionBtn)</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Style only.</dd></div>
+    <div><dt>When</dt><dd><code>DefRow</code> before Phase 26 (which would otherwise build <code>ProfileRow</code>); <code>StatTile</code> before 40 and 42; <code>PageHeader</code> before 42 wraps it as <code>MasterHeader</code>.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/G-tables-cards-chrome.md">detail/G-tables-cards-chrome.md</a>, G7, G8, G9</dd></div>
+  </dl>
+</article>
+<article class="group" id="U32" data-phase="U5" data-bug="0" data-q="0" data-text="u32 filter pills, navigation state, progress bar toggles web `filterchip` and the mobile lists pills are one job built twice; the web one has no `aria-pressed`. none of the three main navs marks the active item for assistive tech. the progress bar is built twice (200px in the web header, full width on the phone) with no `role=&quot;progressbar&quot;`. `filterpills`, `progressbar` in `shared/ui/`; `aria-current=&quot;page&quot;` on nav items in place.">
+  <header>
+    <div class="rank">32</div>
+    <div class="ttl"><h3><span class="gid">U32</span> Filter pills, navigation state, progress bar</h3><p class="job">Choose one list filter from a row of pills; mark the active nav item; show "n of N complete".</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size S</span><span class="b">Visibility: Low</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">2 + 3 + 2 sites</span></h4><p>Web <code>FilterChip</code> and the mobile Lists pills are one job built twice; the web one has no <code>aria-pressed</code>. None of the three main navs marks the active item for assistive tech. The progress bar is built twice (200px in the web header, full width on the phone) with no <code>role="progressbar"</code>.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>FilterPills</code>, <code>ProgressBar</code> in <code>shared/ui/</code>; <code>aria-current="page"</code> on nav items in place.</p><p class="canon-line"><strong>Canonical look:</strong> The mockups' solid teal filter pill; today's bar.</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/web/filterchip.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/filterchip.png" alt="FilterChip in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web FilterChip<span class="rowname">FilterChip</span></figcaption></figure><figure class="canon"><a href="shots/mobile/filter-chips-week-month-to-do-done.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/filter-chips-week-month-to-do-done.png" alt="Filter chips (Week / Month / To-Do / Done) in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile filter pills<span class=std>Becomes the standard</span><span class="rowname">Filter chips (Week / Month / To-Do / Done)</span></figcaption></figure><figure class="canon"><a href="shots/web/progress-bar.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/progress-bar.png" alt="Progress bar in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Web<span class=std>Becomes the standard</span><span class="rowname">Progress bar</span></figcaption></figure><figure class="canon"><a href="shots/mobile/progress-bar.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/progress-bar.png" alt="Progress bar in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile<span class=std>Becomes the standard</span><span class="rowname">Progress bar</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>43 Playwright clicks find nav items as buttons: keep the role.</dd></div>
+    <div><dt>When</dt><dd><code>FilterPills</code> before Phase 36.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/E-segmented-tabs-nav.md">detail/E-segmented-tabs-nav.md</a>, G2a, G5, G6</dd></div>
+  </dl>
+</article>
+<article class="group" id="U33" data-phase="U4" data-bug="0" data-q="0" data-text="u33 calendar keyboard and month header dates the admin minicalendar copies monthgrid&#x27;s keyboard model. the three month content grids (web and mobile my availability, hospital closures) share nothing and have no arrow keys. the five calendars are two jobs, so they do not become one component. `usecalendarkeys` and `monthheaderrow` in `shared/calendar/`.">
+  <header>
+    <div class="rank">33</div>
+    <div class="ttl"><h3><span class="gid">U33</span> Calendar keyboard and month header</h3><p class="job">Arrow-key movement inside a month calendar; the weekday header and month buttons.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size S</span><span class="b">Visibility: Low</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">2 pickers, 3 content grids</span></h4><p>The admin MiniCalendar copies MonthGrid's keyboard model. The three month content grids (web and mobile My availability, hospital closures) share nothing and have no arrow keys. The five calendars are two jobs, so they do not become one component.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>useCalendarKeys</code> and <code>MonthHeaderRow</code> in <code>shared/calendar/</code>.</p><p class="canon-line"><strong>Canonical look:</strong> MonthGrid's key model. Colours stay per calendar.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/mobile/monthgrid-lookbackdatesheet.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/monthgrid-lookbackdatesheet.png" alt="MonthGrid (LookbackDateSheet) in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> MonthGrid<span class=std>Becomes the standard</span><span class="rowname">MonthGrid (LookbackDateSheet)</span></figcaption></figure><figure class=""><a href="shots/admin/minicalendar-rightrail.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/minicalendar-rightrail.png" alt="MiniCalendar (RightRail) in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Admin MiniCalendar<span class="rowname">MiniCalendar (RightRail)</span></figcaption></figure><figure class=""><a href="shots/admin/hospitalcalendar.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/hospitalcalendar.png" alt="HospitalCalendar in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> Hospital calendar<span class="rowname">HospitalCalendar</span></figcaption></figure><figure class=""><a href="shots/mobile/my-calendar-month-grid.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/my-calendar-month-grid.png" alt="My calendar month grid in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Mobile content grid<span class="rowname">My calendar month grid</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>data-date</code>, <code>data-calendar-day</code>, the "Next month" role name; catalogue rows asserted by name.</dd></div>
+    <div><dt>When</dt><dd>Standalone. The hospital calendar fixes fold into Phase 42.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/D-dates-formatting.md">detail/D-dates-formatting.md</a>, G1a, G1b</dd></div>
+  </dl>
+</article>
+<article class="group" id="U34" data-phase="U4" data-bug="0" data-q="0" data-text="u34 number stepper, radio keyboard, chip multi-select fields `stepperbutton` plus a private icon stepper in bookingdetailbody; stepper buttons are named &quot;−&quot; and &quot;+&quot;. four radio groups, one with arrow keys. `contracteditsheet` re-builds `chipmultiselect` in the same file without its list semantics. `numberstepper`; a `userovingradio` hook; the existing `chipmultiselect`.">
+  <header>
+    <div class="rank">34</div>
+    <div class="ttl"><h3><span class="gid">U34</span> Number stepper, radio keyboard, chip multi-select</h3><p class="job">Nudge a whole number; pick one of a few visible options; pick several items shown as chips.</p></div>
+    <div class="badges"><span class="b b-phase">U4</span><span class="b">Size S</span><span class="b">Visibility: Low (a11y)</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">5 + 4 + 1</span></h4><p><code>StepperButton</code> plus a private icon stepper in BookingDetailBody; stepper buttons are named "−" and "+". Four radio groups, one with arrow keys. <code>ContractEditSheet</code> re-builds <code>ChipMultiSelect</code> in the same file without its list semantics.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>NumberStepper</code>; a <code>useRovingRadio</code> hook; the existing <code>ChipMultiSelect</code>.</p><p class="canon-line"><strong>Canonical look:</strong> StepperButton (the mockup's 44px, radius 12); StatusRadioGroup's keyboard model.</p></section>
+  </div>
+  <div class="gallery"><figure class="canon"><a href="shots/mobile/stepperbutton.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/stepperbutton.png" alt="StepperButton in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> StepperButton<span class=std>Becomes the standard</span><span class="rowname">StepperButton</span></figcaption></figure><figure class=""><a href="shots/web/unitscard.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/unitscard.png" alt="UnitsCard in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> UnitsCard<span class="rowname">UnitsCard</span></figcaption></figure><figure class="canon"><a href="shots/admin/chipmultiselect.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/chipmultiselect.png" alt="ChipMultiSelect in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> ChipMultiSelect<span class=std>Becomes the standard</span><span class="rowname">ChipMultiSelect</span></figcaption></figure><figure class="canon"><a href="shots/admin/vacatedsessionchoice-statusradiogroup.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/admin/vacatedsessionchoice-statusradiogroup.png" alt="VacatedSessionChoice / StatusRadioGroup in the Admin catalogue"></a><figcaption><span class="app app-admin">Admin</span> StatusRadioGroup<span class=std>Becomes the standard</span><span class="rowname">VacatedSessionChoice / StatusRadioGroup</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd><code>rvg-range-units</code>, <code>modifier-units</code>; <code>UnitsCard.test.tsx</code>.</dd></div>
+    <div><dt>When</dt><dd><code>NumberStepper</code> before Phase 39b (minutes stepper).</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/C-fields-search.md">detail/C-fields-search.md</a>, G5, G6, G8</dd></div>
+  </dl>
+</article>
+<article class="group" id="U35" data-phase="U6" data-bug="0" data-q="0" data-text="u35 smaller repeats misc frosted sticky dock (3 identical; two do not publish their height); notice row (5); colleague pick rows (2 + 2); dashed &quot;add a booking&quot; (2); the brand tick svg pasted into 3 files; disclosure (8 sites, 3 mechanisms, one without `aria-expanded`); money totals block (4); day chip (2); progresspill labels repeated in listrow. `stickydock`, `noticeline`, `pickrow`, `addrowbutton`, `tickglyph`, `disclosure`, `totalsblock`, `daychip`.">
+  <header>
+    <div class="rank">35</div>
+    <div class="ttl"><h3><span class="gid">U35</span> Smaller repeats</h3><p class="job">Small things built two to eight times each.</p></div>
+    <div class="badges"><span class="b b-phase">U6</span><span class="b">Size S each</span><span class="b">Visibility: Low</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">~30 sites in all</span></h4><p>Frosted sticky dock (3 identical; two do not publish their height); notice row (5); colleague pick rows (2 + 2); dashed "Add a booking" (2); the brand tick SVG pasted into 3 files; disclosure (8 sites, 3 mechanisms, one without <code>aria-expanded</code>); money totals block (4); day chip (2); ProgressPill labels repeated in ListRow.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>StickyDock</code>, <code>NoticeLine</code>, <code>PickRow</code>, <code>AddRowButton</code>, <code>TickGlyph</code>, <code>Disclosure</code>, <code>TotalsBlock</code>, <code>DayChip</code>.</p><p class="canon-line"><strong>Canonical look:</strong> The existing best version of each (named in the detail file).</p></section>
+  </div>
+  <div class="gallery"><figure class=""><a href="shots/web/add-a-booking-dashed.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/add-a-booking-dashed.png" alt="Add a booking (dashed) in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Dashed add (web)<span class="rowname">Add a booking (dashed)</span></figcaption></figure><figure class="canon"><a href="shots/mobile/sticky-submit-dock.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/sticky-submit-dock.png" alt="Sticky submit dock in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Sticky dock<span class=std>Becomes the standard</span><span class="rowname">Sticky submit dock</span></figcaption></figure><figure class=""><a href="shots/web/webdaychip.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/webdaychip.png" alt="WebDayChip in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Day chip (web)<span class="rowname">WebDayChip</span></figcaption></figure><figure class=""><a href="shots/mobile/daychip.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/mobile/daychip.png" alt="DayChip in the Mobile catalogue"></a><figcaption><span class="app app-mobile">Mobile</span> Day chip (mobile)<span class="rowname">DayChip</span></figcaption></figure><figure class=""><a href="shots/web/historytimeline.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/web/historytimeline.png" alt="HistoryTimeline in the Web catalogue"></a><figcaption><span class="app app-web">Web</span> Disclosure without state<span class="rowname">HistoryTimeline</span></figcaption></figure></div>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>Low; each is a few call sites.</dd></div>
+    <div><dt>When</dt><dd>Opportunistic: when a phase touches the file.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/J-completeness.md">detail/J-completeness.md</a>, N2 to N6, N8, N9; B-pills-avatars.md G8, G11</dd></div>
+  </dl>
+</article>
+<article class="group" id="U36" data-phase="U5" data-bug="0" data-q="1" data-text="u36 destructive button buttons two identical red-outline buttons (&quot;disable&quot; on a contract, &quot;cancel booking&quot;) and two red &quot;remove&quot; text links, beside teal &quot;remove&quot; links elsewhere. no ruling covers red; the design rule says teal is the only action colour. `button variant=&quot;danger&quot;` if you keep red; otherwise `secondary`.">
+  <header>
+    <div class="rank">36</div>
+    <div class="ttl"><h3><span class="gid">U36</span> Destructive button</h3><p class="job">End or remove something.</p></div>
+    <div class="badges"><span class="b b-phase">U5</span><span class="b">Size S</span><span class="b">Visibility: Medium</span><span class="b b-q">Answer given</span></div>
+  </header>
+  <div class="cols">
+    <section class="today"><h4>Today <span class="count">4 sites</span></h4><p>Two identical red-outline buttons ("Disable" on a Contract, "Cancel booking") and two red "Remove" text links, beside teal "Remove" links elsewhere. No ruling covers red; the design rule says teal is the only action colour.</p></section>
+    <section class="target"><h4>Becomes</h4><p><code>Button variant="danger"</code> if you keep red; otherwise <code>secondary</code>.</p><p class="canon-line"><strong>Canonical look:</strong> Your call (question 8).</p></section>
+  </div>
+  <p class="noshot">No catalogue row shows these members, so there is no screenshot. See the detail file for file and line.</p>
+  <dl class="meta">
+    <div><dt>Must not break</dt><dd>None.</dd></div>
+    <div><dt>When</dt><dd>With U5.</dd></div>
+    <div><dt>Detail</dt><dd><a href="detail/A-buttons.md">detail/A-buttons.md</a>, Destructive button (G8)</dd></div>
+  </dl>
+</article>
+<div class="empty" id="empty">No group matches that filter.</div>
+
+<h2 id="bug">The Escape bug, reproduced</h2>
+<p>Admin, Contract panel, "Change" on the RVG code: the code picker opens over the panel. With the search empty, one Escape closes both, and the Contract form's unsaved edits go with it. Two dialogs open before the key press, none after.</p>
+<div class="bugshots">
+  <figure><a href="shots/escape-bug-before.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/escape-bug-before.png" alt="Contract panel with the code picker open over it"></a><figcaption>Before: the picker open over the Contract panel</figcaption></figure>
+  <figure><a href="shots/escape-bug-after.png" target="_blank" rel="noopener"><img loading="lazy" src="shots/escape-bug-after.png" alt="Both the picker and the Contract panel are gone"></a><figcaption>After one Escape: both gone</figcaption></figure>
+</div>
+
+<h2 id="questions">Questions, and the answers</h2>
+<p>All 27 were answered on 12 November 2026, and the recommended answer was chosen every time. Read each "Recommended" line as the decision.</p>
+<div id="qwrap"><h3>Plan and scope</h3><ol class="qs">
+<li value="1"><div><strong>Run the work as seven owner-added phases (U1 to U7), with U1 to U3 before Phase 21a, U4 and U5 after 22 and before Phase 23, U6 after Phase 25, U7 before Phase 44?</strong> The alternative is to finish the Contracts track (21a to 25) first and start after it, which adds about six more sheets and many pills as copies to migrate later.</div><div class="rec"><span>Decided</span> yes, interleave.</div></li>
+<li value="2"><div><strong>Leave the demo simulators (DemoXero, DemoData, Control Panel, PWA demo panel) out, and adopt the shared parts there only when Phases 41 or 43 touch them?</strong></div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="3"><div><strong>Keep segmented controls, tabs and nav items as buttons and add <code>aria-pressed</code> / <code>aria-current</code>, instead of changing them to radio, tab or link roles?</strong> Changing roles rewrites about 68 Playwright clicks, 11 group selectors and 27 capture steps.</div><div class="rec"><span>Decided</span> keep buttons.</div></li>
+</ol>
+<h3>Fields</h3><ol class="qs">
+<li value="4"><div><strong>Field fill: a grey well inside white sheets, cards and drawers, and white on the page or phone canvas?</strong> This is what the mockups draw. It turns <code>NameSearchBox</code> grey in its 8 sheet and drawer uses, and the masters toolbar selects and the mobile Lists search white.</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="5"><div><strong>Field heights: 48px for every admin sheet control (dropping the 44s), and one compact 36px toolbar size for Conflicts, masters and the audit and Phase 37 filter bars?</strong></div><div class="rec"><span>Decided</span> yes to both.</div></li>
+<li value="6"><div><strong>One focus ring: the Design Language's teal ring (<code>0 0 0 3px rgba(13,110,99,0.30)</code>) on every field and button?</strong> Today there are seven outline rules and the browser's blue on text fields and selects. The admin calendar's crimson ring stays (your pick, PROGRESS.md lines 1047 to 1051).</div><div class="rec"><span>Decided</span> yes.</div></li>
+</ol>
+<h3>Buttons</h3><ol class="qs">
+<li value="7"><div><strong>Admin and web sheet footers use the 54px mobile primary button. Keep that, or move to the 44px desktop size the Admin Review mockup draws?</strong> Moving changes the look of every admin sheet (104 buttons).</div><div class="rec"><span>Decided</span> keep 54 in sheet footers; use the new desktop size only where buttons are hand-rolled today.</div></li>
+<li value="8"><div><strong>Red: keep a red outline for "Cancel booking" only and make the red "Remove" links teal?</strong> No ruling covers red today.</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="9"><div><strong>Review and Invoices show a breadcrumb and a back link to the same place. Drop the back link?</strong> The breadcrumb is the mockup's.</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="10"><div><strong>Desktop step buttons: one component, keeping each screen's mockup size (32, 36, 38px) and the <code>‹ ›</code> glyph?</strong> The two verifiers split on this; the other option was one 36px size everywhere.</div><div class="rec"><span>Decided</span> keep the mockup sizes, one glyph.</div></li>
+</ol>
+<h3>Overlays and feedback</h3><ol class="qs">
+<li value="11"><div><strong>Add the corner X to web dialogs?</strong> No web dialog has a visible close today; one change covers about 27 sheets.</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="12"><div><strong>Sheet title 18/700 everywhere</strong> (63 of 64 today), not the type scale's 22?</div><div class="rec"><span>Decided</span> 18/700.</div></li>
+<li value="13"><div><strong>Desktop footer row: Cancel hugging its label and the primary last, filling the rest</strong> (12 of 17 admin sheets), and in-card confirms move the primary to the right of "Keep it"?</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="14"><div><strong>"It worked" colour: change the 8 teal result lines to success green, and teal info notes to neutral?</strong> The Design Language says teal is never status.</div><div class="rec"><span>Decided</span> yes.</div></li>
+</ol>
+<h3>Pills and tabs</h3><ol class="qs">
+<li value="15"><div><strong>The "Preferred" pill is teal tint (built on purpose in Phase 17); later rulings in Phases 11 and 18 say no teal on labels. Follow the later rule (success tint)?</strong></div><div class="rec"><span>Decided</span> yes, unless Preferred should read as a selection.</div></li>
+<li value="16"><div><strong>Table pills: adopt the Admin Review mockup's <code>4px 10px</code> 11/600 as the one table size, with <code>1px 8px</code> as the inline size?</strong></div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="17"><div><strong>Balances uses an ink segmented look (from your commit <code>30877ba6</code>) whose shadow is in no design file. Switch it to the standard teal control?</strong></div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="18"><div><strong>Page switches (Web Availability's two pages, Draft Lists, the coming Review Events tab and Intake tabs): all on the underline tab strip, as links? And read Phase 34's "selection-slide for the Intake tabs" as that underline strip?</strong></div><div class="rec"><span>Decided</span> yes to both.</div></li>
+</ol>
+<h3>Tables and cards</h3><ol class="qs">
+<li value="19"><div><strong>Admin tables take the Admin Review mockup header (11/600, lighter rule), keep their tighter padding as a "compact" density, and their shells get the e1 shadow</strong> like the Review table and the Day grid?</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="20"><div><strong>Mobile cards at radius 16 (Balances, More, PWA panels) go to the mockups' 14, before Phase 26 adds a card to More?</strong></div><div class="rec"><span>Decided</span> yes.</div></li>
+</ol>
+<h3>Type, money and dates</h3><ol class="qs">
+<li value="21"><div><strong>Money: grouped "$3,100.00" everywhere, and drop the whole-dollar "Fixed price $3,100" in the procedure stack, as Phase 24 already plans?</strong> This also changes two Playwright assertions in one spec and two demo guide lines (<code>03-demo-script.md:811</code>, <code>master-demo-guide.html:1175</code>).</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="22"><div><strong>Add the sizes the mockups use (12.5, 11.5, 13.5, 18 sheet title, 24 and 28 page titles) to the type scale as tokens, rather than rounding screens to today's scale?</strong></div><div class="rec"><span>Decided</span> add them.</div></li>
+<li value="23"><div><strong>Eyebrow: one size and weight, 11/600?</strong> With question 19, the 10 and 10.5px admin table heads go away.</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="24"><div><strong>Date ranges and timestamps: "Tue 21 Jul to Fri 24 Jul" in the apps, "1 Oct 2026 to 1 Nov 2026" for money and contracts, and "Tue 21 Jul, 08:00" for timestamps?</strong> Today there are five shapes of each.</div><div class="rec"><span>Decided</span> yes.</div></li>
+<li value="25"><div><strong>Touch target floor: the Design Language says 48px; the code has used 44px as the floor in several fixes.</strong> Raising them is a visible change across mobile.</div><div class="rec"><span>Decided</span> keep 44 and record it in the Decisions log.</div></li>
+</ol>
+<h3>Housekeeping</h3><ol class="qs">
+<li value="26"><div><strong>Approve the library decision note for <code>docs/ui-library-research/README.md</code>, and retire <code>ui-library-preview/</code></strong> (section 10)?</div></li>
+<li value="27"><div><strong>CLAUDE.md says "four named motion patterns"; the Design Language and <code>motion.ts</code> have six. Correct the wording?</strong></div><div class="rec"><span>Decided</span> yes.</div></li>
+</ol></div>
+
+<h2 id="plan">The plan in brief</h2>
+<p>Seven owner-added phases interleaved with the catch-up phases. Screens that a catch-up phase is about to rebuild are migrated inside that phase, not here. The full plan, with deadlines, fold-ins and done criteria, is in <a href="PLAN.md">PLAN.md</a>.</p>
+<div class="tbl"><table>
+<thead><tr><th>Phase</th><th>What</th><th class="num">Sessions</th><th>Runs</th></tr></thead>
+<tbody><tr><th>U1</th><td><strong>Tokens, money and date text</strong><br><span>New and bypassed tokens, formatMoney, date helpers, six one-line fixes. No look changes except money grouping.</span></td><td class="num">1</td><td>After Phase 21, before 21a</td></tr><tr><th>U2</th><td><strong>Overlays</strong><br><span>Modal layer (fixes the Escape bug), sheet header and close, footer, confirm, done step, side panel, popover.</span></td><td class="num">2</td><td>Before 21a; must precede 22 and 35</td></tr><tr><th>U3</th><td><strong>Pills, badges and feedback</strong><br><span>Pill, count badge, attention dot, avatar, FormError, Notice, result line, empty state.</span></td><td class="num">2</td><td>Before 21a; must precede 22</td></tr><tr><th>U4</th><td><strong>Fields and search</strong><br><span>Fill rule, select, text field, checkbox, switch, focus ring, search box, date and time fields, contract chooser parts.</span></td><td class="num">2</td><td>After 22; must precede 23, 24, 26 and 27</td></tr><tr><th>U5</th><td><strong>Buttons, tabs and toggles</strong><br><span>Button sizes and outline, text action, back link, icon button, segmented, underline tabs, filter pills, nav state.</span></td><td class="num">2</td><td>After 22, before 23; must precede 27 and 34</td></tr><tr><th>U6</th><td><strong>Tables, cards and page chrome</strong><br><span>Table kit, clickable rows, card, eyebrow, page header, stat tile, label and value rows, status block.</span></td><td class="num">2</td><td>After 25; must precede 26, 33, 36, 42</td></tr><tr><th>U7</th><td><strong>Close out</strong><br><span>Leftovers, catalogue regrouped by family, the guardrail test, CLAUDE.md rules.</span></td><td class="num">1</td><td>Before 44</td></tr></tbody></table></div>
+
+<footer>Sources: <a href="README.md">README.md</a> (the audit), <a href="PLAN.md">PLAN.md</a>, and the verified per-family findings in <code>detail/</code>. Screenshots: <code>shots/</code>, retaken with <code>shots/shoot.mjs</code>.</footer>
+</main>
+<script>
+(function () {
+  var groups = [].slice.call(document.querySelectorAll('.group'));
+  var chips = [].slice.call(document.querySelectorAll('.chip'));
+  var q = document.getElementById('q'), shown = document.getElementById('shown'), empty = document.getElementById('empty');
+  var f = 'all';
+  function apply() {
+    var t = q.value.trim().toLowerCase(), n = 0;
+    groups.forEach(function (g) {
+      var ok = f === 'all' || (f === 'bug' ? g.dataset.bug === '1' : f === 'q' ? g.dataset.q === '1' : g.dataset.phase === f);
+      if (ok && t) ok = g.dataset.text.indexOf(t) !== -1;
+      g.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    });
+    shown.textContent = n + ' of ' + groups.length + ' shown';
+    empty.style.display = n ? 'none' : 'block';
+  }
+  chips.forEach(function (c) {
+    c.setAttribute('aria-pressed', c.classList.contains('on'));
+    c.addEventListener('click', function () {
+      f = c.dataset.f;
+      chips.forEach(function (x) { x.classList.toggle('on', x === c); x.setAttribute('aria-pressed', x === c); });
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+  // Shots were captured at 2x: show them at their real size.
+  [].slice.call(document.querySelectorAll('.gallery img')).forEach(function (img) {
+    function fit() { if (img.naturalWidth) img.style.width = Math.round(img.naturalWidth / 2) + 'px'; }
+    if (img.complete) fit(); else img.addEventListener('load', fit);
+  });
+  apply();
+})();
+</script>
+</body>
+</html>

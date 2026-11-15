@@ -46,7 +46,9 @@ the receivable; `invoiceNumber` and `reference` on both Xero records; neutral Xe
 `bctisFor` in `domain/billing/bcti.ts`, the one pure BCTI count, fed only by `bctiRecords(state)`),
 15b (ACTIVE Lists), 15a (the warning routine and its one registry, `WARNING_RULES` in
 `src/domain/warnings/rules/`, which gains the split-does-not-fit rule) and 14 (the trigger registry and the PWA "Office authorises this List" stand-in,
-`authoriseAsSimulatedOffice` in `src/store/officeStandIn.ts`).
+`authoriseAsSimulatedOffice` in `src/store/officeStandIn.ts`). Also UI unification Phases U2 and U3 (built side by
+side and merged into `master`, and through them U1), DONE first: the shared `OverlayHeader`, `SheetActions`, `Pill` and `Notice` this phase
+builds on.
 **Estimated:** 1 session (a full one: about 35 files and many rewritten tests). If it runs long, the
 natural stop point is after work item 9 (model, split, sending run, Xero wording and seed all green);
 items 10 to 15 are UI and fit a short second session.
@@ -657,6 +659,25 @@ handoff item **P3 GST per-invoice rounding on funder splits** (still true of spl
       buyer-created block), a Master data shot of the Contracts table's Layout and Delivery columns, and Split sheet shots on the
       Admin Booking detail and the mobile Booking.
 15. **Re-green:** `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots`.
+16. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `OverlayHeader` and `SheetActions` (U2) for
+      `SplitFeeSheet`; `Pill` (U3) for the Delivery pills, the provisional pills and the "Split" chip;
+      `Notice` (U3) for the Delivery card's warning and notes; `FormError` (U3) for the split's reason;
+      `ResultLine` (U3) for the Review post-authorise banner; `formatMoney` (U1) for shares and totals.
+    - This phase also migrates these existing copies on the screens it rebuilds: the Invoices `StatusPill`
+      (`apps/admin/screens/InvoicesScreen.tsx`) and the InvoiceDocument `StateChip`
+      (`InvoiceDocument.tsx`, keeping its tick and circle glyphs) onto `Pill`; the Office billing setup
+      card's teal tint (`shared/booking/OfficeBillingSetup.tsx`): build a neutral tint by default, with
+      its 700 eyebrow at 600 (README question 14 and the later rule that teal is never a label or status
+      tint), and log it on the "For the owner's review" list; `FunderAllocationSheet` and its unnamed
+      select and amount input are deleted (item 5), not migrated.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*`
+      and row `data-*` hook on the element recipes and specs target; update the catalogue rows
+      (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -916,6 +937,8 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   `src/shared` with no admin import (pwaPurity); design tokens (teal actions, semantic pills, mono GST
   numbers and shares, crimson only as identity); no en or em dashes in app copy; the demo guide
   figures match the running app.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or a copy this phase was to
+  migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

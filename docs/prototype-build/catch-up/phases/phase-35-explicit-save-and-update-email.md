@@ -867,6 +867,28 @@ have moved them):
       routes);
     - the source-scanning label test covers `booking.save`, `updateEmail.drafted` and the template
       actions.
+20. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: the modal layer's one close path
+      (`useModalLayer`, U2) for "Leave without saving?", with `ConfirmSheet` (U2) as that prompt;
+      `SheetActions` and `OverlayHeader` (U2) on every edit sheet, whose primary reads "Apply" in
+      draft mode (item 7) through the shared footer, not per sheet; `Notice` (U3) for the banners;
+      `Checkbox` (U4) for the change picker's ticks; `TextArea` (U4) for the notes.
+    - This phase also migrates these existing copies on the screens it rebuilds: every edit sheet's
+      footer (`EditProcedureSheet`, `EditListSheet`, `EditPatientSheet`,
+      `EditInvoiceDescriptionSheet`, `CancelBookingSheet`, `SplitFeeSheet` and the rest it touches)
+      onto `SheetActions`; the `BookingDetailBody` sections (its private `Section`) onto
+      `SectionCard`, which is `CaptureSection` (`shared/capture/ui.tsx`) given `action` and
+      `shotPrefix` and re-exported, keeping `tabIndex=-1`, `data-validation-procedure-id`,
+      `data-validation-fields` and the `booking-*`, `capture-*` and `office-billing-setup-*` shot
+      names byte-identical; the notes textarea onto `TextArea` (its chrome, the mockup's notes card,
+      is the canonical look).
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop
+      and say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1211,6 +1233,8 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   (ACTIVE) and no "Open" label for one; "Not preferred", never "blacklist"; teal only for actions;
   crimson nowhere on the new surfaces; warning tint for unsaved, success for saved, neutral for
   notices.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section
+  8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

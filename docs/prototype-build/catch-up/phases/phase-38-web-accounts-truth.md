@@ -519,6 +519,22 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
       (with the month picker and actions), plus `w-01` dashboard re-shot; a new shot of mobile
       Balances on "GST this month". `data-shot` hooks as named above. No Lists shot changes here.
 
+13. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `LineTabs` and `LineTabLink` (U5) for the
+      Accounts sub-tabs; the table kit (U6) for the outstanding table; `SelectField` (U4) for the
+      month picker; `Card` and `StatTile` (U6) for the financial position; `EmptyState` (U3);
+      `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: the Accounts sub-tabs
+      (`SubTabButton`, `apps/web/screens/AccountsScreen.tsx`) onto `LineTabLink`; `AgeChip`
+      (`apps/mobile/screens/BalancesScreen.tsx`) is deleted, not migrated.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop
+      and say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
+
 ## Demo triggers
 
 Everything this phase shows is reachable by normal use in the framed build: the office authorises a
@@ -754,6 +770,8 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **Design and copy.** The dashboard keeps the Web Dashboard mockup's panel anatomy and rhythm; stat
   tiles in mono; teal-only actions; no crimson in panels or the report's actions; "billable party" not
   "payer" (the party comes from the invoice, through 21's label); no en or em dashes.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md`
+  section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

@@ -83,6 +83,11 @@ A moved prepaid Booking needs no change: the payable is the account, so no code 
 9. **Anaesthetist views.** `paymentHistoryFor`, `accpayInvoicesFor`, the web Accounts payments table and mobile Balances read a collect case as held: status `held` ("Held until the List is authorised", nothing released), then, once the transfer exists, released and paid-out amounts come from the transfer, so the row reads Released to you then Paid to you, for the anaesthetist who did the List (a moved Booking's prepayment shows to the new anaesthetist, never the old one). 27's Booking prepayment row says "Held by AA until the List is authorised" and then "Paid to you" in the units block as well. Mobile and web both; the money views read only the mirror, never Xero.
 10. **No move logic.** Tests that `reassignList`, 32's own-List move, 32a's single-Booking move and the office's single-Booking move leave the collect pair, the balance and the entries untouched and call nothing here; then authorise the moved List and prove the transfer pays the new anaesthetist (`list.reassign` and `list.ownerMove` audit unchanged). A prepaid Booking that is cancelled before authorisation gets no transfer (41 credits or refunds it).
 11. **Triggers, tests, guide, shots.** Triggers: none new; see below. Review the audit viewer line for `prepayment.transfer`, the Billing monitor retry for a journal fault, and update the demo guide and the catalogue screenshots as specified below.
+12. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `Card` (U6) for the "AA Holding account" panel; the table kit (`Th`, `Td`, `TableShell`, U6) for its entries table and the web Accounts payments rows it edits; `Pill` and `EmptyState` (U3) for "Held until the List is authorised", Received or Transferred, and "Nothing held"; `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: none beyond what it builds: the PLAN row's `PrepaymentPanel`, rail count and `officeActionStyle` are Phase 27's. The holding panel sits beside `AaFeePanel` but is not a copy of it; the Billing monitor's own pills and buttons are Phase 37's; DemoXero stays as it is (README question 2).
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so (the Sequencing rules put it first); never build a private copy. See [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -158,6 +163,7 @@ After the manual test and the commands are green, run the standard pass (PROGRES
 - **Move.** No move path calls or reads any of this; the collect payee never changes; the new anaesthetist is paid, the old one never sees it. Remove any leftover "payee repoint" seam or comment.
 - **Count and views.** `BctiCountRule.prepaymentPairs` is the only place a prepayment could enter the BCTI count (16's function stays the only count); Dr Rutherford's figures unchanged. The anaesthetist's held and released states read the mirror only.
 - **Naming and seed.** No "prepay holding account", "second pair" or "trust account" for the creditor in copy or code names (the trust account is the bank account); `rng()` order unchanged, `PERSIST_VERSION` bumped once, seed fingerprints and canvas golden tests unchanged, no `Date.now()` or `new Date()`, no en or em dashes, no patient name or NHI in Xero.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

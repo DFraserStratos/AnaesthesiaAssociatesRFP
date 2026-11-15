@@ -44,7 +44,9 @@ one BCTI count), 17 (surgeons' rooms), 18 (contract holders as Parties, the Cont
 generator, composite search, one stored No contract (RVG)), 19 (RVG groups as the one master list,
 the RVG code type-ahead, the resolver), 19a (price ranges, the fee path), 19b, 20 (one Contract per
 Procedure, mandatory at setup, the step rail: one path function with US-04.3.2's rules inside it,
-holder fit and date and no line test), 20a (`ProcedureStack`), 21 and 22.
+holder fit and date and no line test), 20a (`ProcedureStack`), 21 and 22. Also UI unification Phase U5
+(and through it U1 to U4), DONE first: the shared `ConfirmSheet`, the contract chooser parts with
+`StepRail`, `NumberStepper` and `TextAction` this phase builds on.
 **Estimated:** 2 sessions. Session 1: work items 1 to 8 (baseline, model, the pure allocation, the
 Booking-level engine reading 19's resolver, 19a's fee path and 19b's modifiers, rewiring every fee caller, store
 actions, seed, tests), ending green. Session 2: work items 9 to 13 (capture with the primary first,
@@ -786,6 +788,24 @@ meta. Every rule is a pure function in `src/domain/billing/` with a Vitest test.
       - `pwa-device.spec.ts`: the feed trigger from the PWA sheet on a two-procedure Booking.
     - Run `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`. All must be green.
 
+14. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `ConfirmSheet`, `OverlayHeader` and `SheetActions`
+      (U2) for `MakePrimarySheet`; `Pill` and `FormError` (U3) for the neutral "Primary" pill and the sheet's
+      refusal; `NumberStepper` (U4) for the steppers `UnitsCard` keeps; `StepRail` and the other contract
+      chooser parts (U4) wherever this phase touches the Contract step rail; `TextAction` (U5) for "Make
+      primary".
+    - This phase also migrates these existing copies on the screens it rebuilds: `MakePrimarySheet` is built
+      on `ConfirmSheet`, not as a copy of `RemoveProcedureSheet`'s footer (item 9c); `UnitsCard` drops its B
+      and M steppers on additional Procedures (item 9f), and the steppers it keeps move onto `NumberStepper`
+      (keep `rvg-range-units`, `modifier-units` and `UnitsCard.test.tsx` green).
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and
+      row `data-*` hook on the element recipes and specs target; update the catalogue rows
+      (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so
+      (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
+
 ## Demo triggers
 
 Two harness-bar entries, both also on the PWA sheet. "Make primary" is normal use on every surface and
@@ -1059,6 +1079,8 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   no invoice split or credit, no precedence or adjustment, no lock, no ledger share, no loaders. Plus
   the usual: teal-only actions, a neutral Primary pill, no dashes in copy, sheets not modals on
   mobile, `pwaPurity` green, and the trigger bodies in `src/store`.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8),
+  or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

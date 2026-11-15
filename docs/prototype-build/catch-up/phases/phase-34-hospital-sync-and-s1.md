@@ -325,6 +325,28 @@ DM-58; the prototype maps (`prototype-map-admin.md` 1, 8, 13, 14; `prototype-map
     the Future-scope surface. Then build, build:pwa, vitest, shots green; walk S1; the review pass; the
     demo guide; PROGRESS.md.
 
+13. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `LineTabs` and `LineTabLink` (U5) for the
+      Intake tabs: README question 18 is settled, so the URL-routed Intake tabs are the underline tab
+      strip as links, item 8's "`selection-slide` for the Intake tabs" is read as that strip, and under
+      item 8's fallback the in-page tabs use `LineTab`; the table kit (U6) for the PDF lists inbox and
+      correction rows; `Eyebrow` (U6) for the source micro-caps; `Pill`, `EmptyState` and `CountBadge`
+      (U3) for the status, "Re-sent" and "New" chips, the empty state and the Intake nav badge;
+      `TextField` (U4) for the correction fields; `OverlayHeader` and `SheetActions` (U2) for the sample
+      picker.
+    - This phase also migrates these existing copies on the screens it rebuilds: the Integrations
+      `TabButton` (`apps/admin/screens/IntegrationMonitorScreen.tsx`) is deleted; its private
+      `StatusChip` and `EmptyNote` move onto `Pill` and `EmptyState` in the parts that stay product UI
+      (PDF lists, Intake); the parts that move to `/demo/integrations` keep their plain look (README
+      question 2).
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
+
 ## Demo triggers
 
 | Label | Screen | Surface | Effect |
@@ -491,6 +513,8 @@ confirmed ones with tests, re-green, record it. Do not re-raise settled Decision
   capture, the PDF beat), with no MSG-STG-1001, HL7 caveat, 20950 or DRAFT.
 - **Design and copy.** Admin Review anatomy, token tints, teal only for actions, no crimson on rows or
   pills, no en or em dashes, no "slot".
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section
+  8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

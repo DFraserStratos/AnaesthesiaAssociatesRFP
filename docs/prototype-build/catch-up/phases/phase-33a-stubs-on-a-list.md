@@ -59,6 +59,11 @@ The office resolves it on Matching: **Add NHI** creates the Booking through 33's
 7. **Matching screen.** A waiting row with a standing stub names it ("A stub stands on Dr Souter's <day> <session> List", from the List) and its panel's NHI field gains **Add NHI** (teal) beside **Reject**, both through `resolveStub`; after Add NHI the panel shows the Booking created and a link to it. The Unmatched filter is unchanged. `actionLabels.ts`: `stub.place`, `stub.resolve`, `stub.remove` ("Stub placed on List", "Stub replaced by Booking", "Stub removed").
 8. **Triggers** (below), PWA sheet entry, Reset and reload.
 9. **Guide, shots, review pass, PROGRESS.**
+10. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `AttentionDot` (U3) for `StubMarker`; `OverlayHeader` (U2) for `StubSheet` on mobile and `PopoverPanel` (U2) for it on the web; `ProgressBar` (U5) for the List's progress line; `TextAction` (U5) for "Resolve on Matching"; `Button` (U5) for Add NHI and Reject.
+    - This phase also migrates these existing copies on the screens it rebuilds: `StubMarker` is built on `AttentionDot` (the anatomy 15a's `WarningTriangle` composes), never a private disc; nothing else.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so (the Sequencing rules put it first); never build a private copy. See [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -123,6 +128,7 @@ Standard pass (convention 18), steered at:
 - **No prompt.** Submit and authorise untouched; no to-do or Warning record for a stub.
 - **Display.** One shared component set, PWA-safe; teal the only action colour, no crimson; no en or em dashes, no "stub Booking", no "slot"; readings labelled once.
 - **Seed.** `rng()` order, `PERSIST_VERSION` bumped once, scripted-beat Lists untouched.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

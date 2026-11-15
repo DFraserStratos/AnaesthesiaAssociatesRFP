@@ -168,7 +168,7 @@ doesn't already cover.
 - `docs/design/Design Language.dc.html` is the **token source of truth**: palette and neutrals, the
   six status colours (with tint / on-tint values, the hatched Unavailable and dashed Free
   treatments), type (Schibsted Grotesk UI + Spline Sans Mono data, tabular-nums), 4pt spacing,
-  radii, elevations, and the four named motion patterns. It is transcribed into `src/theme/`, which
+  radii, elevations, and the six named motion patterns. It is transcribed into `src/theme/`, which
   is what components read — keep the two in step.
 - The six sample pages — Mobile App, Mobile Availability, Web Dashboard, Web Availability,
   Admin Day, Admin Review — are the **layout reference** for their screens.

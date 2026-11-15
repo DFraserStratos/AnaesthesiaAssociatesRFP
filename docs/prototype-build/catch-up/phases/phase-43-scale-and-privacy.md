@@ -821,6 +821,20 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
       the "ADMIN" label (`SideNav.tsx`). The mobile More card's copy becomes "All patients, NHIs, Lists and
       figures are synthetic." with the same badge in `onLight` (ships to the PWA too).
     - Component tests: each placement renders the badge and its label; no en or em dash.
+16. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `Notice` (U3) for `ScaleBanner`; `Pill` (U3) for
+      `SyntheticDataBadge`; the table kit (U6) for the paged Invoices, Audit and Billing monitor tables;
+      `OverlayHeader` and `SheetActions` (U2) for `RawRowSheet`; `Eyebrow` (U6) for any section label it adds.
+    - This phase also migrates these existing copies on the screens it rebuilds: the DemoData tables onto the table
+      kit where item 14 touches the Data Inspector (README question 2: demo simulators adopt shared parts only when
+      Phases 41 or 43 touch them); nothing else in the demo simulators.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and row
+      `data-*` hook on the element recipes and specs target; update the catalogue rows (`/demo/catalogue/*`) for
+      components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so (the
+      Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1110,6 +1124,8 @@ anything settled in the Decisions log.
 - Design and copy: the Synthetic data badge is neutral (not crimson, not teal, not the demo warning tint),
   the banner is harness chrome, teal-only actions, semantic tints for scan results, mono figures, no en or
   em dashes, and the word "slot" in no app copy (OQ-64).
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8),
+  or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

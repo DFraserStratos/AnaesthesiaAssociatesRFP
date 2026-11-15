@@ -1,0 +1,688 @@
+{
+ "admin": [
+  {
+   "name": "Button",
+   "file": "admin/button.png"
+  },
+  {
+   "name": "TickButton",
+   "file": "admin/tickbutton.png"
+  },
+  {
+   "name": "Segmented",
+   "file": "admin/segmented.png"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "file": "admin/slidingsegmentedcontrol.png"
+  },
+  {
+   "name": "StatusLegend (chips)",
+   "file": "admin/statuslegend-chips.png"
+  },
+  {
+   "name": "SignalFilterButton (DayGrid focus filters)",
+   "file": "admin/signalfilterbutton-daygrid-focus-filters.png"
+  },
+  {
+   "name": "Dialog (useSurface().Overlay)",
+   "file": "admin/dialog-usesurface-overlay.png"
+  },
+  {
+   "name": "MasterPanel / PanelGrid / PanelSection",
+   "file": "admin/masterpanel-panelgrid-panelsection.png"
+  },
+  {
+   "name": "SlotDrawer",
+   "file": "admin/slotdrawer.png"
+  },
+  {
+   "name": "DraftListDrawer",
+   "file": "admin/draftlistdrawer.png"
+  },
+  {
+   "name": "ClearConflictSheet",
+   "file": "admin/clearconflictsheet.png"
+  },
+  {
+   "name": "HistorySheet",
+   "file": "admin/historysheet.png"
+  },
+  {
+   "name": "SideNav (with RolesInfo)",
+   "file": "admin/sidenav-with-rolesinfo.png"
+  },
+  {
+   "name": "Master data sub-nav",
+   "file": "admin/master-data-sub-nav.png"
+  },
+  {
+   "name": "TabButton (Integrations)",
+   "file": "admin/tabbutton-integrations.png"
+  },
+  {
+   "name": "TabLink (AA fees)",
+   "file": "admin/tablink-aa-fees.png"
+  },
+  {
+   "name": "DayNav (with SortToggle)",
+   "file": "admin/daynav-with-sorttoggle.png"
+  },
+  {
+   "name": "StatusChip",
+   "file": "admin/statuschip.png"
+  },
+  {
+   "name": "Pill",
+   "file": "admin/pill.png"
+  },
+  {
+   "name": "MasterPills",
+   "file": "admin/masterpills.png"
+  },
+  {
+   "name": "TierPill / PreferredPill / NotPreferredPill",
+   "file": "admin/tierpill-preferredpill-notpreferredpill.png"
+  },
+  {
+   "name": "ChangedSinceSubmittedPill",
+   "file": "admin/changedsincesubmittedpill.png"
+  },
+  {
+   "name": "DraftListParts",
+   "file": "admin/draftlistparts.png"
+  },
+  {
+   "name": "ConflictDot",
+   "file": "admin/conflictdot.png"
+  },
+  {
+   "name": "WarningTriangle",
+   "file": "admin/warningtriangle.png"
+  },
+  {
+   "name": "NameSearchBox",
+   "file": "admin/namesearchbox.png"
+  },
+  {
+   "name": "ContractSelect (fieldChrome select)",
+   "file": "admin/contractselect-fieldchrome-select.png"
+  },
+  {
+   "name": "SurgeonPicker",
+   "file": "admin/surgeonpicker.png"
+  },
+  {
+   "name": "NotPreferredWarning",
+   "file": "admin/notpreferredwarning.png"
+  },
+  {
+   "name": "ChipMultiSelect",
+   "file": "admin/chipmultiselect.png"
+  },
+  {
+   "name": "CodePickerSheet",
+   "file": "admin/codepickersheet.png"
+  },
+  {
+   "name": "ConflictCallout",
+   "file": "admin/conflictcallout.png"
+  },
+  {
+   "name": "WarningsToDo",
+   "file": "admin/warningstodo.png"
+  },
+  {
+   "name": "NotificationsCard",
+   "file": "admin/notificationscard.png"
+  },
+  {
+   "name": "VacatedSessionChoice / StatusRadioGroup",
+   "file": "admin/vacatedsessionchoice-statusradiogroup.png"
+  },
+  {
+   "name": "ProfileChrome",
+   "file": "admin/profilechrome.png"
+  },
+  {
+   "name": "drawerParts (Section, Row, DrawerLink, ActionBtn)",
+   "file": "admin/drawerparts-section-row-drawerlink-actionbtn.png"
+  },
+  {
+   "name": "Inline success banner (role=status)",
+   "file": "admin/inline-success-banner-role-status.png"
+  },
+  {
+   "name": "Table / Header / TextAction / EditCell",
+   "file": "admin/table-header-textaction-editcell.png"
+  },
+  {
+   "name": "ReviewQueue (clickable rows)",
+   "file": "admin/reviewqueue-clickable-rows.png"
+  },
+  {
+   "name": "RvgGroupsView (grouped rows)",
+   "file": "admin/rvggroupsview-grouped-rows.png"
+  },
+  {
+   "name": "AuditViewer",
+   "file": "admin/auditviewer.png"
+  },
+  {
+   "name": "TextField",
+   "file": "admin/textfield.png"
+  },
+  {
+   "name": "TextArea",
+   "file": "admin/textarea.png"
+  },
+  {
+   "name": "FieldLabel / FormError",
+   "file": "admin/fieldlabel-formerror.png"
+  },
+  {
+   "name": "ContractPanel (ContractEditSheet)",
+   "file": "admin/contractpanel-contracteditsheet.png"
+  },
+  {
+   "name": "SlotStatusSheet",
+   "file": "admin/slotstatussheet.png"
+  },
+  {
+   "name": "ContractPriceRanges",
+   "file": "admin/contractpriceranges.png"
+  },
+  {
+   "name": "MiniCalendar (RightRail)",
+   "file": "admin/minicalendar-rightrail.png"
+  },
+  {
+   "name": "HospitalCalendar",
+   "file": "admin/hospitalcalendar.png"
+  },
+  {
+   "name": "Native date input (TextField type=date)",
+   "file": "admin/native-date-input-textfield-type-date.png"
+  },
+  {
+   "name": "SessionTimesFields",
+   "file": "admin/sessiontimesfields.png"
+  },
+  {
+   "name": "RVG anatomy datalist",
+   "file": "admin/rvg-anatomy-datalist.png"
+  },
+  {
+   "name": "SuccessOverlay",
+   "file": "admin/successoverlay.png"
+  },
+  {
+   "name": "TickBadge",
+   "file": "admin/tickbadge.png"
+  },
+  {
+   "name": "ProcedureStack",
+   "file": "admin/procedurestack.png"
+  },
+  {
+   "name": "DayGrid",
+   "file": "admin/daygrid.png"
+  },
+  {
+   "name": "DraftListBand",
+   "file": "admin/draftlistband.png"
+  },
+  {
+   "name": "StatusBlock",
+   "file": "admin/statusblock.png"
+  },
+  {
+   "name": "Review summary tiles (ReviewScreen)",
+   "file": "admin/review-summary-tiles-reviewscreen.png"
+  },
+  {
+   "name": "Billing pipeline stepper (PipelineCard)",
+   "file": "admin/billing-pipeline-stepper-pipelinecard.png"
+  },
+  {
+   "name": "InvoiceDocument",
+   "file": "admin/invoicedocument.png"
+  },
+  {
+   "name": "AnaesthetistCandidates",
+   "file": "admin/anaesthetistcandidates.png"
+  },
+  {
+   "name": "DraftListCandidates",
+   "file": "admin/draftlistcandidates.png"
+  }
+ ],
+ "web": [
+  {
+   "name": "WebNav",
+   "file": "web/webnav.png"
+  },
+  {
+   "name": "AvailabilityPageSwitch",
+   "file": "web/availabilitypageswitch.png"
+  },
+  {
+   "name": "SubTabButton",
+   "file": "web/subtabbutton.png"
+  },
+  {
+   "name": "Back link",
+   "file": "web/back-link.png"
+  },
+  {
+   "name": "Panel",
+   "file": "web/panel.png"
+  },
+  {
+   "name": "StatTile",
+   "file": "web/stattile.png"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "file": "web/slidingsegmentedcontrol.png"
+  },
+  {
+   "name": "Segmented",
+   "file": "web/segmented.png"
+  },
+  {
+   "name": "FilterChip",
+   "file": "web/filterchip.png"
+  },
+  {
+   "name": "StatusLegend (toggle mode)",
+   "file": "web/statuslegend-toggle-mode.png"
+  },
+  {
+   "name": "StatusChip",
+   "file": "web/statuschip.png"
+  },
+  {
+   "name": "ProgressPill",
+   "file": "web/progresspill.png"
+  },
+  {
+   "name": "WebDayChip",
+   "file": "web/webdaychip.png"
+  },
+  {
+   "name": "WarningTriangle",
+   "file": "web/warningtriangle.png"
+  },
+  {
+   "name": "Who's free chip",
+   "file": "web/who-s-free-chip.png"
+  },
+  {
+   "name": "IconBtn · NavButton · WeekNavButton",
+   "file": "web/iconbtn-navbutton-weeknavbutton.png"
+  },
+  {
+   "name": "Day stepper",
+   "file": "web/day-stepper.png"
+  },
+  {
+   "name": "LinkButton",
+   "file": "web/linkbutton.png"
+  },
+  {
+   "name": "SubmitAction",
+   "file": "web/submitaction.png"
+  },
+  {
+   "name": "Add a booking (dashed)",
+   "file": "web/add-a-booking-dashed.png"
+  },
+  {
+   "name": "Progress bar",
+   "file": "web/progress-bar.png"
+  },
+  {
+   "name": "Dialog (web Overlay)",
+   "file": "web/dialog-web-overlay.png"
+  },
+  {
+   "name": "SubmitListSheet",
+   "file": "web/submitlistsheet.png"
+  },
+  {
+   "name": "WebSearchField",
+   "file": "web/websearchfield.png"
+  },
+  {
+   "name": "NameSearchBox",
+   "file": "web/namesearchbox.png"
+  },
+  {
+   "name": "MovedToYouPanel",
+   "file": "web/movedtoyoupanel.png"
+  },
+  {
+   "name": "SeriesList",
+   "file": "web/serieslist.png"
+  },
+  {
+   "name": "CodePickerSheet",
+   "file": "web/codepickersheet.png"
+  },
+  {
+   "name": "ProcedureCodeCard",
+   "file": "web/procedurecodecard.png"
+  },
+  {
+   "name": "TimesCard",
+   "file": "web/timescard.png"
+  },
+  {
+   "name": "UnitsCard",
+   "file": "web/unitscard.png"
+  },
+  {
+   "name": "ResultLine",
+   "file": "web/resultline.png"
+  },
+  {
+   "name": "Lists table (Th · Td · GroupRow)",
+   "file": "web/lists-table-th-td-grouprow.png"
+  },
+  {
+   "name": "WebResultsTable",
+   "file": "web/webresultstable.png"
+  },
+  {
+   "name": "WebDayTable",
+   "file": "web/webdaytable.png"
+  },
+  {
+   "name": "Accounts tables (tfoot totals)",
+   "file": "web/accounts-tables-tfoot-totals.png"
+  },
+  {
+   "name": "List detail Bookings table",
+   "file": "web/list-detail-bookings-table.png"
+  },
+  {
+   "name": "ListInvoices",
+   "file": "web/listinvoices.png"
+  },
+  {
+   "name": "AvailabilityEditor",
+   "file": "web/availabilityeditor.png"
+  },
+  {
+   "name": "AlertOfficeEntry",
+   "file": "web/alertofficeentry.png"
+  },
+  {
+   "name": "OverrideCard",
+   "file": "web/overridecard.png"
+  },
+  {
+   "name": "WeekStrip",
+   "file": "web/weekstrip.png"
+  },
+  {
+   "name": "My availability month grid (DayCell)",
+   "file": "web/my-availability-month-grid-daycell.png"
+  },
+  {
+   "name": "WebGoToDate",
+   "file": "web/webgotodate.png"
+  },
+  {
+   "name": "Receivables aging bars",
+   "file": "web/receivables-aging-bars.png"
+  },
+  {
+   "name": "BookingTotalPanel · useTickingValue",
+   "file": "web/bookingtotalpanel-usetickingvalue.png"
+  },
+  {
+   "name": "TickBadge",
+   "file": "web/tickbadge.png"
+  },
+  {
+   "name": "CompleteBar",
+   "file": "web/completebar.png"
+  },
+  {
+   "name": "ProcedureStack",
+   "file": "web/procedurestack.png"
+  },
+  {
+   "name": "Cell (AvailabilityGrid)",
+   "file": "web/cell-availabilitygrid.png"
+  },
+  {
+   "name": "AvailabilityGrid",
+   "file": "web/availabilitygrid.png"
+  },
+  {
+   "name": "HistoryTimeline",
+   "file": "web/historytimeline.png"
+  }
+ ],
+ "mobile": [
+  {
+   "name": "BottomSheet",
+   "file": "mobile/bottomsheet.png"
+  },
+  {
+   "name": "ListOptionsSheet",
+   "file": "mobile/listoptionssheet.png"
+  },
+  {
+   "name": "AlertOfficeSheet",
+   "file": "mobile/alertofficesheet.png"
+  },
+  {
+   "name": "SubmitListSheet",
+   "file": "mobile/submitlistsheet.png"
+  },
+  {
+   "name": "AvailabilityEditor",
+   "file": "mobile/availabilityeditor.png"
+  },
+  {
+   "name": "Button (MobileButton)",
+   "file": "mobile/button-mobilebutton.png"
+  },
+  {
+   "name": "Mobile press feedback (:active)",
+   "file": "mobile/mobile-press-feedback-active.png"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "file": "mobile/slidingsegmentedcontrol.png"
+  },
+  {
+   "name": "Segmented",
+   "file": "mobile/segmented.png"
+  },
+  {
+   "name": "Filter chips (Week / Month / To-Do / Done)",
+   "file": "mobile/filter-chips-week-month-to-do-done.png"
+  },
+  {
+   "name": "StepperButton",
+   "file": "mobile/stepperbutton.png"
+  },
+  {
+   "name": "NudgeButton",
+   "file": "mobile/nudgebutton.png"
+  },
+  {
+   "name": "CaptureSection",
+   "file": "mobile/capturesection.png"
+  },
+  {
+   "name": "StatusChip",
+   "file": "mobile/statuschip.png"
+  },
+  {
+   "name": "ProgressPill",
+   "file": "mobile/progresspill.png"
+  },
+  {
+   "name": "OutOfHoursPill",
+   "file": "mobile/outofhourspill.png"
+  },
+  {
+   "name": "AgeChip",
+   "file": "mobile/agechip.png"
+  },
+  {
+   "name": "DayChip",
+   "file": "mobile/daychip.png"
+  },
+  {
+   "name": "Avatar",
+   "file": "mobile/avatar.png"
+  },
+  {
+   "name": "Hero figure card",
+   "file": "mobile/hero-figure-card.png"
+  },
+  {
+   "name": "EmptyCard",
+   "file": "mobile/emptycard.png"
+  },
+  {
+   "name": "MovedToYouPanel",
+   "file": "mobile/movedtoyoupanel.png"
+  },
+  {
+   "name": "Booking card (Capture pill)",
+   "file": "mobile/booking-card-capture-pill.png"
+  },
+  {
+   "name": "Progress bar",
+   "file": "mobile/progress-bar.png"
+  },
+  {
+   "name": "LookbackSearchRow",
+   "file": "mobile/lookbacksearchrow.png"
+  },
+  {
+   "name": "LookbackResults (ResultRow)",
+   "file": "mobile/lookbackresults-resultrow.png"
+  },
+  {
+   "name": "SeriesList",
+   "file": "mobile/serieslist.png"
+  },
+  {
+   "name": "ToggleRow (switch)",
+   "file": "mobile/togglerow-switch.png"
+  },
+  {
+   "name": "InstallCoach",
+   "file": "mobile/installcoach.png"
+  },
+  {
+   "name": "UpdatePrompt",
+   "file": "mobile/updateprompt.png"
+  },
+  {
+   "name": "BookingDetailBody",
+   "file": "mobile/bookingdetailbody.png"
+  },
+  {
+   "name": "TextField",
+   "file": "mobile/textfield.png"
+  },
+  {
+   "name": "TextArea",
+   "file": "mobile/textarea.png"
+  },
+  {
+   "name": "FormError",
+   "file": "mobile/formerror.png"
+  },
+  {
+   "name": "MonthGrid (LookbackDateSheet)",
+   "file": "mobile/monthgrid-lookbackdatesheet.png"
+  },
+  {
+   "name": "My calendar month grid",
+   "file": "mobile/my-calendar-month-grid.png"
+  },
+  {
+   "name": "6-day date strip",
+   "file": "mobile/6-day-date-strip.png"
+  },
+  {
+   "name": "useTickingValue",
+   "file": "mobile/usetickingvalue.png"
+  },
+  {
+   "name": "SlideStack",
+   "file": "mobile/slidestack.png"
+  },
+  {
+   "name": "SuccessOverlay",
+   "file": "mobile/successoverlay.png"
+  },
+  {
+   "name": "TickBadge",
+   "file": "mobile/tickbadge.png"
+  },
+  {
+   "name": "Collapsing masthead",
+   "file": "mobile/collapsing-masthead.png"
+  },
+  {
+   "name": "TimesCard",
+   "file": "mobile/timescard.png"
+  },
+  {
+   "name": "CompleteBar",
+   "file": "mobile/completebar.png"
+  },
+  {
+   "name": "ProcedureStack",
+   "file": "mobile/procedurestack.png"
+  },
+  {
+   "name": "BottomTabBar",
+   "file": "mobile/bottomtabbar.png"
+  },
+  {
+   "name": "MobileHeader",
+   "file": "mobile/mobileheader.png"
+  },
+  {
+   "name": "ListRow",
+   "file": "mobile/listrow.png"
+  },
+  {
+   "name": "Sticky submit dock",
+   "file": "mobile/sticky-submit-dock.png"
+  },
+  {
+   "name": "DockSpacer",
+   "file": "mobile/dockspacer.png"
+  },
+  {
+   "name": "Colleague AM / PM cells",
+   "file": "mobile/colleague-am-pm-cells.png"
+  },
+  {
+   "name": "HalfBlock",
+   "file": "mobile/halfblock.png"
+  },
+  {
+   "name": "WarningTriangle",
+   "file": "mobile/warningtriangle.png"
+  },
+  {
+   "name": "OutOfHoursMoon",
+   "file": "mobile/outofhoursmoon.png"
+  }
+ ]
+}

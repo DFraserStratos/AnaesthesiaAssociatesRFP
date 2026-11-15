@@ -30,7 +30,9 @@ practitioner ID; 20's one Contract per Procedure, its step rail (Patient › Pay
 here); 20a's `pricingBasisFor`; 22's GST rule, `materialiseInvoices`, send step, `deliveryPlanFor`,
 Split and `prepaidSplit`; 23's ranking of every Procedure, prepaid or not (D26, D57); 24's
 `procedurePrice.ts` (its rung for a raised prepayment), `anaesthetistMayChangePricing` and office price
-edit; 15b's ACTIVE; 14's trigger registry and office stand-in.
+edit; 15b's ACTIVE; 14's trigger registry and office stand-in. Also UI unification Phase U6 (and through
+it U1 to U5), DONE first: U4's `Switch`, U5's `disabledReason`, U3's `CountBadge` and U6's `Card`, which
+this phase builds on.
 **Run 27a straight after**: from here the prepayment's payable credits the AA Holding account, which
 the payables run skips, and only 27a's transfer pays the anaesthetist again.
 **Estimated:** 2 sessions. Session 1: items 1 to 9 (figures pinned, model, the pure rules, status,
@@ -490,6 +492,23 @@ in the header comments. AR-28, AR-29 and AR-30 are Retired: cite none of them.
     `node requirements-board/scripts/capture.ts --only US-06.2.1,US-06.2.2,US-06.2.6,US-06.3.1,US-06.3.2,US-06.3.4,US-06.3.5,US-06.4.1,US-08.2.2,US-03.1.8,FT-06.2,FT-06.3,FT-08.1 --dry`
     to see what breaks; fixing it is the "Catalogue screenshots" step. Never edit a requirement.
 15. **Demo guide** (below), in the same session.
+16. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `Switch` (U4) for the Prepayment approval
+      switch; `Button` with `disabledReason` (U5) for "Approve and send"; `Card` and `DefRow` (U6) for
+      `PrepaymentPanel` and the Pre-payments rail card; `CountBadge`, `Pill` and `EmptyState` (U3) for
+      the rail count, its status pills and "No upcoming pre-payments."; `ConfirmSheet` (U2) for
+      switching approval off; `TextAction` (U5) for "Approve on Invoices"; `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: `PrepaymentPanel`
+      (`src/shared/booking/`) is built on `Card`; the Pre-payments rail count is `CountBadge` (the 18px
+      rail bubble, hidden at zero); `officeActionStyle` (`shared/booking/BookingDetailBody.tsx`) is
+      deleted with its one use, the "Raise pre-procedure invoice" button this phase removes.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -732,6 +751,8 @@ anything settled in the Decisions log except the rulings this phase explicitly s
 - **Triggers and PWA.** Each entry on its routes only, the clock never rewinds, the stand-in badged,
   `pwaPurity` passes, seed determinism and the filler `rng()` order unchanged, `PERSIST_VERSION`
   bumped.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section
+  8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

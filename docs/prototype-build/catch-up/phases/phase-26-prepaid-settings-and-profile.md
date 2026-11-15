@@ -18,7 +18,9 @@ Context only, closed elsewhere:
 [OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (one identifier, the HPI CPN, mandatory), **D64** (above) and **D53** ([OQ-111](../../../../requirements-board/requirements/questions/OQ-111.md), 4 November: payments to anaesthetists are made in Xero's payables run, so bank details are master data the system holds, not a field the app pays from).
 **Depends on:** Phase 17 only (built: `normaliseHpiCpn`, `isPlausibleHpiCpn`, the duplicate check, the Admin anaesthetist record page, the
 office-only privacy boundary). Needs nothing unbuilt, so it can run any time; it must run before Phase 38 (whose monthly GST report it leaves
-in calendar months) and before 40a. Where 22 or 25 have not landed, see "Before you start" step 4.
+in calendar months) and before 40a. Where 22 or 25 have not landed, see "Before you start" step 4. Also
+UI unification Phase U6 (and through it U1 to U5), DONE first: the shared `DefRow`, `Card` and
+`PageHeader` this phase builds on, with U3's `Avatar`.
 **Estimated:** 1 session (10 work items).
 
 ## Goal
@@ -158,6 +160,18 @@ Model, pure helpers, store and seed first, then screens.
 10. **Playwright shots.** A new `visual/profile-phase26.spec.ts`: mobile More with the Profile card and the rate sheet, the web profile page,
     the Admin record page's Profile card. Update existing shots the table columns, the GST tab or the
     More screen changed, and `routing.spec.ts` for `/web/profile`. Keep the PWA device spec green.
+11. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `DefRow`, `Card`, `Eyebrow` and `PageHeader` (U6) for the profile rows, the More
+      and Admin Profile cards and the web profile page; `Avatar` (U3) for the WebNav persona button; `OverlayHeader` and `SheetActions` (U2)
+      for `EditRateSheet`; `TextField` with the amount type (U4) for the rate field.
+    - This phase also migrates these existing copies on the screens it rebuilds: `ProfileRow` (`src/shared/profile/`) is built as a `DefRow`
+      variant (label, mono value, optional lock glyph), not a second row component; the More cards (`apps/mobile/screens/MoreScreen.tsx`)
+      sit on `Card` at radius 14 (README question 20), the new Profile card with them.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and row `data-*` hook on the
+      element recipes and specs target; update the catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so (the Sequencing rules put it
+      first); never build a private copy. See [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -265,6 +279,8 @@ re-green. Do not re-raise anything settled in the Decisions log.
 - **Privacy.** The profile never reads the `officePrivate` slice or a tier or pairing audit entry; `officePrivacy.test.ts` green.
 - **Mobile is mobile.** Bottom sheet with sticky Save; the PWA panel still renders below; `pwaPurity` green; the four web nav tabs unchanged.
 - **No gold-plating.** Teal-only actions, crimson identity only, no dashes in copy, one `PERSIST_VERSION` bump.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or a copy this phase was to
+  migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

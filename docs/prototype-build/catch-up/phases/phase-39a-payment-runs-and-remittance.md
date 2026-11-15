@@ -802,6 +802,22 @@ check):
     Remittances tab and sheet; update any spec that shot the old payables panel. The capture
     recipes, ATLAS.md and `npm run verify:board` are the Catalogue screenshots step below. Then the
     demo guide (below) and PROGRESS.
+16. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `LineTabLink` (U5) for the web Accounts
+      Remittances sub-tab, on the strip Phase 38 put there; the table kit (U6) for the approval and
+      run tables; `Card` and `StatTile` (U6) for the payment cycle panel; `Pill` and `Notice` (U3);
+      `formatMoney` with `sign` (U1), so item 8's `formatSignedCurrency` is a thin wrapper over it,
+      not a second formatter.
+    - This phase also migrates these existing copies on the screens it rebuilds: the Remittances
+      sub-tab joins the Accounts `LineTabLink` strip (no `SubTabButton` copy); the payment cycle
+      panel replaces the payables panel on `Card` and the table kit; nothing else.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop
+      and say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1098,6 +1114,8 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **Design and copy.** Signed amounts through one formatter with a hyphen-minus, neutral not red;
   teal the only action colour; no "provisional" or "20th" about the cycle; no en or em dashes in app
   copy.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md`
+  section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

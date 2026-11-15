@@ -235,6 +235,11 @@ One seeded event, an additional invoice that Dr Souter raised on a billed Proced
 13. **Audit labels and copy.** Every new audit action gets a label in `ACTION_LABELS`: `procedureEvent.add`, `procedureEvent.update`, `procedureEvent.remove`, `procedureEvent.approve`, `procedureEvent.decline`, `procedureEvent.invoiced`, `invoice.additionalCreated`, `invoice.partyChanged`; `fieldLabels.ts` gains the event fields. The anaesthetist's actions are audited under their own name (US-08.6.3: "audited like any user action"). Copy sweep: no en or em dash in any new string; the words come from `procedureEventCopy.ts`; no Booking total on any anaesthetist surface; "slot" never in app copy.
 14. **Playwright.** A new `visual/phase38b-events.spec.ts`: the admin events list with the seeded event, the Review Events tab and the review sheet, the Waiting for the next billing run panel, the Admin additional-invoice sheet, an additional invoice document with its link both ways, the Invoices Kind column; Dr Sharma's Raise additional invoice on mobile (bottom sheet) and web (dialog) on her own invoiced Procedure reached through 38a's search; and a mobile and a web shot of the seeded Procedure's events list for Dr Souter. Update any spec that shot the addendum (`admin-phase09.spec.ts`).
 15. **Close-out.** `demoScenarios.test.ts` covers the rewritten S4 Beat 2 end to end at store level (stage, create, approve, run, the links, the BCTI count) and the anaesthetist aside (Dr Sharma raises one, the office approves and runs it); then the demo guide (below), the catalogue screenshots and PROGRESS.
+16. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `LineTabLink` with `badge` (U5) for the Review Events tab (`/admin/review?tab=events` with its count, the Draft Lists `?tab=` link pattern); the table kit (U6) for the events review rows; `OverlayHeader` and `SheetActions` (U2) for `EventReviewSheet` and `AdditionalInvoiceSheet`; `Checkbox` (U4) for the "same as" tick; `TextField` with the number and amount types (U4) for quantity and amount; `Pill` and `Notice` (U3) for the status pills and the "Waiting for the next billing run" panel; `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: the Review Events tab is built on `LineTabLink` with `badge`, not a private tab or a copy of the Draft Lists tint pills; nothing else.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so (the Sequencing rules put it first); never build a private copy. See [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -367,6 +372,7 @@ Once the manual test checklist and `npm run build`, `npm run build:pwa`, `npx vi
 - **One label.** The word "event" and every kind, status and button label come only from `procedureEventCopy.ts`.
 - **Determinism and persistence.** No `Date.now()`, `new Date()` or `Math.random()`; the seeded event's instant is fixed; `PERSIST_VERSION` bumped with migrate tests; two fresh seeds deep-equal; no seeded figure moved.
 - **Design and copy.** Teal the only action colour; status pills on semantic tints; mono for dates, numbers and amounts; a bottom sheet on the phone, not a modal; no en or em dashes; "slot" never in app copy.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

@@ -761,6 +761,28 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
 17. **Docs inside the app:** `aa-prototype/README.md` store map gains `xeroQueue.ts`,
     `xeroSimActions.ts`, `disbursementDetection.ts`, `billingMonitorView.ts`, `domain/xero/` and `domain/xeroSim/` (with the
     scope-fence rule).
+18. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `SelectField` compact and `FilterDateInput`
+      (U4) for the filter bar, in place of AuditViewer's `Filter` pattern item 12 names; `FilterPills`
+      (U5) for Problems only; the table kit (`Th`, `Td`, `TableShell`, `GroupRow`, `ClickableRow`, U6)
+      for the anaesthetist groups and sortable heads, in place of `tableChrome.ts`; `PageHeader`,
+      `StatTile` and `Card` (U6) for the title, the tile row and `ReconciliationCard`; `SidePanel` (U2)
+      for the Resolve side sheet; `Pill`, `Notice`, `ResultLine` and `EmptyState` (U3); `Button`,
+      `TextAction` and `BackLink` (U5) for Retry now, Resolve, Open in Review and "Back to Billing
+      monitor"; `formatMoney` (U1).
+    - This phase also migrates these existing copies on the screens it rebuilds: the Billing monitor
+      pills (`StageChip`, `BookingStatusPill` and the card status pill in
+      `apps/admin/screens/BillingMonitorScreen.tsx`) onto `Pill`; its hand-built buttons (Run payables,
+      Resolve & retry) onto `Button`; its filter bar onto `SelectField` compact and `FilterDateInput`;
+      and the pipeline's a11y note: the stage strip (`PipelineCard`) renders as `<ol aria-label="Billing
+      pipeline">` with each stage's state in text, not only in `title`.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`,
+      `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the
+      catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1099,6 +1121,8 @@ amends (listed below).
   no en or em dashes, badges on every simulated control and none on the monitor's own product UI; the
   awaiting pill is neutral, not the schedule SUBMITTED colour; sort headers are buttons with
   `aria-sort`.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section
+  8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

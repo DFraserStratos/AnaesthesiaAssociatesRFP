@@ -89,7 +89,9 @@ and is found by search); the "trust account" and "prepay holding account" wordin
 **Owner decisions** ([ROADMAP.md](../ROADMAP.md#owner-decisions) table D1 to D84, re-read on 2026-11-10 against catalogue `fbdd555`, including Donald's 5 November contract model decisions: made for the build, not yet confirmed by AA). This phase gates on none: it scripts and labels what the phases built. It tells the audience each decision as it now stands: answered rows as the rule (no provisional label; D16 the step rail, D34 no schedule upload, D73 an admin's edit always wins and D77 no versions or lines among them), superseded rows (D2, D3, D6, D12, D16's caveat, D17, D20, D32's lines, D47's versions and the old defaults of D30, D35, D49 and D54 to D57) in their **new** reading, D23 as built but **back at Confirm** (labelled once as awaiting confirmation), and open rows (D29, D31, D36, D52's first part, D55's part, D68, D70 to D72, D74, D76 and D78 to D84) as the built default, labelled provisional in the UI's own words (D79, D81 and D82 have nothing on screen to label: they are logged). Drift-check step 3 lists every row.
 
 **Depends on:** every catch-up phase, 14 to 43a (including 15a, 15b, 17a, 18a, 19a, 19b, 20a, 21a, 27a, 32a, 32b, 32c, 38a, 38b, 39a, 39b, 40a and 43a), DONE. This phase runs last. It changes no domain behaviour; it re-walks and
-re-scripts what 14 to 43a built.
+re-scripts what 14 to 43a built. Also UI unification Phase U7 (the close out), DONE first: the catalogue
+is regrouped by family and every shared component is in place before this phase regenerates every
+screenshot and audits labels.
 **Estimated:** 2 sessions (one is not realistic for four new Vitest files, two Playwright specs, a
 copy sweep of about thirty sites, five rewritten guide files, a regenerated 1,400-line master guide,
 two full walks of S1 to S5 plus a handset pass, and a four-reviewer adversarial pass; the 2026-10-01,

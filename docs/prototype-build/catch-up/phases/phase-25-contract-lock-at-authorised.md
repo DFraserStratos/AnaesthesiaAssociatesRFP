@@ -125,6 +125,12 @@ Pure code first, then the store, then the screen; the session ends with `npm run
 
 12. **The History tab, triggers, Control Panel text and shots.** The Contract panel's History tab (`data-shot="contract-history"`: rows with who, what, when and before to after; below them "Procedures locked against this Contract" linking to each Booking and invoice; an empty state for a new Contract). Register `regenerate-invoice` and re-point `billing-failure` (see "Demo triggers"). `DemoControlPanel.tsx`: the S4 clause ("then Resolve & retry Losa Tuilagi" stays, now for her hand-off) and the S5 jump text and Beat 4 clause (a backdated price range on Health NZ, its History row, Whitaker's invoices unchanged, Regenerate identical on Hemi Walker's). Vitest: `regenerate-invoice` is visible only on `/admin/invoices/:invoiceId`, disabled with its reason on pre-payment and AA-FEE invoices, and reports identical for S3 invoices. Playwright: re-point `visual/admin-phase09.spec.ts` to the re-based failure; extend `visual/admin-phase08.spec.ts` with the Locked record card and a regenerate run; add shots for `contract-history` and `booking-lock-badge`. While building, run `npm --prefix requirements-board run capture -- --only US-04.1.3,US-04.3.5,US-07.3.1,US-08.1.1,US-08.4.4,US-08.5.1,US-08.5.2,US-13.3.2,US-15.0.3 --dry` to find broken recipes early. Grep new copy for en and em dashes; teal on every new action; crimson nowhere new; no "slot" in app copy; "Booking", never "card".
 
+13. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `LineTabs` and `LineTab` (U5) for the Contract panel's History tab; `Pill` (U3) for the neutral lock pill; `EmptyState` (U3) for a new Contract's empty history; `Notice` (U3) for the Regenerate result; `formatMoney` and `stampText` (U1). `DefRow` is built in U6, which runs after this phase: use the existing `drawerParts` `Row` (`apps/admin/components/drawerParts.tsx`) for label and value rows (the look `DefRow` takes) and build no private row; U6 migrates it.
+    - This phase also migrates these existing copies on the screens it rebuilds: the Contract panel's History tab is the first local tablist, built on `LineTab`, not a private tab strip; the lock pill is `Pill`, not a new chip.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*` and row `data-*` hook on the element recipes and specs target; update the catalogue rows (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and say so (the Sequencing rules put it first); never build a private copy. See [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and [`README.md`](../../../ui-unification/README.md) section 8.
+
 ## Demo triggers
 
 | Label | Screen (routes) | Surface | Effect |
@@ -219,6 +225,7 @@ After the manual test checklist and `npm run build`, `npm run build:pwa`, `npx v
 - **History.** Rows are complete (create, edit, disable, ranges, specialties, tag), before and after are right, nothing is deleted, and the Procedures locked against a Contract match `billing.locks`.
 - **Parity and display.** Item 1's fixture passes unchanged; S3, S4 and S5 figures and 16's BCTI counts are identical to Phase 24's; no fee display or stack of a locked Booking changes after a master edit in any app, and ACTIVE Bookings still re-price.
 - **Seeds and determinism.** Every AUTHORISED List is locked at seed time, migrated locks are labelled, no new RNG draws, no `Date.now()`, `PERSIST_VERSION` bumped, trigger bodies in `src/store` and the PWA purity test holds.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8), or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

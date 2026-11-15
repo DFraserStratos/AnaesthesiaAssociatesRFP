@@ -127,7 +127,9 @@ snapshot), 26 (the anaesthetist profile on More, the prepaid card), 27 (the prep
 Booking), 29 (the user-maintained status list), 32 and 32a (the Notifications card and the move
 sheets), 38a (the main view, archive and search), 38b and 39 (the anaesthetist's own additional
 invoice and credit note) and 43 (`SyntheticDataBadge`) have also run. The capture and review screens
-are settled by now, which is why this phase sits late.
+are settled by now, which is why this phase sits late. Also UI unification Phase U6 (and through it U1 to
+U5), DONE first: U2's `PopoverPanel` and `SidePanel` and U6's `Eyebrow` and `Card`, which this phase
+builds on.
 **Estimated:** 2 sessions. Session 1: the sign-in (items 1 to 4) and the sweep with its guard test
 (items 5 to 9); stop green after item 9. Session 2: the help (items 10 to 15), the help desk (items 16
 to 18) and the triggers (item 19).
@@ -895,6 +897,24 @@ below exists today or is built by the phase that names it.
       hint is dismissed, and running it clears all three; "Help desk resolves this request" visible on an
       admin route only, disabled with none open, and running it resolves the oldest open ticket and writes
       one audit row.
+20. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `usePopover` and `PopoverPanel` (U2) for
+      `InfoTip`; `SidePanel` (U2) for `HelpPanel`; `Eyebrow` and `Card` (U6) for the section labels the
+      tips sit beside, `FirstRunHint` and the help contact card; `Pill` (U3) for ticket status, "Feature
+      request" and Provisional; `PersonaChip` and `Avatar` (U3) for the SideNav persona; `Checkbox`,
+      `TextField` and `TextArea` (U4) for the request form.
+    - This phase also migrates these existing copies on the screens it rebuilds: `InfoTip` is built on
+      `PopoverPanel` and `HelpPanel` on `SidePanel`, neither with its own outside-click, Escape or focus
+      code; the section labels it places tips beside move onto `Eyebrow`; the SideNav persona (the "KW /
+      Kirsty W. / Office" literals in `apps/admin/components/SideNav.tsx`) is read through
+      `shared/viewer.ts` and shown with `PersonaChip`.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*`
+      and row `data-*` hook on the element recipes and specs target; update the catalogue rows
+      (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
 
 ## Demo triggers
 
@@ -1198,6 +1218,8 @@ Do not re-raise anything settled in the Decisions log.
   is badged simulated, unreachable from the mobile and web apps, and dash-free.
 - **Design.** Teal only for action, crimson only in the logo and avatar, the design's label row, rail
   card, field and sheet anatomy, no new chrome, reduced motion respected.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8),
+  or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 

@@ -691,6 +691,23 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
 
 19. **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`.
 
+20. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components: `PageHeader` and `StatTile` (U6) for the
+      patient screens' header and tiles; the table kit (U6) for the patient and waiting-row tables;
+      `LineTab` or `LineTabLink` (U5) for any tabs on the patient record; `Pill`, `EmptyState` and
+      `CountBadge` (U3) for `nhiBadge`, `BalanceAlertChip`, the empty states and the SideNav badge;
+      `TextField` (U4) for the NHI field and `Button` with `disabledReason` (U5) for its disabled Save.
+    - This phase also migrates these existing copies on the screens it rebuilds: none of the PLAN row's
+      (those are Phase 42's); the Billing monitor's "Prior balance" tag goes in the copy sweep (item 15),
+      not migrated.
+    - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*`
+      and row `data-*` hook on the element recipes and specs target; update the catalogue rows
+      (`/demo/catalogue/*`) for components removed or merged.
+    - If the U phase that builds a component named here has not landed when this phase starts, stop and
+      say so (the Sequencing rules put it first); never build a private copy. See
+      [`docs/ui-unification/PLAN.md`](../../../ui-unification/PLAN.md) section 3 and
+      [`README.md`](../../../ui-unification/README.md) section 8.
+
 ## Demo triggers
 
 | Label | Screen | Surface | Effect |
@@ -967,6 +984,8 @@ anything settled in the Decisions log (as amended by this phase).
   Booking", never "billable party", in new app copy; no en or em dashes.
 - **No pricing drift.** Nothing touches Contracts, holders, lines, the resolver or the price precedence in
   `src/domain/billing`.
+- **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8),
+  or a copy this phase was to migrate and left, is a finding.
 
 ## PROGRESS.md updates
 
