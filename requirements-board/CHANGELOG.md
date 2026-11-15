@@ -2,6 +2,10 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.8.1 · 2026-11-12
+
+- `update-build-plan`: a plan can hold an owner-added track whose phase numbers are a capital letter and digits (`U1`), beside the numbered run. The tools read such a phase's DONE or IN PROGRESS row and its `### [<word>] Phase U1` entry in the progress file, and always count it as the plan's own (it is not compared with `firstPhase`). Before, only two-digit numbers (`15`, `15a`) were read, so such a phase could never show as built. SKILL.md says so.
+
 ## 1.8.0 · 2026-11-10
 
 - Stepped diagrams can follow their steps: `step_view: follow` in the sidecar (beside `steps`) makes the view frame each step as the reader arrives at it, by the step bar, the arrow keys, the Steps tab or a link. `fixed`, the default and the same as leaving it out, keeps today's behaviour: the view stays where it is, right for a diagram that fits one screen. Follow is for a wide flow that does not.

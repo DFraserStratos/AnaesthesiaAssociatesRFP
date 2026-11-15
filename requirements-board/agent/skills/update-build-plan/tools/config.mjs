@@ -142,8 +142,11 @@ function statusesOf(boardConfig, settledCodes, unsettledCodes) {
 // A progress file (config `progress`) records phases in a status table, rows
 // `| NN | <title> | DONE | <date> | ...` or `| NN | ... | IN PROGRESS | ...`, and one `### [<word>] Phase NN`
 // entry per built phase. Without one, status.json in the plan folder may list `done` and `in_progress`.
-// Only phases numbered from config `firstPhase` count.
-const ROW = st => new RegExp(`^\\|\\s*(\\d{2}[a-z]?)\\s*\\|[^|\\n]*\\|\\s*(?:${st})\\s*\\|`, 'gim')
+// Only phases numbered from config `firstPhase` count. A phase number is two digits with an optional
+// letter (15, 15a), or a capital letter and digits (U1): an owner-added track outside the numbered run,
+// which always counts as this plan's.
+const NUM = '\\d{2}[a-z]?|[A-Z]\\d+'
+const ROW = st => new RegExp(`^\\|\\s*(${NUM})\\s*\\|[^|\\n]*\\|\\s*(?:${st})\\s*\\|`, 'gm')
 export function phaseStatus(c, root = process.cwd()) {
   const text = c.progress && fs.existsSync(path.join(root, c.progress)) ? fs.readFileSync(path.join(root, c.progress), 'utf8') : ''
   let status = {}
@@ -151,12 +154,12 @@ export function phaseStatus(c, root = process.cwd()) {
   // status.json's done and in_progress lists stand in only when there is no progress file.
   const listed = k => (text ? [] : (status[k] ?? []).map(String))
   const first = parseInt(c.firstPhase, 10)
-  const ours = n => parseInt(n, 10) >= first
+  const ours = n => /^[A-Z]/.test(n) || parseInt(n, 10) >= first
   const rows = st => [...text.matchAll(ROW(st))].map(m => m[1])
-  const doneDate = new Map([...text.matchAll(/^\|\s*(\d{2}[a-z]?)\s*\|[^|\n]*\|\s*DONE\s*\|\s*([^|\n]*?)\s*\|/gim)].map(m => [m[1], m[2]]))
+  const doneDate = new Map([...text.matchAll(new RegExp(`^\\|\\s*(${NUM})\\s*\\|[^|\\n]*\\|\\s*DONE\\s*\\|\\s*([^|\\n]*?)\\s*\\|`, 'gm'))].map(m => [m[1], m[2]]))
   for (const n of listed('done')) if (!doneDate.has(n)) doneDate.set(n, '')
   const done = [...new Set([...rows('DONE'), ...listed('done')])]
-  const entries = [...text.matchAll(/^###\s+(?:\S+\s+)?Phase\s+(\d{2}[a-z]?)\b/gim)].map(m => m[1])
+  const entries = [...text.matchAll(new RegExp(`^###\\s+(?:\\S+\\s+)?Phase\\s+(${NUM})\\b`, 'gm'))].map(m => m[1])
   const inProgress = [...new Set([...rows('IN PROGRESS'), ...listed('in_progress')])]
   return {
     text,

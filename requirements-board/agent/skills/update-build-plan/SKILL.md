@@ -47,6 +47,13 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   phase. Shots hide the harness bar, so recipes stage demo triggers with the runner's `trigger` step
   (Phase 14 adds it); anything every fresh browser context would show, such as a first-run welcome
   card, needs the runner to preset it (Phase 43a).
+- **Owner-added track: UI unification (U1 to U7).** Seven phases outside the gap analysis, with empty
+  `covers` by design (`PLAN/ROADMAP.md`, "Sequencing rules", first rule; source `docs/ui-unification/`).
+  On every update, add "keep the UI unification track: phases U1 to U7, their sequencing rule, the U
+  entries in catch-up phases' `depends_on`, and the 'Build on the shared components' work item and
+  review line in each unbuilt UI phase" to the owner directives in `changeNotes`, and check after
+  Stage 3 that `plan.json` still has U1 to U7. The outline architect and critic would otherwise drop
+  a phase that covers nothing.
 - After an update, also change the baseline commit and phase count in `CLAUDE.md`'s "Current state"
   paragraph, and the "Catalogue snapshot" line in `PLAN/README.md`.
 - Worked example: the 2026-10-08 update (133 items re-graded, 40 phases rewritten; DM ids remapped
@@ -100,7 +107,7 @@ optional; without the file, defaults apply (a new adopter's plan). The keys:
 | `name`, `title` | The plan's name in prompts and pages (`build plan`, `Build plan`) |
 | `subject`, `appNoun`, `app`, `appCode`, `appSummary` | What is built (`the app`), the word for it (`app`), its folder, the code paths whose change makes the code maps stale (`[app]`), and one sentence for agents |
 | `board`, `requirements`, `boardUrl` | The board folder (`requirements-board`), its requirements folder (`<board>/requirements`), its dev server (`http://localhost:5180`) |
-| `progress` | The progress file (none): a status table with rows `\| NN \| <title> \| DONE \| <date> \|` or `IN PROGRESS`, and a `### [<word>] Phase NN` entry per built phase. Without one, `PLAN/status.json` `done` and `in_progress` lists say which phases are built |
+| `progress` | The progress file (none): a status table with rows `\| NN \| <title> \| DONE \| <date> \|` or `IN PROGRESS`, and a `### [<word>] Phase NN` entry per built phase. `NN` is two digits with an optional letter (`15a`), or a capital letter and digits (`U1`) for an owner-added track outside the numbered run. Without one, `PLAN/status.json` `done` and `in_progress` lists say which phases are built |
 | `firstPhase` | The first phase number this plan owns (`01`); phases below it are ignored in the progress file |
 | `outOfScopeLanes` | Board swim lanes left out of the plan, e.g. `["Future Work"]` (none) |
 | `settledStatuses`, `unsettledStatuses` | Status codes to build first and to flag "confirm before building" (from the board config's `settle` flags) |
