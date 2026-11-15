@@ -26,7 +26,7 @@
         },
         {
           "state": "payment-type",
-          "caption": "Where the invoice goes, then the Contract: Patient › Standard with No contract · RVG pinned first",
+          "caption": "Where the invoice goes, then the payment type: Standard first, the normal pathway, then Prepaid",
           "steps": [
             {
               "click": "[data-shot=contract-rail-step-1] >> nth=0"
@@ -35,18 +35,11 @@
               "click": "[data-rail-option=patient] >> nth=0"
             },
             {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-combo] >> nth=0"
-            },
-            {
-              "wait": 300
+              "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=capture-billing] >> nth=0",
-            "[data-shot=contract-combo-list]"
+            "[data-shot=capture-billing] >> nth=0"
           ]
         },
         {
@@ -112,14 +105,14 @@
           "state": "picked-up",
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=contract-picker]"
+            "[data-shot=billing-sheet]"
           ],
           "caption": "The anaesthetist picks up the office's answers at step 3"
         }

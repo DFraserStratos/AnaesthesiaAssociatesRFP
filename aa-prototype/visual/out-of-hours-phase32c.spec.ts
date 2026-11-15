@@ -187,11 +187,12 @@ test('4 · Mobile as Dr Souter: the List after PM, moon and 18:00; add a Booking
   const bookingUrl = page.url()
   // Catch-up Phase 20: saved with no Contract, so the anaesthetist chooses one
   // on the step rail before it can complete: Patient › Standard › No contract · RVG.
-  // On the phone the Billing card's rows open the steps in a sheet.
-  await page.locator('[data-shot=billing-row-invoice-to]').click()
+  // On the phone a tap on the Billing card opens the steps in a sheet; the lone Contract is picked.
+  await page.locator('[data-shot=capture-billing]').click()
   await page.locator('[data-rail-option=patient]').click()
-  await page.locator('[data-contract-id=CT-NO-CONTRACT]').click()
-  await page.getByRole('button', { name: 'Use this Contract' }).click()
+  await page.locator('[data-rail-option=standard]').click()
+  await expect(page.locator('[data-shot=billing-sheet] [data-shot=contract-rail-step-3]')).toContainText('RVG')
+  await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Start now' }).click()
   await page.goto('/demo/control')
   await page.waitForLoadState('networkidle')

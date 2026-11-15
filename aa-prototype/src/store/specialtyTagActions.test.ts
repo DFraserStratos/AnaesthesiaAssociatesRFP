@@ -9,7 +9,7 @@ import { editProcedure } from './lifecycle'
 import { chooseContractForFailedBooking } from './billingRun'
 import { editParty } from './partyActions'
 import { fundingTagsInOrder } from '../domain/billing/fundingTags'
-import { destinationKey, destinationOf, impliedDestinations, isOpenPriceFallback } from '../domain/billing/fallbacks'
+import { destinationKey, destinationOf, impliedDestinations, isOpenPriceFallback, isRvgFallback } from '../domain/billing/fallbacks'
 import { surgeonSpecialtyLabel } from '../domain/specialties'
 import type { AuditEntry } from '../domain/types'
 import { CONTRACT, PARTY, ROOM, SPC, SURG, TAG } from '../domain/seed'
@@ -134,7 +134,8 @@ describe('funding tags (US-13.4.5)', () => {
     ].map((o) => (o.ok ? 'ok' : o.code))
     expect(codes).toEqual(['codeTaken', 'funderKind', 'fundingTagHeld', 'officeOnly'])
     const held = removeFundingTag(api, OFFICE, TAG.sxap)
-    expect(held.ok ? '' : held.message).toBe('SXAP is carried by 9 Contracts, its system Fixed price Contracts included, so it cannot be removed. Edit its code instead.')
+    // 7 office Contracts, CES and Southern Cross's SXAP Fixed price fallbacks and their 2 RVG backstops.
+    expect(held.ok ? '' : held.message).toBe('SXAP is carried by 11 Contracts, its system No contract Contracts included, so it cannot be removed. Edit its code instead.')
   })
 })
 
@@ -155,23 +156,35 @@ describe('Contracts with specialties, a tag and the fallbacks (US-04.2.16, US-04
   // Phase 19a, so its fallbacks exist from the start: Forte has none.
   const FORTE_SXAP = { ...CES_SXAP, holderId: PARTY.forte }
 
-  it("tagging a hospital's first SXAP Contract creates its fallback in the same commit, audited", () => {
+  it("tagging a hospital's first SXAP Contract creates its fallback and RVG backstop in the same commit, audited", () => {
     const api = createAppStore()
     const before = api.getState().audit.length
     const outcome = createContract(api, OFFICE, FORTE_SXAP)
     expect(outcome.ok).toBe(true)
     const s = api.getState()
     const added = s.audit.slice(before)
-    expect(added.map((a) => a.action)).toEqual(['contract.create', 'contract.fallbackCreate'])
+    expect(added.map((a) => a.action)).toEqual(['contract.create', 'contract.fallbackCreate', 'contract.fallbackCreate'])
     expect(new Set(added.map((a) => a.atISO)).size).toBe(1)
     const fallback = s.masters.contracts[added[1]!.entityId]!
-    expect(fallback).toMatchObject({ name: 'Forte Health · SXAP · Fixed price', aaCode: 'FORTE-SXAP-FIX', pricing: { kind: 'open' }, fundingTagId: TAG.sxap })
+    expect(fallback).toMatchObject({ name: 'Forte Health · SXAP · Fixed price', aaCode: 'FORTE-SXAP-FIX', pricing: { kind: 'open' }, systemRole: 'openPriceFallback', fundingTagId: TAG.sxap })
+    const backstop = s.masters.contracts[added[2]!.entityId]!
+    expect(backstop).toMatchObject({
+      name: 'Forte Health · SXAP · RVG',
+      aaCode: 'FORTE-SXAP-RVG',
+      pricing: { kind: 'rvgAnaesthetistRate' },
+      systemRole: 'rvgFallback',
+      anaesthetistMayOverridePrice: true,
+      holderId: PARTY.forte,
+      billsTo: 'holder',
+      fundingTagId: TAG.sxap,
+    })
     expect(added[0]!.after).toMatchObject({ holder: 'Forte Health', specialties: 'Ophthalmology', fundingTag: 'SXAP' })
     expect(added[1]!.after).toMatchObject({ holder: 'Forte Health', specialties: 'Every specialty', fundingTag: 'SXAP' })
+    expect(added[2]!.after).toMatchObject({ name: 'Forte Health · SXAP · RVG', holder: 'Forte Health', specialties: 'Every specialty', fundingTag: 'SXAP' })
     for (const a of added) expectNamed(a)
   })
 
-  it('an edit to another tag adds the new fallback, keeps the old, and a second save makes no duplicate', () => {
+  it('an edit to another tag adds the new fallback and backstop, keeps the old, and a second save makes no duplicate', () => {
     const api = createAppStore()
     const created = createContract(api, OFFICE, FORTE_SXAP)
     const id = created.ok ? created.value.contract.id : ''
@@ -179,15 +192,21 @@ describe('Contracts with specialties, a tag and the fallbacks (US-04.2.16, US-04
     const names = () => Object.values(api.getState().masters.contracts).filter(isOpenPriceFallback).map((c) => c.name)
     expect(names()).toContain('Forte Health · SXAP · Fixed price')
     expect(names()).toContain('Forte Health · HNZ · Fixed price')
-    expect(api.getState().audit.at(-2)).toMatchObject({ action: 'contract.update', before: { fundingTag: 'SXAP' }, after: { fundingTag: 'HNZ' } })
+    const backstops = () => Object.values(api.getState().masters.contracts).filter(isRvgFallback).map((c) => c.name)
+    expect(backstops()).toContain('Forte Health · SXAP · RVG')
+    expect(backstops()).toContain('Forte Health · HNZ · RVG')
+    expect(api.getState().audit.slice(-3).map((a) => a.action)).toEqual(['contract.update', 'contract.fallbackCreate', 'contract.fallbackCreate'])
+    expect(api.getState().audit.at(-3)).toMatchObject({ action: 'contract.update', before: { fundingTag: 'SXAP' }, after: { fundingTag: 'HNZ' } })
     const count = names().length
+    const backstopCount = backstops().length
     expect(editContract(api, OFFICE, id, { name: 'CES HNZ cataract' }).ok).toBe(true)
     expect(names().length).toBe(count)
+    expect(backstops().length).toBe(backstopCount)
     expect(editContract(api, OFFICE, id, { fundingTagId: undefined }).ok).toBe(true)
     expect(api.getState().audit.at(-1)).toMatchObject({ before: { fundingTag: 'HNZ' }, after: { fundingTag: 'None' } })
   })
 
-  it('one fallback per destination after any run of creates, edits, disables and re-enables', () => {
+  it('one fallback per destination, and one RVG backstop per hospital or Special one, after any run of creates, edits, disables and re-enables', () => {
     const api = createAppStore()
     createContract(api, OFFICE, { ...CES_SXAP, holderId: PARTY.forte, name: 'Forte SXAP fixed', fundingTagId: TAG.sxap })
     const ces = createContract(api, OFFICE, CES_SXAP)
@@ -200,6 +219,12 @@ describe('Contracts with specialties, a tag and the fallbacks (US-04.2.16, US-04
     const keys = Object.values(s.masters.contracts).filter(isOpenPriceFallback).map((f) => destinationKey(destinationOf(f, s.masters.parties)))
     expect(new Set(keys).size).toBe(keys.length)
     for (const d of impliedDestinations(s.masters.contracts, s.masters.parties)) expect(keys).toContain(destinationKey(d))
+    const rvgKeys = Object.values(s.masters.contracts).filter(isRvgFallback).map((f) => destinationKey(destinationOf(f, s.masters.parties)))
+    expect(new Set(rvgKeys).size).toBe(rvgKeys.length)
+    for (const d of impliedDestinations(s.masters.contracts, s.masters.parties)) {
+      if (d.kind !== 'patient') expect(rvgKeys).toContain(destinationKey(d))
+    }
+    expect(rvgKeys.some((k) => k.startsWith('patient:'))).toBe(false)
     const codes = Object.values(s.masters.contracts).map((c) => c.aaCode)
     expect(new Set(codes).size).toBe(codes.length)
   })

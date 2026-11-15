@@ -168,11 +168,17 @@ test('Start now becomes the travelling Finish action without a validation-focus 
 
   // An RVG code makes the times required (the code itself is optional since
   // catch-up Phase 19), so Mark complete finds the missing handover.
-  const code = page.locator('[data-shot=capture-procedure-code]').first()
-  await code.getByText('Choose', { exact: true }).click()
-  await page.getByPlaceholder('Search RVG code or description').fill('H1')
-  await page.locator('button[data-rvg-code=H1]').first().click()
-  await expect(code).toContainText('Base 4 units')
+  // The RVG code sits in the Billing sheet (owner review, 2026-11-16): tap the card,
+  // set Patient › Standard (No contract · RVG, the lone Contract, is picked), then the code.
+  await page.locator('[data-shot=capture-billing]').first().click()
+  const sheet = page.locator('[data-shot=billing-sheet]')
+  await sheet.locator('[data-rail-option=patient]').first().click()
+  // Payment type always asks; the anaesthetist takes Standard (Prepaid is the office's).
+  await sheet.locator('[data-rail-option=standard]').first().click()
+  await sheet.locator('input[role=combobox]').fill('H1')
+  await sheet.locator('button[data-rvg-code=H1]').first().click()
+  await expect(sheet.locator('[data-shot=capture-procedure-code]')).toContainText('B 4')
+  await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
   const validationFocus = page.locator('[data-validation-focus="true"]')
   await expect(validationFocus).toBeFocused()

@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Check, ChevronDown, ChevronRight, RotateCcw, Search } from 'lucide-react'
+import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
-import type { Contract, ContractId, Procedure, RailAnswers } from '../../domain/types'
+import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
+import type { BillingValidationFailure } from '../../domain/billing'
+import { rangeInForce } from '../../domain/billing/priceRanges'
+import { RvgCodeField } from '../capture/ProcedureCodeCard'
+import { TextAction } from '../ui/TextAction'
+import { formatCurrency } from '../format'
+import { SlidingSegmentedControl } from '../ui/SlidingSegmentedControl'
 import {
   OFFICE_TYPES_AMOUNT_MESSAGE,
   contractRailFor,
@@ -20,10 +26,9 @@ import {
   type Actor,
 } from '../../store'
 import { useSurface } from '../surface'
-import { CaptureSection } from '../capture/ui'
-import { Pill } from '../ui/Pill'
+import { CaptureSection, FailureNotes } from '../capture/ui'
 import { Button } from '../ui/Button'
-import { ContractRail, contractPriceText } from '../flows/ContractRail'
+import { contractPriceText } from '../flows/ContractRail'
 
 /**
  * The Booking's Billing card (catch-up Phase 20; US-04.3.8, US-04.3.9,
@@ -37,8 +42,17 @@ import { ContractRail, contractPriceText } from '../flows/ContractRail'
  * Answers save as they are given (the answers so far, until a Contract is
  * chosen), so whoever opens the Booking next carries on from there.
  *
- * On the phone the card shows two rows (Invoice to, Contract) that open the
- * same steps in a bottom sheet (`ContractRail`).
+ * The last step is the price, as the mock's price step (owner review,
+ * 2026-11-12): a lone Contract on the path is picked as the answer is given;
+ * several are chosen in the "Choose the Contract" field. An RVG Contract's price
+ * is the RVG code, typed in here (left blank, the anaesthetist fills it in), with
+ * "RVG code | Fixed price" to price it at a typed amount instead (the
+ * destination's Other price); a fixed price shows its agreed fee on the rail.
+ * There is no separate RVG code card.
+ *
+ * On the phone the card is a short summary (Invoice to, Contract, Price); a tap
+ * anywhere on it opens the Billing sheet, which holds the same steps, "Price by"
+ * and the RVG code (owner review, 2026-11-16).
  *
  * Every rule is `contractRailFor`'s; the store applies the guards.
  */
@@ -50,6 +64,13 @@ interface BillingCardProps {
   actor: Actor
   /** The actor may edit this Booking (38a's window). */
   canEdit: boolean
+  /** The actor may record capture on this Booking: the RVG code is theirs to fill in (catch-up Phase 20, owner review). */
+  canCapture: boolean
+  /** The Procedure's RVG group row (from `procedureFee`). */
+  rvgGroup?: RvgGroup | undefined
+  /** rvgGroupId / baseUnitsSelected failures (shown post-latch, verbatim). */
+  codeFailures: BillingValidationFailure[]
+  onError: (message: string) => void
   /** "Procedure n" when the Booking has more than one. */
   ordinal?: number
   procedureCount?: number
@@ -83,8 +104,22 @@ function cardLabel(ordinal?: number, count?: number): string {
 // Web and Admin: the inline card
 // ---------------------------------------------------------------------------
 
-function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount }: BillingCardProps) {
+function InlineBillingCard(props: BillingCardProps) {
+  return (
+    <CaptureSection label={cardLabel(props.ordinal, props.procedureCount)} shot="billing">
+      <BillingSteps {...props} layout="side" />
+    </CaptureSection>
+  )
+}
+
+/**
+ * The steps and the price: the Billing card's body on the web and Admin
+ * (`side`, the rail down the left), and the whole of the phone's Billing sheet
+ * (`sheet`, the rail across the top), so both edit through the same flow.
+ */
+function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFailures, onError, layout }: BillingCardProps & { layout: 'side' | 'sheet' }) {
   const { masters, context, contract, start } = useBilling(procedure)
+  const sheet = layout === 'sheet'
   const railActor = railActorOf(actor)
   const officeOnly = railActor === 'anaesthetist' && contract?.prepaid === true
   const editable = canEdit && !officeOnly && context !== undefined
@@ -92,7 +127,6 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
   const [given, setGiven] = useState<RailAnswers | undefined>(start)
   const [editing, setEditing] = useState<Step | null>(null)
   const [otherOn, setOtherOn] = useState(contract?.pricing.kind === 'open')
-  const [amount, setAmount] = useState(procedure.enteredPrice !== undefined ? procedure.enteredPrice.toFixed(2) : '')
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
 
@@ -102,7 +136,6 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
     setGiven(start)
     setEditing(null)
     setOtherOn(contract?.pricing.kind === 'open')
-    setAmount(procedure.enteredPrice !== undefined ? procedure.enteredPrice.toFixed(2) : '')
     setError(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startKey])
@@ -117,6 +150,7 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
   const fallback = view.contract?.otherPrice
   const onThisPath = contract !== undefined && view.contract?.rows.some((r) => r.contract.id === contract.id)
   const onThisFallback = contract !== undefined && fallback?.contract.id === contract.id
+  const onBackstop = contract !== undefined && view.contract?.rvgBackstop?.id === contract.id
 
   /** Answers so far are kept on a Procedure with no Contract (US-04.3.8). */
   const keep = (next: RailAnswers | undefined) => {
@@ -125,9 +159,23 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
     setError(null)
     setNote(null)
     setOtherOn(false)
+    // Every answer is saved as it is given (owner review, 2026-11-16), so the other side sees how far it has got.
+    // An answer that still leads to the Contract (the same path, or the start of it) keeps it; one that does not releases it.
+    const onPath = next === undefined || (start !== undefined && next.destination === start.destination && (next.narrow === undefined || next.narrow === start.narrow))
     if (procedure.governingContractId === undefined) {
       const res = setRailAnswers(useAppStore, actor, procedure.id, next)
       if (!res.ok) setError(res.message)
+    } else if (!onPath) {
+      const res = setRailAnswers(useAppStore, actor, procedure.id, next, { releaseContract: true })
+      if (!res.ok) {
+        setError(res.message)
+        return
+      }
+    }
+    // A lone Contract on the new path is the answer: picked at once, as the mock does.
+    if (next !== undefined && context !== undefined) {
+      const only = contractRailFor(railMastersOf({ masters }), context, next, { actor: railActor }).contract?.autoPick
+      if (only !== undefined && !only.viaOtherPrice && only.contractId !== procedure.governingContractId) choose(only.contractId)
     }
   }
 
@@ -139,17 +187,44 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
       return
     }
     setError(null)
-    setNote(changing ? 'Any typed price was cleared for the new Contract.' : null)
+    setOtherOn(masters.contracts[contractId]?.pricing.kind === 'open')
+    setNote(changing && procedure.enteredPrice !== undefined && enteredPrice === undefined ? 'Any typed price was cleared for the new Contract.' : null)
+  }
+  const rows = view.contract?.rows ?? []
+  const loneRvg = rows.length === 1 && isRvgKind(rows[0]!.contract.pricing.kind) ? rows[0]!.contract : undefined
+  /** "RVG code | Fixed price": Fixed price shows the amount; back to RVG returns to the lone RVG Contract. */
+  const priceBy = (by: PriceBy) => {
+    if (by === 'amount') return setOtherOn(true)
+    setOtherOn(false)
+    if (onThisFallback && loneRvg !== undefined) choose(loneRvg.id)
   }
 
   const destLabel = view.destination.options.find((o) => o.value === view.destination.answer)?.label
   const narrowLabel = view.narrow?.options.find((o) => o.value === view.narrow?.answer)?.label
-  const contractValue = contract !== undefined && editing === null ? `${contract.name} · ${contractPriceText(contract, context.listDateISO)}` : undefined
+  const priceLine = contract !== undefined && editing === null ? priceSummary(contract, procedure, rvgGroup, context.listDateISO, railActor) : undefined
   const slots: { n: Step; label: string; value?: string; auto: boolean }[] = [
     { n: 1, label: 'Invoice to', ...(destLabel !== undefined ? { value: destLabel } : {}), auto: view.destination.autoFilled },
-    { n: 2, label: view.narrow?.title ?? 'Narrow it down', ...(narrowLabel !== undefined && (editing === null || editing > 1) ? { value: narrowLabel } : {}), auto: view.narrow?.autoFilled === true },
-    { n: 3, label: 'Contract', ...(contractValue !== undefined && (onThisPath || onThisFallback) ? { value: contractValue } : {}), auto: false },
+    { n: 2, label: view.narrow?.title ?? 'Payment type', ...(narrowLabel !== undefined && (editing === null || editing > 1) ? { value: narrowLabel } : {}), auto: view.narrow?.autoFilled === true },
+    { n: 3, label: 'Price', ...(priceLine !== undefined && (onThisPath || onThisFallback || onBackstop) ? { value: priceLine } : {}), auto: false },
   ]
+  const price = (c: Contract | undefined, opts: { toggle?: boolean; amount?: boolean } = {}) => (
+    <PriceBlock
+      mode={priceModeOf(c, opts.amount === true)}
+      contract={c}
+      procedure={procedure}
+      rvgGroup={rvgGroup}
+      actor={actor}
+      canCapture={canCapture}
+      codeFailures={codeFailures}
+      onError={onError}
+      look={sheet ? 'sheet' : 'inline'}
+      editable={editable}
+      toggle={opts.toggle === true}
+      {...(fallback !== undefined ? { fallback } : {})}
+      onPriceBy={priceBy}
+      onAmount={(n) => fallback !== undefined && choose(fallback.contract.id, n)}
+    />
+  )
 
   const reachable = (n: Step) => n === 1 || (n === 2 && view.destination.answer !== undefined) || (n === 3 && view.narrow?.answer !== undefined)
   const jump = (n: Step) => {
@@ -170,17 +245,19 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
   let body: ReactNode
   if (!editable) {
     body = (
-      <ReadOnlySummary
-        contract={contract}
-        answersText={railAnswersText(masters, context, procedure.railAnswers)}
-        dateISO={context.listDateISO}
-        officeOnly={officeOnly}
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <ReadOnlySummary
+          contract={contract}
+          answersText={railAnswersText(masters, context, procedure.railAnswers)}
+          officeOnly={officeOnly}
+        />
+        {contract !== undefined && price(contract)}
+      </div>
     )
   } else if (step === 1) {
     body = (
       <StepFrame question="Where does the invoice go?" aside={<StartAgain onClick={restart} hidden={given === undefined} />}>
-        <ChoiceTiles options={view.destination.options} value={view.destination.answer} onPick={(v) => keep({ destination: v as RailAnswers['destination'] })} />
+        <ChoiceTiles options={view.destination.options} value={view.destination.answer} stacked={sheet} onPick={(v) => keep({ destination: v as RailAnswers['destination'] })} />
       </StepFrame>
     )
   } else if (step === 2 && view.narrow !== undefined) {
@@ -188,131 +265,101 @@ function InlineBillingCard({ procedure, actor, canEdit, ordinal, procedureCount 
     const q = dest === 'patient' ? 'Standard or prepaid?' : dest === 'hospital' ? `Under which of ${destLabel ?? 'the hospital'}'s funding tags?` : 'Which holder?'
     body = (
       <StepFrame question={q} aside={<StartAgain onClick={restart} hidden={false} />}>
-        <ChoiceTiles options={view.narrow.options} value={view.narrow.answer} onPick={(v) => keep({ destination: dest, narrow: v })} />
+        <ChoiceTiles options={view.narrow.options} value={view.narrow.answer} stacked={sheet} onPick={(v) => keep({ destination: dest, narrow: v })} />
       </StepFrame>
     )
   } else {
     const c = view.contract
+    // Patient › Standard with No contract · RVG its one Contract keeps the mock's lone pick and "RVG code | Fixed price"
+    // (owner review, 2026-11-16). Every other path lists its Contracts under a "No contract" heading holding the
+    // destination's two backstops, No contract · RVG and No contract · Fixed price; there is no "Other price" switch.
     const pinned = c?.rows.find((r) => r.pinned)
-    const auto = c?.autoPick
-    const current = contract !== undefined && (onThisPath || onThisFallback) ? contract : undefined
-    const suggested = current === undefined && auto !== undefined && !auto.viaOtherPrice ? masters.contracts[auto.contractId] : undefined
-    const typed = parseAmount(amount)
+    const loneStandard = pinned !== undefined && rows.length === 1
+    const backstops = [c?.rvgBackstop, fallback?.contract].filter((x): x is Contract => x !== undefined)
+    const current = contract !== undefined && (onThisPath || onThisFallback || onBackstop) ? contract : undefined
+    const suggested = loneStandard && current === undefined && c?.autoPick !== undefined && !c.autoPick.viaOtherPrice ? masters.contracts[c.autoPick.contractId] : undefined
+    const amountMode = loneStandard ? otherOn || onThisFallback : current?.pricing.kind === 'open'
+    const toggle = loneStandard && fallback !== undefined && current !== undefined && (isRvgKind(current.pricing.kind) || onThisFallback)
+    const question = loneStandard ? 'Price' : current !== undefined ? 'Contract and price' : 'Which Contract?'
     body = (
-      <StepFrame question={current !== undefined ? 'Contract and price' : c !== undefined && c.rows.length === 0 ? 'No Contract here fits this List' : 'Which Contract?'} aside={<StartAgain onClick={restart} hidden={false} />}>
+      <StepFrame question={question} aside={<StartAgain onClick={restart} hidden={false} />}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {!otherOn && (
-            <ContractCombo
-              rows={c?.rows ?? []}
-              {...(current !== undefined && !onThisFallback ? { value: current } : {})}
-              dateISO={context.listDateISO}
-              onPick={(id) => choose(id)}
-              pinnedId={pinned?.contract.id}
-            />
+          {!loneStandard && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={FIELD_LABEL}>Contract</span>
+              <ContractCombo
+                rows={rows.filter((r) => !r.pinned)}
+                backstops={backstops}
+                {...(current !== undefined ? { value: current } : {})}
+                dateISO={context.listDateISO}
+                onPick={(id) => choose(id)}
+                inFlow={sheet}
+              />
+            </div>
           )}
-          {suggested !== undefined && !otherOn && (
-            <div data-shot="contract-rail-only-contract" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: accent.tint, borderRadius: radius.ctl, padding: '8px 8px 8px 14px' }}>
+          {suggested !== undefined && !amountMode && (
+            <div data-shot="contract-rail-only-contract" style={{ display: 'flex', flexDirection: sheet ? 'column' : 'row', alignItems: sheet ? 'stretch' : 'center', justifyContent: 'space-between', gap: 10, background: accent.tint, borderRadius: radius.ctl, padding: sheet ? 12 : '8px 8px 8px 14px' }}>
               <span style={{ fontSize: 13.5, color: neutral.ink }}>
                 <strong>{suggested.name}</strong> is the only option here.
               </span>
-              <Button variant="primary" onClick={() => choose(suggested.id)}>Use it</Button>
+              <Button variant="primary" onClick={() => choose(suggested.id)} {...(sheet ? { style: { minHeight: 44 } } : {})}>Use it</Button>
             </div>
           )}
-          {fallback !== undefined && (
-            <div data-shot="contract-rail-other-price" style={{ border: `1px solid ${otherOn ? accent.base : neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px', background: otherOn ? accent.tint : neutral.surface }}>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={otherOn}
-                className="aa-rail-focus"
-                onClick={() => setOtherOn(!otherOn)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}
-              >
-                <span aria-hidden style={{ width: 36, height: 20, borderRadius: 999, background: otherOn ? accent.base : neutral.lineStrong, position: 'relative', flex: 'none', transition: 'background 150ms' }}>
-                  <span style={{ position: 'absolute', top: 2, left: otherOn ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: neutral.surface, transition: 'left 150ms' }} />
-                </span>
-                <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <span style={{ fontSize: 14.5, fontWeight: 600, color: otherOn ? accent.base : neutral.ink }}>Other price</span>
-                  <span style={{ fontSize: 12.5, color: neutral.slate }}>{fallback.contract.name}, for anything no Contract here prices</span>
-                </span>
-              </button>
-              {otherOn && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                  {fallback.mayTypeAmount ? (
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, color: neutral.slate }}>
-                      Amount, ex GST
-                      <input
-                        data-shot="contract-rail-amount"
-                        inputMode="decimal"
-                        className="mono aa-rail-focus"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="0.00"
-                        style={{ minHeight: 40, borderRadius: radius.ctl, border: `1px solid ${amount.trim() !== '' && typed === undefined ? semantic.error.solid : neutral.line}`, background: neutral.surface, padding: '0 12px', fontSize: 15, color: neutral.ink, width: 160 }}
-                      />
-                    </label>
-                  ) : (
-                    <span style={{ fontSize: 13, color: neutral.slate }}>{OFFICE_TYPES_AMOUNT_MESSAGE}</span>
-                  )}
-                  <Button
-                    variant="primary"
-                    disabled={fallback.mayTypeAmount && typed === undefined}
-                    onClick={() => choose(fallback.contract.id, fallback.mayTypeAmount ? typed : undefined)}
-                  >
-                    {onThisFallback ? 'Save amount' : 'Use Other price'}
-                  </Button>
-                </div>
-              )}
-            </div>
+          {loneStandard && current !== undefined && (
+            <span data-shot="contract-rail-lone" style={{ fontSize: 12.5, color: neutral.slate }}>
+              <span style={{ fontWeight: 600, color: neutral.ink }}>{rows[0]!.contract.name}</span> <span className="mono">{rows[0]!.contract.aaCode}</span> · the only Contract here
+            </span>
           )}
-          {current !== undefined && <Outcome contract={current} actor={railActor} dateISO={context.listDateISO} amount={procedure.enteredPrice} />}
+          {(current !== undefined || amountMode) && price(current, { toggle, amount: amountMode })}
         </div>
       </StepFrame>
     )
   }
 
+  const railSlots = slots.map((s, i) => {
+    // A Contract set on this path finishes the rail: every step ticked, as the mock's finished path.
+    const complete = s.n === 3 && s.value !== undefined && editing === null
+    const done = s.value !== undefined && (s.n !== step || complete)
+    const current = editable && s.n === step && !complete
+    return (
+      <li key={s.n} style={{ minWidth: 0 }}>
+        <RailSlot
+          n={s.n}
+          label={s.label}
+          value={s.value}
+          auto={s.auto && s.value !== undefined}
+          done={done}
+          current={current}
+          last={i === slots.length - 1}
+          across={sheet}
+          onJump={editable && reachable(s.n) && s.n !== step ? () => jump(s.n) : undefined}
+        />
+      </li>
+    )
+  })
+
   return (
-    <CaptureSection label={cardLabel(ordinal, procedureCount)} shot="billing">
-      <div className="aa-rail-scope" data-shot="contract-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {contract === undefined && (
-          <div data-shot="needs-invoice-destination" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>
-            {NEEDS_INVOICE_DESTINATION}
-          </div>
-        )}
+    <div className="aa-rail-scope" data-shot="contract-picker" style={{ display: 'flex', flexDirection: 'column', gap: sheet ? 16 : 12 }}>
+      {sheet ? (
+        <>
+          <nav aria-label="Billing steps">
+            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>{railSlots}</ol>
+          </nav>
+          <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>{body}</div>
+        </>
+      ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'clamp(168px, 28%, 236px) minmax(0, 1fr)' }}>
           <nav aria-label="Billing steps" style={{ borderRight: `1px solid ${neutral.line}`, paddingRight: 12 }}>
-            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {slots.map((s, i) => {
-                // A Contract set on this path finishes the rail: every step ticked, as the mock's finished path.
-                const complete = s.n === 3 && s.value !== undefined && editing === null
-                const done = s.value !== undefined && (s.n !== step || complete)
-                const current = editable && s.n === step && !complete
-                return (
-                  <li key={s.n}>
-                    <RailSlot
-                      n={s.n}
-                      label={s.label}
-                      value={s.value}
-                      auto={s.auto && s.value !== undefined}
-                      done={done}
-                      current={current}
-                      last={i === slots.length - 1}
-                      onJump={editable && reachable(s.n) && s.n !== step ? () => jump(s.n) : undefined}
-                    />
-                  </li>
-                )
-              })}
-            </ol>
+            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>{railSlots}</ol>
           </nav>
-          <div style={{ paddingLeft: 18, minWidth: 0 }}>{body}</div>
+          <div style={{ paddingLeft: 18, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>{body}</div>
         </div>
-        {error !== null && (
-          <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 13.5 }}>{error}</div>
-        )}
-        {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
-        {railActor === 'anaesthetist' && editable && <span style={{ fontSize: 12, color: neutral.mist }}>{CONTRACT_CHANGE_CAPTION}</span>}
-      </div>
-    </CaptureSection>
+      )}
+      {error !== null && (
+        <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 13.5 }}>{error}</div>
+      )}
+      {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
+    </div>
   )
 }
 
@@ -351,7 +398,28 @@ function StartAgain({ onClick, hidden }: { onClick: () => void; hidden: boolean 
 }
 
 /** One step of the rail: its marker (with the line on to the next), its label and its answer. */
-function RailSlot({ n, label, value, auto, done, current, last, onJump }: { n: Step; label: string; value?: string; auto: boolean; done: boolean; current: boolean; last: boolean; onJump?: () => void }) {
+function RailSlot({ n, label, value, auto, done, current, last, across, onJump }: { n: Step; label: string; value?: string; auto: boolean; done: boolean; current: boolean; last: boolean; across?: boolean; onJump?: () => void }) {
+  if (across === true) {
+    // The phone's sheet: three steps side by side, each its marker, label and answer.
+    return (
+      <button
+        type="button"
+        data-shot={`contract-rail-step-${n}`}
+        disabled={onJump === undefined}
+        onClick={onJump}
+        aria-current={current ? 'step' : undefined}
+        className="aa-rail-focus"
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, width: '100%', height: '100%', boxSizing: 'border-box', textAlign: 'left', border: `1px solid ${current ? accent.base : 'transparent'}`, background: current ? accent.tint : 'transparent', borderRadius: radius.ctl, padding: 8, cursor: onJump !== undefined ? 'pointer' : 'default', fontFamily: 'inherit', minWidth: 0 }}
+      >
+        <span className="mono" style={{ width: 22, height: 22, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: done ? accent.base : neutral.surface, color: done ? neutral.surface : current ? accent.base : neutral.mist, border: done ? 'none' : `1.5px solid ${current ? accent.base : neutral.lineStrong}` }}>
+          {done ? <Check size={13} strokeWidth={3} aria-hidden /> : n}
+        </span>
+        <span style={{ fontSize: 11.5, lineHeight: '15px', fontWeight: 600, color: current ? accent.base : neutral.slate }}>{label}</span>
+        <span style={{ width: '100%', fontSize: 13, lineHeight: '17px', fontWeight: 600, color: done && value !== undefined ? neutral.ink : neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{done && value !== undefined ? value : 'Not answered'}</span>
+        {auto && <span data-shot="contract-rail-only-option" style={{ fontSize: 11.5, color: neutral.slate }}>Only option</span>}
+      </button>
+    )
+  }
   return (
     <button
       type="button"
@@ -397,9 +465,9 @@ function RailSlot({ n, label, value, auto, done, current, last, onJump }: { n: S
 }
 
 /** The step's answers as tiles, each with its count; one with none is greyed (its fallback still fills in). */
-function ChoiceTiles({ options, value, onPick }: { options: readonly RailOption[]; value?: string; onPick: (v: string) => void }) {
+function ChoiceTiles({ options, value, stacked, onPick }: { options: readonly RailOption[]; value?: string; stacked?: boolean; onPick: (v: string) => void }) {
   return (
-    <div role="radiogroup" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+    <div role="radiogroup" style={{ display: 'grid', gridTemplateColumns: stacked === true ? 'minmax(0, 1fr)' : 'repeat(auto-fit, minmax(170px, 1fr))', gap: stacked === true ? 8 : 10 }}>
       {options.map((o) => {
         const on = o.value === value
         const empty = o.count === 0
@@ -442,19 +510,36 @@ function ChoiceTiles({ options, value, onPick }: { options: readonly RailOption[
   )
 }
 
+const NO_CONTRACT_HEADING = 'No contract'
+
+/** A Contract as the lists name it: the backstops as "No contract · RVG" and "No contract · Fixed price", whoever holds them. */
+export function contractLabel(c: Contract): string {
+  if (c.systemRole === 'noContractRvg' || c.systemRole === 'rvgFallback') return 'No contract · RVG'
+  if (c.systemRole === 'openPriceFallback') return c.prepaid ? 'Prepaid · Fixed price' : 'No contract · Fixed price'
+  return c.name
+}
+
+function backstopPriceText(c: Contract): string {
+  return c.pricing.kind === 'open' ? 'Type the amount' : 'RVG'
+}
+
 /** "Choose the Contract": a field that drops down the step's Contracts, searchable, grouped by holder. */
 function ContractCombo({
   rows,
   value,
   dateISO,
   onPick,
-  pinnedId,
+  backstops,
+  inFlow = false,
 }: {
   rows: readonly { contract: Contract; pinned: boolean }[]
+  /** The destination's No contract · RVG and No contract · Fixed price, listed first under "No contract", never searched away. */
+  backstops: readonly Contract[]
   value?: Contract
   dateISO: string
   onPick: (id: ContractId) => void
-  pinnedId?: ContractId
+  /** Drop the list down in the page flow (inside the phone's sheet) rather than floating. */
+  inFlow?: boolean
 }) {
   const parties = useAppStore((s) => s.masters.parties)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
@@ -488,15 +573,16 @@ function ContractCombo({
       return [c.name, c.aaCode, c.holderReference ?? '', c.invoiceDescription ?? ''].some((f) => f.replace(/\s+/g, '').toLowerCase().includes(needle)) || code.toLowerCase() === needle
     }
     const out = new Map<string, { title: string; rows: { contract: Contract; pinned: boolean }[] }>()
+    if (backstops.length > 0) out.set(NO_CONTRACT_HEADING, { title: NO_CONTRACT_HEADING, rows: backstops.map((contract) => ({ contract, pinned: true })) })
     for (const r of rows) {
       if (!r.pinned && !hit(r.contract)) continue
-      const title = r.pinned ? 'Always first' : (parties[r.contract.holderId]?.name ?? r.contract.holderId)
+      const title = parties[r.contract.holderId]?.name ?? r.contract.holderId
       const g = out.get(title) ?? { title, rows: [] }
       g.rows.push(r)
       out.set(title, g)
     }
     return [...out.values()]
-  }, [rows, q, parties, rvgGroups])
+  }, [rows, backstops, q, parties, rvgGroups])
   const matched = groups.reduce((n, g) => n + g.rows.filter((r) => !r.pinned).length, 0)
 
   return (
@@ -515,7 +601,7 @@ function ContractCombo({
       >
         {value !== undefined ? (
           <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{value.name}</span>
+            <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{contractLabel(value)}</span>
             <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{value.aaCode}</span>
           </span>
         ) : (
@@ -526,12 +612,12 @@ function ContractCombo({
       {open && (
         <div
           data-shot="contract-combo-list"
-          style={{ position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: '0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18)', overflow: 'hidden' }}
+          style={{ ...(inFlow ? { marginTop: 6 } : { position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, boxShadow: '0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18)' }), background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: `1px solid ${neutral.line}` }}>
             <Search size={16} color={neutral.mist} aria-hidden />
             <input
-              autoFocus
+              autoFocus={!inFlow}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Type a name or code"
@@ -562,21 +648,20 @@ function ContractCombo({
                     >
                       <span aria-hidden style={{ color: accent.base, display: 'flex' }}>{selected && <Check size={15} strokeWidth={3} />}</span>
                       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                        <span style={{ fontSize: 14, fontWeight: 500, color: neutral.ink }}>{contract.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 500, color: neutral.ink }}>{contractLabel(contract)}</span>
                         <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                           <span className="mono" style={{ fontSize: 11.5, color: neutral.slate }}>{contract.aaCode}</span>
                           {contract.holderReference !== undefined && <span className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{contract.holderReference}</span>}
-                          {pinned && pinnedId === contract.id && <Pill size="small" shot="contract-rail-pinned">Always first</Pill>}
                         </span>
                       </span>
-                      <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap' }}>{contractPriceText(contract, dateISO)}</span>
+                      <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap' }}>{pinned ? backstopPriceText(contract) : contractPriceText(contract, dateISO)}</span>
                     </button>
                   )
                 })}
               </div>
             ))}
             {q.trim() !== '' && matched === 0 && <div style={{ padding: '10px 14px', fontSize: 13.5, color: neutral.mist }}>No Contract matches "{q.trim()}".</div>}
-            {rows.length === 0 && <div style={{ padding: '10px 14px', fontSize: 13.5, color: neutral.mist }}>Nothing here for this List. Use Other price.</div>}
+            {rows.length === 0 && <div style={{ padding: '10px 14px', fontSize: 13.5, color: neutral.mist }}>No Contract of its own fits this List.</div>}
           </div>
         </div>
       )}
@@ -584,30 +669,216 @@ function ContractCombo({
   )
 }
 
-/** What follows the Contract, by its pricing kind (US-04.3.8). */
-function Outcome({ contract, actor, dateISO, amount }: { contract: Contract; actor: 'office' | 'anaesthetist'; dateISO: string; amount?: number }) {
-  let text: string
-  if (contract.pricing.kind === 'open') text = amount !== undefined ? `Typed price $${amount.toFixed(2)}.` : 'No price yet: type the amount above.'
-  else if (contract.prepaid) text = `Prepaid: ${contractPriceText(contract, dateISO)}, invoiced before the procedure.`
-  else if (isRvgKind(contract.pricing.kind)) text = actor === 'office' ? 'Priced from RVG units: the anaesthetist fills in the RVG code below.' : 'Priced from RVG units: fill in the RVG code below.'
-  else text = `A fixed price of ${contractPriceText(contract, dateISO)}. No RVG code is needed.`
+/** The Price slot's answer in a few words, as the mock's rail ("RVG H6a", "Agreed fee $357.39"). */
+function priceSummary(contract: Contract, procedure: Procedure, rvgGroup: RvgGroup | undefined, dateISO: string, railActor: 'office' | 'anaesthetist'): string {
+  if (contract.pricing.kind === 'open') return procedure.enteredPrice !== undefined ? `Fixed price ${formatCurrency(procedure.enteredPrice)}` : 'Amount to type'
+  if (isRvgKind(contract.pricing.kind)) return rvgGroup !== undefined ? `RVG ${rvgGroup.code}` : railActor === 'office' ? 'To the anaesthetist' : 'RVG code to fill in'
+  const range = rangeInForce(contract, dateISO)
+  if (range === null) return 'Needs a price'
+  return `${contract.prepaid ? 'Prepaid' : 'Agreed fee'} ${formatCurrency(range.price)}`
+}
+
+type PriceMode = 'none' | 'rvg' | 'fixed' | 'amount'
+type PriceBy = 'rvg' | 'amount'
+
+const PRICE_BY = [
+  { value: 'rvg', label: 'RVG code' },
+  { value: 'amount', label: 'Fixed price' },
+] as const
+
+const FIELD_LABEL = { fontSize: 12.5, lineHeight: '18px', fontWeight: 600, color: neutral.slate } as const
+
+function priceModeOf(contract: Contract | undefined, amount: boolean): PriceMode {
+  if (amount) return 'amount'
+  if (contract === undefined) return 'none'
+  if (contract.pricing.kind === 'open') return 'amount'
+  return isRvgKind(contract.pricing.kind) ? 'rvg' : 'fixed'
+}
+
+/**
+ * The price, as the contract picker mock's price step (US-04.3.8, US-03.3.1):
+ * "RVG code | Fixed price" where the destination has an Other price; then the RVG
+ * code field (left blank, the anaesthetist fills it in) or the fixed price's
+ * amount. A fixed or prepaid price shows its agreed fee on the rail, with an RVG
+ * code for reference only. With no Contract yet, the RVG code may still be
+ * recorded. No line repeats the price in words (owner review, 2026-11-16).
+ */
+function PriceBlock({
+  mode,
+  contract,
+  procedure,
+  rvgGroup,
+  actor,
+  canCapture,
+  codeFailures,
+  onError,
+  look,
+  editable,
+  toggle,
+  fallback,
+  onPriceBy,
+  onAmount,
+}: {
+  mode: PriceMode
+  /** None yet ("Needs an invoice destination"): the RVG code may still be filled in, its price follows the Contract. */
+  contract: Contract | undefined
+  procedure: Procedure
+  rvgGroup: RvgGroup | undefined
+  actor: Actor
+  canCapture: boolean
+  codeFailures: BillingValidationFailure[]
+  onError: (message: string) => void
+  /** `sheet`: the phone's Billing sheet, with thumb-sized controls. */
+  look: 'inline' | 'sheet'
+  editable: boolean
+  toggle: boolean
+  fallback?: { contract: Contract; mayTypeAmount: boolean }
+  onPriceBy: (by: PriceBy) => void
+  /** Price at the Other price: a typed amount, or none where the office types it. */
+  onAmount: (amount: number | undefined) => void
+}) {
+  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const billingLines = useAppStore((s) => s.schedule.billingLines)
+  const [referenceOpen, setReferenceOpen] = useState(false)
+  const mobile = look === 'sheet'
+  // Priced by its own rate x time line (Method 3): no RVG code is asked.
+  const rateTime = Object.values(billingLines).some((l) => l.procedureId === procedure.id && l.chargeBasis === 'rateTime')
+  const coded = procedure.rvgGroupId !== undefined
+  const field = (role: 'required' | 'reference' | undefined, emptyHint?: string) => (
+    <RvgCodeField
+      procedure={procedure}
+      rvgGroup={rvgGroup}
+      rvgGroups={rvgGroups}
+      actor={actor}
+      canCapture={canCapture}
+      failures={codeFailures}
+      onError={onError}
+      look="inline"
+      listInFlow={mobile}
+      {...(role !== undefined ? { codeRole: role } : {})}
+      {...(emptyHint !== undefined ? { emptyHint } : {})}
+    />
+  )
+
   return (
-    <div data-shot="contract-rail-outcome" style={{ fontSize: 13.5, color: neutral.slate, background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px' }}>
-      {text}
+    <div data-shot={contract !== undefined ? 'contract-rail-outcome' : 'billing-rvg-code'} style={{ display: 'flex', flexDirection: 'column', gap: mobile ? 12 : 8 }}>
+      {toggle && editable && (
+        <div data-shot="contract-rail-other-price" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {mobile && <span style={FIELD_LABEL}>Price by</span>}
+          <SlidingSegmentedControl
+            ariaLabel="Price by"
+            layout="two-column"
+            value={mode === 'amount' ? 'amount' : 'rvg'}
+            options={PRICE_BY}
+            onSelect={onPriceBy}
+            buttonStyle={{ minHeight: mobile ? 44 : 40, fontSize: mobile ? 16 : 14, fontWeight: 600 }}
+          />
+        </div>
+      )}
+      {mode === 'amount' && (
+        <AmountEntry
+          procedure={procedure}
+          onFallback={contract !== undefined && contract.pricing.kind === 'open'}
+          mayType={editable && fallback?.mayTypeAmount === true}
+          editable={editable}
+          mobile={mobile}
+          onAmount={onAmount}
+        />
+      )}
+      {mode === 'rvg' && !rateTime && field(coded ? undefined : 'required')}
+      {mode === 'none' && field(undefined, 'Its price follows the Contract, once one is chosen.')}
+      {mode === 'fixed' &&
+        (coded || referenceOpen ? (
+          field('reference')
+        ) : canCapture ? (
+          <span style={{ alignSelf: 'flex-start' }}>
+            <TextAction small shot="rvg-code-add-reference" onClick={() => setReferenceOpen(true)}>
+              Add an RVG code for reference
+            </TextAction>
+          </span>
+        ) : null)}
     </div>
   )
 }
 
-function ReadOnlySummary({ contract, answersText, dateISO, officeOnly }: { contract?: Contract; answersText: string; dateISO: string; officeOnly: boolean }) {
+/**
+ * The fixed price's amount (the destination's Other price; the mock's "Fixed
+ * price" field): saved when the field is left or Enter is pressed. Where only the
+ * office types it, the anaesthetist can still choose it and leave the amount.
+ */
+function AmountEntry({
+  procedure,
+  onFallback,
+  mayType,
+  editable,
+  mobile,
+  onAmount,
+}: {
+  procedure: Procedure
+  onFallback: boolean
+  mayType: boolean
+  editable: boolean
+  mobile: boolean
+  onAmount: (amount: number | undefined) => void
+}) {
+  const saved = onFallback ? procedure.enteredPrice : undefined
+  const [text, setText] = useState(saved !== undefined ? saved.toFixed(2) : '')
+  useEffect(() => {
+    setText(saved !== undefined ? saved.toFixed(2) : '')
+  }, [saved])
+  const typed = parseAmount(text)
+  const commit = () => {
+    if (typed !== undefined && typed !== saved) onAmount(typed)
+  }
+  const todo = saved === undefined && editable
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span style={{ ...FIELD_LABEL, color: todo && mobile ? accent.base : neutral.slate }}>
+        Fixed price{todo && mobile ? ' · to do' : ''}
+      </span>
+      {mayType ? (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${text.trim() !== '' && typed === undefined ? semantic.error.solid : neutral.lineStrong}`, borderRadius: radius.ctl, padding: '0 12px', background: neutral.surface, maxWidth: mobile ? undefined : 220 }}>
+          <span className="mono" style={{ fontSize: mobile ? 17 : 15, color: neutral.slate }}>$</span>
+          <input
+            data-shot="contract-rail-amount"
+            inputMode="decimal"
+            aria-label="Fixed price, ex GST"
+            placeholder="0.00"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commit()
+            }}
+            className="mono"
+            style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent', flex: 1, minWidth: 0, padding: mobile ? '12px 0' : '9px 0', fontSize: mobile ? 18 : 15, fontWeight: 600, color: neutral.ink }}
+          />
+        </label>
+      ) : saved !== undefined ? (
+        <span className="mono" style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{formatCurrency(saved)}</span>
+      ) : (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13.5, color: neutral.slate }}>{OFFICE_TYPES_AMOUNT_MESSAGE}</span>
+          {editable && !onFallback && (
+            <Button variant="primary" onClick={() => onAmount(undefined)}>
+              Use Fixed price
+            </Button>
+          )}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function ReadOnlySummary({ contract, answersText, officeOnly }: { contract?: Contract; answersText: string; officeOnly: boolean }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {contract !== undefined ? (
         <>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{contract.name}</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{contractLabel(contract)}</span>
             <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{contract.aaCode}</span>
           </span>
-          <span style={{ fontSize: 13, color: neutral.slate }}>{contractPriceText(contract, dateISO)}</span>
         </>
       ) : (
         <span style={{ fontSize: 13.5, color: neutral.slate }}>So far: {answersText}</span>
@@ -618,74 +889,96 @@ function ReadOnlySummary({ contract, answersText, dateISO, officeOnly }: { contr
 }
 
 // ---------------------------------------------------------------------------
-// Phone: the card's rows open the steps in a bottom sheet
+// Phone: a summary of how the Procedure is billed; tapping it opens the sheet
 // ---------------------------------------------------------------------------
 
-function MobileBillingCard({ procedure, actor, canEdit, ordinal, procedureCount }: BillingCardProps) {
+/**
+ * The phone's Billing card (owner review, 2026-11-16): a short summary (Invoice
+ * to, Contract, Price), the whole card one tap target that opens the Billing
+ * sheet, where every step, "Price by" and the RVG code are edited through the
+ * same flow as the web and Admin card.
+ */
+function MobileBillingCard(props: BillingCardProps) {
+  const { procedure, actor, canEdit, canCapture, rvgGroup, codeFailures, ordinal, procedureCount } = props
   const { masters, context, contract, start } = useBilling(procedure)
+  const { Overlay } = useSurface()
   const [open, setOpen] = useState(false)
   if (context === undefined) return null
   const railActor = railActorOf(actor)
   const officeOnly = railActor === 'anaesthetist' && contract?.prepaid === true
-  const editable = canEdit && !officeOnly
+  const editable = (canEdit && !officeOnly) || canCapture
   const answers = contract !== undefined ? railAnswersText(masters, context, start) : procedure.railAnswers !== undefined ? railAnswersText(masters, context, procedure.railAnswers) : undefined
-  return (
-    <CaptureSection label={cardLabel(ordinal, procedureCount)} shot="billing">
-      <div className="aa-rail-scope" data-shot="billing-contract-rows" style={{ display: 'flex', flexDirection: 'column' }}>
-        {contract === undefined && (
-          <div data-shot="needs-invoice-destination" style={{ fontSize: 13.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px', marginBottom: 8 }}>
-            {NEEDS_INVOICE_DESTINATION}
-          </div>
-        )}
-        <MobileRow label="Invoice to" value={answers} todo={answers === undefined ? 'Not set by the office' : undefined} onOpen={editable ? () => setOpen(true) : undefined} />
-        <MobileRow
-          label="Contract"
-          value={contract !== undefined ? `${contract.name} · ${contractPriceText(contract, context.listDateISO)}` : undefined}
-          todo={contract === undefined ? 'After where the invoice goes' : undefined}
-          onOpen={editable ? () => setOpen(true) : undefined}
-          last
-        />
-        {officeOnly && <span data-shot="contract-set-by-office" style={{ fontSize: 12.5, color: neutral.slate, marginTop: 6 }}>Set by the office</span>}
-        {railActor === 'anaesthetist' && editable && <span style={{ fontSize: 12, color: neutral.mist, marginTop: 6 }}>{CONTRACT_CHANGE_CAPTION}</span>}
-      </div>
-      <ContractRail
-        open={open}
-        actor={railActor}
-        context={context}
-        start={start}
-        {...(procedure.governingContractId !== undefined ? { currentContractId: procedure.governingContractId } : {})}
-        {...(procedure.enteredPrice !== undefined ? { currentEnteredPrice: procedure.enteredPrice } : {})}
-        onDone={(pick) => {
-          const res = setProcedureContract(useAppStore, actor, procedure.id, pick.contractId, pick.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {})
-          return res.ok ? null : res.message
-        }}
-        onLeave={(next) => {
-          if (next !== undefined) setRailAnswers(useAppStore, actor, procedure.id, next)
-        }}
-        onClose={() => setOpen(false)}
+  const priceLine = contract !== undefined ? priceSummary(contract, procedure, rvgGroup, context.listDateISO, railActor) : rvgGroup !== undefined ? `RVG ${rvgGroup.code}` : undefined
+  const rvgTodo = contract !== undefined && isRvgKind(contract.pricing.kind) && procedure.rvgGroupId === undefined && canCapture
+  const label = cardLabel(ordinal, procedureCount)
+
+  const rows = (
+    <>
+      <SummaryRow label="Invoice to" value={answers} todo={answers === undefined ? 'Where the invoice goes' : undefined} />
+      <SummaryRow label="Contract" value={contract !== undefined ? contractLabel(contract) : undefined} todo={contract === undefined ? (answers === undefined ? 'After where the invoice goes' : 'Not chosen yet') : undefined} />
+      <SummaryRow
+        label="Price"
+        value={priceLine}
+        {...(rvgGroup !== undefined && procedure.rvgGroupId !== undefined ? { sub: rvgGroup.description } : {})}
+        todo={rvgTodo ? 'Choose the RVG code' : priceLine === undefined ? 'Follows the Contract' : undefined}
+        todoAccent={rvgTodo}
+        last
       />
-    </CaptureSection>
+    </>
+  )
+
+  return (
+    <>
+      <button
+        type="button"
+        data-shot="capture-billing"
+        aria-label={`${label}. ${editable ? 'Edit' : 'Read only'}`}
+        disabled={!editable}
+        onClick={() => setOpen(true)}
+        tabIndex={editable ? 0 : -1}
+        data-validation-procedure-id={procedure.id}
+        data-validation-fields="rvgGroupId baseUnitsSelected"
+        className="aa-rail-focus"
+        style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
+      >
+        <span style={{ display: 'flex', alignItems: 'baseline', width: '100%' }}>
+          <span style={{ flex: 1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</span>
+          {editable && <span style={{ fontSize: 14, fontWeight: 600, color: accent.base }}>Edit</span>}
+        </span>
+        <span data-shot="billing-contract-rows" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>{rows}</span>
+        {officeOnly && <span data-shot="contract-set-by-office" style={{ fontSize: 12.5, color: neutral.slate }}>Set by the office</span>}
+        {codeFailures.length > 0 && (
+          <span style={{ width: '100%' }}>
+            <FailureNotes failures={codeFailures} />
+          </span>
+        )}
+      </button>
+      <Overlay open={open} onClose={() => setOpen(false)}>
+        <div data-shot="billing-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: neutral.ink }}>{label}</h2>
+          <BillingSteps {...props} layout="sheet" />
+          <Button onClick={() => setOpen(false)} style={{ width: '100%', minHeight: 48 }}>
+            Done
+          </Button>
+        </div>
+      </Overlay>
+    </>
   )
 }
 
-function MobileRow({ label, value, todo, onOpen, last }: { label: string; value?: string; todo?: string; onOpen?: () => void; last?: boolean }) {
+function SummaryRow({ label, value, sub, todo, todoAccent, last }: { label: string; value?: string | undefined; sub?: string; todo?: string | undefined; todoAccent?: boolean; last?: boolean }) {
+  const shown = value ?? todo
   return (
-    <button
-      type="button"
+    <span
       data-shot={`billing-row-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`}
-      disabled={onOpen === undefined}
-      onClick={onOpen}
-      className="aa-rail-focus"
-      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', borderBottom: last === true ? 'none' : `1px solid ${neutral.line}`, background: 'transparent', padding: '12px 0', fontFamily: 'inherit', cursor: onOpen !== undefined ? 'pointer' : 'default' }}
+      style={{ display: 'grid', gridTemplateColumns: '84px minmax(0, 1fr)', columnGap: 12, alignItems: 'baseline', padding: '10px 0', borderBottom: last === true ? 'none' : `1px solid ${neutral.line}` }}
     >
-      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: todo !== undefined ? accent.base : neutral.slate }}>
-          {label}
-          {todo !== undefined && ' · to do'}
-        </span>
-        <span style={{ fontSize: 15, fontWeight: value !== undefined ? 600 : 400, color: value !== undefined ? neutral.ink : neutral.mist }}>{value ?? todo}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>{label}</span>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{ fontSize: 15, lineHeight: '20px', fontWeight: value !== undefined ? 600 : 500, color: value !== undefined ? neutral.ink : todoAccent === true ? accent.base : neutral.mist }}>{shown}</span>
+        {value !== undefined && todo !== undefined && todoAccent === true && <span style={{ fontSize: 13, fontWeight: 600, color: accent.base }}>{todo}</span>}
+        {sub !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{sub}</span>}
       </span>
-      {onOpen !== undefined && <ChevronRight size={18} color={neutral.slate} aria-hidden />}
-    </button>
+    </span>
   )
 }

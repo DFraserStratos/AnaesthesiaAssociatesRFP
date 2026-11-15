@@ -756,6 +756,25 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
 // Catch-up Phase 18: Parties and flat Contracts
 // ---------------------------------------------------------------------------
 
+/** The seeded RVG backstops (owner review, 2026-11-16): one per hospital tag and Special holder, id to AA code. */
+const RVG_BACKSTOPS: Record<string, string> = {
+  'CT-RVG-HOSPITAL-PY-CES-TAG-ACC': 'CES-ACC-RVG',
+  'CT-RVG-HOSPITAL-PY-CES-TAG-HNZ': 'CES-HNZ-RVG',
+  'CT-RVG-HOSPITAL-PY-CES-TAG-SXAP': 'CES-SXAP-RVG',
+  'CT-RVG-HOSPITAL-PY-CPH-TAG-HNZ': 'CPH-HNZ-RVG',
+  'CT-RVG-HOSPITAL-PY-STG-TAG-ACC': 'STG-ACC-RVG',
+  'CT-RVG-HOSPITAL-PY-SX-TAG-SXAP': 'SX-SXAP-RVG',
+  'CT-RVG-SPECIAL-PY-ARIA': 'ARIA-RVG',
+  'CT-RVG-SPECIAL-PY-CES': 'CES-RVG',
+  'CT-RVG-SPECIAL-PY-COS': 'COS-RVG',
+  'CT-RVG-SPECIAL-PY-CPH': 'CPH-RVG',
+  'CT-RVG-SPECIAL-PY-FORTE': 'FORTE-RVG',
+  'CT-RVG-SPECIAL-PY-NIB': 'NIB-RVG',
+  'CT-RVG-SPECIAL-PY-STG': 'STG-RVG',
+  'CT-RVG-SPECIAL-PY-SX': 'SX-RVG',
+  'CT-RVG-SPECIAL-PY-UNI': 'UNI-RVG',
+}
+
 describe('seeded flat Contracts (catch-up Phase 18)', () => {
   const contracts = seed.masters.contracts
   const ctx = {
@@ -769,8 +788,13 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
   }
 
   it('pins the AA code table, every code unique', () => {
-    // The office's Contracts; Phase 18a's open-price fallbacks are pinned in specialtiesAndFallbacks.test.ts.
-    const table = Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole !== 'openPriceFallback').map((c) => [c.id, c.aaCode]))
+    // The office's Contracts and No contract · RVG; Phase 18a's open-price fallbacks are pinned in
+    // phase18aSeed.test.ts, the RVG backstops (owner review, 2026-11-16) below.
+    const table = Object.fromEntries(
+      Object.values(contracts)
+        .filter((c) => c.systemRole !== 'openPriceFallback' && c.systemRole !== 'rvgFallback')
+        .map((c) => [c.id, c.aaCode]),
+    )
     expect(table).toEqual({
       'CT-NO-CONTRACT': 'AA-RVG',
       'CT-STG-D1': 'STG-001',
@@ -806,17 +830,19 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       // Catch-up Phase 20: Nair's prepaid item, on Dr Souter's price list.
       'CT-SOUTER-RHINO-COS': 'SOUTER-004',
     })
+    expect(Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole === 'rvgFallback').map((c) => [c.id, c.aaCode]))).toEqual(RVG_BACKSTOPS)
     const codes = Object.values(contracts).map((c) => c.aaCode)
     expect(new Set(codes).size).toBe(codes.length)
   })
 
   it('no seeded Contract breaks a save guard, and exactly one is No contract · RVG', () => {
+    expect(Object.values(contracts).filter((c) => c.systemRole === 'noContractRvg').map((c) => c.id)).toEqual(['CT-NO-CONTRACT'])
     for (const c of Object.values(contracts)) {
       expect(contractRefusal(c, { ...ctx, prev: c }), c.id).toBeNull()
     }
     expect(noContractRvg(contracts)).toMatchObject({ id: 'CT-NO-CONTRACT', holderId: 'PY-AA', billsTo: 'payer', anaesthetistMayOverridePrice: true })
-    // The override is seeded on No contract · RVG only (A18); nothing is prepaid; every Contract is Active.
-    expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id)).toEqual(['CT-NO-CONTRACT'])
+    // The override is seeded on No contract · RVG (A18) and the system's RVG backstops only; every Contract is Active.
+    expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id).sort()).toEqual(['CT-NO-CONTRACT', ...Object.keys(RVG_BACKSTOPS)].sort())
     // Prepaid: Dr Souter's price list (catch-up Phase 19a) and the system's Prepaid · Fixed price (Phase 18a).
     expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
       ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),

@@ -160,9 +160,20 @@ export function setProcedureContract(
 /**
  * Keep the answers so far on a Procedure with no Contract (US-04.3.8), so the
  * other side carries on from them. Audited `procedure.railAnswers`. A
- * Procedure with a Contract keeps none: it is refused.
+ * Procedure with a Contract keeps none: it is refused, unless
+ * `releaseContract` is set: an answer that no longer leads to the Contract
+ * releases it (owner review, 2026-11-16: every answer is saved as it is given,
+ * so the other side sees how far the choice has got). The release is audited as
+ * a `procedure.contract` change; the RVG code stays, a typed price goes with
+ * its Contract. Only the office takes a Procedure off a prepaid Contract.
  */
-export function setRailAnswers(api: AppStoreApi, actor: Actor, procedureId: string, answers: RailAnswers | undefined): Outcome {
+export function setRailAnswers(
+  api: AppStoreApi,
+  actor: Actor,
+  procedureId: string,
+  answers: RailAnswers | undefined,
+  opts: { releaseContract?: true } = {},
+): Outcome {
   const state = api.getState()
   const at = procedureOn(state, procedureId)
   if (!at.found) return at.refusal
@@ -170,7 +181,31 @@ export function setRailAnswers(api: AppStoreApi, actor: Actor, procedureId: stri
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
   if (procedure.governingContractId !== undefined) {
-    return refuse('contractSet', 'This procedure already has a Contract. Change it on the step rail.')
+    if (opts.releaseContract !== true) return refuse('contractSet', 'This procedure already has a Contract. Change it on the step rail.')
+    const was = state.masters.contracts[procedure.governingContractId]
+    if (actor.role === 'anaesthetist' && was?.prepaid === true) return refuse('prepaidOfficeOnly', PREPAID_OFFICE_ONLY_MESSAGE)
+    if (actor.role === 'anaesthetist' && answers?.destination === 'patient' && answers.narrow === 'prepaid') {
+      return refuse('prepaidOfficeOnly', PREPAID_OFFICE_ONLY_MESSAGE)
+    }
+    const next: Procedure = { ...procedure }
+    delete next.governingContractId
+    delete next.enteredPrice
+    if (answers === undefined) delete next.railAnswers
+    else next.railAnswers = answers
+    next.invoiceDescription = refreshedInvoiceDescriptionFor(next, state.masters.contracts)
+    const view = (p: Procedure) => ({
+      governingContractId: p.governingContractId,
+      enteredPrice: p.enteredPrice,
+      railAnswers: p.railAnswers,
+      invoiceDescription: p.invoiceDescription?.text ?? null,
+    })
+    mutate(
+      api,
+      actor,
+      { entityType: 'procedure', entityId: procedureId, action: 'procedure.contract', before: view(procedure), after: view(next) },
+      (s) => ({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
+    )
+    return ok(undefined)
   }
   // The anaesthetist is never on Prepaid (A17).
   if (actor.role === 'anaesthetist' && answers?.destination === 'patient' && answers.narrow === 'prepaid') {

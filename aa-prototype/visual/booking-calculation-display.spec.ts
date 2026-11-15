@@ -11,7 +11,7 @@ async function openMobileEllison(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.getByText('Margaret Ellison', { exact: false }).first().click()
-  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
+  await expect(page.locator('[data-shot="capture-billing"]').last()).toBeVisible()
   await page.waitForTimeout(600)
 }
 
@@ -20,7 +20,7 @@ async function openWebEllison(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross').first().click()
   await page.getByText('Margaret Ellison').first().click()
-  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
+  await expect(page.locator('[data-shot="capture-billing"]').last()).toBeVisible()
   await page.waitForTimeout(200)
 }
 

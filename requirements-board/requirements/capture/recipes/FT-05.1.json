@@ -30,13 +30,19 @@
         {
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "click": "[data-shot=billing-sheet] [data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=billing-sheet] input[role=combobox]",
               "value": "T2"
             },
             {
@@ -44,7 +50,7 @@
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [role=dialog]"
+            "[data-shot=billing-sheet] [data-shot=rvg-type-ahead]"
           ]
         }
       ]

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Check, FlaskConical } from 'lucide-react'
 import { BottomSheet } from '../shared/surface'
+import { useAnySheetOpen } from '../shared/surface/sheetPresence'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
 import { accent, elevation, neutral, radius, semantic } from '../theme/tokens'
@@ -24,6 +25,9 @@ export function PwaDemoActions() {
   const rows = useDemoTriggerRows('pwa')
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  // Any open sheet, this chip's own included, hides the chip: it floats at
+  // zIndex 55 and would otherwise sit over the sheet's controls.
+  const sheetOpen = useAnySheetOpen()
 
   // A new screen starts with the sheet closed.
   useEffect(() => setOpen(false), [pathname])
@@ -34,6 +38,7 @@ export function PwaDemoActions() {
 
   return (
     <>
+      {!sheetOpen && (
       <button
         type="button"
         data-shot="pwa-demo-actions"
@@ -81,6 +86,7 @@ export function PwaDemoActions() {
           </span>
         )}
       </button>
+      )}
 
       <BottomSheet open={open} onClose={() => setOpen(false)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 4 }}>

@@ -145,10 +145,10 @@ working List rather than an empty one.
   slotted into her 08:30 place between the first two cases. Her NHI matched an existing record, so
   intake reused it, no duplicate. Her Booking shows the hospital's text as received, "lap appy ?conv to
   open" (Hospital feed), with its Contract and RVG code still to choose. She arrives with no Contract, so in Admin she shows on Day's
-  **Needs an invoice destination** card, and her Booking reads "Needs an invoice destination".
+  **Needs an invoice destination** card, and her List row reads "Needs an invoice destination".
 - **Click (the office sets it):** in **Admin Day view → Tue 28 Jul**, open her row on the **Needs an
   invoice destination** card. On her Booking, the **Billing** card shows the steps inline: **Patient**
-  (Standard fills itself in) → **Choose the Contract** → **No contract · RVG**. She leaves the card. (On the PWA,
+  → **Standard** (the payment type is always asked) → **Choose the Contract** → **No contract · RVG**. She leaves the card. (On the PWA,
   **Demo → Office sets this Booking's Contract** stands in for the office.)
 - **Say:** "The office answers what it knows first: where the invoice goes, then the Contract. Where
   the Contract prices from the RVG, the code is the anaesthetist's."
@@ -164,7 +164,7 @@ working List rather than an empty one.
 - **Optional aside:** open Dr Souter's **Tue 4 Aug AM** List → the **09:30 "right total knee"** Booking
   (Sione Davies). Say: "The rooms sent 'RTK'; when the hospital's list arrived it replaced that with
   'right total knee', and the original is in the Booking's history. The Booking shows only the latest
-  text; the Contract and the RVG code sit in their own cards below it." Open **History** to show "Procedure text replaced" naming 'RTK' (Surgeon's rooms PDF). The
+  text; the Contract and its RVG code sit together in the Billing card below it." Open **History** to show "Procedure text replaced" naming 'RTK' (Surgeon's rooms PDF). The
   wording is illustrative demo data, not AA's.
 - **Optional, live:** on the same List open **Diane Foster** (11:00, "WLE MM", RVG code to choose) →
   **Demo actions → Fire hospital message** (it defaults to **MSG-STG-1012**; Future-scope badge: HL7 is
@@ -177,9 +177,9 @@ working List rather than an empty one.
 - **Click:**
   - Go to **Anaesthetist Mobile App → Tue 28 Jul St George's List → Sarah Mitchell**.
   - She reads the procedure text first: "lap appy ?conv to open", what the hospital wrote. Her Booking
-    arrives with no RVG code (the hospital sends the text only). On the **RVG code**
-    card select **Choose**, type **appendicectomy** in the type-ahead and pick **A3 · Appendicectomy,
-    laparoscopic · B 5**, then **Start now**.
+    arrives with no RVG code (the hospital sends the text only). Tap the **Billing** card to open
+    its sheet, type **appendicectomy** in the RVG code field and pick **A3 · Appendicectomy,
+    laparoscopic · B 5**, tap **Done**, then **Start now**.
   - Without leaving Sarah, select **live clock → +1 hour**, close the popup, then select
     **Finish now**.
   - Select **Mark complete**.
@@ -190,7 +190,7 @@ working List rather than an empty one.
   tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
   active Booking is complete, so one captured Booking out of four submits nothing yet. That gate is the
   reason the List is the unit of approval, not the Booking."
-- **Expected:** the RVG code card reads **A3 · Appendicectomy, laparoscopic · Base 5 units · from the RVG
+- **Expected:** the RVG code in the Billing card reads **A3 Appendicectomy, laparoscopic · Base 5 units · from the RVG
   group**, and B reads 5. Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
   **Bookings still to finish** sheet, which names each remaining Booking by time and patient with what it
   needs. The List stays `ACTIVE`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
@@ -307,8 +307,8 @@ already seeded.
   holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
   availability finders show it as booked.
 - **Worth pointing at:** "Where does the invoice go, then the Contract. Each step only offers Contracts
-  that fit this List, and typing finds one among hundreds. Other price covers anything no price list has
-  yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
+  that fit this List, and typing finds one among hundreds. No contract · RVG and No contract · Fixed price,
+  first in every list, cover anything no price list has yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
 - **Optional one-liner:** "Assign List does the same without a patient, for a session booked ahead."
 - **Optional office aside, "the hospital's wording arrives":** **Admin Day → Tue 21** → Dr Souter's PM
   List → **Wiremu Tane** (the rooms' "lap chole +/- IOC", illustrative) → **Demo actions → Hospital

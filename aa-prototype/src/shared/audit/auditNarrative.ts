@@ -236,6 +236,7 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     if (key === 'status' && Object.hasOwn(STATUS_LABEL, value)) return STATUS_LABEL[value as ContractStatus]
     if (key === 'systemRole' && value === 'noContractRvg') return 'No contract · RVG'
     if (key === 'systemRole' && value === 'openPriceFallback') return 'Fixed price'
+    if (key === 'systemRole' && value === 'rvgFallback') return 'No contract · RVG'
     return value
   }
   if (Array.isArray(value)) {

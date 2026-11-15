@@ -67,7 +67,7 @@ test('phase 18a funding tags and the Fixed price fallbacks', async ({ page }) =>
   await page.getByRole('button', { name: 'Move HNZ down' }).click()
   await expect(tags.locator('tr[data-tag] td:first-child')).toHaveText(['SXAP', 'HNZ', 'ACC'])
   await page.getByRole('button', { name: 'Remove SXAP' }).click()
-  await expect(page.getByRole('alert')).toContainText('SXAP is carried by 9 Contracts')
+  await expect(page.getByRole('alert')).toContainText('SXAP is carried by 11 Contracts')
   await page.screenshot({ path: 'visual/shots/p18a-06-funding-tags.png', fullPage: true })
 
   // The system rows in the catalogue.

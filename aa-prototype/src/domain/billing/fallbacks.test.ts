@@ -7,7 +7,11 @@ import {
   ensureFallbacks,
   fallbackNameFor,
   findFallback,
+  findRvgFallback,
+  isOfficeContract,
   isOpenPriceFallback,
+  isRvgFallback,
+  rvgFallbackNameFor,
   seedFallbackId,
 } from './fallbacks'
 import { contractRefusal, type Contract, type ContractRefusalContext } from './contracts'
@@ -71,23 +75,29 @@ describe('ensureFallbacks (AR-58 5.5)', () => {
     mkContract({ id: 'nib', aaCode: 'NIB-001', holderId: NIB.id }),
   ]
 
-  it('makes the two Patient fallbacks and one per hospital and tag and per Special holder', () => {
+  it('makes the two Patient fallbacks and, per hospital and tag and per Special holder, a Fixed price one and an RVG backstop', () => {
     const { created } = ensureFallbacks(byId(office), PARTIES, TAGS, newId)
     expect(created.map((c) => [c.name, c.aaCode]).sort()).toEqual(
       [
         ['Canterbury Orthopaedic Surgeons · Fixed price', 'COS-FIX'],
+        ['Canterbury Orthopaedic Surgeons · RVG', 'COS-RVG'],
         ['No contract · Fixed price', 'AA-FIX'],
         ['Prepaid · Fixed price', 'AA-PRE'],
         ["St George's · ACC · Fixed price", 'STG-ACC-FIX'],
+        ["St George's · ACC · RVG", 'STG-ACC-RVG'],
         ["St George's · Fixed price", 'STG-FIX'],
+        ["St George's · RVG", 'STG-RVG'],
         ['nib · Fixed price', 'NIB-FIX'],
+        ['nib · RVG', 'NIB-RVG'],
       ].sort(),
     )
   })
 
-  it('each fallback is kind open, system, Active, with no specialties or links; the tag only on a hospital one', () => {
+  it('each open-price fallback is kind open, system, Active, with no specialties or links; the tag only on a hospital one', () => {
     const { created } = ensureFallbacks(byId(office), PARTIES, TAGS, newId)
-    for (const f of created) {
+    const open = created.filter(isOpenPriceFallback)
+    expect(open).toHaveLength(6)
+    for (const f of open) {
       expect(f).toMatchObject({ pricing: { kind: 'open' }, systemRole: 'openPriceFallback', status: 'active', specialtyIds: [], linkedSurgeonIds: [] })
       expect(f.pricing.kind).not.toBe('fixed')
       expect(isOpenPriceFallback(f)).toBe(true)
@@ -113,8 +123,9 @@ describe('ensureFallbacks (AR-58 5.5)', () => {
     const first = ensureFallbacks(byId(office), PARTIES, TAGS, newId).contracts
     const moved = { ...first, 'stg-acc': { ...first['stg-acc']!, fundingTagId: 'hnz' } }
     const { created, contracts } = ensureFallbacks(moved, PARTIES, TAGS, newId)
-    expect(created.map((c) => c.name)).toEqual(["St George's · HNZ · Fixed price"])
+    expect(created.map((c) => c.name)).toEqual(["St George's · HNZ · Fixed price", "St George's · HNZ · RVG"])
     expect(Object.values(contracts).some((c) => c.name === "St George's · ACC · Fixed price")).toBe(true)
+    expect(Object.values(contracts).some((c) => c.name === "St George's · ACC · RVG")).toBe(true)
   })
 
   it('a Disabled Contract implies no destination; the Patient ones always exist', () => {
@@ -126,7 +137,8 @@ describe('ensureFallbacks (AR-58 5.5)', () => {
   it('a fallback implies nothing of its own, and codes stay unique when the stem is taken', () => {
     const taken = [...office, mkContract({ id: 'x', aaCode: 'NIB-FIX', holderId: NIB.id, name: 'Something else' })]
     const { created } = ensureFallbacks(byId(taken), PARTIES, TAGS, newId)
-    expect(created.find((c) => c.holderId === NIB.id)?.aaCode).toBe('NIB-FIX-2')
+    expect(created.find((c) => c.holderId === NIB.id && isOpenPriceFallback(c))?.aaCode).toBe('NIB-FIX-2')
+    expect(created.find((c) => c.holderId === NIB.id && isRvgFallback(c))?.aaCode).toBe('NIB-RVG')
     const all = Object.values(ensureFallbacks(byId(taken), PARTIES, TAGS, newId).contracts).map((c) => c.aaCode)
     expect(new Set(all).size).toBe(all.length)
   })
@@ -140,6 +152,114 @@ describe('ensureFallbacks (AR-58 5.5)', () => {
 
   it('names from the Party short name and the tag code', () => {
     expect(fallbackNameFor({ kind: 'hospital', holderPartyId: CES.id, fundingTagId: 'sxap' }, PARTIES, TAGS)).toBe('Christchurch Eye Surgery · SXAP · Fixed price')
+  })
+})
+
+describe('the RVG backstops (owner review, 2026-11-16)', () => {
+  const office = [
+    mkContract({ id: 'stg-acc', aaCode: 'STG-002', holderId: STG.id, fundingTagId: 'acc' }),
+    mkContract({ id: 'cos-acc', aaCode: 'COS-001', holderId: GROUP.id, fundingTagId: 'acc', linkedSurgeonIds: ['s1'] }),
+    mkContract({ id: 'doyle', aaCode: 'DOYLE-001', holderId: GROUP.id, billsTo: 'payer' }),
+    mkContract({ id: 'pre', aaCode: 'AA-009', holderId: AA.id, billsTo: 'payer', prepaid: true }),
+  ]
+  const seedIds = (_d: unknown, key: string, kind: 'open' | 'rvg') => seedFallbackId(key, kind)
+
+  it('makes one per hospital tag and Special holder only, never a Patient one', () => {
+    const { created } = ensureFallbacks(byId(office), PARTIES, TAGS, seedIds)
+    const rvg = created.filter(isRvgFallback)
+    expect(rvg.map((c) => [c.id, c.name, c.aaCode]).sort()).toEqual(
+      [
+        ['CT-RVG-HOSPITAL-PY-STG-ACC', "St George's · ACC · RVG", 'STG-ACC-RVG'],
+        ['CT-RVG-SPECIAL-PY-COS', 'Canterbury Orthopaedic Surgeons · RVG', 'COS-RVG'],
+      ].sort(),
+    )
+    expect(rvg.some((c) => c.billsTo === 'payer' || c.prepaid)).toBe(false)
+    // Destinations in key order; per destination the open one first, then its backstop.
+    expect(created.map((c) => c.id)).toEqual([
+      'CT-FIX-HOSPITAL-PY-STG-ACC',
+      'CT-RVG-HOSPITAL-PY-STG-ACC',
+      'CT-FIX-PATIENT-PREPAID',
+      'CT-FIX-PATIENT-STANDARD',
+      'CT-FIX-SPECIAL-PY-COS',
+      'CT-RVG-SPECIAL-PY-COS',
+    ])
+  })
+
+  it("mirrors its destination's Fixed price fallback, priced from RVG units at the anaesthetist's rate", () => {
+    const { contracts } = ensureFallbacks(byId(office), PARTIES, TAGS, seedIds)
+    const fix = contracts['CT-FIX-HOSPITAL-PY-STG-ACC']!
+    const rvg = contracts['CT-RVG-HOSPITAL-PY-STG-ACC']!
+    expect(rvg).toEqual({
+      ...fix,
+      id: 'CT-RVG-HOSPITAL-PY-STG-ACC',
+      name: "St George's · ACC · RVG",
+      aaCode: 'STG-ACC-RVG',
+      pricing: { kind: 'rvgAnaesthetistRate' },
+      anaesthetistMayOverridePrice: true,
+      systemRole: 'rvgFallback',
+    })
+    expect(rvg).toMatchObject({ holderId: STG.id, billsTo: 'holder', fundingTagId: 'acc', prepaid: false, status: 'active', specialtyIds: [], linkedSurgeonIds: [] })
+    expect(contracts['CT-RVG-SPECIAL-PY-COS']).toMatchObject({ holderId: GROUP.id, billsTo: 'holder', prepaid: false, pricing: { kind: 'rvgAnaesthetistRate' }, systemRole: 'rvgFallback' })
+    expect(contracts['CT-RVG-SPECIAL-PY-COS']?.fundingTagId).toBeUndefined()
+    expect(isOpenPriceFallback(rvg)).toBe(false)
+    expect(isOfficeContract(rvg)).toBe(false)
+    expect(isOfficeContract(fix)).toBe(false)
+    expect(isOfficeContract(contracts['stg-acc']!)).toBe(true)
+    // Unlike the open-price fallback, the backstop carries a price of its own, so a Procedure may sit on it.
+    expect(contractChoosableForProcedure(rvg)).toBe(true)
+  })
+
+  it('a backstop implies no destination of its own, and a second run creates none', () => {
+    const first = ensureFallbacks(byId(office), PARTIES, TAGS, seedIds)
+    const second = ensureFallbacks(first.contracts, PARTIES, TAGS, seedIds)
+    expect(second.created).toEqual([])
+    expect(second.contracts).toEqual(first.contracts)
+  })
+
+  it('a destination with its Fixed price fallback but no backstop gets only the backstop', () => {
+    const first = ensureFallbacks(byId(office), PARTIES, TAGS, seedIds).contracts
+    const missing = { ...first }
+    delete missing['CT-RVG-SPECIAL-PY-COS']
+    const { created } = ensureFallbacks(missing, PARTIES, TAGS, seedIds)
+    expect(created.map((c) => [c.id, c.aaCode])).toEqual([['CT-RVG-SPECIAL-PY-COS', 'COS-RVG']])
+  })
+
+  it('findRvgFallback: the backstop per hospital or Special destination, No contract · RVG for Patient › Standard, none for Prepaid', () => {
+    const noContract = mkContract({ id: 'CT-NO-CONTRACT', aaCode: 'AA-RVG', holderId: AA.id, billsTo: 'payer', pricing: { kind: 'rvgAnaesthetistRate' }, systemRole: 'noContractRvg' })
+    const { contracts } = ensureFallbacks(byId([...office, noContract]), PARTIES, TAGS, seedIds)
+    expect(findRvgFallback(contracts, { kind: 'hospital', holderPartyId: STG.id, fundingTagId: 'acc' }, PARTIES)?.id).toBe('CT-RVG-HOSPITAL-PY-STG-ACC')
+    expect(findRvgFallback(contracts, { kind: 'special', holderPartyId: GROUP.id }, PARTIES)?.id).toBe('CT-RVG-SPECIAL-PY-COS')
+    expect(findRvgFallback(contracts, { kind: 'patient', prepaid: false }, PARTIES)?.id).toBe('CT-NO-CONTRACT')
+    expect(findRvgFallback(contracts, { kind: 'patient', prepaid: true }, PARTIES)).toBeUndefined()
+    expect(findRvgFallback(contracts, { kind: 'special', holderPartyId: NIB.id }, PARTIES)).toBeUndefined()
+    // findFallback still finds the open one, never the backstop.
+    expect(findFallback(contracts, { kind: 'hospital', holderPartyId: STG.id, fundingTagId: 'acc' }, PARTIES)?.id).toBe('CT-FIX-HOSPITAL-PY-STG-ACC')
+  })
+
+  it('names and seed ids', () => {
+    expect(rvgFallbackNameFor({ kind: 'hospital', holderPartyId: CES.id, fundingTagId: 'sxap' }, PARTIES, TAGS)).toBe('Christchurch Eye Surgery · SXAP · RVG')
+    expect(rvgFallbackNameFor({ kind: 'special', holderPartyId: NIB.id }, PARTIES, TAGS)).toBe('nib · RVG')
+    expect(seedFallbackId('hospital:PY-STG:TAG-ACC', 'rvg')).toBe('CT-RVG-HOSPITAL-PY-STG-TAG-ACC')
+    expect(seedFallbackId('hospital:PY-STG:TAG-ACC', 'open')).toBe('CT-FIX-HOSPITAL-PY-STG-TAG-ACC')
+  })
+
+  it('the save guard accepts a seeded backstop unchanged and refuses anything but a rename or new AA code', () => {
+    const { contracts } = ensureFallbacks(byId(office), PARTIES, TAGS, seedIds)
+    const rvg = contracts['CT-RVG-HOSPITAL-PY-STG-ACC']!
+    const ctx: ContractRefusalContext = {
+      prev: rvg,
+      parties: PARTIES,
+      contracts,
+      surgeonIds: new Set(['s1']),
+      anaesthetistIds: new Set(),
+      specialtyIds: new Set(['gen']),
+      rvgGroups: {},
+      fundingTagIds: new Set(Object.keys(TAGS)),
+    }
+    expect(contractRefusal(rvg, ctx)).toBeNull()
+    expect(contractRefusal({ ...rvg, name: 'STG ACC RVG', aaCode: 'STG-ACC-R' }, ctx)).toBeNull()
+    expect(contractRefusal({ ...rvg, anaesthetistMayOverridePrice: false }, ctx)?.code).toBe('systemFixed')
+    expect(contractRefusal({ ...rvg, status: 'disabled' }, ctx)?.code).toBe('systemNeverDisabled')
   })
 })
 

@@ -76,9 +76,19 @@ export function isOpenPriceFallback(contract: Pick<Contract, 'systemRole'>): boo
   return contract.systemRole === 'openPriceFallback'
 }
 
-/** The office's own Contracts: every Contract but the open-price fallbacks. Counts and "this holder's Contracts" read it. */
+/**
+ * Whether a Contract is one of the system-made RVG backstops (owner review,
+ * 2026-11-16): "No contract · RVG" for a hospital tag or a Special holder,
+ * priced from RVG units at the anaesthetist's rate and invoiced to that holder.
+ * Under Patient › Standard the backstop is No contract · RVG itself.
+ */
+export function isRvgFallback(contract: Pick<Contract, 'systemRole'>): boolean {
+  return contract.systemRole === 'rvgFallback'
+}
+
+/** The office's own Contracts: every Contract but the system-made backstops. Counts and "this holder's Contracts" read it. */
 export function isOfficeContract(contract: Pick<Contract, 'systemRole'>): boolean {
-  return !isOpenPriceFallback(contract)
+  return !isOpenPriceFallback(contract) && !isRvgFallback(contract)
 }
 
 /**
@@ -165,6 +175,29 @@ export function openPriceFallback(
   }
 }
 
+/** The RVG backstop's name: `St George's · ACC · RVG`, `NIB · RVG` (the rail shows it as "No contract · RVG"). */
+export function rvgFallbackNameFor(d: InvoiceDestination, parties: Parties, tags: Tags): string {
+  return fallbackNameFor(d, parties, tags).replace(/ · Fixed price$/, ' · RVG')
+}
+
+/**
+ * The RVG backstop for a hospital or Special destination: as its open-price
+ * fallback, but priced from RVG units at the anaesthetist's rate. None for a
+ * Patient destination (Standard has No contract · RVG; Prepaid is never RVG).
+ */
+export function rvgFallback(
+  d: Exclude<InvoiceDestination, { kind: 'patient' }>,
+  fields: { id: ContractId; aaCode: string; parties: Parties; tags: Tags },
+): Contract {
+  return {
+    ...openPriceFallback(d, fields),
+    name: rvgFallbackNameFor(d, fields.parties, fields.tags),
+    anaesthetistMayOverridePrice: true,
+    pricing: { kind: 'rvgAnaesthetistRate' },
+    systemRole: 'rvgFallback',
+  }
+}
+
 /** The two Patient destinations, which always have their fallback. */
 export const PATIENT_DESTINATIONS: readonly InvoiceDestination[] = [
   { kind: 'patient', prepaid: false },
@@ -179,7 +212,7 @@ export function impliedDestinations(contracts: Contracts, parties: Parties): Inv
   const byKey = new Map<string, InvoiceDestination>()
   for (const d of PATIENT_DESTINATIONS) byKey.set(destinationKey(d), d)
   for (const c of Object.values(contracts)) {
-    if (c.status !== 'active' || isOpenPriceFallback(c)) continue
+    if (c.status !== 'active' || !isOfficeContract(c)) continue
     const d = destinationOf(c, parties)
     byKey.set(destinationKey(d), d)
   }
@@ -193,6 +226,16 @@ export function findFallback(contracts: Contracts, d: InvoiceDestination, partie
 }
 
 /**
+ * The RVG backstop for a destination: No contract · RVG under Patient ›
+ * Standard, none under Prepaid, else the destination's `rvgFallback`.
+ */
+export function findRvgFallback(contracts: Contracts, d: InvoiceDestination, parties: Parties): Contract | undefined {
+  if (d.kind === 'patient') return d.prepaid ? undefined : Object.values(contracts).find((c) => c.systemRole === 'noContractRvg')
+  const key = destinationKey(d)
+  return Object.values(contracts).find((c) => isRvgFallback(c) && destinationKey(destinationOf(c, parties)) === key)
+}
+
+/**
  * Keep the fallbacks in step (AR-58 5.5): add the missing one for every
  * destination `impliedDestinations` names, never removing, disabling or
  * renaming one. Idempotent: a second run creates none. `newId` gives each new
@@ -203,29 +246,41 @@ export function ensureFallbacks(
   contracts: Contracts,
   parties: Parties,
   tags: Tags,
-  newId: (d: InvoiceDestination, key: string) => ContractId,
+  newId: (d: InvoiceDestination, key: string, kind: 'open' | 'rvg') => ContractId,
 ): { contracts: Record<ContractId, Contract>; created: Contract[] } {
   const have = new Set<string>()
+  const haveRvg = new Set<string>()
   for (const c of Object.values(contracts)) {
     if (isOpenPriceFallback(c)) have.add(destinationKey(destinationOf(c, parties)))
+    if (isRvgFallback(c)) haveRvg.add(destinationKey(destinationOf(c, parties)))
   }
   const taken = new Set(Object.values(contracts).map((c) => normaliseAaCode(c.aaCode)))
   const next: Record<ContractId, Contract> = { ...contracts }
   const created: Contract[] = []
   for (const d of impliedDestinations(contracts, parties)) {
     const key = destinationKey(d)
-    if (have.has(key)) continue
-    const aaCode = uniqueCode(fallbackCodeStem(d, parties, tags), taken)
-    taken.add(normaliseAaCode(aaCode))
-    const fallback = openPriceFallback(d, { id: newId(d, key), aaCode, parties, tags })
-    next[fallback.id] = fallback
-    created.push(fallback)
-    have.add(key)
+    if (!have.has(key)) {
+      const aaCode = uniqueCode(fallbackCodeStem(d, parties, tags), taken)
+      taken.add(normaliseAaCode(aaCode))
+      const fallback = openPriceFallback(d, { id: newId(d, key, 'open'), aaCode, parties, tags })
+      next[fallback.id] = fallback
+      created.push(fallback)
+      have.add(key)
+    }
+    // Each hospital tag and Special holder also gets its RVG backstop (owner review, 2026-11-16).
+    if (d.kind !== 'patient' && !haveRvg.has(key)) {
+      const aaCode = uniqueCode(fallbackCodeStem(d, parties, tags).replace(/-FIX$/, '-RVG'), taken)
+      taken.add(normaliseAaCode(aaCode))
+      const backstop = rvgFallback(d, { id: newId(d, key, 'rvg'), aaCode, parties, tags })
+      next[backstop.id] = backstop
+      created.push(backstop)
+      haveRvg.add(key)
+    }
   }
   return { contracts: next, created }
 }
 
-/** The seed's fallback id for a destination: `CT-FIX-<key>`, deterministic. */
-export function seedFallbackId(key: string): ContractId {
-  return `CT-FIX-${key.replace(/[^A-Za-z0-9]+/g, '-').toUpperCase()}`
+/** The seed's fallback id for a destination: `CT-FIX-<key>` (`CT-RVG-<key>` for its RVG backstop), deterministic. */
+export function seedFallbackId(key: string, kind: 'open' | 'rvg' = 'open'): ContractId {
+  return `CT-${kind === 'rvg' ? 'RVG' : 'FIX'}-${key.replace(/[^A-Za-z0-9]+/g, '-').toUpperCase()}`
 }

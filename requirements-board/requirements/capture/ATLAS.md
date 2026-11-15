@@ -676,11 +676,17 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   "Save booking" and "Done". Photo capture is Future Work: only the `photo-capture-future` demo
   action opens it (see Demo actions by screen).
 - **RVG code type-ahead** (catch-up Phase 19; replaces the grouped procedure picker): the
-  `[data-shot=capture-procedure-code]` card (label "RVG code") → `>> text="Change"` (or "Choose" when
-  empty; "Clear" `[data-shot=rvg-code-clear]` empties it). The sheet `[data-shot=rvg-type-ahead]` is
+  `[data-shot=capture-procedure-code]` field inside the Billing card (no card of its own since the
+  2026-11-12 owner review). On the web and Admin the code is typed straight in:
+  `[data-shot=capture-procedure-code] input[role=combobox]` ("Type a code, e.g. H6a") drops down
+  `[data-shot=rvg-type-ahead]`: every code under sticky anatomy headings (`[data-shot=rvg-section]`,
+  `[data-shot=rvg-section-heading]`; rows `button[data-rvg-code=<code>]`); a chosen code shows in the field
+  itself, `[data-shot=rvg-code-chosen]` (`button[aria-label$=". Change"]`, reopens the field), with a cross
+  `[data-shot=rvg-code-clear]`. On the phone the same field sits in the Billing sheet (list in the flow). On a fixed or prepaid price it shows
+  only after `[data-shot=rvg-code-add-reference]` "Add an RVG code for reference"; "Clear" `[data-shot=rvg-code-clear]` empties it). The sheet `[data-shot=rvg-type-ahead]` is
   `[role=dialog]` (mobile `[data-aa-mobile-product] [role=dialog]`), search placeholder "Search RVG code
   or description" (focused on open). Rows are `button[data-rvg-code=<code>]` with
-  `[data-shot=rvg-anatomy]` and `[data-shot=rvg-base-units]` inside. Type "H1", "T2" (three rows) or
+  `[data-shot=rvg-base-units]` inside, grouped under the same sticky anatomy headings. Type "H1", "T2" (three rows) or
   "H4". A ranged row shows `[data-shot=rvg-range-units]` ("Guide 10 to 12 · starts at 10"); its value
   button "Base units 10. Type a value" opens an input (`[data-shot=rvg-range-units] input`, Enter to
   save); outside the guide `[data-shot=rvg-outside-guide]` appears. The manual add form's chooser is
@@ -770,18 +776,27 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Billing reference, "Save payer and reference"), "Price override" (placeholders `-10` and "Why the
   price differs") and "Funder allocation".
 - **The step rail (catch-up Phase 20), Admin and web:** inline on the Booking, the "Billing" card
-  `[data-shot=capture-billing]` (one per Procedure; `>> nth=0` for the first), no click to open. Steps
+  `[data-shot=capture-billing]` (one per Procedure; `>> nth=0` for the first), no click to open, no
+  "Needs an invoice destination" bar (that shows on List rows and Admin Day's card only). Steps
   `[data-shot=contract-rail-step-1..3]` (click an answered one to change it; the later ones clear),
   tiles `[data-rail-option=patient|hospital|special|standard|prepaid|<tag id>|<holder Party id>]`, then
   the field `[data-shot=contract-combo]`, which drops down `[data-shot=contract-combo-list]` (its
-  search input, rows `[data-contract-id=<id>]`; choosing one sets it at once). A lone Contract offers
-  "Use it" (`contract-rail-only-contract`). The switch `[data-shot=contract-rail-other-price] [role=switch]`,
-  its amount `[data-shot=contract-rail-amount]` and "Use Other price"; the outcome line
-  `[data-shot=contract-rail-outcome]`; "Start again" `contract-rail-start-again`. The office setup,
+  search input, rows `[data-contract-id=<id>]`, the first two always the "No contract" heading's
+  No contract · RVG and No contract · Fixed price backstops (`[role=option] >> nth=0|1`); choosing one
+  sets it at once). The combo shows on every path but Patient › Standard with No contract · RVG alone,
+  which offers "Use it" (`contract-rail-only-contract`) on a Booking loaded with no Contract and then
+  "RVG code | Fixed price" (`[data-shot=contract-rail-other-price] [data-sliding-segmented-control]`);
+  there is no "Other price" switch. The price block under the Contract `[data-shot=contract-rail-outcome]`
+  (the RVG code field, or the "Fixed price" amount `[data-shot=contract-rail-amount]`; no line repeating
+  the price); a lone Contract is picked on the answer and named
+  in `[data-shot=contract-rail-lone]`; with no Contract yet the RVG code block is
+  `[data-shot=billing-rvg-code]`; the rail's third step is "Price", its answer the price ("RVG H6a",
+  "Agreed fee $357.39"); "Start again" `contract-rail-start-again`. The office setup,
   "Contract and payer" and "Edit operation" show the Contract read-only.
-- **The step rail on mobile:** the Billing card's rows `[data-shot=billing-row-invoice-to]` and
-  `billing-row-contract` open the steps in a bottom sheet (`[data-shot=contract-picker]`), finished with
-  "Use this Contract" (Other price and its amount in the sheet too). "Add another procedure" adds the
+- **The step rail on mobile:** the Billing card is a summary, one button `[data-shot=capture-billing]`
+  (rows `billing-row-invoice-to`, `billing-row-contract`, `billing-row-price`; "Edit"); a tap opens the
+  Billing sheet `[data-shot=billing-sheet]` holding the same flow as the web card (`[data-shot=contract-picker]`,
+  the rail across the top, "Price by", the RVG code field), saved as each answer is given, closed with "Done". "Add another procedure" adds the
   Procedure at once; its own Billing card picks its Contract.
 - **Creation forms:** the manual and phone-advice forms have a Contract row
   `[data-shot=manual-contract]` ("Choose"); saving without one is allowed.
@@ -939,7 +954,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - `procedure-stack` (on every Booking screen, the small Procedure card at the top of the capture column:
   the latest text only, as received, with when and where it came from, its text `procedure-text`; the
-  Contract is in the Billing card `capture-billing` and the RVG code in `capture-procedure-code`). Compact,
+  Contract and the RVG code `capture-procedure-code` are both in the Billing card `capture-billing`). Compact,
   in Admin Review's `review-procedures` cell and the List drawer's `drawer-procedure-stack`, it also has
   `procedure-contract` (Contract and pricing basis) and `procedure-rvg-code`. `procedure-description` (the
   manual form); `edit-procedure-text` (read-only in Edit procedure); `invoice-procedure-heading` (one
@@ -987,9 +1002,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   the 20 Neurosurgery and Spine rows). `capture-asa-status` is gone (no ASA card), as are the
   segmented modifier bands and "Also applies" chips.
 - RVG groups (catch-up Phase 19): `masters-rvg-groups`, `rvg-group-sheet`, `rvg-group-retire`,
-  `rvg-group-search`, `rvg-type-ahead`, `rvg-anatomy`, `rvg-base-units`, `rvg-range-units`,
-  `rvg-outside-guide`, `rvg-code-clear`, `manual-rvg-code`; the capture card keeps
-  `capture-procedure-code` (an explicit `shot` on `CaptureSection`, since its label is now "RVG code").
+  `rvg-group-search`, `rvg-type-ahead`, `rvg-section`, `rvg-section-heading`, `rvg-code-chosen`, `rvg-base-units`, `rvg-range-units`,
+  `rvg-outside-guide`, `rvg-code-clear`, `manual-rvg-code`; the RVG code field keeps
+  `capture-procedure-code` (inside the Billing card's price; there is no `procedure-code-card`).
   There is no `masters-rvg` hook. The read-only RVG time rule panel above the table is
   `masters-rvg-time-rule` (catch-up Phase 19a). The T row's caption reads "From start and finish
   stamps · RVG time tiers"; money surfaces show "Needs a price" (`booking-needs-price` on the Booking

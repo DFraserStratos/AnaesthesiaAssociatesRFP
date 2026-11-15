@@ -1216,7 +1216,7 @@ export function entityCounts(state: AppState): EntityCounts {
     surgeons: Object.keys(state.masters.surgeons).length,
     hospitals: Object.keys(state.masters.hospitals).length,
     parties: Object.keys(state.masters.parties).length,
-    contracts: Object.values(state.masters.contracts).filter((c) => !isOpenPriceFallback(c)).length,
+    contracts: Object.values(state.masters.contracts).filter((c) => !isOpenPriceFallback(c) && c.systemRole !== 'rvgFallback').length,
     fixedPriceFallbacks: Object.values(state.masters.contracts).filter(isOpenPriceFallback).length,
     specialties: Object.keys(state.masters.specialties).length,
     fundingTags: Object.keys(state.masters.fundingTags).length,

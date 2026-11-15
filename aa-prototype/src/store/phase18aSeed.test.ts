@@ -16,7 +16,7 @@ import { accpayInvoicesFor } from './selectors'
 import { SPECIALTY_FOR_DIRECTORY_TEXT } from '../domain/seed'
 import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from '../domain/seed/specialistDirectory'
 import { contractFitsSpecialties, surgeonSpecialtyLabel } from '../domain/specialties'
-import { destinationKey, destinationOf, impliedDestinations, isOpenPriceFallback } from '../domain/billing/fallbacks'
+import { destinationKey, destinationOf, findFallback, impliedDestinations, isOfficeContract, isOpenPriceFallback, isRvgFallback, seedFallbackId } from '../domain/billing/fallbacks'
 import { fundingTagsInOrder, procedureAccFunded } from '../domain/billing/fundingTags'
 
 const state = freshAppState()
@@ -96,7 +96,7 @@ describe("surgeons' specialties (US-13.6.6)", () => {
 describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
   it("tags SXAP, HNZ and the ACC Contracts; specialties on the priced items (catch-up Phase 19a, AR-58 8.2)", () => {
     const tagged = Object.values(masters.contracts)
-      .filter((c) => !isOpenPriceFallback(c) && c.fundingTagId !== undefined)
+      .filter((c) => isOfficeContract(c) && c.fundingTagId !== undefined)
       .map((c) => `${c.aaCode}:${masters.fundingTags[c.fundingTagId!]?.code}`)
       .sort()
     expect(tagged).toEqual([
@@ -181,6 +181,44 @@ describe('the open-price fallbacks (DM-49, AR-58 5.5)', () => {
 
   it('no seeded Procedure sits on a fallback', () => {
     const ids = new Set(fallbacks.map((f) => f.id))
+    expect(Object.values(schedule.procedures).filter((p) => ids.has(p.governingContractId ?? ''))).toEqual([])
+  })
+})
+
+describe('the RVG backstops (owner review, 2026-11-16)', () => {
+  const backstops = Object.values(masters.contracts).filter(isRvgFallback)
+
+  it('exactly one per hospital tag and Special holder the Contracts imply, none for a Patient destination', () => {
+    const keys = backstops.map((f) => destinationKey(destinationOf(f, masters.parties))).sort()
+    expect(new Set(keys).size).toBe(keys.length)
+    expect(keys).toEqual(impliedDestinations(masters.contracts, masters.parties).map(destinationKey).filter((k) => !k.startsWith('patient:')))
+    expect(keys).toHaveLength(15)
+  })
+
+  it("each mirrors its destination's Fixed price fallback, priced from RVG units at the anaesthetist's rate", () => {
+    for (const b of backstops) {
+      const d = destinationOf(b, masters.parties)
+      expect(b.id).toBe(seedFallbackId(destinationKey(d), 'rvg'))
+      const fix = findFallback(masters.contracts, d, masters.parties)!
+      expect(b).toEqual({
+        ...fix,
+        id: b.id,
+        name: fix.name.replace(/ · Fixed price$/, ' · RVG'),
+        aaCode: fix.aaCode.replace(/-FIX$/, '-RVG'),
+        pricing: { kind: 'rvgAnaesthetistRate' },
+        anaesthetistMayOverridePrice: true,
+        systemRole: 'rvgFallback',
+      })
+    }
+    expect(masters.contracts['CT-RVG-HOSPITAL-PY-STG-TAG-ACC']).toMatchObject({ name: "St George's · ACC · RVG", aaCode: 'STG-ACC-RVG', fundingTagId: 'TAG-ACC', billsTo: 'holder', prepaid: false, status: 'active' })
+    expect(masters.contracts['CT-RVG-SPECIAL-PY-COS']).toMatchObject({ aaCode: 'COS-RVG', billsTo: 'holder' })
+    expect(masters.contracts['CT-RVG-SPECIAL-PY-COS']?.fundingTagId).toBeUndefined()
+    expect(masters.contracts['CT-RVG-PATIENT-STANDARD']).toBeUndefined()
+    expect(masters.contracts['CT-RVG-PATIENT-PREPAID']).toBeUndefined()
+  })
+
+  it('no seeded Procedure sits on a backstop', () => {
+    const ids = new Set(backstops.map((f) => f.id))
     expect(Object.values(schedule.procedures).filter((p) => ids.has(p.governingContractId ?? ''))).toEqual([])
   })
 })

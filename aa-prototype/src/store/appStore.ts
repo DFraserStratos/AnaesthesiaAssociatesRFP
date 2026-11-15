@@ -18,6 +18,7 @@
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { resilientLocalStorage } from './persistStorage'
+import { bindCrossTabSync } from './crossTabSync'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
 import { INTEGRATION_FEEDS } from '../domain/integrations'
@@ -109,7 +110,9 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v38: catch-up Phase 20a, procedure text (US-02.5.7, US-08.4.6): `Procedure.description`
+/** v39: catch-up Phase 20 (9), owner review 2026-11-16: every hospital tag and Special holder gains
+ *  an RVG backstop Contract (`CT-RVG-<key>`, `systemRole: 'rvgFallback'`) beside its Fixed price one.
+ *  v38: catch-up Phase 20a, procedure text (US-02.5.7, US-08.4.6): `Procedure.description`
  *  replaced by one `procedureText` (the hospital's replacing the rooms', the replaced text in
  *  the audit history) and an `invoiceDescription`; attachments removed (RV-01); AR-35's
  *  illustrative wording seeded; MSG-STG-1001 and MSG-STG-1012 reworded.
@@ -241,7 +244,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 38
+export const PERSIST_VERSION = 39
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
@@ -379,3 +382,8 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
  * receive it (or a test-created store) as their `api` argument.
  */
 export const useAppStore: BoundAppStore = createAppStore({ persisted: true })
+
+// Live sync with other tabs of this origin (Admin in one, mobile in another):
+// another tab's write to the key rehydrates this singleton without writing
+// back. Binds once, and not at all without a window. See crossTabSync.ts.
+bindCrossTabSync(useAppStore, PERSIST_KEY)

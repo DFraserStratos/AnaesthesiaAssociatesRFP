@@ -95,7 +95,7 @@ describe('Funding tags view (US-13.4.5)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove NZDF' }))
     expect(codes()).toEqual(['SXAP', 'HNZ', 'ACC'])
     fireEvent.click(screen.getByRole('button', { name: 'Remove SXAP' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('SXAP is carried by 9 Contracts, its system Fixed price Contracts included, so it cannot be removed.')
+    expect(screen.getByRole('alert')).toHaveTextContent('SXAP is carried by 11 Contracts, its system No contract Contracts included, so it cannot be removed.')
   })
 })
 
@@ -176,11 +176,11 @@ describe('the Contract editor and catalogue (US-04.2.16, US-04.2.17)', () => {
     expect(kinds).not.toContain('open')
   })
 
-  it('filters by funding tag beside the holder filter', () => {
+  it('filters by funding tag beside the holder filter, the system Fixed price and RVG backstop Contracts included', () => {
     renderAdmin('/admin/masters?view=contracts')
     fireEvent.change(within(shot('contract-tag-filter')).getByLabelText('Funding tag'), { target: { value: TAG.acc } })
     expect(shot('contract-result-count')).toHaveTextContent('tagged ACC')
     const codes = [...document.querySelectorAll('tr[data-contract] td:first-child')].map((td) => td.textContent).sort()
-    expect(codes).toEqual(['CES-009', 'CES-ACC-FIX', 'COS-001', 'COS-002', 'STG-002', 'STG-ACC-FIX'])
+    expect(codes).toEqual(['CES-009', 'CES-ACC-FIX', 'CES-ACC-RVG', 'COS-001', 'COS-002', 'STG-002', 'STG-ACC-FIX', 'STG-ACC-RVG'])
   })
 })

@@ -21,28 +21,28 @@
           "state": "open",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=rvg-type-ahead]"
           ],
-          "caption": "The type-ahead opens on a short list with the search box focused"
+          "caption": "Change opens the field on every code, under its anatomy heading"
         },
         {
           "state": "search",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "fill": "[data-shot=capture-procedure-code] input[role=combobox]",
               "value": "H1"
             },
             {
@@ -50,7 +50,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=rvg-type-ahead]"
           ],
           "caption": "Typing H1 lists every H1 row with its description and base units"
         }
@@ -66,7 +66,7 @@
           "state": "closed",
           "steps": [],
           "highlight": [
-            "[data-shot=capture-procedure-code]"
+            "[data-shot=capture-billing] [data-shot=billing-row-price]"
           ],
           "caption": "The RVG code with its base units from the RVG group"
         },
@@ -74,14 +74,20 @@
           "state": "open",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
+            },
+            {
+              "click": "[data-shot=billing-sheet] [data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [role=dialog]"
+            "[data-shot=billing-sheet] [data-shot=rvg-type-ahead]"
           ],
           "caption": "The type-ahead opens on a short list with the search box focused"
         },
@@ -89,13 +95,19 @@
           "state": "search",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "click": "[data-shot=billing-sheet] [data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=billing-sheet] input[role=combobox]",
               "value": "H1"
             },
             {
@@ -103,7 +115,7 @@
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [role=dialog]"
+            "[data-shot=billing-sheet] [data-shot=rvg-type-ahead]"
           ],
           "caption": "Typing H1 lists every H1 row with its description and base units"
         }
@@ -119,20 +131,20 @@
           "state": "start",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "fill": "[data-shot=capture-procedure-code] input[role=combobox]",
               "value": "H4"
             },
             {
               "wait": 400
             },
             {
-              "click": "[role=dialog] button[data-rvg-code=H4]"
+              "click": "[data-shot=rvg-type-ahead] button[data-rvg-code=H4]"
             },
             {
               "wait": 600
@@ -147,20 +159,20 @@
           "state": "outside",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "fill": "[data-shot=capture-procedure-code] input[role=combobox]",
               "value": "H4"
             },
             {
               "wait": 400
             },
             {
-              "click": "[role=dialog] button[data-rvg-code=H4]"
+              "click": "[data-shot=rvg-type-ahead] button[data-rvg-code=H4]"
             },
             {
               "wait": 600
@@ -200,27 +212,33 @@
           "state": "start",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "click": "[data-shot=billing-sheet] [data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=billing-sheet] input[role=combobox]",
               "value": "H4"
             },
             {
               "wait": 400
             },
             {
-              "click": "[data-aa-mobile-product] [role=dialog] button[data-rvg-code=H4]"
+              "click": "[data-shot=billing-sheet] button[data-rvg-code=H4] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=capture-procedure-code]"
+            "[data-shot=billing-sheet] [data-shot=capture-procedure-code]"
           ],
           "caption": "A ranged group starts at its starting figure"
         },
@@ -228,44 +246,50 @@
           "state": "outside",
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "click": "[data-shot=billing-sheet] [data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=billing-sheet] input[role=combobox]",
               "value": "H4"
             },
             {
               "wait": 400
             },
             {
-              "click": "[data-aa-mobile-product] [role=dialog] button[data-rvg-code=H4]"
+              "click": "[data-shot=billing-sheet] button[data-rvg-code=H4] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-shot=rvg-range-units] button[aria-label^=\"Base units\"]"
+              "click": "[data-shot=billing-sheet] [data-shot=rvg-range-units] button[aria-label^=\"Base units\"]"
             },
             {
               "wait": 300
             },
             {
-              "fill": "[data-shot=rvg-range-units] input",
+              "fill": "[data-shot=billing-sheet] [data-shot=rvg-range-units] input",
               "value": "14"
             },
             {
               "press": "Enter",
-              "on": "[data-shot=rvg-range-units] input"
+              "on": "[data-shot=billing-sheet] [data-shot=rvg-range-units] input"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=rvg-range-units]"
+            "[data-shot=billing-sheet] [data-shot=rvg-range-units]"
           ],
           "caption": "Any value is accepted; outside the range raises a warning for the office"
         }
@@ -281,6 +305,15 @@
           "state": "optional",
           "steps": [
             {
+              "scroll": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "click": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "wait": 300
+            },
+            {
               "scroll": "[data-shot=capture-procedure-code]"
             },
             {
@@ -290,7 +323,7 @@
           "highlight": [
             "[data-shot=capture-procedure-code]"
           ],
-          "caption": "Required on RVG Contracts: on a fixed price it is optional, for reference"
+          "caption": "Required on RVG Contracts: on a fixed price it is offered for reference only"
         },
         {
           "state": "default-filled",
@@ -325,6 +358,15 @@
           "state": "optional",
           "steps": [
             {
+              "scroll": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "click": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "wait": 300
+            },
+            {
               "scroll": "[data-shot=capture-procedure-code]"
             },
             {
@@ -334,7 +376,7 @@
           "highlight": [
             "[data-shot=capture-procedure-code]"
           ],
-          "caption": "Required on RVG Contracts: on a fixed price it is optional, for reference"
+          "caption": "Required on RVG Contracts: on a fixed price it is offered for reference only"
         },
         {
           "state": "default-filled",

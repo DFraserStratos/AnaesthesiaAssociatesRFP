@@ -63,7 +63,7 @@ type Step = 1 | 2 | 3
 
 const CLOSED_VIEW: ContractRailView = { destination: { options: [], autoFilled: false } }
 
-const STEP_TITLE: Record<Step, string> = { 1: 'Invoice to', 2: 'Narrow it down', 3: 'Contract' }
+const STEP_TITLE: Record<Step, string> = { 1: 'Invoice to', 2: 'Payment type', 3: 'Contract' }
 
 /** A Contract's price as a row shows it: its fixed price in force, "Prepaid" before it, or how it is priced. */
 export function contractPriceText(contract: Contract, dateISO: string): string {

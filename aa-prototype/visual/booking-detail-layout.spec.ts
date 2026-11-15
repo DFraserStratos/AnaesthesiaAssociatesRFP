@@ -12,7 +12,7 @@ async function openEllison(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Lists', exact: true }).click()
   await page.getByText('Southern Cross').first().click()
   await page.getByText('Margaret Ellison').first().click()
-  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
+  await expect(page.locator('[data-shot="capture-billing"]').last()).toBeVisible()
 }
 
 /** The office Booking: the only desktop Booking that carries the Booking total. */

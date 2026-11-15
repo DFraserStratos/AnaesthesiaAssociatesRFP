@@ -157,20 +157,20 @@
         {
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "click": "role=button[name=\"Use this Contract\"]"
+              "click": "role=button[name=\"Use it\"]"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=capture-procedure-code]"
+            "[data-shot=billing-sheet] [data-shot=capture-procedure-code]"
           ],
           "caption": "The anaesthetist fills in the RVG code"
         }

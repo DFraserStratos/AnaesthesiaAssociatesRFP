@@ -126,6 +126,19 @@ describe('setRailAnswers and setEnteredPrice', () => {
     expect(setRailAnswers(api, OFFICE, RILEY_PROC, { destination: 'patient' })).toMatchObject({ ok: false, code: 'contractSet' })
   })
 
+  it('an answer off the Contract\'s path releases it, saved and audited at once; the RVG code stays; prepaid only by the office', () => {
+    const api = store()
+    const p = firstProcOf(api, pickUp())
+    setProcedureContract(api, OFFICE, p.id, 'CT-NO-CONTRACT')
+    const code = proc(api, p.id).rvgGroupId
+    expect(setRailAnswers(api, OFFICE, p.id, { destination: 'hospital' }, { releaseContract: true })).toMatchObject({ ok: true })
+    expect(proc(api, p.id).governingContractId).toBeUndefined()
+    expect(proc(api, p.id).railAnswers).toEqual({ destination: 'hospital' })
+    expect(proc(api, p.id).rvgGroupId).toBe(code)
+    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'procedure.contract', after: { governingContractId: undefined, railAnswers: { destination: 'hospital' } } })
+    expect(setRailAnswers(api, SOUTER, RILEY_PROC, { destination: 'patient', narrow: 'standard' }, { releaseContract: true })).toMatchObject({ ok: false, code: 'prepaidOfficeOnly' })
+  })
+
   it('types an amount: the office on any fallback, the anaesthetist only on No contract · Fixed price', () => {
     const api = store()
     const p = firstProcOf(api, pickUp())

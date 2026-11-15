@@ -54,7 +54,7 @@ export type ContractPricing =
 
 export type ContractStatus = 'active' | 'disabled'
 /** The two system roles (AR-58 5.5): the one No contract · RVG, and every open-price fallback. */
-export type SystemRole = 'noContractRvg' | 'openPriceFallback'
+export type SystemRole = 'noContractRvg' | 'openPriceFallback' | 'rvgFallback'
 
 /**
  * The fields the office may change on a system Contract (AR-58 validation
@@ -232,7 +232,7 @@ export const CONTRACT_REFUSAL_MESSAGES: Record<ContractRefusalCode, string> = {
   linkUnknown: 'A linked surgeon or anaesthetist could not be found.',
   prepaidFixed: 'Prepaid is set when the Contract is created and cannot change.',
   pricingKindFixed: 'The pricing kind is set when the Contract is created and cannot change.',
-  systemRoleNotChosen: 'Only the system makes No contract · RVG and the Fixed price Contracts.',
+  systemRoleNotChosen: 'Only the system makes the No contract Contracts (RVG and Fixed price).',
   systemFixed: 'Only the name and AA code of a system Contract can change.',
   systemNeverDisabled: 'A system Contract is always available and cannot be disabled.',
   specialtyUnknown: 'A specialty on this Contract is not on the list.',
@@ -436,6 +436,7 @@ export function contractSearch(
         Number(b.systemRole === 'noContractRvg') - Number(a.systemRole === 'noContractRvg') ||
         holderRank(a).localeCompare(holderRank(b)) ||
         // A holder's open-price fallbacks after its own Contracts.
+        Number(a.systemRole === 'rvgFallback' || a.systemRole === 'openPriceFallback') - Number(b.systemRole === 'rvgFallback' || b.systemRole === 'openPriceFallback') ||
         Number(a.systemRole === 'openPriceFallback') - Number(b.systemRole === 'openPriceFallback') ||
         a.aaCode.localeCompare(b.aaCode),
     )

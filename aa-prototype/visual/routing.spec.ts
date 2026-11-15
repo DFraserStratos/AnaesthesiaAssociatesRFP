@@ -36,7 +36,7 @@ test('web: drilling writes the URL; refresh holds the booking; Back unwinds the 
   await page.reload()
   await page.waitForLoadState('networkidle')
   expect(page.url()).toBe(bookingURL)
-  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
+  await expect(page.locator('[data-shot="capture-billing"]').last()).toBeVisible()
 
   // ... and Back unwinds one screen at a time.
   await page.goBack()
@@ -207,7 +207,7 @@ test('mobile: the slide stack is in the URL; refresh holds the booking, Back pop
   await page.reload()
   await page.waitForLoadState('networkidle')
   expect(page.url()).toBe(bookingURL)
-  await expect(page.getByText('RVG code', { exact: true }).last()).toBeVisible()
+  await expect(page.locator('[data-shot="capture-billing"]').last()).toBeVisible()
   // Drilled in, the tab bar is still hidden after the refresh.
   await expect(page.getByRole('button', { name: 'Balances' })).toHaveCount(0)
 

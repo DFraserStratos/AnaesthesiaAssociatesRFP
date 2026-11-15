@@ -6,12 +6,12 @@
     {
       "name": "other-price",
       "app": "admin",
-      "caption": "Every destination has an Other price",
+      "caption": "Every destination has No contract · RVG and No contract · Fixed price",
       "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {
           "state": "off",
-          "caption": "Every destination has an Other price: Southern Cross › SXAP",
+          "caption": "Every Contract list starts with No contract: No contract · RVG and No contract · Fixed price",
           "steps": [
             {
               "click": "[data-shot=contract-rail-step-1] >> nth=0"
@@ -21,15 +21,21 @@
             },
             {
               "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=contract-rail-other-price] >> nth=0"
+            "[data-shot=contract-combo-list]"
           ]
         },
         {
           "state": "on",
-          "caption": "Every destination has an Other price: Southern Cross · SXAP · Fixed price asks for the amount",
+          "caption": "No contract · Fixed price: the amount is typed on the Procedure",
           "steps": [
             {
               "click": "[data-shot=contract-rail-step-1] >> nth=0"
@@ -38,14 +44,23 @@
               "click": "[data-rail-option=hospital] >> nth=0"
             },
             {
-              "click": "[data-shot=contract-rail-other-price] >> nth=0 >> [role=switch]"
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-combo-list] [role=option] >> nth=1"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=contract-rail-other-price] >> nth=0"
+            "[data-shot=contract-rail-outcome] >> nth=0"
           ]
         }
       ]
@@ -59,16 +74,25 @@
         {
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-shot=contract-picker] [data-shot=contract-rail-other-price] [role=switch]"
+              "click": "role=button[name=\"Use it\"]"
             },
             {
-              "fill": "[data-shot=contract-rail-amount]",
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=billing-sheet] [data-shot=contract-rail-other-price] >> text=\"Fixed price\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=billing-sheet] [data-shot=contract-rail-amount]",
               "value": "2000"
             },
             {
@@ -76,7 +100,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=contract-picker] [data-shot=contract-rail-other-price]"
+            "[data-shot=billing-sheet] [data-shot=contract-picker]"
           ]
         }
       ]

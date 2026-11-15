@@ -5,15 +5,12 @@ import type { BillingValidationFailure } from '../../domain/billing'
 import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { procedureFee } from './feeContext'
-import { ProcedureCodeCard } from './ProcedureCodeCard'
 import { TimesCard } from './TimesCard'
 import { UnitsCard } from './UnitsCard'
 import { OverrideCard } from './OverrideCard'
 import { BillingLinesCard } from './BillingLinesCard'
 import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
-import { rvgCodeToFill } from '../../domain/billing/contractRail'
-import { isRvgKind } from '../../domain/billing/contracts'
 import { BillingCard } from '../booking/BillingCard'
 import { ProcedureStack } from '../booking/ProcedureStack'
 
@@ -42,8 +39,8 @@ interface BtmCaptureBlockProps {
 
 /**
  * One procedure's Outcome/BTM capture block (mockup screen 3 = the skin; the
- * Phase 01 calculator = the maths). Composition: context header → procedure
- * code → times → B/T/M and the itemised modifiers → override → billing lines →
+ * Phase 01 calculator = the maths). Composition: procedure stack → Billing
+ * card (Contract and price, the RVG code inside it) → times → B/T/M and the itemised modifiers → override → billing lines →
  * notes. The ASA grade is one optional modifier, claimed in the modifiers
  * ledger with its explanation.
  *
@@ -103,10 +100,6 @@ export function BtmCaptureBlock({
     'modifierClaims',
   ])
   const unanchored = shown.filter((f) => !anchored.has(f.field))
-
-  // Derived, never stored (US-03.3.1): an RVG-kind Contract with no RVG code yet; the stack's
-  // RVG part says so, and the code card below asks for it.
-  const rvgToFill = contract !== undefined && rvgCodeToFill(masters, procedure, Object.values(billingLines).filter((l) => l.procedureId === procedure.id))
 
   // The store's edit gate (ACTIVE or SUBMITTED, own List for the anaesthetist; catch-up Phase 38a).
   const editable = procedure !== undefined && editRefusal(actor, list) === null
@@ -186,9 +179,20 @@ export function BtmCaptureBlock({
           : {})}
       />
 
-      {/* The Procedure's one Contract (catch-up Phase 20): the Billing card, the
-          step rail inline for the office and, mirrored, the anaesthetist. */}
-      <BillingCard procedure={procedure} actor={actor} canEdit={editable} ordinal={ordinal} procedureCount={procedureCount} />
+      {/* The Procedure's one Contract and its price (catch-up Phase 20): the Billing card, the
+          step rail inline for the office and, mirrored, the anaesthetist. The RVG code is
+          filled in inside it (owner review, 2026-11-12): no separate code card. */}
+      <BillingCard
+        procedure={procedure}
+        actor={actor}
+        canEdit={editable}
+        canCapture={canCapture}
+        rvgGroup={rvgGroup}
+        codeFailures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
+        onError={onError}
+        ordinal={ordinal}
+        procedureCount={procedureCount}
+      />
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
@@ -198,16 +202,6 @@ export function BtmCaptureBlock({
         </div>
       )}
 
-      <ProcedureCodeCard
-        procedure={procedure}
-        rvgGroup={rvgGroup}
-        rvgGroups={masters.rvgGroups}
-        actor={actor}
-        canCapture={canCapture}
-        failures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
-        onError={onError}
-        {...(rvgToFill ? { codeRole: 'required' as const } : contract !== undefined && !isRvgKind(contract.pricing.kind) ? { codeRole: 'reference' as const } : {})}
-      />
 
       <TimesCard
         procedure={procedure}

@@ -46,13 +46,13 @@
         {
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "fill": "[data-shot=capture-procedure-code] input[role=combobox]",
               "value": "H1"
             },
             {
@@ -60,7 +60,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog] [data-shot=rvg-base-units]"
+            "[data-shot=rvg-type-ahead] [data-shot=rvg-base-units]"
           ]
         }
       ]
@@ -74,13 +74,19 @@
         {
           "steps": [
             {
-              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "fill": "input[placeholder=\"Search RVG code or description\"]",
+              "click": "[data-shot=billing-sheet] [data-shot=capture-procedure-code] button[aria-label$=\". Change\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=billing-sheet] input[role=combobox]",
               "value": "H1"
             },
             {
@@ -88,7 +94,7 @@
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [role=dialog] [data-shot=rvg-base-units]"
+            "[data-shot=billing-sheet] [data-shot=rvg-type-ahead] [data-shot=rvg-base-units]"
           ]
         }
       ]

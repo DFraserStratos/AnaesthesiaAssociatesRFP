@@ -7,10 +7,25 @@
       "name": "no-contract-rvg",
       "app": "admin",
       "caption": "No contract · RVG, first under Patient › Standard",
-      "start": "/admin/day/2026-07-23/bookings/BK0060",
+      "start": "/admin/day/2026-08-10/bookings/BK0163",
       "states": [
         {
           "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=patient] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-rail-option=standard] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
             {
               "click": "[data-shot=contract-combo] >> nth=0"
             },
@@ -29,10 +44,25 @@
       "name": "search-pinned",
       "app": "admin",
       "caption": "No contract · RVG stays first whatever is typed",
-      "start": "/admin/day/2026-07-23/bookings/BK0060",
+      "start": "/admin/day/2026-08-10/bookings/BK0163",
       "states": [
         {
           "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=patient] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-rail-option=standard] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
             {
               "click": "[data-shot=contract-combo] >> nth=0"
             },
@@ -55,10 +85,22 @@
       "name": "no-contract-rvg",
       "app": "web",
       "caption": "No contract · RVG, first under Patient › Standard",
-      "start": "/web/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0163",
       "states": [
         {
           "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-1] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=patient] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=standard] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
             {
               "click": "[data-shot=contract-combo] >> nth=0"
             },
@@ -82,14 +124,14 @@
         {
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=contract-picker] [data-contract-id=CT-NO-CONTRACT]"
+            "[data-shot=billing-sheet] [data-shot=contract-rail-only-contract]"
           ],
           "caption": "No contract · RVG, first under Patient › Standard"
         }

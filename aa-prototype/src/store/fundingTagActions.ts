@@ -119,7 +119,7 @@ export function removeFundingTag(api: AppStoreApi, actor: Actor, id: string): Ou
   if (used > 0) {
     return refuse(
       'fundingTagHeld',
-      `${existing.code} is carried by ${used} ${used === 1 ? 'Contract' : 'Contracts'}, its system Fixed price Contracts included, so it cannot be removed. Edit its code instead.`,
+      `${existing.code} is carried by ${used} ${used === 1 ? 'Contract' : 'Contracts'}, its system No contract Contracts included, so it cannot be removed. Edit its code instead.`,
       { used },
     )
   }

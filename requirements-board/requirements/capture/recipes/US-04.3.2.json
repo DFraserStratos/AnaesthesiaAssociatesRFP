@@ -88,7 +88,7 @@
       "name": "contract-picker",
       "app": "web",
       "caption": "The anaesthetist sees the same Contracts",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0163",
       "states": [
         {
           "steps": [
@@ -96,7 +96,13 @@
               "click": "[data-shot=contract-rail-step-1] >> nth=0"
             },
             {
-              "click": "[data-rail-option=hospital] >> nth=0"
+              "click": "[data-rail-option=patient] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=standard] >> nth=0"
+            },
+            {
+              "wait": 300
             },
             {
               "click": "[data-shot=contract-combo] >> nth=0"
@@ -122,14 +128,14 @@
         {
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=contract-picker]"
+            "[data-shot=billing-sheet]"
           ],
           "caption": "The anaesthetist sees the same Contracts"
         }

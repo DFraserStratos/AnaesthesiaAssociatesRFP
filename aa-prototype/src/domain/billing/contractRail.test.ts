@@ -136,14 +136,23 @@ describe('contractRailFor (US-04.3.8)', () => {
     expect(view.narrow).toBeUndefined()
   })
 
-  it('under Patient, "Payment type": Standard then Prepaid for the office, never Prepaid for the anaesthetist', () => {
+  it('under Patient, "Payment type" always asks: Standard then Prepaid, Prepaid never choosable by the anaesthetist', () => {
     const office = contractRailFor(masters, ctx({ hospitalId: 'H-FORTE', surgeonId: 'S-LIM' }), { destination: 'patient' }, { actor: 'office' })
     expect(office.narrow?.title).toBe('Payment type')
     expect(office.narrow?.options.map((o) => o.value)).toEqual(['standard', 'prepaid'])
+    expect(office.narrow?.answer).toBeUndefined()
     const anaes = contractRailFor(masters, ctx({ hospitalId: 'H-FORTE', surgeonId: 'S-LIM' }), { destination: 'patient' }, { actor: 'anaesthetist' })
-    expect(anaes.narrow?.options.map((o) => o.value)).toEqual(['standard'])
-    expect(anaes.narrow?.answer).toBe('standard')
-    expect(anaes.narrow?.autoFilled).toBe(true)
+    expect(anaes.narrow?.options.map((o) => [o.value, o.selectable])).toEqual([['standard', true], ['prepaid', false]])
+    expect(anaes.narrow?.options[1]?.hint).toBe('Set by the office')
+    expect(anaes.narrow?.answer).toBeUndefined()
+    expect(anaes.contract).toBeUndefined()
+  })
+
+  it('stops at Payment type even when the List has no prepaid Contract, Prepaid shown but not choosable', () => {
+    const none = { ...masters, contracts: Object.fromEntries(Object.entries(masters.contracts).filter(([, c]) => !c.prepaid)) }
+    const view = contractRailFor(none, ctx({ hospitalId: 'H-FORTE', surgeonId: 'S-LIM' }), { destination: 'patient' }, { actor: 'office' })
+    expect(view.narrow?.answer).toBeUndefined()
+    expect(view.narrow?.options.find((o) => o.value === 'prepaid')).toMatchObject({ count: 0, selectable: false })
   })
 
   it('pins No contract · RVG first under Patient › Standard, whatever is typed', () => {

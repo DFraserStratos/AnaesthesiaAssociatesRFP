@@ -166,7 +166,7 @@ function withFallbacks(contracts: readonly Contract[]): Contract[] {
     Object.fromEntries(contracts.map((c) => [c.id, c])),
     Object.fromEntries(PARTIES.map((p) => [p.id, p])),
     Object.fromEntries(FUNDING_TAGS.map((t) => [t.id, t])),
-    (_d, key) => seedFallbackId(key),
+    (_d, key, kind) => seedFallbackId(key, kind),
   )
   return Object.values(all)
 }

@@ -34,10 +34,7 @@
               "click": "[data-rail-option=patient] >> nth=0"
             },
             {
-              "click": "[data-shot=contract-combo] >> nth=0"
-            },
-            {
-              "click": "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
+              "click": "[data-rail-option=standard] >> nth=0"
             },
             {
               "wait": 600
@@ -60,14 +57,14 @@
           "state": "rail",
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=contract-picker]"
+            "[data-shot=billing-sheet]"
           ],
           "caption": "Change the Contract until the office authorises the list: a submitted List"
         },
@@ -75,22 +72,25 @@
           "state": "changed",
           "steps": [
             {
-              "click": "[data-shot=billing-row-invoice-to] >> nth=0"
+              "click": "[data-shot=capture-billing] >> nth=0"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-shot=contract-rail-step-1]"
+              "click": "[data-shot=billing-sheet] [data-shot=contract-rail-step-1]"
             },
             {
-              "click": "[data-rail-option=patient]"
+              "click": "[data-shot=billing-sheet] [data-rail-option=patient]"
             },
             {
-              "click": "[data-contract-id=CT-NO-CONTRACT]"
+              "click": "[data-shot=billing-sheet] [data-rail-option=standard]"
             },
             {
-              "click": "role=button[name=\"Use this Contract\"]"
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Done\"]"
             },
             {
               "wait": 600

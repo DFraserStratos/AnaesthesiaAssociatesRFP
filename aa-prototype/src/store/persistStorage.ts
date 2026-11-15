@@ -45,6 +45,11 @@
  * Playwright, poll for the payload to contain what the flow just produced
  * (`visual/admin-phase08.spec.ts` does) rather than sleeping on a guess.
  *
+ * CROSS-TAB SYNC. A second tab on the same origin (Admin in one, the mobile
+ * app in the other) learns of a write through the window `storage` event and
+ * rehydrates from it (`crossTabSync.ts`). `adoptExternal` and `withoutWrites`
+ * at the foot of this file are what keep that adopt from writing back.
+ *
  * WHY NOT IndexedDB: `createJSONStorage` would then hydrate ASYNCHRONOUSLY, and
  * every launch would paint one frame of the pristine seed before the persisted
  * state landed — a visible flash of the wrong demo day. IndexedDB is the escape
@@ -148,6 +153,10 @@ function getItem(name: string): string | null {
 
 function setItem(name: string, value: string): void {
   lastKey = name
+  // Inside an external adopt (see `withoutWrites`): what storage holds is the
+  // other tab's payload, and this tab's in-memory state is derived from it, so
+  // there is nothing of ours to record or write.
+  if (writesSuppressed > 0) return
   lastValue.set(name, value)
   if (persistDisabled) return
   unwritten.add(name)
@@ -257,5 +266,72 @@ export function bytes(name: string | null = lastKey): number {
     return stored === null ? 0 : byteLengthOf(stored)
   } catch {
     return 0
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cross-tab adoption (live sync between two tabs of the same origin)
+// ---------------------------------------------------------------------------
+
+/**
+ * Depth of `withoutWrites` calls in progress. While above zero, `setItem`
+ * drops what it is handed: not queued, not recorded as `lastValue`.
+ */
+let writesSuppressed = 0
+
+/**
+ * Take a value ANOTHER tab wrote to `name` as this tab's own record of
+ * storage, so the rehydrate that follows reads it and nothing writes it back.
+ *
+ * THE ECHO PROBLEM. A presenter runs the Admin app in one tab and the mobile
+ * app in another; `crossTabSync.ts` listens for the window `storage` event the
+ * browser fires in every OTHER tab when one writes the key, and rehydrates.
+ * Two things here stop that turning into ping-pong or a stale read:
+ *
+ *   - Any write this tab still has queued behind the timer is DROPPED. The
+ *     other tab wrote later, so last writer wins (a demo, not a ledger), and a
+ *     queued write landing after the adopt (the timer, or the `pagehide` /
+ *     `visibilitychange` flush) would clobber the newer payload and bounce it
+ *     straight back to the tab that wrote it.
+ *   - `lastValue` becomes the adopted payload, so `getItem` (which serves a
+ *     held, unwritten value ahead of storage) cannot hand the rehydrate this
+ *     tab's own superseded state instead of the new one.
+ *
+ * A `null` value is the key being removed (or `localStorage.clear()`) in the
+ * other tab: the record is forgotten and nothing is pending afterwards.
+ *
+ * The rehydrate itself must then run inside `withoutWrites`, below.
+ */
+export function adoptExternal(name: string, value: string | null): void {
+  lastKey = name
+  unwritten.delete(name)
+  if (unwritten.size === 0 && timer !== undefined) {
+    clearTimeout(timer)
+    timer = undefined
+  }
+  if (value === null) lastValue.delete(name)
+  else lastValue.set(name, value)
+}
+
+/**
+ * Run `fn` with writes switched off, synchronously. zustand's rehydrate sets
+ * state through the RAW setter, which does not persist, but it does call
+ * `setItem` when the adopted payload needed a version migration (an old build
+ * still open in the other tab), and any shell action `fn` calls to put this
+ * tab's own view state back goes through the persisting setter. Neither may
+ * reach storage: the other tab owns what is there now, and writing it back
+ * would fire a `storage` event over THERE and start the ping-pong this exists
+ * to prevent. Writes are only ever fired by local mutations.
+ *
+ * Synchronous only: the storage here is synchronous, so zustand's hydrate
+ * resolves inside the call (its thenable chain runs inline). An async storage
+ * would leave the suppression window before the write it is meant to swallow.
+ */
+export function withoutWrites(fn: () => void): void {
+  writesSuppressed += 1
+  try {
+    fn()
+  } finally {
+    writesSuppressed -= 1
   }
 }

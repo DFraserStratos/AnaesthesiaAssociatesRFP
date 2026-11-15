@@ -36,7 +36,7 @@ import { BookingTotalPanel } from '../../../../shared/capture/BookingTotalPanel'
 import { CompleteBar } from '../../../../shared/capture/CompleteBar'
 import { TimesCard } from '../../../../shared/capture/TimesCard'
 import { OverrideCard } from '../../../../shared/capture/OverrideCard'
-import { ProcedureCodeCard } from '../../../../shared/capture/ProcedureCodeCard'
+import { RvgCodeField } from '../../../../shared/capture/ProcedureCodeCard'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import { UnitsCard } from '../../../../shared/capture/UnitsCard'
 import { procedureFee } from '../../../../shared/capture/feeContext'
@@ -934,12 +934,12 @@ export function OverrideCardDemo({ f }: F) {
   return <CaptureHost f={f}>{({ procedure, canCapture, onError }) => <OverrideCard procedure={procedure} actor={f.actor} canCapture={canCapture} failures={[]} onError={onError} />}</CaptureHost>
 }
 
-export function ProcedureCodeCardDemo({ f }: F) {
+export function RvgCodeFieldDemo({ f }: F) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   return (
     <CaptureHost f={f}>
       {({ procedure, canCapture, onError }) => (
-        <ProcedureCodeCard
+        <RvgCodeField
           procedure={procedure}
           rvgGroup={procedure.rvgGroupId !== undefined ? rvgGroups[procedure.rvgGroupId] : undefined}
           rvgGroups={rvgGroups}

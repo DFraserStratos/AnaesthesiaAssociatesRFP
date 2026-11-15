@@ -18,7 +18,7 @@
 | Booking | One patient appointment inside a List |
 | Procedure | One clinical procedure inside a Booking; each carries exactly one Contract |
 | Invoice destination | Where a Procedure's invoice goes: the patient, the List's hospital, or a special Contract's holder. Worked out from the Contract, never stored; a Procedure with no Contract shows "Needs an invoice destination" |
-| Other price | The step rail's toggle onto the destination's open-price fallback (No contract · Fixed price, a hospital's tag, a holder), with the amount typed on the Procedure |
+| No contract | The heading every Contract list starts with: the destination's two backstops, No contract · RVG (the anaesthetist's RVG rate, invoiced to that destination) and No contract · Fixed price (an amount typed on the Procedure) |
 | BTM | Base units + Time units + Modifier units |
 
 ## Terms not to use
@@ -99,10 +99,11 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 ### One Contract per Procedure, on the step rail
 
 1. **Where does the invoice go?** Patient, the List's hospital, or Special, each with its count.
-2. **Then narrow it down:** Payment type (Standard, then Prepaid) under Patient; the hospital's funding
+2. **Then the payment type:** Standard, then Prepaid, always asked under Patient; the hospital's funding
    tags; Special's holders.
-3. **The Contract**, typed to search, No contract · RVG pinned first under Patient › Standard, or
-   **Other price** with the amount typed.
+3. **The Contract**, typed to search, under a **No contract** heading with No contract · RVG and
+   No contract · Fixed price first. Patient › Standard alone picks No contract · RVG at once, with
+   **RVG code | Fixed price**.
 
 The office sets it at booking setup; the anaesthetist sees the same rail and can finish or change it
 until the List is authorised, never onto or off a prepaid Contract. A Contract bills its holder or the

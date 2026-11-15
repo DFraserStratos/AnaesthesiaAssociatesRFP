@@ -22,8 +22,14 @@ async function advanceClockTo1715(page: Page): Promise<void> {
   await page.waitForTimeout(200)
 }
 
-const card = (page: Page) => page.locator('[data-shot=capture-procedure-code]').first()
-const search = (page: Page) => page.getByPlaceholder('Search RVG code or description')
+// On the phone the RVG code is edited in the Billing sheet (owner review, 2026-11-16): tap the card, then the field.
+const billing = (page: Page) => page.locator('[data-shot=capture-billing]').first()
+const card = (page: Page) => page.locator('[data-shot=billing-sheet] [data-shot=capture-procedure-code]').first()
+const search = (page: Page) => page.locator('[data-shot=billing-sheet] input[role=combobox]')
+async function changeCode(page: Page): Promise<void> {
+  await billing(page).click()
+  await card(page).getByRole('button', { name: /\. Change$/ }).click()
+}
 
 test('an AA group added in Admin is picked in the mobile type-ahead', async ({ page }) => {
   await page.goto('/admin/masters?view=rvgGroups')
@@ -42,23 +48,26 @@ test('an AA group added in Admin is picked in the mobile type-ahead', async ({ p
   await expect(page.locator('[data-shot=masters-rvg-groups]')).toContainText('Brow lift')
 
   await openEllison(page)
-  await card(page).getByText('Change', { exact: true }).click()
+  await changeCode(page)
   await search(page).fill('brow')
   await page.locator('button[data-rvg-code=H3]', { hasText: 'Brow lift' }).click()
   await expect(card(page)).toContainText('Brow lift')
-  await expect(card(page)).toContainText('Base 5 units · from the RVG group')
+  await expect(card(page)).toContainText('B 5')
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(billing(page)).toContainText('Brow lift')
   await expect(page.locator('[data-shot=units-row-b]').first()).toContainText('From the RVG group')
   await page.screenshot({ path: 'visual/shots/p19-01-aa-group-picked.png' })
 })
 
 test('typing a code lists every row with that code, each with its description, anatomy and base units', async ({ page }) => {
   await openEllison(page)
-  await card(page).getByText('Change', { exact: true }).click()
+  await changeCode(page)
   await expect(search(page)).toBeFocused()
   await search(page).fill('H1')
   const h1 = page.locator('button[data-rvg-code=H1]')
   await expect(h1.first()).toContainText('B 4')
-  await expect(h1.first()).toContainText('Head')
+  // Every code sits under its anatomy heading, pinned while its rows scroll past.
+  await expect(page.locator('[data-shot=billing-sheet] [data-shot=rvg-section][aria-label=Head] button[data-rvg-code=H1]').first()).toBeVisible()
   await search(page).fill('T2')
   const t2 = page.locator('button[data-rvg-code=T2]')
   await expect(t2).toHaveCount(3)
@@ -69,17 +78,19 @@ test('typing a code lists every row with that code, each with its description, a
 
 test('Clear leaves the Procedure with no RVG code and its text untouched', async ({ page }) => {
   await openEllison(page)
-  await card(page).getByRole('button', { name: 'Clear' }).click()
-  await expect(card(page)).toContainText('No RVG code')
-  // Catch-up Phase 20: Ellison's Contract prices from RVG units, so the code is required: "Add RVG code".
-  await expect(card(page)).toContainText('Add RVG code')
+  await billing(page).click()
+  await card(page).getByRole('button', { name: 'Clear the RVG code' }).click()
+  await expect(search(page)).toBeVisible()
+  await page.getByRole('button', { name: 'Done' }).click()
+  // Catch-up Phase 20: Ellison's Contract prices from RVG units, so the card's Price reads the code as to do.
+  await expect(billing(page)).toContainText('Choose the RVG code')
   await expect(page.locator('[data-shot=units-row-b]').first()).toContainText('No RVG code')
 })
 
 test('H4 with 14 typed: the caption, completion goes through, the warning on the Admin To-do', async ({ page }) => {
   await advanceClockTo1715(page)
   await openEllison(page)
-  await card(page).getByText('Change', { exact: true }).click()
+  await changeCode(page)
   await search(page).fill('H4')
   await page.locator('button[data-rvg-code=H4]').first().click()
   await expect(page.locator('[data-shot=rvg-range-units]')).toContainText('Guide 10 to 12 · starts at 10')
@@ -89,6 +100,7 @@ test('H4 with 14 typed: the caption, completion goes through, the warning on the
   await expect(page.locator('[data-shot=rvg-range-units]')).toContainText('14 chosen')
   await expect(page.locator('[data-shot=rvg-outside-guide]')).toHaveText('Outside the guide range. The office will see a warning after the procedure.')
   await page.screenshot({ path: 'visual/shots/p19-03-outside-guide.png' })
+  await page.getByRole('button', { name: 'Done' }).click()
 
   await page.getByRole('button', { name: 'Finish now' }).click()
   await page.getByRole('button', { name: 'Mark complete' }).click()

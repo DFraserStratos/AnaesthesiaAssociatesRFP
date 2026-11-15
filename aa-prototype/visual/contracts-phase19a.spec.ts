@@ -118,7 +118,8 @@ test('phase 19a a default RVG code fills an empty Procedure', async ({ page }) =
   // Merivale's Face lift under Patient › Standard.
   await page.goto('/admin/day/2026-07-24/bookings/BK0034')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('button', { name: 'No RVG code. Choose' }).first()).toBeVisible()
+  // Prepaid at a fixed price: the code is only offered for reference (catch-up Phase 20).
+  await expect(page.locator('[data-shot=rvg-code-add-reference]').first()).toBeVisible()
   // The Billing card is inline on the Booking: change step 2, then choose the Contract.
   await page.locator('[data-shot=contract-rail-step-2]').first().click()
   await page.locator('[data-rail-option=standard]').first().click()

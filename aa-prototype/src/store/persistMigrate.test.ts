@@ -451,7 +451,6 @@ describe('procedure text and invoice description (catch-up Phase 20a)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v37 store with Procedure descriptions and attachments and reseeds the procedure texts', () => {
-    expect(PERSIST_VERSION).toBe(38)
     const fresh = freshAppState()
     const procedures = Object.fromEntries(
       Object.entries(fresh.schedule.procedures).map(([id, p]) => {
@@ -467,5 +466,23 @@ describe('procedure text and invoice description (catch-up Phase 20a)', () => {
     expect(first['description']).toBeUndefined()
     expect(first['procedureText']).not.toBeUndefined()
     expect(s.schedule.bookings.BK0001 as unknown as Record<string, unknown>).not.toHaveProperty('attachments')
+  })
+})
+
+describe('the RVG backstops (catch-up Phase 20 (9))', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v38 store without the RVG backstop Contracts and reseeds them', () => {
+    expect(PERSIST_VERSION).toBe(39)
+    const fresh = freshAppState()
+    const contracts = Object.fromEntries(Object.entries(fresh.masters.contracts).filter(([, c]) => c.systemRole !== 'rvgFallback'))
+    const stale = { ...fresh, masters: { ...fresh.masters, contracts } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 38 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.masters.contracts).some((c) => c.systemRole === 'rvgFallback')).toBe(true)
   })
 })

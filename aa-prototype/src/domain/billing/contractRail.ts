@@ -38,7 +38,7 @@ import type { AnaesthetistId, BillingLine, ContractId, HospitalId, Procedure, Ra
 import type { Specialty } from '../specialties'
 import { contractFitsSpecialties } from '../specialties'
 import { contractMatchesQuery, isRvgKind, linkFits, noContractRvg, type Contract } from './contracts'
-import { destinationKey, destinationOf, findFallback, type InvoiceDestination } from './fallbacks'
+import { destinationKey, destinationOf, findFallback, findRvgFallback, type InvoiceDestination } from './fallbacks'
 import { fundingTagsInOrder, type FundingTag, type FundingTagId } from './fundingTags'
 import type { Party, PartyId } from './parties'
 import { rangeInForce } from './priceRanges'
@@ -170,7 +170,7 @@ export interface RailOption {
   hint?: string
   /** How many Contracts this answer holds for this List (No contract · RVG counted under Patient › Standard). */
   count: number
-  /** Whether it can be chosen. A hospital tag or Prepaid with no Contract still can: its step fills in the fallback. */
+  /** Whether it can be chosen. A hospital tag with no Contract still can (its step fills in the fallback); Prepaid with none cannot, nor ever for the anaesthetist. */
   selectable: boolean
 }
 
@@ -194,6 +194,13 @@ export interface ContractStep {
   shown: RailRow[]
   /** The destination's open-price fallback, reached only through "Other price". */
   otherPrice?: { contract: Contract; mayTypeAmount: boolean }
+  /**
+   * The destination's RVG backstop (owner review, 2026-11-16): No contract ·
+   * RVG under Patient › Standard (also its pinned row), the hospital tag's or
+   * Special holder's `rvgFallback`, none under Prepaid. With `otherPrice` it
+   * makes the "No contract" heading every Contract list starts with.
+   */
+  rvgBackstop?: Contract
   /**
    * What the step fills in by itself: its one row, or the fallback when no
    * Contract is left to choose (A7). The person still confirms it.
@@ -320,11 +327,16 @@ export function contractRailFor(
   let narrowOptions: RailOption[]
   let live: (o: RailOption) => boolean
   if (dest === 'patient') {
-    narrowOptions = [{ value: 'standard', label: 'Standard', hint: 'Invoiced after the procedure', count: all.standard.length + 1, selectable: true }]
-    if (opts.actor === 'office') {
-      narrowOptions.push({ value: 'prepaid', label: 'Prepaid', hint: 'Invoiced before the procedure', count: all.prepaid.length, selectable: true })
-    }
-    live = (o) => o.count > 0
+    // Payment type always asks (Donald, 16 November): Standard first, the normal pathway, then Prepaid,
+    // shown even when it holds nothing. The anaesthetist sees Prepaid but cannot choose it (A17).
+    const prepaidCount = opts.actor === 'office' ? all.prepaid.length : grouped(masters, ctx, 'office', '').prepaid.length
+    narrowOptions = [
+      { value: 'standard', label: 'Standard', hint: 'Invoiced after the procedure', count: all.standard.length + 1, selectable: true },
+      opts.actor === 'office'
+        ? { value: 'prepaid', label: 'Prepaid', hint: 'Invoiced before the procedure', count: prepaidCount, selectable: prepaidCount > 0 }
+        : { value: 'prepaid', label: 'Prepaid', hint: 'Set by the office', count: prepaidCount, selectable: false },
+    ]
+    live = () => false
   } else if (dest === 'hospital') {
     narrowOptions = hospitalTags.map((t) => ({ value: t.id, label: t.code, count: all.hospitalByTag.get(t.id)?.length ?? 0, selectable: true }))
     live = () => true
@@ -353,6 +365,8 @@ export function contractRailFor(
   if (fallback !== undefined) {
     contractStep.otherPrice = { contract: fallback, mayTypeAmount: mayTypeEnteredPrice(opts.actor, fallback, masters.parties) }
   }
+  const rvgBackstop = fallbackDest !== undefined ? findRvgFallback(masters.contracts, fallbackDest, masters.parties) : undefined
+  if (rvgBackstop !== undefined && rvgBackstop.status === 'active') contractStep.rvgBackstop = rvgBackstop
   if (query === '') {
     // One row fills itself in; none fills in the fallback (A7).
     if (rows.length === 1) contractStep.autoPick = { contractId: rows[0]!.contract.id, viaOtherPrice: false }
@@ -481,7 +495,7 @@ export function contractAllowedOn(masters: RailMasters, ctx: RailContext, contra
   const contract = masters.contracts[contractId]
   if (contract === undefined) return false
   if (contract.systemRole === 'noContractRvg') return true
-  if (contract.systemRole === 'openPriceFallback') {
+  if (contract.systemRole === 'openPriceFallback' || contract.systemRole === 'rvgFallback') {
     const d = destinationOf(contract, masters.parties)
     if (d.kind === 'patient') return true
     if (d.kind === 'hospital') return hospitalTagsFor(masters, ctx).some((t) => t.id === d.fundingTagId) && listHospitalParty(masters.parties, ctx.hospitalId)?.id === d.holderPartyId

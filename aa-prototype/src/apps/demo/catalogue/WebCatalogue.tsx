@@ -109,11 +109,14 @@ export function WebCatalogue() {
           <CatalogueRow name="SeriesList" source="shared/availability/SeriesList.tsx" usedIn={WM} what="Her repeating days off, each with Delete and an inline are-you-sure step." replaceWith="shadcn Card list + AlertDialog" note="The inline confirm becomes an AlertDialog. Deleting a series changes the demo data.">
             <D.SeriesListDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={ALL} what="The RVG code type-ahead: search by code or description, every row showing code, description, anatomy and base units." replaceWith="shadcn Combobox (Base UI) + TanStack Virtual" note="Picks are held locally here. No combobox or listbox roles, and every row renders.">
+          <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={ALL} what="The RVG code type-ahead in an Overlay: every code under its anatomy heading, search by code or description, every row showing code, description and base units." replaceWith="shadcn Combobox (Base UI) + TanStack Virtual" note="Picks are held locally here. No combobox or listbox roles, and every row renders.">
             <D.CodePickerDemo />
           </CatalogueRow>
-          <CatalogueRow name="ProcedureCodeCard" source="shared/capture/ProcedureCodeCard.tsx" usedIn={ALL} what="The capture card for a Procedure's RVG code: Choose or Change opens the picker, Clear removes it, a ranged code takes a base value." replaceWith="shadcn Card + Base UI NumberField" note="Live on a seeded Booking still to capture; changes write to the demo data.">
-            <D.ProcedureCodeCardDemo f={f} />
+          <CatalogueRow name="RvgCodeList" source="shared/capture/RvgCodeList.tsx" usedIn={ALL} what="Every RVG code under its anatomy heading, the heading pinned to the top of the list until its rows scroll past; shared by the type-ahead field and the code sheet." replaceWith="Base UI Combobox groups + TanStack Virtual" note="Shown inside CodePickerSheet above and RvgCodeField below. Every row renders.">
+            <D.CodePickerDemo />
+          </CatalogueRow>
+          <CatalogueRow name="RvgCodeField" source="shared/capture/ProcedureCodeCard.tsx" usedIn={ALL} what="A Procedure's RVG code, inside the Billing card's price (on the phone, inside the Billing sheet): typed straight into the field, which drops down every code; once chosen the field shows the code, a click changes it and a cross clears it; a ranged code takes a base value." replaceWith="shadcn Card + Base UI NumberField" note="Live on a seeded Booking still to capture; changes write to the demo data.">
+            <D.RvgCodeFieldDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="TimesCard" source="shared/capture/TimesCard.tsx" usedIn={ALL} what="Start and Finish capture: Start now and Finish now stamp the demo clock, then minus and plus 5 minute nudges." replaceWith="shadcn Card + Button Group" note="Live on a seeded Booking; stamping and nudging write to the demo data.">
             <D.TimesCardDemo f={f} />
