@@ -1,7 +1,18 @@
 # UI library research: start here
 
-**Status:** research only, parked. Nothing has been changed in `aa-prototype/`. The plan is to pick this up
-towards the end of the prototype build (after the catch-up phases).
+**Status: closed, 12 November 2026. We are not adopting shadcn/ui or any component library.**
+
+- The side-by-side preview scored library fit for our look at 2.6 to 2.8 out of 5 (Admin 2.8, Web 2.7,
+  Mobile 2.6); no row scored 5.
+- The kit had to rewrite Button, Badge, Tabs, the segmented control and the toast to match the design.
+- The dev team is comfortable keeping custom controls and advised against bending shadcn to our look.
+
+The research surfaced a problem worth fixing on its own: the same component built more than once. That work
+continues as the unification effort in `docs/ui-unification/` (one component per job, our own design and
+code). The inventories, the fit notes and the component map in this folder remain as evidence; the
+provisional decisions and the "How to resume" prompt below are historical. `ui-library-preview/` is retired
+at the start of unification phase U1, with its row list, fit notes and plan log archived to
+`preview-archive/` in this folder.
 
 **Snapshot:** gathered 11 November 2026, at commit `48fa38d4` (with uncommitted catch-up work in progress
 at the time). The inventories describe the app at that point; library versions and status are as reported
@@ -60,6 +71,36 @@ is **unification and recognisability, not polish**:
 | Charts | Recharts (shadcn Chart) for the receivables aging bars | Replaces a hand-built span chart; adds an accessible fallback. |
 | Designed-component libraries | **Not used** | Against principle 1. Beautiful UI noted only for a possible future AI assistant. |
 
+## What the preview taught us (11 Nov 2026)
+
+The `ui-library-preview/` build rechecked versions and tried every row. Changes to the provisional
+decisions above:
+
+- **Pinned versions** (all exact): React 19.3.1, `@base-ui/react` 1.9.0 (the old
+  `@base-ui-components/react` name is deprecated), shadcn CLI 4.23.0 (style `base-nova`), Tailwind 4.3.5,
+  Sonner 2.0.8, cmdk 1.1.1, **TanStack Table 9.3.1 (v9 is now stable, not alpha)**, TanStack Virtual
+  3.14.26, React Hook Form 7.91.0 + `@hookform/resolvers` 7.0.5 + Zod 4.6.7, react-day-picker 10.0.2 (also
+  published as `@daypicker/react`), Recharts 3.8.0 (shadcn Chart's pin; 3.10.1 is latest), NumberFlow 0.6.2,
+  Motion 14.12.0, lucide-react 1.71.0, date-fns 4.4.0. TypeScript 7 is out; 6.0.3 kept to match the prototype.
+- **React 19 upgrade is nearly free**: the whole prototype catalogue runs under React 19 unmodified. One fix
+  is needed: `SlideStack.tsx` `inert: ''` must become `inert: true` (React 19 reads `''` as false).
+- **shadcn for Base UI has no `number-field`, `autocomplete` or working `form`**: use the Base UI
+  NumberField / Autocomplete primitives directly and shadcn Field with React Hook Form.
+- **shadcn components now import `cn` from the `cn` npm package**, and `cn` does not treat custom radius
+  names (`rounded-ctl`, `rounded-pill`) as conflicting: overrides need the important modifier.
+- **Tailwind prefix (`tw:`) works end to end** with the shadcn CLI and is how library styling was kept off
+  the existing screens; useful if the migration is incremental.
+- **Re-skinning needed to follow the prototype, not the Design Language summary**: avatars are
+  crimson-tint / white-elevated chips (not solid crimson), line tabs use an ink underline, the usual
+  segmented control is a teal pill; status chips are flat tints (hatched / dashed belong to blocks); fields
+  are 48px on the background colour; field labels are the 11px uppercase eyebrow.
+- **Not used**: Vaul (Base UI Drawer instead, as planned), cmdk (no row needed a command palette), shadcn
+  Sidebar (nav rows use Base UI NavigationMenu). React Aria TimeField, the research's pick for
+  SessionTimesFields, is outside the stack; the native time input stays as option 1 there.
+- Many rows carry **live options** for choices the research left open (ToggleGroup or Tabs, toast or inline,
+  corner X, Escape behaviour, NumberFlow or the existing tween); the user's verdict export records the
+  preferred one.
+
 ## Stays custom (built on library primitives)
 
 Admin DayGrid scheduling canvas; mobile SlideStack with edge-swipe-back; collapsing mobile masthead;
@@ -103,6 +144,8 @@ candidate-ranking pickers (domain ordering rules). Details in the inventories.
 | `research-specialists.md` | Sonner, Vaul, cmdk, NumberFlow, Emil Kowalski's skills (pick-ui-library), plus TanStack, forms, dates, Motion, dnd-kit and others. |
 | `research-designed.md` | Beautiful UI, RareUI, Magic UI, Aceternity, 21st.dev, and business-block sources (Tremor, ReUI, Kibo, coss). |
 | `source-video.md` | The video that prompted this: summary, transcript notes and its library links. |
+| `preview-build-prompt.md` | Kick-off prompt for the next step: a separate `ui-library-preview/` workspace showing each current component beside its live library replacement. |
+| `../../ui-library-preview/` | **The preview itself (built 11 Nov 2026).** `npm run dev:preview`, http://localhost:5182/admin, `/web`, `/mobile`, `/theme`. Every catalogue row live twice: current (left) and library replacement (right), with live options for open design choices and exportable Adopt/Adjust/Reject verdicts. See its `README.md`. |
 
 **Live component catalogue (in the prototype):** `/demo/catalogue/admin`, `/demo/catalogue/web` and
 `/demo/catalogue/mobile` (URL only, not in the app switcher; code in

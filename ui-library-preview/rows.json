@@ -1,0 +1,3396 @@
+{
+ "admin": [
+  {
+   "name": "Button",
+   "group": "shadcn",
+   "source": "shared/ui/Button.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The one button: teal primary, outlined secondary and the compact tinted pill, with a disabled state. About 102 uses in Admin.",
+   "replaceWith": "shadcn Button (cva variants)",
+   "note": "Adds focus-visible, hover and loading states.",
+   "example": {
+    "component": "ButtonExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TickButton",
+   "group": "shadcn",
+   "source": "shared/ui/TickButton.tsx",
+   "usedIn": "Admin · Web",
+   "stage": "web",
+   "what": "The office's 'dealt with' control: a teal outline button with a check, used by To-do Clear and notice Resolve.",
+   "replaceWith": "shadcn Button (outline variant + icon)",
+   "example": {
+    "component": "TickButtonExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Segmented",
+   "group": "shadcn",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A row of mutually exclusive options (status filters, List or Calendar, Yes or No). 22 uses in Admin.",
+   "replaceWith": "shadcn ToggleGroup (single)",
+   "note": "Gives radio semantics and arrow keys.",
+   "example": {
+    "component": "SegmentedExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "group": "shadcn",
+   "source": "shared/ui/SlidingSegmentedControl.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A segmented control whose selected pill slides between options, in teal, surface and ink variants.",
+   "replaceWith": "shadcn ToggleGroup (single) or Tabs",
+   "note": "Keep the sliding indicator with a Motion layoutId.",
+   "example": {
+    "component": "SlidingSegmentedExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "StatusLegend (chips)",
+   "group": "shadcn",
+   "source": "shared/StatusLegend.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The List kinds and availability statuses from the status master. With a toggle handler each chip hides or shows that status on the grid.",
+   "replaceWith": "shadcn ToggleGroup (multiple)",
+   "example": {
+    "component": "StatusLegendExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SignalFilterButton (DayGrid focus filters)",
+   "group": "shadcn",
+   "source": "apps/admin/components/DayGrid.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The Day grid footer's aria-pressed pills (Needs attention, Conflict, Has note, Has warnings) that narrow and regroup the rows, with Reset filters.",
+   "replaceWith": "shadcn ToggleGroup (multiple) / Toggle",
+   "note": "Not exported: the row mounts the real DayGrid with an empty roster, so only its live footer shows.",
+   "example": {
+    "component": "FocusFiltersExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) day.masters, day.warningFlags"
+  },
+  {
+   "name": "Dialog (useSurface().Overlay)",
+   "group": "shadcn",
+   "source": "shared/surface/Dialog.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The web Overlay every Admin sheet opens in: a centred card over a scrim, closed by Escape or a scrim click. About 37 uses.",
+   "replaceWith": "shadcn Dialog",
+   "note": "Adds focus trap, initial focus and restore, scroll lock, portal and aria-labelledby; retires the OPEN_DIALOGS stack.",
+   "example": {
+    "component": "OverlayExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "MasterPanel / PanelGrid / PanelSection",
+   "group": "shadcn",
+   "source": "apps/admin/components/MasterPanel.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The 600px right side panel the Contract and Party editors open in, with a dialog role, Escape and focus in and back.",
+   "replaceWith": "shadcn Sheet (side)",
+   "note": "Adds the missing focus trap and portal.",
+   "example": {
+    "component": "MasterPanelExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SlotDrawer",
+   "group": "shadcn",
+   "source": "apps/admin/components/SlotDrawer.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The 440px session drawer: an empty session's actions, or a List's details, bookings and actions with nested sheets.",
+   "replaceWith": "shadcn Sheet (side)",
+   "note": "Adds dialog role, Escape and focus handling. Its actions (assign, edit, reassign, status) write to the demo store, and its List links leave this page.",
+   "example": {
+    "component": "SlotDrawerExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "router",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() activeSlotId, emptySlotId"
+  },
+  {
+   "name": "DraftListDrawer",
+   "group": "shadcn",
+   "source": "apps/admin/components/DraftListDrawer.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The same drawer for a Draft List (no session yet): its details, bookings and Assign, Redate, Edit and Remove.",
+   "replaceWith": "shadcn Sheet (side)",
+   "note": "Disabled reasons live only in title tooltips. Its actions write to the demo store.",
+   "example": {
+    "component": "DraftListDrawerExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() draftListId"
+  },
+  {
+   "name": "ClearConflictSheet",
+   "group": "shadcn",
+   "source": "apps/admin/components/conflicts/ClearConflictSheet.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Confirms clearing a hospital-closure conflict on a List, with an optional note.",
+   "replaceWith": "shadcn AlertDialog",
+   "note": "Correct alertdialog role, focus on the safe action. Confirming clears the conflict in the demo store.",
+   "example": {
+    "component": "ClearConflictExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() conflictedListId; store schedule.lists"
+  },
+  {
+   "name": "HistorySheet",
+   "group": "shadcn",
+   "source": "shared/booking/HistorySheet.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The audit history of a record in an Overlay, with expandable steps (HistoryTimeline).",
+   "replaceWith": "shadcn Dialog + Accordion",
+   "example": {
+    "component": "HistorySheetExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() submittedListId; store schedule.lists"
+  },
+  {
+   "name": "SideNav (with RolesInfo)",
+   "group": "shadcn",
+   "source": "apps/admin/components/SideNav.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 600,
+   "what": "The dark Admin side nav: sections with crimson and amber count badges, the wordmark and the Roles in this prototype dialog.",
+   "replaceWith": "shadcn Sidebar",
+   "note": "Gives real links, aria-current and a nav label; crimson only on --sidebar-primary.",
+   "example": {
+    "component": "SideNavExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Master data sub-nav",
+   "group": "shadcn",
+   "source": "apps/admin/screens/masters/MasterData.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 420,
+   "what": "The vertical list of the 15 master views, with aria-current on the open one.",
+   "replaceWith": "shadcn Sidebar group / NavigationMenu",
+   "note": "Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view.",
+   "example": {
+    "component": "MastersSubNavExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "consts MASTERS_NAV"
+  },
+  {
+   "name": "TabButton (Integrations)",
+   "group": "shadcn",
+   "source": "apps/admin/screens/IntegrationMonitorScreen.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 420,
+   "what": "Five underlined tab buttons switching the Integrations monitor between messages, feeds, PDFs, data quality and validators.",
+   "replaceWith": "shadcn Tabs",
+   "note": "Not exported: the row mounts the real Integrations screen. Adds tab roles and arrow keys. Some tab actions write to the demo store.",
+   "example": {
+    "component": "IntegrationMonitorScreen",
+    "file": "apps/admin/screens/IntegrationMonitorScreen.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "live store (the real screen reads its own data as the office)"
+  },
+  {
+   "name": "TabLink (AA fees)",
+   "group": "shadcn",
+   "source": "apps/admin/screens/AaFeesScreen.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Route tabs for the AA fee invoices and fee settings pages.",
+   "replaceWith": "shadcn Tabs (as links)",
+   "note": "Rebuilt on buttons with the same styles: the real one is a router Link that would leave this page.",
+   "example": {
+    "component": "TabLinkExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "DayNav (with SortToggle)",
+   "group": "shadcn",
+   "source": "apps/admin/components/DayNav.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The Day view toolbar: week and day steppers, Today, a native date input bounded by the horizon, the Roster or A to Z SortToggle and Find available.",
+   "replaceWith": "shadcn Button Group + ToggleGroup + Date Picker",
+   "note": "Labels the glyph buttons and gives SortToggle pressed semantics.",
+   "example": {
+    "component": "DayNavExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) "
+  },
+  {
+   "name": "StatusChip",
+   "group": "shadcn",
+   "source": "shared/StatusChip.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A small tinted chip for a List kind or availability status, coloured from the status master.",
+   "replaceWith": "shadcn Badge (6 status variants)",
+   "example": {
+    "component": "StatusChipExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Pill",
+   "group": "shadcn",
+   "source": "shared/ui/Pill.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "Neutral and success label pills, never teal or crimson, so no pill reads as a button.",
+   "replaceWith": "shadcn Badge",
+   "example": {
+    "component": "PillExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "MasterPills",
+   "group": "shadcn",
+   "source": "apps/admin/components/MasterPills.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Admin's import path for Pill, used for Party kinds, Contract tags, Active and RVG anatomy headings.",
+   "replaceWith": "shadcn Badge",
+   "note": "A re-export only: delete it in the migration.",
+   "example": {
+    "component": "MasterPillsExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TierPill / PreferredPill / NotPreferredPill",
+   "group": "shadcn",
+   "source": "apps/admin/components/pairing/Pills.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The office-only pairing pills: priority tier, preferred pairing (teal tint) and not preferred (warning outline).",
+   "replaceWith": "shadcn Badge",
+   "example": {
+    "component": "PairingPillsExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ChangedSinceSubmittedPill",
+   "group": "shadcn",
+   "source": "apps/admin/components/ChangedSinceSubmitted.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Flags a submitted List the anaesthetist has changed since submitting, with the count and time of the last change.",
+   "replaceWith": "shadcn Badge + Tooltip",
+   "note": "Driven by a local cue here: the seed has no changed submitted List.",
+   "example": {
+    "component": "ChangedSinceSubmittedExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "DraftListParts",
+   "group": "shadcn",
+   "source": "apps/admin/components/draftLists/DraftListParts.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Draft List badges: Unassigned, the DRAFT state chip, the waiting time (amber past a day) and the booking count.",
+   "replaceWith": "shadcn Badge",
+   "example": {
+    "component": "DraftListPartsLive",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() draftListId; store schedule.lists"
+  },
+  {
+   "name": "ConflictDot",
+   "group": "shadcn",
+   "source": "apps/admin/components/conflicts/ConflictDot.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The amber conflict mark, muted once cleared.",
+   "replaceWith": "shadcn Badge (dot) + Tooltip",
+   "example": {
+    "component": "ConflictDotExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "WarningTriangle",
+   "group": "shadcn",
+   "source": "shared/warnings/WarningTriangle.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The warning mark on a booking, coloured by the strongest open warning.",
+   "replaceWith": "shadcn Tooltip + Badge",
+   "note": "Its detail is reachable by keyboard once it is a Tooltip.",
+   "example": {
+    "component": "WarningTriangleExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store schedule, billing, appSettings, clock, masters"
+  },
+  {
+   "name": "NameSearchBox",
+   "group": "shadcn",
+   "source": "shared/ui/NameSearchBox.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The one type-ahead name search box, in field and pill sizes; Escape clears it. Each caller filters its own rows.",
+   "replaceWith": "shadcn Input Group (search)",
+   "note": "One search input instead of three.",
+   "example": {
+    "component": "NameSearchBoxExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.anaesthetists"
+  },
+  {
+   "name": "ContractSelect (fieldChrome select)",
+   "group": "shadcn",
+   "source": "shared/contracts/ContractSelect.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "A native select of every active Contract grouped by holder, styled with Admin's 48px selectControlStyle.",
+   "replaceWith": "shadcn Select (or NativeSelect)",
+   "note": "Several Admin selects are unlabelled today; this one has its label.",
+   "example": {
+    "component": "ContractSelectExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SurgeonPicker",
+   "group": "shadcn",
+   "source": "apps/admin/components/pairing/SurgeonPicker.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "A native select of surgeons with a 'Not preferred with Dr X' optgroup for the chosen anaesthetist.",
+   "replaceWith": "Base UI Combobox (with groups)",
+   "note": "The list is long and not searchable today. Opens on an anaesthetist with a not-preferred surgeon, so the second optgroup shows.",
+   "example": {
+    "component": "SurgeonPickerExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.anaesthetists"
+  },
+  {
+   "name": "NotPreferredWarning",
+   "group": "shadcn",
+   "source": "apps/admin/components/pairing/NotPreferredWarning.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "An amber callout when the chosen surgeon is not preferred with the anaesthetist; it warns, never blocks.",
+   "replaceWith": "shadcn Alert",
+   "note": "Fed by the real useNotPreferredWarning hook for a seeded not-preferred pairing.",
+   "example": {
+    "component": "NotPreferredWarningExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ChipMultiSelect",
+   "group": "shadcn",
+   "source": "apps/admin/components/ChipMultiSelect.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "A native 'Add a...' select plus removable chips, for a Contract's specialties.",
+   "replaceWith": "Base UI Combobox (multiple, chips)",
+   "note": "Searchable, with Backspace to remove.",
+   "example": {
+    "component": "ChipMultiSelectExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.specialties"
+  },
+  {
+   "name": "CodePickerSheet",
+   "group": "shadcn",
+   "source": "shared/capture/CodePickerSheet.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The RVG code type-ahead in an Overlay: search by code or description, every match rendered.",
+   "replaceWith": "Base UI Combobox + TanStack Virtual",
+   "note": "Gives combobox and listbox roles and arrow and Enter selection.",
+   "example": {
+    "component": "CodePickerExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.rvgGroups"
+  },
+  {
+   "name": "ConflictCallout",
+   "group": "shadcn",
+   "source": "apps/admin/components/conflicts/ConflictCallout.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Warns, before saving, that the hospital is closed that day and the List will be flagged.",
+   "replaceWith": "shadcn Alert",
+   "example": {
+    "component": "ConflictCalloutExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() holidayId; store masters.hospitals, masters.holidays"
+  },
+  {
+   "name": "WarningsToDo",
+   "group": "shadcn",
+   "source": "apps/admin/components/WarningsToDo.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The rail's To-do card: every open warning, soonest first, each with Open and Clear, and a show-more toggle.",
+   "replaceWith": "shadcn Card + Collapsible",
+   "note": "Clear writes a clearance to the demo store.",
+   "example": {
+    "component": "WarningsToDoExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) day.todoRows"
+  },
+  {
+   "name": "NotificationsCard",
+   "group": "shadcn",
+   "source": "apps/admin/components/NotificationsCard.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The rail's shared notification pool: active notices with Resolve, See all and Show resolved.",
+   "replaceWith": "shadcn Card + Button",
+   "note": "Resolve writes to the demo store. The fresh seed has no notices, so it shows its empty state.",
+   "example": {
+    "component": "NotificationsCardExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "timers"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "VacatedSessionChoice / StatusRadioGroup",
+   "group": "shadcn",
+   "source": "shared/flows/VacatedSessionChoice.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A radio group of status chips with a roving tab stop: what the vacated session becomes after a move.",
+   "replaceWith": "shadcn RadioGroup",
+   "note": "Already correct; swap for consistency.",
+   "example": {
+    "component": "VacatedChoiceExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ProfileChrome",
+   "group": "shadcn",
+   "source": "apps/admin/components/ProfileChrome.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions.",
+   "replaceWith": "shadcn Card (+ Breadcrumb for BackLink)",
+   "note": "BackLink is left out: it is a router Link.",
+   "example": {
+    "component": "ProfileChromeExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "router"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "drawerParts (Section, Row, DrawerLink, ActionBtn)",
+   "group": "shadcn",
+   "source": "apps/admin/components/drawerParts.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The drawers' section headings, label and value rows, inline links and action buttons.",
+   "replaceWith": "shadcn Button + DropdownMenu",
+   "note": "SlotDrawer re-declares its own copies; merge them.",
+   "example": {
+    "component": "DrawerPartsExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Inline success banner (role=status)",
+   "group": "sonner",
+   "source": "apps/admin/screens/ConflictsScreen.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "A teal-tint confirmation line with Dismiss after an action (Conflicts, Draft Lists, Recurring apply, Holiday, AA fees).",
+   "replaceWith": "Sonner toast (with action and undo)",
+   "note": "Inline JSX in each screen, not a component: rebuilt here from the Conflicts screen. Errors stay inline.",
+   "example": {
+    "component": "InlineBannerExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Table / Header / TextAction / EditCell",
+   "group": "tanstack",
+   "source": "apps/admin/screens/masters/chrome.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The master views' table chrome: a page header, a bordered table with head cells, text actions and an Edit cell.",
+   "replaceWith": "TanStack Table + shadcn Table",
+   "note": "Adds sorting with aria-sort, sticky headers and column visibility. Th and Td are duplicated in four files today.",
+   "example": {
+    "component": "MasterTableExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.specialties"
+  },
+  {
+   "name": "ReviewQueue (clickable rows)",
+   "group": "tanstack",
+   "source": "apps/admin/screens/ReviewQueue.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 380,
+   "what": "Submitted Lists to authorise, as a table whose whole row opens the List (tableChrome's isInteractiveRowTarget).",
+   "replaceWith": "TanStack Table + shadcn Table (row links)",
+   "note": "Fixes mouse-only row clicks: rows have no tabIndex today. Open is stubbed.",
+   "example": {
+    "component": "ReviewQueue",
+    "file": "apps/admin/screens/ReviewQueue.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "live store (the real screen reads its own data as the office)"
+  },
+  {
+   "name": "RvgGroupsView (grouped rows)",
+   "group": "tanstack",
+   "source": "apps/admin/screens/masters/RvgGroupsView.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 460,
+   "what": "RVG groups under anatomy headings (colSpan group rows), with search, an anatomy filter and add, edit and retire.",
+   "replaceWith": "TanStack Table (grouping) + shadcn Table",
+   "note": "Add, edit and retire write to the demo store.",
+   "example": {
+    "component": "RvgGroupsView",
+    "file": "apps/admin/screens/masters/RvgGroupsView.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "live store (the real screen reads its own data as the office)"
+  },
+  {
+   "name": "AuditViewer",
+   "group": "tanstack",
+   "source": "apps/admin/screens/AuditViewer.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 460,
+   "what": "The global audit feed with a filter bar (two selects, two dates), capped at 500 rows.",
+   "replaceWith": "TanStack Table + TanStack Virtual",
+   "note": "Virtualisation or pagination replaces the 500-row cap; the date pair becomes a range picker.",
+   "example": {
+    "component": "AuditViewer",
+    "file": "apps/admin/screens/AuditViewer.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "live store (the real screen reads its own data as the office)"
+  },
+  {
+   "name": "TextField",
+   "group": "forms",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A labelled 48px text input with optional mono style and hint line. 59 uses in Admin.",
+   "replaceWith": "shadcn Field + Input (React Hook Form)",
+   "note": "Adds aria-invalid and field-bound errors.",
+   "example": {
+    "component": "TextFieldExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TextArea",
+   "group": "forms",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A labelled multi-line text input with an optional blur handler.",
+   "replaceWith": "shadcn Field + Textarea",
+   "example": {
+    "component": "TextAreaExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "FieldLabel / FormError",
+   "group": "forms",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The field label, and the inline role=alert error line under a form.",
+   "replaceWith": "shadcn Label + FieldError (Zod schema)",
+   "note": "Ties each error to its field instead of one line per form.",
+   "example": {
+    "component": "FormErrorExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ContractPanel (ContractEditSheet)",
+   "group": "forms",
+   "source": "apps/admin/flows/ContractEditSheet.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "The Contract editor in a MasterPanel: two-column fields, selects, segmented choices, ChipMultiSelect, SurgeonPicker, the RVG code picker and price ranges.",
+   "replaceWith": "shadcn Sheet + Field + React Hook Form + Zod",
+   "note": "Save writes the Contract to the demo store.",
+   "example": {
+    "component": "ContractPanelExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() fixedContractId; store masters.contracts"
+  },
+  {
+   "name": "SlotStatusSheet",
+   "group": "forms",
+   "source": "apps/admin/flows/SlotStatusSheet.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Adds or edits an availability status: name, colour swatches, flags and a live preview, validated as you type.",
+   "replaceWith": "shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod",
+   "note": "Save adds the status to the demo store.",
+   "example": {
+    "component": "SlotStatusSheetExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ContractPriceRanges",
+   "group": "forms",
+   "source": "apps/admin/flows/ContractPriceRanges.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted.",
+   "replaceWith": "Base UI NumberField + TanStack Table (cell edit)",
+   "note": "Keep Enter-commits and Escape-cancels. Saving writes to the demo store.",
+   "example": {
+    "component": "ContractPriceRangesExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "timers"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() fixedContractId; store masters.contracts"
+  },
+  {
+   "name": "MiniCalendar (RightRail)",
+   "group": "daypicker",
+   "source": "apps/admin/components/RightRail.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 420,
+   "what": "The rail's month calendar with roving focus, arrows, Home and End, Page Up and Down, and today in crimson.",
+   "replaceWith": "shadcn Calendar (react-day-picker)",
+   "note": "Not exported: the row mounts the real RightRail (calendar on top; To-do, notes and Awaiting review below). Keep its key bindings. Notes stay local.",
+   "example": {
+    "component": "RightRailExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) day.todoRows"
+  },
+  {
+   "name": "HospitalCalendar",
+   "group": "daypicker",
+   "source": "apps/admin/screens/masters/HospitalsView.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 520,
+   "what": "One hospital's month of closures and Lists: a closure opens it to change or delete, an open day adds one.",
+   "replaceWith": "shadcn Calendar (custom day content)",
+   "note": "Not exported: the row mounts the real HospitalsView; choose Calendar. Saving a holiday writes to the demo store.",
+   "example": {
+    "component": "HospitalsView",
+    "file": "apps/admin/screens/masters/HospitalsView.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "live store (the real screen reads its own data as the office)"
+  },
+  {
+   "name": "Native date input (TextField type=date)",
+   "group": "daypicker",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The browser's own date input, used 15 times in Admin (holidays, redate, audit range, go-to-date).",
+   "replaceWith": "shadcn Date Picker (Popover + Calendar)",
+   "note": "Pass the demo clock's today and the horizon as bounds.",
+   "example": {
+    "component": "DateFieldExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "demo clock useToday()"
+  },
+  {
+   "name": "SessionTimesFields",
+   "group": "daypicker",
+   "source": "apps/admin/flows/SessionTimesFields.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "A session's start and end as native time inputs, with a default or own-times hint and Use default.",
+   "replaceWith": "React Aria TimeField (or keep native)",
+   "note": "Neither Base UI nor react-day-picker has a time picker.",
+   "example": {
+    "component": "SessionTimesExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store appSettings.schedule.defaultTimes.AM"
+  },
+  {
+   "name": "RVG anatomy datalist",
+   "group": "daypicker",
+   "source": "apps/admin/screens/masters/RvgGroupsView.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "RvgGroupSheet's anatomy heading: free text with the known headings suggested by a native datalist.",
+   "replaceWith": "Base UI Autocomplete",
+   "note": "RvgGroupSheet is not exported: rebuilt from its markup and the real ANATOMY_HEADINGS. The real one opens from Add group in the RvgGroupsView row.",
+   "example": {
+    "component": "AnatomyDatalistExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "consts ANATOMY_HEADINGS"
+  },
+  {
+   "name": "SuccessOverlay",
+   "group": "motion",
+   "source": "shared/ui/SuccessOverlay.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "height": 200,
+   "what": "The full-surface success moment: the circle pops and the tick draws, then the flow moves on (Assign Draft List, Reassign).",
+   "replaceWith": "Custom on Motion (keep the choreography)",
+   "example": {
+    "component": "SuccessOverlayExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "timers"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TickBadge",
+   "group": "motion",
+   "source": "shared/ui/TickBadge.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The teal tick badge, optionally animated with the complete-tick draw.",
+   "replaceWith": "Custom on Motion",
+   "example": {
+    "component": "TickBadgeExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ProcedureStack",
+   "group": "custom",
+   "source": "shared/booking/ProcedureStack.tsx",
+   "usedIn": "",
+   "stage": "web",
+   "replaceWith": "Custom (a description list on library primitives)",
+   "what": "One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed.",
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "",
+   "example": ""
+  },
+  {
+   "name": "DayGrid",
+   "group": "custom",
+   "source": "apps/admin/components/DayGrid.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 620,
+   "what": "The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the Draft List band and the filter footer. Cut down to 10 rows.",
+   "replaceWith": "Custom on primitives (grid roles, Tooltip, TanStack Virtual)",
+   "note": "Blocks open the real SlotDrawer, and its actions write to the demo store.",
+   "example": {
+    "component": "DayGridExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "router",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) day.anaesthetists, day.viewsByAnaesthetist, day.masters, day.warningFlags, day.draftLists, day.bookingCounts"
+  },
+  {
+   "name": "DraftListBand",
+   "group": "custom",
+   "source": "apps/admin/components/DraftListBand.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Today's Draft Lists on the same ruler, above the anaesthetists; each opens its drawer.",
+   "replaceWith": "Custom (Tooltip on blocks)",
+   "example": {
+    "component": "DraftListBandExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) day.draftLists, day.bookingCounts"
+  },
+  {
+   "name": "StatusBlock",
+   "group": "custom",
+   "source": "shared/StatusBlock.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A session block filled by its status: solid, tint, hatched Unavailable or dashed Free.",
+   "replaceWith": "Custom (status cell rendering)",
+   "example": {
+    "component": "StatusBlockExample",
+    "file": "apps/demo/catalogue/admin/basicExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.slotStatuses"
+  },
+  {
+   "name": "Review summary tiles (ReviewScreen)",
+   "group": "custom",
+   "source": "apps/admin/screens/ReviewScreen.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 560,
+   "what": "The review page's four summary tiles, then the bookings table with totals and flags, the action bar and the authorise confirm.",
+   "replaceWith": "Custom on shadcn Card + Table + AlertDialog",
+   "note": "Tile is not exported: the row mounts the real ReviewScreen. Authorise writes to the demo store.",
+   "example": {
+    "component": "ReviewScreenExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() submittedListId"
+  },
+  {
+   "name": "Billing pipeline stepper (PipelineCard)",
+   "group": "custom",
+   "source": "apps/admin/screens/BillingMonitorScreen.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "what": "Each billed List's stages (authorised, run, invoices, emailed, Xero) as tinted chips joined by arrows.",
+   "replaceWith": "Custom on shadcn Badge + Tooltip",
+   "note": "Not exported, and the real screen's AA fee link leaves the page: rebuilt from StageChip, fed by the real billingMonitor selector. Chips are buttons here so the detail can be shown.",
+   "example": {
+    "component": "PipelineStepperExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "store schedule, billing, masters; consts STAGE_TONE"
+  },
+  {
+   "name": "InvoiceDocument",
+   "group": "custom",
+   "source": "apps/admin/screens/InvoiceDocument.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 520,
+   "what": "The invoice as a print-styled document (patient or insurer layout, serif voice) with its info rail. Shown at half size.",
+   "replaceWith": "Custom (print-styled page)",
+   "note": "Keep it out of a fixed Dialog for print isolation. Its rail actions write to the demo store.",
+   "example": {
+    "component": "InvoiceDocumentExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "admin/adminData.ts useSeedIds() invoiceId"
+  },
+  {
+   "name": "AnaesthetistCandidates",
+   "group": "custom",
+   "source": "apps/admin/components/pairing/AnaesthetistCandidates.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 420,
+   "what": "The ranked anaesthetist picker: a name search, a tier filter and tiered, shuffled-within-tier rows.",
+   "replaceWith": "Custom on Base UI Combobox / listbox",
+   "note": "Ranking is a domain rule; adds listbox semantics and arrow keys.",
+   "example": {
+    "component": "AnaesthetistCandidatesExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() todayISO; useAdminDay(today) day.anaesthetists; store masters.surgeons"
+  },
+  {
+   "name": "DraftListCandidates",
+   "group": "custom",
+   "source": "apps/admin/components/pairing/DraftListCandidates.tsx",
+   "usedIn": "Admin",
+   "stage": "web",
+   "height": 420,
+   "what": "Who can take a Draft List: free colleagues first, not-preferred ones apart, occupied sessions linked to their List.",
+   "replaceWith": "Custom on Base UI Combobox / listbox",
+   "example": {
+    "component": "DraftListCandidatesExample",
+    "file": "apps/demo/catalogue/admin/storeExamples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "admin/adminData.ts useSeedIds() draftListId"
+  }
+ ],
+ "web": [
+  {
+   "name": "WebNav",
+   "group": "shadcn",
+   "source": "apps/web/components/WebNav.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar.",
+   "replaceWith": "shadcn NavigationMenu (links) + Avatar",
+   "note": "Plain buttons today: no aria-current, no nav label, a hand-rolled avatar.",
+   "example": {
+    "component": "WebNavDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.personaName, f.initials"
+  },
+  {
+   "name": "AvailabilityPageSwitch",
+   "group": "shadcn",
+   "source": "apps/web/components/AvailabilityPageSwitch.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "Switches between the two Availability pages, Find cover and My availability. A sliding segmented control used as route navigation.",
+   "replaceWith": "shadcn Tabs (as links)",
+   "note": "A segmented control doing a tab bar's job; tabs-as-links give the route and aria-current.",
+   "example": {
+    "component": "PageSwitchDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "router"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SubTabButton",
+   "group": "shadcn",
+   "source": "apps/web/screens/AccountsScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The Accounts underline sub-tabs: Overdue, Payments, GST activity and AA fees.",
+   "replaceWith": "shadcn Tabs",
+   "note": "Recreated: local to AccountsScreen.tsx. No tab roles, aria-selected or arrow keys today.",
+   "example": {
+    "component": "SubTabsDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "consts SUB_TABS; recreation SubTabButton"
+  },
+  {
+   "name": "Back link",
+   "group": "shadcn",
+   "source": "apps/web/screens/ListDetailView.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The teal chevron link above List and Booking detail that returns to where you came from.",
+   "replaceWith": "shadcn Breadcrumb",
+   "note": "Recreated: inline in ListDetailView.tsx and BookingDetailView.tsx. A breadcrumb also says where you are.",
+   "example": {
+    "component": "BackLinkDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation BackLink"
+  },
+  {
+   "name": "Panel",
+   "group": "shadcn",
+   "source": "apps/web/components/Panel.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The white card every web screen is built from: optional title row with a right-aligned action, padded or flush for a full-bleed table.",
+   "replaceWith": "shadcn Card",
+   "note": "The title is a div, not a heading, so screen-reader users cannot jump between panels.",
+   "example": {
+    "component": "PanelDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "StatTile",
+   "group": "shadcn",
+   "source": "apps/web/screens/DashboardScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "A dashboard figure: small caps label, a large mono value and an optional green change pill. Seeded productivity figures.",
+   "replaceWith": "shadcn Card + Badge",
+   "note": "Recreated: local to DashboardScreen.tsx. Static figures; no animation to add.",
+   "example": {
+    "component": "StatTileDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId; recreation StatTile"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "group": "shadcn",
+   "source": "shared/ui/SlidingSegmentedControl.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A single-choice segmented control whose highlight slides between options. Three colour variants.",
+   "replaceWith": "shadcn ToggleGroup (single)",
+   "note": "aria-pressed buttons rather than radios, no roving focus. Keep the slide with Motion layoutId.",
+   "example": {
+    "component": "SlidingSegmentedDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Segmented",
+   "group": "shadcn",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The simpler segmented control (no slide). On web it picks the GST period on Accounts.",
+   "replaceWith": "shadcn ToggleGroup (single)",
+   "note": "A second segmented control doing the same job; merge into one.",
+   "example": {
+    "component": "SegmentedDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "FilterChip",
+   "group": "shadcn",
+   "source": "apps/web/screens/AvailabilityGrid.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The All anaesthetists / Free only pills on Find cover, with today's free-session count.",
+   "replaceWith": "shadcn ToggleGroup (single)",
+   "note": "Recreated: local to AvailabilityGrid.tsx. No aria-pressed (the mobile filter chips have it).",
+   "example": {
+    "component": "FilterChipDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.todayISO; store schedule, appSettings, masters.slotStatuses; recreation FilterChip"
+  },
+  {
+   "name": "StatusLegend (toggle mode)",
+   "group": "shadcn",
+   "source": "shared/StatusLegend.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The status legend as compact chips. Given activeStatuses and onToggleStatus it becomes a status filter; click the chips.",
+   "replaceWith": "shadcn ToggleGroup (multiple)",
+   "note": "A group of toggles without a toggle group's keyboard model.",
+   "example": {
+    "component": "StatusLegendDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "StatusChip",
+   "group": "shadcn",
+   "source": "shared/StatusChip.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The pill for a List type or availability status, coloured from the status master. Every status in the legend is shown.",
+   "replaceWith": "shadcn Badge (status variants)",
+   "note": "Status colours become --status-* tokens with tint and on-tint values.",
+   "example": {
+    "component": "StatusChipDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ProgressPill",
+   "group": "shadcn",
+   "source": "shared/schedule/ProgressPill.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A List's progress: To finish, Ready to submit, Done · unbilled, Invoiced, Authorised.",
+   "replaceWith": "shadcn Badge",
+   "note": "One more pill family to fold into Badge variants.",
+   "example": {
+    "component": "ProgressPillDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "consts PROGRESSES"
+  },
+  {
+   "name": "WebDayChip",
+   "group": "shadcn",
+   "source": "apps/web/screens/ListsLookback.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The teal chip naming the picked day on the Lists page. Click it to close the day and go back to the main view.",
+   "replaceWith": "shadcn Badge (removable) / Button",
+   "note": "The whole chip is the close button; a Badge with a separate remove control reads more clearly.",
+   "example": {
+    "component": "DayChipDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.pastDayISO, f.todayISO"
+  },
+  {
+   "name": "WarningTriangle",
+   "group": "shadcn",
+   "source": "shared/warnings/WarningTriangle.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The small warning marker on a Booking, coloured by the strongest open warning, with a count when there are several.",
+   "replaceWith": "shadcn Tooltip + Badge",
+   "note": "The warning text lives only in title=, which keyboard and touch users never see.",
+   "example": {
+    "component": "WarningTriangleDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.todayISO"
+  },
+  {
+   "name": "Who's free chip",
+   "group": "shadcn",
+   "source": "apps/web/screens/DashboardScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "A colleague's name on the dashboard's Who's free panel. A button when her List can move into their free session, a plain chip otherwise.",
+   "replaceWith": "shadcn Tooltip",
+   "note": "Recreated: inline in DashboardScreen.tsx. Why it is or is not clickable is only in title=.",
+   "example": {
+    "component": "WhosFreeChipDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId; store masters.anaesthetists; recreation WhosFreeChip"
+  },
+  {
+   "name": "IconBtn · NavButton · WeekNavButton",
+   "group": "shadcn",
+   "source": "apps/web/screens/AvailabilityGrid.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "Three near-identical square chevron buttons (day, month and week stepping), each labelled, at three sizes.",
+   "replaceWith": "shadcn Button (size icon)",
+   "note": "Recreated: local to AvailabilityGrid.tsx, MyAvailabilityCalendar.tsx and WeekStrip.tsx. Three copies of one button.",
+   "example": {
+    "component": "IconButtonsDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation IconBtn/NavButton/WeekNavButton"
+  },
+  {
+   "name": "Day stepper",
+   "group": "shadcn",
+   "source": "apps/web/screens/AvailabilityGrid.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "Previous day, the day's name, next day and Today, for Find cover.",
+   "replaceWith": "shadcn Button Group",
+   "note": "Recreated: inline in AvailabilityGrid.tsx. No arrow-key or T-for-today shortcuts.",
+   "example": {
+    "component": "DayStepperDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.todayISO; recreation IconBtn/DayPill/TodayButton"
+  },
+  {
+   "name": "LinkButton",
+   "group": "shadcn",
+   "source": "apps/web/screens/DashboardScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "A teal text button inside a sentence, such as view overdue accounts.",
+   "replaceWith": "shadcn Button (variant link)",
+   "note": "Recreated: local to DashboardScreen.tsx.",
+   "example": {
+    "component": "LinkButtonDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation LinkButton"
+  },
+  {
+   "name": "SubmitAction",
+   "group": "shadcn",
+   "source": "apps/web/screens/ListDetailView.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "List detail's primary action in four states: blocked (count left, opens the real blockers sheet), ready, submitted and authorised.",
+   "replaceWith": "shadcn Button variants + Badge",
+   "note": "Recreated: local to ListDetailView.tsx. Submitting just swaps the button for a green pill, with no live region or toast.",
+   "example": {
+    "component": "SubmitActionDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.detailListId, f.actor; recreation SubmitAction"
+  },
+  {
+   "name": "Add a booking (dashed)",
+   "group": "shadcn",
+   "source": "apps/web/screens/ListDetailView.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The full-width dashed button under the Bookings table. Opens the real Add a booking dialog.",
+   "replaceWith": "shadcn Button (outline, dashed variant)",
+   "note": "Recreated: inline in ListDetailView.tsx. Saving in the dialog adds a Booking to the demo data.",
+   "example": {
+    "component": "AddBookingButtonDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.detailListId, f.actor; recreation AddBookingButton"
+  },
+  {
+   "name": "Progress bar",
+   "group": "shadcn",
+   "source": "apps/web/screens/ListDetailView.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "How many Bookings on the List are complete, as a count and a green bar that eases to its new width.",
+   "replaceWith": "shadcn Progress",
+   "note": "Recreated: inline in ListDetailView.tsx. No progressbar role or value today.",
+   "example": {
+    "component": "ProgressBarDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation ProgressBar"
+  },
+  {
+   "name": "Dialog (web Overlay)",
+   "group": "shadcn",
+   "source": "shared/surface/Dialog.tsx",
+   "usedIn": "Web · Admin",
+   "stage": "web",
+   "what": "The web surface's modal: a centred card over a scrim, closed by Escape or a scrim click. Shown with the dashboard's Which List? picker.",
+   "replaceWith": "shadcn Dialog",
+   "note": "The Overlay is real; the picker content is recreated from DashboardScreen.tsx. No focus trap, initial focus, restore or scroll lock today.",
+   "example": {
+    "component": "DialogDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId; store masters.hospitals, masters.surgeons"
+  },
+  {
+   "name": "SubmitListSheet",
+   "group": "shadcn",
+   "source": "shared/flows/SubmitListSheet.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "The submit flow's sheet. In blockers mode it lists each Booking still to finish and why.",
+   "replaceWith": "shadcn Dialog (AlertDialog for the confirm step)",
+   "note": "Only blockers mode is offered here; confirm mode submits the List for real.",
+   "example": {
+    "component": "SubmitListSheetDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.detailListId, f.actor"
+  },
+  {
+   "name": "WebSearchField",
+   "group": "shadcn",
+   "source": "apps/web/screens/ListsLookback.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The Lists page's pill search box for a patient name or NHI, with a clear button once you type.",
+   "replaceWith": "shadcn Input Group (search)",
+   "note": "One of three search inputs (with NameSearchBox and mobile's LookbackSearchRow); merge into one.",
+   "example": {
+    "component": "WebSearchFieldDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "NameSearchBox",
+   "group": "shadcn",
+   "source": "shared/ui/NameSearchBox.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The shared name filter, as a pill (Find cover) or a field. Filters the list it sits over as you type.",
+   "replaceWith": "shadcn Input Group (search)",
+   "note": "Same job as WebSearchField; one component.",
+   "example": {
+    "component": "NameSearchBoxDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "MovedToYouPanel",
+   "group": "shadcn",
+   "source": "shared/flows/MovedToYouPanel.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "Tells an anaesthetist which Lists or Bookings colleagues have moved to them recently, each opening its List or Booking.",
+   "replaceWith": "shadcn Alert",
+   "note": "An informational callout built by hand.",
+   "example": {
+    "component": "MovedToYouDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "router"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.movedToId, f.anaesthetistId"
+  },
+  {
+   "name": "SeriesList",
+   "group": "shadcn",
+   "source": "shared/availability/SeriesList.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "Her repeating days off, each with Delete and an inline are-you-sure step.",
+   "replaceWith": "shadcn Card list + AlertDialog",
+   "note": "The inline confirm becomes an AlertDialog. Deleting a series changes the demo data.",
+   "example": {
+    "component": "SeriesListDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.actor, f.anaesthetistId"
+  },
+  {
+   "name": "CodePickerSheet",
+   "group": "shadcn",
+   "source": "shared/capture/CodePickerSheet.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The RVG code type-ahead: search by code or description, every row showing code, description, anatomy and base units.",
+   "replaceWith": "shadcn Combobox (Base UI) + TanStack Virtual",
+   "note": "Picks are held locally here. No combobox or listbox roles, and every row renders.",
+   "example": {
+    "component": "CodePickerDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "store masters.rvgGroups"
+  },
+  {
+   "name": "ProcedureCodeCard",
+   "group": "shadcn",
+   "source": "shared/capture/ProcedureCodeCard.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The capture card for a Procedure's RVG code: Choose or Change opens the picker, Clear removes it, a ranged code takes a base value.",
+   "replaceWith": "shadcn Card + Base UI NumberField",
+   "note": "Live on a seeded Booking still to capture; changes write to the demo data.",
+   "example": {
+    "component": "ProcedureCodeCardDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.actor; store masters.rvgGroups"
+  },
+  {
+   "name": "TimesCard",
+   "group": "shadcn",
+   "source": "shared/capture/TimesCard.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "Start and Finish capture: Start now and Finish now stamp the demo clock, then minus and plus 5 minute nudges.",
+   "replaceWith": "shadcn Card + Button Group",
+   "note": "Live on a seeded Booking; stamping and nudging write to the demo data.",
+   "example": {
+    "component": "TimesCardDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.actor"
+  },
+  {
+   "name": "UnitsCard",
+   "group": "shadcn",
+   "source": "shared/capture/UnitsCard.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The base, time and modifier unit rows with steppers, each showing where its value came from.",
+   "replaceWith": "shadcn Card + Button Group (labelled steppers)",
+   "note": "Steppers announce only minus or plus today. The modifier and ASA controls were being reworked (ModifiersSection) when this page was built, so they are not shown as separate rows.",
+   "example": {
+    "component": "UnitsCardDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ResultLine",
+   "group": "sonner",
+   "source": "shared/availability/AvailabilityForm.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "The inline teal status line confirming an availability change (role status).",
+   "replaceWith": "Sonner toast",
+   "note": "Inline success banners become toasts; errors stay inline. The web also has no feedback at all after submitting a List.",
+   "example": {
+    "component": "ResultLineDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "consts RESULT_SAMPLES"
+  },
+  {
+   "name": "Lists table (Th · Td · GroupRow)",
+   "group": "tanstack",
+   "source": "apps/web/screens/ListsScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 560,
+   "what": "Her Lists from today, after an Earlier, not yet authorised group row. Row click opens a List; search and Go to date swap in the other tables.",
+   "replaceWith": "TanStack Table + shadcn Table (grouped rows)",
+   "note": "The real ListsScreen in a scrolling stage (the table is local to it). Th and Td are copied in four files; no sorting; row clicks are mouse first.",
+   "example": {
+    "component": "ListsTableDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "router"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId, f.todayISO"
+  },
+  {
+   "name": "WebResultsTable",
+   "group": "tanstack",
+   "source": "apps/web/screens/ListsLookback.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 460,
+   "what": "Search results grouped Upcoming then Past: date, session, patient, NHI, hospital, procedure and progress.",
+   "replaceWith": "TanStack Table + shadcn Table",
+   "note": "Type in the search box to drive it.",
+   "example": {
+    "component": "ResultsTableDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "router"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.searchSeed, f.anaesthetistId, f.todayISO"
+  },
+  {
+   "name": "WebDayTable",
+   "group": "tanstack",
+   "source": "apps/web/screens/ListsLookback.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 360,
+   "what": "One day's Lists for Go to date: session, start time, location, Booking count, status and progress.",
+   "replaceWith": "TanStack Table + shadcn Table",
+   "note": "Pick a day with the date input above it.",
+   "example": {
+    "component": "DayTableDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "router"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.pastDayISO, f.todayISO, f.anaesthetistId"
+  },
+  {
+   "name": "Accounts tables (tfoot totals)",
+   "group": "tanstack",
+   "source": "apps/web/screens/AccountsScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 560,
+   "what": "Overdue, Payments, GST activity and AA fees, each a table; Overdue, GST and AA fees close with totals in a tfoot.",
+   "replaceWith": "TanStack Table + shadcn Table (footer)",
+   "note": "The real AccountsScreen; its sub-tabs switch the table. Totals rows have no row headers.",
+   "example": {
+    "component": "AccountsDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId"
+  },
+  {
+   "name": "List detail Bookings table",
+   "group": "tanstack",
+   "source": "apps/web/screens/ListDetailView.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 700,
+   "what": "A List's Bookings with time, patient and NHI, procedure, units, fee and status, then a totals row; plus the page's actions and panels.",
+   "replaceWith": "TanStack Table + shadcn Table",
+   "note": "The real ListDetailView in a scrolling stage. Rows have no keyboard handle at all today. Move, alert, attachments and add a booking open real flows that change the demo data.",
+   "example": {
+    "component": "ListDetailDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "router"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.detailListId, f.actor, f.todayISO"
+  },
+  {
+   "name": "ListInvoices",
+   "group": "tanstack",
+   "source": "shared/schedule/ListInvoices.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "An authorised List's invoices, read only: number, who it went to, when, total and paid state.",
+   "replaceWith": "shadcn Table (plain)",
+   "note": "A styled list today; a small static table, no TanStack features needed.",
+   "example": {
+    "component": "ListInvoicesDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.authorisedListId"
+  },
+  {
+   "name": "AvailabilityEditor",
+   "group": "forms",
+   "source": "shared/availability/AvailabilityEditor.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "height": 520,
+   "what": "The rail on My availability: the selected day's AM and PM sessions and the form to change them, set a range or repeat.",
+   "replaceWith": "React Hook Form + Zod + shadcn Field",
+   "note": "Hand-rolled form state and errors. Saving changes the demo data.",
+   "example": {
+    "component": "AvailabilityEditorDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.todayISO, f.actor, f.anaesthetistId"
+  },
+  {
+   "name": "AlertOfficeEntry",
+   "group": "forms",
+   "source": "shared/flows/AlertOfficeSheet.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "web",
+   "what": "Alert the office about this List: opens a short message sheet, then shows the open alert's status.",
+   "replaceWith": "shadcn Dialog + Field + React Hook Form",
+   "note": "Sending an alert writes to the demo data.",
+   "example": {
+    "component": "AlertOfficeDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.detailListId, f.actor"
+  },
+  {
+   "name": "OverrideCard",
+   "group": "forms",
+   "source": "shared/capture/OverrideCard.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "A Procedure's price adjustment or fixed charge with its mandatory reason, saved on Save.",
+   "replaceWith": "Base UI NumberField + shadcn Field + React Hook Form",
+   "note": "Live on a seeded Booking; saving writes to the demo data.",
+   "example": {
+    "component": "OverrideCardDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.actor"
+  },
+  {
+   "name": "WeekStrip",
+   "group": "daypicker",
+   "source": "apps/web/components/WeekStrip.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 300,
+   "what": "The dashboard week: seven columns of her AM and PM sessions in status colours, Lists clickable, today outlined, week stepping.",
+   "replaceWith": "react-day-picker (week view, custom day content)",
+   "note": "Today is marked by colour only (no aria-current); truncated labels have no tooltip.",
+   "example": {
+    "component": "WeekStripDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "router"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.todayISO, f.anaesthetistId"
+  },
+  {
+   "name": "My availability month grid (DayCell)",
+   "group": "daypicker",
+   "source": "apps/web/screens/MyAvailabilityCalendar.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 720,
+   "what": "Her month, each day with AM and PM session cells. Click a day, shift-click to select a range; the rail edits the selection.",
+   "replaceWith": "shadcn Calendar (react-day-picker, range mode, custom day content)",
+   "note": "The real screen in a scrolling stage (the grid is local to it). The day cell has no focus style. Saving in the rail changes the demo data.",
+   "example": {
+    "component": "MyAvailabilityDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "router"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.actor, f.anaesthetistId"
+  },
+  {
+   "name": "WebGoToDate",
+   "group": "daypicker",
+   "source": "apps/web/screens/ListsLookback.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "The Lists page's Go to date: a native date input bounded by her first and last day with work.",
+   "replaceWith": "shadcn Date Picker (Popover + Calendar)",
+   "note": "Pass the demo clock's today and the bounds as min and max.",
+   "example": {
+    "component": "GoToDateDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId"
+  },
+  {
+   "name": "Receivables aging bars",
+   "group": "recharts",
+   "source": "apps/web/screens/DashboardScreen.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "Outstanding receivables by age bucket as horizontal bars with amounts, from the billing mirror.",
+   "replaceWith": "Recharts bar chart (shadcn Chart)",
+   "note": "Recreated: inline in DashboardScreen.tsx. Spans with no chart semantics or table fallback.",
+   "example": {
+    "component": "AgingBarsDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId, f.todayISO; store billing, schedule, masters; recreation AGING_ROWS/AgingBars"
+  },
+  {
+   "name": "BookingTotalPanel · useTickingValue",
+   "group": "numberflow",
+   "source": "shared/capture/BookingTotalPanel.tsx",
+   "usedIn": "Web · Admin",
+   "stage": "web",
+   "what": "The ink Booking total: breakdown lines, units and fee, rate and override note. Units and fee tick to new values with a green flash.",
+   "replaceWith": "NumberFlow (optional swap for useTickingValue)",
+   "note": "Fed local figures here. Keep the flash and the reduced-motion jump; animate nothing that is static today.",
+   "example": {
+    "component": "BookingTotalDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId; store masters.anaesthetists"
+  },
+  {
+   "name": "TickBadge",
+   "group": "motion",
+   "source": "shared/ui/TickBadge.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "The small green completion tick, still on settled rows or drawn with a pulse at the moment of completion.",
+   "replaceWith": "Custom on Motion",
+   "note": "Keep the choreography; re-express the CSS keyframes on Motion.",
+   "example": {
+    "component": "TickBadgeDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "CompleteBar",
+   "group": "motion",
+   "source": "shared/capture/CompleteBar.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "what": "Booking capture's Mark complete button, which becomes a green done bar with Amend while the List is active.",
+   "replaceWith": "Custom on Motion (shadcn Button inside)",
+   "note": "Local state here; in the app it completes and reopens the Booking.",
+   "example": {
+    "component": "CompleteBarDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ProcedureStack",
+   "group": "custom",
+   "source": "shared/booking/ProcedureStack.tsx",
+   "usedIn": "",
+   "stage": "web",
+   "replaceWith": "Custom (a description list on library primitives)",
+   "what": "One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed.",
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "",
+   "example": ""
+  },
+  {
+   "name": "Cell (AvailabilityGrid)",
+   "group": "custom",
+   "source": "apps/web/screens/AvailabilityGrid.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "what": "One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there.",
+   "replaceWith": "Custom cell on a grid + shadcn Tooltip",
+   "note": "Recreated: local to AvailabilityGrid.tsx. Non-actionable cells are disabled buttons, unreachable by keyboard.",
+   "example": {
+    "component": "AvailabilityCellDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.todayISO; store schedule, appSettings, masters.slotStatuses, masters.hospitals, masters.surgeons; recreation AvailabilityCell"
+  },
+  {
+   "name": "AvailabilityGrid",
+   "group": "custom",
+   "source": "apps/web/screens/AvailabilityGrid.tsx",
+   "usedIn": "Web",
+   "stage": "web",
+   "height": 640,
+   "what": "Find cover: every anaesthetist's AM and PM for a day, filters, name search and legend, with Move and Move here gestures.",
+   "replaceWith": "Custom grid (role grid, roving focus) on library primitives",
+   "note": "The real screen; its navigation is intercepted. Move opens the real move sheet, which changes the demo data if confirmed.",
+   "example": {
+    "component": "AvailabilityGridDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "router"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.anaesthetistId, f.todayISO"
+  },
+  {
+   "name": "HistoryTimeline",
+   "group": "custom",
+   "source": "shared/booking/HistoryTimeline.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "web",
+   "height": 460,
+   "what": "A record's audit trail in plain English, newest first, under day headings, with coalesced runs that expand. Shown for the seeded Booking with the longest history.",
+   "replaceWith": "Custom, its expandable groups on shadcn Collapsible",
+   "note": "The ledger layout is ours; only the expand and collapse is a library job.",
+   "example": {
+    "component": "HistoryTimelineDemo",
+    "file": "apps/demo/catalogue/web/demos.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "web/fixtures.ts useWebFixtures() f.historyEntityId; store audit"
+  }
+ ],
+ "mobile": [
+  {
+   "name": "BottomSheet",
+   "group": "shadcn",
+   "source": "shared/surface/BottomSheet.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 420,
+   "what": "The mobile modal: a scrim and a panel that slides up from the bottom. It is what useSurface().Overlay renders on the phone, so every shared sheet uses it.",
+   "replaceWith": "shadcn Drawer (Base UI Drawer)",
+   "note": "Adds drag-to-dismiss, snap points, Escape, a focus trap with restore, and nested sheets. Must keep --aa-keyboard-inset and portal into the phone frame.",
+   "example": {
+    "component": "BottomSheetExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ListOptionsSheet",
+   "group": "shadcn",
+   "source": "apps/mobile/components/ListOptionsSheet.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 520,
+   "what": "The action sheet behind the List's ⋯ button: a row per thing she can do with her own List, each with a one-line hint.",
+   "replaceWith": "shadcn Drawer + plain button list",
+   "note": "Declares role=menu with no arrow keys or focus handling. Either drop the menu roles or use a real Menu.",
+   "example": {
+    "component": "ListOptionsSheetExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "AlertOfficeSheet",
+   "group": "shadcn",
+   "source": "shared/flows/AlertOfficeSheet.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "mobile",
+   "height": 560,
+   "what": "Asks the office to check one of her Lists or Bookings, with a note. Shows a sent state afterwards.",
+   "replaceWith": "shadcn Drawer + Field (React Hook Form + Zod)",
+   "note": "Drawer adds the focus trap; Field binds the note's error to the textarea. Send writes to the demo store (the seeded record really changes); Demo reset puts it back.",
+   "example": {
+    "component": "AlertOfficeSheetExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "mobile/persona.ts useSeedPicks() picks.listId; useMobilePersona() actor"
+  },
+  {
+   "name": "SubmitListSheet",
+   "group": "shadcn",
+   "source": "shared/flows/SubmitListSheet.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "mobile",
+   "height": 560,
+   "what": "Opened from the greyed submit dock: names each Booking still to finish and what blocks it. Its confirm mode submits the List.",
+   "replaceWith": "shadcn Drawer",
+   "note": "Shown in blockers mode only, so nothing is submitted from here.",
+   "example": {
+    "component": "SubmitListSheetExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "mobile/persona.ts useSeedPicks() picks.listId; useMobilePersona() actor"
+  },
+  {
+   "name": "AvailabilityEditor",
+   "group": "shadcn",
+   "source": "shared/availability/AvailabilityEditor.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "mobile",
+   "height": 600,
+   "what": "A day's sessions, then the form to change them or add days off. Mobile hosts it in a bottom sheet; web in the right rail.",
+   "replaceWith": "shadcn Drawer + Field + ToggleGroup (React Hook Form + Zod)",
+   "note": "Same body in a library shell, one form pattern. Saving or removing writes to the demo store (the seeded record really changes); Demo reset puts it back.",
+   "example": {
+    "component": "AvailabilityEditorExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "useMobilePersona() actor, anaesthetistId"
+  },
+  {
+   "name": "Button (MobileButton)",
+   "group": "shadcn",
+   "source": "shared/ui/Button.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 320,
+   "what": "The shared button set: primary (54px teal), secondary (outlined) and pill (tinted, compact). Mobile imports it as MobileButton.",
+   "replaceWith": "shadcn Button (cva variants)",
+   "note": "Adds focus-visible, hover, loading and aria-disabled states.",
+   "example": {
+    "component": "ButtonExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Mobile press feedback (:active)",
+   "group": "shadcn",
+   "source": "theme/global.css",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 280,
+   "what": "A CSS rule that makes every enabled button inside the phone UI sink 1px and scale slightly while held. The PWA host adds a touch listener so iOS fires :active.",
+   "replaceWith": "shadcn Button active state (active: utilities)",
+   "note": "Moves from one global selector into the Button variants, so non-button tap targets opt in explicitly.",
+   "example": {
+    "component": "PressFeedbackExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "group": "shadcn",
+   "source": "shared/ui/SlidingSegmentedControl.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 260,
+   "what": "A segmented control whose highlight slides to the chosen cell, measured in layout pixels so it survives the phone frame's scale. Teal, surface and ink variants.",
+   "replaceWith": "shadcn ToggleGroup (single) or Tabs",
+   "note": "Gives radio semantics and arrow keys (today role=group with aria-pressed). Keep the slide with Motion layoutId.",
+   "example": {
+    "component": "SlidingSegmentedExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Segmented",
+   "group": "shadcn",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 220,
+   "what": "SlidingSegmentedControl with a field label above it, plus a read-only mode that keeps the selection visible.",
+   "replaceWith": "shadcn ToggleGroup + Field label",
+   "note": "The label is a div today, so it is not tied to the control.",
+   "example": {
+    "component": "SegmentedExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Filter chips (Week / Month / To-Do / Done)",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/ForwardListsScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "The pill toggles above the Lists home that bound the forward window or filter to work to do or done.",
+   "replaceWith": "shadcn ToggleGroup (single)",
+   "note": "Recreated: local to ForwardListsScreen.tsx. Already has aria-pressed; the web FilterChip copy does not.",
+   "example": {
+    "component": "FilterChipsExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation FilterChipsCopy"
+  },
+  {
+   "name": "StepperButton",
+   "group": "shadcn",
+   "source": "shared/capture/ui.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "The 44px round-square minus and plus buttons beside each unit count in capture.",
+   "replaceWith": "shadcn Button (icon) + Button Group",
+   "note": "Glyph-only today, so a screen reader hears just a minus or plus. Needs labels.",
+   "example": {
+    "component": "StepperButtonExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "NudgeButton",
+   "group": "shadcn",
+   "source": "shared/capture/ui.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "The small minus 5 and plus 5 buttons that nudge a stamped start or finish time.",
+   "replaceWith": "shadcn Button (sm, outline) + Button Group",
+   "example": {
+    "component": "NudgeButtonExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "CaptureSection",
+   "group": "shadcn",
+   "source": "shared/capture/ui.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 260,
+   "what": "The capture card: a micro-caps label, the body, and an optional footer area pinned to the foot.",
+   "replaceWith": "shadcn Card (CardHeader / CardContent / CardFooter)",
+   "note": "The label should become a real heading.",
+   "example": {
+    "component": "CaptureSectionExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "StatusChip",
+   "group": "shadcn",
+   "source": "shared/StatusChip.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 220,
+   "what": "A status pill: coloured dot and label on the status tint, read from the status master so a rename shows at once.",
+   "replaceWith": "shadcn Badge + 6 status variants",
+   "note": "Status colours become --status-* tokens with tint and on-tint values.",
+   "example": {
+    "component": "StatusChipExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ProgressPill",
+   "group": "shadcn",
+   "source": "shared/schedule/ProgressPill.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "A List's progress as a compact pill: to finish, ready to submit, done, authorised, invoiced.",
+   "replaceWith": "shadcn Badge",
+   "example": {
+    "component": "ProgressPillExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "OutOfHoursPill",
+   "group": "shadcn",
+   "source": "shared/schedule/OutOfHoursMark.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 160,
+   "what": "The neutral Out-of-hours pill beside a title, with the moon in a header.",
+   "replaceWith": "shadcn Badge (secondary, with icon)",
+   "example": {
+    "component": "OutOfHoursPillExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "AgeChip",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/BalancesScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 240,
+   "what": "An outstanding invoice's age in days (amber past 60 days), with an ACC chip when ACC funded.",
+   "replaceWith": "shadcn Badge",
+   "note": "Recreated: local to BalancesScreen.tsx.",
+   "example": {
+    "component": "AgeChipExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation AgeChipCopy"
+  },
+  {
+   "name": "DayChip",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/ListsLookback.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 160,
+   "what": "The teal chip naming the picked day; tapping it closes the day view and goes back to the Lists.",
+   "replaceWith": "shadcn Badge (as a button, with dismiss icon)",
+   "note": "Teal reads as an action here, which is right: it is one.",
+   "example": {
+    "component": "DayChipExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "demo clock useToday()"
+  },
+  {
+   "name": "Avatar",
+   "group": "shadcn",
+   "source": "shared/Avatar.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 160,
+   "what": "The persona identity avatar: a white chip with crimson initials and a soft shadow.",
+   "replaceWith": "shadcn Avatar (AvatarFallback)",
+   "note": "One of four hand-rolled avatars (the colleague initials on Availability are another).",
+   "example": {
+    "component": "AvatarExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "useMobilePersona() initials"
+  },
+  {
+   "name": "Hero figure card",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/BalancesScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "The Balances headline: outstanding to you, in large mono figures, with the unpaid invoice count. Static, not animated.",
+   "replaceWith": "shadcn Card",
+   "note": "Recreated: local to BalancesScreen.tsx. Reads the persona's real receivables.",
+   "example": {
+    "component": "HeroFigureCardExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId; recreation HeroFigureCardCopy"
+  },
+  {
+   "name": "EmptyCard",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/BalancesScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 180,
+   "what": "The centred, muted card that says there is nothing to show yet.",
+   "replaceWith": "shadcn Empty",
+   "note": "Recreated: local to BalancesScreen.tsx.",
+   "example": {
+    "component": "EmptyCardExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation EmptyCardCopy"
+  },
+  {
+   "name": "MovedToYouPanel",
+   "group": "shadcn",
+   "source": "shared/flows/MovedToYouPanel.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "mobile",
+   "height": 300,
+   "what": "The notice at the top of Find cover listing Lists or Bookings a colleague moved to her in the last week, with any message.",
+   "replaceWith": "shadcn Card + Item list",
+   "example": {
+    "component": "MovedToYouPanelExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId"
+  },
+  {
+   "name": "Booking card (Capture pill)",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/ListDetailScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 340,
+   "what": "A Booking on the List: time, patient, NHI and operation, ending in a Capture pill, a completion tick, or Cancelled.",
+   "replaceWith": "shadcn Item (as a button) + Badge",
+   "note": "Recreated: local to ListDetailScreen.tsx. Tap a card to cycle Capture, done, cancelled (local only). Its accessible name is all the text run together today.",
+   "example": {
+    "component": "BookingCardExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "mobile/persona.ts useSeedPicks() picks.listId; store schedule.bookings, schedule.procedures, masters.patients; recreation BookingCardCopy"
+  },
+  {
+   "name": "Progress bar",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/ListDetailScreen.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "mobile",
+   "height": 180,
+   "what": "The List's n of m complete line with a green bar that eases to the new width.",
+   "replaceWith": "shadcn Progress",
+   "note": "Recreated: local to ListDetailScreen.tsx. Gains role=progressbar and aria-valuenow.",
+   "example": {
+    "component": "ProgressBarExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation ProgressBarCopy"
+  },
+  {
+   "name": "LookbackSearchRow",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/ListsLookback.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "The Lists search field (patient name or NHI, with a clear button) and the calendar button beside it.",
+   "replaceWith": "shadcn Input Group (search) + Button",
+   "note": "One search input instead of three (this, WebSearchField, NameSearchBox).",
+   "example": {
+    "component": "LookbackSearchRowExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "LookbackResults (ResultRow)",
+   "group": "shadcn",
+   "source": "apps/mobile/screens/ListsLookback.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 420,
+   "what": "Search results grouped Upcoming and Past, each Booking a card with session, patient, NHI and progress.",
+   "replaceWith": "shadcn Item list + Badge",
+   "example": {
+    "component": "LookbackResultsExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId; store masters.patients, schedule.bookings, schedule.lists"
+  },
+  {
+   "name": "SeriesList",
+   "group": "shadcn",
+   "source": "shared/availability/SeriesList.tsx",
+   "usedIn": "Web · Mobile",
+   "stage": "mobile",
+   "height": 260,
+   "what": "Her repeating days off, each with a Remove that asks for confirmation inline.",
+   "replaceWith": "shadcn Item list + AlertDialog (confirm remove)",
+   "note": "Confirming a removal writes to the demo store (the seeded record really changes); Demo reset puts it back.",
+   "example": {
+    "component": "SeriesListExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "useMobilePersona() actor, anaesthetistId"
+  },
+  {
+   "name": "ToggleRow (switch)",
+   "group": "shadcn",
+   "source": "pwa/PwaDemoPanel.tsx",
+   "usedIn": "Mobile (installed PWA)",
+   "stage": "mobile",
+   "height": 180,
+   "what": "The hand-drawn switch on the PWA's presenter panel, such as Play the office.",
+   "replaceWith": "shadcn Switch",
+   "note": "Recreated: local to PwaDemoPanel.tsx.",
+   "example": {
+    "component": "ToggleRowExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation ToggleRowCopy"
+  },
+  {
+   "name": "InstallCoach",
+   "group": "shadcn",
+   "source": "pwa/InstallCoach.tsx",
+   "usedIn": "Mobile (installed PWA)",
+   "stage": "mobile",
+   "height": 340,
+   "what": "The dismissible Add to your home screen tip, with iPhone steps or an Android Install button.",
+   "replaceWith": "shadcn Alert",
+   "note": "Recreated: src/pwa is PWA-only (its installPrompt module attaches a window listener at import and must not load in the prototype).",
+   "example": {
+    "component": "InstallCoachExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation InstallCoachCopy"
+  },
+  {
+   "name": "UpdatePrompt",
+   "group": "sonner",
+   "source": "pwa/UpdatePrompt.tsx",
+   "usedIn": "Mobile (installed PWA)",
+   "stage": "mobile",
+   "height": 240,
+   "what": "The floating snackbar that appears when a new build is waiting: tap to reload into it. Polls the service worker.",
+   "replaceWith": "Sonner toast with a Reload action",
+   "note": "Recreated: it needs virtual:pwa-register, which only the PWA build provides. Offset the toaster above --aa-dock-height.",
+   "example": {
+    "component": "UpdatePromptExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "virtual"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation UpdatePromptCopy"
+  },
+  {
+   "name": "BookingDetailBody",
+   "group": "forms",
+   "source": "shared/booking/BookingDetailBody.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 640,
+   "what": "The whole Booking capture: patient, ASA, RVG code, times, units, override, billing lines, notes and Mark complete, laid out by the mobile surface.",
+   "replaceWith": "React Hook Form + Zod over shadcn Card fields",
+   "note": "On a failed complete it focuses the first invalid field by hand; RHF's shouldFocusError does that. The ASA, units and modifier cards (being reworked in catch-up Phase 19b) are live in here. Each tap writes to the demo store (the seeded record really changes); Demo reset puts it back.",
+   "example": {
+    "component": "BookingDetailBodyExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay",
+    "timers"
+   ],
+   "recreated": false,
+   "composite": true,
+   "sampleData": "mobile/persona.ts useSeedPicks() picks.bookingId; useMobilePersona() actor"
+  },
+  {
+   "name": "TextField",
+   "group": "forms",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "A labelled input with an optional hint tied by aria-describedby.",
+   "replaceWith": "shadcn Field + Input + Label",
+   "note": "Adds aria-invalid, a field-bound error and a focus ring.",
+   "example": {
+    "component": "TextFieldExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TextArea",
+   "group": "forms",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "A labelled multi-line field, used for notes and messages in sheets.",
+   "replaceWith": "shadcn Field + Textarea",
+   "example": {
+    "component": "TextAreaExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "FormError",
+   "group": "forms",
+   "source": "shared/ui/Field.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "A refused save in plain words, in the error tint, announced as an alert.",
+   "replaceWith": "shadcn FieldError (bound to the field by RHF)",
+   "note": "Today it sits under the form, not under the field that caused it.",
+   "example": {
+    "component": "FormErrorExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "MonthGrid (LookbackDateSheet)",
+   "group": "daypicker",
+   "source": "shared/calendar/MonthGrid.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 600,
+   "what": "The Go to a date month in a bottom sheet: a dot marks a day with one of her Lists, with a month and year jump panel and full keyboard support.",
+   "replaceWith": "shadcn Calendar (react-day-picker)",
+   "note": "Keeps the custom day content (dots). Adds grid roles; pass the demo clock's today and the bounds.",
+   "example": {
+    "component": "MonthGridExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId"
+  },
+  {
+   "name": "My calendar month grid",
+   "group": "daypicker",
+   "source": "apps/mobile/screens/MyAvailabilityCalendarScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 520,
+   "what": "Her own month: each day is an AM over PM pair of half-blocks in the session's status, with previous and next month buttons.",
+   "replaceWith": "shadcn Calendar with a custom day renderer",
+   "note": "Recreated: local to MyAvailabilityCalendarScreen.tsx (reads her real sessions). The library gives the grid and keyboard; the half-blocks stay ours.",
+   "example": {
+    "component": "MyCalendarGridExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId; recreation HalfBlockCopy/MyCalendarGridCopy"
+  },
+  {
+   "name": "6-day date strip",
+   "group": "daypicker",
+   "source": "apps/mobile/screens/AvailabilityScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "Today and the next five days as buttons at the top of Find cover. A dot marks a day with a free session.",
+   "replaceWith": "react-day-picker (single week row) or ToggleGroup",
+   "note": "Recreated: local to AvailabilityScreen.tsx. The free dot is colour only and today has no aria-current. The research map files it as Custom + ToggleGroup.",
+   "example": {
+    "component": "DateStripExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "demo clock useToday(); recreation DateStripCopy"
+  },
+  {
+   "name": "useTickingValue",
+   "group": "numberflow",
+   "source": "shared/capture/useTickingValue.ts",
+   "usedIn": "Admin · Web",
+   "stage": "mobile",
+   "height": 220,
+   "what": "A hook that rolls a figure to its new value over 320ms with a green flash, and jumps under reduced motion.",
+   "replaceWith": "NumberFlow",
+   "note": "Not mounted on Mobile: the mobile surface's BookingTotal renders nothing, so this demo drives the hook directly. Keep the flash tint.",
+   "example": {
+    "component": "TickingValueExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "timers"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SlideStack",
+   "group": "motion",
+   "source": "apps/mobile/components/SlideStack.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 420,
+   "what": "The iOS-style stack: every layer stays mounted, the one behind parallaxes and dims, and an edge swipe from the left pops a layer.",
+   "replaceWith": "Custom on Motion (drag + AnimatePresence)",
+   "note": "No library ships a stack navigator. The edge swipe is touch only (DevTools device mode). Add focus moves on push and pop.",
+   "example": {
+    "component": "SlideStackExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "SuccessOverlay",
+   "group": "motion",
+   "source": "shared/ui/SuccessOverlay.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 360,
+   "what": "The full-surface success moment: blurred flood, the circle pops, the tick draws, a haptic fires. The owner hides it after 1050ms.",
+   "replaceWith": "Custom on Motion",
+   "note": "AA's one standout moment: keep the choreography. iOS ignores navigator.vibrate.",
+   "example": {
+    "component": "SuccessOverlayExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "timers"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TickBadge",
+   "group": "motion",
+   "source": "shared/ui/TickBadge.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "The small completion tick on a success-tint circle; animated it draws and pulses, otherwise it sits still.",
+   "replaceWith": "Custom on Motion",
+   "example": {
+    "component": "TickBadgeExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Collapsing masthead",
+   "group": "motion",
+   "source": "shared/surface/SurfaceProvider.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 460,
+   "what": "The Booking screen's large title folds into a 44px nav row once the column scrolls past 24px, iOS large-title style.",
+   "replaceWith": "Custom on Motion (scroll-driven)",
+   "note": "The fold is the real MobileBookingLayout; the masthead handed to it is recreated from BookingDetailScreen.tsx, where it is local.",
+   "example": {
+    "component": "CollapsingMastheadExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "TimesCard",
+   "group": "motion",
+   "source": "shared/capture/TimesCard.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 340,
+   "what": "Start and Finish as one travelling teal action: Start now stamps the demo clock and slides across to become Finish now, revealing the stamp and its nudges.",
+   "replaceWith": "shadcn Card + Button, travel on Motion (layout)",
+   "note": "Each tap writes to the demo store (the seeded record really changes); Demo reset puts it back.",
+   "example": {
+    "component": "TimesCardExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read",
+    "store-write",
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "CompleteBar",
+   "group": "motion",
+   "source": "shared/capture/CompleteBar.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 180,
+   "what": "The Booking's Mark complete button, which becomes a green success bar with Amend while the List is still open.",
+   "replaceWith": "shadcn Button; success state custom on Motion",
+   "note": "Local state only here: no Booking is completed.",
+   "example": {
+    "component": "CompleteBarExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "surface-overlay"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "ProcedureStack",
+   "group": "custom",
+   "source": "shared/booking/ProcedureStack.tsx",
+   "usedIn": "",
+   "stage": "mobile",
+   "replaceWith": "Custom (a description list on library primitives)",
+   "what": "One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed.",
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "",
+   "example": ""
+  },
+  {
+   "name": "BottomTabBar",
+   "group": "custom",
+   "source": "apps/mobile/MobileApp.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 220,
+   "what": "The four-tab bar at the foot of the phone: Lists, Availability, Balances, More, frosted, hidden once you drill in.",
+   "replaceWith": "Custom nav of links with aria-current",
+   "note": "Recreated: local to MobileApp.tsx. Today plain buttons, active by colour only, not a nav.",
+   "example": {
+    "component": "BottomTabBarExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation BottomTabBarCopy"
+  },
+  {
+   "name": "MobileHeader",
+   "group": "custom",
+   "source": "apps/mobile/components/MobileHeader.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 140,
+   "what": "The tab-screen header: micro-caps eyebrow, large title and the persona avatar.",
+   "replaceWith": "Custom (keep), title as a real h1",
+   "note": "The large title is a div, so the screen has no heading.",
+   "example": {
+    "component": "MobileHeaderExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "useMobilePersona() initials"
+  },
+  {
+   "name": "ListRow",
+   "group": "custom",
+   "source": "shared/schedule/ListRow.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 460,
+   "what": "A session row on the Lists home: status rail, session and time, title, and a right-hand cluster (progress, count, chip). Open and closed sessions take the status fill.",
+   "replaceWith": "Custom on shadcn Item / Card (status rail stays ours)",
+   "note": "First two rows are her real upcoming Lists.",
+   "example": {
+    "component": "ListRowExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "mobile/persona.ts useSeedPicks() picks.ownListIds; store schedule.lists, schedule.bookings, masters"
+  },
+  {
+   "name": "Sticky submit dock",
+   "group": "custom",
+   "source": "apps/mobile/screens/ListDetailScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 260,
+   "what": "The frosted footer on a List: greyed with what is left, teal Mark list completed, green Submitted to office, or locked once authorised.",
+   "replaceWith": "Custom fixed footer with shadcn Button inside",
+   "note": "Recreated: local to ListDetailScreen.tsx. Switch the four states with the control.",
+   "example": {
+    "component": "SubmitDockExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "recreation SubmitDockCopy"
+  },
+  {
+   "name": "DockSpacer",
+   "group": "custom",
+   "source": "shared/ui/DockSpacer.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 340,
+   "what": "An in-flow spacer at the tail of a scroller so the last item clears the frosted dock or tab bar. Trailing padding creates no scroll room on WebKit.",
+   "replaceWith": "Custom (keep; part of the inset contract)",
+   "note": "Invisible in the app; outlined here so you can see it.",
+   "example": {
+    "component": "DockSpacerExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  },
+  {
+   "name": "Colleague AM / PM cells",
+   "group": "custom",
+   "source": "apps/mobile/screens/AvailabilityScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 460,
+   "what": "Each colleague's card on Find cover with an AM and a PM cell in that session's status. A free cell her List could move into becomes a button.",
+   "replaceWith": "Custom status cells + shadcn Tooltip",
+   "note": "Recreated: local to AvailabilityScreen.tsx (today's real sessions). Hatched and dashed fills are domain visuals.",
+   "example": {
+    "component": "ColleagueCellsExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId; recreation ColleagueCellsCopy"
+  },
+  {
+   "name": "HalfBlock",
+   "group": "custom",
+   "source": "apps/mobile/screens/MyAvailabilityCalendarScreen.tsx",
+   "usedIn": "Mobile",
+   "stage": "mobile",
+   "height": 200,
+   "what": "One session's bar in the month grid: the status fill (or the List's), a repeat glyph for a series and an amber ! for a flag.",
+   "replaceWith": "Custom + shadcn Tooltip",
+   "note": "Recreated: local to MyAvailabilityCalendarScreen.tsx. Its title never shows on touch.",
+   "example": {
+    "component": "HalfBlockExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": true,
+   "composite": false,
+   "sampleData": "useMobilePersona() anaesthetistId; recreation HalfBlockCopy"
+  },
+  {
+   "name": "WarningTriangle",
+   "group": "custom",
+   "source": "shared/warnings/WarningTriangle.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 240,
+   "what": "The small marker on a Booking with a warning: a disc in the strongest open warning's colour, with the count when more than one.",
+   "replaceWith": "Custom + shadcn Tooltip",
+   "note": "The text lives in title only; a Tooltip makes it reachable by keyboard.",
+   "example": {
+    "component": "WarningTriangleExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [
+    "store-read"
+   ],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "mobile/persona.ts useSeedPicks() picks.bookingId"
+  },
+  {
+   "name": "OutOfHoursMoon",
+   "group": "custom",
+   "source": "shared/schedule/OutOfHoursMark.tsx",
+   "usedIn": "Admin · Web · Mobile",
+   "stage": "mobile",
+   "height": 140,
+   "what": "The moon that stands in the session column where an AM or PM List shows its session.",
+   "replaceWith": "Custom (lucide icon, keep)",
+   "example": {
+    "component": "OutOfHoursMoonExample",
+    "file": "apps/demo/catalogue/mobile/examples.tsx"
+   },
+   "deps": [],
+   "recreated": false,
+   "composite": false,
+   "sampleData": "inline literals in the example"
+  }
+ ]
+}
