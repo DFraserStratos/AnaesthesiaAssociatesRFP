@@ -11,6 +11,7 @@ import { format, parseISO } from 'date-fns'
 import { neutral, semantic } from '../../theme/tokens'
 import { invoicesForListView, useAppStore, type ListInvoiceRow } from '../../store'
 import { formatCurrency } from '../format'
+import { EmptyState } from '../ui/EmptyState'
 
 const PAID_LABEL: Record<ListInvoiceRow['paid'], string> = { paid: 'Paid', partPaid: 'Part paid', outstanding: 'Outstanding' }
 
@@ -22,7 +23,7 @@ export function useListInvoices(listId: string): ListInvoiceRow[] {
 }
 
 export function ListInvoices({ rows }: { rows: readonly ListInvoiceRow[] }) {
-  if (rows.length === 0) return <div style={{ fontSize: 13, color: neutral.mist }}>No invoices were raised for this List.</div>
+  if (rows.length === 0) return <EmptyState>No invoices were raised for this List.</EmptyState>
   return (
     <ul data-shot="list-invoices" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
       {rows.map((r, i) => (

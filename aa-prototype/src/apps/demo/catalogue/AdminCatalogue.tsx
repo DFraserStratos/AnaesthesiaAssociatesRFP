@@ -15,6 +15,7 @@ import {
   DrawerPartsExample,
   FormErrorExample,
   InlineBannerExample,
+  NoticeExample,
   MasterPanelExample,
   MasterPillsExample,
   MastersSubNavExample,
@@ -177,7 +178,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SurgeonPicker" source="apps/admin/components/pairing/SurgeonPicker.tsx" usedIn={A} what="A native select of surgeons with a 'Not preferred with Dr X' optgroup for the chosen anaesthetist." replaceWith="Base UI Combobox (with groups)" note="The list is long and not searchable today. Opens on an anaesthetist with a not-preferred surgeon, so the second optgroup shows.">
           <SurgeonPickerExample />
         </CatalogueRow>
-        <CatalogueRow name="NotPreferredWarning" source="apps/admin/components/pairing/NotPreferredWarning.tsx" usedIn={A} what="An amber callout when the chosen surgeon is not preferred with the anaesthetist; it warns, never blocks." replaceWith="shadcn Alert" note="Fed by the real useNotPreferredWarning hook for a seeded not-preferred pairing.">
+        <CatalogueRow name="NotPreferredWarning" source="apps/admin/components/pairing/NotPreferredWarning.tsx" usedIn={A} what="An amber callout when the chosen surgeon is not preferred with the anaesthetist, on the shared Notice; it warns, never blocks." replaceWith="shadcn Alert" note="Fed by the real useNotPreferredWarning hook for a seeded not-preferred pairing.">
           <NotPreferredWarningExample />
         </CatalogueRow>
         <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips, for a Contract's specialties." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
@@ -186,7 +187,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay: search by code or description, every match rendered." replaceWith="Base UI Combobox + TanStack Virtual" note="Gives combobox and listbox roles and arrow and Enter selection.">
           <CodePickerExample />
         </CatalogueRow>
-        <CatalogueRow name="ConflictCallout" source="apps/admin/components/conflicts/ConflictCallout.tsx" usedIn={A} what="Warns, before saving, that the hospital is closed that day and the List will be flagged." replaceWith="shadcn Alert">
+        <CatalogueRow name="Notice" source="shared/ui/Notice.tsx" usedIn={AWM} what="The one notice (UI unification U3): the ConflictCallout shell in warning, error and success, and the neutral note. A role only where the note announces; the icon is aria-hidden." replaceWith="shadcn Alert">
+          <NoticeExample />
+        </CatalogueRow>
+        <CatalogueRow name="ConflictCallout" source="apps/admin/components/conflicts/ConflictCallout.tsx" usedIn={A} what="Warns, before saving, that the hospital is closed that day and the List will be flagged (the shared Notice, warning tone)." replaceWith="shadcn Alert">
           <ConflictCalloutExample />
         </CatalogueRow>
         <CatalogueRow name="WarningsToDo" source="apps/admin/components/WarningsToDo.tsx" usedIn={A} what="The rail's To-do card: every open warning, soonest first, each with Open and Clear, and a show-more toggle. Its count is the shared CountBadge (read as 3 to do)." replaceWith="shadcn Card + Collapsible" note="Clear writes a clearance to the demo store.">
@@ -208,7 +212,7 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="sonner">
-        <CatalogueRow name="Inline success banner (role=status)" source="apps/admin/screens/ConflictsScreen.tsx" usedIn={A} what={`A teal-tint confirmation line with Dismiss after an action (Conflicts, ${DRAFT_LISTS}, Recurring apply, Holiday, AA fees).`} replaceWith="Sonner toast (with action and undo)" note="Inline JSX in each screen, not a component: rebuilt here from the Conflicts screen. Errors stay inline.">
+        <CatalogueRow name="Inline success banner (role=status)" source="apps/admin/screens/ConflictsScreen.tsx" usedIn={A} what={`The shared ResultLine (UI unification U3): a success-green confirmation with Dismiss after an action (Conflicts, ${DRAFT_LISTS}, Recurring apply, AA fees), its role=status region always mounted. The masters lines stay teal until Phase 42.`} replaceWith="Sonner toast (with action and undo)" note="Inline JSX in each screen, not a component: rebuilt here from the Conflicts screen. Errors stay inline.">
           <InlineBannerExample />
         </CatalogueRow>
       </LibraryGroup>
@@ -243,7 +247,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="TextArea" source="shared/ui/Field.tsx" usedIn={AWM} what="A labelled multi-line text input with an optional blur handler." replaceWith="shadcn Field + Textarea">
           <TextAreaExample />
         </CatalogueRow>
-        <CatalogueRow name="FieldLabel / FormError" source="shared/ui/Field.tsx" usedIn={AWM} what="The field label, and the inline role=alert error line under a form." replaceWith="shadcn Label + FieldError (Zod schema)" note="Ties each error to its field instead of one line per form.">
+        <CatalogueRow name="FieldLabel / FormError" source="shared/ui/Field.tsx" usedIn={AWM} what="The field label, and FormError: the role=alert refusal box under a form, or its inline line beside a compact row control (UI unification U3: the one error box)." replaceWith="shadcn Label + FieldError (Zod schema)" note="Ties each error to its field instead of one line per form.">
           <FormErrorExample />
         </CatalogueRow>
         <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, selects, segmented choices, ChipMultiSelect, SurgeonPicker, the RVG code picker and price ranges." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">

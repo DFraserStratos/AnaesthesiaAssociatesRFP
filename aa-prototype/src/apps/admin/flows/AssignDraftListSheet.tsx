@@ -12,13 +12,13 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { TriangleAlert } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import { assignDraftList, bookingCountsByList, useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { DRAFT_ASSIGN_WARNINGS, isDraftList } from '../../../domain/draftLists'
 import { Button, FormError, SuccessOverlay } from '../../../shared/ui'
+import { Notice } from '../../../shared/ui/Notice'
 import { useSurface } from '../../../shared/surface'
 import { locationName, pairingLine } from '../../../shared/format'
 import { LIST_KIND_LABELS } from '../../../domain/types'
@@ -116,9 +116,9 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
         </div>
 
         {passed ? (
-          <div role="status" style={{ background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-            This {DRAFT_LIST}'s day has passed. Change its date or remove it.
-          </div>
+          <Notice tone="warning" live="status">
+            <span>This {DRAFT_LIST}'s day has passed. Change its date or remove it.</span>
+          </Notice>
         ) : targetId === null ? (
           <>
             <div style={{ fontSize: 13, color: neutral.slate }}>Choose the anaesthetist. To use another day, change the {DRAFT_LIST}'s date first.</div>
@@ -142,7 +142,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
             </div>
             <div data-shot={pairingWarning !== null ? 'admin-assign-draft-list-not-preferred' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <NotPreferredWarning warning={pairingWarning} shot="assign-draft-list-pairing-warning" />
-              {holiday && <SoftWarning shot="assign-draft-list-holiday-warning">{DRAFT_ASSIGN_WARNINGS.hospitalHoliday(hospitalName)}</SoftWarning>}
+              {holiday && <Notice tone="warning" live="status" shot="assign-draft-list-holiday-warning">{DRAFT_ASSIGN_WARNINGS.hospitalHoliday(hospitalName)}</Notice>}
             </div>
             <FormError message={error} />
             <div style={{ display: 'flex', gap: 8 }}>
@@ -166,15 +166,6 @@ function ConfirmRow({ label, children }: { label: string; children: React.ReactN
     <div style={{ display: 'flex', gap: 10, fontSize: 14 }}>
       <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist, paddingTop: 2 }}>{label}</span>
       <span style={{ color: neutral.ink }}>{children}</span>
-    </div>
-  )
-}
-
-function SoftWarning({ shot, children }: { shot: string; children: React.ReactNode }) {
-  return (
-    <div role="status" data-shot={shot} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.card, padding: '12px 14px', fontSize: 13, lineHeight: '18px' }}>
-      <TriangleAlert size={16} aria-hidden style={{ flexShrink: 0, marginTop: 1, color: semantic.warning.solid }} />
-      <span>{children}</span>
     </div>
   )
 }

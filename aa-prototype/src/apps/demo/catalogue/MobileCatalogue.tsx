@@ -133,11 +133,10 @@ export function MobileCatalogue() {
           note="Recreated: local to BalancesScreen.tsx. Reads the persona's real receivables.">
           <Ex.HeroFigureCardExample />
         </CatalogueRow>
-        <CatalogueRow name="EmptyCard" source="apps/mobile/screens/BalancesScreen.tsx" usedIn={M} stage="mobile" height={180}
-          what="The centred, muted card that says there is nothing to show yet."
-          replaceWith="shadcn Empty"
-          note="Recreated: local to BalancesScreen.tsx.">
-          <Ex.EmptyCardExample />
+        <CatalogueRow name="EmptyState" source="shared/ui/EmptyState.tsx" usedIn={SW} stage="mobile" height={260}
+          what="The one empty state (UI unification U3, which replaced EmptyCard): the inline mist line, the card (as on Balances) and the phone list screens' centred line."
+          replaceWith="shadcn Empty">
+          <Ex.EmptyStateExample />
         </CatalogueRow>
         <CatalogueRow name="MovedToYouPanel" source="shared/flows/MovedToYouPanel.tsx" usedIn={WM} stage="mobile" height={300}
           what="The notice at the top of Find cover listing Lists or Bookings a colleague moved to her in the last week, with any message."
@@ -215,7 +214,7 @@ export function MobileCatalogue() {
           <Ex.TextAreaExample />
         </CatalogueRow>
         <CatalogueRow name="FormError" source="shared/ui/Field.tsx" usedIn={SW} stage="mobile" height={200}
-          what="A refused save in plain words, in the error tint, announced as an alert."
+          what="A refused save in plain words, announced as an alert: the error-tint box under a form, or the inline line beside a compact row control (UI unification U3, which moved every hand copy onto it)."
           replaceWith="shadcn FieldError (bound to the field by RHF)"
           note="Today it sits under the form, not under the field that caused it.">
           <Ex.FormErrorExample />

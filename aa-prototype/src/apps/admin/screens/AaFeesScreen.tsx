@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { addMonths, format, parseISO } from 'date-fns'
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import type { AaFeeFixedItem, AaFeeSettings } from '../../../domain/types'
 import { aaFeeFixedTotal, aaFeeFor, aaFeeMonthLabel, validateAaFeeSettings } from '../../../domain/billing/aaFee'
 import {
@@ -20,6 +20,8 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 import { Pill } from '../../../shared/ui/Pill'
+import { FormError } from '../../../shared/ui'
+import { ResultLine } from '../../../shared/ui/ResultLine'
 
 export type AaFeesTab = 'invoices' | 'settings'
 
@@ -173,19 +175,8 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
             {disabledReason !== null && <div style={{ fontSize: 12, color: neutral.mist }}>{disabledReason}</div>}
           </div>
         </div>
-        {result !== null && (
-          <div
-            role="status"
-            style={{
-              padding: '9px 16px',
-              fontSize: 12.5,
-              background: result.ok ? semantic.success.tint : semantic.error.tint,
-              color: result.ok ? semantic.success.onTint : semantic.error.onTint,
-            }}
-          >
-            {result.text}
-          </div>
-        )}
+        <ResultLine shot="aa-fee-run-result" line={result?.ok === true ? result.text : null} style={{ margin: '0 16px 12px' }} />
+        <FormError message={result?.ok === false ? result.text : null} style={{ margin: '0 16px 12px' }} />
         <div style={{ overflowX: 'auto' }}>
           <table data-testid="aa-fee-preview" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
             <thead>
@@ -550,16 +541,9 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
           )}
         </div>
 
-        {invalid !== null && (
-          <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 12.5 }}>
-            {invalid}
-          </div>
-        )}
-        {message !== null && (
-          <div role="status" style={{ background: message.ok ? semantic.success.tint : semantic.error.tint, color: message.ok ? semantic.success.onTint : semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 12.5 }}>
-            {message.text}
-          </div>
-        )}
+        <FormError message={invalid} />
+        <ResultLine shot="aa-fee-settings-result" line={message?.ok === true ? message.text : null} />
+        <FormError message={message?.ok === false ? message.text : null} />
 
         <div>
           <button

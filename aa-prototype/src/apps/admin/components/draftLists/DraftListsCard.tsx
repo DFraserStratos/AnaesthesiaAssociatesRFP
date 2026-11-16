@@ -17,6 +17,7 @@ import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { CountBadge } from '../../../../shared/ui/CountBadge'
 import { BookingCount, UnassignedPill, WaitingTime } from './DraftListParts'
 import { sessionText } from '../../../../domain/outOfHours'
+import { EmptyState } from '../../../../shared/ui/EmptyState'
 
 const RAIL_ROWS = 5
 
@@ -38,7 +39,7 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
         {DRAFT_LISTS}
         <CountBadge count={waiting.length} tone="warning" mono srNoun="waiting" />
       </h2>
-      {waiting.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No {DRAFT_LISTS} waiting.</div>}
+      {waiting.length === 0 && <EmptyState>No {DRAFT_LISTS} waiting.</EmptyState>}
       {shown.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {shown.map((l) => (

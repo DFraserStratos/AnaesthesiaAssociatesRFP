@@ -13,6 +13,7 @@ import { locationName } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
 import { SESSIONS_IN_ORDER, sessionText } from '../../../domain/outOfHours'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 interface DashboardScreenProps {
   anaesthetistId: string
@@ -204,7 +205,7 @@ export function DashboardScreen({
           style={{ gridColumn: 'span 7' }}
         >
           {receivables.rows.length === 0 ? (
-            <EmptyNote>No outstanding accounts. Receivables appear here once billed work goes unpaid.</EmptyNote>
+            <EmptyState style={{ padding: '4px 0' }}>No outstanding accounts. Receivables appear here once billed work goes unpaid.</EmptyState>
           ) : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -237,7 +238,7 @@ export function DashboardScreen({
           style={{ gridColumn: 'span 5' }}
         >
           {figures === undefined ? (
-            <EmptyNote>No productivity history yet.</EmptyNote>
+            <EmptyState style={{ padding: '4px 0' }}>No productivity history yet.</EmptyState>
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -284,7 +285,7 @@ export function DashboardScreen({
                 </div>
               ))
             ) : (
-              <EmptyNote>No leave booked.</EmptyNote>
+              <EmptyState style={{ padding: '4px 0' }}>No leave booked.</EmptyState>
             )}
           </div>
         </Panel>
@@ -296,7 +297,7 @@ export function DashboardScreen({
           style={{ gridColumn: 'span 7' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {locumRows.length === 0 && <EmptyNote>No free sessions in the next 5 days.</EmptyNote>}
+            {locumRows.length === 0 && <EmptyState style={{ padding: '4px 0' }}>No free sessions in the next 5 days.</EmptyState>}
             {locumRows.map((row, i) => (
               <div
                 key={row.key}
@@ -375,10 +376,6 @@ function LinkButton({ onClick, children }: { onClick: () => void; children: Reac
       {children}
     </button>
   )
-}
-
-function EmptyNote({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 13, color: neutral.mist, padding: '4px 0' }}>{children}</div>
 }
 
 function leaveRange(fromISO: string, toISO: string): string {

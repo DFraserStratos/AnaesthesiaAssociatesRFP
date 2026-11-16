@@ -10,6 +10,7 @@ import { NotificationsCard } from './NotificationsCard'
 import type { NotificationTarget } from '../../../store'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 import { hhmm, longDay } from '../../../shared/format'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 interface ReviewRow {
   listId: string
@@ -238,7 +239,7 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
     <Card>
       <div style={{ fontSize: 14, fontWeight: 600 }}>Internal notes</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {notes.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No notes for this day.</div>}
+        {notes.length === 0 && <EmptyState>No notes for this day.</EmptyState>}
         {notes.map((n) => (
           <div key={n.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, borderLeft: `3px solid ${n.flagged ? semantic.warning.solid : neutral.line}`, paddingLeft: 10 }}>
             <span className="mono" style={{ fontSize: 10, color: neutral.mist }}>{hhmm(n.atISO)} · {n.initials}</span>
@@ -279,7 +280,7 @@ function AwaitingReview({ rows, onReviewList }: { rows: ReviewRow[]; onReviewLis
   return (
     <Card>
       <div style={{ fontSize: 14, fontWeight: 600 }}>Awaiting review</div>
-      {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing awaiting review.</div>}
+      {rows.length === 0 && <EmptyState>Nothing awaiting review.</EmptyState>}
       {rows.map((r) => (
         <button
           key={r.listId}

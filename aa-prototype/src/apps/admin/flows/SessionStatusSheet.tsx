@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Building2, Users } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, semantic } from '../../../theme/tokens'
 import { activeStatuses, isClosedKey, statusFor } from '../../../domain/slotStatus'
 import { defaultVacated } from '../../../domain/listMoves'
 import type { SlotStatusKey } from '../../../domain/types'
@@ -17,6 +17,7 @@ import { surnameFirst } from '../util'
 import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { NotAvailableColleagues } from '../components/pairing/AnaesthetistCandidates'
 import { sessionText } from '../../../domain/outOfHours'
+import { Notice } from '../../../shared/ui/Notice'
 
 type Step = 'status' | 'where' | 'colleague' | 'confirm' | 'done'
 
@@ -187,14 +188,14 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
             />
             <TextArea label="Note" value={note} onChange={setNote} placeholder="Optional, for example: Unwell, short notice" />
             {needsWhere && !locked && (
-              <div data-shot="office-status-holds-list" style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 12, fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
-                This session has a List ({listLine}). {submitted ? 'It has been submitted, so it can only be handed on to a colleague.' : 'Next, choose whether it goes back to the office or to a colleague.'}
-              </div>
+              <Notice tone="neutral" shot="office-status-holds-list">
+                <span>This session has a List ({listLine}). {submitted ? 'It has been submitted, so it can only be handed on to a colleague.' : 'Next, choose whether it goes back to the office or to a colleague.'}</span>
+              </Notice>
             )}
             {needsWhere && locked && (
-              <div role="status" style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 12, fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
-                This session's List is authorised and locked, so the session cannot be marked {statusLabel}.
-              </div>
+              <Notice tone="neutral" live="status">
+                <span>This session's List is authorised and locked, so the session cannot be marked {statusLabel}.</span>
+              </Notice>
             )}
             <FormError message={error} />
             <div style={{ display: 'flex', gap: 8 }}>
@@ -268,11 +269,11 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
           <div data-shot="office-status-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <BackLink onClick={() => setStep(route === 'colleague' ? 'colleague' : 'where')}>{route === 'colleague' ? 'Who is free' : 'Where it goes'}</BackLink>
             {header}
-            <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 14, fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
+            <Notice tone="neutral">
               {route === 'colleague'
                 ? `${drSurname(target?.name ?? '')} gets the List and its ${bookingCountLabel(bookingCount)} straight away, in their ${sessionText(session)} session.`
                 : `The List goes back to the office with its ${bookingCountLabel(bookingCount)} and waits in the ${DRAFT_LISTS} for someone to take it.`}
-            </div>
+            </Notice>
             <VacatedSessionChoice label={`${who}'s session after the move`} value={vacated} onChange={setVacated} statusBeingSet={statusKey} shot="office-status-vacated" />
             {route === 'colleague' && <NotPreferredWarning warning={pairingWarning} shot="office-status-pairing-warning" />}
             <FormError message={error} />

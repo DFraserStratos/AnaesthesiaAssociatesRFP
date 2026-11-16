@@ -14,6 +14,7 @@ import { formatCurrency, plural } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { MobileHeader } from '../components'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 type Section = 'outstanding' | 'gst'
 
@@ -87,7 +88,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
       {section === 'outstanding' ? (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {outstanding.length === 0 ? (
-            <EmptyCard>No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyCard>
+            <EmptyState variant="card">No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyState>
           ) : (
             outstanding.map((r) => (
               <div key={r.caseId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -112,7 +113,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
             <span className="mono" style={{ fontWeight: 700, color: neutral.ink }}>{formatCurrency(gst.totalGross)}</span>
           </div>
           {gst.rows.length === 0 ? (
-            <EmptyCard>No payments received this month yet.</EmptyCard>
+            <EmptyState variant="card">No payments received this month yet.</EmptyState>
           ) : (
             <>
               {gst.rows.map((r) => (
@@ -151,10 +152,3 @@ function AgeChip({ days, accFunded }: { days: number; accFunded: boolean }) {
   )
 }
 
-function EmptyCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '20px', textAlign: 'center', fontSize: 13.5, color: neutral.mist }}>
-      {children}
-    </div>
-  )
-}

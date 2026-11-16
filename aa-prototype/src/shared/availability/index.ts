@@ -6,5 +6,4 @@ export { describeAvailabilityOutcome, type AvailabilityOutcomeKind } from './des
 export { monthCells, monthOf, shiftMonth, WEEKDAY_INITIALS, WEEKDAY_SHORT_NAMES } from './monthCells'
 export { useActiveSeries, useAvailabilityBounds, useAvailabilityDay, useAvailabilityMonth } from './useAvailability'
 export { SeriesList } from './SeriesList'
-export { ResultLine } from './AvailabilityForm'
 export { describeDayForScreenReaders } from './dayLabel'

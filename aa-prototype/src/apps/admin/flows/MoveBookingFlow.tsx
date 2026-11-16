@@ -5,11 +5,12 @@ import type { List } from '../../../domain/types'
 import { reassignBooking, useAppStore, type Actor } from '../../../store'
 import { LIST_STATE_LABELS, locationName } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
-import { Button } from '../../../shared/ui'
+import { Button, FormError } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { surnameOf } from '../util'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { compareSessions, sessionText } from '../../../domain/outOfHours'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 interface MoveBookingFlowProps {
   open: boolean
@@ -80,7 +81,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
         </label>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflow: 'auto' }}>
-          {candidates.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No candidate lists on {targetDate !== '' ? format(parseISO(targetDate), 'd MMM') : 'that day'}.</div>}
+          {candidates.length === 0 && <EmptyState>No candidate lists on {targetDate !== '' ? format(parseISO(targetDate), 'd MMM') : 'that day'}.</EmptyState>}
           {candidates.map((l) => {
             const anae = l.anaesthetistId !== undefined ? masters.anaesthetists[l.anaesthetistId] : undefined
             const hosp = locationName(l.hospitalId, masters.hospitals)
@@ -109,9 +110,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
           })}
         </div>
 
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-        )}
+        <FormError message={error} />
         <Button variant="secondary" block onClick={onClose}>Cancel</Button>
         <div style={{ fontSize: 11, color: accent.pressed }}>Select a target list to move the booking immediately.</div>
       </div>

@@ -9,6 +9,7 @@ import { FormError } from '../ui'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
 import { SESSIONS_IN_ORDER, sessionText } from '../../domain/outOfHours'
+import { EmptyState } from '../ui/EmptyState'
 
 /** What the panel asks its host to open: the form for one session (or both), prefilled. */
 export interface ChangeRequest {
@@ -75,7 +76,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
   }
 
   if (sessions.length === 0) {
-    return <div style={{ fontSize: 13, color: neutral.mist }}>No session on this day: it is before your start date or outside the schedule.</div>
+    return <EmptyState>No session on this day: it is before your start date or outside the schedule.</EmptyState>
   }
 
   return (

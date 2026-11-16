@@ -1,9 +1,9 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { format, parseISO } from 'date-fns'
 import { BellRing, CheckCircle2 } from 'lucide-react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { neutral, semantic } from '../../theme/tokens'
 import { alertOffice, activeAlertFor, latestAlertFor, officeAlertRefusal, OFFICE_ALERT_NOTE_MAX, resolveNotification, useAppStore, type Actor } from '../../store'
-import { Button, FormError, TextArea, TickBadge, TickButton } from '../ui'
+import { Button, FormError, Notice, TextArea, TickBadge, TickButton } from '../ui'
 import { useSurface } from '../surface'
 import { drSurname } from '../format'
 import { sessionText } from '../../domain/outOfHours'
@@ -55,24 +55,22 @@ export function AlertOfficeEntry({
   return (
     <div data-shot={`alert-office-${target.bookingId !== undefined ? 'booking' : 'list'}`} style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
       {active !== undefined ? (
-        <div data-shot="alert-office-sent" role="status" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px' }}>
-          <BellRing size={16} aria-hidden style={{ color: neutral.slate, flex: 'none', marginTop: 2 }} />
+        <Notice tone="neutral" live="status" shot="alert-office-sent" icon={<BellRing size={16} />}>
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
             <span style={{ fontSize: 13.5, fontWeight: 600, color: neutral.ink }}>The office has been alerted</span>
             {active.message !== undefined && <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate }}>"{active.message}"</span>}
             <span style={{ fontSize: 11.5, color: neutral.mist }}>{whenLabel(active.atISO)} · It stays with the office until someone there deals with it.</span>
           </span>
-        </div>
+        </Notice>
       ) : (
         latest?.resolvedAt !== undefined && (
-          <div data-shot="alert-office-resolved" role="status" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: semantic.success.tint, borderRadius: radius.card, padding: '12px 14px' }}>
-            <CheckCircle2 size={16} aria-hidden style={{ color: semantic.success.onTint, flex: 'none', marginTop: 2 }} />
+          <Notice tone="success" live="status" shot="alert-office-resolved" icon={<CheckCircle2 size={16} />}>
             <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
               <span style={{ fontSize: 13.5, fontWeight: 600, color: semantic.success.onTint }}>The office has dealt with this</span>
               {latest.message !== undefined && <span style={{ fontSize: 13, lineHeight: '18px', color: semantic.success.onTint }}>Your note: "{latest.message}"</span>}
               <span style={{ fontSize: 11.5, color: semantic.success.onTint }}>{whenLabel(latest.resolvedAt)}</span>
             </span>
-          </div>
+          </Notice>
         )
       )}
       {canAlert && !statusOnly && (
@@ -179,25 +177,31 @@ export function OfficeAlertLine({ actor, target }: { actor: Actor; target: Targe
   if (active === undefined || actor.role !== 'office') return null
   const who = from !== undefined ? drSurname(from) : 'the anaesthetist'
   return (
-    <div data-shot="office-alert-line" role="status" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px' }}>
-      <BellRing size={16} aria-hidden style={{ color: neutral.slate, flex: 'none', marginTop: 2 }} />
+    <Notice
+      tone="neutral"
+      live="status"
+      shot="office-alert-line"
+      icon={<BellRing size={16} />}
+      action={
+        <TickButton
+          compact
+          shot="office-alert-tick"
+          label={`Resolve alert from ${who}`}
+          onClick={() => {
+            const out = resolveNotification(useAppStore, actor, active.id)
+            setError(out.ok ? null : out.message)
+          }}
+        >
+          Resolve
+        </TickButton>
+      }
+    >
       <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: neutral.ink }}>Alert from {who}</span>
         {active.message !== undefined && <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate }}>"{active.message}"</span>}
         <span style={{ fontSize: 11.5, color: neutral.mist }}>{whenLabel(active.atISO)}</span>
-        {error !== null && <span role="alert" style={{ fontSize: 12, color: semantic.error.onTint }}>{error}</span>}
+        <FormError message={error} variant="inline" />
       </span>
-      <TickButton
-        compact
-        shot="office-alert-tick"
-        label={`Resolve alert from ${who}`}
-        onClick={() => {
-          const out = resolveNotification(useAppStore, actor, active.id)
-          setError(out.ok ? null : out.message)
-        }}
-      >
-        Resolve
-      </TickButton>
-    </div>
+    </Notice>
   )
 }

@@ -19,13 +19,15 @@ import { drSurname, hhmm, locationName, shortDay } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { isAssignedList } from '../../../domain/draftLists'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, radius, semantic } from '../../../theme/tokens'
 import { cellStyle as adminCell, headCellStyle as adminHead, textActionStyle } from '../tableChrome'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ClearConflictSheet } from '../components/conflicts/ClearConflictSheet'
 import { selectControlStyle } from '../flows/fieldChrome'
 import { sessionText } from '../../../domain/outOfHours'
+import { ResultLine } from '../../../shared/ui/ResultLine'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 const cellStyle = { ...adminCell(), verticalAlign: 'top' as const }
 const headCellStyle = adminHead()
@@ -165,17 +167,20 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
         </label>
       </div>
 
-      {confirmation !== null && (
-        <div role="status" data-shot="conflicts-confirmation" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-          <span>{confirmation}</span>
-          <button type="button" style={textActionStyle} onClick={() => setConfirmation(null)}>Dismiss</button>
-        </div>
-      )}
+      <ResultLine
+        shot="conflicts-confirmation"
+        line={confirmation}
+        actions={
+          <button type="button" style={textActionStyle} onClick={() => setConfirmation(null)}>
+            Dismiss
+          </button>
+        }
+      />
 
       {groups.length === 0 ? (
-        <div data-shot="conflicts-empty" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 24, fontSize: 13, color: neutral.slate }}>
+        <EmptyState variant="card" shot="conflicts-empty">
           No conflicts in this range.
-        </div>
+        </EmptyState>
       ) : (
         <div data-shot="conflicts-table" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {groups.map(([dateISO, dayRows]) => {

@@ -7,10 +7,9 @@
  */
 
 import { useMemo } from 'react'
-import { TriangleAlert } from 'lucide-react'
 import { conflictPreview, describeConflict, type ExpectedConflict } from '../../../../domain/conflicts'
 import { useAppStore, useConflictLookups } from '../../../../store'
-import { radius, semantic } from '../../../../theme/tokens'
+import { Notice } from '../../../../shared/ui/Notice'
 
 /** The conflicts a target would raise (`conflictPreview` over the live records). */
 export function useConflictPreview(target: { dateISO: string; hospitalId?: string } | null): ExpectedConflict[] {
@@ -50,20 +49,13 @@ export function ConflictCallout({
   if (conflicts.length === 0) return null
   const tail = subject === 'Booking' ? 'The Booking will be accepted and the List flagged as a conflict.' : 'The List will be accepted and flagged as a conflict.'
   return (
-    <div
-      role="status"
-      data-shot={shot}
-      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.card, padding: '12px 14px', fontSize: 13, lineHeight: '18px' }}
-    >
-      <TriangleAlert size={16} aria-hidden style={{ flexShrink: 0, marginTop: 1, color: semantic.warning.solid }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {conflicts.map((c) => (
-          <strong key={c.cause} style={{ fontWeight: 600 }}>
-            {describeConflict(c, { hospitalId: hospitalId ?? '' }, lookups).detail}
-          </strong>
-        ))}
-        <span>{tail} You can still go ahead.</span>
-      </div>
-    </div>
+    <Notice tone="warning" live="status" shot={shot}>
+      {conflicts.map((c) => (
+        <strong key={c.cause} style={{ fontWeight: 600 }}>
+          {describeConflict(c, { hospitalId: hospitalId ?? '' }, lookups).detail}
+        </strong>
+      ))}
+      <span>{tail} You can still go ahead.</span>
+    </Notice>
   )
 }

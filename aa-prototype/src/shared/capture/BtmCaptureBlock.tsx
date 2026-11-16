@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { accent, semantic, radius } from '../../theme/tokens'
+import { semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
@@ -13,6 +13,7 @@ import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
 import { BILLING_FAILURE_FIELDS, BillingCard } from '../booking/BillingCard'
 import { ProcedureStack } from '../booking/ProcedureStack'
+import { Notice } from '../ui/Notice'
 
 /** Fields the Contract row anchors (the step rail and "Contract and reference" own them; catch-up Phase 20). */
 // The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
@@ -170,10 +171,10 @@ export function BtmCaptureBlock({
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
-        <div data-shot="procedure-additional-note" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '18px' }}>
+        <Notice tone="neutral" shot="procedure-additional-note">
           Additional procedure. It bills for time units only; base and modifier units stay on the
           first procedure.
-        </div>
+        </Notice>
       )}
 
 

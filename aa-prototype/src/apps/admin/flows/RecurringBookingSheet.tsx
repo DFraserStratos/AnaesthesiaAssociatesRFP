@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { addDays, format, parseISO } from 'date-fns'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import type { ListKind, RecurringBooking, Session } from '../../../domain/types'
 import { coversDate, type PlanKept, type PlanSkipped } from '../../../domain/recurringBookingProjection'
 import { recurringClashListId } from '../../../domain/draftLists'
@@ -23,6 +23,8 @@ import { selectControlStyle as selectStyle } from './fieldChrome'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { keptDetail, previewLine, resultLine, retirePreviewLine, retireResultLine, SKIPPED_DETAIL, SKIPPED_HEADING } from '../recurringBookingCopy'
 import { textActionStyle } from '../tableChrome'
+import { Notice } from '../../../shared/ui/Notice'
+import { ResultLine } from '../../../shared/ui/ResultLine'
 
 interface Props {
   open: boolean
@@ -291,9 +293,9 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
             ) : (
               <>
                 {plan !== null && (
-                  <div role="status" data-shot="recurring-booking-preview" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '19px' }}>
+                  <Notice tone="neutral" live="status" shot="recurring-booking-preview">
                     {previewLine({ created: plan.create.length, updated: plan.update.length, removed: plan.remove.length, kept: plan.kept, skipped: plan.skipped }, draft?.dayOfWeek)}
-                  </div>
+                  </Notice>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
                   {editing && <Button variant="secondary" onClick={() => setRetiring(true)}>Retire</Button>}
@@ -319,7 +321,7 @@ function AppliedView({ applied, onShow, onOpenDraftLists, onDone }: { applied: A
   }
   return (
     <div data-shot="recurring-booking-result" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div role="status" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '19px' }}>{applied.line}</div>
+      <ResultLine line={applied.line} />
       {result.firstAffectedDateISO !== undefined && (
         <button type="button" style={{ ...textActionStyle, alignSelf: 'flex-start', fontSize: 13 }} onClick={() => onShow(result.firstAffectedDateISO!)}>
           Show on day grid ({shortDay(result.firstAffectedDateISO)})

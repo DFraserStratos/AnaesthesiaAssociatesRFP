@@ -21,6 +21,8 @@ import { Button } from '../ui/Button'
 import { TextAction } from '../ui/TextAction'
 import { formatCurrency, parseAmount, plural } from '../format'
 import { motion } from '../../theme/motion'
+import { FormError } from '../ui'
+import { Notice } from '../ui/Notice'
 
 /**
  * The step rail (catch-up Phase 20; US-04.3.8, US-04.3.9, US-04.3.2,
@@ -293,19 +295,24 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
           </div>
         )}
         {outcome !== null && (
-          <div data-shot="contract-rail-outcome" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 13.5, color: neutral.slate, background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px' }}>
+          <Notice
+            tone="neutral"
+            shot="contract-rail-outcome"
+            action={
+              actor === 'office' && finalContract !== undefined && isRvgKind(finalContract.pricing.kind) && !usingOther ? (
+                <TextAction small shot="contract-rail-enter-rvg" onClick={() => setCodeOpen(true)}>
+                  {rvgNow !== undefined ? 'Change code' : 'Enter it now'}
+                </TextAction>
+              ) : undefined
+            }
+          >
             <span>
               {outcome}
               {rvgNow !== undefined && masters.rvgGroups[rvgNow] !== undefined && (
                 <span className="mono" style={{ marginLeft: 6, color: neutral.ink }}>RVG code {masters.rvgGroups[rvgNow]!.code}</span>
               )}
             </span>
-            {actor === 'office' && finalContract !== undefined && isRvgKind(finalContract.pricing.kind) && !usingOther && (
-              <TextAction small shot="contract-rail-enter-rvg" onClick={() => setCodeOpen(true)}>
-                {rvgNow !== undefined ? 'Change code' : 'Enter it now'}
-              </TextAction>
-            )}
-          </div>
+          </Notice>
         )}
         <CodePickerSheet
           open={codeOpen}
@@ -317,11 +324,7 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
           }}
           onClose={() => setCodeOpen(false)}
         />
-        {error !== null && (
-          <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13.5 }}>
-            {error}
-          </div>
-        )}
+        <FormError message={error} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <Button variant="secondary" onClick={close}>
             {currentContractId === undefined && view.answers !== undefined ? 'Keep answers and close' : 'Cancel'}

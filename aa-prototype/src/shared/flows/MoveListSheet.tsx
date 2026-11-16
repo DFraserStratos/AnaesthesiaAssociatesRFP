@@ -13,7 +13,7 @@ import { defaultVacated, pushTargets, type PushTarget } from '../../domain/listM
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
 import { drSurname, locationName, matchesNameQuery, plural, shortDay } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
-import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
+import { Button, NameSearchBox, TextArea, TickBadge, FormError } from '../ui'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
 import { BackLink, ChoiceRow } from './moveSheetParts'
@@ -254,11 +254,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
             />
 
             <TextArea label="Add a message" value={message} onChange={setMessage} placeholder={route === 'colleague' ? `Optional note for ${colleagueShort} and the office` : 'Optional note for the office'} />
-            {error !== null && (
-              <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-                {error}
-              </div>
-            )}
+            <FormError message={error} />
             <span data-shot="move-submit" style={{ display: 'contents' }}>
               <Button variant="primary" block onClick={submit}>
                 Move List

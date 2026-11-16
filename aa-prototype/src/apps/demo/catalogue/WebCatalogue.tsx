@@ -29,7 +29,7 @@ export function WebCatalogue() {
       <SurfaceProvider variant="web">
       <MoveListPromptProvider actor={f.actor}>
         <LibraryGroup id="shadcn">
-          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar." replaceWith="shadcn NavigationMenu (links) + Avatar" note="Plain buttons today: no aria-current, no nav label, a hand-rolled avatar.">
+          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar." replaceWith="shadcn NavigationMenu (links) + Avatar" note="Plain buttons today: no aria-current, no nav label. The avatar is the shared Avatar (tint, 36).">
             <D.WebNavDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. A sliding segmented control used as route navigation." replaceWith="shadcn Tabs (as links)" note="A segmented control doing a tab bar's job; tabs-as-links give the route and aria-current.">
@@ -128,7 +128,7 @@ export function WebCatalogue() {
         </LibraryGroup>
 
         <LibraryGroup id="sonner">
-          <CatalogueRow name="ResultLine" source="shared/availability/AvailabilityForm.tsx" usedIn={WM} what="The inline teal status line confirming an availability change (role status)." replaceWith="Sonner toast" note="Inline success banners become toasts; errors stay inline. The web also has no feedback at all after submitting a List.">
+          <CatalogueRow name="ResultLine" source="shared/ui/ResultLine.tsx" usedIn={ALL} what="The success-green line confirming an action in place (UI unification U3, question 14), its role=status region always mounted so the words are announced; actions and a labelled dismiss." replaceWith="Sonner toast" note="Inline success banners become toasts; errors stay inline. The web also has no feedback at all after submitting a List.">
             <D.ResultLineDemo />
           </CatalogueRow>
         </LibraryGroup>

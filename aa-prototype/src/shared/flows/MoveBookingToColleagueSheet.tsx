@@ -13,7 +13,7 @@ import {
 import { bookingMoveReceivers, freeColleagues, type BookingMoveInput, type BookingReceiver } from '../../domain/bookingMoves'
 import type { AssignedList, Booking } from '../../domain/types'
 import { drSurname, locationName } from '../format'
-import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
+import { Button, NameSearchBox, TextArea, TickBadge, FormError } from '../ui'
 import { useSurface } from '../surface'
 import { Avatar } from '../Avatar'
 import { sessionText } from '../../domain/outOfHours'
@@ -245,11 +245,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
               </span>
             </label>
 
-            {error !== null && (
-              <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-                {error}
-              </div>
-            )}
+            <FormError message={error} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <span data-shot="move-booking-submit" style={{ display: 'contents' }}>
                 <Button variant="primary" block onClick={submit}>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { neutral } from '../../theme/tokens'
 import { removeProcedure, useAppStore, type Actor } from '../../store'
-import { Button } from '../ui'
+import { Button, FormError } from '../ui'
 import { useSurface } from '../surface'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 
@@ -66,11 +66,7 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
             {lineCount === 1 ? 'Its 1 billing line goes with it.' : `Its ${lineCount} billing lines go with it.`}
           </div>
         )}
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-            {error}
-          </div>
-        )}
+        <FormError message={error} />
         <Button variant="primary" block onClick={submit}>
           Remove procedure
         </Button>

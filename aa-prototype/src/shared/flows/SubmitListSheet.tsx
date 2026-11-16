@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { completionBlockersFor, submitList, useAppStore, type Actor } from '../../store'
-import { Button } from '../ui'
+import { Button, FormError } from '../ui'
 import { useSurface } from '../surface'
 
 interface SubmitListSheetProps {
@@ -114,11 +114,7 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
           <div data-shot="submit-doer-note" style={{ fontSize: 14, lineHeight: '21px', color: neutral.ink }}>
             Submitting says you did every procedure on this List. If a colleague is doing one, move it to them first.
           </div>
-          {error !== null && (
-            <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
+          <FormError message={error} />
           <Button variant="primary" block onClick={confirmSubmit}>
             Submit to office
           </Button>

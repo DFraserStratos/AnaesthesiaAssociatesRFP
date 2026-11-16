@@ -48,7 +48,6 @@ import {
   BottomTabBarCopy,
   ColleagueCellsCopy,
   DateStripCopy,
-  EmptyCardCopy,
   FilterChipsCopy,
   HalfBlockCopy,
   HeroFigureCardCopy,
@@ -64,6 +63,7 @@ import {
 } from './recreations'
 import { useMobilePersona, type SeedPicks } from './persona'
 import { procedureLabel } from '../../../../domain/billing/procedureStack'
+import { EmptyState } from '../../../../shared/ui/EmptyState'
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -372,6 +372,7 @@ export function FormErrorExample() {
   return (
     <div style={col}>
       <FormError message={show ? 'Add a note of at least 3 characters.' : null} />
+      <FormError variant="inline" message={show ? 'Could not clear: the warning was already cleared.' : null} />
       <Button variant="pill" onClick={() => setShow((s) => !s)}>{show ? 'Clear the error' : 'Show the error'}</Button>
     </div>
   )
@@ -742,8 +743,14 @@ export function AgeChipExample() {
   )
 }
 
-export function EmptyCardExample() {
-  return <EmptyCardCopy>No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyCardCopy>
+export function EmptyStateExample() {
+  return (
+    <div style={col}>
+      <EmptyState>No notes for this day.</EmptyState>
+      <EmptyState variant="card">No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyState>
+      <EmptyState variant="centred">No free sessions on this day.</EmptyState>
+    </div>
+  )
 }
 
 export function CaptureSectionExample() {

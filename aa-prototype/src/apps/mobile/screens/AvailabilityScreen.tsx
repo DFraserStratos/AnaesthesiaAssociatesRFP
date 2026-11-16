@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import { sessionText } from '../../../domain/outOfHours'
 import { OutOfHoursMoon } from '../../../shared/schedule'
 import { STATUS_ON_FILL } from '../../../theme/statusColours'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 interface AvailabilityScreenProps {
   anaesthetistId: string
@@ -263,7 +264,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
           )
         })}
         {rowsToShow.length === 0 && (
-          <div style={{ marginTop: 20, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>No free sessions on this day.</div>
+          <EmptyState variant="centred">No free sessions on this day.</EmptyState>
         )}
         {/* 82 - 8 for the column gap, so the reserved space is unchanged. */}
         <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 74px)" />

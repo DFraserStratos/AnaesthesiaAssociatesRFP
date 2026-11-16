@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim, zIndex } from '../../../theme/tokens'
+import { accent, neutral, scrim, zIndex } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { HistorySheet } from '../../../shared/booking'
@@ -36,6 +36,8 @@ import { useDraftListCandidates } from './pairing/DraftListCandidates'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from './draftLists/DraftListParts'
 import { ActionBtn, DrawerLink, Row, Section } from './drawerParts'
 import { sessionText } from '../../../domain/outOfHours'
+import { Notice } from '../../../shared/ui/Notice'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 type Sheet = 'none' | 'assign' | 'edit' | 'redate' | 'remove' | 'history' | 'addBooking' | { move: string } | { assignTo: string }
 
@@ -128,9 +130,9 @@ function DraftBody({
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
           <ConflictPanel list={list} actor={actor} />
           {passed && (
-            <div role="status" style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+            <Notice tone="neutral" live="status">
               This day has passed. Change its date or remove it.
-            </div>
+            </Notice>
           )}
 
           <Section label="Request">
@@ -169,7 +171,7 @@ function DraftBody({
           {!passed && (
             <Section label="Available that session">
               <div data-shot="draft-list-available" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {short.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No one is free and clear that session. See everyone for who could take it.</div>}
+                {short.length === 0 && <EmptyState>No one is free and clear that session. See everyone for who could take it.</EmptyState>}
                 {short.map((c) => (
                   <div key={c.anaesthetistId} data-available={c.anaesthetistId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', margin: '0 -10px', borderBottom: `1px solid ${neutral.line}` }}>
                     <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: neutral.ink }}>{surnameFirst(masters.anaesthetists[c.anaesthetistId]?.name ?? c.anaesthetistId)}</span>
@@ -186,7 +188,7 @@ function DraftBody({
           )}
 
           <Section label={`Bookings (${active.length})`}>
-            {bookings.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No Bookings on this {DRAFT_LIST} yet.</div>}
+            {bookings.length === 0 && <EmptyState>No Bookings on this {DRAFT_LIST} yet.</EmptyState>}
             {bookings.map((booking) => {
               const patient = masters.patients[booking.patientId]
               const cancelled = booking.cancellation !== undefined

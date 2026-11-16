@@ -15,7 +15,7 @@ import type { PostalAddress } from '../../domain/types'
 import { anyPayerBilled, cleanPostalAddress, isMinorOn, onlyHoldersBilled, payerHasContact } from '../../domain/billing'
 import { formatPostalAddress } from '../../domain/billing/payer'
 import { setBookingPayer, useAppStore, type Actor, type PayerInput } from '../../store'
-import { Button, FormError, TextField } from '../ui'
+import { Button, FormError, Notice, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { PostalAddressFields, addressDraftOf, type PostalAddressDraft } from './PostalAddressFields'
 import { DifferentPayerTick, EMPTY_OTHER_PAYER, OtherPayerFields, otherPayerInput, type OtherPayerDraft } from './PayerFields'
@@ -139,9 +139,9 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
         )}
 
         {needsContact && (
-          <div data-shot="payer-contact-ask" role="status" style={{ background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '19px' }}>
+          <Notice tone="warning" live="status" shot="payer-contact-ask">
             {PAYER_CONTACT_ASK}
-          </div>
+          </Notice>
         )}
         <FormError message={error} />
         <Button variant="primary" block onClick={save} disabled={different && other.name.trim() === ''}>

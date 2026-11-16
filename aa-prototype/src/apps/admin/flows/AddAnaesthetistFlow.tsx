@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import type { GstPeriod } from '../../../domain/types'
 import { addAnaesthetist, useAppStore, useToday, type Actor } from '../../../store'
 import { Button, Segmented, TextField } from '../../../shared'
 import { useSurface } from '../../../shared'
 import { GST_OPTIONS } from './fieldChrome'
+import { FormError } from '../../../shared/ui'
+import { ResultLine } from '../../../shared/ui/ResultLine'
 
 interface Props {
   open: boolean
@@ -90,12 +92,10 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
             hint="Sessions are created from this date to the end of the schedule horizon."
           />
         </div>
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-        )}
+        <FormError message={error} />
+        <ResultLine line={result} />
         {result !== null ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{result}</div>
             <Button variant="primary" block onClick={onClose}>Done</Button>
           </div>
         ) : (

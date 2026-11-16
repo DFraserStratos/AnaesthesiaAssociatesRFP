@@ -591,10 +591,6 @@ export function AgeChipCopy({ days, accFunded }: { days: number; accFunded: bool
   )
 }
 
-export function EmptyCardCopy({ children }: { children: ReactNode }) {
-  return <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '20px', textAlign: 'center', fontSize: 13.5, color: neutral.mist }}>{children}</div>
-}
-
 // ---------------------------------------------------------------------------
 // pwa/PwaDemoPanel.tsx: ToggleRow; pwa/UpdatePrompt.tsx; pwa/InstallCoach.tsx
 // ---------------------------------------------------------------------------

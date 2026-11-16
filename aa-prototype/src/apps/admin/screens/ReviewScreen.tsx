@@ -16,6 +16,7 @@ import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../componen
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { FormError } from '../../../shared/ui'
 
 interface ReviewScreenProps {
   listId: string
@@ -269,9 +270,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         <Tile label="Flags" value={String(allFlags.length)} tone={allFlags.length > 0 ? 'warn' : undefined} sub="to check before authorising" />
       </div>
 
-      {error !== null && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-      )}
+      <FormError message={error} />
 
       {/* Review table */}
       <div data-testid="review-detail-table-shell" style={{ overflowX: 'auto', opacity: authorised ? 0.72 : 1, transition: 'opacity 300ms', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>

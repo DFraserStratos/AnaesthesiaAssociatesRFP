@@ -11,7 +11,7 @@ import { DemoBadge } from '../DemoBadge'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
 import { formatPostalAddress } from '../../domain/billing/payer'
-import { Button, TextField, FieldLabel, Segmented } from '../ui'
+import { Button, TextField, FieldLabel, Segmented, FormError } from '../ui'
 import { formatCurrency } from '../format'
 
 /** Fields a photo extraction may pre-fill. */
@@ -339,11 +339,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       {/* The holder's reference is the office's (the approval number lives on the Booking's Insurer or funder row, catch-up Phase 21). */}
       {isOffice && <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract reference" />}
 
-      {error !== null && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-          {error}
-        </div>
-      )}
+      <FormError message={error} />
 
       <Button variant="primary" block onClick={save} disabled={!canSave} style={{ marginTop: 4 }}>
         Save booking

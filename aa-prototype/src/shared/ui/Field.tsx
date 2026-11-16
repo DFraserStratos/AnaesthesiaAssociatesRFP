@@ -55,11 +55,35 @@ export function TextField({ label, value, onChange, placeholder, type = 'text', 
   )
 }
 
-/** A refused save, in plain words: the error-tint box the sheets share. Nothing when there is no message. */
-export function FormError({ message }: { message: string | null }) {
-  if (message === null) return null
+/**
+ * A refused save, in plain words: the error-tint box the sheets share (`box`),
+ * or a one-line refusal beside a compact row control (`inline`: 12px error
+ * on-tint text, UI unification U3, C question 6). Both are `role="alert"`, and
+ * the node mounts with its text, so a screen reader announces it. Nothing
+ * when there is no message. `style` is placement only (margins, alignment).
+ */
+export function FormError({
+  message,
+  variant = 'box',
+  shot,
+  style,
+}: {
+  message: string | null | undefined
+  variant?: 'box' | 'inline'
+  shot?: string
+  style?: CSSProperties
+}) {
+  if (message === null || message === undefined || message === '') return null
+  if (variant === 'inline') {
+    // A span, so it can sit inside a row's text column; block, so it takes its own line.
+    return (
+      <span role="alert" data-shot={shot} style={{ display: 'block', color: semantic.error.onTint, fontSize: 12, ...style }}>
+        {message}
+      </span>
+    )
+  }
   return (
-    <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+    <div role="alert" data-shot={shot} style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, ...style }}>
       {message}
     </div>
   )

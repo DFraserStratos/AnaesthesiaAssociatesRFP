@@ -30,6 +30,7 @@ import { CaptureSection, FailureNotes } from '../capture/ui'
 import { Button } from '../ui/Button'
 import { Pill } from '../ui/Pill'
 import { contractPriceText } from '../flows/ContractRail'
+import { FormError } from '../ui'
 
 /**
  * The Booking's Billing card (catch-up Phase 20; US-04.3.8, US-04.3.9,
@@ -367,9 +368,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
           <div style={{ paddingLeft: 18, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>{body}</div>
         </div>
       )}
-      {error !== null && (
-        <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 13.5 }}>{error}</div>
-      )}
+      <FormError message={error} />
       {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
     </div>
   )
