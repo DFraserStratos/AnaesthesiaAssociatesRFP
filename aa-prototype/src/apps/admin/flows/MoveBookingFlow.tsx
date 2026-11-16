@@ -6,7 +6,7 @@ import { reassignBooking, useAppStore, type Actor } from '../../../store'
 import { LIST_STATE_LABELS, locationName } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { Button } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { surnameOf } from '../util'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { compareSessions, sessionText } from '../../../domain/outOfHours'
@@ -68,10 +68,10 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Move booking to another list</div>
-        <div style={{ fontSize: 13, color: neutral.slate }}>
-          The Booking moves alone. Both lists' other bookings and their status are untouched, and the move is recorded in the Booking's audit trail.
-        </div>
+        <OverlayHeader
+          title="Move booking to another list"
+          description="The Booking moves alone. Both lists' other bookings and their status are untouched, and the move is recorded in the Booking's audit trail."
+        />
         <div style={{ fontSize: 13, color: neutral.slate }}>To move into a free session, assign a List to it first.</div>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -112,7 +112,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
-        <Button variant="secondary" block onClick={onClose}>Cancel</Button>
+        <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>} />
         <div style={{ fontSize: 11, color: accent.pressed }}>Select a target list to move the booking immediately.</div>
       </div>
     </Overlay>

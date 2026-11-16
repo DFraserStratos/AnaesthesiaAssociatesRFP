@@ -20,6 +20,7 @@ import {
 } from '../../../../domain/billing/rvgGroups'
 import { createRvgGroup, editRvgGroup, restoreRvgGroup, retireRvgGroup, useAppStore, type Actor } from '../../../../store'
 import { Button, FieldLabel, FormError, Segmented, TextField, useSurface } from '../../../../shared'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
 import { NameSearchBox } from '../../../../shared/ui'
 import { neutral, radius } from '../../../../theme/tokens'
@@ -217,7 +218,7 @@ function RvgGroupSheet({ group, actor, headings, onClose }: { group?: RvgGroup; 
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="rvg-group-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{group === undefined ? 'Add an RVG group' : `Edit ${group.code} · ${group.description}`}</div>
+        <OverlayHeader title={group === undefined ? 'Add an RVG group' : `Edit ${group.code} · ${group.description}`} />
         <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
           <TextField label="RVG code" value={code} onChange={setCode} mono placeholder="e.g. H3" />
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -245,7 +246,7 @@ function RvgGroupSheet({ group, actor, headings, onClose }: { group?: RvgGroup; 
         )}
         {hasRange && <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: -6 }}>The anaesthetist sees the range when choosing the value. The base units must sit within it.</div>}
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{group === undefined ? 'Add group' : 'Save changes'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{group === undefined ? 'Add group' : 'Save changes'}</Button>} />
       </div>
     </Overlay>
   )
@@ -267,13 +268,15 @@ function RetireRvgGroup({ group, actor, onClose }: { group: RvgGroup; actor: Act
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="rvg-group-retire" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Retire {group.code}?</div>
+        <OverlayHeader title={<>Retire {group.code}?</>} />
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
           {group.description} leaves the RVG code search. Procedures that already carry it keep it and price as before. You can restore it later.
         </div>
         <FormError message={error} />
-        <Button variant="primary" block onClick={retire}>Retire group</Button>
-        <Button variant="secondary" block onClick={onClose}>Cancel</Button>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={retire}>Retire group</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

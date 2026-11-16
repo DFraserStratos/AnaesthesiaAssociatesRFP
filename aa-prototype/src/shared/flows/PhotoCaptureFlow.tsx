@@ -4,6 +4,7 @@ import { type Actor } from '../../store'
 import type { BookingSource } from '../../domain/types'
 import { DemoBadge } from '../DemoBadge'
 import { ManualBookingForm } from './ManualBookingForm'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { SAMPLE_EXTRACTIONS, type SampleExtraction } from './sampleExtractions'
 
 interface PhotoCaptureFlowProps {
@@ -33,7 +34,7 @@ export function PhotoCaptureFlow({ listId, actor, source, onSaved }: PhotoCaptur
   if (step.kind === 'pick') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 17, fontWeight: 700 }}>Photo of the paper list</div>
+        <OverlayHeader title="Photo of the paper list" />
         <DemoBadge label="Simulated capture · sample paper cards" />
         <div style={{ fontSize: 13, color: neutral.slate }}>Pick a sample paper card to scan.</div>
         <div style={{ display: 'flex', gap: 12 }}>

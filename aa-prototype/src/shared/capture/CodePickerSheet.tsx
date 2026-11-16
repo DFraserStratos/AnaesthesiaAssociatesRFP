@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import type { RvgGroup, RvgGroupId } from '../../domain/types'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { NameSearchBox } from '../ui/NameSearchBox'
 import { RvgCodeList, rvgSections } from './RvgCodeList'
 import { plural } from '../format'
@@ -41,7 +42,7 @@ export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose }:
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="rvg-type-ahead">
-        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>RVG code</div>
+        <OverlayHeader title="RVG code" style={{ marginBottom: 12 }} />
         <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus />
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px 6px', minHeight: 18 }} aria-live="polite">
           {query.trim() === ''

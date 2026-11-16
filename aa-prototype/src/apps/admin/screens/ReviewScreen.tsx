@@ -7,6 +7,7 @@ import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTrian
 import { bookingFee, procedureFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
+import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
@@ -389,26 +390,25 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       </div>
 
       {/* Authorise confirm */}
-      <Overlay open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Authorise this list for billing?</div>
-          <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-            Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="secondary" block onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button variant="primary" block onClick={doAuthorise}>Authorise for billing</Button>
-          </div>
+      <ConfirmSheet
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Authorise this list for billing?"
+        confirmLabel="Authorise for billing"
+        onConfirm={doAuthorise}
+        cancelLabel="Cancel"
+      >
+        <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
+          Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
         </div>
-      </Overlay>
+      </ConfirmSheet>
 
       {/* Log phone note */}
       <Overlay open={noteOpen} onClose={() => setNoteOpen(false)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Log a phone note</div>
-          <div style={{ fontSize: 13, color: neutral.slate }}>Record a call about this list. It attaches to the list and its audit trail. It never returns the list to the anaesthetist.</div>
+          <OverlayHeader title="Log a phone note" description="Record a call about this list. It attaches to the list and its audit trail. It never returns the list to the anaesthetist." />
           <TextArea label="Note" value={noteText} onChange={setNoteText} placeholder="e.g. Confirmed the missing reference with the hospital." />
-          <Button variant="primary" block disabled={noteText.trim() === ''} onClick={saveNote}>Log note</Button>
+          <SheetActions primary={<Button variant="primary" block disabled={noteText.trim() === ''} onClick={saveNote}>Log note</Button>} />
         </div>
       </Overlay>
 

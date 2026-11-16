@@ -5,6 +5,7 @@ import type { Anaesthetist, GstPeriod } from '../../../domain/types'
 import { normaliseHpiCpn } from '../../../domain/surgeons'
 import { editAnaesthetist, useAppStore, type Actor } from '../../../store'
 import { Button, Segmented, TextField } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { useSurface } from '../../../shared'
 import { GST_OPTIONS } from './fieldChrome'
 import { anaesthetistRecordPath } from '../mastersPaths'
@@ -79,14 +80,17 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{anaesthetist.name}</div>
-          {!onRecordPage && (
-            <Link to={anaesthetistRecordPath(anaesthetist.registrationNumber)} onClick={onClose} style={{ ...textActionStyle, flex: 'none', fontSize: 13 }}>
-              Open record
-            </Link>
-          )}
-        </div>
+        <OverlayHeader
+          title={anaesthetist.name}
+          trailingLayout="end"
+          trailing={
+            !onRecordPage && (
+              <Link to={anaesthetistRecordPath(anaesthetist.registrationNumber)} onClick={onClose} style={{ ...textActionStyle, flex: 'none', fontSize: 13 }}>
+                Open record
+              </Link>
+            )
+          }
+        />
         <div className="mono" style={{ fontSize: 12, color: neutral.mist }}>Registration {anaesthetist.registrationNumber} · HPI CPN {anaesthetist.hpiId || 'not set'}</div>
         <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
@@ -107,7 +111,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
         {error !== null && (
           <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
-        <Button variant="primary" block onClick={save}>Save changes</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>Save changes</Button>} />
       </div>
     </Overlay>
   )

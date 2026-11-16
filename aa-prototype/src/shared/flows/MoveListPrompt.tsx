@@ -7,6 +7,8 @@ import { locationName } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
 import { Button } from '../ui'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { MoveListSheet } from './MoveListSheet'
 import { sessionText } from '../../domain/outOfHours'
 
@@ -125,12 +127,10 @@ function ListsToMoveIntro({ listIds, statusKey, onStart, onCancel }: { listIds: 
     <Overlay open onClose={onCancel}>
       <div data-shot="move-lists-intro" style={{ display: 'flex', flexDirection: 'column', gap: 14, width: variant === 'web' ? 460 : undefined, maxWidth: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>
-            {listIds.length} of your sessions have Lists
-          </span>
-          <span style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
-            Before these sessions are marked {label}, choose where each List goes: back to the office or to a colleague. One at a time.
-          </span>
+          <OverlayHeader
+            title={`${listIds.length} of your sessions have Lists`}
+            description={<>Before these sessions are marked {label}, choose where each List goes: back to the office or to a colleague. One at a time.</>}
+          />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}>
           {listIds.map((id, i) => {
@@ -148,12 +148,18 @@ function ListsToMoveIntro({ listIds, statusKey, onStart, onCancel }: { listIds: 
             )
           })}
         </div>
-        <Button variant="primary" block onClick={onStart}>
-          Choose where they go
-        </Button>
-        <Button variant="secondary" block onClick={onCancel}>
-          Not now
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={onStart}>
+              Choose where they go
+            </Button>
+          }
+          secondary={
+            <Button variant="secondary" block onClick={onCancel}>
+              Not now
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )

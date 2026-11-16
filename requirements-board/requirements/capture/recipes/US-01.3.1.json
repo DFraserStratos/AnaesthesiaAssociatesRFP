@@ -42,7 +42,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog] label:has(select)"
+            "[role=dialog]:not([data-testid=admin-list-drawer]) label:has(select)"
           ],
           "caption": "Edit list: a single hospital and a single surgeon"
         },
@@ -79,14 +79,14 @@
               "value": ""
             },
             {
-              "click": "[role=dialog] >> role=button[name=/^Save/]"
+              "click": "[role=dialog]:not([data-testid=admin-list-drawer]) >> role=button[name=/^Save/]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[role=dialog]:not([data-testid=admin-list-drawer])"
           ],
           "caption": "Edit list refuses to clear the surgeon: Choose the surgeon."
         }

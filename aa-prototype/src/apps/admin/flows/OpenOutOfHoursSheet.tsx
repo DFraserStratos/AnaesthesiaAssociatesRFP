@@ -12,7 +12,7 @@ import { format, parseISO } from 'date-fns'
 import { neutral } from '../../../theme/tokens'
 import { openOutOfHoursSession, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { OPEN_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 import { surnameFirst } from '../util'
@@ -60,7 +60,7 @@ export function OpenOutOfHoursSheet({ open, anaesthetistId, dateISO, actor, onCl
     <Overlay open={open} onClose={onClose}>
       <div data-shot="out-of-hours-open-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{OPEN_OUT_OF_HOURS}</div>
+          <OverlayHeader title={OPEN_OUT_OF_HOURS} />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>
             {surnameFirst(anaesthetistName ?? anaesthetistId)} · {format(parseISO(dateISO), 'EEE d MMM')}
           </div>
@@ -70,10 +70,10 @@ export function OpenOutOfHoursSheet({ open, anaesthetistId, dateISO, actor, onCl
         </div>
         <SessionTimesFields session="OOH" draft={times} defaults={defaults} onChange={(next) => { setTimes(next); setError(null) }} />
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save}>{OPEN_OUT_OF_HOURS}</Button>
-        </div>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={save}>{OPEN_OUT_OF_HOURS}</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

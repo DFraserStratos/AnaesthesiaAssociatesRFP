@@ -36,6 +36,9 @@ import { SidePanel } from '../../../admin/components/SidePanel'
 import { Header, Table, TextAction, EditCell } from '../../../admin/screens/masters/chrome'
 import { rowCellStyle } from '../../../admin/screens/masters/tableStyles'
 import { SessionTimesFields, timesDraftError, type TimesDraft } from '../../../admin/flows/SessionTimesFields'
+import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
+import { SheetActions } from '../../../../shared/surface/SheetActions'
+import { ConfirmSheet } from '../../../../shared/surface/ConfirmSheet'
 
 /** A quiet line under an example that reports what the last click did. */
 export function Echo({ children }: { children: ReactNode }) {
@@ -174,23 +177,87 @@ export function OverlayExample() {
       <Button variant="secondary" onClick={() => setOpen(true)}>Open dialog</Button>
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Add a note</div>
-          <div style={{ fontSize: 13, color: neutral.slate }}>The shared web Overlay: a centred dialog. Escape or the scrim closes it.</div>
+          <OverlayHeader title="Add a note" description="The shared web Overlay: a centred dialog. Escape or the scrim closes it." />
           <TextField label="Note" value={name} onChange={setName} placeholder="e.g. Ring theatre at 7" />
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button
-              onClick={() => {
-                setSaved(name === '' ? '(empty)' : name)
-                setOpen(false)
-              }}
-            >
-              Save
-            </Button>
-          </div>
+          <SheetActions
+            secondary={<Button variant="secondary" block onClick={() => setOpen(false)}>Cancel</Button>}
+            primary={
+              <Button
+                block
+                onClick={() => {
+                  setSaved(name === '' ? '(empty)' : name)
+                  setOpen(false)
+                }}
+              >
+                Save
+              </Button>
+            }
+          />
         </div>
       </Overlay>
       <Echo>{saved === null ? 'Local only: nothing is saved to the store.' : `Saved locally: ${saved}`}</Echo>
+    </div>
+  )
+}
+
+export function OverlayHeaderExample() {
+  const { Overlay } = useSurface()
+  const [open, setOpen] = useState(false)
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Open a titled dialog</Button>
+      <Overlay open={open} onClose={() => setOpen(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <OverlayHeader title="A titled dialog" description="The h2 names the dialog for a screen reader, and the corner X appears with it." />
+          <Button variant="secondary" block onClick={() => setOpen(false)}>Close</Button>
+        </div>
+      </Overlay>
+      <Echo>Local only: nothing is saved to the store.</Echo>
+    </div>
+  )
+}
+
+export function SheetActionsExample() {
+  const { Overlay } = useSurface()
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Open a sheet with a footer</Button>
+      <Overlay open={open} onClose={() => setOpen(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <OverlayHeader title="Add a comment" />
+          <TextField label="Comment" value={note} onChange={setNote} placeholder="e.g. Ring theatre at 7" />
+          <SheetActions
+            secondary={<Button variant="secondary" block onClick={() => setOpen(false)}>Cancel</Button>}
+            primary={<Button block onClick={() => setOpen(false)}>Save</Button>}
+          />
+        </div>
+      </Overlay>
+      <Echo>Local only: the footer is one row on web, stacked on the phone.</Echo>
+    </div>
+  )
+}
+
+export function ConfirmSheetExample() {
+  const [open, setOpen] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Open a confirm</Button>
+      <ConfirmSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Remove this example?"
+        description="Focus opens on Keep it. A double click on Remove runs it once."
+        confirmLabel="Remove"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          setResult('Removed (locally)')
+          setOpen(false)
+        }}
+      />
+      <Echo>{result ?? 'Local only: nothing is saved to the store.'}</Echo>
     </div>
   )
 }

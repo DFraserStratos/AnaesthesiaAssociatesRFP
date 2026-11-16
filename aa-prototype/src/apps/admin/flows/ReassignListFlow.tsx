@@ -5,7 +5,7 @@ import { defaultVacated } from '../../../domain/listMoves'
 import { closedEmptyColleagueSlots, openSlotViews, reassignList, useAppStore, type Actor } from '../../../store'
 import { Button } from '../../../shared/ui'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { VacatedSessionChoice } from '../../../shared/flows/VacatedSessionChoice'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { surnameFirst } from '../util'
@@ -101,7 +101,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   return (
     <Overlay open={open} onClose={showSuccess ? () => {} : onClose}>
       <div aria-hidden={showSuccess} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Reassign list (cover)</div>
+        <OverlayHeader title="Reassign list (cover)" />
 
         {targetId === null ? (
           <>
@@ -119,7 +119,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
               trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {sessionText(list.session)}</span>}
             />
             <NotAvailableColleagues slots={unavailableSlots} session={list.session} query={query} shot="reassign-not-available" />
-            <Button variant="secondary" block onClick={onClose}>Cancel</Button>
+            <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>} />
           </>
         ) : (
           <>
@@ -131,10 +131,10 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
             {error !== null && (
               <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
             )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="secondary" onClick={() => setTargetId(null)}>Back</Button>
-              <Button variant="primary" block onClick={confirm}>{pairingWarning !== null ? 'Confirm reassignment anyway' : 'Confirm reassignment'}</Button>
-            </div>
+            <SheetActions
+              primary={<Button variant="primary" block onClick={confirm}>{pairingWarning !== null ? 'Confirm reassignment anyway' : 'Confirm reassignment'}</Button>}
+              secondary={<Button variant="secondary" block onClick={() => setTargetId(null)}>Back</Button>}
+            />
           </>
         )}
       </div>

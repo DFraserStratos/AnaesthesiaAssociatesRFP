@@ -9,14 +9,13 @@ import { useEffect, useState } from 'react'
 import { neutral, radius, accent } from '../../../theme/tokens'
 import { bookingCountsByList, removeDraftList, useAppStore, type Actor } from '../../../store'
 import { removeBlockedReason } from '../../../domain/draftLists'
-import { Button, FormError, TextField } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { FormError, TextField } from '../../../shared/ui'
+import { ConfirmSheet } from '../../../shared/surface'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 const REASONS = ['Request cancelled by the rooms', 'No anaesthetist found', 'Duplicate request'] as const
 
 export function RemoveDraftListSheet({ open, listId, actor, onClose, onDone }: { open: boolean; listId: string; actor: Actor; onClose: () => void; onDone: () => void }) {
-  const { Overlay } = useSurface()
   const bookings = useAppStore((s) => bookingCountsByList(s.schedule.bookings).get(listId) ?? 0)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -40,16 +39,23 @@ export function RemoveDraftListSheet({ open, listId, actor, onClose, onDone }: {
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div data-shot="admin-remove-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Remove {DRAFT_LIST}</div>
+    <ConfirmSheet
+      open={open}
+      onClose={onClose}
+      title={<>Remove {DRAFT_LIST}</>}
+      description={blocked ? undefined : 'It leaves the waiting list and stays in History with who removed it and when.'}
+      confirmLabel="Remove"
+      onConfirm={remove}
+      cancelLabel="Cancel"
+      confirmDisabled={blocked}
+      shot="admin-remove-draft-list"
+    >
         {blocked ? (
           <div role="status" style={{ fontSize: 13, color: neutral.slate }}>
             {removeBlockedReason(bookings)}
           </div>
         ) : (
           <>
-            <div style={{ fontSize: 13, color: neutral.slate }}>It leaves the waiting list and stays in History with who removed it and when.</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Reason">
               {REASONS.map((r) => {
                 const on = reason === r
@@ -70,11 +76,6 @@ export function RemoveDraftListSheet({ open, listId, actor, onClose, onDone }: {
           </>
         )}
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={remove} disabled={blocked}>Remove</Button>
-        </div>
-      </div>
-    </Overlay>
+    </ConfirmSheet>
   )
 }

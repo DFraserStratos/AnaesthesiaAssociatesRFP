@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { radius, semantic } from '../../theme/tokens'
 import { cancelBooking, useAppStore, type Actor } from '../../store'
-import { Button, TextArea } from '../ui'
-import { useSurface } from '../surface'
+import { TextArea } from '../ui'
+import { ConfirmSheet } from '../surface/ConfirmSheet'
 
 interface CancelBookingSheetProps {
   open: boolean
@@ -14,7 +14,6 @@ interface CancelBookingSheetProps {
 
 /** Reason-gated booking cancellation (audited soft-cancel). The reason is required. */
 export function CancelBookingSheet({ open, bookingId, actor, onClose, onCancelled }: CancelBookingSheetProps) {
-  const { Overlay } = useSurface()
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -37,25 +36,22 @@ export function CancelBookingSheet({ open, bookingId, actor, onClose, onCancelle
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Cancel this booking</div>
-        <div style={{ fontSize: 13, color: neutral.slate }}>
-          The booking stays visible in a cancelled state and drops out of the list's completion count. This is audited.
-        </div>
+    <ConfirmSheet
+      open={open}
+      onClose={onClose}
+      title="Cancel this booking"
+      description="The booking stays visible in a cancelled state and drops out of the list's completion count. This is audited."
+      confirmLabel="Cancel booking"
+      onConfirm={submit}
+      confirmDisabled={reason.trim() === ''}
+      cancelLabel="Keep the booking"
+    >
         <TextArea label="Reason" value={reason} onChange={setReason} placeholder="Why is this booking being cancelled?" />
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
             {error}
           </div>
         )}
-        <Button variant="primary" block onClick={submit} disabled={reason.trim() === ''}>
-          Cancel booking
-        </Button>
-        <Button variant="secondary" block onClick={onClose}>
-          Keep the booking
-        </Button>
-      </div>
-    </Overlay>
+    </ConfirmSheet>
   )
 }

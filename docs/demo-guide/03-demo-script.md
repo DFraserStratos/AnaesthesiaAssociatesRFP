@@ -180,7 +180,7 @@ working List rather than an empty one.
     arrives with no RVG code (the hospital sends the text only). Tap the **Billing** card to open
     its sheet, type **appendicectomy** in the RVG code field and pick **A3 · Appendicectomy,
     laparoscopic · B 5**, tap **Done**, then **Start now**.
-  - Without leaving Sarah, select **live clock → +1 hour**, close the popup, then select
+  - Without leaving Sarah, select **live clock → +1 hour**, close the popup (Escape, or a click outside it), then select
     **Finish now**.
   - Select **Mark complete**.
   - Optional, to show the completion gate: back on the List, select

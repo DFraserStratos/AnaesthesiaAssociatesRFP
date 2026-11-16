@@ -22,6 +22,7 @@ import {
   type Actor,
 } from '../../../../store'
 import { Button, FieldLabel, FormError, useSurface } from '../../../../shared'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { assignSelectStyle } from '../../flows/AssignListFields'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle } from './tableStyles'
@@ -135,7 +136,7 @@ function HorizonSheet({ open, actor, onClose }: { open: boolean; actor: Actor; o
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-horizon-months" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Schedule horizon</div>
+        <OverlayHeader title="Schedule horizon" />
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Months ahead</FieldLabel>
           <input
@@ -163,12 +164,14 @@ function HorizonSheet({ open, actor, onClose }: { open: boolean; actor: Actor; o
             The sessions after {longDate(preview.toEndISO)} are removed, with their empty Lists. Lists assigned there by the office are not restored by extending again; recurring bookings are.
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save} disabled={!valid || blocked || preview?.direction === 'none'}>
-            {confirming && preview !== null ? `Confirm and remove ${days(preview.days)}` : 'Save horizon'}
-          </Button>
-        </div>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save} disabled={!valid || blocked || preview?.direction === 'none'}>
+              {confirming && preview !== null ? `Confirm and remove ${days(preview.days)}` : 'Save horizon'}
+            </Button>
+          }
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )
@@ -204,7 +207,7 @@ function SessionTimesSheet({ open, actor, onClose }: { open: boolean; actor: Act
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-session-times-edit" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Default session times</div>
+        <OverlayHeader title="Default session times" />
         {SESSIONS_IN_ORDER.map((session) => (
           <div key={session} style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
             <span className="mono" style={{ width: 88, paddingBottom: 14, fontSize: 12, fontWeight: 600, color: neutral.mist }}>{sessionText(session)}</span>
@@ -220,10 +223,10 @@ function SessionTimesSheet({ open, actor, onClose }: { open: boolean; actor: Act
         ))}
         <div style={{ fontSize: 12.5, color: neutral.slate }}>Sessions with their own times keep them.</div>
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save}>Save session times</Button>
-        </div>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={save}>Save session times</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

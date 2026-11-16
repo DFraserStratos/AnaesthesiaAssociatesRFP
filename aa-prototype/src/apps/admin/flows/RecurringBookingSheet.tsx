@@ -18,6 +18,7 @@ import {
   type RecurringBookingApplyResult,
 } from '../../../store'
 import { Button, FieldLabel, FormError, Segmented, TextField, useSurface } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { shortDay } from '../../../shared/format'
 import { selectControlStyle as selectStyle } from './fieldChrome'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
@@ -200,7 +201,7 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="recurring-booking-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{editing ? 'Edit recurring booking' : 'Add recurring booking'}</div>
+        <OverlayHeader title={editing ? 'Edit recurring booking' : 'Add recurring booking'} />
         {applied !== null ? (
           <AppliedView
             applied={applied}
@@ -283,10 +284,10 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
                     {retirePreviewLine({ removed: retirePlan.remove.length, kept: retirePlan.kept })}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button variant="secondary" block onClick={() => setRetiring(false)}>Keep it running</Button>
-                  <Button variant="primary" block onClick={retire}>Retire</Button>
-                </div>
+                <SheetActions
+                  primary={<Button variant="primary" block onClick={retire}>Retire</Button>}
+                  secondary={<Button variant="secondary" block onClick={() => setRetiring(false)}>Keep it running</Button>}
+                />
               </div>
             ) : (
               <>
@@ -295,10 +296,10 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
                     {previewLine({ created: plan.create.length, updated: plan.update.length, removed: plan.remove.length, kept: plan.kept, skipped: plan.skipped }, draft?.dayOfWeek)}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {editing && <Button variant="secondary" onClick={() => setRetiring(true)}>Retire</Button>}
-                  <Button variant="primary" block onClick={apply}>{pairingWarning !== null ? 'Apply anyway' : 'Apply to canvas now'}</Button>
-                </div>
+                <SheetActions
+                  primary={<Button variant="primary" block onClick={apply}>{pairingWarning !== null ? 'Apply anyway' : 'Apply to canvas now'}</Button>}
+                  secondary={editing ? <Button variant="secondary" block onClick={() => setRetiring(true)}>Retire</Button> : undefined}
+                />
                 <div style={{ fontSize: 12, color: neutral.mist }}>Saves it and applies it to the schedule ahead, from tomorrow. Lists with Bookings or office edits are left as they are.</div>
               </>
             )}
@@ -340,7 +341,7 @@ function AppliedView({ applied, onShow, onOpenDraftLists, onDone }: { applied: A
           See them on {SKIPPED_HEADING}
         </button>
       )}
-      <Button variant="primary" block onClick={onDone}>Done</Button>
+      <SheetActions primary={<Button variant="primary" block onClick={onDone}>Done</Button>} />
     </div>
   )
 }

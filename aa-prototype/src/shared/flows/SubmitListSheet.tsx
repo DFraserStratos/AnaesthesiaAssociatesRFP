@@ -4,6 +4,9 @@ import type { BillingValidationFailure } from '../../domain/billing'
 import { completionBlockersFor, submitList, useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
 import { useSurface } from '../surface'
+import { ConfirmSheet } from '../surface/ConfirmSheet'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 
 interface SubmitListSheetProps {
   open: boolean
@@ -65,15 +68,42 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
     onClose()
   }
 
+  if (mode === 'confirm') {
+    return (
+      <ConfirmSheet
+        open={open}
+        onClose={onClose}
+        title="Submit this list to the office?"
+        confirmLabel="Submit to office"
+        onConfirm={confirmSubmit}
+        cancelLabel="Not yet"
+      >
+          <div style={{ fontSize: 14, lineHeight: '21px', color: neutral.slate }}>
+            Submitting tells the office this list is ready for review and billing. You can still
+            change these bookings until the office authorises the list; the office sees any change
+            at review.
+          </div>
+          {/* The doer rule (catch-up Phase 32a, US-01.4.6): one sentence, no extra step. */}
+          <div data-shot="submit-doer-note" style={{ fontSize: 14, lineHeight: '21px', color: neutral.ink }}>
+            Submitting says you did every procedure on this List. If a colleague is doing one, move it to them first.
+          </div>
+          {error !== null && (
+            <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+              {error}
+            </div>
+          )}
+      </ConfirmSheet>
+    )
+  }
+
   return (
     <Overlay open={open} onClose={onClose}>
-      {mode === 'blockers' ? (
+      {(
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Bookings still to finish</div>
-          <div style={{ fontSize: 13, color: neutral.slate }}>
-            Every booking must be marked complete before the list can be submitted to the office.
-            Cancelled bookings do not count.
-          </div>
+          <OverlayHeader
+            title="Bookings still to finish"
+            description="Every booking must be marked complete before the list can be submitted to the office. Cancelled bookings do not count."
+          />
           {rows.map((row) => (
             <div
               key={row.bookingId}
@@ -98,33 +128,13 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
               )}
             </div>
           ))}
-          <Button variant="secondary" block onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Submit this list to the office?</div>
-          <div style={{ fontSize: 14, lineHeight: '21px', color: neutral.slate }}>
-            Submitting tells the office this list is ready for review and billing. You can still
-            change these bookings until the office authorises the list; the office sees any change
-            at review.
-          </div>
-          {/* The doer rule (catch-up Phase 32a, US-01.4.6): one sentence, no extra step. */}
-          <div data-shot="submit-doer-note" style={{ fontSize: 14, lineHeight: '21px', color: neutral.ink }}>
-            Submitting says you did every procedure on this List. If a colleague is doing one, move it to them first.
-          </div>
-          {error !== null && (
-            <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-          <Button variant="primary" block onClick={confirmSubmit}>
-            Submit to office
-          </Button>
-          <Button variant="secondary" block onClick={onClose}>
-            Not yet
-          </Button>
+          <SheetActions
+            primary={
+              <Button variant="secondary" block onClick={onClose}>
+                Close
+              </Button>
+            }
+          />
         </div>
       )}
     </Overlay>

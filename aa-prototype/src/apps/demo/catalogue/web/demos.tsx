@@ -66,6 +66,7 @@ import {
   WeekNavButton,
   WhosFreeChip,
 } from './recreations'
+import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
 
 type F = { f: WebFixtures }
 
@@ -480,7 +481,7 @@ export function DialogDemo({ f }: F) {
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 460, maxWidth: '100%' }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>Which List?</div>
+            <OverlayHeader title="Which List?" />
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Your Lists in the next six days. Choose one to move it back to the office or to a colleague.</div>
           </div>
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: 14, overflow: 'hidden' }}>

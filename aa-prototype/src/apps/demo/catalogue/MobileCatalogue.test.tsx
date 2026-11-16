@@ -28,7 +28,7 @@ describe('the Mobile UI catalogue', () => {
   it('renders one row per component, grouped by replacement library', () => {
     renderPage()
     expect(screen.getByRole('heading', { level: 1, name: /Anaesthetist Mobile App/ })).toBeInTheDocument()
-    for (const name of ['BottomSheet', 'ListOptionsSheet', 'SlideStack', 'BottomTabBar', 'MonthGrid (LookbackDateSheet)', 'SuccessOverlay', 'UpdatePrompt', 'BookingDetailBody', 'HalfBlock', 'useTickingValue']) {
+    for (const name of ['BottomSheet', 'ListOptionsSheet', 'SlideStack', 'BottomTabBar', 'MonthGrid (LookbackDateSheet)', 'SuccessOverlay', 'UpdatePrompt', 'BookingDetailBody', 'HalfBlock', 'useTickingValue', 'InlineConfirm', 'DoneStep']) {
       expect(document.querySelector(`[data-catalogue-row="${name}"]`), name).not.toBeNull()
     }
     expect(document.querySelectorAll('[data-catalogue-row]').length).toBeGreaterThanOrEqual(30)

@@ -4,6 +4,7 @@ import type { SurgeonGroup } from '../../../domain/types'
 import { compareBySurname } from '../../../domain/surgeons'
 import { createSurgeonGroup, editSurgeonGroup, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 /** Add or edit a surgeon group and its members (catch-up Phase 17, US-13.4.1). */
@@ -31,7 +32,7 @@ export function SurgeonGroupSheet({ group, actor, onClose }: { group?: SurgeonGr
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="surgeon-group-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{group === undefined ? 'Add a surgeon group' : 'Edit surgeon group'}</div>
+        <OverlayHeader title={group === undefined ? 'Add a surgeon group' : 'Edit surgeon group'} />
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Canterbury Orthopaedic Surgeons" />
         <TextField label="Description (optional)" value={description} onChange={setDescription} />
         <fieldset style={{ border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -47,7 +48,7 @@ export function SurgeonGroupSheet({ group, actor, onClose }: { group?: SurgeonGr
           </div>
         </fieldset>
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{group === undefined ? 'Add group' : 'Save changes'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{group === undefined ? 'Add group' : 'Save changes'}</Button>} />
       </div>
     </Overlay>
   )

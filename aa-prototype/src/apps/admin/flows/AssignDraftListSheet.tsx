@@ -19,7 +19,7 @@ import { assignDraftList, bookingCountsByList, useAppStore, type Actor } from '.
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { DRAFT_ASSIGN_WARNINGS, isDraftList } from '../../../domain/draftLists'
 import { Button, FormError, SuccessOverlay } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { locationName, pairingLine } from '../../../shared/format'
 import { LIST_KIND_LABELS } from '../../../domain/types'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
@@ -104,10 +104,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-assign-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>Assign {DRAFT_LIST}</div>
-            <UnassignedPill />
-          </div>
+          <OverlayHeader title={<>Assign {DRAFT_LIST}</>} trailing={<UnassignedPill />} />
           <div style={{ fontSize: 13, color: neutral.slate, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span>{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)} · {pairingLine(list, masters)}</span>
             <span aria-hidden>·</span>
@@ -123,7 +120,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
           <>
             <div style={{ fontSize: 13, color: neutral.slate }}>Choose the anaesthetist. To use another day, change the {DRAFT_LIST}'s date first.</div>
             <DraftListCandidates listId={listId} requestKey={requestKey} onPick={(p) => setTargetId(p.anaesthetistId)} onOpenOccupied={onOpenOccupied} />
-            <Button variant="secondary" block onClick={onClose}>Cancel</Button>
+            <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>} />
           </>
         ) : (
           <>
@@ -145,10 +142,10 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
               {holiday && <SoftWarning shot="assign-draft-list-holiday-warning">{DRAFT_ASSIGN_WARNINGS.hospitalHoliday(hospitalName)}</SoftWarning>}
             </div>
             <FormError message={error} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="secondary" onClick={() => { setTargetId(null); setError(null) }}>Back</Button>
-              <Button variant="primary" block onClick={confirm}>{anyWarning ? 'Assign anyway' : `Assign ${DRAFT_LIST}`}</Button>
-            </div>
+            <SheetActions
+              primary={<Button variant="primary" block onClick={confirm}>{anyWarning ? 'Assign anyway' : `Assign ${DRAFT_LIST}`}</Button>}
+              secondary={<Button variant="secondary" block onClick={() => { setTargetId(null); setError(null) }}>Back</Button>}
+            />
           </>
         )}
       </div>

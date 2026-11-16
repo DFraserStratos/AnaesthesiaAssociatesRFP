@@ -254,4 +254,57 @@ describe('useModalLayer', () => {
     escapeOn()
     expect(screen.queryByRole('dialog', { name: 'sheet' })).toBeNull()
   })
+
+  it('a drawer that swaps body as its sheet closes returns focus to the page opener, not a detached button', () => {
+    function Page() {
+      const [open, setOpen] = useState(false)
+      const [assigned, setAssigned] = useState(false)
+      const [sheet, setSheet] = useState(false)
+      return (
+        <div data-aa-modal-scope>
+          <button onClick={() => setOpen(true)}>Grid cell</button>
+          {open && (assigned ? (
+            <Layer key="list" name="list-drawer" open onClose={() => setOpen(false)} />
+          ) : (
+            <Layer key="empty" name="empty-drawer" open onClose={() => setOpen(false)}>
+              <button onClick={() => setSheet(true)}>Assign</button>
+            </Layer>
+          ))}
+          <Layer name="assign-sheet" open={sheet} onClose={() => setSheet(false)}>
+            <button onClick={() => { setSheet(false); setAssigned(true) }}>Confirm</button>
+          </Layer>
+        </div>
+      )
+    }
+    render(<Page />)
+    const cell = screen.getByText('Grid cell')
+    cell.focus()
+    fireEvent.click(cell)
+    const assign = screen.getByText('Assign')
+    assign.focus()
+    fireEvent.click(assign)
+    fireEvent.click(screen.getByText('Confirm'))
+    expect(screen.getByRole('dialog', { name: 'list-drawer' })).toBeInTheDocument()
+    escapeOn()
+    expect(screen.queryByRole('dialog', { name: 'list-drawer' })).toBeNull()
+    expect(document.activeElement).toBe(cell)
+  })
+
+  it('Tab stays in the modal while a popover inside it is open', () => {
+    function WithCombo() {
+      const [pop, setPop] = useState(true)
+      const popRef = useRef<HTMLDivElement>(null)
+      useModalLayer({ open: pop, onClose: () => setPop(false), rootRef: popRef, kind: 'popover' })
+      return (
+        <Layer name="rail" open onClose={() => {}}>
+          <button>First</button>
+          <div ref={popRef}>{pop && <button>Last option</button>}</div>
+        </Layer>
+      )
+    }
+    render(<WithCombo />)
+    screen.getByText('Last option').focus()
+    tab()
+    expect(document.activeElement).toBe(screen.getByText('First'))
+  })
 })

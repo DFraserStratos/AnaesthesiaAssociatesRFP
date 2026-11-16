@@ -13,6 +13,8 @@ import { insurerAndFunderParties } from '../../domain/billing/insurance'
 import { setBookingInsurance, useAppStore, type Actor } from '../../store'
 import { Button, FieldLabel, FormError, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 
 interface FunderSheetProps {
   open: boolean
@@ -89,10 +91,10 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
     <Overlay open={open} onClose={onClose}>
       <div data-shot="funder-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: variant === 'web' ? 480 : undefined, maxWidth: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>Insurer or funder</div>
-          <div style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
-            Who funds this Booking, and the insurer&apos;s approval number. It never changes who is invoiced.
-          </div>
+          <OverlayHeader
+            title="Insurer or funder"
+            description={<>Who funds this Booking, and the insurer&apos;s approval number. It never changes who is invoiced.</>}
+          />
         </div>
 
         <div role="radiogroup" aria-label="Insurer or funder" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -132,9 +134,13 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
         )}
 
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>
-          Save
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save}>
+              Save
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )

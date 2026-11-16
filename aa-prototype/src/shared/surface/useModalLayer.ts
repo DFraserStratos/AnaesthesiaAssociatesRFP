@@ -91,6 +91,11 @@ function focusQuietly(el: HTMLElement | null | undefined): void {
   el?.focus({ preventScroll: true })
 }
 
+/** A control focus can go back to: still on the page, not the body, not behind a modal. */
+function usable(el: HTMLElement | null | undefined, inside?: HTMLElement): el is HTMLElement {
+  return el !== null && el !== undefined && el.isConnected && el !== document.body && el.closest('[inert]') === null && !(inside?.contains(el) ?? false)
+}
+
 function topModal(): Layer | undefined {
   for (let i = stack.length - 1; i >= 0; i -= 1) {
     const layer = stack[i]
@@ -134,21 +139,25 @@ function onKeyDown(e: KeyboardEvent): void {
     top.close()
     return
   }
-  if (e.key !== 'Tab' || top.kind !== 'modal') return
-  const items = tabbables(top.root)
+  if (e.key !== 'Tab') return
+  // The trap is the top modal's, even with a popover open inside it (the
+  // Contract combo in the rail); a harness menu outside the modal keeps Tab.
+  const modal = topModal()
+  if (modal === undefined || (top.kind === 'popover' && !modal.root.contains(top.root))) return
+  const items = tabbables(modal.root)
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
   if (items.length === 0) {
     e.preventDefault()
-    focusQuietly(top.panel)
+    focusQuietly(modal.panel)
     return
   }
   const first = items[0]
   const last = items[items.length - 1]
-  const inside = active !== null && top.root.contains(active)
+  const inside = active !== null && modal.root.contains(active)
   if (!inside) {
     e.preventDefault()
     focusQuietly(e.shiftKey ? last : first)
-  } else if (e.shiftKey && (active === first || active === top.panel)) {
+  } else if (e.shiftKey && (active === first || active === modal.panel)) {
     e.preventDefault()
     focusQuietly(last)
   } else if (!e.shiftKey && active === last) {
@@ -209,14 +218,15 @@ function push(layer: Layer, initialFocus: HTMLElement | null, opener: HTMLElemen
   stack.splice(at, 0, layer)
   syncListener()
   if (layer.kind !== 'modal') return
-  applyInert()
-  if (inherited !== null) layer.returnTo = inherited
-  if (at !== stack.length - 1) return
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
-  // The opener as it stood before this layer rendered: an `autoFocus` child
-  // has already taken focus by the time this effect runs.
-  const before = inherited ?? opener ?? active
-  layer.returnTo = before !== null && before !== document.body && !layer.root.contains(before) ? before : null
+  const onTop = at === stack.length - 1
+  // Where focus goes back on close, judged before this layer makes the page
+  // inert: the inherited opener of a same-commit handoff, else the opener as it
+  // stood before this layer rendered (an `autoFocus` child has already taken
+  // focus by now), else what has focus; the first still on the page and live.
+  layer.returnTo = (onTop ? [inherited, opener, active] : [inherited]).find((el) => usable(el, layer.root)) ?? null
+  applyInert()
+  if (!onTop) return
   if (initialFocus !== null) focusQuietly(initialFocus)
   else if (active === null || !layer.root.contains(active)) focusQuietly(layer.panel)
 }
@@ -228,15 +238,22 @@ function pop(layer: Layer): void {
   syncListener()
   if (layer.kind !== 'modal') return
   // Same-commit replacement (see `vacated`): effects of one commit run in one task.
-  vacated = { at, returnTo: layer.returnTo }
-  queueMicrotask(() => {
-    vacated = null
-  })
+  // The first layer to leave in a commit owns the slot (a sheet closing with
+  // the drawer it sat over does not overwrite the drawer's opener).
+  if (vacated === null) {
+    vacated = { at, returnTo: layer.returnTo }
+    queueMicrotask(() => {
+      vacated = null
+    })
+  }
   applyInert()
-  // Back to the opener, unless focus already went somewhere else on purpose.
+  // Back to the opener, unless focus already went somewhere else on purpose;
+  // an opener now behind another modal (inert) or gone falls back to that modal.
   const active = document.activeElement
   const lost = active === null || active === document.body || !active.isConnected || layer.root.contains(active)
-  if (lost && layer.returnTo !== null && layer.returnTo.isConnected) focusQuietly(layer.returnTo)
+  if (!lost) return
+  if (usable(layer.returnTo)) focusQuietly(layer.returnTo)
+  else focusQuietly(topModal()?.panel)
 }
 
 /** Register an open overlay on the one modal stack. See the module comment. */

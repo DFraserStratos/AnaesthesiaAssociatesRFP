@@ -7,6 +7,7 @@ import { railAnswersFor, railAnswersText } from '../../domain/billing/contractRa
 import { lookupNhi } from '../../domain/nzhis'
 import { createBooking, railActorOf, railContextForList, useAppStore, type Actor } from '../../store'
 import { ContractRail, type ContractRailPick } from './ContractRail'
+import { SheetActions } from '../surface/SheetActions'
 import { DemoBadge } from '../DemoBadge'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
@@ -345,9 +346,13 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         </div>
       )}
 
-      <Button variant="primary" block onClick={save} disabled={!canSave} style={{ marginTop: 4 }}>
-        Save booking
-      </Button>
+      <SheetActions
+        primary={
+          <Button variant="primary" block onClick={save} disabled={!canSave}>
+            Save booking
+          </Button>
+        }
+      />
       {!canSave && (
         <div style={{ fontSize: 12, color: neutral.mist, textAlign: 'center', marginTop: -8 }}>
           Name and date of birth are required.

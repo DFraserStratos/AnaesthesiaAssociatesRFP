@@ -26,7 +26,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[role=dialog]:not([data-testid=admin-list-drawer])"
           ],
           "caption": "Choose an anaesthetist whose session is free, listed in tier order"
         },
@@ -46,14 +46,14 @@
               "wait": 400
             },
             {
-              "click": "[role=dialog] >> text=\"Hughes, Rawiri\""
+              "click": "[role=dialog]:not([data-testid=admin-list-drawer]) >> text=\"Hughes, Rawiri\""
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[role=dialog]:not([data-testid=admin-list-drawer])"
           ],
           "caption": "The List moves with its Bookings and history; the vacated session returns to Free unless marked otherwise"
         },
@@ -73,7 +73,7 @@
               "wait": 400
             },
             {
-              "click": "[role=dialog] >> text=\"Hughes, Rawiri\""
+              "click": "[role=dialog]:not([data-testid=admin-list-drawer]) >> text=\"Hughes, Rawiri\""
             },
             {
               "wait": 300
@@ -104,7 +104,7 @@
               "wait": 400
             },
             {
-              "click": "[role=dialog] >> text=\"Hughes, Rawiri\""
+              "click": "[role=dialog]:not([data-testid=admin-list-drawer]) >> text=\"Hughes, Rawiri\""
             },
             {
               "wait": 300

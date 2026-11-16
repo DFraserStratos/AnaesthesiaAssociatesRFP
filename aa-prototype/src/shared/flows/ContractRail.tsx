@@ -15,6 +15,7 @@ import { isRvgKind } from '../../domain/billing/contracts'
 import { rangeInForce } from '../../domain/billing/priceRanges'
 import { railMastersOf, useAppStore } from '../../store'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { NameSearchBox } from '../ui/NameSearchBox'
 import { Pill } from '../ui/Pill'
 import { Button } from '../ui/Button'
@@ -274,7 +275,7 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
     <Overlay open={open} onClose={close} size="wide">
       <div className="aa-rail-scope" data-shot="contract-picker" role="group" aria-labelledby="contract-rail-title" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <h2 id="contract-rail-title" style={{ margin: 0, fontSize: 17, fontWeight: 600, color: neutral.ink }}>Choose the Contract</h2>
+          <OverlayHeader id="contract-rail-title" title="Choose the Contract" />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Where the invoice goes, then the Contract. Each step offers only what fits this List.</div>
         </div>
         {variant === 'mobile' ? (

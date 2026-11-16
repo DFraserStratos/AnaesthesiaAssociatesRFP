@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { BottomSheet } from '../../../shared/surface'
 import { Button } from '../../../shared/ui'
+import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
+import { SheetActions } from '../../../shared/surface/SheetActions'
 
 /**
  * The mobile List's options (opened from the ⋯ in the List detail nav bar):
@@ -24,8 +26,7 @@ export function ListOptionsSheet({ open, title, subtitle, options, onClose }: { 
     <BottomSheet open={open} onClose={onClose}>
       <div data-shot="list-options-sheet" role="menu" aria-label="List options" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 4px 8px' }}>
-          <span style={{ fontSize: 17, lineHeight: '24px', fontWeight: 700, color: neutral.ink }}>{title}</span>
-          <span style={{ fontSize: 13, color: neutral.slate }}>{subtitle}</span>
+          <OverlayHeader title={title} description={subtitle} />
         </div>
         {options.map((o) => (
           <button
@@ -71,9 +72,13 @@ export function ListOptionsSheet({ open, title, subtitle, options, onClose }: { 
             </span>
           </button>
         ))}
-        <Button variant="secondary" block onClick={onClose} style={{ marginTop: 8 }}>
-          Close
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="secondary" block onClick={onClose}>
+              Close
+            </Button>
+          }
+        />
       </div>
     </BottomSheet>
   )

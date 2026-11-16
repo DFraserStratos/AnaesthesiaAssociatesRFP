@@ -26,6 +26,7 @@ import {
   type Actor,
 } from '../../store'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { CaptureSection, FailureNotes } from '../capture/ui'
 import { Button } from '../ui/Button'
 import { Pill } from '../ui/Pill'
@@ -953,7 +954,7 @@ function MobileBillingCard(props: BillingCardProps) {
       </button>
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div data-shot="billing-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: neutral.ink }}>{label}</h2>
+          <OverlayHeader title={label} />
           <BillingSteps {...props} layout="sheet" />
           <Button onClick={() => setOpen(false)} style={{ width: '100%', minHeight: 48 }}>
             Done

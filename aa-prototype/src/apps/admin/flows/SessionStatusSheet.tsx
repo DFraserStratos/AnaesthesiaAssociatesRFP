@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Building2, Users } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import { activeStatuses, isClosedKey, statusFor } from '../../../domain/slotStatus'
 import { defaultVacated } from '../../../domain/listMoves'
 import type { SlotStatusKey } from '../../../domain/types'
 import { closedEmptyColleagueSlots, listInSlot, markUnavailableAndMoveList, openSlotViews, setAvailability, useAppStore, type Actor } from '../../../store'
-import { Button, FormError, TextArea, TickBadge } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { Button, FormError, TextArea } from '../../../shared/ui'
+import { DoneStep } from '../../../shared/ui/DoneStep'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { BackLink, ChoiceRow } from '../../../shared/flows/moveSheetParts'
 import { StatusRadioGroup, VacatedSessionChoice } from '../../../shared/flows/VacatedSessionChoice'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
@@ -160,7 +161,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
 
   const header = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>{step === 'status' || step === 'done' ? 'Change status' : 'Where does this List go?'}</span>
+      <OverlayHeader title={step === 'status' || step === 'done' ? 'Change status' : 'Where does this List go?'} />
       <span style={{ fontSize: 13, color: neutral.slate }}>
         {anaesthetist !== undefined ? surnameFirst(anaesthetist.name) : slot.anaesthetistId} · {dayLine}
       </span>
@@ -197,14 +198,16 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
               </div>
             )}
             <FormError message={error} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
-              <span data-shot="office-status-save" style={{ display: 'contents' }}>
-                <Button variant="primary" block disabled={statusKey === '' || locked} onClick={saveStatus}>
-                  {needsWhere ? 'Continue' : 'Save status'}
-                </Button>
-              </span>
-            </div>
+            <SheetActions
+              primary={
+                <span data-shot="office-status-save" style={{ display: 'contents' }}>
+                  <Button variant="primary" block disabled={statusKey === '' || locked} onClick={saveStatus}>
+                    {needsWhere ? 'Continue' : 'Save status'}
+                  </Button>
+                </span>
+              }
+              secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+            />
           </>
         )}
 
@@ -276,23 +279,29 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
             <VacatedSessionChoice label={`${who}'s session after the move`} value={vacated} onChange={setVacated} statusBeingSet={statusKey} shot="office-status-vacated" />
             {route === 'colleague' && <NotPreferredWarning warning={pairingWarning} shot="office-status-pairing-warning" />}
             <FormError message={error} />
-            <span data-shot="office-status-confirm-button" style={{ display: 'contents' }}>
-              <Button variant="primary" block onClick={confirmMove}>
-                {route === 'colleague' ? `Move to ${drSurname(target?.name ?? '')}${pairingWarning !== null ? ' anyway' : ''}` : 'Return to the office'}
-              </Button>
-            </span>
+            <SheetActions
+              primary={
+                <span data-shot="office-status-confirm-button" style={{ display: 'contents' }}>
+                  <Button variant="primary" block onClick={confirmMove}>
+                    {route === 'colleague' ? `Move to ${drSurname(target?.name ?? '')}${pairingWarning !== null ? ' anyway' : ''}` : 'Return to the office'}
+                  </Button>
+                </span>
+              }
+            />
           </div>
         )}
 
         {step === 'done' && done !== null && (
-          <div data-shot="office-status-done" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
-            <TickBadge size={72} animate />
-            <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>{done.line}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center', lineHeight: '19px', maxWidth: 380 }}>{done.detail}</div>
-            <Button variant="secondary" block onClick={onClose} style={{ marginTop: 4 }}>
-              Done
-            </Button>
-          </div>
+          <DoneStep
+            shot="office-status-done"
+            title={done.line}
+            detail={done.detail}
+            action={
+              <Button variant="secondary" block onClick={onClose}>
+                Done
+              </Button>
+            }
+          />
         )}
       </div>
     </Overlay>

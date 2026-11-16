@@ -13,6 +13,7 @@ import { locationName } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
 import { SESSIONS_IN_ORDER, sessionText } from '../../../domain/outOfHours'
+import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 
 interface DashboardScreenProps {
   anaesthetistId: string
@@ -159,7 +160,7 @@ export function DashboardScreen({
       <Overlay open={picking} onClose={() => setPicking(false)}>
         <div data-shot="dashboard-move-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 460, maxWidth: '100%' }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>Which List?</div>
+            <OverlayHeader title="Which List?" />
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Your Lists in the next six days. Choose one to move it back to the office or to a colleague.</div>
           </div>
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}>

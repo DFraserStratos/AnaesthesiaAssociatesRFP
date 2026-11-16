@@ -11,7 +11,7 @@ import { neutral } from '../../../theme/tokens'
 import { createDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
 import type { ListKind, RequestSource, Session } from '../../../domain/types'
 import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { DRAFT_LIST, SOURCE_LABELS } from '../../../shared/scheduleTerms'
 import { assignSelectStyle, withKind } from './AssignListFields'
 import { useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
@@ -102,7 +102,7 @@ export function DraftListSheet({
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-new-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>New {DRAFT_LIST}</div>
+          <OverlayHeader title={<>New {DRAFT_LIST}</>} />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>A request with no anaesthetist yet.</div>
         </div>
 
@@ -143,10 +143,10 @@ export function DraftListSheet({
 
         <div style={{ fontSize: 13, color: neutral.slate }}>Saving does not change anyone's schedule. You can add Bookings before an anaesthetist is assigned.</div>
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save}>Save {DRAFT_LIST}</Button>
-        </div>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={save}>Save {DRAFT_LIST}</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

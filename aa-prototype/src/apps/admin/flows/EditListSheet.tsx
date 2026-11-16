@@ -3,7 +3,7 @@ import { neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
 import { editList, setSlotTimes, useAppStore, useListTimes, type Actor, type ListPatch } from '../../../store'
 import { Button, FieldLabel, TextArea } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
@@ -96,7 +96,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Edit list</div>
+        <OverlayHeader title="Edit list" />
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Hospital</FieldLabel>
@@ -130,7 +130,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
         <ConflictCallout conflicts={closures} hospitalId={hospitalId} shot="edit-list-conflict-warning" />
         {/* Catch-up Phase 17: warn, never block. Only a changed surgeon warns. */}
         <NotPreferredWarning warning={pairingWarning} shot="edit-list-pairing-warning" />
-        <Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Save list anyway' : 'Save list'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Save list anyway' : 'Save list'}</Button>} />
       </div>
     </Overlay>
   )

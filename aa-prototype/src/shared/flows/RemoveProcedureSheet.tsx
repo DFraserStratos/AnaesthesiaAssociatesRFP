@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import { removeProcedure, useAppStore, type Actor } from '../../store'
-import { Button } from '../ui'
-import { useSurface } from '../surface'
+import { ConfirmSheet } from '../surface/ConfirmSheet'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 
 interface RemoveProcedureSheetProps {
@@ -27,7 +26,6 @@ interface RemoveProcedureSheetProps {
  * the sheet names the procedure and counts the billing lines going with it.
  */
 export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClose, onRemoved }: RemoveProcedureSheetProps) {
-  const { Overlay } = useSurface()
   const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const lineCount = useAppStore(
@@ -54,13 +52,20 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Remove procedure {ordinal}?</div>
-        <div style={{ fontSize: 13, color: neutral.slate }}>
+    <ConfirmSheet
+      open={open}
+      onClose={onClose}
+      title={`Remove procedure ${ordinal}?`}
+      description={
+        <>
           <strong style={{ color: neutral.ink }}>{name}</strong> and everything captured on it (times, units,
           modifiers and notes) are removed from this booking. This is audited and cannot be undone from here.
-        </div>
+        </>
+      }
+      confirmLabel="Remove procedure"
+      onConfirm={submit}
+      cancelLabel="Keep it"
+    >
         {lineCount > 0 && (
           <div style={{ fontSize: 13, color: neutral.slate }}>
             {lineCount === 1 ? 'Its 1 billing line goes with it.' : `Its ${lineCount} billing lines go with it.`}
@@ -71,13 +76,6 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
             {error}
           </div>
         )}
-        <Button variant="primary" block onClick={submit}>
-          Remove procedure
-        </Button>
-        <Button variant="secondary" block onClick={onClose}>
-          Keep it
-        </Button>
-      </div>
-    </Overlay>
+    </ConfirmSheet>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode, type Ref } from 'react'
 import { Repeat } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { SlotStatusKey } from '../../domain/types'
@@ -6,6 +6,7 @@ import { defaultSlotStatus, isClosedKey, statusFor, type SessionChoice } from '.
 import { clearAvailability, deleteAvailabilitySeries, useAppStore, type Actor, type CalendarDay, type CalendarSession } from '../../store'
 import { StatusChip } from '../StatusChip'
 import { FormError } from '../ui'
+import { InlineConfirm } from '../ui/InlineConfirm'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
 import { SESSIONS_IN_ORDER, sessionText } from '../../domain/outOfHours'
@@ -49,6 +50,8 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
   const defaultLabel = defaultStatus.longLabel
   const past = day.dateISO < todayISO
   const [confirmSeries, setConfirmSeries] = useState<CalendarSession | null>(null)
+  // The "Delete the series" buttons, so "Keep it" gives focus back (U2 InlineConfirm).
+  const seriesDeleteLinks = useRef<Record<string, HTMLButtonElement | null>>({})
   const [error, setError] = useState<string | null>(null)
   // Catch-up Phase 32 (Phase 29's handoff): a movable List offers "Move this List" here.
   const movePrompt = useMoveListPrompt()
@@ -132,7 +135,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
               <Actions>
                 <PanelAction onClick={() => onChange({ sessions: s.session, statusKey: s.statusKey, ...(s.note !== undefined ? { note: s.note } : {}), instance: true })}>Change this one</PanelAction>
                 <PanelAction onClick={() => remove(s)}>Delete this one</PanelAction>
-                <PanelAction onClick={() => setConfirmSeries(s)}>Delete the series</PanelAction>
+                <PanelAction buttonRef={(el) => { seriesDeleteLinks.current[s.slotId] = el }} onClick={() => setConfirmSeries(s)}>Delete the series</PanelAction>
               </Actions>
             ) : (
               <Actions>
@@ -141,15 +144,16 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
               </Actions>
             )}
             {confirmSeries?.slotId === s.slotId && s.series !== undefined && (
-              <div data-shot="availability-series-confirm" role="group" aria-label="Delete the series" style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
-                  Delete the series? Its sessions from today on return to {defaultLabel}. Days you changed on their own keep their status, and past days stay as they were.
-                </div>
-                <Actions>
-                  <PanelAction primary onClick={() => deleteSeries(s)}>Delete the series</PanelAction>
-                  <PanelAction onClick={() => setConfirmSeries(null)}>Keep it</PanelAction>
-                </Actions>
-              </div>
+              <InlineConfirm
+                shot="availability-series-confirm"
+                label="Delete the series"
+                message={<>Delete the series? Its sessions from today on return to {defaultLabel}. Days you changed on their own keep their status, and past days stay as they were.</>}
+                confirmLabel="Delete the series"
+                onConfirm={() => deleteSeries(s)}
+                cancelLabel="Keep it"
+                onCancel={() => setConfirmSeries(null)}
+                returnFocus={() => seriesDeleteLinks.current[s.slotId]}
+              />
             )}
           </div>
         )
@@ -166,9 +170,10 @@ function Actions({ children }: { children: ReactNode }) {
   return <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{children}</div>
 }
 
-function PanelAction({ onClick, children, primary }: { onClick: () => void; children: ReactNode; primary?: boolean }) {
+function PanelAction({ onClick, children, primary, buttonRef }: { onClick: () => void; children: ReactNode; primary?: boolean; buttonRef?: Ref<HTMLButtonElement> }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={onClick}
       style={{

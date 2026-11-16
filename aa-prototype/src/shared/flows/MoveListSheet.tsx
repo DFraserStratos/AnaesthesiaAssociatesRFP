@@ -13,7 +13,10 @@ import { defaultVacated, pushTargets, type PushTarget } from '../../domain/listM
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
 import { drSurname, locationName, matchesNameQuery, plural, shortDay } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
-import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
+import { Button, NameSearchBox, TextArea } from '../ui'
+import { DoneStep } from '../ui/DoneStep'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
 import { BackLink, ChoiceRow } from './moveSheetParts'
@@ -259,29 +262,33 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
                 {error}
               </div>
             )}
-            <span data-shot="move-submit" style={{ display: 'contents' }}>
-              <Button variant="primary" block onClick={submit}>
-                Move List
-              </Button>
-            </span>
+            <SheetActions
+              primary={
+                <span data-shot="move-submit" style={{ display: 'contents' }}>
+                  <Button variant="primary" block onClick={submit}>
+                    Move List
+                  </Button>
+                </span>
+              }
+            />
           </div>
         )}
 
         {step === 'done' && done !== null && (
-          <div data-shot="move-done" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
-            <TickBadge size={72} animate />
-            <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>
-              {done.route === 'office' ? 'Returned to the office' : `Moved to ${drSurname(done.colleagueName ?? '')}`}
-            </div>
-            <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center', lineHeight: '19px' }}>
-              {done.route === 'office'
+          <DoneStep
+            shot="move-done"
+            title={done.route === 'office' ? 'Returned to the office' : `Moved to ${drSurname(done.colleagueName ?? '')}`}
+            detail={
+              done.route === 'office'
                 ? 'The office can see it in its notifications.'
-                : `${drSurname(done.colleagueName ?? '')} and the office can see it now.`}
-            </div>
-            <Button variant="secondary" block onClick={onClose} style={{ marginTop: 4 }}>
-              Done
-            </Button>
-          </div>
+                : `${drSurname(done.colleagueName ?? '')} and the office can see it now.`
+            }
+            action={
+              <Button variant="secondary" block onClick={onClose}>
+                Done
+              </Button>
+            }
+          />
         )}
       </div>
     </Overlay>
@@ -296,7 +303,7 @@ function ListHeader({ title, line, progress }: { title: string; line: string; pr
           {progress.index} of {progress.total}
         </span>
       )}
-      <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>Move your List</span>
+      <OverlayHeader title="Move your List" />
       <span style={{ fontSize: 14, color: neutral.ink }}>{title}</span>
       <span style={{ fontSize: 13, color: neutral.slate }}>{line}</span>
     </div>

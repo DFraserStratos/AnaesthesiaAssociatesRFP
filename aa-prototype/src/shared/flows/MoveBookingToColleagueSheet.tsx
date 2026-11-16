@@ -13,7 +13,10 @@ import {
 import { bookingMoveReceivers, freeColleagues, type BookingMoveInput, type BookingReceiver } from '../../domain/bookingMoves'
 import type { AssignedList, Booking } from '../../domain/types'
 import { drSurname, locationName } from '../format'
-import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
+import { Button, NameSearchBox, TextArea } from '../ui'
+import { DoneStep } from '../ui/DoneStep'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { useSurface } from '../surface'
 import { Avatar } from '../Avatar'
 import { sessionText } from '../../domain/outOfHours'
@@ -143,7 +146,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
 
   const header = (
     <div data-shot="move-booking-header" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>Move to a colleague</span>
+      <OverlayHeader title="Move to a colleague" />
       <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>
         {snapshot.patientName}
         {snapshot.procedure !== undefined && <span style={{ fontWeight: 400, color: neutral.slate }}>, {snapshot.procedure}</span>}
@@ -250,36 +253,44 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
                 {error}
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <span data-shot="move-booking-submit" style={{ display: 'contents' }}>
-                <Button variant="primary" block onClick={submit}>
-                  Move Booking
+            <SheetActions
+              primary={
+                <span data-shot="move-booking-submit" style={{ display: 'contents' }}>
+                  <Button variant="primary" block onClick={submit}>
+                    Move Booking
+                  </Button>
+                </span>
+              }
+              secondary={
+                <Button variant="secondary" block onClick={() => setStep('find')}>
+                  Back
                 </Button>
-              </span>
-              <Button variant="secondary" block onClick={() => setStep('find')}>
-                Back
-              </Button>
-            </div>
+              }
+            />
           </div>
         )}
 
         {step === 'done' && done !== null && (
-          <div data-shot="move-booking-done" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
-            <TickBadge size={72} animate />
-            <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Moved to {drSurname(done.name)}.</div>
-            <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center', lineHeight: '19px' }}>
-              It is on a new List in their {day} {sessionText(list.session)} session.
-              {done.toldOffice && (
-                <>
-                  <br />
-                  <span data-shot="move-booking-office-told">The office has been told.</span>
-                </>
-              )}
-            </div>
-            <Button variant="secondary" block onClick={onBackToList} style={{ marginTop: 4 }}>
-              Back to your List
-            </Button>
-          </div>
+          <DoneStep
+            shot="move-booking-done"
+            title={<>Moved to {drSurname(done.name)}.</>}
+            detail={
+              <>
+                It is on a new List in their {day} {sessionText(list.session)} session.
+                {done.toldOffice && (
+                  <>
+                    <br />
+                    <span data-shot="move-booking-office-told">The office has been told.</span>
+                  </>
+                )}
+              </>
+            }
+            action={
+              <Button variant="secondary" block onClick={onBackToList}>
+                Back to your List
+              </Button>
+            }
+          />
         )}
       </div>
     </Overlay>

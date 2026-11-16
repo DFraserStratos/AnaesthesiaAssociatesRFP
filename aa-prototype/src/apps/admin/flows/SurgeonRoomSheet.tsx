@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { SurgeonRoom } from '../../../domain/types'
 import { createSurgeonRoom, editSurgeonRoom, useAppStore, type Actor } from '../../../store'
 import { Button, TextField, useSurface, FormError } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 
 /**
  * Add or edit a surgeons' room (catch-up Phase 17, US-13.6.1): its contact
@@ -25,12 +26,12 @@ export function SurgeonRoomSheet({ room, actor, onClose }: { room?: SurgeonRoom;
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="surgeon-room-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{room === undefined ? "Add a surgeons' room" : "Edit surgeons' room"}</div>
+        <OverlayHeader title={room === undefined ? "Add a surgeons' room" : "Edit surgeons' room"} />
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Avonside Surgical Rooms" />
         <TextField label="Contact email" value={contactEmail} onChange={setContactEmail} type="email" placeholder="reception@rooms.example" />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" placeholder="03 555 0000" hint="Surgeons join a room from their own record." />
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{room === undefined ? 'Add room' : 'Save changes'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{room === undefined ? 'Add room' : 'Save changes'}</Button>} />
       </div>
     </Overlay>
   )

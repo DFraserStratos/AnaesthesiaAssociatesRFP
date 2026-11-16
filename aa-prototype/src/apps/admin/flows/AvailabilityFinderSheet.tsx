@@ -20,7 +20,7 @@ import type { Session } from '../../../domain/types'
 import { slotIdFor } from '../../../domain/slots'
 import { openSlotViews, useAppStore } from '../../../store'
 import { Button, FieldLabel, Segmented } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { AnaesthetistCandidates, useSuggestionKey } from '../components/pairing'
 import { assignSelectStyle } from './AssignListFields'
 import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
@@ -69,7 +69,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-availability-finder" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Find available</div>
+          <OverlayHeader title="Find available" />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(dateISO), 'EEEE d MMMM')}</div>
         </div>
 
@@ -103,7 +103,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
           />
         )}
 
-        <Button variant="secondary" block onClick={onClose}>Close</Button>
+        <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Close</Button>} />
       </div>
     </Overlay>
   )

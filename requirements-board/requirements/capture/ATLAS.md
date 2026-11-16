@@ -201,6 +201,12 @@ Hooks already added:
   or use `>> nth=0`.
 - **Highlighting a row or card with no hook: add a `data-shot`.** Don't write a long xpath.
 - A **dialog or sheet** is `[role=dialog]`. On mobile, scope it as `[data-aa-mobile-product] [role=dialog]`.
+- **UI unification Phase U2:** `[role=dialog]` now also matches the Admin drawers (they are `<aside role="dialog">`
+  named by their title). When a drawer is open and a sheet opens from it, scope the sheet: prefer the sheet's
+  own `data-shot`, else `[role=dialog]:not([data-testid=admin-list-drawer])`. The capture highlight unions every
+  visible match, so a bare `[role=dialog]` highlight taken while a drawer is open grows to cover the drawer too.
+- **"Close" is no longer unique.** `[data-testid=admin-list-drawer] >> role=button[name="Close"]` stays unique, but a bare
+  `role=button[name="Close"]` can now also match a web dialog's corner X. Scope it.
 
 ## Personas and IDs
 
@@ -642,6 +648,14 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Patient › Standard, Souter's list under Prepaid for the office); BK0023 (Mon 20 AM, SUBMITTED).
 
 ## Overlays that need clicks
+
+- **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
+  `<aside role="dialog" aria-modal="true">` named by its h2 title, with a header "Close" X, and Escape closes it.
+  Contract and Party panels are the same component at 600px. A sheet opened from a drawer is a second
+  `[role=dialog]`, the drawer behind it is `inert`, and Escape closes only the top layer. Every web/Admin
+  Dialog with a title has a "Close" button, and every Dialog and BottomSheet is named by its h2 title. On web the
+  cancel button now comes first in a footer row and the primary last (phone: stacked); labels unchanged.
+  Done steps (`move-booking-done`, `alert-office-done`, `move-done`, `office-status-done`) have `role="status"`.
 
 - **Party and Contract panels** (Master data, catch-up Phase 18): a row click or its Edit opens a
   600px right-docked panel (`[data-shot=party-panel]`, `[data-shot=contract-detail]`), not a centred
@@ -1173,6 +1187,10 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 
 ## Gotchas
 
+- **Escape closes the top layer only** (Phase U2). A recipe that presses Escape with an Admin drawer open
+  now closes the drawer, unless a sheet is on top, in which case only the sheet closes. Close a drawer with
+  `[data-testid=admin-list-drawer] >> role=button[name="Close"]`, and do not press Escape to dismiss a
+  sheet if the drawer must stay open.
 - **State lives in localStorage** (`aa-demo`, with a write coalesced over about 250ms).
   - A `goto` step inside `setup` reloads the page. Add `{ "wait": 400 }` before it if you just
     mutated state.

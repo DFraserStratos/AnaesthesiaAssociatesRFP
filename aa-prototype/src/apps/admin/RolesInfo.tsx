@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { useSurface } from '../../shared'
+import { OverlayHeader } from '../../shared/surface'
 
 interface RoleEntry {
   role: string
@@ -56,7 +57,7 @@ export function RolesInfo() {
 
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Roles in this prototype</div>
+          <OverlayHeader title="Roles in this prototype" />
           <div style={{ fontSize: 13, color: neutral.slate }}>
             View, access and edit rights are managed by role (RFP). Each is provable live by switching persona in the app switcher.
           </div>

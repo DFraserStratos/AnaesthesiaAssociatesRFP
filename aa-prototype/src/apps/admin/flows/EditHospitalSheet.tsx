@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Hospital } from '../../../domain/types'
 import { editHospital, useAppStore, type Actor } from '../../../store'
 import { Button, TextField, useSurface, FormError } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 
 /**
  * Edit a hospital's name and its contact email for booking updates (catch-up
@@ -23,11 +24,11 @@ export function EditHospitalSheet({ hospital, actor, onClose }: { hospital: Hosp
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="edit-hospital-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Edit hospital</div>
+        <OverlayHeader title="Edit hospital" />
         <TextField label="Hospital name" value={name} onChange={setName} />
         <TextField label="Contact email" value={contactEmail} onChange={setContactEmail} type="email" placeholder="bookings@hospital.example" hint="The contact for booking updates to this hospital." />
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>Save changes</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>Save changes</Button>} />
       </div>
     </Overlay>
   )

@@ -3,6 +3,10 @@ export { BottomSheet } from './BottomSheet'
 export { Dialog } from './Dialog'
 export { SurfaceProvider } from './SurfaceProvider'
 export { useModalLayer, MODAL_SCOPE_ATTR, type ModalLayerOptions, type ModalLayerKind } from './useModalLayer'
+export { OverlayHeader, type OverlayHeaderProps } from './OverlayHeader'
+export { SheetActions, type SheetActionsProps } from './SheetActions'
+export { ConfirmSheet, type ConfirmSheetProps } from './ConfirmSheet'
+export { CornerClose } from './CornerClose'
 export {
   useSurface,
   type Surface,

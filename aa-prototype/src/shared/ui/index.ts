@@ -15,6 +15,8 @@ export { NameSearchBox, type NameSearchBoxProps } from './NameSearchBox'
 export { Pill, PILL_TONES, type PillTone, type PillSize, type PillVariant } from './Pill'
 export { usePopover, type Popover } from './usePopover'
 export { PopoverPanel, type PopoverPanelProps } from './PopoverPanel'
+export { DoneStep, type DoneStepProps } from './DoneStep'
+export { InlineConfirm, type InlineConfirmProps } from './InlineConfirm'
 // UI unification U3: the passive vocabulary.
 export { CountBadge, type CountBadgeTone } from './CountBadge'
 export { visuallyHidden } from './visuallyHidden'

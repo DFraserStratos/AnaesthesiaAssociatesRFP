@@ -66,6 +66,11 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `usePopover` | `ui/usePopover.ts` | The one popover behaviour (U2): open state, outside `pointerdown`, Escape back to the trigger, `aria-expanded` and `aria-controls` | Phase 43a (`InfoTip`) |
 | `PopoverPanel` | `ui/PopoverPanel.tsx` | The one popover panel (U2): card radius, e3, placed `end`, `fill` or `inline` | Phase 43a (`InfoTip`) |
 | `SidePanel` (Admin only) | `apps/admin/components/SidePanel.tsx` | The right-docked Admin panel (U2): `list` 440px drawers, `record` 600px (`MasterPanel`); h2 at 18/700 names the dialog; corner X; e3 | Phases 33a, 35, 43a (`HelpPanel`) |
+| `OverlayHeader` | `surface/OverlayHeader.tsx` | The one sheet and dialog title (U2): an h2 at `type.sheetTitle` (18/24/700) and an optional 13px slate description; names the enclosing dialog and brings the web Dialog's corner X | Phase 22 (`SplitFeeSheet`) and every new sheet |
+| `SheetActions` | `surface/SheetActions.tsx` | The one sheet footer (U2, question 13): primary stacked over secondary on the phone; one row on web, secondary hugging first, primary last and filling | Phase 35 ("Apply") |
+| `ConfirmSheet` | `surface/ConfirmSheet.tsx` | The one sheet confirm (U2): `OverlayHeader` and `SheetActions`, focus on the safe button, the primary runs once | Phases 23 (`MakePrimarySheet`), 41 |
+| `InlineConfirm` | `ui/InlineConfirm.tsx` | The in-card confirm (U2): a `neutral.bg` box, "Keep it" then the primary on the right, focus in and back to the opener | None planned |
+| `DoneStep` | `ui/DoneStep.tsx` | The in-sheet done step (U2): TickBadge 72, 18/700 success title, slate detail, the action; `role="status"`, focus on the action | None planned |
 
 Text helpers (not components, same rule): `formatMoney`, `parseAmount`, `parseAmountOrNaN`
 (`src/domain/billing/money.ts`) and `dateRange`, `stampText`, `hhmm`, `plural`, `longDayNoYear` and the day

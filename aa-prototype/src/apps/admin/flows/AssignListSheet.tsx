@@ -12,7 +12,7 @@ import { format, parseISO } from 'date-fns'
 import { neutral } from '../../../theme/tokens'
 import { assignListToSlot, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
 import { NotPreferredWarning, useNotPreferredWarning } from '../components/pairing'
 import { AssignListFields, assignDraftError, emptyAssignDraft, type AssignDraft } from './AssignListFields'
@@ -69,7 +69,7 @@ export function AssignListSheet({ open, slotId, actor, initialSurgeonId, onClose
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-assign-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Assign List</div>
+          <OverlayHeader title="Assign List" />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>
             {surnameFirst(anaesthetistName ?? slot.anaesthetistId)} · {format(parseISO(slot.dateISO), 'EEE d MMM')} · {sessionText(slot.session)}
           </div>
@@ -80,10 +80,10 @@ export function AssignListSheet({ open, slotId, actor, initialSurgeonId, onClose
 
         <FormError message={error} />
         <NotPreferredWarning warning={pairingWarning} shot="assign-list-pairing-warning" />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Assign anyway' : 'Assign List'}</Button>
-        </div>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Assign anyway' : 'Assign List'}</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

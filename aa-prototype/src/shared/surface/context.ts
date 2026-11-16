@@ -20,6 +20,8 @@ export interface OverlayProps {
   hideHandle?: boolean
   /** A wider desktop dialog for a two-column body (the step rail, catch-up Phase 20); the mobile sheet ignores it. */
   size?: 'default' | 'wide'
+  /** The control that takes focus on open (a `ConfirmSheet`'s safe button; UI unification U2). */
+  initialFocusRef?: RefObject<HTMLElement>
 }
 
 export interface FooterProps {

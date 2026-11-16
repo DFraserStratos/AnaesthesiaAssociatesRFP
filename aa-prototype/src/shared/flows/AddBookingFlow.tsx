@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { neutral, semantic, type as typeScale } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import type { BookingSource } from '../../domain/types'
-import { Button, TickBadge } from '../ui'
+import { Button } from '../ui'
+import { DoneStep } from '../ui/DoneStep'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { DemoBadge } from '../DemoBadge'
 import { useSurface } from '../surface'
 import { ManualBookingForm, type ExtractionFields } from './ManualBookingForm'
@@ -66,18 +67,7 @@ export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, 
     <Overlay open={open} onClose={onClose}>
       {mode === 'manual' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: typeScale.title.size,
-              lineHeight: `${typeScale.title.line}px`,
-              fontWeight: typeScale.title.weight,
-              letterSpacing: typeScale.title.tracking,
-              color: neutral.ink,
-            }}
-          >
-            Add a booking
-          </h2>
+          <OverlayHeader title="Add a booking" />
           <ManualBookingForm
             listId={listId}
             actor={actor}
@@ -96,26 +86,26 @@ export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, 
       )}
 
       {mode === 'done' && result !== null && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
-          <TickBadge size={72} animate />
-          <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Booking added</div>
-          <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center' }}>
-            {result.reused
+        <DoneStep
+          title="Booking added"
+          detail={
+            result.reused
               ? 'Linked to an existing patient record by NHI. No duplicate was created.'
-              : 'A new patient record was created for this booking.'}
-          </div>
-          <Button
-            variant="primary"
-            block
-            onClick={() => {
-              onCreated(result.bookingId)
-              onClose()
-            }}
-            style={{ marginTop: 4 }}
-          >
-            Done
-          </Button>
-        </div>
+              : 'A new patient record was created for this booking.'
+          }
+          action={
+            <Button
+              variant="primary"
+              block
+              onClick={() => {
+                onCreated(result.bookingId)
+                onClose()
+              }}
+            >
+              Done
+            </Button>
+          }
+        />
       )}
     </Overlay>
   )

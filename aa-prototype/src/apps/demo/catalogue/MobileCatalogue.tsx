@@ -22,26 +22,38 @@ export function MobileCatalogue() {
     >
       <LibraryGroup id="shadcn">
         <CatalogueRow name="BottomSheet" source="shared/surface/BottomSheet.tsx" usedIn={SW} stage="mobile" height={420}
-          what="The mobile modal: a scrim and a panel that slides up from the bottom. It is what useSurface().Overlay renders on the phone, so every shared sheet uses it."
+          what="The mobile modal: a scrim and a panel that slides up from the bottom. It is what useSurface().Overlay renders on the phone, so every shared sheet uses it. It sits on the one modal stack with Dialog (useModalLayer): Escape closes only the top layer, focus goes in, stays in and comes back, and the OverlayHeader title names it."
           replaceWith="shadcn Drawer (Base UI Drawer)"
-          note="Adds drag-to-dismiss, snap points, Escape, a focus trap with restore, and nested sheets. Must keep --aa-keyboard-inset and portal into the phone frame.">
+          note="The library would add drag-to-dismiss, snap points and nested sheets. Must keep --aa-keyboard-inset and portal into the phone frame.">
           <Ex.BottomSheetExample />
           <StageHint>Tap the scrim or the handle to dismiss.</StageHint>
         </CatalogueRow>
+        <CatalogueRow name="InlineConfirm" source="shared/ui/InlineConfirm.tsx" usedIn={SW} stage="mobile" height={320}
+          what="The one in-card confirm: a tinted box with a message and two pill actions, 'Keep it' first and the primary on the right. Focus moves to 'Keep it' on open and back to the control that opened it."
+          replaceWith="shadcn AlertDialog (inline) or a plain Alert with actions"
+          note="Used where a sheet would be too heavy, such as deleting a series from its card.">
+          <Ex.InlineConfirmExample />
+        </CatalogueRow>
+        <CatalogueRow name="DoneStep" source="shared/ui/DoneStep.tsx" usedIn={SW} stage="mobile" height={380}
+          what="The one in-sheet done step: a 72px TickBadge, a success title, an optional detail and the step's one action. Announced with role=status, with focus on the action at mount."
+          replaceWith="Plain component (shadcn Alert with an icon)"
+          note="The action is the caller's: Done closes the sheet, or opens the new Booking.">
+          <Ex.DoneStepExample />
+        </CatalogueRow>
         <CatalogueRow name="ListOptionsSheet" source="apps/mobile/components/ListOptionsSheet.tsx" usedIn={M} stage="mobile" height={520}
-          what="The action sheet behind the List's ⋯ button: a row per thing she can do with her own List, each with a one-line hint."
+          what="The action sheet behind the List's ⋯ button, titled by an OverlayHeader: a row per thing she can do with her own List, each with a one-line hint."
           replaceWith="shadcn Drawer + plain button list"
-          note="Declares role=menu with no arrow keys or focus handling. Either drop the menu roles or use a real Menu.">
+          note="Declares role=menu with no arrow keys. Either drop the menu roles or use a real Menu.">
           <Ex.ListOptionsSheetExample />
         </CatalogueRow>
         <CatalogueRow name="AlertOfficeSheet" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} stage="mobile" height={560}
-          what="Asks the office to check one of her Lists or Bookings, with a note. Shows a sent state afterwards."
+          what="Asks the office to check one of her Lists or Bookings, with a note (OverlayHeader and SheetActions). A DoneStep shows the sent state afterwards."
           replaceWith="shadcn Drawer + Field (React Hook Form + Zod)"
           note={`Drawer adds the focus trap; Field binds the note's error to the textarea. Send ${WRITES}`}>
           <Ex.AlertOfficeSheetExample picks={picks} />
         </CatalogueRow>
         <CatalogueRow name="SubmitListSheet" source="shared/flows/SubmitListSheet.tsx" usedIn={WM} stage="mobile" height={560}
-          what="Opened from the greyed submit dock: names each Booking still to finish and what blocks it. Its confirm mode submits the List."
+          what="Opened from the greyed submit dock: names each Booking still to finish and what blocks it. Its confirm mode is a ConfirmSheet that submits the List."
           replaceWith="shadcn Drawer"
           note="Shown in blockers mode only, so nothing is submitted from here.">
           <Ex.SubmitListSheetExample picks={picks} />

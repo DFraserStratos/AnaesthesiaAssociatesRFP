@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Surgeon } from '../../../domain/types'
 import { createSurgeon, editSurgeon, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { selectControlStyle } from './fieldChrome'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { specialtiesInOrder } from '../../../domain/specialties'
@@ -43,7 +44,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="surgeon-edit-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{surgeon === undefined ? 'Add a surgeon' : 'Edit surgeon'}</div>
+        <OverlayHeader title={surgeon === undefined ? 'Add a surgeon' : 'Edit surgeon'} />
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Ms A. Reid" />
         <ChipMultiSelect
           label="Specialties"
@@ -65,7 +66,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
         <TextField label="HPI CPN (required)" value={hpiId} onChange={setHpiId} mono placeholder="12ABCD" hint="The surgeon's unique number on the Health Provider Index, for example 12ABCD" />
         <TextField label="NZ medical registration number (optional)" value={registration} onChange={setRegistration} mono hint="For information" />
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{surgeon === undefined ? 'Add surgeon' : 'Save changes'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{surgeon === undefined ? 'Add surgeon' : 'Save changes'}</Button>} />
       </div>
     </Overlay>
   )

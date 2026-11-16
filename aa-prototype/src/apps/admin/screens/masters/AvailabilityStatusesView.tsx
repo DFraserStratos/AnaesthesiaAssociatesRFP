@@ -5,6 +5,7 @@ import { LIST_KINDS, type SlotStatus } from '../../../../domain/types'
 import { allStatusesForEditor } from '../../../../domain/slotStatus'
 import { futureSessionsWithStatus, reorderSlotStatus, restoreSlotStatus, retireSlotStatus, useAppStore, type Actor } from '../../../../store'
 import { Button, FormError, StatusChip, useSurface } from '../../../../shared'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { SlotStatusSheet } from '../../flows/SlotStatusSheet'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle } from './tableStyles'
@@ -107,14 +108,16 @@ function RetireConfirm({ status, actor, onClose }: { status: SlotStatus; actor: 
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="admin-availability-status-retire" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Retire {status.label}?</div>
+        <OverlayHeader title={<>Retire {status.label}?</>} />
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
           It leaves the choices and the legends. {carrying === 0 ? 'No session from today on carries it.' : `${carrying} ${carrying === 1 ? 'session' : 'sessions'} from today on ${carrying === 1 ? 'carries' : 'carry'} it. They keep it until changed.`} You can restore it later.
         </div>
         <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 10 }}><StatusChip status={status.key} /></div>
         <FormError message={error} />
-        <Button variant="primary" block onClick={retire}>Retire status</Button>
-        <Button variant="secondary" block onClick={onClose}>Cancel</Button>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={retire}>Retire status</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

@@ -52,7 +52,7 @@ export function PopoverPanel({ id, placement, role, labelledBy, width, maxHeight
         color: neutral.ink,
         border: `1px solid ${neutral.line}`,
         borderRadius: radius.card,
-        ...(padding === 0 ? { overflow: 'hidden' as const } : {}),
+        ...(padding === 0 && maxHeight === undefined ? { overflow: 'hidden' as const } : {}),
       }}
     >
       {children}

@@ -3,7 +3,7 @@ import { neutral, radius } from '../../../../theme/tokens'
 import type { Modifier } from '../../../../domain/types'
 import { addAaModifier, useAppStore, type Actor } from '../../../../store'
 import { Button, DemoBadge, FormError, TextField } from '../../../../shared'
-import { useSurface } from '../../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../../shared/surface'
 import { Header, Table } from './chrome'
 import { cellStyle } from './tableStyles'
 
@@ -110,7 +110,7 @@ function AddAaModifierSheet({ actor, onClose }: { actor: Actor; onClose: () => v
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="add-aa-modifier" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Add an AA modifier</div>
+        <OverlayHeader title="Add an AA modifier" />
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: -6 }}>One of AA's own, beside the RVG table. Anaesthetists can claim it at once, with a short reason.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 12 }}>
           <TextField label="Code" value={code} onChange={setCode} mono placeholder="e.g. AAX1" />
@@ -118,7 +118,7 @@ function AddAaModifierSheet({ actor, onClose }: { actor: Actor; onClose: () => v
         </div>
         <TextField label="Modifying factor" value={factor} onChange={setFactor} placeholder="What the modifier is for" />
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>Add modifier</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>Add modifier</Button>} />
       </div>
     </Overlay>
   )

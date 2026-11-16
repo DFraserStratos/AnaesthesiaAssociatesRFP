@@ -64,6 +64,8 @@ import {
 } from './recreations'
 import { useMobilePersona, type SeedPicks } from './persona'
 import { procedureLabel } from '../../../../domain/billing/procedureStack'
+import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
+import { DoneStep, InlineConfirm } from '../../../../shared/ui'
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -167,12 +169,53 @@ export function BottomSheetExample() {
       <Button onClick={() => setOpen(true)}>Open a bottom sheet</Button>
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div style={col}>
-          <div style={{ fontSize: 17, fontWeight: 700 }}>A bottom sheet</div>
-          <div style={{ fontSize: 14, color: neutral.slate }}>Tap the scrim, the handle or Close. There is no drag to dismiss and no Escape today.</div>
+          <OverlayHeader title="A bottom sheet" />
+          <div style={{ fontSize: 14, color: neutral.slate }}>Tap the scrim, the handle or Close, or press Escape on a keyboard. There is no drag to dismiss.</div>
           <Button variant="secondary" block onClick={() => setOpen(false)}>Close</Button>
         </div>
       </Overlay>
     </>
+  )
+}
+
+export function InlineConfirmExample() {
+  const [asking, setAsking] = useState(false)
+  const [deleted, setDeleted] = useState(false)
+  const openerRef = useRef<HTMLButtonElement>(null)
+  return (
+    <div style={col}>
+      {deleted ? (
+        <div style={{ fontSize: 13, color: neutral.slate }}>Deleted (locally). Reload the page to try again.</div>
+      ) : (
+        <>
+          <div style={{ fontSize: 14, color: neutral.ink }}>Weekly clinic series</div>
+          {asking ? (
+            <InlineConfirm
+              label="Delete the series"
+              message="Delete the whole series? This cannot be undone."
+              confirmLabel="Delete"
+              onConfirm={() => setDeleted(true)}
+              cancelLabel="Keep it"
+              onCancel={() => setAsking(false)}
+              returnFocus={() => openerRef.current}
+            />
+          ) : (
+            <button ref={openerRef} type="button" onClick={() => setAsking(true)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, color: accent.pressed, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              Delete
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+export function DoneStepExample() {
+  const [done, setDone] = useState(false)
+  return done ? (
+    <Button variant="secondary" onClick={() => setDone(false)}>Show the done step again</Button>
+  ) : (
+    <DoneStep title="Sent" detail="The office has been told." action={<Button block onClick={() => setDone(true)}>Done</Button>} />
   )
 }
 

@@ -4,6 +4,8 @@ import type { Patient } from '../../domain/types'
 import { editPatient, useAppStore, type Actor } from '../../store'
 import { Button, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { cleanPostalAddress } from '../../domain/billing/payer'
 import { PostalAddressFields, addressDraftOf, type PostalAddressDraft } from './PostalAddressFields'
 
@@ -55,7 +57,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Edit patient details</div>
+        <OverlayHeader title="Edit patient details" />
         <TextField label="Name" value={name} onChange={setName} />
         <TextField label="Date of birth" value={dob} onChange={setDob} type="date" />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
@@ -66,9 +68,13 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
             {error}
           </div>
         )}
-        <Button variant="primary" block onClick={save} disabled={name.trim() === '' || dob === ''}>
-          Save details
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save} disabled={name.trim() === '' || dob === ''}>
+              Save details
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )

@@ -23,6 +23,9 @@ import {
   MasterTableExample,
   NameSearchBoxExample,
   OverlayExample,
+  OverlayHeaderExample,
+  SheetActionsExample,
+  ConfirmSheetExample,
   PairingPillsExample,
   PillExample,
   ProfileChromeExample,
@@ -110,8 +113,17 @@ export function AdminCatalogue() {
         <CatalogueRow name="SignalFilterButton (DayGrid focus filters)" source="apps/admin/components/DayGrid.tsx" usedIn={A} what="The Day grid footer's aria-pressed pills (Needs attention, Conflict, Has note, Has warnings) that narrow and regroup the rows, with Reset filters." replaceWith="shadcn ToggleGroup (multiple) / Toggle" note="Not exported: the row mounts the real DayGrid with an empty roster, so only its live footer shows.">
           <FocusFiltersExample />
         </CatalogueRow>
-        <CatalogueRow name="Dialog (useSurface().Overlay)" source="shared/surface/Dialog.tsx" usedIn={AWM} what="The web Overlay every Admin sheet opens in: a centred card over a scrim, closed by Escape or a scrim click. On the one modal stack (useModalLayer, U2): one Escape closes only the top layer, focus goes in, stays in and comes back, the page behind is inert. About 37 uses." replaceWith="shadcn Dialog" note="Adds scroll lock and aria-labelledby; no portal (the phone frame is scaled).">
+        <CatalogueRow name="Dialog (useSurface().Overlay)" source="shared/surface/Dialog.tsx" usedIn={AWM} what="The web Overlay every Admin sheet opens in: a centred card over a scrim, closed by Escape, the corner X or a scrim click. It sits on the one modal stack with BottomSheet (useModalLayer): one Escape closes only the top layer, focus goes in, stays in and comes back, the page behind is inert, and the OverlayHeader title names the dialog. About 37 uses." replaceWith="shadcn Dialog" note="The library would add scroll lock and a portal; we keep no portal because the phone frame is scaled.">
           <OverlayExample />
+        </CatalogueRow>
+        <CatalogueRow name="OverlayHeader" source="shared/surface/OverlayHeader.tsx" usedIn={AWM} what="The one sheet title: an h2 at 18/700 with an optional 13px slate description. Its id names the enclosing dialog, and on web it brings the Dialog's corner X (Close); on the phone the handle is the close." replaceWith="shadcn DialogHeader + DialogTitle + DialogDescription" note="Every sheet uses it, so the title and the accessible name cannot drift apart.">
+          <OverlayHeaderExample />
+        </CatalogueRow>
+        <CatalogueRow name="SheetActions" source="shared/surface/SheetActions.tsx" usedIn={AWM} what="The one sheet footer, laid out by the surface: stacked primary over secondary on the phone, one row on web with the secondary hugging its label first and the primary last, filling the rest. Footer buttons stay 54px." replaceWith="shadcn DialogFooter" note="Pass the buttons as they are, so labels, disabled state and handlers stay on them.">
+          <SheetActionsExample />
+        </CatalogueRow>
+        <CatalogueRow name="ConfirmSheet" source="shared/surface/ConfirmSheet.tsx" usedIn={AWM} what="The one sheet confirm: the surface's Overlay with an OverlayHeader and SheetActions. Focus opens on the safe button, and a double click runs the primary once. The body between header and footer is the caller's." replaceWith="shadcn AlertDialog" note="Used by ClearConflictSheet and SubmitListSheet. Labels are the caller's.">
+          <ConfirmSheetExample />
         </CatalogueRow>
         <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." replaceWith="shadcn Sheet (side)" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
           <MasterPanelExample />
@@ -129,10 +141,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="DraftListDrawer" source="apps/admin/components/DraftListDrawer.tsx" usedIn={A} what={`The same drawer on SidePanel for a ${DRAFT_LIST} (no session yet): its details, bookings and Assign, Redate, Edit and Remove.`} replaceWith="shadcn Sheet (side)" note="Disabled reasons live only in title tooltips. Its actions write to the demo store.">
           <DraftListDrawerExample />
         </CatalogueRow>
-        <CatalogueRow name="ClearConflictSheet" source="apps/admin/components/conflicts/ClearConflictSheet.tsx" usedIn={A} what="Confirms clearing a hospital-closure conflict on a List, with an optional note." replaceWith="shadcn AlertDialog" note="Correct alertdialog role, focus on the safe action. Confirming clears the conflict in the demo store.">
+        <CatalogueRow name="ClearConflictSheet" source="apps/admin/components/conflicts/ClearConflictSheet.tsx" usedIn={A} what="Confirms clearing a hospital-closure conflict on a List, with an optional note. A ConfirmSheet: focus opens on the safe button and a double click clears once." replaceWith="shadcn AlertDialog" note="Confirming clears the conflict in the demo store.">
           <ClearConflictExample />
         </CatalogueRow>
-        <CatalogueRow name="HistorySheet" source="shared/booking/HistorySheet.tsx" usedIn={AWM} what="The audit history of a record in an Overlay, with expandable steps (HistoryTimeline)." replaceWith="shadcn Dialog + Accordion">
+        <CatalogueRow name="HistorySheet" source="shared/booking/HistorySheet.tsx" usedIn={AWM} what="The audit history of a record in an Overlay, titled by an OverlayHeader, with expandable steps (HistoryTimeline)." replaceWith="shadcn Dialog + Accordion">
           <HistorySheetExample />
         </CatalogueRow>
         <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges (the mockup badge, kept local), the wordmark, the Roles in this prototype dialog and the persona through the shared PersonaChip." replaceWith="shadcn Sidebar" note="Gives real links, aria-current and a nav label; crimson only on --sidebar-primary." height={600}>
@@ -191,7 +203,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips, for a Contract's specialties." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
           <ChipMultiSelectExample />
         </CatalogueRow>
-        <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay: search by code or description, every match rendered." replaceWith="Base UI Combobox + TanStack Virtual" note="Gives combobox and listbox roles and arrow and Enter selection.">
+        <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay titled by an OverlayHeader: search by code or description, every match rendered." replaceWith="Base UI Combobox + TanStack Virtual" note="The library would add combobox and listbox roles and arrow and Enter selection.">
           <CodePickerExample />
         </CatalogueRow>
         <CatalogueRow name="ConflictCallout" source="apps/admin/components/conflicts/ConflictCallout.tsx" usedIn={A} what="Warns, before saving, that the hospital is closed that day and the List will be flagged." replaceWith="shadcn Alert">
@@ -257,7 +269,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, selects, segmented choices, ChipMultiSelect, SurgeonPicker, the RVG code picker and price ranges." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
           <ContractPanelExample />
         </CatalogueRow>
-        <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status: name, colour swatches, flags and a live preview, validated as you type." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store.">
+        <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store.">
           <SlotStatusSheetExample />
         </CatalogueRow>
         <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="Keep Enter-commits and Escape-cancels. Saving writes to the demo store.">

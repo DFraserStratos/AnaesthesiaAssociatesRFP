@@ -3,6 +3,8 @@ import { neutral } from '../../theme/tokens'
 import { setInvoiceDescription, useAppStore, type Actor } from '../../store'
 import { Button, FieldLabel, FormError, TextArea } from '../ui'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { PROCEDURE_TEXT_SOURCE_LABELS } from '../format'
 
 interface EditInvoiceDescriptionSheetProps {
@@ -49,7 +51,7 @@ export function EditInvoiceDescriptionSheet({ open, procedureId, actor, onClose 
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="edit-invoice-description" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Edit invoice description</div>
+        <OverlayHeader title="Edit invoice description" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Procedure text</FieldLabel>
           <div
@@ -63,9 +65,13 @@ export function EditInvoiceDescriptionSheet({ open, procedureId, actor, onClose 
         <TextArea label="What the invoice says" value={text} onChange={setText} />
         <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: -8 }}>Your wording stays if a newer description arrives.</div>
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>
-          Save invoice description
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save}>
+              Save invoice description
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )

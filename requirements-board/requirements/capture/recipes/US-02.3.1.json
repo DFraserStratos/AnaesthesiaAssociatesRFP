@@ -42,7 +42,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[role=dialog]:not([data-testid=admin-list-drawer])"
           ]
         }
       ]

@@ -17,6 +17,8 @@ import { formatPostalAddress } from '../../domain/billing/payer'
 import { setBookingPayer, useAppStore, type Actor, type PayerInput } from '../../store'
 import { Button, FormError, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { PostalAddressFields, addressDraftOf, type PostalAddressDraft } from './PostalAddressFields'
 import { DifferentPayerTick, EMPTY_OTHER_PAYER, OtherPayerFields, otherPayerInput, type OtherPayerDraft } from './PayerFields'
 
@@ -107,10 +109,7 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
     <Overlay open={open} onClose={onClose}>
       <div data-shot="payer-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14, width: variant === 'web' ? 480 : undefined, maxWidth: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>Payer</div>
-          <div style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
-            Invoiced for every procedure whose Contract bills the payer.
-          </div>
+          <OverlayHeader title="Payer" description="Invoiced for every procedure whose Contract bills the payer." />
         </div>
 
         <DifferentPayerTick checked={different} onChange={setDifferent} />
@@ -144,9 +143,13 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
           </div>
         )}
         <FormError message={error} />
-        <Button variant="primary" block onClick={save} disabled={different && other.name.trim() === ''}>
-          Save payer
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save} disabled={different && other.name.trim() === ''}>
+              Save payer
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )

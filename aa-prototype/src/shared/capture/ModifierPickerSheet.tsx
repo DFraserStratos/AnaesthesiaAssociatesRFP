@@ -12,6 +12,7 @@ import {
 import type { Modifier, ModifierId, Procedure } from '../../domain/types'
 import { claimModifier, editModifierExplanation, restoreModifier, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { Button } from '../ui/Button'
 import { FormError } from '../ui/Field'
 import { TextAction } from '../ui/TextAction'
@@ -124,7 +125,7 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="modifier-picker">
-        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>{editing !== undefined ? 'Modifier explanation' : 'Add a modifier'}</div>
+        <OverlayHeader title={editing !== undefined ? 'Modifier explanation' : 'Add a modifier'} style={{ marginBottom: 12 }} />
         {editing === undefined && <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus />}
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px', minHeight: 18 }} aria-live="polite">
           {status ?? (editing !== undefined ? '' : query.trim() === '' ? 'Each modifier you claim needs a short reason.' : `${count} ${count === 1 ? 'match' : 'matches'}`)}

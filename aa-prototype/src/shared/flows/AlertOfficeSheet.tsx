@@ -3,7 +3,10 @@ import { format, parseISO } from 'date-fns'
 import { BellRing, CheckCircle2 } from 'lucide-react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import { alertOffice, activeAlertFor, latestAlertFor, officeAlertRefusal, OFFICE_ALERT_NOTE_MAX, resolveNotification, useAppStore, type Actor } from '../../store'
-import { Button, FormError, TextArea, TickBadge, TickButton } from '../ui'
+import { Button, FormError, TextArea, TickButton } from '../ui'
+import { DoneStep } from '../ui/DoneStep'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { useSurface } from '../surface'
 import { drSurname } from '../format'
 import { sessionText } from '../../domain/outOfHours'
@@ -132,8 +135,7 @@ export function AlertOfficeSheet({ open, actor, target, onClose }: { open: boole
         {!sent ? (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>Alert the office</span>
-              <span style={{ fontSize: 13, color: neutral.slate }}>{what} · {line}</span>
+              <OverlayHeader title="Alert the office" description={<>{what} · {line}</>} />
             </div>
             <div style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
               The office sees your note in its notifications and checks this {what}. It stays there until someone in the office deals with it.
@@ -145,21 +147,27 @@ export function AlertOfficeSheet({ open, actor, target, onClose }: { open: boole
               {trimmed}/{OFFICE_ALERT_NOTE_MAX}
             </span>
             <FormError message={error} />
-            <span data-shot="alert-office-send" style={{ display: 'contents' }}>
-              <Button variant="primary" block disabled={trimmed === 0 || trimmed > OFFICE_ALERT_NOTE_MAX} onClick={send}>
-                Send to the office
-              </Button>
-            </span>
+            <SheetActions
+              primary={
+                <span data-shot="alert-office-send" style={{ display: 'contents' }}>
+                  <Button variant="primary" block disabled={trimmed === 0 || trimmed > OFFICE_ALERT_NOTE_MAX} onClick={send}>
+                    Send to the office
+                  </Button>
+                </span>
+              }
+            />
           </>
         ) : (
-          <div data-shot="alert-office-done" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
-            <TickBadge size={72} animate />
-            <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>The office has been alerted</div>
-            <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center', lineHeight: '19px' }}>It shows in the office's notifications with your note.</div>
-            <Button variant="secondary" block onClick={onClose} style={{ marginTop: 4 }}>
-              Done
-            </Button>
-          </div>
+          <DoneStep
+            shot="alert-office-done"
+            title="The office has been alerted"
+            detail="It shows in the office's notifications with your note."
+            action={
+              <Button variant="secondary" block onClick={onClose}>
+                Done
+              </Button>
+            }
+          />
         )}
       </div>
     </Overlay>

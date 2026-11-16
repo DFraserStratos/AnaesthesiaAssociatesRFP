@@ -5,6 +5,7 @@ import { validateSlotStatusDraft, type SlotStatusDraft } from '../../../domain/s
 import { addSlotStatus, editSlotStatus, useAppStore, type Actor } from '../../../store'
 import { resolveStatusVisual, STATUS_PALETTE } from '../../../theme/statusColours'
 import { blockFill, Button, FieldLabel, FormError, Segmented, StatusChipView, TextArea, TextField, useSurface } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 
 const TREATMENTS: { value: StatusTreatment; label: string }[] = [
   { value: 'solid', label: 'Solid' },
@@ -69,7 +70,7 @@ export function SlotStatusSheet({ status, actor, onClose }: { status?: SlotStatu
     <Overlay open onClose={onClose}>
       <div data-shot="admin-availability-status-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{status === undefined ? 'Add an availability status' : `Edit ${status.label}`}</div>
+          <OverlayHeader title={status === undefined ? 'Add an availability status' : `Edit ${status.label}`} />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>
             Rules read the ID, so a new name or colour changes how it looks, never how it behaves.
           </div>
@@ -139,9 +140,13 @@ export function SlotStatusSheet({ status, actor, onClose }: { status?: SlotStatu
           </ul>
         )}
         <FormError message={error} />
-        <Button variant="primary" block onClick={save} disabled={issues.length > 0}>
-          {status === undefined ? 'Add status' : 'Save changes'}
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save} disabled={issues.length > 0}>
+              {status === undefined ? 'Add status' : 'Save changes'}
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )

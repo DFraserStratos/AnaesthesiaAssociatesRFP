@@ -10,7 +10,7 @@ import { neutral } from '../../../theme/tokens'
 import { effectiveSlotTimes } from '../../../domain/slots'
 import { setSlotTimes, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
 import { sessionText } from '../../../domain/outOfHours'
 
@@ -55,15 +55,15 @@ export function EditSlotTimesSheet({ open, slotId, actor, onClose }: { open: boo
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-edit-session-times" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Edit times</div>
+          <OverlayHeader title="Edit times" />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(slot.dateISO), 'EEE d MMM')} · {sessionText(slot.session)} session</div>
         </div>
         <SessionTimesFields session={slot.session} draft={draft} defaults={defaults} onChange={setDraft} />
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save}>Save times</Button>
-        </div>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={save}>Save times</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

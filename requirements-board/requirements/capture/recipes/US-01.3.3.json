@@ -134,14 +134,14 @@
               "wait": 400
             },
             {
-              "select": "[role=dialog] [data-shot=assign-hospital]",
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=assign-hospital]",
               "value": "H-FORTE"
             },
             {
               "wait": 300
             },
             {
-              "select": "[role=dialog] select[data-shot=surgeon-picker]",
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) select[data-shot=surgeon-picker]",
               "value": "S-OKAFOR"
             },
             {
@@ -149,7 +149,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[role=dialog]:not([data-testid=admin-list-drawer])"
           ],
           "caption": "Book (phone advice): the surgeon is required, times prefilled 13:00 to 17:30"
         }

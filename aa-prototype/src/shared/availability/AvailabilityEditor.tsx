@@ -6,6 +6,8 @@ import { AvailabilityForm, ResultLine, type AvailabilityFormInitial } from './Av
 import { AvailabilitySlotPanel, type ChangeRequest } from './AvailabilitySlotPanel'
 import { useAvailabilityBounds, useAvailabilityDay } from './useAvailability'
 import { dateRange, longDayNoYear } from '../format'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { useOverlayTitleSeam } from '../surface/overlayTitle'
 
 interface AvailabilityEditorProps {
   actor: Actor
@@ -32,6 +34,7 @@ interface AvailabilityEditorProps {
  */
 export function AvailabilityEditor({ actor, anaesthetistId, fromISO, toISO, formPreset, onResult, shot, onDone }: AvailabilityEditorProps) {
   const { todayISO } = useAvailabilityBounds()
+  const inSheet = useOverlayTitleSeam() !== null
   const day = useAvailabilityDay(anaesthetistId, fromISO)
   const range = toISO !== undefined && toISO !== fromISO
   const [request, setRequest] = useState<ChangeRequest | null>(range || formPreset !== undefined ? { sessions: formPreset?.sessions ?? 'both' } : null)
@@ -55,7 +58,12 @@ export function AvailabilityEditor({ actor, anaesthetistId, fromISO, toISO, form
           </button>
         )}
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>{formPreset !== undefined ? 'Add days off' : title}</div>
+          {/* A sheet title in the phone's sheet (U2 OverlayHeader names it); inline on the web rail it keeps its card title. */}
+          {inSheet ? (
+            <OverlayHeader title={formPreset !== undefined ? 'Add days off' : title} />
+          ) : (
+            <div style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>{formPreset !== undefined ? 'Add days off' : title}</div>
+          )}
           <div style={{ fontSize: 12.5, color: neutral.mist }}>
             {request === null ? 'Your AM and PM sessions' : request.instance === true ? 'Change this one only; the series carries on' : 'Set a status for these sessions'}
           </div>

@@ -82,6 +82,10 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
   billing view.
 - **Reset → Confirm reset** in the shared top bar restores the pristine data and clock from any app
   while keeping the current app.
+- Closing things: **Escape** closes only the top layer (a sheet over a drawer closes first, then the
+  drawer) and returns focus to what opened it. Every web and Admin dialog has a corner **X** (Close) at
+  its top right. A phone sheet has no X: its handle or a tap on the scrim closes it. The Demo actions
+  pill, live clock, Reset popup and app switcher also close on Escape or an outside click.
 - Time: 1 unit per 15 minutes for the first two hours.
 - Time after two hours: 1 unit per 10 minutes.
 - Each anaesthetist has an independent dollar value per unit.

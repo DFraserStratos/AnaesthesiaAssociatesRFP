@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, ReactNode, Ref } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 
@@ -13,6 +13,10 @@ interface ButtonProps {
   block?: boolean
   style?: CSSProperties
   type?: 'button' | 'submit'
+  /** The button element, for initial focus (a confirm's safe button; UI unification U2). */
+  buttonRef?: Ref<HTMLButtonElement>
+  /** `data-shot` on the button. */
+  shot?: string
 }
 
 /**
@@ -31,6 +35,8 @@ export function Button({
   block = false,
   style,
   type = 'button',
+  buttonRef,
+  shot,
 }: ButtonProps) {
   const base: CSSProperties = {
     fontFamily: 'inherit',
@@ -78,7 +84,7 @@ export function Button({
   }
 
   return (
-    <button type={type} onClick={disabled ? undefined : onClick} disabled={disabled} style={{ ...base, ...variantStyle, ...style }}>
+    <button ref={buttonRef} type={type} data-shot={shot} onClick={disabled ? undefined : onClick} disabled={disabled} style={{ ...base, ...variantStyle, ...style }}>
       {children}
     </button>
   )

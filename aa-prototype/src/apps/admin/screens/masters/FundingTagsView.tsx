@@ -3,6 +3,7 @@ import { neutral } from '../../../../theme/tokens'
 import { FUNDER_PARTY_KINDS, fundingTagsInOrder, fundingTagUsage, normaliseTagCode, type FundingTag } from '../../../../domain/billing/fundingTags'
 import { createFundingTag, editFundingTag, moveFundingTagInList, removeFundingTag, useAppStore, type Actor } from '../../../../store'
 import { Button, FieldLabel, FormError, TextField, useSurface } from '../../../../shared'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
 import { PARTY_KIND_LABEL } from '../../../../shared/contracts'
 import { selectControlStyle } from '../../flows/fieldChrome'
@@ -90,7 +91,7 @@ function FundingTagSheet({ tag, actor, onClose }: { tag?: FundingTag; actor: Act
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="funding-tag-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{tag === undefined ? 'Add a funding tag' : `Edit ${tag.code}`}</div>
+        <OverlayHeader title={tag === undefined ? 'Add a funding tag' : `Edit ${tag.code}`} />
         <TextField label="Code" value={code} onChange={(v) => setCode(normaliseTagCode(v))} mono placeholder="e.g. NZDF" hint="The short label shown on Contracts and when choosing one." />
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Funder</FieldLabel>
@@ -106,7 +107,7 @@ function FundingTagSheet({ tag, actor, onClose }: { tag?: FundingTag; actor: Act
         <div id={funderHintId} style={{ fontSize: 12, color: neutral.mist, marginTop: -8 }}>The insurer or funder whose work arrives under this tag. Optional.</div>
         {tag !== undefined && <div style={{ fontSize: 12.5, color: neutral.slate }}>Changing the code does not rename the Fixed price Contracts already made for it; rename those in Contracts.</div>}
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{tag === undefined ? 'Add funding tag' : 'Save changes'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{tag === undefined ? 'Add funding tag' : 'Save changes'}</Button>} />
       </div>
     </Overlay>
   )

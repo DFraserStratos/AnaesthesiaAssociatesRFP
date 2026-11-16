@@ -92,10 +92,10 @@ export function WebCatalogue() {
           <CatalogueRow name="Progress bar" source="apps/web/screens/ListDetailView.tsx" usedIn={WM} what="How many Bookings on the List are complete, as a count and a green bar that eases to its new width." replaceWith="shadcn Progress" note="Recreated: inline in ListDetailView.tsx. No progressbar role or value today.">
             <D.ProgressBarDemo />
           </CatalogueRow>
-          <CatalogueRow name="Dialog (web Overlay)" source="shared/surface/Dialog.tsx" usedIn={WA} what="The web surface's modal: a centred card over a scrim, closed by Escape or a scrim click. Shown with the dashboard's Which List? picker." replaceWith="shadcn Dialog" note="The Overlay is real; the picker content is recreated from DashboardScreen.tsx. No focus trap, initial focus, restore or scroll lock today.">
+          <CatalogueRow name="Dialog (web Overlay)" source="shared/surface/Dialog.tsx" usedIn={WA} what="The web surface's modal: a centred card over a scrim, closed by Escape, the corner X or a scrim click. On the one modal stack (useModalLayer): focus goes in, stays in and comes back, and the OverlayHeader title names the dialog. Shown with the dashboard's Which List? picker." replaceWith="shadcn Dialog" note="The Overlay is real; the picker content is recreated from DashboardScreen.tsx. The library would add scroll lock.">
             <D.DialogDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="SubmitListSheet" source="shared/flows/SubmitListSheet.tsx" usedIn={WM} what="The submit flow's sheet. In blockers mode it lists each Booking still to finish and why." replaceWith="shadcn Dialog (AlertDialog for the confirm step)" note="Only blockers mode is offered here; confirm mode submits the List for real.">
+          <CatalogueRow name="SubmitListSheet" source="shared/flows/SubmitListSheet.tsx" usedIn={WM} what="The submit flow's sheet. In blockers mode it lists each Booking still to finish and why; confirm mode is a ConfirmSheet." replaceWith="shadcn Dialog (AlertDialog for the confirm step)" note="Only blockers mode is offered here; confirm mode submits the List for real.">
             <D.SubmitListSheetDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="WebSearchField" source="apps/web/screens/ListsLookback.tsx" usedIn={W} what="The Lists page's pill search box for a patient name or NHI, with a clear button once you type." replaceWith="shadcn Input Group (search)" note="One of three search inputs (with NameSearchBox and mobile's LookbackSearchRow); merge into one.">
@@ -110,7 +110,7 @@ export function WebCatalogue() {
           <CatalogueRow name="SeriesList" source="shared/availability/SeriesList.tsx" usedIn={WM} what="Her repeating days off, each with Delete and an inline are-you-sure step." replaceWith="shadcn Card list + AlertDialog" note="The inline confirm becomes an AlertDialog. Deleting a series changes the demo data.">
             <D.SeriesListDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={ALL} what="The RVG code type-ahead in an Overlay: every code under its anatomy heading, search by code or description, every row showing code, description and base units." replaceWith="shadcn Combobox (Base UI) + TanStack Virtual" note="Picks are held locally here. No combobox or listbox roles, and every row renders.">
+          <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={ALL} what="The RVG code type-ahead in an Overlay titled by an OverlayHeader: every code under its anatomy heading, search by code or description, every row showing code, description and base units." replaceWith="shadcn Combobox (Base UI) + TanStack Virtual" note="Picks are held locally here. The library would add combobox and listbox roles and virtualise the rows.">
             <D.CodePickerDemo />
           </CatalogueRow>
           <CatalogueRow name="RvgCodeList" source="shared/capture/RvgCodeList.tsx" usedIn={ALL} what="Every RVG code under its anatomy heading, the heading pinned to the top of the list until its rows scroll past; shared by the type-ahead field and the code sheet." replaceWith="Base UI Combobox groups + TanStack Virtual" note="Shown inside CodePickerSheet above and RvgCodeField below. Every row renders.">
@@ -158,7 +158,7 @@ export function WebCatalogue() {
           <CatalogueRow name="AvailabilityEditor" source="shared/availability/AvailabilityEditor.tsx" usedIn={WM} what="The rail on My availability: the selected day's AM and PM sessions and the form to change them, set a range or repeat." replaceWith="React Hook Form + Zod + shadcn Field" note="Hand-rolled form state and errors. Saving changes the demo data." height={520}>
             <D.AvailabilityEditorDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="AlertOfficeEntry" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} what="Alert the office about this List: opens a short message sheet, then shows the open alert's status." replaceWith="shadcn Dialog + Field + React Hook Form" note="Sending an alert writes to the demo data.">
+          <CatalogueRow name="AlertOfficeEntry" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} what="Alert the office about this List: opens a short message sheet (OverlayHeader and SheetActions), then a DoneStep for the sent step, then shows the open alert's status." replaceWith="shadcn Dialog + Field + React Hook Form" note="Sending an alert writes to the demo data.">
             <D.AlertOfficeDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="OverrideCard" source="shared/capture/OverrideCard.tsx" usedIn={ALL} what="A Procedure's price adjustment or fixed charge with its mandatory reason, saved on Save." replaceWith="Base UI NumberField + shadcn Field + React Hook Form" note="Live on a seeded Booking; saving writes to the demo data.">

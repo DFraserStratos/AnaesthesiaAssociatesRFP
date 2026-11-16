@@ -8,7 +8,8 @@
 import { useEffect, useState } from 'react'
 import { describeConflict, type ExpectedConflict } from '../../../../domain/conflicts'
 import { clearListConflict, useAppStore, useConflictLookups, type Actor } from '../../../../store'
-import { Button, FormError, TextArea, useSurface } from '../../../../shared'
+import { FormError, TextArea } from '../../../../shared'
+import { ConfirmSheet } from '../../../../shared/surface'
 import { neutral } from '../../../../theme/tokens'
 
 export function ClearConflictSheet({
@@ -26,7 +27,6 @@ export function ClearConflictSheet({
   onClose: () => void
   onCleared?: () => void
 }) {
-  const { Overlay } = useSurface()
   const list = useAppStore((s) => s.schedule.lists[listId])
   const lookups = useConflictLookups()
   const [note, setNote] = useState('')
@@ -53,9 +53,15 @@ export function ClearConflictSheet({
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div data-shot="conflict-clear-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Clear this conflict</div>
+    <ConfirmSheet
+      open={open}
+      onClose={onClose}
+      title="Clear this conflict"
+      shot="conflict-clear-sheet"
+      confirmLabel="Clear"
+      onConfirm={clear}
+      cancelLabel="Cancel"
+    >
         <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
           <strong style={{ color: neutral.ink }}>{described.reason}.</strong> {described.detail}
         </div>
@@ -64,11 +70,6 @@ export function ClearConflictSheet({
         </div>
         <TextArea label="Note (optional)" value={note} onChange={setNote} placeholder="e.g. Theatre confirmed running" />
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" block onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={clear}>Clear</Button>
-        </div>
-      </div>
-    </Overlay>
+    </ConfirmSheet>
   )
 }

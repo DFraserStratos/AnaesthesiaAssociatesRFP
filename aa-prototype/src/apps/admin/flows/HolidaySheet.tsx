@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { plural, shortDay } from '../../../shared/format'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { addHospitalHoliday, deleteHospitalHoliday, editHospitalHoliday, listsFlaggedByHoliday, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, FormError, TextField, useSurface } from '../../../shared'
@@ -89,7 +90,7 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot={editing ? 'holiday-edit-sheet' : 'holiday-add-sheet'} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{editing ? 'Change a hospital holiday' : 'Add a hospital holiday'}</div>
+        <OverlayHeader title={editing ? 'Change a hospital holiday' : 'Add a hospital holiday'} />
         {editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <FieldLabel>Hospital</FieldLabel>
@@ -118,25 +119,25 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
         {result !== null ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div role="status" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{result}</div>
-            <Button variant="primary" block onClick={onClose}>Done</Button>
+            <SheetActions primary={<Button variant="primary" block onClick={onClose}>Done</Button>} />
           </div>
         ) : confirmDelete && existing !== undefined ? (
           <div data-shot="holiday-delete-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, color: neutral.ink }}>
               Deleting {existing.name} on {shortDay(existing.dateISO)} clears {plural(flaggedNow, 'flagged List')}.
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="secondary" block onClick={() => setConfirmDelete(false)}>Keep it</Button>
-              <Button variant="primary" block onClick={remove}>Delete holiday</Button>
-            </div>
+            <SheetActions
+              primary={<Button variant="primary" block onClick={remove}>Delete holiday</Button>}
+              secondary={<Button variant="secondary" block onClick={() => setConfirmDelete(false)}>Keep it</Button>}
+            />
           </div>
         ) : editing ? (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="secondary" block onClick={() => setConfirmDelete(true)}>Delete holiday</Button>
-            <Button variant="primary" block onClick={save}>Save changes</Button>
-          </div>
+          <SheetActions
+            primary={<Button variant="primary" block onClick={save}>Save changes</Button>}
+            secondary={<Button variant="secondary" block onClick={() => setConfirmDelete(true)}>Delete holiday</Button>}
+          />
         ) : (
-          <Button variant="primary" block onClick={save}>Add holiday</Button>
+          <SheetActions primary={<Button variant="primary" block onClick={save}>Add holiday</Button>} />
         )}
       </div>
     </Overlay>

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { elevation, neutral, radius, scrim, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import { useRegisterOpenSheet } from './sheetPresence'
 import { useModalLayer } from './useModalLayer'
+import { OverlayTitleContext } from './overlayTitle'
 
 interface BottomSheetProps {
   open: boolean
@@ -10,6 +11,8 @@ interface BottomSheetProps {
   children: ReactNode
   /** Hide the drag handle (e.g. when the sheet owns its own header chrome). */
   hideHandle?: boolean
+  /** The control that takes focus on open (a confirm's safe button). */
+  initialFocusRef?: RefObject<HTMLElement>
 }
 
 /**
@@ -26,14 +29,17 @@ interface BottomSheetProps {
  * `Dialog` so shared flows render as centred dialogs without any per-platform
  * branching in the flow bodies themselves.
  */
-export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, children, hideHandle, initialFocusRef }: BottomSheetProps) {
   const [closing, setClosing] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   // The one modal stack (U2): Escape (a keyboard on the installed PWA, F
   // question 7) closes the top sheet through the same slide-down as the scrim
   // and handle; focus goes in and comes back; the screens behind are inert.
-  useModalLayer({ open, onClose: requestClose, rootRef, panelRef })
+  useModalLayer({ open, onClose: requestClose, rootRef, panelRef, initialFocusRef })
+  // The `OverlayHeader` inside names the sheet; no corner X on the phone, the handle is the close (convention 16).
+  const [titleId, setTitleId] = useState<string | null>(null)
+  const seam = useMemo(() => ({ register: setTitleId, corner: false }), [])
 
   useEffect(() => {
     if (!closing) return undefined
@@ -71,6 +77,7 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
         ref={panelRef}
         role="dialog"
         aria-modal
+        aria-labelledby={titleId ?? undefined}
         tabIndex={-1}
         style={{
           outline: 'none',
@@ -127,7 +134,7 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
             />
           </button>
         )}
-        {children}
+        <OverlayTitleContext.Provider value={seam}>{children}</OverlayTitleContext.Provider>
       </div>
     </div>
   )

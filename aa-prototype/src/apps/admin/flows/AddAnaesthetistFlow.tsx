@@ -4,6 +4,7 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { GstPeriod } from '../../../domain/types'
 import { addAnaesthetist, useAppStore, useToday, type Actor } from '../../../store'
 import { Button, Segmented, TextField } from '../../../shared'
+import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { useSurface } from '../../../shared'
 import { GST_OPTIONS } from './fieldChrome'
 
@@ -72,7 +73,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Add an anaesthetist</div>
+        <OverlayHeader title="Add an anaesthetist" />
         <div style={{ fontSize: 12.5, color: neutral.slate }}>Adding an anaesthetist creates their AM and PM sessions, free, from their start date.</div>
         <TextField label="Registration number (ID)" value={registrationNumber} onChange={setRegistrationNumber} mono placeholder="e.g. 41552" />
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Dr Nadia Kerr" />
@@ -96,10 +97,10 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
         {result !== null ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{result}</div>
-            <Button variant="primary" block onClick={onClose}>Done</Button>
+            <SheetActions primary={<Button variant="primary" block onClick={onClose}>Done</Button>} />
           </div>
         ) : (
-          <Button variant="primary" block onClick={save}>Add anaesthetist</Button>
+          <SheetActions primary={<Button variant="primary" block onClick={save}>Add anaesthetist</Button>} />
         )}
       </div>
     </Overlay>

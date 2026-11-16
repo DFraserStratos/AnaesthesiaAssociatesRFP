@@ -3,6 +3,7 @@ import { neutral } from '../../../../theme/tokens'
 import { specialtiesInOrder, specialtyUsage, type Specialty } from '../../../../domain/specialties'
 import { createSpecialty, removeSpecialty, renameSpecialty, useAppStore, type Actor } from '../../../../store'
 import { Button, FormError, TextField, useSurface } from '../../../../shared'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle } from './tableStyles'
@@ -84,7 +85,7 @@ function SpecialtySheet({ specialty, actor, onClose }: { specialty?: Specialty; 
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="specialty-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{specialty === undefined ? 'Add a specialty' : `Rename ${specialty.name}`}</div>
+        <OverlayHeader title={specialty === undefined ? 'Add a specialty' : `Rename ${specialty.name}`} />
         <TextField
           label="Name"
           value={name}
@@ -93,7 +94,7 @@ function SpecialtySheet({ specialty, actor, onClose }: { specialty?: Specialty; 
           hint={specialty === undefined ? 'One broad name, with no subspecialty.' : 'Every surgeon and Contract holding it shows the new name.'}
         />
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{specialty === undefined ? 'Add specialty' : 'Save name'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{specialty === undefined ? 'Add specialty' : 'Save name'}</Button>} />
       </div>
     </Overlay>
   )

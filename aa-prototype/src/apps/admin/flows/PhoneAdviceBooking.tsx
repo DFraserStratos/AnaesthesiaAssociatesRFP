@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { neutral } from '../../../theme/tokens'
 import { ANAE, HOSP, RVG_GROUP, SURG } from '../../../domain/seed'
 import { effectiveSlotTimes } from '../../../domain/slots'
 import { assignListToSlot, setSlotTimes, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
 import { AddBookingFlow } from '../../../shared/flows'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, useNotPreferredWarning } from '../components/pairing'
 import { AssignListFields, assignDraftError, emptyAssignDraft, type AssignDraft } from './AssignListFields'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
@@ -124,10 +123,10 @@ export function PhoneAdviceBooking({ open, slotId, actor, onClose, onBooked }: P
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-phone-advice" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Book (phone advice)</div>
-        <div style={{ fontSize: 13, color: neutral.slate }}>
-          A call from the surgeon's rooms. Assign the List for this session, then add the patient's booking.
-        </div>
+        <OverlayHeader
+          title="Book (phone advice)"
+          description="A call from the surgeon's rooms. Assign the List for this session, then add the patient's booking."
+        />
 
         <AssignListFields
           anaesthetistId={slot.anaesthetistId}
@@ -146,7 +145,7 @@ export function PhoneAdviceBooking({ open, slotId, actor, onClose, onBooked }: P
         <FormError message={error} />
         {/* Catch-up Phase 17: warn, never block; the acknowledgement lands with the assignment. */}
         <NotPreferredWarning warning={pairingWarning} shot="phone-advice-pairing-warning" />
-        <Button variant="primary" block onClick={continueToBooking}>{pairingWarning !== null ? 'Continue anyway' : 'Continue to add booking'}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={continueToBooking}>{pairingWarning !== null ? 'Continue anyway' : 'Continue to add booking'}</Button>} />
       </div>
     </Overlay>
   )

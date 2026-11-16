@@ -3,6 +3,7 @@ import { neutral } from '../../theme/tokens'
 import { useAppStore } from '../../store'
 import { sortAuditNewestFirst } from '../audit'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { HistoryTimeline } from './HistoryTimeline'
 
 interface HistorySheetProps {
@@ -65,7 +66,7 @@ export function HistorySheet({ open, entityIds, entityLabels, title, onClose }: 
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{title}</div>
+        <OverlayHeader title={title} />
         <div style={{ fontSize: 12.5, color: neutral.mist }}>Every change to this record, most recent first.</div>
         <HistoryTimeline
           entries={entries}

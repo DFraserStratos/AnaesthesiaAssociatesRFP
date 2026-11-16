@@ -15,6 +15,7 @@ import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../../store'
 import { addPairingPreference } from '../../../../store/officePrivate'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../../shared'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { selectControlStyle } from '../../flows/fieldChrome'
 import type { PairingPerspective } from './perspective'
 import { usePairingEntries } from './useOfficePairings'
@@ -94,7 +95,7 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
     <Overlay open onClose={onClose}>
       <div data-shot="pairing-add-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{PAIRING_LABELS.add}</div>
+          <OverlayHeader title={PAIRING_LABELS.add} />
           <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: 2 }}>{PAIRING_LABELS.privacyNote}</div>
         </div>
 
@@ -145,7 +146,7 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
         <TextField label="Reason (optional)" value={reason} onChange={setReason} placeholder="e.g. Works well together on long eye lists" />
 
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>{PAIRING_LABELS.add}</Button>
+        <SheetActions primary={<Button variant="primary" block onClick={save}>{PAIRING_LABELS.add}</Button>} />
       </div>
     </Overlay>
   )

@@ -166,7 +166,8 @@ test('no warning for a not-preferred receiver: Mrs Riley (Ms Lim) to Dr Ropata r
   await expect(confirm).toContainText("A new List is created in Dr Ropata's Fri 24 Jul AM session at Forte Health.")
   await expect(confirm.locator('[data-shot="move-booking-honour"]')).toContainText('Dr Ropata claims it.')
   await clean(page, '[data-shot="move-booking-confirm"]', 'not-preferred confirm')
-  await expect(confirm.getByRole('button')).toHaveText(['Move Booking', 'Back'])
+  // Web footer (UI unification U2, question 13): Back hugging first, the primary last.
+  await expect(confirm.getByRole('button')).toHaveText(['Back', 'Move Booking'])
   await page.screenshot({ path: 'visual/shots/p32a-14-not-preferred-confirm.png' })
 })
 

@@ -10,7 +10,7 @@ import { neutral } from '../../../theme/tokens'
 import { bookingCountsByList, redateDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
 import type { Session } from '../../../domain/types'
 import { Button, FieldLabel, FormError, Segmented } from '../../../shared/ui'
-import { useSurface } from '../../../shared/surface'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 import { assignSelectStyle } from './AssignListFields'
 
@@ -55,7 +55,7 @@ export function RedateDraftListSheet({ open, listId, actor, onClose, onDone }: {
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-redate-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Change date</div>
+        <OverlayHeader title="Change date" />
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
             <FieldLabel>Day</FieldLabel>
@@ -67,10 +67,10 @@ export function RedateDraftListSheet({ open, listId, actor, onClose, onDone }: {
           {bookings > 0 ? `Its ${bookings} Booking${bookings === 1 ? '' : 's'} move${bookings === 1 ? 's' : ''} with it. ` : ''}The {DRAFT_LIST} keeps how long it has been waiting.
         </div>
         <FormError message={error} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" block onClick={save}>Change date</Button>
-        </div>
+        <SheetActions
+          primary={<Button variant="primary" block onClick={save}>Change date</Button>}
+          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
+        />
       </div>
     </Overlay>
   )

@@ -28,7 +28,7 @@ describe('AdminCatalogue', () => {
   it('renders the rows, grouped by replacement library', () => {
     const { container } = renderPage()
     expect(screen.getByRole('heading', { level: 1, name: 'Admin Web App · UI components' })).toBeInTheDocument()
-    for (const name of ['Button', 'SlotDrawer', 'DayGrid', 'CodePickerSheet', 'SuccessOverlay', 'InvoiceDocument', 'MiniCalendar (RightRail)', 'AuditViewer']) {
+    for (const name of ['Button', 'SlotDrawer', 'DayGrid', 'CodePickerSheet', 'SuccessOverlay', 'InvoiceDocument', 'MiniCalendar (RightRail)', 'AuditViewer', 'SidePanel', 'PopoverPanel', 'OverlayHeader', 'SheetActions', 'ConfirmSheet']) {
       expect(container.querySelector(`[data-catalogue-row="${name}"]`)).not.toBeNull()
     }
     const rows = container.querySelectorAll('[data-catalogue-row]')

@@ -17,9 +17,8 @@
  */
 
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
-import { X } from 'lucide-react'
 import { elevation, neutral, scrim, type as typeScale, zIndex } from '../../../theme/tokens'
-import { useModalLayer } from '../../../shared/surface'
+import { CornerClose, useModalLayer } from '../../../shared/surface'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 
 export const SIDE_PANEL_WIDTH = { list: ADMIN_LIST_DRAWER_WIDTH, record: 600 } as const
@@ -70,7 +69,7 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
   const layout = footerLayout ?? (record ? 'end' : 'row')
   return (
     <div ref={rootRef}>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
+      <div onClick={onClose} aria-hidden style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
       <aside
         ref={panelRef}
         role="dialog"
@@ -89,9 +88,7 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
             {meta !== undefined &&
               (record ? <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', fontSize: 13, color: neutral.slate }}>{meta}</div> : meta)}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
-            <X size={20} aria-hidden />
-          </button>
+          <CornerClose onClose={onClose} />
         </header>
         <div style={{ flex: 1, overflowY: 'auto', padding: record ? '20px 24px' : 24, display: 'flex', flexDirection: 'column', gap: bodyGap ?? (record ? 20 : 16) }}>{children}</div>
         {footer !== undefined && (

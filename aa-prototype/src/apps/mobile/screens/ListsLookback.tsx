@@ -20,6 +20,7 @@ import { listRowModel } from './listRowModel'
 import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
 import { dayWithYear, longDay, nhiBadge, shortDay, plural } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
+import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 
 // ---------------------------------------------------------------------------
 // The header row: search field and calendar button
@@ -127,7 +128,7 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
   return (
     <div data-shot="mobile-lookback-calendar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div>
-        <div style={{ fontSize: 17, fontWeight: 600 }}>Go to a date</div>
+        <OverlayHeader title="Go to a date" />
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>A dot marks a day with one of your Lists.</div>
       </div>
       <MonthGrid

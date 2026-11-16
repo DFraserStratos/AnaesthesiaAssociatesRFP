@@ -4,6 +4,8 @@ import type { Procedure } from '../../domain/types'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
 import { Button, FieldLabel, FormError, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { OverlayHeader } from '../surface/OverlayHeader'
+import { SheetActions } from '../surface/SheetActions'
 import { ProcedureContractRow } from '../booking/ProcedureContractRow'
 
 interface EditBillingSetupSheetProps {
@@ -50,7 +52,7 @@ export function EditBillingSetupSheet({ open, procedure, actor, onClose }: EditB
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="contract-and-reference" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Contract and reference</div>
+        <OverlayHeader title="Contract and reference" />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Contract</FieldLabel>
@@ -62,9 +64,13 @@ export function EditBillingSetupSheet({ open, procedure, actor, onClose }: EditB
         <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract reference" />
 
         <FormError message={error} />
-        <Button variant="primary" block onClick={save}>
-          Save reference
-        </Button>
+        <SheetActions
+          primary={
+            <Button variant="primary" block onClick={save}>
+              Save reference
+            </Button>
+          }
+        />
       </div>
     </Overlay>
   )
