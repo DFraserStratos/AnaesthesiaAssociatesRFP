@@ -44,7 +44,7 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `Pill` | `ui/Pill.tsx` | A tone label: status, kind, attention flag. `tone` neutral, success, warning, error; `size` sm, md (inline, default), lg (table, `4px 10px` 11/600); `variant` tint or outline; `leading`, `mono`, `title`, `shot`, `data-*` | U3 (done) |
 | `NameSearchBox` | `ui/NameSearchBox.tsx` | The type-ahead name search | U4 (field fill) |
 | `FieldLabel` | `ui/Field.tsx` | The label above a field | U4 |
-| `FormError` | `ui/Field.tsx` | A refusal box under a form | U3 (announced, one look) |
+| `FormError` | `ui/Field.tsx` | Every refusal: the `box` under a form, or the `inline` line beside a compact row control; always `role="alert"`; `shot` (U3) | None planned |
 | `TextField` | `ui/Field.tsx` | A labelled text, date or number input | U4 (number, time, `min`, `max`, `invalid`, `size`, `fill`) |
 | `TextArea` | `ui/Field.tsx` | A labelled multi-line input | U4 (counter) |
 | `Segmented` | `ui/Field.tsx` | A labelled choice between a few options | U5 |
@@ -58,6 +58,9 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `AttentionDot` | `warnings/AttentionDot.tsx` | The solid "!" or triangle marker, 13px by default; `aria-hidden` unless labelled; `WarningTriangle` composes it (U3) | None planned |
 | `Avatar` | `Avatar.tsx` | Initials in a disc beside a printed name: `elevated` (mobile), `tint` (web and Admin), `neutral` (move sheets, `muted`); mockup font steps (U3) | None planned |
 | `PersonaChip` | `PersonaChip.tsx` | The signed-in persona on an ink bar: avatar, name, role (U3) | None planned |
+| `Notice` | `ui/Notice.tsx` | A non-blocking note: warning, error (booking-level only), success, neutral; `live` only where it announces; `action` slot (U3) | None planned |
+| `ResultLine` | `ui/ResultLine.tsx` | "It worked" in success green; `role="status"` always mounted (scope `[role=status]` by `data-shot`); `actions`, `onDismiss`, `plain` (U3) | None planned |
+| `EmptyState` | `ui/EmptyState.tsx` | "Nothing here": `inline`, `card`, `centred`; `title`, `action` (U3) | None planned |
 | `Dialog` | `surface/Dialog.tsx` | The centred web and Admin overlay | U2 (`useModalLayer`, `OverlayHeader`, corner X) |
 | `BottomSheet` | `surface/BottomSheet.tsx` | The phone's bottom sheet | U2 (`useModalLayer`, `OverlayHeader`, `SheetActions`) |
 | `SurfaceProvider` | `surface/SurfaceProvider.tsx` | Chooses sheet or dialog per surface; the frosted dock | U2 |

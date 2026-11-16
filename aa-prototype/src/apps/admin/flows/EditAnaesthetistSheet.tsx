@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import type { Anaesthetist, GstPeriod } from '../../../domain/types'
 import { normaliseHpiCpn } from '../../../domain/surgeons'
 import { editAnaesthetist, useAppStore, type Actor } from '../../../store'
@@ -10,6 +10,7 @@ import { useSurface } from '../../../shared'
 import { GST_OPTIONS } from './fieldChrome'
 import { anaesthetistRecordPath } from '../mastersPaths'
 import { textActionStyle } from '../tableChrome'
+import { FormError } from '../../../shared/ui'
 
 interface Props {
   open: boolean
@@ -108,9 +109,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
         {anaesthetist.active && active === 'inactive' && (
           <div style={{ fontSize: 12.5, color: neutral.slate }}>Their sessions from today are removed.</div>
         )}
-        {error !== null && (
-          <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-        )}
+        <FormError message={error} />
         <SheetActions primary={<Button variant="primary" block onClick={save}>Save changes</Button>} />
       </div>
     </Overlay>

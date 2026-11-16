@@ -32,6 +32,7 @@ import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { resolveDisplayStatus } from '../../../shared'
 import { DayChip, LookbackDayView, LookbackResults, LookbackSearchRow } from './ListsLookback'
 import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -392,7 +393,7 @@ export function ForwardListsScreen({
           {todaySection !== undefined && renderRows(todaySection.rows)}
           {/* To-Do and Done count earlier Lists too: empty only when both parts are. */}
           {forward.length === 0 && (filter === 'week' || filter === 'month' || earlierCount === 0) && (
-            <div style={{ marginTop: 20, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>{EMPTY_FORWARD[filter]}</div>
+            <EmptyState variant="centred">{EMPTY_FORWARD[filter]}</EmptyState>
           )}
           {laterSections.map((section) => (
             <div key={section.date}>

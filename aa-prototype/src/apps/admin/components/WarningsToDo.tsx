@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
+import { FormError } from '../../../shared/ui/Field'
 import { drSurname, shortDay, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { ClearWarningButton, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { sessionText } from '../../../domain/outOfHours'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 /** Rows shown before "Show all". */
 export const TODO_VISIBLE_ROWS = 6
@@ -66,8 +68,8 @@ export function WarningsToDo({
           {plural(conflicts, 'open conflict')}
         </button>
       )}
-      {rows.length === 0 && conflicts === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing needs attention.</div>}
-      {rows.length === 0 && conflicts > 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No open warnings.</div>}
+      {rows.length === 0 && conflicts === 0 && <EmptyState>Nothing needs attention.</EmptyState>}
+      {rows.length === 0 && conflicts > 0 && <EmptyState>No open warnings.</EmptyState>}
       {shown.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {shown.map((r) => {
@@ -124,7 +126,7 @@ export function WarningsToDo({
           {expanded ? 'Show fewer' : `Show all (${rows.length})`}
         </button>
       )}
-      {error !== null && <div role="alert" style={{ fontSize: 12, color: neutral.slate }}>{error}</div>}
+      <FormError message={error} variant="inline" />
     </section>
   )
 }

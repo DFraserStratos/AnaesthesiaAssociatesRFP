@@ -10,6 +10,7 @@ import { PairingSection, useProfileHistory } from '../components/pairing'
 import { BackLink, Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
 import { mastersViewPath, surgeonProfilePath } from '../mastersPaths'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 /**
  * The surgeon profile (catch-up Phase 17; US-13.6.2, US-13.6.1, US-13.6.3,
@@ -73,7 +74,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
                 {colleagues.length === 0 ? (
-                  <div style={{ fontSize: 13, color: neutral.mist }}>No other surgeons.</div>
+                  <EmptyState>No other surgeons.</EmptyState>
                 ) : (
                   colleagues.map((c) => (
                     <Link key={c.id} to={surgeonProfilePath(c.id)} className="aa-table-entity-link" style={{ fontSize: 14 }}>

@@ -9,6 +9,7 @@ import { hhmm, shortDay } from '../format'
 import { strongestOpen } from './useBookingWarnings'
 import { KIND_LABELS, STRENGTH_LABELS, warningPillTone, warningTone } from './tone'
 import { Pill } from '../ui/Pill'
+import { FormError } from '../ui/Field'
 
 /** "Tue 21 Jul 10:05" for a clearance time. */
 export function clearanceWhen(atISO: string): string {
@@ -140,7 +141,7 @@ export function WarningsPanel({
       {open.length > 0 && (
         <span style={{ fontSize: 11.5, opacity: 0.85 }}>A warning, never a block: it never stops completion or submission.</span>
       )}
-      {error !== null && <span role="alert" style={{ fontSize: 12, fontWeight: 600 }}>{error}</span>}
+      <FormError message={error} variant="inline" />
     </section>
   )
 }

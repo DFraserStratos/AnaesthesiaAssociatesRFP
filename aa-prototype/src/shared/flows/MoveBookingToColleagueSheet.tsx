@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronRight } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius } from '../../theme/tokens'
 import {
   bookingRequiresPrepayment,
   moveBookingToAnaesthetist,
@@ -13,7 +13,7 @@ import {
 import { bookingMoveReceivers, freeColleagues, type BookingMoveInput, type BookingReceiver } from '../../domain/bookingMoves'
 import type { AssignedList, Booking } from '../../domain/types'
 import { drSurname, locationName } from '../format'
-import { Button, NameSearchBox, TextArea } from '../ui'
+import { Button, NameSearchBox, TextArea, FormError } from '../ui'
 import { DoneStep } from '../ui/DoneStep'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -248,11 +248,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
               </span>
             </label>
 
-            {error !== null && (
-              <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-                {error}
-              </div>
-            )}
+            <FormError message={error} />
             <SheetActions
               primary={
                 <span data-shot="move-booking-submit" style={{ display: 'contents' }}>

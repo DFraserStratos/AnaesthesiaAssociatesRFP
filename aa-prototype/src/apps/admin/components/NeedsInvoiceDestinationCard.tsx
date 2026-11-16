@@ -4,6 +4,7 @@ import { accent, neutral, radius } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
 import { shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 const VISIBLE_ROWS = 5
 
@@ -33,7 +34,7 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
         <CountBadge count={rows.length} srNoun={rows.length === 1 ? 'procedure' : 'procedures'} />
       </h2>
       {rows.length === 0 ? (
-        <div style={{ fontSize: 12.5, color: neutral.mist }}>Every Booking has an invoice destination.</div>
+        <EmptyState>Every Booking has an invoice destination.</EmptyState>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {shown.map((row) => (

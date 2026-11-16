@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/scheduleTerms'
 import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, procedureStackViewFor, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
@@ -27,6 +27,9 @@ import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { surgeonProfilePath } from '../mastersPaths'
 import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
+import { FormError } from '../../../shared/ui'
+import { Notice } from '../../../shared/ui/Notice'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 interface SlotDrawerProps {
   /** The session open in the drawer (a Slot id). */
@@ -188,7 +191,7 @@ function ListBody({
           </Section>
 
           <Section label={`Bookings (${activeBookings.length})`}>
-            {bookings.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No bookings on this List yet.</div>}
+            {bookings.length === 0 && <EmptyState>No bookings on this List yet.</EmptyState>}
             {bookings.map((booking) => {
               const patient = masters.patients[booking.patientId]
               const cancelled = booking.cancellation !== undefined
@@ -378,9 +381,7 @@ function EmptySessionDrawer({
               </div>
             </Section>
           )}
-          {error !== null && (
-            <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-          )}
+          <FormError message={error} />
       </SidePanel>
 
       <HistorySheet open={sheet === 'history'} entityIds={[slot.id]} title="Session history" onClose={() => setSheet('none')} />
@@ -398,10 +399,10 @@ function MovedHereLine({ listId, anaesthetistId }: { listId: string; anaesthetis
   const from = useAppStore((s) => (n !== undefined ? s.masters.anaesthetists[n.fromAnaesthetistId]?.name : undefined))
   if (n === undefined || n.route !== 'colleague' || n.toAnaesthetistId !== anaesthetistId) return null
   return (
-    <div data-shot="drawer-moved-here" style={{ background: neutral.bg, borderRadius: radius.card, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
-      Moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, an anaesthetist's own move · <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(n.atISO), 'EEE d MMM HH:mm')}</span>
+    <Notice tone="neutral" shot="drawer-moved-here">
+      <div>Moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, an anaesthetist's own move · <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(n.atISO), 'EEE d MMM HH:mm')}</span></div>
       {n.message !== undefined && <div style={{ color: neutral.slate, marginTop: 2 }}>"{n.message}"</div>}
-    </div>
+    </Notice>
   )
 }
 

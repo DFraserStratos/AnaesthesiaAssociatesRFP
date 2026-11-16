@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
 import { editList, setSlotTimes, useAppStore, useListTimes, type Actor, type ListPatch } from '../../../store'
-import { Button, FieldLabel, TextArea } from '../../../shared/ui'
+import { Button, FieldLabel, TextArea, FormError } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
@@ -123,9 +123,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
 
         <TextArea label="Notes" value={notes} onChange={setNotes} placeholder="Office annotation for this list" />
 
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-        )}
+        <FormError message={error} />
         {/* Catch-up Phase 30: a hospital closed that day warns, never blocks (OQ-09). */}
         <ConflictCallout conflicts={closures} hospitalId={hospitalId} shot="edit-list-conflict-warning" />
         {/* Catch-up Phase 17: warn, never block. Only a changed surgeon warns. */}

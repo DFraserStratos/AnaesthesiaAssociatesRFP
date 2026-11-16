@@ -20,3 +20,6 @@ export { InlineConfirm, type InlineConfirmProps } from './InlineConfirm'
 // UI unification U3: the passive vocabulary.
 export { CountBadge, type CountBadgeTone } from './CountBadge'
 export { visuallyHidden } from './visuallyHidden'
+export { Notice, type NoticeTone, type NoticeProps } from './Notice'
+export { ResultLine } from './ResultLine'
+export { EmptyState, type EmptyStateVariant } from './EmptyState'

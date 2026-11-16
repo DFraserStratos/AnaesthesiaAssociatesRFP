@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { radius, semantic } from '../../theme/tokens'
 import { cancelBooking, useAppStore, type Actor } from '../../store'
-import { TextArea } from '../ui'
+import { TextArea, FormError } from '../ui'
 import { ConfirmSheet } from '../surface/ConfirmSheet'
 
 interface CancelBookingSheetProps {
@@ -47,11 +46,7 @@ export function CancelBookingSheet({ open, bookingId, actor, onClose, onCancelle
       cancelLabel="Keep the booking"
     >
         <TextArea label="Reason" value={reason} onChange={setReason} placeholder="Why is this booking being cancelled?" />
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-            {error}
-          </div>
-        )}
+        <FormError message={error} />
     </ConfirmSheet>
   )
 }

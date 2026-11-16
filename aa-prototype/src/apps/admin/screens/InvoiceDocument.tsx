@@ -9,6 +9,7 @@ import type { BillingCase, Invoice } from '../../../domain/types'
 import { GST_RATE, postalAddressLines, procedureRequiresPrepayment } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency, hhmm } from '../../../shared/format'
+import { FormError } from '../../../shared/ui'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -309,11 +310,7 @@ function InvoiceInfoRail({
           </Button>
         </div>
 
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '9px 10px', fontSize: 12.5 }}>
-            {error}
-          </div>
-        )}
+        <FormError message={error} />
       </RailCard>
 
       <RailCard title="Xero handoff" warning={handoffFailed}>

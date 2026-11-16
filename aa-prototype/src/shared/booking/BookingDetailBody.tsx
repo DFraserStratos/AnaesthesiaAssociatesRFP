@@ -33,6 +33,8 @@ import {
   type Actor,
 } from '../../store'
 import { Button } from '../ui'
+import { Notice } from '../ui/Notice'
+import { ResultLine } from '../ui/ResultLine'
 import { useSurface, type BookingTotalLine } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, procedureFee } from '../capture'
 import { ageYears, BOOKING_SOURCE_LABELS, formatCurrency, formatDob, hhmm, nhiBadge } from '../format'
@@ -543,19 +545,23 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         }
       />
       {movedToMe !== undefined && (
-        <div data-shot="booking-moved-to-you" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, color: neutral.ink, borderRadius: radius.card, padding: '10px 12px', fontSize: 13 }}>
+        <Notice tone="neutral" shot="booking-moved-to-you">
           {movedToYouByLine(movedToMe.atISO, movedToMe.fromName)}
-        </div>
+        </Notice>
       )}
       {cancelled && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
-          <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
-        </div>
+        <Notice tone="error" icon={false}>
+          <span>
+            <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
+          </span>
+        </Notice>
       )}
       {booking.bookingType === 'postOpAddendum' && (
-        <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
-          <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new booking through its own cycle; the original booking stays locked and immutable (the RFP immutability answer).
-        </div>
+        <Notice tone="neutral">
+          <span>
+            <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new booking through its own cycle; the original booking stays locked and immutable (the RFP immutability answer).
+          </span>
+        </Notice>
       )}
       {prepaymentStatus === 'paid' && (
         <div data-shot="booking-prepayment" style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -564,17 +570,16 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         </div>
       )}
       {error !== null && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
+        <Notice tone="error" icon={false}>
           {error}
-        </div>
+        </Notice>
       )}
       {completeError !== null && showValidation && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <strong>{completeError}</strong>
+        <Notice tone="error" icon={false} title={completeError}>
           {bookingLevelFailures.map((f, i) => (
             <span key={i}>{f.message}</span>
           ))}
-        </div>
+        </Notice>
       )}
     </>
   ) : null
@@ -778,11 +783,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           read only, and 38b's events replace this action. */}
       {!cancelled && list.state === 'AUTHORISED' && !isBackdropList(list) && booking.bookingType !== 'postOpAddendum' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-          {postOpMsg !== null && (
-            <div style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
-              {postOpMsg}
-            </div>
-          )}
+          <ResultLine line={postOpMsg} />
           <Button variant="secondary" block onClick={doAddPostOp}>
             <Stethoscope size={16} aria-hidden /> Add post-op event
           </Button>

@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius } from '../../../../theme/tokens'
+import { neutral } from '../../../../theme/tokens'
 import type { Session } from '../../../../domain/types'
 import {
   HORIZON_MONTHS_MAX,
@@ -27,6 +27,7 @@ import { assignSelectStyle } from '../../flows/AssignListFields'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle } from './tableStyles'
 import { sessionText, SESSIONS_IN_ORDER } from '../../../../domain/outOfHours'
+import { Notice } from '../../../../shared/ui/Notice'
 
 const longDate = (iso: string) => format(parseISO(iso), 'EEE d MMM yyyy')
 
@@ -160,9 +161,9 @@ function HorizonSheet({ open, actor, onClose }: { open: boolean; actor: Actor; o
         )}
         {!blocked && <FormError message={error} />}
         {confirming && preview !== null && (
-          <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13, lineHeight: '19px' }}>
-            The sessions after {longDate(preview.toEndISO)} are removed, with their empty Lists. Lists assigned there by the office are not restored by extending again; recurring bookings are.
-          </div>
+          <Notice tone="neutral">
+            <span>The sessions after {longDate(preview.toEndISO)} are removed, with their empty Lists. Lists assigned there by the office are not restored by extending again; recurring bookings are.</span>
+          </Notice>
         )}
         <SheetActions
           primary={

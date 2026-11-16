@@ -12,6 +12,7 @@ import { useAvailabilityBounds } from './useAvailability'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
 import { OUT_OF_HOURS_SESSION } from '../outOfHoursTerms'
 import { longDayNoYear } from '../format'
+import { ResultLine } from '../ui/ResultLine'
 
 type RepeatChoice = 'none' | '1' | '2' | 'more'
 
@@ -297,18 +298,8 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
       <TextField label="Note (optional)" value={note} onChange={(v) => { touched(); setNote(v) }} placeholder="For example, conference" />
 
       <FormError message={error} />
-      <ResultLine line={result} />
+      <ResultLine line={result} shot="availability-result" />
       <Button variant="primary" block onClick={() => save()}>Save</Button>
-    </div>
-  )
-}
-
-/** An availability action's result line (one look on every surface). */
-export function ResultLine({ line }: { line: string | null }) {
-  if (line === null) return null
-  return (
-    <div role="status" data-shot="availability-result" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '18px' }}>
-      {line}
     </div>
   )
 }

@@ -7,6 +7,8 @@ import { FormError } from '../ui'
 import { InlineConfirm } from '../ui/InlineConfirm'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useActiveSeries } from './useAvailability'
+import { ResultLine } from '../ui/ResultLine'
+import { EmptyState } from '../ui/EmptyState'
 
 /**
  * "Your series" (catch-up Phase 29; US-01.5.3): the anaesthetist's running
@@ -34,7 +36,7 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
 
   return (
     <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {series.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>{emptyText}</div>}
+      {series.length === 0 && <EmptyState>{emptyText}</EmptyState>}
       {series.map((s) => (
         <div key={s.id} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -58,7 +60,7 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
         </div>
       ))}
       <FormError message={error} />
-      {line !== null && <div role="status" style={{ fontSize: 12.5, color: accent.pressed }}>{line}</div>}
+      <ResultLine plain line={line} />
     </div>
   )
 }

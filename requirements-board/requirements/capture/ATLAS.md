@@ -190,6 +190,7 @@ Hooks already added:
 
 ## Selector tips (learned the hard way)
 
+- `ResultLine` keeps an always-mounted `role="status"` (empty and visually hidden until its text arrives), so scope `[role=status]` by `data-shot`.
 - **`text=Foo` is a case-insensitive *substring* match.** It happily hits a paragraph that
   mentions "foo". Use one of these instead:
   - `text="Foo"`, the exact form: note the inner quotes, escaped in JSON as `"text=\"Foo\""`.
@@ -872,6 +873,7 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase U3: `aa-fee-run-result` and `aa-fee-settings-result` (AA fees screen: the run result line and the settings save line, both the shared `ResultLine`; refusals there are `FormError`, `role=alert`).
 - Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,
   `contract-rail-other-price`, `contract-rail-amount`, `contract-rail-outcome`, `contract-rail-enter-rvg`,
   `contract-rail-pinned`, `contract-rail-only-option`; the Contract row `procedure-contract-row` in the

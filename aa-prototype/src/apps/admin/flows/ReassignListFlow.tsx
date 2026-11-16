@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral } from '../../../theme/tokens'
 import type { AssignedList, SlotStatusKey } from '../../../domain/types'
 import { defaultVacated } from '../../../domain/listMoves'
 import { closedEmptyColleagueSlots, openSlotViews, reassignList, useAppStore, type Actor } from '../../../store'
-import { Button } from '../../../shared/ui'
+import { Button, FormError } from '../../../shared/ui'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { VacatedSessionChoice } from '../../../shared/flows/VacatedSessionChoice'
@@ -12,6 +12,7 @@ import { surnameFirst } from '../util'
 import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { NotAvailableColleagues } from '../components/pairing/AnaesthetistCandidates'
 import { sessionText } from '../../../domain/outOfHours'
+import { Notice } from '../../../shared/ui/Notice'
 
 interface ReassignListFlowProps {
   open: boolean
@@ -123,14 +124,12 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
           </>
         ) : (
           <>
-            <div style={{ background: accent.tint, borderRadius: radius.card, padding: 12, fontSize: 13, color: accent.pressed }}>
-              The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {sessionText(list.session)} session.
-            </div>
+            <Notice tone="neutral">
+              <span>The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {sessionText(list.session)} session.</span>
+            </Notice>
             <VacatedSessionChoice label={`${surnameFirst(sourceName)}'s session after the move`} value={vacatedStatus} onChange={setVacatedStatus} shot="reassign-vacated" />
             <NotPreferredWarning warning={pairingWarning} shot="reassign-pairing-warning" />
-            {error !== null && (
-              <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-            )}
+            <FormError message={error} />
             <SheetActions
               primary={<Button variant="primary" block onClick={confirm}>{pairingWarning !== null ? 'Confirm reassignment anyway' : 'Confirm reassignment'}</Button>}
               secondary={<Button variant="secondary" block onClick={() => setTargetId(null)}>Back</Button>}

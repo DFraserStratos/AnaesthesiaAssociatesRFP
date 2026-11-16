@@ -29,7 +29,8 @@ import { NameSearchBox, SlidingSegmentedControl, type SlidingSegmentVariant } fr
 import { drSurname, formatCurrency, locationName, mondayOf, shiftWeeks } from '../../../../shared/format'
 import { ListInvoices, useBookingSearch, useListInvoices } from '../../../../shared/schedule'
 import { AddBookingFlow, AlertOfficeEntry, MovedToYouPanel, SubmitListSheet, useMovableLists } from '../../../../shared/flows'
-import { AvailabilityEditor, ResultLine, SeriesList } from '../../../../shared/availability'
+import { AvailabilityEditor, SeriesList } from '../../../../shared/availability'
+import { ResultLine } from '../../../../shared/ui/ResultLine'
 import { HistoryTimeline } from '../../../../shared/booking'
 import { sortAuditNewestFirst } from '../../../../shared/audit'
 import { BookingTotalPanel } from '../../../../shared/capture/BookingTotalPanel'
@@ -758,7 +759,7 @@ export function ResultLineDemo() {
         ))}
         <KnobButton onClick={() => setLine(null)}>Clear</KnobButton>
       </div>
-      <ResultLine line={line} />
+      <ResultLine line={line} shot="availability-result" onDismiss={() => setLine(null)} />
     </>
   )
 }

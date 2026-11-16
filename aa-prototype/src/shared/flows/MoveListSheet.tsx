@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Building2, ChevronRight, Users } from 'lucide-react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import {
   markUnavailableAndMoveList,
   moveListToOffice,
@@ -13,7 +13,7 @@ import { defaultVacated, pushTargets, type PushTarget } from '../../domain/listM
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
 import { drSurname, locationName, matchesNameQuery, plural, shortDay } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
-import { Button, NameSearchBox, TextArea } from '../ui'
+import { Button, NameSearchBox, TextArea, FormError } from '../ui'
 import { DoneStep } from '../ui/DoneStep'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -257,11 +257,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
             />
 
             <TextArea label="Add a message" value={message} onChange={setMessage} placeholder={route === 'colleague' ? `Optional note for ${colleagueShort} and the office` : 'Optional note for the office'} />
-            {error !== null && (
-              <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-                {error}
-              </div>
-            )}
+            <FormError message={error} />
             <SheetActions
               primary={
                 <span data-shot="move-submit" style={{ display: 'contents' }}>

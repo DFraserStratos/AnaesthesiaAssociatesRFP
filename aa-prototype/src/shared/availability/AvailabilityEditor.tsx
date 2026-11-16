@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import type { Actor } from '../../store'
-import { AvailabilityForm, ResultLine, type AvailabilityFormInitial } from './AvailabilityForm'
+import { AvailabilityForm, type AvailabilityFormInitial } from './AvailabilityForm'
+import { ResultLine } from '../ui/ResultLine'
 import { AvailabilitySlotPanel, type ChangeRequest } from './AvailabilitySlotPanel'
 import { useAvailabilityBounds, useAvailabilityDay } from './useAvailability'
 import { dateRange, longDayNoYear } from '../format'
@@ -72,7 +73,7 @@ export function AvailabilityEditor({ actor, anaesthetistId, fromISO, toISO, form
       {request === null && day !== undefined ? (
         <>
           <AvailabilitySlotPanel actor={actor} day={day} todayISO={todayISO} onChange={(r) => { setLine(null); setRequest(r) }} onResult={result} />
-          <ResultLine line={line} />
+          <ResultLine line={line} shot="availability-result" />
         </>
       ) : (
         <AvailabilityForm

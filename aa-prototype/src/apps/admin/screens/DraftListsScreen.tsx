@@ -29,6 +29,9 @@ import { RedateDraftListSheet } from '../flows/RedateDraftListSheet'
 import { RemoveDraftListSheet } from '../flows/RemoveDraftListSheet'
 import { DraftListSheet } from '../flows/DraftListSheet'
 import { sessionText } from '../../../domain/outOfHours'
+import { ResultLine } from '../../../shared/ui/ResultLine'
+import { Pill } from '../../../shared/ui/Pill'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 const cellStyle = adminCell()
 const headCellStyle = adminHead()
@@ -141,21 +144,24 @@ export function DraftListsScreen({
         })}
       </div>
 
-      {assignedNote !== null && (
-        <div role="status" data-shot="draft-lists-assigned" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-          <span>{assignedNote.text}</span>
-          <span style={{ display: 'inline-flex', gap: 14 }}>
-            <button type="button" style={textActionStyle} onClick={() => onOpenList(assignedNote.listId)}>Open List</button>
-            <button type="button" style={textActionStyle} onClick={() => setAssigned(null)}>Dismiss</button>
-          </span>
-        </div>
-      )}
+      <ResultLine
+        shot="draft-lists-assigned"
+        line={assignedNote?.text}
+        actions={
+          assignedNote !== null ? (
+            <span style={{ display: 'inline-flex', gap: 14 }}>
+              <button type="button" style={textActionStyle} onClick={() => onOpenList(assignedNote.listId)}>Open List</button>
+              <button type="button" style={textActionStyle} onClick={() => setAssigned(null)}>Dismiss</button>
+            </span>
+          ) : undefined
+        }
+      />
 
       {tab === 'unassigned' ? (
         waiting.length === 0 ? (
-          <div data-shot="draft-lists-empty" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 24, fontSize: 13, color: neutral.slate }}>
+          <EmptyState variant="card" shot="draft-lists-empty">
             No {DRAFT_LISTS} are waiting. New requests appear here until they are assigned.
-          </div>
+          </EmptyState>
         ) : (
           <div data-shot="draft-lists-table" style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1140, tableLayout: 'fixed' }}>
@@ -195,7 +201,7 @@ export function DraftListsScreen({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                             <UnassignedPill />
                             <span style={{ fontSize: 12.5, color: neutral.slate }}>{origin(l)}</span>
-                            {passed && <span data-day-passed="true" style={{ fontSize: 11, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.pill, padding: '1px 8px' }}>Day passed</span>}
+                            {passed && <Pill tone="warning" data-day-passed="true">Day passed</Pill>}
                             {holiday && (
                               <span data-holiday-flag="true" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: semantic.warning.onTint }}>
                                 <TriangleAlert size={12} aria-hidden style={{ color: semantic.warning.solid }} />

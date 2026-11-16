@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { accent, neutral, radius } from '../../../../theme/tokens'
+import { accent, neutral } from '../../../../theme/tokens'
 import {
   Button,
   FieldLabel,
@@ -39,6 +39,7 @@ import { SessionTimesFields, timesDraftError, type TimesDraft } from '../../../a
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
 import { SheetActions } from '../../../../shared/surface/SheetActions'
 import { ConfirmSheet } from '../../../../shared/surface/ConfirmSheet'
+import { EmptyState, Notice, ResultLine } from '../../../../shared/ui'
 
 /** A quiet line under an example that reports what the last click did. */
 export function Echo({ children }: { children: ReactNode }) {
@@ -660,12 +661,35 @@ export function InlineBannerExample() {
           Clear a conflict (simulated)
         </Button>
       </div>
-      {message !== null && (
-        <div role="status" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-          <span>{message}</span>
-          <button type="button" style={textActionStyle} onClick={() => setMessage(null)}>Dismiss</button>
-        </div>
-      )}
+      <ResultLine
+        line={message}
+        actions={
+          <button type="button" style={textActionStyle} onClick={() => setMessage(null)}>
+            Dismiss
+          </button>
+        }
+      />
+    </div>
+  )
+}
+
+export function NoticeExample() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Notice tone="warning" title="Southern Cross is closed: Theatre maintenance closure.">The List will be accepted and flagged as a conflict. You can still go ahead.</Notice>
+      <Notice tone="error" icon={false} title="Booking cancelled.">It stays visible but is excluded from billing.</Notice>
+      <Notice tone="success" title="The office has dealt with this">Your note was read.</Notice>
+      <Notice tone="neutral">Moved here by Dr Chen, an anaesthetist's own move.</Notice>
+    </div>
+  )
+}
+
+export function EmptyStateExample() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <EmptyState>No notes for this day.</EmptyState>
+      <EmptyState variant="card" title="No RVG groups match.">Check the code or a word of the description.</EmptyState>
+      <EmptyState variant="centred">No free sessions on this day.</EmptyState>
     </div>
   )
 }

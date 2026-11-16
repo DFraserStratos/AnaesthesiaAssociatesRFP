@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { radius, semantic } from '../../theme/tokens'
 import type { Patient } from '../../domain/types'
 import { editPatient, useAppStore, type Actor } from '../../store'
-import { Button, TextField } from '../ui'
+import { Button, TextField, FormError } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -63,11 +62,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <PostalAddressFields value={address} onChange={setAddress} shot="patient-postal-address" />
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-            {error}
-          </div>
-        )}
+        <FormError message={error} />
         <SheetActions
           primary={
             <Button variant="primary" block onClick={save} disabled={name.trim() === '' || dob === ''}>

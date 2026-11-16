@@ -42,7 +42,7 @@
           ],
           "highlight": [
             "[data-testid=aa-fee-preview-29104]",
-            "[role=status]"
+            "[data-shot=aa-fee-run-result]"
           ]
         }
       ]

@@ -175,9 +175,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
       <AaFeePanel />
 
-      {error !== null && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-      )}
+      <FormError message={error} />
 
       {rows.length === 0 ? (
         <div style={{ fontSize: 13, color: neutral.mist }}>

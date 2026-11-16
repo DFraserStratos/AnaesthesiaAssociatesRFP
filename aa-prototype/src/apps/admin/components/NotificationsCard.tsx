@@ -17,6 +17,7 @@ import { CountBadge } from '../../../shared/ui/CountBadge'
 import { motion } from '../../../theme/motion'
 import { FormError, TickBadge, TickButton } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
+import { EmptyState } from '../../../shared/ui/EmptyState'
 
 const RAIL_ROWS = 3
 
@@ -138,7 +139,7 @@ export function NotificationsCard({
         <ActiveCount count={count} shot="admin-notifications-count" />
       </h2>
       {rows.length === 0 && (
-        <div style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.mist }}>Nothing waiting. When an anaesthetist moves a List or alerts the office, it shows here until someone ticks it.</div>
+        <EmptyState>Nothing waiting. When an anaesthetist moves a List or alerts the office, it shows here until someone ticks it.</EmptyState>
       )}
       {rows.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>

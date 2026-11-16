@@ -2,23 +2,20 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "U2",
-      "U3"
+      "21a"
     ],
-    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b, 20, 20a, 21 and U1 are done (2026-11-16). U2 and U3 run side by side in two worktrees, both before 21a; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44. The Contracts track continues with 21a to 25 in the ROADMAP's run order."
+    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b, 20, 20a, 21, U1, U2 and U3 are done (2026-11-16). U2 and U3 are joined on branch ui/u2-u3, which the owner takes into master before 21a starts. Then 21a and 22; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-16",
-    "headline": "Start U2 and U3 side by side. Money, date text and the tokens are one thing each.",
-    "headline_sub": "U1 (one formatMoney, so money reads \"$3,100.00\" everywhere and S5 Beat 4 shows one figure; date, timestamp, plural and HH:MM text in domain/dateText.ts; one parseAmount; the mockups' type, radius, colour, shadow, frosted, fade and focus ring tokens and a zIndex scale, literals equal to a token swapped with no visual change; the web List detail opening by keyboard and five more one-line fixes; src/shared/ui/README.md; ui-library-preview/ retired) is done and committed. Next: U2 (overlays) and U3 (pills, badges and feedback) side by side, then 21a and 22, U4 and U5, 23 to 25, U6.",
-    "parallel": "U2 and U3 run at the same time, each in its own git worktree and branch cut from the commit that holds U1; the one that finishes second merges both on branch ui/u2-u3, and the owner takes that into master before 21a starts. No other UI unification phase runs beside another phase: they edit the same shared files. 17a and 26 have their catch-up dependencies met but come after the Contracts track and U6 in the run order.",
+    "headline": "Start 21a now. One modal layer, one sheet header, footer and confirm, one pill, notice and error box.",
+    "headline_sub": "U2 (one modal stack fixing the Escape bug, SidePanel, the popovers, OverlayHeader with the web corner X, SheetActions, ConfirmSheet, InlineConfirm, DoneStep) and U3 (Pill tones, CountBadge, AttentionDot, Avatar, PersonaChip, FormError, Notice, ResultLine, EmptyState) are done and merged on branch ui/u2-u3, not yet in master. Next in run order: 21a, then 22, then U4 and U5.",
+    "parallel": "None now: 21a runs alone (the Contracts track and the U phases edit the same shared files). 17a and 26 have their catch-up dependencies met but come after the Contracts track and U6 in the run order.",
     "safe": {
-      "U2": "U1 is done and committed: U2 reads type.sheetTitle for OverlayHeader and the zIndex scale for useModalLayer (the 200 and 60 clashes are its to settle). Runs beside U3 in its own worktree.",
-      "U3": "U1 is done and committed: U3 reads brand.onDarkMuted for PersonaChip and the now aria-hidden DayGrid \"!\" for AttentionDot. Runs beside U2 in its own worktree."
+      "21a": "21, 32b, U2 and U3 are done; it is next in run order. Take branch ui/u2-u3 into master first: 21a builds on the shared Pill, Notice, FormError and sheet parts (OverlayHeader, SheetActions, ConfirmSheet) and words Review's authorise confirm, now a ConfirmSheet."
     },
     "wait": {
-      "21a": "Needs U2 and U3 merged into master (it builds on the shared Pill, Notice and sheet parts). 21 is done: it reads payerContactMissing, invoiceDeliveryFor, the payer and funder rows and PayerSheet.",
-      "22": "Needs 21a in run order, and U2 and U3 (the sheet header and footer, Pill and Notice). 21 is done: it sends by invoiceDeliveryFor and Invoice.billedTo.",
+      "22": "Needs 21a in run order. U2 and U3 are done (OverlayHeader, SheetActions, Pill, Notice); 21 is done: it sends by invoiceDeliveryFor and Invoice.billedTo.",
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
       "U4": "Needs 22 in run order; U1's --focus-ring and parseAmount are ready for it.",
