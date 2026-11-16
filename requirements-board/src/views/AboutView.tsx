@@ -103,7 +103,7 @@ const STEPS = [
   { n: 3, title: 'Review on the board', text: 'Check statuses, answer outstanding questions, arrange the swimlanes. New answers go in the next update.', skill: null, next: 'down' },
   { n: 4, title: 'Commit', text: 'Commit the catalogue to git. The commit is the baseline the build plan is updated from.', skill: null, next: 'left' },
   { n: 5, title: '/update-build-plan', text: 'Pass it the commit. It re-grades the changed requirements against the app and updates the plan.', skill: 'update-build-plan', next: 'left' },
-  { n: 6, title: 'Build', text: 'Build the next phases. What you learn goes to the next meeting as new evidence.', skill: null, next: 'up' },
+  { n: 6, title: 'Build', text: 'Paste the next phase’s kick-off prompt: /run-build-phase builds and tests it. What you learn goes to the next meeting as new evidence.', skill: 'run-build-phase', next: 'up' },
 ] as const
 
 const CHEVRON = { right: ChevronRight, down: ChevronDown, left: ChevronLeft, up: ChevronUp }
@@ -207,8 +207,17 @@ const SKILLS: Skill[] = [
     role: 'Step 5 of the loop',
     when: 'After a requirements update is committed. With no plan yet, it makes the first one.',
     say: '/update-build-plan',
-    changes: 'Re-grades the requirements that changed since the plan’s last commit against the app, re-plans the phases they touch, and updates their docs and kick-off prompts. It never rewrites a phase already built.',
+    changes: 'Re-grades the requirements that changed since the plan’s last commit against the app, re-plans the phases they touch, and updates their docs and kick-off prompts. With a phase runner set in the plan’s config, a prompt is a few lines that load /run-build-phase; the phase doc holds the rest. It never rewrites a phase already built.',
     then: 'Build the next phase from its kick-off prompt.',
+  },
+  {
+    name: 'run-build-phase',
+    kind: 'skill',
+    role: 'Step 6 of the loop',
+    when: 'To build a phase of the plan. Its kick-off prompt loads it; you can also name a phase yourself, or resume one half built.',
+    say: '/run-build-phase 07',
+    changes: 'Builds the phase in the app from its plan doc: reads a context pack of what the phase needs, checks whether its requirements moved since it was planned, plans and builds, runs the plan’s checks, the manual checklist and a review, updates the screenshots on its stories, then writes a progress entry and names the next phase on the plan page.',
+    then: 'Read its notes and the “For the owner’s review” list, commit, and start the phase the plan page names.',
   },
   {
     name: 'add-artifact',

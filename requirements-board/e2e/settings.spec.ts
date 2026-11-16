@@ -91,7 +91,7 @@ test('a component in use cannot be removed or renamed; a new one is saved', asyn
 test('the About page explains the loop and lists the live statuses', async ({ page }) => {
   await page.goto('/#/about')
   await expect(page.locator('.loop-step')).toHaveCount(6)
-  await expect(page.locator('.skill-card')).toHaveCount(7)
+  await expect(page.locator('.skill-card')).toHaveCount(8)
   await expect(page.locator('#about-board .about-statuses').first().locator('.status')).toHaveCount(DEFAULT_ITEM_STATUSES.length)
 })
 

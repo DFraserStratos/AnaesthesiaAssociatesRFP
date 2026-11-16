@@ -12,6 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { TOOLS, loadConfig, phaseStatus, stripPlanArg } from './config.mjs'
+import { BASELINE_LINE } from './plan-docs.mjs'
 
 const config = loadConfig()
 const argv = stripPlanArg()
@@ -59,7 +60,6 @@ const skip = f => /^(gaps\.json|GAP-ANALYSIS\.md|plan\.json|units\.json|plan\.co
 const walk = d => fs.readdirSync(path.join(CU, d), { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])
 // Only baseline references move: lines about the drift check or the plan's baseline, and never an
 // `old..new` range. Historical mentions ("graded at <old>", "since <old>") keep the old sha.
-const BASELINE_LINE = /drift|baseline|plan-state\.mjs|planned (?:below )?against|against catalogue commit/i
 const shaRe = new RegExp(`(\\.\\.)?\\b(${from[0]}|${from[1]})\\b(?!\\.\\.)`, 'g')
 const rebase = line => !BASELINE_LINE.test(line) ? line
   : line.replace(shaRe, (m, range, sha) => range ? m : (sha.length === 40 ? commit : commit.slice(0, 7)))

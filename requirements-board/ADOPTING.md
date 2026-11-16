@@ -81,6 +81,27 @@ each block, and change nothing else unless it is plainly wrong:
   project-specific (the app's description and rules for its agents, out-of-scope lanes, the plan
   page's words) goes in the plan folder's `plan.config.json`, which the first run writes; its keys are
   in the skill's "The tools and the plan's config". Its tools are in the skill's `tools/` folder.
+- `run-build-phase` (optional: it builds one phase of the plan per session, from a short kick-off
+  prompt): the plan folder, the file holding the project's coding rules and the standing rules every
+  phase follows, the app's folder, its house rules in brief, the design references and viewports
+  (or "none"), whether screenshots are captured, the demo or user guide a phase patches (or "none"),
+  the progress file and the exact shape of its status rows and entries (the tools parse them), the
+  plan page and where the run order lives, and the plan's tracks. Then give the plan's
+  `plan.config.json` a `runner` key:
+  - `skill`: `"run-build-phase"`. With it set, `update-build-plan` writes slim kick-off prompts that
+    load this skill and keeps everything else in the phase docs; leave it out and prompts carry the
+    whole procedure, as before.
+  - `checks`: the project's green commands as named checks (`name`, `cwd`, `cmd`, and where they
+    apply `needs`, `after`, `changed` for the quick inner loop, `focus`, `timeout`), with
+    `maxParallel` and a `concurrency` note on why they may run side by side.
+  - `devServers` (each `name`, `port`, `url`, `cwd`, `cmd`) and `devCommand`, with `startTimeout`;
+    and, with screenshot capture, `capture` (`cwd`, `cmd`, `onlyFlag`, `dryFlag`, `report`).
+  - `context` (optional): the context pack's budget and the progress-file and `ROADMAP.md` sections
+    it quotes. `logDir` (default `.build-phase`) holds the session's working files and git-ignores
+    itself.
+
+  `node BOARD/agent/skills/run-build-phase/tools/phase-check.mjs --help` gives the full shape, and
+  `--list` prints the schedule it would run without running anything.
 - `consistency-review`: the board folder, `REQ` path and check commands, the run folder (persistent,
   outside `/tmp`), the people and the source ranking, the follow-on skill, and the JSON arguments for
   its two workflows (owner, levels, fixed rulings, project rules, protected artifacts, topic groups).

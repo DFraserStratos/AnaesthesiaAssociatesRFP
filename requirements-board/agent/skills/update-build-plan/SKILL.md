@@ -21,6 +21,29 @@ Outputs, all in `PLAN/`:
   are the owner's, kept in `PLAN/status.json` `guidance`;
 - an "Update history" line in `PLAN/README.md`.
 
+**Kick-off prompts and the phase runner.** With a phase runner skill configured (config `runner.skill`,
+for example `run-build-phase`, the sibling skill in this kit), a prompt is slim and doc-first: the
+runner skill carries every generic step of running a phase, the phase doc carries the phase's
+specifics, and the prompt holds only what the doc does not say. In order:
+1. the opening line naming the phase: "Please run <plan> Phase <id> (<title>) of <subject>.";
+2. "Load the <runner> skill and follow it for this phase", with the session count (and the track
+   where the plan has tracks), saying the doc's sections hold the reads, drift-check stops, rules and
+   finish items;
+3. an `Override:` block, only where the phase departs from the runner's flow (a worktree root, branch,
+   commit or merge rules; "When done" after each session; a session-1-only run; "stop green so I can
+   commit");
+4. `Also read:`, only reads the doc does not list, as curated selections;
+5. `Hold to these above all:`, the three to six rules the phase most easily gets wrong;
+6. `Phase goal:`, one paragraph.
+
+A block with nothing in it is left out. The prompt never restates a generic step, the green commands
+or the frontend-design bullet, and names no repo root or absolute path outside an Override. Whatever
+it drops is in the doc: its "Before you start" holds the drift-check ids, the questions built as
+answered and the open ones' defaults, the stops, the predecessors to confirm and the extra reads. A
+phase this skill updates has its prompt rewritten to that shape if it is not there yet. Without a
+runner, a prompt carries the whole procedure (read-first list, drift check, "While working:", "When
+done:", the capture step).
+
 ## This repo
 
 The only repo-specific facts this skill uses. When the board moves to another repo, rewrite this
@@ -37,8 +60,13 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 - Node: agent shells default to Node 22.16, too old for the board's `source` command (22.18 or newer).
   Prefix commands with `PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"`.
 - Standing rules live in `PLAN/ROADMAP.md`: "Owner review: agents test themselves", "Catalogue
-  screenshots" (PROGRESS convention 19) and "Front-end design" (every unbuilt phase that touches UI
-  has the frontend-design bullet in its prompt's "While working:" list).
+  screenshots" (PROGRESS convention 19) and "Front-end design" (the runner skill loads the
+  `frontend-design` skill before any UI step, so prompts no longer carry the bullet; each UI phase's
+  doc names the design page for every screen it changes).
+- Phase runner: `run-build-phase` (`PLAN/plan.config.json` `runner.skill`; its tools read the rest of
+  `runner`). Prompts not yet in the slim shape still carry the old procedure and pass the checks until
+  their phase is next updated. Twelve unbuilt prompts written before the repo moved still name its old
+  root: `recipe-status.mjs --check` notes them.
 - Screenshot capture: on. The runner is `requirements-board/scripts/capture.ts`; recipes are
   `REQ/capture/recipes/<ID>.json` (format, routes, seed ids and hooks in `REQ/capture/ATLAS.md`);
   `npm run capture` in `requirements-board/` drives the prototype (5173) and the PWA (5174) and writes
@@ -96,8 +124,22 @@ Run every tool from the repo root as `node T/<tool>`. Each finds the plan by its
 given, else the `BUILD_PLAN` environment variable, else the repo's only `plan.config.json`, else
 `docs/build-plan`. Pass `--plan PLAN` when the repo has more than one plan. `node T/config.mjs --json`
 prints the resolved config: pass its output as the `config` argument of every workflow. Workflow
-script paths are absolute: `<repo>/T/workflow-<name>.js`. `node --test T/req-changes.test.mjs` tests
-the change detection.
+script paths are absolute: `<repo>/T/workflow-<name>.js`.
+
+Shared modules, imported by the tools here and by the phase runner's tools
+(`../run-build-phase/tools/` loads `config.mjs`, `req-changes.mjs`, `plan-docs.mjs` and `scope.mjs`
+from this folder), so a change to one must keep both skills working:
+- `config.mjs`: finds the plan and resolves its config (`loadConfig`, `phaseStatus`).
+- `req-changes.mjs`: rename-aware catalogue changes and the substance test.
+- `scope.mjs`: statuses, recodes and the out-of-scope rule.
+- `plan-docs.mjs`: reads the plan's own Markdown, pure: the owner decision rows and the phases each
+  gates (`phase-briefs.mjs`, the runner's context pack), the drift-check baseline lines
+  (`apply-plan-update.mjs`, the context pack), and the kick-off prompt checks (`recipe-status.mjs
+  --check`: whether a prompt loads the runner skill or runs the capture step, and home-folder paths
+  that are not this checkout).
+
+`node --test T/*.test.mjs` tests the change detection (`req-changes.test.mjs`) and the plan readers
+(`plan-docs.test.mjs`). After changing a shared module, run the runner's `tools/*.test.mjs` too.
 
 `PLAN/plan.config.json` holds everything project-specific the tools and workflows use. Every key is
 optional; without the file, defaults apply (a new adopter's plan). The keys:
@@ -116,7 +158,8 @@ optional; without the file, defaults apply (a new adopter's plan). The keys:
 | `standingRules`, `projectRules`, `greenCommands` | Text every agent gets: the plan's standing rules, the project's coding rules, the commands that must pass |
 | `gapAnalysis` | `codeGuide`, `history`, `sourcesExample`, `outOfScope`, `outOfScopeShort`, `demoTriggerRule`, `surfaces`, `maps` (`[{ key, scope }]`, one code-mapping agent each), `modelCode`, `decisionsLog`, `demoScript`, `themeBullets` |
 | `planning` | Fresh-plan text: `history`, `ownerRules`, `styleRefs`, `guidance`, `research`, `criticChecks` |
-| `phaseDoc` | `extraSections` (`afterWorkItems`, `afterChecklist`, `afterScreenshots`: "## Name: what it holds"), `readFirst`, `reference`, `workItemRules`, `promptRules`, `reviewChecks` |
+| `phaseDoc` | `extraSections` (`afterWorkItems`, `afterChecklist`, `afterScreenshots`: "## Name: what it holds"), `readFirst` (the reads a phase needs: the prompt's read-first list, or with a runner the reads in the doc's "Before you start"), `reference`, `workItemRules`, `promptRules`, `reviewChecks` |
+| `runner` | The phase runner (none). `skill`: the skill every kick-off prompt loads (e.g. `run-build-phase`); when set, the workflows write slim doc-first prompts and `recipe-status.mjs --check` accepts a prompt that loads it in place of running the capture itself (`config.mjs` resolves it as `runnerSkill`). The rest is read by the runner's tools (`phase-check.mjs --help` has the full shape): `checks` (the green commands as named checks, each `name`, `aliases`, `cwd`, `cmd`, `needs`, `after`, `changed` (its quick `--changed` form), `focus`, `timeout`, `equivalent`), `maxParallel`, `logDir` (git-ignored working files, `.build-phase`), `concurrency` (why the checks may run side by side), `devServers` (`name`, `port`, `url`, `cwd`, `cmd`), `devCommand`, `startTimeout`, `capture` (`cwd`, `cmd`, `onlyFlag`, `dryFlag`, `report`, `timeout`), and `context` for the context pack (`budgetKB`, `fullEntryKB`, `progressSections`, `roadmapSections`, `sequencingSection`, `sequencingAlways`, `designDir`) |
 | `index` | The page's words: `title`, `kicker`, `heading`, `intro` (`{phases}`, `{first}`, `{last}`, `{commit}` filled in), `themesHeading`, `howTo`, `callouts`, `footer`, `tracks` (`{ "<track>": "setup" \| "A" … "E" }`) |
 
 `PLAN/units.json` (every gap, DM and RV id to plan) is generated by `assemble-gaps.mjs`; never edit it.
@@ -269,7 +312,11 @@ before going on.
 3. **Screenshot check** (with screenshot capture). `node T/recipe-status.mjs --check` must pass:
    - every unbuilt phase doc has a `## Catalogue screenshots` section naming each story it owns
      screenshots for, including every story under a covered epic or feature;
-   - every kick-off prompt runs `npm run capture`.
+   - every kick-off prompt runs the capture step: it loads the runner skill (config `runner.skill`),
+     or, without a runner or in a prompt not yet converted, runs `npm run capture` itself.
+
+   Its `note:` lines (they do not fail it) name prompts with a home-folder path that is not this
+   checkout: a stale repo root. Fix those in the phases this update changed.
 
    Fix any phase it names yourself. These are usually rows for an epic's or feature's other stories:
    one line each saying which phase owns it.
@@ -281,6 +328,11 @@ before going on.
      for a decision `ROADMAP.md` records as answered;
    - kick-off prompts reference files that exist;
    - every unbuilt phase keeps the standing rules "This repo" names for phase docs and prompts;
+   - with a runner skill configured, each changed phase's prompt loads it and is slim and doc-first
+     ("Kick-off prompts and the phase runner", at the top), and what it leaves out is in the doc's
+     "Before you start";
+   - no changed prompt names a stale repo root (the `note:` lines of `recipe-status.mjs --check`),
+     and a doc-first prompt names no absolute path outside an Override;
    - with screenshot capture, each updated phase's "Catalogue screenshots" rows match its covered items;
    - `node T/build-index.mjs` is re-run if it changed anything.
 
@@ -378,15 +430,20 @@ phase must carry it in four places:
    - "Recipes this phase breaks": other recipes whose route, seed id, text or selector the phase
      changes, found by grepping the recipes for what it renames or removes;
    - the recipe guide (`ATLAS.md`) sections to update.
-2. **A Manual test checklist item**: a full `npm run capture` with no failed recipe and no story
-   without a recipe, the new shots checked by eye, and `npm run verify:board` green.
+2. **A Manual test checklist item**: the phase's own recipes captured first and their shots checked
+   by eye, then one full `npm run capture` at the end with no failed recipe and no story without a
+   recipe, and `npm run verify:board` green. The runner does exactly this (`phase-check.mjs
+   --capture <IDs>`, then `--capture all`).
 3. **A progress-file bullet**: recipes created or changed, and the capture report's counts before and
    after.
 4. **The kick-off prompt**:
-   - the recipe guide and the ROADMAP rule in the read-first list;
-   - a "When done:" bullet that runs the step: in `BOARD/`, `node scripts/capture.ts --dry`, then a
-     full `npm run capture`, starting the app's dev servers in the background if one is down;
-   - `npm run verify:board` in the green line.
+   - with a runner skill configured: nothing beyond loading it. The runner reads the recipe guide and
+     the ROADMAP rule, captures the phase's recipes, then runs one full capture, and its checks
+     include the board's;
+   - without one: the recipe guide and the ROADMAP rule in the read-first list; a "When done:" bullet
+     that runs the step (in `BOARD/`, `node scripts/capture.ts --only <its IDs> --dry`, then a
+     capture of those IDs, then one full `npm run capture`, starting the app's dev servers in the
+     background if one is down); `npm run verify:board` in the green line.
 
 Rules to keep when re-planning:
 - An item that moves to another phase takes its row with it. A new story with no recipe gets a
@@ -404,7 +461,7 @@ Rules to keep when re-planning:
 `node T/recipe-status.mjs --check` is the mechanical guard. It fails if:
 - an unbuilt phase lacks the section;
 - the section misses one of its stories;
-- the prompt never runs `npm run capture`.
+- the prompt neither loads the runner skill (config `runner.skill`) nor runs `npm run capture`.
 
 The detail workflow's writer and reviewer prompts already ask for the section, and the briefs carry
 the rows, so check that their output does too.

@@ -91,6 +91,11 @@ export function loadConfig({ argv = process.argv.slice(2), root = process.cwd() 
     planning: raw.planning ?? {},
     phaseDoc: raw.phaseDoc ?? {},
     index: raw.index ?? {},
+    // The phase runner skill (`runner.skill`, e.g. "run-build-phase"): when set, kick-off prompts are slim and
+    // doc-first (they load that skill, which carries every generic step) and the phase doc holds the reads and
+    // stops. The rest of `runner` (checks, devServers, capture, context) is read from the file by the runner's
+    // own tools, so it is not copied here.
+    runnerSkill: (raw.runner && typeof raw.runner.skill === 'string' && raw.runner.skill.trim()) || null,
   }
   // Screenshot capture: on when the plan says so, or (unset) when the board has a capture section.
   const boardConfig = readBoardConfig(root, requirements)

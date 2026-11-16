@@ -6,7 +6,10 @@
 //             the outline of an update in progress, before plan.json is rebuilt); `--plan <file.json>` works too
 //   --check   exit 1 unless every unbuilt phase doc has a "## Catalogue screenshots" section that names
 //             each story it covers (and each feature it covers that has no stories), and its kick-off
-//             prompt runs the capture step
+//             prompt runs the capture step: it runs `npm run capture` itself, or it loads the phase runner
+//             skill (config `runner.skill`), whose close-out captures the phase's recipes, then runs one full
+//             capture. Also notes (without failing) home-folder paths in unbuilt prompts that are not this
+//             checkout: a stale repo root.
 // Stories are listed under a covered epic or feature. Out-of-scope items (scope.mjs) are skipped. A story
 // with no recipe is marked "none": the phase must create it (see ROADMAP.md, "Catalogue screenshots").
 // Without screenshot capture it prints that and exits 0.
@@ -14,6 +17,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { loadRecodes, loadStatuses, outOfScopeRule } from './scope.mjs'
 import { loadConfig, phaseStatus } from './config.mjs'
+import { runsCaptureStep, staleRoots } from './plan-docs.mjs'
 
 const ROOT = process.cwd()
 // `--plan` names the plan folder, or (a .json file) a plan file to read phases from, as `--plan-file` does.
@@ -76,18 +80,22 @@ const built = num => builtSet.has(num)
 
 if (check) {
   const problems = []
+  const notes = []
   for (const p of plan.phases) {
     if (built(p.num)) continue
     const doc = fs.readFileSync(path.join(CU, p.file), 'utf8')
     const prompt = fs.readFileSync(path.join(CU, p.file.replace(/\.md$/, '.prompt.md')), 'utf8')
+    const stale = staleRoots(prompt, ROOT)
+    if (stale.length) notes.push(`note: ${p.num}: kick-off prompt names a path outside this checkout: ${stale.join('; ')}`)
     const at = doc.indexOf(`\n${SECTION}`)
     if (at < 0) { problems.push(`${p.num}: no "${SECTION}" section in ${p.file}`); continue }
     const next = doc.indexOf('\n## ', at + SECTION.length + 1)
     const body = doc.slice(at, next < 0 ? undefined : next)
     const absent = shotItems(p).filter(id => !body.includes(id))
     if (absent.length) problems.push(`${p.num}: section does not name ${absent.join(', ')}`)
-    if (!/npm run capture/.test(prompt)) problems.push(`${p.num}: kick-off prompt does not run npm run capture`)
+    if (!runsCaptureStep(prompt, config.runnerSkill)) problems.push(`${p.num}: kick-off prompt does not run npm run capture${config.runnerSkill ? ` or load the ${config.runnerSkill} skill` : ''}`)
   }
+  if (notes.length) console.log(notes.join('\n'))
   if (problems.length) { console.log(problems.join('\n')); process.exit(1) }
   console.log(`ok: ${plan.phases.filter(p => !built(p.num)).length} unbuilt phases have the capture step`)
   process.exit(0)

@@ -101,14 +101,84 @@ export function substance(text, recodes = [], kind = 'item') {
   return `${kept.join('\n')}\n---\n${unlink(body)}`.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim()
 }
 
+/** A changed entry's text at `from` and at `to` (default: the working tree); null where it does not exist. */
+export function sidesOf({ cwd, from, to = null, entry }) {
+  const show = (ref, file) => {
+    try { return execFileSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return null }
+  }
+  const before = entry.change === 'A' ? null : show(from, entry.was ?? entry.file)
+  const after = entry.change === 'D' ? null : to ? show(to, entry.file) : (() => { try { return fs.readFileSync(path.join(cwd, entry.file), 'utf8') } catch { return null } })()
+  return { before, after }
+}
+
+/** An item or question's text without its cosmetic front-matter fields (COSMETIC_FIELDS); the body as it is. */
+export function withoutCosmetic(text) {
+  if (text == null) return ''
+  const m = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/)
+  if (!m) return text
+  let skip = false
+  const kept = m[1].split('\n').filter(line => {
+    const key = line.match(/^([A-Za-z_]+):/)
+    if (key) skip = COSMETIC_FIELDS.includes(key[1])
+    return !skip
+  })
+  return `---\n${kept.join('\n')}\n---\n${m[2]}`
+}
+
+/**
+ * A unified diff of two texts, hunks only (`@@ -a,n +b,m @@` then ' ', '-' and '+' lines), `context`
+ * lines around each change. In-process (LCS), so it writes nothing: for catalogue-sized files.
+ */
+export function unifiedDiff(a, b, context = 2) {
+  const A = a === '' ? [] : a.replace(/\n$/, '').split('\n')
+  const B = b === '' ? [] : b.replace(/\n$/, '').split('\n')
+  const n = A.length, m = B.length
+  const L = Array.from({ length: n + 1 }, () => new Int32Array(m + 1))
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1])
+  const ops = []
+  let i = 0, j = 0
+  while (i < n || j < m) {
+    if (i < n && j < m && A[i] === B[j]) { ops.push([' ', A[i], i, j]); i++; j++ }
+    else if (i < n && (j === m || L[i + 1][j] >= L[i][j + 1])) { ops.push(['-', A[i], i, j]); i++ }
+    else { ops.push(['+', B[j], i, j]); j++ }
+  }
+  const out = []
+  let k = 0
+  while (k < ops.length) {
+    if (ops[k][0] === ' ') { k++; continue }
+    let s = Math.max(0, k - context)
+    let e = k
+    while (e < ops.length) {
+      if (ops[e][0] !== ' ') { e++; continue }
+      let run = e
+      while (run < ops.length && ops[run][0] === ' ') run++
+      if (run === ops.length || run - e > 2 * context) { e = Math.min(run, e + context); break }
+      e = run
+    }
+    const h = ops.slice(s, e)
+    const aN = h.filter(o => o[0] !== '+').length, bN = h.filter(o => o[0] !== '-').length
+    out.push(`@@ -${h[0][2] + (aN ? 1 : 0)},${aN} +${h[0][3] + (bN ? 1 : 0)},${bN} @@`, ...h.map(o => o[0] + o[1]))
+    k = e
+  }
+  return out.join('\n')
+}
+
+/**
+ * The unified diff of a changed entry with cosmetic front-matter fields left out on both sides (so a diff
+ * shows only what a reader of the requirement would notice), hunks only, `context` lines around each.
+ */
+export function substanceDiff({ cwd, from, to = null, entry, context = 2 }) {
+  const { before, after } = sidesOf({ cwd, from, to, entry })
+  return unifiedDiff(before == null ? '' : withoutCosmetic(before), after == null ? '' : withoutCosmetic(after), context)
+}
+
 /** True when a changed entry from requirementChanges() differs in substance (a real status move included; a recode is not). */
 export function changedInSubstance({ cwd, from, to = null, entry, req = LAYOUTS[0].root }) {
   if (entry.change !== 'M') return true
   const show = (ref, file) => {
     try { return execFileSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return null }
   }
-  const before = show(from, entry.was ?? entry.file)
-  const after = to ? show(to, entry.file) : (() => { try { return fs.readFileSync(path.join(cwd, entry.file), 'utf8') } catch { return null } })()
+  const { before, after } = sidesOf({ cwd, from, to, entry })
   // The newest recode list covers every older baseline: read it from the target side, else the working tree.
   const recodes = (() => {
     const text = to ? show(to, recodesPath(req)) : null

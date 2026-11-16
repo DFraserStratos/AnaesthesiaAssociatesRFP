@@ -21,6 +21,7 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { layoutsOf, requirementChanges, changedInSubstance } from './req-changes.mjs'
 import { TOOLS, loadConfig, stripPlanArg } from './config.mjs'
+import { decisionRows as decisionRowsOf, gates } from './plan-docs.mjs'
 
 const config = loadConfig()
 const argv = stripPlanArg()
@@ -59,14 +60,8 @@ const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxB
 const show = (file) => { try { return git('show', `${sha}:${file}`) } catch { return '' } }
 const logs = changes.changeLogsAdded.map(f => ({ f, lines: show(f).split('\n') }))
 const roadmap = fs.readFileSync(path.join(CU, 'ROADMAP.md'), 'utf8')
-const decisionRows = roadmap.split('\n').filter(l => /^\| D\d+ \|/.test(l))
+const decisionRows = decisionRowsOf(roadmap)
 
-// "28 to 32", "15b, 28 to 32", "all": does a decision's Gates cell name this phase?
-const gates = (cell, num) => cell.split(',').map(s => s.trim()).some(t => {
-  if (t === num || t === 'all') return true
-  const r = t.match(/^(\d+)[a-z]?\s+to\s+(\d+)[a-z]?$/)
-  return r ? parseInt(num, 10) >= +r[1] && parseInt(num, 10) <= +r[2] : false
-})
 const fmGet = (text, k) => (text.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')) || [])[1]?.trim().replace(/^"|"$/g, '')
 
 // Tiers come from the outline's `affected` list. A phase whose covers changed is never "baseline".
