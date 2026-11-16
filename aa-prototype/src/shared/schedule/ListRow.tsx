@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { elevation, neutral, radius, semantic } from '../../theme/tokens'
-import { STATUS_PALETTE } from '../../theme/statusColours'
+import { elevation, neutral, radius } from '../../theme/tokens'
 import type { DisplayKey } from '../../domain/types'
-import { LIST_PROGRESS_LABEL, type ListProgress } from '../../domain/listProgress'
+import type { ListProgress } from '../../domain/listProgress'
+import { PILL_TONES } from '../ui/Pill'
+import { PROGRESS_DONE_COLOR, progressLabel, progressTone } from './ProgressPill'
 import { useDisplayStatus } from '../status/useSlotStatuses'
 import { TickBadge } from '../ui/TickBadge'
 import { OutOfHoursMoon } from './OutOfHoursMark'
@@ -63,7 +64,8 @@ function Chevron() {
   return <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
 }
 
-function Pill({ bg, color, children }: { bg: string; color: string; children: ReactNode }) {
+/** The Mobile App mockup's row pill (`5px 10px` 11/600, kept as drawn; README section 5); tones from the shared `Pill`. */
+function RowPill({ bg, color, children }: { bg: string; color: string; children: ReactNode }) {
   return (
     <span style={{ padding: '5px 10px', borderRadius: radius.pill, background: bg, fontSize: 11, fontWeight: 600, color, whiteSpace: 'nowrap' }}>
       {children}
@@ -74,23 +76,23 @@ function Pill({ bg, color, children }: { bg: string; color: string; children: Re
 function RightCluster({ right }: { right: ListRowRight }) {
   if (right.kind === 'custom') return <>{right.node}</>
   if (right.kind === 'progress') {
-    const label = LIST_PROGRESS_LABEL[right.progress]
+    const label = progressLabel(right.progress)
+    const tone = progressTone(right.progress)
     // Submitted and ready to submit share the design's done tick cluster (stacked,
     // narrow, no chevron); a submitted row is also quieter (`quiet`).
-    if (right.progress === 'submitted' || right.progress === 'readyToSubmit') {
-      const s = STATUS_PALETTE.free
+    if (tone === 'done') {
       return (
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flex: 'none' }}>
           <TickBadge size={24} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: s.onTint, whiteSpace: 'nowrap' }}>{label}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: PROGRESS_DONE_COLOR, whiteSpace: 'nowrap' }}>{label}</span>
         </span>
       )
     }
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-        <Pill bg={neutral.sunken} color={neutral.slate}>
+        <RowPill bg={PILL_TONES[tone].tint} color={PILL_TONES[tone].onTint}>
           {label}
-        </Pill>
+        </RowPill>
         <Chevron />
       </span>
     )
@@ -98,9 +100,9 @@ function RightCluster({ right }: { right: ListRowRight }) {
   if (right.kind === 'toFinish') {
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-        <Pill bg={semantic.warning.tint} color={semantic.warning.onTint}>
-          {right.count} {LIST_PROGRESS_LABEL.toFinish.toLowerCase()}
-        </Pill>
+        <RowPill bg={PILL_TONES.warning.tint} color={PILL_TONES.warning.onTint}>
+          {right.count} {progressLabel('toFinish').toLowerCase()}
+        </RowPill>
         <Chevron />
       </span>
     )
@@ -113,9 +115,9 @@ function CountPill({ count, statusKey }: { count: number; statusKey: DisplayKey 
   const s = useDisplayStatus(statusKey).visual
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Pill bg={s.tint} color={s.onTint}>
+        <RowPill bg={s.tint} color={s.onTint}>
           {plural(count, 'booking')}
-        </Pill>
+        </RowPill>
         <Chevron />
       </span>
   )
@@ -124,9 +126,9 @@ function CountPill({ count, statusKey }: { count: number; statusKey: DisplayKey 
 function ChipPill({ statusKey, label }: { statusKey: DisplayKey; label: string }) {
   const s = useDisplayStatus(statusKey).visual
   return (
-    <Pill bg={neutral.surface} color={s.onTint}>
+    <RowPill bg={neutral.surface} color={s.onTint}>
       {label}
-    </Pill>
+    </RowPill>
   )
 }
 

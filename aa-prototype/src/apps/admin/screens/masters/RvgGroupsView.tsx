@@ -147,7 +147,7 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
                 <td style={rowCellStyle} data-shot={g.includedModifierIds.length > 0 ? 'masters-rvg-included' : undefined}>
                   <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
                     {g.includedModifierIds.map((id) => (
-                      <Pill key={id} size="small">
+                      <Pill key={id} size="sm">
                         <span className="mono">{modifiers[id]?.code ?? '?'} · 0</span>
                       </Pill>
                     ))}

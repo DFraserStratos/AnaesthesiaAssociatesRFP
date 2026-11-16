@@ -16,7 +16,8 @@ import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotSta
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
-import { BackLink, ChoiceRow, Initials } from './moveSheetParts'
+import { BackLink, ChoiceRow } from './moveSheetParts'
+import { Avatar } from '../Avatar'
 import { VacatedSessionChoice } from './VacatedSessionChoice'
 import { sessionText } from '../../domain/outOfHours'
 
@@ -202,7 +203,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
                   }}
                   style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', minHeight: 56, border: 'none', borderTop: i === 0 ? 'none' : `1px solid ${neutral.sunken}`, background: neutral.surface, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
                 >
-                  <Initials name={t.name} />
+                  <Avatar name={t.name} size={36} variant="neutral" />
                   <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{t.name}</span>
                     {t.phone !== '' && <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{t.phone}</span>}
@@ -220,7 +221,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
             {toSlotId === undefined && <BackLink onClick={() => setStep(route === 'colleague' ? 'colleague' : 'where')}>{route === 'colleague' ? 'Who is free' : 'Where it goes'}</BackLink>}
             {route === 'colleague' && colleague !== undefined ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <Initials name={colleague.name} size={44} />
+                <Avatar name={colleague.name} size={44} variant="neutral" />
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <span style={{ fontSize: 18, fontWeight: 700 }}>{colleague.name}</span>
                   <span style={{ fontSize: 13, color: neutral.slate }}>{dayLine} · {targetSlotId !== undefined ? resolveDisplayStatus(slots[targetSlotId]?.status ?? '', statuses).label : ''} session</span>

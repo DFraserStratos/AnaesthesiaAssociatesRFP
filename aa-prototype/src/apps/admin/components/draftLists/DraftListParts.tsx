@@ -13,36 +13,24 @@ import { waitingMinutes } from '../../../../domain/draftLists'
 import type { List } from '../../../../domain/types'
 import { waitingLabel } from '../../../../shared/format'
 import { DRAFT_STATE, UNASSIGNED, bookingCountLabel, bookingNoun } from '../../../../shared/scheduleTerms'
-import { neutral, radius, semantic } from '../../../../theme/tokens'
-
-const PILL: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 5,
-  padding: '1px 8px',
-  borderRadius: radius.pill,
-  fontSize: 11,
-  fontWeight: 600,
-  lineHeight: '16px',
-  whiteSpace: 'nowrap',
-}
+import { Pill } from '../../../../shared/ui/Pill'
+import { neutral, semantic, type as typeScale } from '../../../../theme/tokens'
 
 /** The flag on every Draft List surface: the warning tint, a solid dot (never colour alone: it carries the word). */
 export function UnassignedPill() {
   return (
-    <span data-unassigned="true" style={{ ...PILL, background: semantic.warning.tint, color: semantic.warning.onTint }}>
-      <span aria-hidden style={{ width: 6, height: 6, borderRadius: 3, background: semantic.warning.solid }} />
+    <Pill tone="warning" data-unassigned="true" leading={<span aria-hidden style={{ width: 6, height: 6, borderRadius: 3, background: semantic.warning.solid }} />}>
       {UNASSIGNED}
-    </span>
+    </Pill>
   )
 }
 
-/** The DRAFT state chip, shown only on a Draft List beside its flag. */
+/** The DRAFT state chip, shown only on a Draft List beside its flag (its caps keep their tracking). */
 export function DraftStateChip() {
   return (
-    <span data-list-state="DRAFT" style={{ ...PILL, background: neutral.sunken, color: neutral.slate, letterSpacing: '0.06em' }}>
+    <Pill data-list-state="DRAFT" style={{ letterSpacing: typeScale.micro.tracking }}>
       {DRAFT_STATE}
-    </span>
+    </Pill>
   )
 }
 

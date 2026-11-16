@@ -1,33 +1,18 @@
 /**
  * The pairing and tier pills (catch-up Phase 17). Admin only. Tiers are plain
- * neutral pills; a preferred pairing is a calm teal-tint pill (information,
- * not an action); a not-preferred pairing is attention in the warning family
- * (the outline style of 15a's strength pill), never error red, never crimson.
- * Every word comes from the one label set.
+ * neutral pills; a preferred pairing is the success tint (information, not an
+ * action: UI unification question 15 moved it off the teal action tint); a
+ * not-preferred pairing is attention in the warning family (the outline of
+ * 15a's strength pill), never error red, never crimson. Every word comes from
+ * the one label set. One-line wrappers over the shared `Pill` (U3).
  */
 
-import type { CSSProperties } from 'react'
 import { PAIRING_LABELS, tierLabel } from '../../../../domain/pairingPreferences'
 import type { PriorityTier } from '../../../../domain/types'
-import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
-
-const PILL: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  padding: '1px 8px',
-  borderRadius: radius.pill,
-  fontSize: 11,
-  fontWeight: 600,
-  lineHeight: '16px',
-  whiteSpace: 'nowrap',
-}
+import { Pill } from '../../../../shared/ui/Pill'
 
 export function TierPill({ tier }: { tier: PriorityTier }) {
-  return (
-    <span data-tier={tier} style={{ ...PILL, background: neutral.sunken, color: neutral.slate }}>
-      {tierLabel(tier)}
-    </span>
-  )
+  return <Pill data-tier={tier}>{tierLabel(tier)}</Pill>
 }
 
 /** With a `count`, the pill reads "2 Preferred" (the Surgeons table's counts). */
@@ -36,13 +21,13 @@ function counted(count: number | undefined, label: string): string {
 }
 
 export function PreferredPill({ count }: { count?: number } = {}) {
-  return <span style={{ ...PILL, background: accent.tint, color: accent.pressed }}>{counted(count, PAIRING_LABELS.kind.PREFERRED)}</span>
+  return <Pill tone="success">{counted(count, PAIRING_LABELS.kind.PREFERRED)}</Pill>
 }
 
 export function NotPreferredPill({ count }: { count?: number } = {}) {
   return (
-    <span style={{ ...PILL, background: neutral.surface, color: semantic.warning.onTint, border: `1px solid ${semantic.warning.solid}` }}>
+    <Pill tone="warning" variant="outline">
       {counted(count, PAIRING_LABELS.kind.NOT_PREFERRED)}
-    </span>
+    </Pill>
   )
 }

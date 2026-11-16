@@ -7,7 +7,8 @@ import { clearWarning, useAppStore, type Actor } from '../../store'
 import { neutral, radius } from '../../theme/tokens'
 import { hhmm, shortDay } from '../format'
 import { strongestOpen } from './useBookingWarnings'
-import { KIND_LABELS, STRENGTH_LABELS, warningTone } from './tone'
+import { KIND_LABELS, STRENGTH_LABELS, warningPillTone, warningTone } from './tone'
+import { Pill } from '../ui/Pill'
 
 /** "Tue 21 Jul 10:05" for a clearance time. */
 export function clearanceWhen(atISO: string): string {
@@ -35,24 +36,10 @@ export function ClearWarningButton({
 }
 
 function StrengthPill({ warning }: { warning: Warning }) {
-  const tone = warningTone(isOpen(warning) ? warning.strength : undefined)
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '1px 8px',
-        borderRadius: radius.pill,
-        border: `1px solid ${tone.solid}`,
-        color: tone.onTint,
-        background: neutral.surface,
-        fontSize: 11,
-        fontWeight: 600,
-        lineHeight: '16px',
-      }}
-    >
+    <Pill variant="outline" tone={warningPillTone(isOpen(warning) ? warning.strength : undefined)}>
       {STRENGTH_LABELS[warning.strength]}
-    </span>
+    </Pill>
   )
 }
 

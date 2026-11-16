@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react'
-import { accent, brand, neutral, semantic, radius } from '../../../theme/tokens'
+import { AttentionDot } from '../../../shared/warnings/AttentionDot'
+import { accent, brand, neutral, radius } from '../../../theme/tokens'
 import { useAppStore, type Actor, type CalendarSession } from '../../../store'
 import { defaultSlotStatus } from '../../../domain/slotStatus'
 import { blockFill, resolveDisplayStatus, StatusChip, useAnaesthetistStatusChoices, useDisplayStatus, useSlotStatusRecords } from '../../../shared'
@@ -187,7 +188,8 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
       </span>
       {line2 !== '' && <span style={{ fontSize: 10, color: v.onTint, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{line2}</span>}
       {session.conflict && (
-        <span title="This List has a conflict for the office to resolve" style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: radius.pill, background: semantic.warning.solid, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        // The day cell's label already names the conflict, so the disc stays out of the name; the title is a hover hint.
+        <AttentionDot title="This List has a conflict for the office to resolve" style={{ position: 'absolute', top: -4.5, right: -4.5 }} />
       )}
     </span>
   )

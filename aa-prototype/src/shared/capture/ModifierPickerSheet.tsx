@@ -179,11 +179,11 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
                           <span style={{ fontSize: 14, fontWeight: 500, color: neutral.ink, lineHeight: '19px' }}>{m.factor}</span>
                           {state.kind === 'applied' && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                              <Pill size="small" shot="modifier-picker-applied">Applied</Pill>
+                              <Pill size="sm" shot="modifier-picker-applied">Applied</Pill>
                               <span style={{ fontSize: 12, color: neutral.mist }}>{state.reason}</span>
                             </span>
                           )}
-                          {state.kind === 'claimed' && <Pill size="small">Claimed</Pill>}
+                          {state.kind === 'claimed' && <Pill size="sm">Claimed</Pill>}
                         </span>
                         <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap', paddingTop: 2 }}>
                           {modifierUnitsText(m)}

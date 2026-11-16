@@ -1,4 +1,4 @@
-import { Wordmark } from '../../../shared'
+import { PersonaChip, Wordmark } from '../../../shared'
 import { brand, neutral, semantic, radius } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 import { PERSONAS } from '../../../shell/appConfig'
@@ -94,12 +94,8 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <RolesInfo />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
-          <span aria-hidden style={{ width: 30, height: 30, borderRadius: radius.pill, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{PERSONAS.kirsty.initials}</span>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.surface }}>{PERSONAS.kirsty.name}</span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{PERSONAS.kirsty.role}</span>
-          </div>
+        <div style={{ padding: 8 }}>
+          <PersonaChip persona={PERSONAS.kirsty} />
         </div>
       </div>
     </div>

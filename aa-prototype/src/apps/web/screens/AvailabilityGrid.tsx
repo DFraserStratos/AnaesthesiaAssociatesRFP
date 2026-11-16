@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { accent, brand, neutral, radius } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
-import { resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
+import { Avatar, resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
 import { initialsOf, locationName, matchesNameQuery, longDayNoYear } from '../../../shared/format'
 import { NameSearchBox } from '../../../shared/ui'
 import { AvailabilityPageSwitch, Panel } from '../components'
@@ -170,7 +170,7 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
             {visible.map((row) => (
               <div key={row.anaesthetistId} data-shot={row.anaesthetistId === anaesthetistId ? 'availability-row-mine' : undefined} style={{ display: 'grid', gridTemplateColumns: columns, gap: '0 12px', alignItems: 'center', padding: '7px 20px', borderBottom: `1px solid ${neutral.sunken}` }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                  <span aria-hidden style={{ width: 30, height: 30, borderRadius: radius.pill, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{row.initials}</span>
+                  <Avatar initials={row.initials} size={30} variant="tint" />
                   <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {row.name}
                     {row.anaesthetistId === anaesthetistId && <span style={{ marginLeft: 6, fontSize: 11, color: neutral.mist }}>(you)</span>}

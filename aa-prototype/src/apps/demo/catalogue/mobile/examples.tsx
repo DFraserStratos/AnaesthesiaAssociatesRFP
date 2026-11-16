@@ -29,7 +29,7 @@ import {
   type ListRowRight,
 } from '../../../../shared'
 import { Button, FormError, Segmented, SlidingSegmentedControl, TextArea, TextField } from '../../../../shared/ui'
-import { OutOfHoursMoon, OutOfHoursPill, useBookingSearch } from '../../../../shared/schedule'
+import { OutOfHoursMoon, useBookingSearch } from '../../../../shared/schedule'
 import { AlertOfficeSheet, MovedToYouPanel, SubmitListSheet, useBookingsMovedToMe, useMovedToMe } from '../../../../shared/flows'
 import { AvailabilityEditor, SeriesList, useAvailabilityMonth } from '../../../../shared/availability'
 import { TimesCard } from '../../../../shared/capture/TimesCard'
@@ -601,15 +601,6 @@ export function ProgressPillExample() {
   return <div style={{ ...row, rowGap: 10 }}>{all.map((p) => <ProgressPill key={p} progress={p} />)}</div>
 }
 
-export function OutOfHoursPillExample() {
-  return (
-    <div style={row}>
-      <OutOfHoursPill />
-      <OutOfHoursPill moon />
-    </div>
-  )
-}
-
 export function OutOfHoursMoonExample() {
   return (
     <div style={{ ...row, gap: 18 }}>
@@ -652,7 +643,10 @@ export function AvatarExample() {
     <div style={{ ...row, gap: 14 }}>
       <Avatar initials={initials} size={34} />
       <Avatar initials={initials} />
-      <Avatar initials={initials} size={56} />
+      <Avatar initials={initials} size={30} variant="tint" />
+      <Avatar initials={initials} size={36} variant="tint" />
+      <Avatar name="Dr Ana Kaur" size={36} variant="neutral" />
+      <Avatar name="Dr Ana Kaur" size={36} variant="neutral" muted />
     </div>
   )
 }

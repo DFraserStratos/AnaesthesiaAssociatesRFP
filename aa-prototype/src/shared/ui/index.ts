@@ -12,4 +12,7 @@ export { TickButton } from './TickButton'
 export { SuccessOverlay } from './SuccessOverlay'
 export { DockSpacer } from './DockSpacer'
 export { NameSearchBox, type NameSearchBoxProps } from './NameSearchBox'
-export { Pill, type PillTone } from './Pill'
+export { Pill, PILL_TONES, type PillTone, type PillSize, type PillVariant } from './Pill'
+// UI unification U3: the passive vocabulary.
+export { CountBadge, type CountBadgeTone } from './CountBadge'
+export { visuallyHidden } from './visuallyHidden'

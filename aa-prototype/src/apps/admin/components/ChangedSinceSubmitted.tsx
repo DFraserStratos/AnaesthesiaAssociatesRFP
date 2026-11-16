@@ -8,7 +8,7 @@
 
 import { useMemo } from 'react'
 import { PenLine } from 'lucide-react'
-import { neutral, semantic, radius } from '../../../theme/tokens'
+import { Pill } from '../../../shared/ui/Pill'
 import { changedSinceSubmitted, useAppStore, type ChangedSinceSubmitted } from '../../../store'
 import { dayWithYear, hhmm, plural } from '../../../shared/format'
 
@@ -26,25 +26,15 @@ export function useChangedSinceSubmitted(listId: string | undefined): ChangedSin
 export function ChangedSinceSubmittedPill({ cue }: { cue: ChangedSinceSubmitted }) {
   const changes = plural(cue.count, 'change')
   return (
-    <span
-      data-shot="review-changed-since-submitted"
+    <Pill
+      tone="warning"
+      variant="outline"
+      size="lg"
+      shot="review-changed-since-submitted"
       title={`${changes} by the anaesthetist since the List was submitted, the last on ${dayWithYear(cue.lastAtISO)} at ${hhmm(cue.lastAtISO)}`}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        fontSize: 12,
-        fontWeight: 600,
-        color: semantic.warning.onTint,
-        background: neutral.surface,
-        border: `1px solid ${semantic.warning.solid}66`,
-        borderRadius: radius.pill,
-        padding: '3px 10px',
-        whiteSpace: 'nowrap',
-      }}
+      leading={<PenLine size={12} strokeWidth={2.4} aria-hidden />}
     >
-      <PenLine size={12} strokeWidth={2.4} aria-hidden />
       Changed since submitted · <span className="mono">{cue.count}</span>
-    </span>
+    </Pill>
   )
 }

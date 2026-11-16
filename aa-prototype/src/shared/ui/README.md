@@ -41,7 +41,7 @@ drops a hook: check `git diff` for removed `data-` lines.
 |---|---|---|---|
 | `Button` | `ui/Button.tsx` | Primary, secondary and danger commands | U5 (sizes, `outline`, `disabledReason`) |
 | `TextAction` | `ui/TextAction.tsx` | A teal text command inside a row or card | U5 |
-| `Pill` | `ui/Pill.tsx` | A tone label: status, kind, attention flag | U3 (tones, sizes, outline) |
+| `Pill` | `ui/Pill.tsx` | A tone label: status, kind, attention flag. `tone` neutral, success, warning, error; `size` sm, md (inline, default), lg (table, `4px 10px` 11/600); `variant` tint or outline; `leading`, `mono`, `title`, `shot`, `data-*` | U3 (done) |
 | `NameSearchBox` | `ui/NameSearchBox.tsx` | The type-ahead name search | U4 (field fill) |
 | `FieldLabel` | `ui/Field.tsx` | The label above a field | U4 |
 | `FormError` | `ui/Field.tsx` | A refusal box under a form | U3 (announced, one look) |
@@ -53,6 +53,11 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `TickButton` | `ui/TickButton.tsx` | A tick-to-confirm control | None planned |
 | `SuccessOverlay` | `ui/SuccessOverlay.tsx` | The full-surface "it worked" moment | U2 (`DoneStep`) |
 | `DockSpacer` | `ui/DockSpacer.tsx` | Room under content for a pinned mobile dock | None planned |
+| `CountBadge` | `ui/CountBadge.tsx` | The 18px count beside a heading, with a hidden noun; hidden at zero by default (U3) | None planned |
+| `visuallyHidden` | `ui/visuallyHidden.ts` | Words for screen readers only (a style object, U3) | None planned |
+| `AttentionDot` | `warnings/AttentionDot.tsx` | The solid "!" or triangle marker, 13px by default; `aria-hidden` unless labelled; `WarningTriangle` composes it (U3) | None planned |
+| `Avatar` | `Avatar.tsx` | Initials in a disc beside a printed name: `elevated` (mobile), `tint` (web and Admin), `neutral` (move sheets, `muted`); mockup font steps (U3) | None planned |
+| `PersonaChip` | `PersonaChip.tsx` | The signed-in persona on an ink bar: avatar, name, role (U3) | None planned |
 | `Dialog` | `surface/Dialog.tsx` | The centred web and Admin overlay | U2 (`useModalLayer`, `OverlayHeader`, corner X) |
 | `BottomSheet` | `surface/BottomSheet.tsx` | The phone's bottom sheet | U2 (`useModalLayer`, `OverlayHeader`, `SheetActions`) |
 | `SurfaceProvider` | `surface/SurfaceProvider.tsx` | Chooses sheet or dialog per surface; the frosted dock | U2 |

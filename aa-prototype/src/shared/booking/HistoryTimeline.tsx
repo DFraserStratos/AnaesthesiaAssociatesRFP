@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import type { AuditEntry } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { easing, motion } from '../../theme/motion'
+import { Pill } from '../ui/Pill'
 import { useAppStore, useToday } from '../../store'
 import { dayHeading, hhmm } from '../format'
 import { actionLabel, auditFieldChanges, auditNamesFor, coalesceAudit, type AuditFieldChange, type AuditGroup, type AuditNames } from '../audit'
@@ -181,19 +182,9 @@ function GroupRow({
             {actionLabel(entry.action)}
           </span>
           {coalesced && (
-            <span
-              style={{
-                flex: 'none',
-                fontSize: 10.5,
-                fontWeight: 600,
-                color: accent.pressed,
-                background: accent.tint,
-                borderRadius: radius.pill,
-                padding: '1px 8px',
-              }}
-            >
+            <Pill size="sm" style={{ flex: 'none' }}>
               {steps.length} changes
-            </span>
+            </Pill>
           )}
         </div>
         <span style={{ fontSize: 12, color: neutral.slate }}>{provenance(entry)}</span>

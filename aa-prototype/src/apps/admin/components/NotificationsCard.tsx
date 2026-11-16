@@ -13,6 +13,7 @@ import { format, parseISO } from 'date-fns'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { activeNotificationCount, latestNotifications, resolveNotification, useAppStore, type Actor, type NotificationRow, type NotificationTarget, type PoolState } from '../../../store'
 import { accent, neutral, radius } from '../../../theme/tokens'
+import { CountBadge } from '../../../shared/ui/CountBadge'
 import { motion } from '../../../theme/motion'
 import { FormError, TickBadge, TickButton } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
@@ -58,18 +59,12 @@ export function usePoolState(): PoolState {
   )
 }
 
-/** The count of notices nobody has ticked, beside a heading (US-13.8.1 "Count"): a neutral pill, not an action. */
+/**
+ * The count of notices nobody has ticked, beside a heading (US-13.8.1 "Count"):
+ * the shared rail bubble, not an action. It still shows "0" once all are ticked.
+ */
 export function ActiveCount({ count, shot }: { count: number; shot: string }) {
-  return (
-    <span
-      data-shot={shot}
-      className="mono"
-      style={{ display: 'inline-flex', alignItems: 'center', minWidth: 22, height: 22, padding: '0 8px', borderRadius: radius.pill, background: neutral.sunken, color: count > 0 ? neutral.ink : neutral.slate, fontSize: 12, fontWeight: 700, justifyContent: 'center', fontVariantNumeric: 'tabular-nums' }}
-    >
-      {count}
-      <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}> active</span>
-    </span>
-  )
+  return <CountBadge count={count} shot={shot} mono srNoun="active" hideAtZero={false} />
 }
 
 /**

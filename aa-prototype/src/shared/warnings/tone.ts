@@ -14,3 +14,10 @@ export function warningTone(strength: WarningStrength | undefined): { solid: str
 
 export const KIND_LABELS = { beforeProcedure: 'Before procedure', afterProcedure: 'After procedure' } as const
 export const STRENGTH_LABELS = { mild: 'Mild', strong: 'Strong' } as const
+
+/** The same three colours as `Pill` tones (UI unification U3): mild warning, strong error, cleared neutral. */
+export function warningPillTone(strength: WarningStrength | undefined): 'warning' | 'error' | 'neutral' {
+  if (strength === 'strong') return 'error'
+  if (strength === 'mild') return 'warning'
+  return 'neutral'
+}

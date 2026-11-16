@@ -15,7 +15,7 @@ import type { AssignedList, Booking } from '../../domain/types'
 import { drSurname, locationName } from '../format'
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
-import { Initials } from './moveSheetParts'
+import { Avatar } from '../Avatar'
 import { sessionText } from '../../domain/outOfHours'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 
@@ -204,7 +204,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
         {step === 'confirm' && receiver !== undefined && (
           <div data-shot="move-booking-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Initials name={receiver.name} size={44} />
+              <Avatar name={receiver.name} size={44} variant="neutral" />
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <span style={{ fontSize: 18, fontWeight: 700, color: neutral.ink }}>{receiver.name}</span>
                 <span style={{ fontSize: 13, color: neutral.slate }}>
@@ -314,7 +314,7 @@ function ReceiverRow({ receiver, first, onPick }: { receiver: BookingReceiver; f
     return (
       <li style={{ display: 'flex' }}>
         <div data-shot="move-booking-blocked" data-anaesthetist-id={receiver.anaesthetistId} aria-disabled="true" style={{ ...base, background: neutral.bg }}>
-          <Initials name={receiver.name} muted />
+          <Avatar name={receiver.name} size={36} variant="neutral" muted />
           {text}
         </div>
       </li>
@@ -323,7 +323,7 @@ function ReceiverRow({ receiver, first, onPick }: { receiver: BookingReceiver; f
   return (
     <li style={{ display: 'flex' }}>
       <button type="button" data-shot="move-booking-receiver" data-anaesthetist-id={receiver.anaesthetistId} onClick={onPick} style={{ ...base, background: neutral.surface, cursor: 'pointer' }}>
-        <Initials name={receiver.name} />
+        <Avatar name={receiver.name} size={36} variant="neutral" />
         {text}
         <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
       </button>

@@ -158,7 +158,7 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                   <td style={rowStyle}>
                     <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
                       <span style={{ color: neutral.slate, whiteSpace: 'nowrap' }}>{rangeSpanText(ranges, i)}</span>
-                      {current && <Pill size="small">In force today</Pill>}
+                      {current && <Pill size="sm">In force today</Pill>}
                     </span>
                   </td>
                   <td style={{ ...rowStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>

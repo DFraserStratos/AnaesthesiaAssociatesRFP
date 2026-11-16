@@ -10,7 +10,7 @@ import {
   AnatomyDatalistExample,
   ButtonExample,
   ChangedSinceSubmittedExample,
-  ConflictDotExample,
+  AttentionDotExample,
   DateFieldExample,
   DrawerPartsExample,
   FormErrorExample,
@@ -127,7 +127,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="HistorySheet" source="shared/booking/HistorySheet.tsx" usedIn={AWM} what="The audit history of a record in an Overlay, with expandable steps (HistoryTimeline)." replaceWith="shadcn Dialog + Accordion">
           <HistorySheetExample />
         </CatalogueRow>
-        <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges, the wordmark and the Roles in this prototype dialog." replaceWith="shadcn Sidebar" note="Gives real links, aria-current and a nav label; crimson only on --sidebar-primary." height={600}>
+        <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges (the mockup badge, kept local), the wordmark, the Roles in this prototype dialog and the persona through the shared PersonaChip." replaceWith="shadcn Sidebar" note="Gives real links, aria-current and a nav label; crimson only on --sidebar-primary." height={600}>
           <SideNavExample />
         </CatalogueRow>
         <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the 15 master views, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view." height={420}>
@@ -147,13 +147,13 @@ export function AdminCatalogue() {
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={AWM} what="A small tinted chip for a List kind or availability status, coloured from the status master." replaceWith="shadcn Badge (6 status variants)">
           <StatusChipExample />
         </CatalogueRow>
-        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="Neutral, success and warning label pills, never teal or crimson, so no pill reads as a button (the warning tone since catch-up Phase 21: a payer with no contact, Under 18, no approval number)." replaceWith="shadcn Badge">
+        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="The one label pill (UI unification U3): neutral, success, warning and error tones; sm, md (inline) and lg (table, the Admin Review size); a tint or a full-alpha outline; a leading icon or dot. Never teal or crimson, so no pill reads as a button." replaceWith="shadcn Badge">
           <PillExample />
         </CatalogueRow>
         <CatalogueRow name="MasterPills" source="apps/admin/components/MasterPills.tsx" usedIn={A} what="Admin's import path for Pill, used for Party kinds, Contract tags, Active and RVG anatomy headings." replaceWith="shadcn Badge" note="A re-export only: delete it in the migration.">
           <MasterPillsExample />
         </CatalogueRow>
-        <CatalogueRow name="TierPill / PreferredPill / NotPreferredPill" source="apps/admin/components/pairing/Pills.tsx" usedIn={A} what="The office-only pairing pills: priority tier, preferred pairing (teal tint) and not preferred (warning outline)." replaceWith="shadcn Badge">
+        <CatalogueRow name="TierPill / PreferredPill / NotPreferredPill" source="apps/admin/components/pairing/Pills.tsx" usedIn={A} what="The office-only pairing pills over the shared Pill: priority tier, preferred pairing (success tint, question 15) and not preferred (warning outline)." replaceWith="shadcn Badge">
           <PairingPillsExample />
         </CatalogueRow>
         <CatalogueRow name="ChangedSinceSubmittedPill" source="apps/admin/components/ChangedSinceSubmitted.tsx" usedIn={A} what="Flags a submitted List the anaesthetist has changed since submitting, with the count and time of the last change." replaceWith="shadcn Badge + Tooltip" note="Driven by a local cue here: the seed has no changed submitted List.">
@@ -162,8 +162,8 @@ export function AdminCatalogue() {
         <CatalogueRow name="DraftListParts" source="apps/admin/components/draftLists/DraftListParts.tsx" usedIn={A} what={`${DRAFT_LIST} badges: ${UNASSIGNED}, the DRAFT state chip, the waiting time (amber past a day) and the booking count.`} replaceWith="shadcn Badge">
           <DraftListPartsLive />
         </CatalogueRow>
-        <CatalogueRow name="ConflictDot" source="apps/admin/components/conflicts/ConflictDot.tsx" usedIn={A} what="The amber conflict mark, muted once cleared." replaceWith="shadcn Badge (dot) + Tooltip">
-          <ConflictDotExample />
+        <CatalogueRow name="AttentionDot" source="shared/warnings/AttentionDot.tsx" usedIn={AWM} what="The solid attention disc (UI unification U3, from ConflictDot): a 13px '!' for a conflict or a List that needs the office, a triangle for warnings, muted once cleared. A marker, never a control: aria-hidden unless labelled. WarningTriangle and the Day grid and calendar marks draw it." replaceWith="shadcn Badge (dot) + Tooltip">
+          <AttentionDotExample />
         </CatalogueRow>
         <CatalogueRow name="WarningTriangle" source="shared/warnings/WarningTriangle.tsx" usedIn={AWM} what="The warning mark on a booking, coloured by the strongest open warning." replaceWith="shadcn Tooltip + Badge" note="Its detail is reachable by keyboard once it is a Tooltip.">
           <WarningTriangleExample />
@@ -189,10 +189,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="ConflictCallout" source="apps/admin/components/conflicts/ConflictCallout.tsx" usedIn={A} what="Warns, before saving, that the hospital is closed that day and the List will be flagged." replaceWith="shadcn Alert">
           <ConflictCalloutExample />
         </CatalogueRow>
-        <CatalogueRow name="WarningsToDo" source="apps/admin/components/WarningsToDo.tsx" usedIn={A} what="The rail's To-do card: every open warning, soonest first, each with Open and Clear, and a show-more toggle." replaceWith="shadcn Card + Collapsible" note="Clear writes a clearance to the demo store.">
+        <CatalogueRow name="WarningsToDo" source="apps/admin/components/WarningsToDo.tsx" usedIn={A} what="The rail's To-do card: every open warning, soonest first, each with Open and Clear, and a show-more toggle. Its count is the shared CountBadge (read as 3 to do)." replaceWith="shadcn Card + Collapsible" note="Clear writes a clearance to the demo store.">
           <WarningsToDoExample />
         </CatalogueRow>
-        <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved." replaceWith="shadcn Card + Button" note="Resolve writes to the demo store. The fresh seed has no notices, so it shows its empty state.">
+        <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved. Its count is the shared CountBadge (read as 2 active), still showing 0." replaceWith="shadcn Card + Button" note="Resolve writes to the demo store. The fresh seed has no notices, so it shows its empty state.">
           <NotificationsCardExample />
         </CatalogueRow>
         <CatalogueRow name="VacatedSessionChoice / StatusRadioGroup" source="shared/flows/VacatedSessionChoice.tsx" usedIn={AWM} what="A radio group of status chips with a roving tab stop: what the vacated session becomes after a move." replaceWith="shadcn RadioGroup" note="Already correct; swap for consistency.">
