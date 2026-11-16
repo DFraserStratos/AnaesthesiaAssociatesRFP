@@ -23,7 +23,10 @@ the Vitest + Playwright suites are green.
 **The requirements catch-up is next.** `docs/prototype-build/catch-up/` holds a verified gap analysis
 between the prototype and the catalogue (at commit `fbdd555`) and a build plan of phases 14 to 44 (50 phases, some lettered such as 15a) to
 close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). A catch-up phase
-session follows its phase doc and prompt; other work is still fixes, polish and demo preparation.
+session follows its kick-off prompt, which loads the `run-build-phase` skill (the lifecycle every
+phase shares: context pack, drift check, build, checks, review, screenshots, PROGRESS entry, and
+updating the plan page to name the next phase) and its phase doc; other work is still fixes, polish
+and demo preparation.
 When requirements change, the `/update-requirements` skill records the evidence and updates the
 catalogue, then (after a commit) `/update-build-plan <commit>` updates the plan.
 
@@ -73,7 +76,9 @@ Not the place to edit requirements:
   `requirements-board/requirements/` (format: `REQ/SCHEMA.md`). It is a **portable kit**: the app,
   its data folder `requirements/` and its agent skills in `agent/` (`update-requirements`,
   `update-build-plan` (its tools in `agent/skills/update-build-plan/tools/`; the catch-up plan's
-  settings in `docs/prototype-build/catch-up/plan.config.json`), `add-artifact`, `svg-diagram`,
+  settings in `docs/prototype-build/catch-up/plan.config.json`), `run-build-phase` (runs one plan
+  phase; its `phase-context.mjs` and `phase-check.mjs` in `agent/skills/run-build-phase/tools/`, set
+  up by the `runner` key of the same config), `add-artifact`, `svg-diagram`,
   `transcript-reconciler`, `consistency-review`, and the `link-requirements` workflow),
   exposed to Claude Code by symlinks in `.claude/skills/` and `.claude/workflows/` (`npm --prefix
   requirements-board run install-skills -- --link`; a shared kit gets copies instead); edit the files in

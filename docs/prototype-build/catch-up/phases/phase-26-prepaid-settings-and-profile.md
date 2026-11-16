@@ -17,7 +17,7 @@ Context only, closed elsewhere:
 [OQ-14](../../../../requirements-board/requirements/questions/OQ-14.md) (bank details in the system, on the profile, display-only here, mandatory),
 [OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (one identifier, the HPI CPN, mandatory), **D64** (above) and **D53** ([OQ-111](../../../../requirements-board/requirements/questions/OQ-111.md), 4 November: payments to anaesthetists are made in Xero's payables run, so bank details are master data the system holds, not a field the app pays from).
 **Depends on:** Phase 17 only (built: `normaliseHpiCpn`, `isPlausibleHpiCpn`, the duplicate check, the Admin anaesthetist record page, the
-office-only privacy boundary). Needs nothing unbuilt, so it can run any time; it must run before Phase 38 (whose monthly GST report it leaves
+office-only privacy boundary). Its only other dependency is UI unification Phase U6 (below); it must run before Phase 38 (whose monthly GST report it leaves
 in calendar months) and before 40a. Where 22 or 25 have not landed, see "Before you start" step 4. Also
 UI unification Phase U6 (and through it U1 to U5), DONE first: the shared `DefRow`, `Card` and
 `PageHeader` this phase builds on, with U3's `Avatar`.

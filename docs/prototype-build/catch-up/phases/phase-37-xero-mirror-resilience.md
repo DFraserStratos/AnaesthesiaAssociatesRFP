@@ -836,11 +836,16 @@ disbursement (Mobile Balances shows outstanding receivables, not payouts). The P
 entries on Balances pick up the outage-aware body automatically; an outage cannot be switched on in the
 PWA (it has its own storage and no harness bar), so they behave exactly as before. Phase 14's
 "Office authorises this List" and "Play the office" hand off through `handoffListPairs`, so they reach
-the gate and, with Xero always available in the PWA, create the Xero pair at once as today; nothing in
-the PWA runs payables, so no PWA path depends on disbursement detection. `wireXeroQueue` is wired in
+the gate and, with Xero always available in the PWA, create the Xero pair at once as today. The one PWA
+path that runs payables is Phase 36's office stand-in "Office runs payables" on Mobile · Balances
+(`surfaces: ['pwa']`, `OFFICE_SIMULATION_ACTOR`): keep it, rename it "Office runs payables in Xero",
+and have its body call the same simulated Xero payables run as the Billing monitor's button (the
+payment made in Xero, then recorded here when detected), so Dr Souter's "Paid out" still rises by what
+was due, with the same disabled state ("Nothing due to pay out"); update its registry test and any
+recipe or demo-guide line that names it (owner decision, 16 November 2026). `wireXeroQueue` is wired in
 `pwa/main.tsx` for parity. Confirm the six new entries declare `surfaces: ['bar']`, that the PWA
-sheet lists none of them, and that Phase 44's parity audit lists this phase as "no PWA stand-in
-required".
+sheet lists none of them, and that Phase 44's parity audit lists this phase as "PWA stand-in renamed:
+Office runs payables in Xero".
 
 ## Out of scope
 
@@ -1180,5 +1185,5 @@ amends (listed below).
   39 had landed and it was built here), and richer amendments (line-level diffs, raised totals); for
   Phase 39a, the restyled monitor's panel order, where its payables run preview goes; for Phase 43, the
   monitor at full scale (the collapse threshold, and whether it then needs paging); for Phase 44, the
-  FT-13.3 placement caveat is already gone from the monitor (RV-17); Phase 44 parity audit: no PWA
-  stand-in required for this phase.
+  FT-13.3 placement caveat is already gone from the monitor (RV-17); Phase 44 parity audit: Phase 36's PWA
+  stand-in renamed "Office runs payables in Xero" and switched to the Xero payables run.

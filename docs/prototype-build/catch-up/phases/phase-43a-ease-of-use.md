@@ -241,8 +241,10 @@ presenter-narrated.
      work item 6's office-only list in one place, and record it. **The anaesthetist is to see more**
      (for example the calculated fee): move it out of the office-only list in one place and record
      it. Never strip a field a Confirmed story still gives the anaesthetist.
-   - **US-03.4.1 now takes the procedure or Contract change away from the anaesthetist:** stop and
-     tell the owner. Removing Phase 20's "Change" is that phase's rule, not a display sweep.
+   - **US-03.4.1 now takes the procedure or Contract change away from the anaesthetist:** not a
+     stop. Leave Phase 20's "Change" as it is (removing it is that phase's rule, not a display
+     sweep), build the rest, and list it under "For the owner's review" (owner decision, 16 November
+     2026).
    - **US-11.2.2 changes who edits the payer** (for example the office only): make 21's payer sheet
      read-only for the anaesthetist through the store's existing refusal (one line) and record it.
 3. If US-15.0.1 or US-13.5.3 is now Retired or Future, drop that half of the phase (the help and sweep,

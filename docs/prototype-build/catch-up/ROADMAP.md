@@ -335,7 +335,7 @@ Contracts     17 surgeons, rooms, preferences & tiers (built) ─▶ 18 Parties 
               completion & review ─▶ 22 invoice presentation & split ─▶ 23 primary & multi-procedure rule
               ─▶ 24 pricing kinds & the price until held ─▶ 25 Contract history & AUTHORISED lock
                                                             (19 and 21 after 15a; 20 after 38a; 21a after 32b)
-Profile       26 anaesthetist profile & bank details                     (needs nothing unbuilt)
+Profile       26 anaesthetist profile & bank details                     (needs U6)
 Rooms         17a rooms without an email, surgeons at more than one room, practice manager & PA contacts
                                           (after 17, built, and 18a; before 35, 40 and 42)
 Prepayment    27 prepayment lifecycle ─▶ 27a AA Holding account & transfer      (after 25)
@@ -655,8 +655,8 @@ under Sequencing rules.
     re-expressed, the discount line and the $0 invoice. 25 locks what 18 to 24 built in a pricing
     snapshot per Procedure and shows each Contract's audited history. There are no versions, staged
     changes or relinking to build (D77, D34 answered).
-- **26 needs nothing unbuilt.** It keeps its place after 25, but can run any time if AA wants bank
-  details sooner; it removes the GST period (RV-02), so it runs before 38, whose monthly GST report it
+- **26 needs only U6 (and 17, built).** It keeps its place after 25 and U6, and can run as soon as
+  U6 is done if AA wants bank details sooner; it removes the GST period (RV-02), so it runs before 38, whose monthly GST report it
   leaves in calendar months.
 - **17a needs 18a** (and built 17). It runs after 26 in run order, and before 35, 40
   and 42: 35's update email and 40's NHI request read a room's email through its one helper (empty
@@ -1387,16 +1387,31 @@ PWA parity beat by beat.
   a typed Prepaid · Fixed price); 32c any S2 line on the AM and PM sessions (an out-of-hours List
   after PM); 35 the history narration (named office users); 43a the help desk.
 
+### Running a phase
+
+From 16 November 2026 every kick-off prompt is short: it names the phase, tells the agent to load
+the `run-build-phase` skill (`requirements-board/agent/skills/run-build-phase/`), and adds only what
+the phase doc does not already say (overrides, extra reads, the rules to hold above all, the goal).
+The skill holds the rest, the same for every phase: a context pack of what this phase needs from
+the progress file, this roadmap and the catalogue (`phase-context.mjs`); the drift check; plan and
+build; quick partial checks while building and the full green set side by side at gates
+(`phase-check.mjs`); the design-fidelity check and manual checklist; review, screenshots and demo
+guide in parallel; a short PROGRESS entry with a Handoffs block; and updating `status.json` and the
+plan page so it names the next phase. A prompt line wins over the skill; the phase doc wins over the
+skill for what to build.
+
 ### Front-end design
 
-Every phase from 15 on touches UI, so every kick-off prompt from 15 on tells the agent to invoke the
-`/frontend-design:frontend-design` skill before building or reshaping any screen, sheet, dialog,
-panel, row, banner or state. The skill works inside the design system, not over it: the
+Every phase from 15 on touches UI, so the agent invokes the `frontend-design` skill before building
+or reshaping any screen, sheet, dialog, panel, row, banner or state. From 16 November 2026 the
+`run-build-phase` skill (see "Running a phase" below) holds this step, so kick-off prompts no longer
+carry the bullet, and it adds a design-fidelity check: each changed screen is screenshotted beside
+its mockup at the same viewport and compared before the phase is called done. The skill works inside the design system, not over it: the
 `docs/design` files and `src/theme` tokens stay authoritative (PROGRESS convention 17, CLAUDE.md
 "Design"), so it shapes layout, hierarchy, spacing, states and finish, never a new palette, typeface
 or visual language, and the two hard rules (crimson identity only, teal the only action colour)
 hold. Store, seed and pure-domain steps do not need it. A new or re-planned phase that touches UI
-carries the same "While working:" bullet.
+names, in its doc, the design page and screen for each screen it changes.
 
 ### One component per job
 
@@ -1423,9 +1438,11 @@ rule switches on when the U phase that builds its component lands; U7 adds the s
 The owner (2026-10-02) is running the phases back to back and will not review the app after each
 one. One proper review comes **after all catch-up phases are finished**. So, from Phase 15 on:
 
-- **No plan-approval stop.** After the drift check, the agent writes its step plan (in the session,
-  and in the PROGRESS entry) and starts building straight away. It does not enter plan mode or wait
-  for approval.
+- **No plan-approval stop.** After the drift check, the agent writes its step plan and starts
+  building straight away. It never enters plan mode itself. When the owner starts a session in plan
+  mode (often so it plans while the previous phase is still testing or capturing), the agent does
+  all its reading and the drift check first and presents the plan once; after approval it builds to
+  the end without further stops.
 - **The agent is the tester.** It runs the phase's manual test checklist itself, in the running app
   (start root `npm run dev` in the background if 5173 or 5174 is down), driving it with Playwright
   or the `/run` skill and checking screenshots by eye. "Handset" checks use the emulated mobile
@@ -1471,11 +1488,14 @@ PROGRESS.md entry:
    Add `data-shot` hooks rather than brittle selectors, and move hooks with the code they follow.
    Stage a per-screen demo trigger with the runner's `trigger` step (added in Phase 14, because shots
    hide the harness bar that holds the "Demo actions" menu); on the PWA, open its Demo sheet instead.
-3. **Capture.** With the prototype on 5173 and the PWA on 5174 (if they are not running, start root
-   `npm run dev` in the background and stop it afterwards), run `node scripts/capture.ts --dry` in
-   `requirements-board/`, fix what fails, then a full `npm run capture`. The full run rewrites only
-   images that changed, links them into the items' `images`, and rewrites `requirements-board/requirements/capture/REPORT.md`. It
-   must end with no failed recipe and no story without a recipe.
+3. **Capture.** From 16 November 2026, through the runner's `phase-check.mjs` (it starts the
+   prototype on 5173 and the PWA on 5174 if they are down, and stops what it started): first
+   `--capture <IDs>` for the recipes of steps 1 and 2 only (a dry run of just those, then their
+   capture), fixing and re-running only what fails; then one full capture (`--capture all`, no dry
+   pass) at the very end, in the background while the PROGRESS entry is written. Never a full dry
+   run: it takes as long as a full capture. The full run rewrites only images that changed, links
+   them into the items' `images`, and rewrites `requirements-board/requirements/capture/REPORT.md`.
+   It must end with no failed recipe and no story without a recipe.
 4. **Look at the shots.** Open the new and changed images for the covered items and check that each
    shows the built feature, the highlight lands on it, and the caption is true.
 5. **Keep ATLAS current.** Where the phase changes routes, seed ids, personas, overlays or hooks that

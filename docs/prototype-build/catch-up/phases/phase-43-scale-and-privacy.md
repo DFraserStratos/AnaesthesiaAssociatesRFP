@@ -99,7 +99,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 
 - **Scale.** A "Load full-scale data" demo action replaces the demo data with a full-practice dataset
   built in memory from the seeded RNG: 85 anaesthetists (the 14 demo anaesthetists plus 71 synthetic
-  ones), about 20,000 Slots across the scheduling horizon setting (four months by default and a setting
+  ones), about 21,000 Slots across the scheduling horizon setting (four months by default and a setting
   that can change; the app says "sessions", never "slot"), and about 28,000 invoices raised over the last
   12 months, each with its Booking, pricing snapshot, ledger pair and Xero mirror. The set is generated
   in the flat model of 5 November, exactly as the app holds it: standing patterns as recurring bookings; Lists in

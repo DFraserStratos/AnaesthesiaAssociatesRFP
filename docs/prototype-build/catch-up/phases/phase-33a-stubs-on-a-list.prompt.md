@@ -1,32 +1,18 @@
-Please run catch-up Phase 33a (Stubs on a List) of the Anaesthesia Associates prototype (aa-prototype/, a React demo over a fake in-browser backend; the requirements catalogue is the source of truth). Paths below are relative to the repo root and several contain spaces, so quote them. Run it straight after Phase 33, in the same working tree. Do not commit or push.
+Please run catch-up Phase 33a (Stubs on a List) of the Anaesthesia Associates prototype.
 
-Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions D11 (answered: no Booking or patient without an NHI; the row waits in 33's unmatched queue) and D66 (answered 4 November, OQ-118: a stub, not a Booking, stands in the waiting row's place on its List, seen by the anaesthetist and the office, until the office resolves it from intake; build it as answered, no provisional label), the Intake sequencing (33a straight after 33; 34 and 40 reuse its resolve path), the vocabulary rule (a stub, never a "stub Booking"), and the Demo triggers, PWA parity, Demo guide, Front-end design, "Owner review: agents test themselves" and "Catalogue screenshots" sections.
-2. docs/prototype-build/catch-up/phases/phase-33a-stubs-on-a-list.md: your detailed plan.
-3. docs/prototype-build/catch-up/phases/phase-33-hospital-matching-screen.md (only its work items 1, 2 and 5 on the row model, the matcher's waiting rows and decideImportRow, and its row panel) and the PROGRESS entries of Phases 33, 15a and 31: use the names they shipped.
-4. The catalogue in "requirements-board/requirements/": stories/ FT-02.6, US-02.6.1, US-02.6.2, US-02.6.3; for context US-02.1.4 (its "Stub on the List" criterion), US-11.1.4, US-11.1.5 and US-13.7.3 (no confirm step); questions/ OQ-118 (the Answer) and OQ-49; domain-model.md's glossary "Stub"; Greg's 28 October passages (npm --prefix requirements-board run source -- --item US-02.6.1 --text, Node 24 via nvm). Then DM-58 in docs/prototype-build/catch-up/analysis/domain-model-delta.md and the gaps.json entries for FT-02.6, US-02.6.1 to US-02.6.3 and DM-58.
-5. docs/design/Design Language.dc.html, Mobile App.dc.html, Web Dashboard.dc.html, Admin Day.dc.html and Admin Review.dc.html: the authoritative visual reference (convention 17). No mockup has a stub; extend the Booking row.
-6. requirements-board/requirements/capture/ATLAS.md and the phase doc's "Catalogue screenshots" section.
-7. docs/prototype-build/PROGRESS.md: the binding conventions.
+Load the run-build-phase skill and follow it for this phase. The phase doc holds the reads, drift-check stops, work items, checklist, screenshots, demo guide and progress updates; below is only what the doc does not already say.
 
-Then do the drift check in the phase doc (plan-state.mjs --diff with the IDs it lists, baseline fbdd555), confirm 33 is DONE and how it exposes the List a no-NHI row would land on, build OQ-118 and OQ-49 as answered, and build the stub readings the doc lists, labelled once in code and once in the app and logged for the owner. Then write a short plan from the work items and start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
+Overrides:
+- Run it straight after Phase 33, in the same working tree.
 
-While working:
-- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it. Here it applies to the stub row, its marker and sheet, the List's "waiting at intake" note, and Add NHI on the Matching panel.
-- A stub is not a Booking. Keep it in the intake slice, never in schedule.bookings, on its own id (never the NHI), linked to its waiting row; prove with one isolation sweep that no Booking count, fee, completion, billing, BCTI, search, warning or to-do path reads it.
-- One path. Only settleStubForRow changes a stub's status, inside decideImportRow's commit; resolveStub composes 33's correctImportRow and decideImportRow and is what 40 and 34 reuse. Every mutation through the audited mutate(), times from the demo clock.
+Also read:
+- Phase 33's doc: only its work items 1, 2 and 5 (the row model, the matcher's waiting rows and decideImportRow, the row panel). The PROGRESS entries of Phases 15a and 31 as well as 33's, for the names they shipped.
+
+Hold to these above all:
+- A stub is not a Booking: its own record in the intake slice, never in schedule.bookings, on its own id (never the NHI), linked to its waiting row; one isolation sweep proves no Booking count, fee, completion, billing, BCTI, search, warning or to-do path reads it.
+- One path: only settleStubForRow changes a stub's status, inside decideImportRow's commit; resolveStub composes 33's correctImportRow and decideImportRow and is what 34 and 40 reuse.
 - A List holding a stub never reads all-complete, through the stub's own marking only: no Warning record, no to-do entry, no prompt or block at submit or authorise.
-- One PWA-safe component set in src/shared/stubs; teal the only action colour, crimson never; no en or em dashes, no "slot", no "stub Booking" in app copy.
-- Seed one stub on a Dr Souter List away from scripted beats; keep rng() order; bump PERSIST_VERSION by one.
-- Demo triggers in Phase 14's registry only: the PWA "Office adds the NHI to this stub". Add NHI and Reject are product controls.
-- Keep npm run build, npm run build:pwa and npx vitest run green as you go.
-
-When done:
-- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run verify:board are green;
-- run the adversarial review-and-fix pass (convention 18: Opus subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding, fix the confirmed ones, re-green);
-- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 33a; create the US-02.6.1 to US-02.6.3 recipes, add US-02.1.4's stub state, and fix every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update ATLAS.md; then npm run verify:board green. Never edit a requirement's text or status or any artifact;
-- patch the demo guide in the same session as the phase doc's "Demo guide updates" lists (the no-NHI beat, the cheat sheet's NHI answer and the NHI to type, Workflow 1, master-demo-guide.html);
-- update PROGRESS.md (status row, phase entry, handoffs and Decisions log as the phase doc lists) and give me short, clear notes ending with the "For the owner's review" list (also in the PROGRESS entry).
+- The stub readings are labelled once: in code (STUB_READINGS), once in the app and on the owner's list.
+- Say "a stub", never "stub Booking"; no "slot" in app copy.
 
 Phase goal: an incoming booking with no NHI still waits in the unmatched queue and creates no Booking, and a stub, a record of its own outside the Bookings table and never keyed on the NHI, stands in its place on its List, clearly marked in the mobile, web and Admin List views and never counted as a Booking; a List holding one never reads all-complete, with no warning, to-do entry, prompt or block; the office resolves it on Matching through one audited path, Add NHI creating the Booking that takes the stub's place or Reject removing it, which 34 and 40 reuse.

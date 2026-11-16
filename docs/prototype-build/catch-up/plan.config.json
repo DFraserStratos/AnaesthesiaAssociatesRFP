@@ -62,12 +62,12 @@
       "afterChecklist": "## Demo guide updates: which docs/demo-guide files and S1 to S5 beats change, or \"none\".",
       "afterScreenshots": "## Adversarial review (after build): the standard pass (PROGRESS convention 18), with \"Steer this phase's reviewers at:\" bullets specific to this phase."
     },
-    "readFirst": "the relevant design files, and the PROGRESS.md sections that matter: binding conventions + any Decisions log entries this phase supersedes",
+    "readFirst": "the design pages (and the screens within them) for every screen the phase changes; the ROADMAP.md owner decisions (D-numbers, each with a one-line gist) and sequencing rules that name the phase; its GAP-ANALYSIS.md epic tables and DM and RV rows; the catalogue stories, context items and questions (answered or open), domain-model.md sections and artifact sections it builds from; the PROGRESS.md Decisions-log entries it supersedes or honours, and the catch-up entries of the phases it builds on, each with what to read it for (the names that phase shipped). Not the binding conventions, ROADMAP's standing rules, ATLAS.md or the Design Language: the run-build-phase context pack and skill carry those",
     "workItemRules": "Include PERSIST_VERSION bumps, Vitest tests for any domain or billing rule, and removal/rework of retired behaviour where covered. A phase that touches UI has a work item \"Build on the shared components; migrate these copies\" naming the shared components it uses and the private copies on its screens that it migrates (docs/ui-unification/PLAN.md section 3).",
-    "promptRules": "If the phase touches UI, the prompt's \"While working:\" list opens with the frontend-design bullet (ROADMAP.md \"Front-end design\"; copy it from a neighbouring prompt). The \"When done:\" list runs the adversarial review pass (PROGRESS convention 18) and the demo guide updates.",
+    "promptRules": "The run-build-phase skill holds the frontend-design step (it loads the skill named frontend-design before building or reshaping any screen, sheet, dialog, panel, row, banner or state), the house rules, the green commands, the adversarial review pass (PROGRESS convention 18), the catalogue screenshots, the demo guide updates and the PROGRESS entry, so a prompt never restates them; the phase doc names the design page for each screen it changes. A phase that runs in its own git worktree beside another (U2 and U3) keeps its worktree root, branch, commit, port-lock and merge rules in the prompt's Override block, because the doc lives in the worktree it must create first: the only place a prompt names an absolute path.",
     "reviewChecks": [
       "demo triggers are screen-contextual (harness bar, plus the PWA equivalent) and the demo guide beats it changes are named",
-      "a phase that touches UI has the frontend-design bullet in \"While working:\"",
+      "a phase that touches UI names in its doc the design page (and the screen within it) for each screen it changes, so the runner's design-fidelity check has its references; its prompt carries no frontend-design bullet (the run-build-phase skill loads frontend-design)",
       "a phase that touches UI has the \"Build on the shared components\" work item, and its adversarial review steer says a new private copy of a shared component is a finding",
       "the owner-added UI unification phases (U1 to U7) and their sequencing rule are still in the plan"
     ]
@@ -99,6 +99,98 @@
       "Schedule": "B", "Intake": "B",
       "Prepayment": "D", "Patients": "D",
       "Master data": "E", "NFR": "E"
+    }
+  },
+  "runner": {
+    "skill": "run-build-phase",
+    "maxParallel": 4,
+    "logDir": ".build-phase",
+    "concurrency": "npm run build and npm run build:pwa both start with tsc -b on the same solution (aa-prototype/tsconfig.json: app + node references), which rewrites node_modules/.tmp/*.tsbuildinfo; two at once race on those files, so the typecheck runs once and both vite builds need it (typecheck + build = npm run build, typecheck + build-pwa = npm run build:pwa, without changing package.json). The two vite builds run side by side: different outDir (dist/ and dist-pwa/, each emptied by its own build), different cacheDir (node_modules/.vite and node_modules/.vite-pwa), publicDir only read. vitest (jsdom, src/**/*.test.*, no output folder, cache node_modules/.vite/vitest) runs beside them from the start; it is the long pole (about 90 s wall, 4 to 5 cores). verify-board is another folder with its own tsconfig and tsbuildinfo, so it is safe beside everything, but two of its tests (git history, skill links) do git and file work under a 5 s timeout and timed out when run beside the app's Vitest on 16 November 2026, so it waits for vitest (ordering only) and shots wait for it. shots (Playwright) does not read dist; its webServer entries reuse a dev server already on 5173/5174 (reuseExistingServer: true) and otherwise start npm run dev and dev:pwa itself, so it never clashes with the dev servers; it waits for vitest and both builds (ordering only, not success) so CPU contention cannot slow its screenshots into timeouts. Catalogue capture is its own mode (--capture) and needs the dev servers on 5173 and 5174.",
+    "checks": [
+      {
+        "name": "typecheck",
+        "aliases": ["tsc"],
+        "cwd": "aa-prototype",
+        "cmd": "tsc -b",
+        "changed": true,
+        "focus": "error TS",
+        "timeout": 600,
+        "equivalent": "the tsc -b that starts npm run build and npm run build:pwa (run once for both)"
+      },
+      {
+        "name": "build",
+        "cwd": "aa-prototype",
+        "cmd": "vite build",
+        "needs": ["typecheck"],
+        "timeout": 600,
+        "equivalent": "with typecheck: npm run build (dist/)"
+      },
+      {
+        "name": "build-pwa",
+        "aliases": ["build:pwa","pwa"],
+        "cwd": "aa-prototype",
+        "cmd": "vite build --config vite.pwa.config.ts",
+        "needs": ["typecheck"],
+        "timeout": 600,
+        "equivalent": "with typecheck: npm run build:pwa (dist-pwa/)"
+      },
+      {
+        "name": "vitest",
+        "aliases": ["test"],
+        "cwd": "aa-prototype",
+        "cmd": "vitest run",
+        "changed": "vitest run --changed --passWithNoTests",
+        "timeout": 900,
+        "equivalent": "npx vitest run (--changed: only tests related to uncommitted changes)"
+      },
+      {
+        "name": "verify-board",
+        "aliases": ["verify","verify:board","board"],
+        "cwd": ".",
+        "cmd": "npm run verify:board",
+        "after": ["vitest"],
+        "changed": {"cmd":"npm run check"},
+        "timeout": 600,
+        "equivalent": "npm run verify:board: board typecheck, Vitest, catalogue check (--changed: the catalogue check only)"
+      },
+      {
+        "name": "shots",
+        "aliases": ["playwright"],
+        "cwd": "aa-prototype",
+        "cmd": "playwright test",
+        "after": ["vitest","build","build-pwa","verify-board"],
+        "focus": "✘|Error:|expect\\(|\\d+ (failed|flaky)|Timeout",
+        "timeout": 1200,
+        "equivalent": "npm run shots"
+      }
+    ],
+    "devServers": [
+      {"name":"prototype","port":5173,"url":"http://localhost:5173","cwd":".","cmd":"npm run dev:proto"},
+      {"name":"pwa","port":5174,"url":"http://localhost:5174","cwd":".","cmd":"npm run dev:pwa"}
+    ],
+    "devCommand": {"cwd":".","cmd":"npm run dev"},
+    "startTimeout": 120,
+    "node": { "min": "22.18", "paths": ["/opt/homebrew/opt/node@24/bin", "$HOME/.nvm/versions/node/v24.20.0/bin"] },
+    "context": {
+      "budgetKB": 60,
+      "fullEntryKB": 8,
+      "progressSections": ["Binding conventions"],
+      "sequencingSection": "Sequencing rules",
+      "sequencingAlways": ["Every phase", "Vocabulary", "Open questions with a recommendation"],
+      "runOrder": [
+        { "section": "Sequencing rules", "marker": "**Run order.**" },
+        { "section": "Tracks", "marker": "Run order from here:" }
+      ],
+      "roadmapSections": ["Owner review: agents test themselves", "Front-end design", "One component per job", "Demo triggers", "PWA parity", "Demo guide", "Catalogue screenshots", "Confirm before building"],
+      "designDir": "docs/design"
+    },
+    "capture": {
+      "cwd": "requirements-board",
+      "cmd": "node scripts/capture.ts",
+      "onlyFlag": "--only",
+      "dryFlag": "--dry",
+      "report": "requirements-board/requirements/capture/REPORT.md",
+      "timeout": 3600
     }
   }
 }
