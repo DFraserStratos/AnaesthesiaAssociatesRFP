@@ -8,12 +8,13 @@
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "22a, a payer on each Procedure, is next (re-planned 17 November), then U4, U5 and 23.",
+    "headline": "Start 22a now: a payer on each Procedure (re-planned 17 November), then U4, U5 and 23.",
     "headline_sub": "The 17 November requirements change moves the payer from the Booking to each Procedure (OQ-140 asks AA to confirm; built as decided). 22a reworks 21's Booking payer and 22's Paid by into one Paid by line and sheet per Procedure; U4 and 23 now wait for it.",
     "parallel": "None now: 22a runs alone, then U4 (a U phase never runs beside a catch-up phase).",
-    "safe": {},
+    "safe": {
+      "22a": "Every dependency is done and committed (21a and 22) and it is next in run order; U4 and 23 now wait for it."
+    },
     "wait": {
-      "22a": "Every dependency is done (21a and 22) and it is next in run order, now that U4 depends on it; awaiting the owner's go-ahead after the 17 November re-plan.",
       "U4": "Now depends on 22a (22a turns 21's PayerSheet into the one Paid by sheet that U4 migrates); runs straight after it.",
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
