@@ -14,6 +14,7 @@ import { format, parseISO } from 'date-fns'
 import { pairingLine } from '../../../../shared/format'
 import { DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
+import { CountBadge } from '../../../../shared/ui/CountBadge'
 import { BookingCount, UnassignedPill, WaitingTime } from './DraftListParts'
 import { sessionText } from '../../../../domain/outOfHours'
 
@@ -35,11 +36,7 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
     >
       <h2 id="admin-draft-lists-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
         {DRAFT_LISTS}
-        {waiting.length > 0 && (
-          <span className="mono" style={{ padding: '0 7px', borderRadius: radius.pill, background: semantic.warning.tint, color: semantic.warning.onTint, fontSize: 11.5, fontWeight: 700, lineHeight: '18px', fontVariantNumeric: 'tabular-nums' }}>
-            {waiting.length}
-          </span>
-        )}
+        <CountBadge count={waiting.length} tone="warning" mono srNoun="waiting" />
       </h2>
       {waiting.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No {DRAFT_LISTS} waiting.</div>}
       {shown.length > 0 && (

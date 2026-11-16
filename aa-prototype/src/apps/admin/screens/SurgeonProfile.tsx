@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import { groupsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
 import { useAppStore, type Actor } from '../../../store'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
@@ -92,9 +92,9 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {memberOf.map((g) => (
-                <span key={g.id} data-group={g.id} style={{ fontSize: 12.5, fontWeight: 500, padding: '4px 10px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate }}>
+                <Pill key={g.id} size="lg" data-group={g.id}>
                   {g.name}
-                </span>
+                </Pill>
               ))}
             </div>
           )}

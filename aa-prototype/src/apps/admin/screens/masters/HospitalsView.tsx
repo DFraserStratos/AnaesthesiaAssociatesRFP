@@ -6,7 +6,7 @@ import { hospitalMonth, scheduleHorizon, useAppStore, type Actor } from '../../.
 import { Button, Segmented } from '../../../../shared'
 import { monthCells, monthOf, shiftMonth, WEEKDAY_SHORT_NAMES } from '../../../../shared/availability'
 import { HolidaySheet } from '../../flows/HolidaySheet'
-import { ConflictDot } from '../../components/conflicts/ConflictDot'
+import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { AddHospitalSheet } from '../../flows/AddHospitalSheet'
 import { EditHospitalSheet } from '../../flows/EditHospitalSheet'
 import { selectControlStyle } from '../../flows/fieldChrome'
@@ -202,7 +202,7 @@ function HospitalCalendar({
                 {listCount > 0 && <span>{plural(listCount, 'List')}</span>}
                 {closure !== undefined && (day?.conflictedCount ?? 0) > 0 && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: semantic.warning.onTint, fontWeight: 600 }}>
-                    <ConflictDot size={12} />
+                    <AttentionDot size={12} />
                     {day?.conflictedCount} flagged
                   </span>
                 )}

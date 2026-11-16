@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { CountBadge } from '../../../shared/ui/CountBadge'
 import { drSurname, shortDay, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
-import { ConflictDot } from './conflicts/ConflictDot'
+import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { ClearWarningButton, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { sessionText } from '../../../domain/outOfHours'
 
@@ -52,11 +53,7 @@ export function WarningsToDo({
     >
       <h2 id="admin-todo-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
         To-do
-        {rows.length > 0 && (
-          <span style={{ padding: '0 7px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate, fontSize: 11.5, fontWeight: 700, lineHeight: '18px', fontVariantNumeric: 'tabular-nums' }}>
-            {rows.length}
-          </span>
-        )}
+        <CountBadge count={rows.length} srNoun="to do" />
       </h2>
       {conflicts > 0 && (
         <button
@@ -65,7 +62,7 @@ export function WarningsToDo({
           onClick={onOpenConflicts}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: 'none', borderRadius: radius.ctl, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base, cursor: 'pointer', textAlign: 'left' }}
         >
-          <ConflictDot />
+          <AttentionDot size={14} />
           {plural(conflicts, 'open conflict')}
         </button>
       )}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { needsInvoiceDestinationBookings, useAppStore } from '../../../store'
 import { accent, neutral, radius } from '../../../theme/tokens'
+import { CountBadge } from '../../../shared/ui/CountBadge'
 import { shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 
@@ -29,11 +30,7 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
     >
       <h2 id="admin-needs-destination-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
         Needs an invoice destination
-        {rows.length > 0 && (
-          <span style={{ padding: '0 7px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate, fontSize: 11.5, fontWeight: 700, lineHeight: '18px', fontVariantNumeric: 'tabular-nums' }}>
-            {rows.length}
-          </span>
-        )}
+        <CountBadge count={rows.length} srNoun={rows.length === 1 ? 'procedure' : 'procedures'} />
       </h2>
       {rows.length === 0 ? (
         <div style={{ fontSize: 12.5, color: neutral.mist }}>Every Booking has an invoice destination.</div>

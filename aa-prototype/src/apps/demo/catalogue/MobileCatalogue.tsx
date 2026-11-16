@@ -110,11 +110,6 @@ export function MobileCatalogue() {
           replaceWith="shadcn Badge">
           <Ex.ProgressPillExample />
         </CatalogueRow>
-        <CatalogueRow name="OutOfHoursPill" source="shared/schedule/OutOfHoursMark.tsx" usedIn={SW} stage="mobile" height={160}
-          what="The neutral Out-of-hours pill beside a title, with the moon in a header."
-          replaceWith="shadcn Badge (secondary, with icon)">
-          <Ex.OutOfHoursPillExample />
-        </CatalogueRow>
         <CatalogueRow name="AgeChip" source="apps/mobile/screens/BalancesScreen.tsx" usedIn={M} stage="mobile" height={240}
           what="An outstanding invoice's age in days (amber past 60 days), with an ACC chip when ACC funded."
           replaceWith="shadcn Badge"
@@ -128,9 +123,8 @@ export function MobileCatalogue() {
           <Ex.DayChipExample />
         </CatalogueRow>
         <CatalogueRow name="Avatar" source="shared/Avatar.tsx" usedIn={SW} stage="mobile" height={160}
-          what="The persona identity avatar: a white chip with crimson initials and a soft shadow."
-          replaceWith="shadcn Avatar (AvatarFallback)"
-          note="One of four hand-rolled avatars (the colleague initials on Availability are another).">
+          what="The one avatar (UI unification U3): elevated white on mobile (the persona), the crimson tint of web and Admin (colleagues, the web nav), and neutral in the move sheets (muted when a colleague cannot be picked). The mockup font steps: 30 gives 11, 34 gives 12, 36 gives 13, 44 gives 15. PersonaChip draws it on the dark bars."
+          replaceWith="shadcn Avatar (AvatarFallback)">
           <Ex.AvatarExample />
         </CatalogueRow>
         <CatalogueRow name="Hero figure card" source="apps/mobile/screens/BalancesScreen.tsx" usedIn={M} stage="mobile" height={200}

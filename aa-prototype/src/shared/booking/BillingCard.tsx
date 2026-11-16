@@ -510,7 +510,7 @@ function ChoiceTiles({ options, value, stacked, onPick }: { options: readonly Ra
               <span style={{ fontSize: 15, fontWeight: 700, color: on ? accent.base : neutral.ink }}>{o.label}</span>
               {/* The Booking's funder marks one path (catch-up Phase 21, US-04.3.10): never a filter. */}
               {o.suggested === true && (
-                <Pill size="small" shot="rail-suggested">
+                <Pill size="sm" shot="rail-suggested">
                   Suggested
                 </Pill>
               )}

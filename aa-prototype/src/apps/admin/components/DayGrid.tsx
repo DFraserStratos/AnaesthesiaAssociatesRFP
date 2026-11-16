@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Moon, Plus, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
+import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import type { DisplayKey, DraftList } from '../../../domain/types'
 import { isClosedKey } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
@@ -353,14 +354,14 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
       {icon === 'conflict' ? (
         // The conflict swatch: the block's warning tint and border with its "!" (the legend entry and the filter in one).
         <span aria-hidden data-shot="daygrid-legend-conflict" style={{ position: 'relative', width: 22, height: 13, borderRadius: 4, boxSizing: 'border-box', background: semantic.warning.tint, border: `1.5px solid ${ATTENTION}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 1 }}>
-          <span style={{ width: 9, height: 9, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, fontSize: 7, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+          <AttentionDot size={9} />
         </span>
       ) : icon === 'note' ? (
         <span aria-hidden style={{ width: 7, height: 7, borderRadius: radius.pill, background: neutral.ink, opacity: 0.55 }} />
       ) : icon === 'warning' ? (
-        <span aria-hidden style={{ width: 13, height: 13, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TriangleAlert size={8} strokeWidth={3} /></span>
+        <AttentionDot glyph="triangle" />
       ) : (
-        <span aria-hidden style={{ width: 13, height: 13, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+        <AttentionDot />
       )}
       {label}
     </button>
@@ -477,7 +478,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
       )}
       {listAttention && (
         // A marker, never a control: the reasons reach assistive tech through the block button's title, so the glyph stays out of its name (U1).
-        <span aria-hidden style={{ position: 'absolute', top: 3, right: 3, width: 13, height: 13, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        <AttentionDot style={{ position: 'absolute', top: 3, right: 3 }} />
       )}
       {showNoteDot && (
         <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: radius.pill, background: neutral.ink, opacity: 0.55 }} />

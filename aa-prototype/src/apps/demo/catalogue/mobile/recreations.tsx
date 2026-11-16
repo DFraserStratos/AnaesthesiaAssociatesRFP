@@ -26,7 +26,8 @@ import {
   type CalendarSession,
   type SlotView,
 } from '../../../../store'
-import { blockFill, resolveDisplayStatus, useDefaultStatus, useDisplayStatus, useSlotStatusRecords } from '../../../../shared'
+import { Avatar, blockFill, resolveDisplayStatus, useDefaultStatus, useDisplayStatus, useSlotStatusRecords } from '../../../../shared'
+import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { TickBadge } from '../../../../shared/ui'
 import {
   describeDayForScreenReaders,
@@ -37,7 +38,7 @@ import {
   useAvailabilityMonth,
   WEEKDAY_INITIALS,
 } from '../../../../shared/availability'
-import { formatCurrency, initialsOf, locationName } from '../../../../shared/format'
+import { formatCurrency, locationName } from '../../../../shared/format'
 
 // ---------------------------------------------------------------------------
 // MobileApp.tsx: BottomTabBar
@@ -417,9 +418,7 @@ export function ColleagueCellsCopy({ dateISO, excludeId, limit, moveTargets, onM
         return (
           <div key={r.anaesthetist.registrationNumber} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 1px 2px rgba(23,35,32,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 34, height: 34, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
-                {initialsOf(r.anaesthetist.name)}
-              </span>
+              <Avatar name={r.anaesthetist.name} size={34} variant="tint" />
               <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.anaesthetist.name}</span>
               {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: openVisual.onTint, background: openVisual.tint, borderRadius: 999, padding: '3px 9px' }}>{openLabel}</span>}
             </div>
@@ -470,7 +469,7 @@ export function HalfBlockCopy({ session }: { session: CalendarSession | undefine
     >
       {session.series !== undefined && <Repeat size={9} strokeWidth={2.6} color={v.onTint} aria-hidden />}
       {session.conflict && (
-        <span aria-hidden style={{ position: 'absolute', top: -4, right: -4, width: 11, height: 11, borderRadius: 99, background: semantic.warning.solid, color: neutral.surface, fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        <AttentionDot style={{ position: 'absolute', top: -5, right: -5 }} />
       )}
     </span>
   )

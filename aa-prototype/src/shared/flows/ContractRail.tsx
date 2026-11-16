@@ -426,7 +426,7 @@ function RailStepButton({
         </span>
         {auto && answer !== undefined && (
           <span>
-            <Pill size="small" shot="contract-rail-only-option">Only option</Pill>
+            <Pill size="sm" shot="contract-rail-only-option">Only option</Pill>
           </span>
         )}
       </span>
@@ -481,7 +481,7 @@ function OptionList({
                   <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{o.label}</span>
                   {/* The Booking's funder marks one path (catch-up Phase 21, US-04.3.10): never a filter. */}
                   {o.suggested === true && (
-                    <Pill size="small" shot="rail-suggested">
+                    <Pill size="sm" shot="rail-suggested">
                       Suggested
                     </Pill>
                   )}
@@ -558,7 +558,7 @@ function ContractRow({
           {contract.holderReference !== undefined && (
             <span className="mono" style={{ fontSize: 12, color: neutral.mist }}>{contract.holderReference}</span>
           )}
-          {pinned && <Pill size="small" shot="contract-rail-pinned">Always first</Pill>}
+          {pinned && <Pill size="sm" shot="contract-rail-pinned">Always first</Pill>}
         </span>
       </span>
       <span className={priceText.startsWith('$') || priceText.startsWith('Prepaid · $') ? 'mono' : undefined} style={{ fontSize: 13, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap' }}>

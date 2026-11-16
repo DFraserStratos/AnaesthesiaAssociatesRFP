@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
-import { accent, brand, neutral, radius } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import type { DisplayKey, Session } from '../../../domain/types'
 import type { SlotStatusRecords } from '../../../domain/slotStatus'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, useToday, type SlotView } from '../../../store'
@@ -8,7 +8,7 @@ import { ChevronRight } from 'lucide-react'
 import { MobileHeader } from '../components'
 import { Avatar, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
-import { initialsOf, locationName, shortDay } from '../../../shared/format'
+import { locationName, shortDay } from '../../../shared/format'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
 import { useNavigate } from 'react-router-dom'
 import { sessionText } from '../../../domain/outOfHours'
@@ -228,9 +228,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
           return (
             <div key={r.anaesthetist.registrationNumber} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 1px 2px rgba(23,35,32,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 34, height: 34, borderRadius: radius.pill, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
-                  {initialsOf(r.anaesthetist.name)}
-                </span>
+                <Avatar name={r.anaesthetist.name} size={34} variant="tint" />
                 <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.anaesthetist.name}</span>
                 {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: openVisual.onTint, background: openVisual.tint, borderRadius: radius.pill, padding: '3px 9px' }}>{openLabel}</span>}
               </div>

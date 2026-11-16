@@ -5,6 +5,7 @@ import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
 import { PopoverPanel, usePopover } from '../shared/ui'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
+import { CountBadge } from '../shared/ui/CountBadge'
 
 /** The harness pill, kept in step with `DemoClockMenu`'s `triggerStyle` (plus no-wrap). */
 const triggerStyle: React.CSSProperties = {
@@ -70,22 +71,8 @@ export function DemoActionsMenu() {
       >
         <FlaskConical size={16} strokeWidth={2} aria-hidden />
         <span className="aa-demo-actions-label">Demo actions</span>
-        <span
-          className="mono"
-          style={{
-            minWidth: 18,
-            height: 18,
-            padding: '0 5px',
-            borderRadius: radius.pill,
-            background: semantic.warning.tint,
-            color: semantic.warning.onTint,
-            fontSize: 11,
-            lineHeight: '18px',
-            textAlign: 'center',
-          }}
-        >
-          {rows.length}
-        </span>
+        {/* The trigger's aria-label already names the count, so no hidden noun. */}
+        <CountBadge count={rows.length} tone="warning" mono hideAtZero={false} />
       </button>
 
       {open ? (

@@ -19,6 +19,7 @@ import {
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
+import { Pill } from '../../../shared/ui/Pill'
 
 export type AaFeesTab = 'invoices' | 'settings'
 
@@ -345,20 +346,9 @@ function FeeInvoiceList({ invoices }: { invoices: AaFeeInvoiceRow[] }) {
 function FeeStatusPill({ row }: { row: AaFeeInvoiceRow }) {
   const paid = row.status === 'paid'
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        padding: '3px 9px',
-        borderRadius: radius.pill,
-        whiteSpace: 'nowrap',
-        fontSize: 11.5,
-        fontWeight: 600,
-        color: paid ? semantic.success.onTint : neutral.slate,
-        background: paid ? semantic.success.tint : neutral.sunken,
-      }}
-    >
+    <Pill size="lg" tone={paid ? 'success' : 'neutral'}>
       {paid ? `Paid ${dateLabel(row.paidAtISO)}` : 'Unpaid'}
-    </span>
+    </Pill>
   )
 }
 
@@ -495,9 +485,7 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
       <section style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>Monthly fee schedule</div>
-          <span data-testid="aa-fee-sample" style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate, fontSize: 11.5, fontWeight: 600 }}>
-            Sample schedule
-          </span>
+          <Pill data-testid="aa-fee-sample">Sample schedule</Pill>
         </div>
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: neutral.slate }}>
           A sample until AA's accountant supplies the real fixed charges. Amounts exclude GST; GST is added at

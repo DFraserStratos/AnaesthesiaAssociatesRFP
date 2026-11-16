@@ -6,7 +6,8 @@ import { AppSwitcher } from './AppSwitcher'
 import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
-import { neutral, brand, radius } from '../theme/tokens'
+import { PersonaChip } from '../shared/PersonaChip'
+import { neutral, radius } from '../theme/tokens'
 
 /**
  * The persistent demo harness. A slim top bar carries the product name, the
@@ -99,30 +100,7 @@ export function AppShell() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              aria-hidden
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: radius.pill,
-                background: brand.tint,
-                color: brand.base,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 11,
-                fontWeight: 700,
-                flex: 'none',
-              }}
-            >
-              {persona.initials}
-            </span>
-            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 600 }}>{persona.name}</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{persona.role}</span>
-            </span>
-          </div>
+          <PersonaChip persona={persona} size={28} gap={8} />
           <AppSwitcher activeApp={activeApp} onSelect={handleSelect} />
           <DemoActionsMenu />
           <DemoClockMenu />

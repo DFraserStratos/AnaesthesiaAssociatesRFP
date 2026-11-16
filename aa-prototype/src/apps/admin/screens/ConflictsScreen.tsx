@@ -18,7 +18,7 @@ import { conflictRows, restoreListConflict, scheduleHorizon, useAppStore, type A
 import { drSurname, hhmm, locationName, shortDay } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { isAssignedList } from '../../../domain/draftLists'
-import { ConflictDot } from '../components/conflicts/ConflictDot'
+import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { cellStyle as adminCell, headCellStyle as adminHead, textActionStyle } from '../tableChrome'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
@@ -214,7 +214,7 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                             <td style={{ ...cellStyle, ...muted }}>{masters.surgeons[r.surgeonId]?.name ?? r.surgeonId}</td>
                             <td style={{ ...cellStyle, maxWidth: 340 }}>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px 2px 3px', borderRadius: radius.pill, background: cleared ? neutral.sunken : semantic.warning.tint, color: cleared ? neutral.slate : semantic.warning.onTint, fontSize: 12, fontWeight: 600 }}>
-                                <ConflictDot muted={cleared} />
+                                <AttentionDot size={14} tone={cleared ? 'muted' : 'warning'} />
                                 {r.reason}
                               </span>
                               <div style={{ marginTop: 4, fontSize: 12, color: neutral.slate, lineHeight: '17px' }}>{r.detail}</div>

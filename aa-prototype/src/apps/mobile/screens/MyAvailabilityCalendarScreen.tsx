@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react'
-import { accent, brand, neutral, radius, semantic, surface } from '../../../theme/tokens'
+import { AttentionDot } from '../../../shared/warnings/AttentionDot'
+import { accent, brand, neutral, radius, surface } from '../../../theme/tokens'
 import type { Actor, CalendarSession } from '../../../store'
 import { blockFill, DockSpacer, resolveDisplayStatus, StatusChip, useAnaesthetistStatusChoices, useDisplayStatus, useSlotStatusRecords } from '../../../shared'
 import {
@@ -189,7 +190,7 @@ function HalfBlock({ session }: { session: CalendarSession | undefined }) {
     >
       {session.series !== undefined && <Repeat size={9} strokeWidth={2.6} color={v.onTint} aria-hidden />}
       {session.conflict && (
-        <span aria-hidden style={{ position: 'absolute', top: -4, right: -4, width: 11, height: 11, borderRadius: radius.pill, background: semantic.warning.solid, color: neutral.surface, fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        <AttentionDot style={{ position: 'absolute', top: -5, right: -5 }} />
       )}
     </span>
   )

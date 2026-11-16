@@ -1,5 +1,5 @@
-import { Logo } from '../../../shared'
-import { brand, neutral, radius } from '../../../theme/tokens'
+import { Avatar, Logo } from '../../../shared'
+import { brand, neutral } from '../../../theme/tokens'
 
 export type WebTab = 'dashboard' | 'lists' | 'availability' | 'accounts'
 
@@ -60,23 +60,7 @@ export function WebNav({ tab, onTab, personaName, initials }: WebNavProps) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>{personaName}</span>
-          <span
-            aria-hidden
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: radius.pill,
-              background: brand.tint,
-              color: brand.base,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            {initials}
-          </span>
+          <Avatar initials={initials} size={36} variant="tint" />
         </div>
       </div>
     </div>

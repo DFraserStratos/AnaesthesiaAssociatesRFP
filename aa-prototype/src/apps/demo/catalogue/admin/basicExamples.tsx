@@ -26,7 +26,7 @@ import { selectControlStyle } from '../../../admin/flows/fieldChrome'
 import { textActionStyle } from '../../../admin/tableChrome'
 import { MASTERS_NAV, type MastersView } from '../../../admin/screens/masters/view'
 import { Pill as MasterPill } from '../../../admin/components/MasterPills'
-import { ConflictDot } from '../../../admin/components/conflicts/ConflictDot'
+import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { ChangedSinceSubmittedPill } from '../../../admin/components/ChangedSinceSubmitted'
 import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/components/pairing'
 import { ActionBtn, DrawerLink, Row as DrawerRow, Section as DrawerSection } from '../../../admin/components/drawerParts'
@@ -304,10 +304,14 @@ export function StatusChipExample() {
 export function PillExample() {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-      <Pill>Neutral</Pill>
-      <Pill tone="success">Success</Pill>
-      <Pill size="small">Small</Pill>
-      <Pill tone="success" size="small">Small success</Pill>
+      {(['neutral', 'success', 'warning', 'error'] as const).map((tone) => (
+        <span key={tone} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <Pill tone={tone} size="sm">{tone} sm</Pill>
+          <Pill tone={tone}>{tone} md</Pill>
+          <Pill tone={tone} size="lg">{tone} lg</Pill>
+          <Pill tone={tone} variant="outline">{tone} outline</Pill>
+        </span>
+      ))}
     </div>
   )
 }
@@ -351,12 +355,13 @@ export function ChangedSinceSubmittedExample() {
   )
 }
 
-export function ConflictDotExample() {
+export function AttentionDotExample() {
   return (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 13, color: neutral.slate }}>
-      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><ConflictDot /> Default</span>
-      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><ConflictDot size={12} /> Small</span>
-      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><ConflictDot muted /> Muted (cleared)</span>
+      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><AttentionDot /> 13 (the Admin Day disc)</span>
+      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><AttentionDot size={9} /> 9 (legend)</span>
+      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><AttentionDot size={14} tone="muted" /> Muted (cleared)</span>
+      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><AttentionDot glyph="triangle" tone="error" label="Strong warning" /> Triangle, labelled</span>
     </div>
   )
 }
