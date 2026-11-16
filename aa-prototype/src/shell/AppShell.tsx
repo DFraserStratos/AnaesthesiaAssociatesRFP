@@ -6,7 +6,7 @@ import { AppSwitcher } from './AppSwitcher'
 import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
-import { neutral, brand } from '../theme/tokens'
+import { neutral, brand, radius } from '../theme/tokens'
 
 /**
  * The persistent demo harness. A slim top bar carries the product name, the
@@ -54,7 +54,7 @@ export function AppShell() {
           gap: 16,
           padding: '0 16px',
           background: neutral.ink,
-          color: '#FFFFFF',
+          color: neutral.surface,
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
@@ -68,7 +68,7 @@ export function AppShell() {
               textTransform: 'uppercase',
               color: 'rgba(255,255,255,0.6)',
               background: 'rgba(255,255,255,0.1)',
-              borderRadius: 999,
+              borderRadius: radius.pill,
               padding: '2px 8px',
               flex: 'none',
             }}
@@ -105,7 +105,7 @@ export function AppShell() {
               style={{
                 width: 28,
                 height: 28,
-                borderRadius: 999,
+                borderRadius: radius.pill,
                 background: brand.tint,
                 color: brand.base,
                 display: 'flex',

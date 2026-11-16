@@ -8,9 +8,9 @@
 
 import { useMemo } from 'react'
 import { PenLine } from 'lucide-react'
-import { neutral, semantic } from '../../../theme/tokens'
+import { neutral, semantic, radius } from '../../../theme/tokens'
 import { changedSinceSubmitted, useAppStore, type ChangedSinceSubmitted } from '../../../store'
-import { dayWithYear, hhmm } from '../../../shared/format'
+import { dayWithYear, hhmm, plural } from '../../../shared/format'
 
 /** The cue for one List, memoised over the records it reads. */
 export function useChangedSinceSubmitted(listId: string | undefined): ChangedSinceSubmitted | null {
@@ -24,7 +24,7 @@ export function useChangedSinceSubmitted(listId: string | undefined): ChangedSin
 }
 
 export function ChangedSinceSubmittedPill({ cue }: { cue: ChangedSinceSubmitted }) {
-  const changes = `${cue.count} change${cue.count === 1 ? '' : 's'}`
+  const changes = plural(cue.count, 'change')
   return (
     <span
       data-shot="review-changed-since-submitted"
@@ -38,7 +38,7 @@ export function ChangedSinceSubmittedPill({ cue }: { cue: ChangedSinceSubmitted 
         color: semantic.warning.onTint,
         background: neutral.surface,
         border: `1px solid ${semantic.warning.solid}66`,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         padding: '3px 10px',
         whiteSpace: 'nowrap',
       }}

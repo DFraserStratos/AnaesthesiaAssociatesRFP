@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
+import { motion } from '../../theme/motion'
 
 type Variant = 'primary' | 'secondary' | 'pill'
 
@@ -40,7 +41,7 @@ export function Button({
     justifyContent: 'center',
     gap: 8,
     border: 'none',
-    transition: 'background 150ms, opacity 150ms',
+    transition: `background ${motion.uiFade.duration}ms, opacity ${motion.uiFade.duration}ms`,
     ...(block ? { width: '100%' } : {}),
   }
 

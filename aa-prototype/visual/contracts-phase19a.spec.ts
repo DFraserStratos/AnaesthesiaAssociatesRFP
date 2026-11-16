@@ -24,7 +24,7 @@ test("phase 19a Merivale's Face lift: a backdated range re-prices the seeded Boo
   // Before: $3,100 from 1 Jun 2026 on the Admin Booking and the web List.
   await page.goto(FACE_LIFT_BOOKING)
   await page.waitForLoadState('networkidle')
-  await expect(page.getByTestId('booking-calculation')).toContainText('$3100.00')
+  await expect(page.getByTestId('booking-calculation')).toContainText('$3,100.00')
   await page.screenshot({ path: 'visual/shots/p19a-01-booking-before.png', fullPage: true })
 
   await openContract(page, 'Face lift', 'CT-MER-FACELIFT')
@@ -46,7 +46,7 @@ test("phase 19a Merivale's Face lift: a backdated range re-prices the seeded Boo
   await page.screenshot({ path: 'visual/shots/p19a-03-face-lift-backdated.png', fullPage: true })
 
   await page.goto(FACE_LIFT_BOOKING)
-  await expect(page.getByTestId('booking-calculation')).toContainText('$3200.00')
+  await expect(page.getByTestId('booking-calculation')).toContainText('$3,200.00')
   await page.screenshot({ path: 'visual/shots/p19a-04-booking-after.png', fullPage: true })
   await page.goto('/web/lists/L-34821-2026-08-10-PM')
   await expect(page.locator('tr', { hasText: '13:30' })).toContainText('$3,200.00')

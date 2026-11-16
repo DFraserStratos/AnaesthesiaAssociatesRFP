@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { accent, semantic } from '../../theme/tokens'
+import { accent, semantic, radius } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
@@ -170,7 +170,7 @@ export function BtmCaptureBlock({
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
-        <div data-shot="procedure-additional-note" style={{ background: accent.tint, color: accent.pressed, borderRadius: 10, padding: '10px 12px', fontSize: 13, lineHeight: '18px' }}>
+        <div data-shot="procedure-additional-note" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '18px' }}>
           Additional procedure. It bills for time units only; base and modifier units stay on the
           first procedure.
         </div>

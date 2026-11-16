@@ -134,11 +134,17 @@
   --color-phone-backdrop: #e4e8e6;
 
   /* ── Radii ─────────────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
   --radius-ctl: 10px;
+  --radius-md: 12px;
   --radius-card: 14px;
   --radius-panel: 20px;
   --radius-sheet: 24px;
   --radius-pill: 999px;
+
+  /* ── Easing (motion.ts `easing.card`; U1) ──────────────── */
+  --ease-card: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* ── Elevation ─────────────────────────────────────────── */
   --shadow-e0: 0 0 #0000;
@@ -146,6 +152,10 @@
   --shadow-e2: 0 2px 4px rgba(23, 35, 32, 0.06), 0 8px 20px rgba(23, 35, 32, 0.09);
   --shadow-e3: 0 8px 16px rgba(23, 35, 32, 0.1), 0 24px 56px rgba(23, 35, 32, 0.18);
   --shadow-calendar-focus: 0 0 0 2px var(--color-surface), 0 0 0 5px var(--color-brand);
+  /* The Design Language focus ring (line 80; = accent.focusRing). Added in U1, applied to fields in U4.
+     Tailwind emits a theme variable only once a rule reads it, so it reaches the page then.
+     The admin calendar's crimson ring above stays beside it (README section 5). */
+  --focus-ring: 0 0 0 3px rgba(13, 110, 99, 0.3);
 
   /* ── Type scale (size / line-height / weight / tracking) ─ */
   --text-display: 32px;
@@ -321,10 +331,8 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   height: var(--aa-viewport-shortfall, 0px);
   z-index: 90;
   pointer-events: none;
-  /* `neutral.ink`, literal: this rule is CSS-only, and there is no `--aa-ink`
-     custom property to read (the tokens live in TS and reach components as
-     style objects). */
-  border-top: 3px solid #172320;
+  /* `neutral.ink`, through the @theme mirror (U1). */
+  border-top: 3px solid var(--color-ink);
   background-image: repeating-linear-gradient(
     45deg,
     rgba(23, 35, 32, 0.55) 0,
@@ -574,7 +582,7 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   transform-origin: center;
   transition-property: transform, filter, background-color, border-color, color, opacity !important;
   transition-duration: 90ms, 90ms, 150ms, 150ms, 150ms, 150ms !important;
-  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  transition-timing-function: var(--ease-card) !important;
 }
 
 [data-aa-mobile-product] button:not(:disabled):active {
@@ -795,7 +803,7 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
    focus ring, never the browser's blue. */
 .aa-rail-scope button:focus-visible,
 .aa-rail-scope input:focus-visible {
-  outline: 2px solid #0d6e63;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 .aa-rail-scope button:focus:not(:focus-visible) {

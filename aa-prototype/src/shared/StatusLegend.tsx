@@ -4,6 +4,7 @@ import { SEED_STATUS } from '../domain/slotStatus'
 import { StatusChip } from './StatusChip'
 import { StatusBlock } from './StatusBlock'
 import { useSlotStatusRecords, useSlotStatuses, resolveDisplayStatus } from './status/useSlotStatuses'
+import { radius } from '../theme/tokens'
 
 interface StatusLegendProps {
   /**
@@ -74,7 +75,7 @@ export function StatusLegend({ variant = 'full', only, activeStatuses, onToggleS
               onClick={() => onToggleStatus(key)}
               style={{
                 border: 0,
-                borderRadius: 999,
+                borderRadius: radius.pill,
                 padding: 0,
                 background: 'transparent',
                 cursor: 'pointer',

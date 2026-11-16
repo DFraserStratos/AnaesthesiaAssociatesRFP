@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { DisplayKey } from '../domain/types'
 import type { StatusVisual } from '../theme/statusColours'
 import { useDisplayStatus } from './status/useSlotStatuses'
+import { radius } from '../theme/tokens'
 
 interface StatusBlockProps {
   /** A List kind or an availability status ID. */
@@ -31,7 +32,7 @@ export function blockFill(visual: StatusVisual): CSSProperties {
 export function StatusBlock({ status, title, detail, style }: StatusBlockProps) {
   const c = useDisplayStatus(status).visual
   return (
-    <span style={{ display: 'block', borderRadius: 6, padding: '6px 9px', minWidth: 110, ...blockFill(c), ...style }}>
+    <span style={{ display: 'block', borderRadius: radius.xs, padding: '6px 9px', minWidth: 110, ...blockFill(c), ...style }}>
       <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: c.onTint }}>
         {title}
       </span>

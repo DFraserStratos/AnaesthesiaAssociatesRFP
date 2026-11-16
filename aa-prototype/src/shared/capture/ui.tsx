@@ -89,7 +89,7 @@ export function StepperButton({
       style={{
         width: 44,
         height: 44,
-        borderRadius: 12,
+        borderRadius: radius.md,
         border: `1px solid ${neutral.line}`,
         background: neutral.surface,
         fontSize: 20,
@@ -124,7 +124,7 @@ export function NudgeButton({
       style={{
         width: 44,
         height: 36,
-        borderRadius: 10,
+        borderRadius: radius.ctl,
         border: `1px solid ${neutral.line}`,
         background: neutral.surface,
         fontFamily: 'inherit',
@@ -150,7 +150,7 @@ export function FailureNotes({ failures }: { failures: readonly BillingValidatio
           style={{
             background: semantic.error.tint,
             color: semantic.error.onTint,
-            borderRadius: 8,
+            borderRadius: radius.sm,
             padding: '6px 10px',
             fontSize: 12,
             lineHeight: '17px',

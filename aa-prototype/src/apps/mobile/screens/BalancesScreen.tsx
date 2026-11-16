@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CircleDollarSign } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { neutral, semantic } from '../../../theme/tokens'
+import { neutral, semantic, radius } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import {
   gstActivityFor,
@@ -10,7 +10,7 @@ import {
   useAppStore,
   useToday,
 } from '../../../store'
-import { formatCurrency } from '../../../shared/format'
+import { formatCurrency, plural } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { MobileHeader } from '../components'
@@ -59,13 +59,13 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
 
       {/* Outstanding total */}
       <div style={{ marginTop: 20, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 20, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <span style={{ width: 44, height: 44, borderRadius: 999, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.slate, flex: 'none' }}>
+        <span style={{ width: 44, height: 44, borderRadius: radius.pill, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.slate, flex: 'none' }}>
           <CircleDollarSign size={22} strokeWidth={2} aria-hidden />
         </span>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: 12, color: neutral.slate }}>Outstanding to you</span>
           <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{formatCurrency(aging.total)}</span>
-          <span style={{ fontSize: 12, color: neutral.mist }}>{outstanding.length} unpaid invoice{outstanding.length === 1 ? '' : 's'}</span>
+          <span style={{ fontSize: 12, color: neutral.mist }}>{plural(outstanding.length, 'unpaid invoice')}</span>
         </div>
       </div>
 
@@ -79,9 +79,9 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
         onSelect={setSection}
         variant="ink"
         ariaLabel="Balance section"
-        trackStyle={{ marginTop: 16, borderRadius: 999 }}
-        indicatorStyle={{ borderRadius: 999 }}
-        buttonStyle={{ minHeight: 36, borderRadius: 999, padding: '0 10px', fontSize: 13 }}
+        trackStyle={{ marginTop: 16, borderRadius: radius.pill }}
+        indicatorStyle={{ borderRadius: radius.pill }}
+        buttonStyle={{ minHeight: 36, borderRadius: radius.pill, padding: '0 10px', fontSize: 13 }}
       />
 
       {section === 'outstanding' ? (
@@ -142,9 +142,9 @@ function AgeChip({ days, accFunded }: { days: number; accFunded: boolean }) {
   return (
     <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
       {accFunded && (
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: STATUS_PALETTE.preop.onTint, background: STATUS_PALETTE.preop.tint, borderRadius: 999, padding: '2px 8px' }}>ACC</span>
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: STATUS_PALETTE.preop.onTint, background: STATUS_PALETTE.preop.tint, borderRadius: radius.pill, padding: '2px 8px' }}>ACC</span>
       )}
-      <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 9px', background: overdue ? semantic.warning.tint : neutral.sunken, color: overdue ? semantic.warning.onTint : neutral.slate }}>
+      <span style={{ fontSize: 11, fontWeight: 600, borderRadius: radius.pill, padding: '2px 9px', background: overdue ? semantic.warning.tint : neutral.sunken, color: overdue ? semantic.warning.onTint : neutral.slate }}>
         {days}d
       </span>
     </span>

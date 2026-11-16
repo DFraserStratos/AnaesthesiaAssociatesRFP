@@ -147,7 +147,7 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
                   }}
                   style={{
                     minHeight: 44,
-                    borderRadius: 999,
+                    borderRadius: radius.pill,
                     border: current ? 'none' : `1px solid ${neutral.line}`,
                     background: current ? accent.base : neutral.surface,
                     color: current ? neutral.surface : enabled ? neutral.slate : neutral.lineStrong,
@@ -229,7 +229,7 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
           onMonthChange(monthOf(todayISO))
           setFocusISO(todayISO)
         }}
-        style={{ alignSelf: 'center', minHeight: 44, padding: '0 18px', borderRadius: 999, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+        style={{ alignSelf: 'center', minHeight: 44, padding: '0 18px', borderRadius: radius.pill, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
       >
         Today
       </button>
@@ -244,7 +244,7 @@ function RoundButton({ label, disabled, onClick, children }: { label: string; di
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      style={{ width: 44, height: 44, flex: 'none', borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
+      style={{ width: 44, height: 44, flex: 'none', borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
     >
       {children}
     </button>

@@ -19,7 +19,8 @@ import { NameSearchBox } from '../ui/NameSearchBox'
 import { Pill } from '../ui/Pill'
 import { Button } from '../ui/Button'
 import { TextAction } from '../ui/TextAction'
-import { formatCurrency } from '../format'
+import { formatCurrency, parseAmount, plural } from '../format'
+import { motion } from '../../theme/motion'
 
 /**
  * The step rail (catch-up Phase 20; US-04.3.8, US-04.3.9, US-04.3.2,
@@ -72,13 +73,6 @@ export function contractPriceText(contract: Contract, dateISO: string): string {
   const range = rangeInForce(contract, dateISO)
   const price = range === null ? 'Needs a price' : formatCurrency(range.price)
   return contract.prepaid ? `Prepaid · ${price}` : price
-}
-
-function parseAmount(text: string): number | undefined {
-  const t = text.replace(/[$,\s]/g, '')
-  if (t === '') return undefined
-  const n = Number(t)
-  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : undefined
 }
 
 export function ContractRail({ open, actor, context, start, currentContractId, currentEnteredPrice, onDone, onLeave, onClose }: ContractRailProps) {
@@ -403,7 +397,7 @@ function RailStepButton({
           flex: 'none',
           width: 22,
           height: 22,
-          borderRadius: 999,
+          borderRadius: radius.pill,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -494,7 +488,7 @@ function OptionList({
                 </span>
                 {o.hint !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{o.hint}</span>}
               </span>
-              <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }} aria-label={`${o.count} ${o.count === 1 ? 'Contract' : 'Contracts'}`}>
+              <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }} aria-label={plural(o.count, 'Contract')}>
                 {o.count}
               </span>
             </button>
@@ -546,7 +540,7 @@ function ContractRow({
         style={{
           width: 18,
           height: 18,
-          borderRadius: 999,
+          borderRadius: radius.pill,
           border: `1.5px solid ${selected ? accent.base : neutral.lineStrong}`,
           background: selected ? accent.base : neutral.surface,
           display: 'inline-flex',
@@ -602,9 +596,9 @@ function OtherPriceToggle({
       >
         <span
           aria-hidden
-          style={{ width: 36, height: 20, borderRadius: 999, background: on ? accent.base : neutral.lineStrong, position: 'relative', flex: 'none', transition: 'background 150ms' }}
+          style={{ width: 36, height: 20, borderRadius: radius.pill, background: on ? accent.base : neutral.lineStrong, position: 'relative', flex: 'none', transition: `background ${motion.uiFade.duration}ms` }}
         >
-          <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: neutral.surface, transition: 'left 150ms' }} />
+          <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: radius.pill, background: neutral.surface, transition: `left ${motion.uiFade.duration}ms` }} />
         </span>
         <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <span style={{ fontSize: 14.5, fontWeight: 600, color: on ? accent.base : neutral.ink }}>Other price</span>

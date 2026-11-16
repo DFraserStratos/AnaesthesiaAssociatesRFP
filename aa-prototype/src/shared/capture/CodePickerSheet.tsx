@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { neutral } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import type { RvgGroup, RvgGroupId } from '../../domain/types'
 import { useSurface } from '../surface'
 import { NameSearchBox } from '../ui/NameSearchBox'
 import { RvgCodeList, rvgSections } from './RvgCodeList'
+import { plural } from '../format'
 
 interface CodePickerSheetProps {
   open: boolean
@@ -45,9 +46,9 @@ export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose }:
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px 6px', minHeight: 18 }} aria-live="polite">
           {query.trim() === ''
             ? 'Type a code such as H1, or a word from the description.'
-            : `${count} ${count === 1 ? 'match' : 'matches'}`}
+            : plural(count, 'match', 'matches')}
         </div>
-        <div style={{ border: `1px solid ${neutral.line}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.md, overflow: 'hidden' }}>
           <RvgCodeList sections={sections} {...(currentId !== undefined ? { currentId } : {})} onPick={onPick} maxHeight={420} role="list" />
         </div>
       </div>

@@ -428,7 +428,7 @@ function StateChip({ on, label }: { on: boolean; label: string }) {
         gap: 6,
         fontSize: 12,
         fontWeight: 600,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         padding: '5px 12px',
         background: on ? semantic.success.tint : neutral.sunken,
         color: on ? semantic.success.onTint : neutral.slate,

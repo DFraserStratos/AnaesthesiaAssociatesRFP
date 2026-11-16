@@ -16,7 +16,7 @@ import {
   type MonitorListRow,
   type MonitorStage,
 } from '../../../store'
-import { dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
+import { dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { sessionText } from '../../../domain/outOfHours'
 import { Button, FormError, useSurface } from '../../../shared'
@@ -72,7 +72,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
     setPayRunMsg(
       r.disbursedCount === 0
         ? 'No authorised payables to disburse right now.'
-        : `Run ${r.payablesRunId}: disbursed ${formatCurrency(r.totalDisbursed)} across ${r.disbursedCount} payable${r.disbursedCount === 1 ? '' : 's'}.`,
+        : `Run ${r.payablesRunId}: disbursed ${formatCurrency(r.totalDisbursed)} across ${plural(r.disbursedCount, 'payable')}.`,
     )
   }
 
@@ -145,7 +145,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
       {failedTotal > 0 && (
         <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
-          {failedTotal} booking{failedTotal === 1 ? '' : 's'} across the pipeline need attention. Resolve and retry each below.
+          {plural(failedTotal, 'booking')} across the pipeline need attention. Resolve and retry each below.
         </div>
       )}
 
@@ -157,7 +157,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           <div style={{ fontSize: 14, fontWeight: 700 }}>Payables run</div>
           <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
             {due.count > 0
-              ? `${due.count} payable${due.count === 1 ? '' : 's'} authorised · ${formatCurrency(due.total)} to disburse to anaesthetists. A payable authorises for exactly what its ACCREC has received.`
+              ? `${plural(due.count, 'payable')} authorised · ${formatCurrency(due.total)} to disburse to anaesthetists. A payable authorises for exactly what its ACCREC has received.`
               : 'No payables are authorised for disbursement. A payable authorises for exactly what its ACCREC has received.'}
           </div>
           {payRunMsg !== null && (
@@ -167,7 +167,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         <button
           onClick={doRunPayables}
           disabled={due.count === 0}
-          style={{ minHeight: 38, padding: '0 16px', borderRadius: radius.ctl, border: 'none', background: due.count === 0 ? neutral.line : accent.base, color: due.count === 0 ? neutral.mist : '#FFFFFF', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: due.count === 0 ? 'default' : 'pointer' }}
+          style={{ minHeight: 38, padding: '0 16px', borderRadius: radius.ctl, border: 'none', background: due.count === 0 ? neutral.line : accent.base, color: due.count === 0 ? neutral.mist : neutral.surface, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: due.count === 0 ? 'default' : 'pointer' }}
         >
           Run payables
         </button>
@@ -267,7 +267,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
         </div>
         <div style={{ fontSize: 12, color: neutral.mist }}>
           {row.list.billedAtISO !== undefined ? `Run ${hhmm(row.list.billedAtISO)} · ` : ''}
-          {row.invoiceCount} invoice{row.invoiceCount === 1 ? '' : 's'}
+          {plural(row.invoiceCount, 'invoice')}
           {row.failedCount > 0 ? ` · ${row.failedCount} failed` : ''}
         </div>
       </div>
@@ -299,7 +299,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                 <td style={cellStyle} data-shot={bookingRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
                   {bookingRow.patientName}
                   {bookingRow.outstandingPriorBalance === true && (
-                    <span title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA." style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                    <span title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA." style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.pill, padding: '2px 8px', whiteSpace: 'nowrap' }}>
                       Prior balance
                     </span>
                   )}
@@ -322,7 +322,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                   {(bookingRow.status === 'failed' || bookingRow.handoffFailure !== undefined) && (
                     <button
                       onClick={() => onResolveRetry(bookingRow)}
-                      style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: '#FFFFFF', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
                       Resolve &amp; retry
                     </button>
@@ -347,7 +347,7 @@ const STAGE_TONE: Record<MonitorStage['state'], { background: string; color: str
 function StageChip({ stage }: { stage: MonitorStage }) {
   const tone = STAGE_TONE[stage.state]
   return (
-    <span title={stage.detail} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap', ...tone }}>
+    <span title={stage.detail} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '4px 10px', whiteSpace: 'nowrap', ...tone }}>
       {stage.label}
     </span>
   )
@@ -370,7 +370,7 @@ function MoneyDetail({ row }: { row: MonitorBookingRow }) {
         : 'Not disbursed'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ color: neutral.slate }}>{n} invoice{n === 1 ? '' : 's'} raised.</span>
+      <span style={{ color: neutral.slate }}>{plural(n, 'invoice')} raised.</span>
       <span style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12 }}>
         <span style={{ color: row.paidInAtISO !== undefined ? semantic.success.onTint : neutral.mist }}>{paidLabel}</span>
         <span style={{ color: row.disbursedAtISO !== undefined ? semantic.success.onTint : neutral.mist }}>{disbursedLabel}</span>
@@ -396,7 +396,7 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
       ? { label: 'Handoff failed', background: semantic.warning.tint, color: semantic.warning.onTint }
       : map[row.status] ?? { label: row.status, background: neutral.sunken, color: neutral.slate }
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: it.background, color: it.color }}>
+    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '3px 9px', whiteSpace: 'nowrap', background: it.background, color: it.color }}>
       {it.label}
     </span>
   )

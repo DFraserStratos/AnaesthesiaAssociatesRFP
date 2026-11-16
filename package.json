@@ -8,12 +8,11 @@
     "dev:pwa": "npm --prefix aa-prototype run dev:pwa",
     "dev:board": "npm --prefix requirements-board run dev",
     "dev:picker": "npm --prefix contract-picker-mock run dev",
-    "dev:preview": "npm --prefix ui-library-preview run dev",
     "check": "npm --prefix requirements-board run check",
     "verify:board": "npm --prefix requirements-board run verify",
     "export:csv": "npm --prefix requirements-board run export:csv",
     "test:plan-state": "node --test requirements-board/agent/skills/update-build-plan/tools/req-changes.test.mjs",
-    "setup": "npm install && npm --prefix aa-prototype install && npm --prefix requirements-board install && npm --prefix contract-picker-mock install && npm --prefix ui-library-preview install"
+    "setup": "npm install && npm --prefix aa-prototype install && npm --prefix requirements-board install && npm --prefix contract-picker-mock install"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

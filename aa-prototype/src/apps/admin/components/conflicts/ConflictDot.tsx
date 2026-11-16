@@ -1,4 +1,4 @@
-import { neutral, semantic } from '../../../../theme/tokens'
+import { neutral, semantic, radius } from '../../../../theme/tokens'
 
 /**
  * The conflict "!" (catch-up Phase 30): the design's attention badge in the
@@ -12,7 +12,7 @@ export function ConflictDot({ size = 14, muted = false }: { size?: number; muted
       style={{
         width: size,
         height: size,
-        borderRadius: 99,
+        borderRadius: radius.pill,
         background: muted ? neutral.mist : semantic.warning.solid,
         color: neutral.surface,
         fontSize: Math.round(size * 0.64),

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { format, parseISO } from 'date-fns'
+import { plural, shortDay } from '../../../shared/format'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { addHospitalHoliday, deleteHospitalHoliday, editHospitalHoliday, listsFlaggedByHoliday, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, FormError, TextField, useSurface } from '../../../shared'
@@ -17,7 +17,6 @@ interface Props {
   onClose: () => void
 }
 
-const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
 
 /**
  * A hospital closure (US-01.5.1, FT-01.5; catch-up Phase 30). Add mode takes
@@ -124,7 +123,7 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
         ) : confirmDelete && existing !== undefined ? (
           <div data-shot="holiday-delete-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, color: neutral.ink }}>
-              Deleting {existing.name} on {format(parseISO(existing.dateISO), 'EEE d MMM')} clears {plural(flaggedNow, 'flagged List')}.
+              Deleting {existing.name} on {shortDay(existing.dateISO)} clears {plural(flaggedNow, 'flagged List')}.
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="secondary" block onClick={() => setConfirmDelete(false)}>Keep it</Button>

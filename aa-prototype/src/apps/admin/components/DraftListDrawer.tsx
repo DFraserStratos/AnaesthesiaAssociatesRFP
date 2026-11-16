@@ -13,14 +13,14 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim } from '../../../theme/tokens'
+import { accent, neutral, radius, scrim, zIndex } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { HistorySheet } from '../../../shared/booking'
 import { AddBookingFlow } from '../../../shared/flows'
 import { LIST_KIND_LABELS, type List } from '../../../domain/types'
 import { isDraftList } from '../../../domain/draftLists'
-import { drSurname, locationName, pairingLine } from '../../../shared/format'
+import { drSurname, locationName, pairingLine, shortDay } from '../../../shared/format'
 import { DRAFT_LIST, ORIGIN_LABELS, ORIGIN_SHORT_LABELS, SOURCE_LABELS, unavailableDetail } from '../../../shared/scheduleTerms'
 import { removeBlockedReason } from '../../../domain/draftLists'
 import { surnameFirst } from '../util'
@@ -98,12 +98,12 @@ function DraftBody({
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
       <div
         data-testid="admin-list-drawer"
         data-shot="admin-draft-list-drawer"
         data-list-id={list.id}
-        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}
+        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}
       >
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -113,7 +113,7 @@ function DraftBody({
             </div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{locationName(list.hospitalId, masters.hospitals)}</div>
             <div style={{ fontSize: 13, color: neutral.slate, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span>{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)}</span>
+              <span>{shortDay(list.dateISO)} · {sessionText(list.session)}</span>
               <span aria-hidden>·</span>
               <span>Waiting <WaitingTime list={list} /></span>
               <span aria-hidden>·</span>

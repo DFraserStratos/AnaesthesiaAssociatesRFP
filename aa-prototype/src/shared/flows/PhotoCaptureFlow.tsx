@@ -57,7 +57,7 @@ export function PhotoCaptureFlow({ listId, actor, source, onSaved }: PhotoCaptur
               <img
                 src={sample.imageUrl}
                 alt={`Sample paper card: ${sample.label}`}
-                style={{ width: '100%', borderRadius: 8, display: 'block', border: `1px solid ${neutral.line}` }}
+                style={{ width: '100%', borderRadius: radius.sm, display: 'block', border: `1px solid ${neutral.line}` }}
               />
               <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>{sample.label}</span>
             </button>
@@ -73,7 +73,7 @@ export function PhotoCaptureFlow({ listId, actor, source, onSaved }: PhotoCaptur
         <img
           src={step.sample.imageUrl}
           alt="Scanning"
-          style={{ width: 160, borderRadius: 8, border: `1px solid ${neutral.line}`, opacity: 0.85 }}
+          style={{ width: 160, borderRadius: radius.sm, border: `1px solid ${neutral.line}`, opacity: 0.85 }}
         />
         <div style={{ fontSize: 16, fontWeight: 600, color: accent.pressed }}>Reading the paper card…</div>
         <DemoBadge label="Simulated OCR · no real processing" />

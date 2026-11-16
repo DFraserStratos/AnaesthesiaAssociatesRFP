@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius, semantic, elevation, zIndex } from '../../theme/tokens'
 import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { rangeInForce } from '../../domain/billing/priceRanges'
 import { RvgCodeField } from '../capture/ProcedureCodeCard'
 import { TextAction } from '../ui/TextAction'
-import { formatCurrency } from '../format'
+import { formatCurrency, parseAmount, plural } from '../format'
 import { SlidingSegmentedControl } from '../ui/SlidingSegmentedControl'
 import {
   OFFICE_TYPES_AMOUNT_MESSAGE,
@@ -375,12 +375,6 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   )
 }
 
-function parseAmount(text: string): number | undefined {
-  const t = text.replace(/[$,\s]/g, '')
-  if (t === '' || !/^\d+(\.\d{1,2})?$/.test(t)) return undefined
-  return Math.round(Number(t) * 100) / 100
-}
-
 function StepFrame({ question, aside, children }: { question: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -423,7 +417,7 @@ function RailSlot({ n, label, value, auto, done, current, last, across, onJump }
         className="aa-rail-focus"
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, width: '100%', height: '100%', boxSizing: 'border-box', textAlign: 'left', border: `1px solid ${current ? accent.base : 'transparent'}`, background: current ? accent.tint : 'transparent', borderRadius: radius.ctl, padding: 8, cursor: onJump !== undefined ? 'pointer' : 'default', fontFamily: 'inherit', minWidth: 0 }}
       >
-        <span className="mono" style={{ width: 22, height: 22, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: done ? accent.base : neutral.surface, color: done ? neutral.surface : current ? accent.base : neutral.mist, border: done ? 'none' : `1.5px solid ${current ? accent.base : neutral.lineStrong}` }}>
+        <span className="mono" style={{ width: 22, height: 22, borderRadius: radius.pill, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: done ? accent.base : neutral.surface, color: done ? neutral.surface : current ? accent.base : neutral.mist, border: done ? 'none' : `1.5px solid ${current ? accent.base : neutral.lineStrong}` }}>
           {done ? <Check size={13} strokeWidth={3} aria-hidden /> : n}
         </span>
         <span style={{ fontSize: 11.5, lineHeight: '15px', fontWeight: 600, color: current ? accent.base : neutral.slate }}>{label}</span>
@@ -449,7 +443,7 @@ function RailSlot({ n, label, value, auto, done, current, last, across, onJump }
           style={{
             width: 24,
             height: 24,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -458,7 +452,7 @@ function RailSlot({ n, label, value, auto, done, current, last, across, onJump }
             background: done ? accent.base : neutral.surface,
             color: done ? neutral.surface : current ? accent.base : neutral.mist,
             border: done ? 'none' : `1.5px solid ${current ? accent.base : neutral.lineStrong}`,
-            zIndex: 1,
+            zIndex: zIndex.raised,
           }}
         >
           {done ? <Check size={13} strokeWidth={3} aria-hidden /> : n}
@@ -521,7 +515,7 @@ function ChoiceTiles({ options, value, stacked, onPick }: { options: readonly Ra
             </span>
             {o.hint !== undefined && <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>{o.hint}</span>}
             <span style={{ marginTop: 'auto', paddingTop: 6, fontSize: 12, color: empty ? neutral.mist : neutral.slate }}>
-              {empty ? 'None for this List' : `${o.count} ${o.count === 1 ? 'Contract' : 'Contracts'}`}
+              {empty ? 'None for this List' : plural(o.count, 'Contract')}
             </span>
           </button>
         )
@@ -632,7 +626,7 @@ function ContractCombo({
       {open && (
         <div
           data-shot="contract-combo-list"
-          style={{ ...(inFlow ? { marginTop: 6 } : { position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, boxShadow: '0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18)' }), background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}
+          style={{ ...(inFlow ? { marginTop: 6 } : { position: 'absolute', zIndex: zIndex.popover, top: 'calc(100% + 6px)', left: 0, right: 0, boxShadow: elevation.e3 }), background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: `1px solid ${neutral.line}` }}>
             <Search size={16} color={neutral.mist} aria-hidden />
@@ -643,7 +637,7 @@ function ContractCombo({
               placeholder="Type a name or code"
               aria-label="Type a name or code"
               className="aa-rail-focus"
-              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontFamily: 'inherit', color: neutral.ink, background: 'transparent' }}
+              style={{ flex: 1, border: 'none', fontSize: 14.5, fontFamily: 'inherit', color: neutral.ink, background: 'transparent' }}
             />
           </div>
           <div role="listbox" aria-label="Contracts" style={{ maxHeight: 340, overflow: 'auto', padding: '4px 0' }}>

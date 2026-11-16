@@ -18,7 +18,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronUp } from 'lucide-react'
-import { accent, neutral } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import { useBookingsMovedToMe, useMovedToMe } from '../../../shared/flows'
 import type { AssignedList, Booking, DisplayKey, Session } from '../../../domain/types'
 import { sessionRank } from '../../../domain/outOfHours'
@@ -311,7 +311,7 @@ export function ForwardListsScreen({
               style={{
                 height: 38,
                 padding: '0 16px',
-                borderRadius: 999,
+                borderRadius: radius.pill,
                 border: active ? 'none' : `1px solid ${neutral.line}`,
                 background: active ? accent.base : neutral.surface,
                 color: active ? neutral.surface : neutral.slate,

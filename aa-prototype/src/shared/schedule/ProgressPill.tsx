@@ -5,7 +5,7 @@
  * carries the design's done tick; nothing here is an action colour.
  */
 
-import { neutral, semantic } from '../../theme/tokens'
+import { neutral, semantic, radius } from '../../theme/tokens'
 import { STATUS_PALETTE } from '../../theme/statusColours'
 import { LIST_PROGRESS_LABEL, type ListProgress } from '../../domain/listProgress'
 import { TickBadge } from '../ui/TickBadge'
@@ -32,7 +32,7 @@ export function ProgressPill({ progress }: { progress: ListProgress }) {
     )
   }
   return (
-    <span data-progress={progress} style={{ display: 'inline-block', padding: '3px 9px', borderRadius: 999, background: tone.bg, color: tone.color, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+    <span data-progress={progress} style={{ display: 'inline-block', padding: '3px 9px', borderRadius: radius.pill, background: tone.bg, color: tone.color, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
       {label}
     </span>
   )

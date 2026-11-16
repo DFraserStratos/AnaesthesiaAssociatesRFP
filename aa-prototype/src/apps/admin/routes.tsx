@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
-import { accent, neutral } from '../../theme/tokens'
+import { accent, neutral, radius, elevation } from '../../theme/tokens'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
 import { listInSlot, useAppStore, useToday, type NotificationTarget } from '../../store'
@@ -24,6 +23,7 @@ import { DraftListsScreen } from './screens/DraftListsScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { useAdminOutlet, type AdminOutletContext } from './outlet'
+import { dayWithYear } from '../../shared/format'
 
 /**
  * The admin app's route elements — one thin wrapper per screen that reads the
@@ -346,17 +346,17 @@ function BeyondHorizon({ endISO, onGoToEnd }: { endISO: string; onGoToEnd: () =>
         minWidth: 0,
         background: neutral.surface,
         border: `1px solid ${neutral.line}`,
-        borderRadius: 14,
+        borderRadius: radius.card,
         padding: '40px 32px',
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
         alignItems: 'flex-start',
-        boxShadow: '0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)',
+        boxShadow: elevation.e1,
       }}
     >
       <div style={{ fontSize: 16, fontWeight: 600, color: neutral.ink }}>
-        Beyond the schedule horizon, which ends {format(parseISO(endISO), 'EEE d MMM yyyy')}.
+        Beyond the schedule horizon, which ends {dayWithYear(endISO)}.
       </div>
       <div style={{ fontSize: 13, color: neutral.slate, maxWidth: 560, lineHeight: '19px' }}>
         Sessions are created up to the horizon and roll forward each day. The horizon length is set in Master data, Schedule settings.

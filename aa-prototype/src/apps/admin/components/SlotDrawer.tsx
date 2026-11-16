@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius, scrim, semantic, zIndex } from '../../../theme/tokens'
 import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/scheduleTerms'
 import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, procedureStackViewFor, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
@@ -11,7 +11,7 @@ import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet, ProcedureStack } from '../../../shared/booking'
 import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
-import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange } from '../../../shared/format'
+import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange, shortDay } from '../../../shared/format'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
 import { EditListSheet } from '../flows/EditListSheet'
@@ -130,13 +130,13 @@ function ListBody({
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
-      <div data-testid="admin-list-drawer" data-slot-id={slot.id} data-list-id={list.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
+      <div data-testid="admin-list-drawer" data-slot-id={slot.id} data-list-id={list.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : list.anaesthetistId}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{shortDay(list.dateISO)} · {sessionText(list.session)} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
             <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <StatusChip status={list.kind} />
             </div>
@@ -299,12 +299,12 @@ function EmptySessionDrawer({
   }
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
-      <div data-testid="admin-list-drawer" data-shot="admin-slot-drawer" data-slot-id={slot.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
+      <div data-testid="admin-list-drawer" data-shot="admin-slot-drawer" data-slot-id={slot.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : slot.anaesthetistId}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(slot.dateISO), 'EEE d MMM')} · {sessionText(slot.session)}</div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{shortDay(slot.dateISO)} · {sessionText(slot.session)}</div>
             <div style={{ marginTop: 8 }}><StatusChip status={slot.status} /></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
@@ -407,7 +407,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function DrawerLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', borderRadius: 8, padding: '4px 10px' }}>
+    <button type="button" onClick={onClick} style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', borderRadius: radius.sm, padding: '4px 10px' }}>
       {children}
     </button>
   )
@@ -420,7 +420,7 @@ function ActionBtn({ onClick, children, primary, shot, disabled }: { onClick: ()
       data-shot={shot}
       onClick={onClick}
       disabled={disabled}
-      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? '#FFFFFF' : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
+      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? neutral.surface : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
     >
       {children}
     </button>

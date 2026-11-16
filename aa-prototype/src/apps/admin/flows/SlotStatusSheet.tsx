@@ -126,7 +126,7 @@ export function SlotStatusSheet({ status, actor, onClose }: { status?: SlotStatu
           <FieldLabel>Preview</FieldLabel>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.ctl, background: neutral.bg }}>
             <StatusChipView visual={visual} label={previewLabel} style={{ flex: 'none' }} />
-            <span style={{ flex: 1, minWidth: 0, display: 'block', borderRadius: 6, padding: '6px 9px', ...blockFill(visual) }}>
+            <span style={{ flex: 1, minWidth: 0, display: 'block', borderRadius: radius.xs, padding: '6px 9px', ...blockFill(visual) }}>
               <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: visual.onTint }}>{previewLong}</span>
               <span style={{ display: 'block', fontSize: 10, color: visual.onTint, opacity: 0.75 }}>AM · a session with no List</span>
             </span>
@@ -170,7 +170,7 @@ function Swatch({ token, selected, onSelect }: { token: StatusColourToken; selec
         fontFamily: 'inherit',
       }}
     >
-      <span aria-hidden style={{ width: 28, height: 20, borderRadius: 6, background: p.tint, borderLeft: `4px solid ${p.solid}` }} />
+      <span aria-hidden style={{ width: 28, height: 20, borderRadius: radius.xs, background: p.tint, borderLeft: `4px solid ${p.solid}` }} />
       <span className="mono" style={{ fontSize: 10.5, color: selected ? accent.pressed : neutral.slate }}>{token}</span>
     </button>
   )

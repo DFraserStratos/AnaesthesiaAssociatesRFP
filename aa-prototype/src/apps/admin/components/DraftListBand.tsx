@@ -14,7 +14,7 @@ import { useAppStore } from '../../../store'
 import type { DraftList, Session } from '../../../domain/types'
 import { drSurname, pairingLine } from '../../../shared/format'
 import { DRAFT_LISTS, UNASSIGNED, bookingCountLabel, unavailableDetail } from '../../../shared/scheduleTerms'
-import { neutral, semantic } from '../../../theme/tokens'
+import { neutral, semantic, radius } from '../../../theme/tokens'
 import { blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, type Ruler } from '../util'
 import { BookingCount, WaitingTime } from './draftLists/DraftListParts'
 
@@ -76,7 +76,7 @@ export function DraftListBand({
                 left: geo.left,
                 width: geo.width,
                 boxSizing: 'border-box',
-                borderRadius: 6,
+                borderRadius: radius.xs,
                 padding: '3px 8px 3px 10px',
                 overflow: 'hidden',
                 display: 'flex',
@@ -99,7 +99,7 @@ export function DraftListBand({
               </span>
               {/* The booking count starts the second line, as on every List block. */}
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-                <span data-booking-count={count} style={{ flex: 'none', minWidth: 14, height: 12, padding: '0 3px', boxSizing: 'border-box', borderRadius: 99, background: neutral.sunken, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span data-booking-count={count} style={{ flex: 'none', minWidth: 14, height: 12, padding: '0 3px', boxSizing: 'border-box', borderRadius: radius.pill, background: neutral.sunken, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <BookingCount count={count} style={{ fontSize: 9, lineHeight: '12px' }} />
                 </span>
                 <span style={{ fontSize: 10.5, lineHeight: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: neutral.ink }}>{pairing}</span>

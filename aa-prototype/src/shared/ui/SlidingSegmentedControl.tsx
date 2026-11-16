@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import { accent, neutral } from '../../theme/tokens'
+import { accent, neutral, radius, elevation, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 
 export type SlidingSegmentLayout = 'row' | 'two-column' | 'wrap'
@@ -60,7 +60,7 @@ const VARIANT_STYLE: Record<
     background: accent.base,
     active: neutral.surface,
     inactive: neutral.slate,
-    shadow: '0 1px 3px rgba(23,35,32,0.2)',
+    shadow: elevation.thumb,
   },
   surface: {
     background: neutral.surface,
@@ -179,7 +179,7 @@ export function SlidingSegmentedControl<T extends string>({
       style={{
         position: 'relative',
         background: neutral.sunken,
-        borderRadius: 12,
+        borderRadius: radius.md,
         padding: 4,
         gap: 4,
         opacity: disabled ? 0.55 : 1,
@@ -228,7 +228,7 @@ export function SlidingSegmentedControl<T extends string>({
             onClick={inert ? undefined : () => onSelect(option.value)}
             style={{
               position: 'relative',
-              zIndex: 1,
+              zIndex: zIndex.raised,
               flex: layout === 'row' ? 1 : layout === 'wrap' ? '0 0 auto' : undefined,
               minWidth: 0,
               minHeight: 40,
@@ -241,7 +241,7 @@ export function SlidingSegmentedControl<T extends string>({
               fontSize: 14,
               fontWeight: 600,
               cursor: inert ? 'default' : 'pointer',
-              transition: 'color 150ms ease-out',
+              transition: `color ${motion.uiFade.duration}ms ${motion.uiFade.easing}`,
               ...optionStyle,
             }}
           >

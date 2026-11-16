@@ -11,7 +11,7 @@
 import type { BillingLine, CounterpartyRef } from '../domain/types'
 import { INDIVIDUAL_ARRANGEMENT_MESSAGE, feeContextFor } from '../domain/billing/validateBookingForBilling'
 import { feeFor } from '../domain/billing/fee'
-import { roundToCents, toCents } from '../domain/billing/money'
+import { formatMoney, roundToCents, toCents } from '../domain/billing/money'
 import {
   allocateId,
   mutate,
@@ -176,7 +176,7 @@ export function setBillingLineAllocation(
     if (toCents(allocated) !== toCents(fee.total)) {
       return refuse(
         'allocationNotConserved',
-        `Billing line amounts must add up to the procedure fee of $${fee.total.toFixed(2)} (they add up to $${allocated.toFixed(2)}).`,
+        `Billing line amounts must add up to the procedure fee of ${formatMoney(fee.total)} (they add up to ${formatMoney(allocated)}).`,
       )
     }
   }
@@ -260,7 +260,7 @@ export function setProcedureFunderAllocation(
     if (toCents(allocated) !== toCents(fee.total)) {
       return refuse(
         'allocationNotConserved',
-        `Billing line amounts must add up to the procedure fee of $${fee.total.toFixed(2)} (they add up to $${allocated.toFixed(2)}).`,
+        `Billing line amounts must add up to the procedure fee of ${formatMoney(fee.total)} (they add up to ${formatMoney(allocated)}).`,
       )
     }
   }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { accent, neutral } from '../../theme/tokens'
+import { accent, neutral, zIndex } from '../../theme/tokens'
 import type { RvgGroup, RvgGroupId } from '../../domain/types'
 import { baseUnitsShort, searchRvgGroups } from '../../domain/billing/rvgGroups'
 
@@ -58,7 +58,7 @@ export function RvgCodeList({
           <div
             aria-hidden
             data-shot="rvg-section-heading"
-            style={{ position: 'sticky', top: 0, zIndex: 1, padding: '7px 14px 6px', background: neutral.bg, borderTop: `1px solid ${neutral.line}`, borderBottom: `1px solid ${neutral.line}`, fontSize: 11.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.slate }}
+            style={{ position: 'sticky', top: 0, zIndex: zIndex.raised, padding: '7px 14px 6px', background: neutral.bg, borderTop: `1px solid ${neutral.line}`, borderBottom: `1px solid ${neutral.line}`, fontSize: 11.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.slate }}
           >
             {section.anatomy}
           </div>

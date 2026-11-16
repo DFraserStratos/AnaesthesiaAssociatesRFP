@@ -9,6 +9,7 @@ import { TickBadge } from '../ui/TickBadge'
 import { OutOfHoursMoon } from './OutOfHoursMark'
 import { OUT_OF_HOURS } from '../outOfHoursTerms'
 import { sessionText } from '../../domain/outOfHours'
+import { plural } from '../format'
 
 /**
  * The right-hand state cluster of a list row (mockup screen 1). `progress` reads
@@ -64,7 +65,7 @@ function Chevron() {
 
 function Pill({ bg, color, children }: { bg: string; color: string; children: ReactNode }) {
   return (
-    <span style={{ padding: '5px 10px', borderRadius: 999, background: bg, fontSize: 11, fontWeight: 600, color, whiteSpace: 'nowrap' }}>
+    <span style={{ padding: '5px 10px', borderRadius: radius.pill, background: bg, fontSize: 11, fontWeight: 600, color, whiteSpace: 'nowrap' }}>
       {children}
     </span>
   )
@@ -113,7 +114,7 @@ function CountPill({ count, statusKey }: { count: number; statusKey: DisplayKey 
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <Pill bg={s.tint} color={s.onTint}>
-          {count} {count === 1 ? 'booking' : 'bookings'}
+          {plural(count, 'booking')}
         </Pill>
         <Chevron />
       </span>
@@ -196,7 +197,7 @@ export function ListRow({
       }}
     >
       {!isOpen && (
-        <span style={{ width: 4, height: 46, borderRadius: 99, background: c.solid, flex: 'none', opacity: quiet ? 0.45 : 1 }} aria-hidden />
+        <span style={{ width: 4, height: 46, borderRadius: radius.pill, background: c.solid, flex: 'none', opacity: quiet ? 0.45 : 1 }} aria-hidden />
       )}
       {session !== undefined && (
         <span style={{ width: 46, flex: 'none', display: 'flex', flexDirection: 'column' }}>
@@ -216,7 +217,7 @@ export function ListRow({
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{ fontSize: 16, fontWeight: quiet ? 500 : 600, color: titleColor }}>{title}</span>
           {badge !== undefined && (
-            <span data-shot="list-row-badge" style={{ flex: 'none', padding: '2px 8px', borderRadius: 999, background: neutral.sunken, color: neutral.ink, fontSize: 11, fontWeight: 700 }}>
+            <span data-shot="list-row-badge" style={{ flex: 'none', padding: '2px 8px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.ink, fontSize: 11, fontWeight: 700 }}>
               {badge}
             </span>
           )}

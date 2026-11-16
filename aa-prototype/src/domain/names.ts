@@ -10,8 +10,12 @@
  * Dr-only short form would mislabel them (Phase 17 pairing group headings).
  * A name with no title stays whole ("Jane Smith"): no title is invented.
  */
-/** A leading personal title ("Dr ", "Ms. "), the one pattern the name helpers share. */
-const TITLE_PREFIX = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i
+/**
+ * A leading personal title ("Dr ", "Ms. "), the one pattern the name helpers share
+ * (here and `nameWithoutTitle` in `shared/format.ts`, UI unification U1).
+ * Not global, so `exec` and `replace` carry no state between calls.
+ */
+export const TITLE_PREFIX = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i
 
 export function titledSurname(name: string): string {
   const match = TITLE_PREFIX.exec(name.trim())

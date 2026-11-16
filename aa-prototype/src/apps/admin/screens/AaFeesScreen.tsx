@@ -17,7 +17,7 @@ import {
   type AaFeeInvoiceRow,
 } from '../../../store'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
-import { drSurname, formatCurrency } from '../../../shared/format'
+import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 
 export type AaFeesTab = 'invoices' | 'settings'
@@ -33,7 +33,7 @@ const EXAMPLE_BCTIS = 40
 const FIRST_MONTH = '2026-01'
 
 function dateLabel(iso: string | undefined): string {
-  return iso === undefined ? '·' : format(parseISO(iso.slice(0, 10)), 'd MMM yyyy')
+  return iso === undefined ? '·' : plainDate(iso.slice(0, 10))
 }
 
 /**
@@ -124,7 +124,7 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
             text:
               res.value.raisedCount === 0
                 ? `Nothing to raise for ${aaFeeMonthLabel(month)}.`
-                : `Raised ${res.value.raisedCount} fee invoice${res.value.raisedCount === 1 ? '' : 's'} for ${aaFeeMonthLabel(month)}, ${formatCurrency(res.value.total)} incl GST.`,
+                : `Raised ${plural(res.value.raisedCount, 'fee invoice')} for ${aaFeeMonthLabel(month)}, ${formatCurrency(res.value.total)} incl GST.`,
           },
     )
   }
@@ -160,7 +160,7 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
                 borderRadius: radius.ctl,
                 border: 'none',
                 background: disabledReason !== null ? neutral.line : accent.base,
-                color: disabledReason !== null ? neutral.mist : '#FFFFFF',
+                color: disabledReason !== null ? neutral.mist : neutral.surface,
                 fontFamily: 'inherit',
                 fontSize: 13.5,
                 fontWeight: 600,
@@ -438,15 +438,11 @@ function toDraft(settings: AaFeeSettings): { items: DraftItem[]; perBcti: string
   }
 }
 
-function parseAmount(text: string): number {
-  const trimmed = text.replace(/[$,\s]/g, '')
-  return trimmed === '' ? Number.NaN : Number(trimmed)
-}
 
 function fromDraft(items: DraftItem[], perBcti: string): AaFeeSettings {
   return {
-    fixedItems: items.map((item): AaFeeFixedItem => ({ id: item.id, description: item.description, amount: parseAmount(item.amount) })),
-    perBctiCharge: parseAmount(perBcti),
+    fixedItems: items.map((item): AaFeeFixedItem => ({ id: item.id, description: item.description, amount: parseAmountOrNaN(item.amount) })),
+    perBctiCharge: parseAmountOrNaN(perBcti),
   }
 }
 
@@ -582,7 +578,7 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
             type="button"
             onClick={save}
             disabled={invalid !== null}
-            style={{ minHeight: 40, padding: '0 18px', borderRadius: radius.ctl, border: 'none', background: invalid !== null ? neutral.line : accent.base, color: invalid !== null ? neutral.mist : '#FFFFFF', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: invalid !== null ? 'default' : 'pointer' }}
+            style={{ minHeight: 40, padding: '0 18px', borderRadius: radius.ctl, border: 'none', background: invalid !== null ? neutral.line : accent.base, color: invalid !== null ? neutral.mist : neutral.surface, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: invalid !== null ? 'default' : 'pointer' }}
           >
             Save settings
           </button>

@@ -8,7 +8,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
-import { elevation, neutral, scrim } from '../../../theme/tokens'
+import { elevation, neutral, scrim, zIndex } from '../../../theme/tokens'
 
 export const MASTER_PANEL_WIDTH = 600
 
@@ -50,7 +50,7 @@ export function MasterPanel({ open, onClose, title, meta, shot, children, footer
   if (!open) return null
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
       <aside
         ref={panelRef}
         role="dialog"
@@ -58,7 +58,7 @@ export function MasterPanel({ open, onClose, title, meta, shot, children, footer
         aria-labelledby={titleId}
         tabIndex={-1}
         data-shot={shot}
-        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: MASTER_PANEL_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: elevation.e3, display: 'flex', flexDirection: 'column', outline: 'none' }}
+        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: MASTER_PANEL_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: elevation.e3, display: 'flex', flexDirection: 'column', outline: 'none' }}
       >
         <header style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>

@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
-import { neutral, radius } from '../../theme/tokens'
+import { neutral, radius, surface, zIndex } from '../../theme/tokens'
 import { BookingTotalPanel } from '../capture'
 import { DockSpacer } from '../ui/DockSpacer'
 import { BottomSheet } from './BottomSheet'
@@ -167,10 +167,10 @@ function MobileBookingLayout({ contentRef, header, history, banners, context, ca
             // 14px floor is the dock's own top pad, so a zero-inset device
             // (Android, desktop) gets a symmetric box rather than a collapse.
             paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-            background: 'rgba(246,248,247,0.92)',
+            background: surface.frosted,
             backdropFilter: 'blur(14px)',
             borderTop: `1px solid ${neutral.line}`,
-            zIndex: 45,
+            zIndex: zIndex.sticky,
           }}
         >
           {commit}
@@ -291,7 +291,7 @@ function WebBookingLayout({ contentRef, header, history, banners, context, captu
 
       {/* Fixed, not absolute: the record page is taller than the viewport, so an
           absolute flood would centre its tick somewhere off screen. */}
-      {overlay !== null && <div style={{ position: 'fixed', inset: 0, zIndex: 60, borderRadius: radius.panel }}>{overlay}</div>}
+      {overlay !== null && <div style={{ position: 'fixed', inset: 0, zIndex: zIndex.overlay, borderRadius: radius.panel }}>{overlay}</div>}
     </>
   )
 }

@@ -765,9 +765,11 @@ The replacement for the status block at the top of `docs/ui-library-research/REA
   170 current rows.
 - Proposed: move `rows.json`, `ROWS.md`, `PLAN.md`, `src/rows/fit/` and `src/rows/recommendations.ts` into
   `docs/ui-library-research/preview-archive/`, delete the workspace, and remove `dev:preview` and its `setup`
-  step from the root `package.json` and its paragraph from `CLAUDE.md`. It is untracked in git today, so
-  nothing is lost from history.
-- Decided: retire it at the start of U1 (question 26). It is still in place today.
+  step from the root `package.json` and its paragraph from `CLAUDE.md`. (It was untracked when this was written;
+  it was committed as `af41706e` before U1, so it is in git history too.)
+- Decided: retire it at the start of U1 (question 26). Done in U1 (16 Nov 2026): the five paths are in
+  `docs/ui-library-research/preview-archive/` and the workspace is deleted. It had been committed by then
+  (`af41706e`), so it is also in git history.
 
 **The live catalogue stays and changes role.** Its rows are grouped by replacement library (shadcn, Sonner,
 TanStack ...) and its tests assert those section ids. U7 regroups it by family (buttons, pills, fields ...),

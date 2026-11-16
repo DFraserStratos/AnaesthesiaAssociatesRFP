@@ -27,7 +27,7 @@ export function Row({ label, children }: { label: string; children: React.ReactN
 
 export function DrawerLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', borderRadius: 8, padding: '4px 10px' }}>
+    <button type="button" onClick={onClick} style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', borderRadius: radius.sm, padding: '4px 10px' }}>
       {children}
     </button>
   )
@@ -41,7 +41,7 @@ export function ActionBtn({ onClick, children, primary, disabled, title, shot }:
       disabled={disabled}
       title={title}
       data-shot={shot}
-      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 12px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? (disabled === true ? neutral.lineStrong : accent.base) : neutral.surface, color: primary === true ? '#FFFFFF' : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
+      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 12px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? (disabled === true ? neutral.lineStrong : accent.base) : neutral.surface, color: primary === true ? neutral.surface : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
     >
       {children}
     </button>

@@ -8,11 +8,12 @@ import { ChevronRight } from 'lucide-react'
 import { MobileHeader } from '../components'
 import { Avatar, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
-import { initialsOf, locationName } from '../../../shared/format'
+import { initialsOf, locationName, shortDay } from '../../../shared/format'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
 import { useNavigate } from 'react-router-dom'
 import { sessionText } from '../../../domain/outOfHours'
 import { OutOfHoursMoon } from '../../../shared/schedule'
+import { STATUS_ON_FILL } from '../../../theme/statusColours'
 
 interface AvailabilityScreenProps {
   anaesthetistId: string
@@ -82,7 +83,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
     return { rows, freeCount, mine }
   }, [slotState, anaesthetists, selectedDate, anaesthetistId])
 
-  const selLong = format(parseISO(selectedDate), 'EEE d MMM')
+  const selLong = shortDay(selectedDate)
 
   function cellSubtitle(view: SlotView | undefined): string {
     if (view === undefined) return ''
@@ -127,7 +128,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
                   alignItems: 'center',
                   gap: 3,
                   padding: '9px 0',
-                  borderRadius: 12,
+                  borderRadius: radius.md,
                   border: 'none',
                   fontFamily: 'inherit',
                   cursor: 'pointer',
@@ -136,7 +137,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
               >
                 <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', color: active ? 'rgba(255,255,255,0.7)' : neutral.mist }}>{d.dow}</span>
                 <span className="mono" style={{ fontSize: 17, fontWeight: 700, color: active ? neutral.surface : neutral.ink }}>{d.date}</span>
-                <span style={{ width: 5, height: 5, borderRadius: 99, background: d.hasFree ? (active ? '#8FE3B4' : openVisual.solid) : 'transparent' }} />
+                <span style={{ width: 5, height: 5, borderRadius: radius.pill, background: d.hasFree ? (active ? STATUS_ON_FILL.free : openVisual.solid) : 'transparent' }} />
               </button>
             )
           })}
@@ -160,7 +161,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
 
       {/* Summary */}
       <div style={{ padding: '6px 20px 2px', display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-        <span style={{ width: 8, height: 8, borderRadius: 99, background: openVisual.solid }} />
+        <span style={{ width: 8, height: 8, borderRadius: radius.pill, background: openVisual.solid }} />
         <span style={{ fontSize: 13, color: neutral.slate }}>
           <span style={{ fontWeight: 700, color: openVisual.onTint }}>{model.freeCount} free sessions</span> on {selLong}
         </span>
@@ -227,11 +228,11 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
           return (
             <div key={r.anaesthetist.registrationNumber} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 1px 2px rgba(23,35,32,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 34, height: 34, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
+                <span style={{ width: 34, height: 34, borderRadius: radius.pill, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
                   {initialsOf(r.anaesthetist.name)}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.anaesthetist.name}</span>
-                {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: openVisual.onTint, background: openVisual.tint, borderRadius: 999, padding: '3px 9px' }}>{openLabel}</span>}
+                {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: openVisual.onTint, background: openVisual.tint, borderRadius: radius.pill, padding: '3px 9px' }}>{openLabel}</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(r.ooh !== undefined ? (['AM', 'PM', 'OOH'] as const) : (['AM', 'PM'] as const)).map((session) => {
@@ -245,7 +246,7 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
                     <Tag
                       key={session}
                       {...(canReceive ? { type: 'button' as const, onClick: () => movePrompt.openMove(mine.list.id, { toSlotId: view.slot.id }), 'data-shot': `availability-move-to-${view.slot.anaesthetistId}-${session.toLowerCase()}` } : {})}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: 10, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: canReceive ? 'pointer' : 'default', background: cs.bg, border: cs.border, ...(session === 'OOH' ? { gridColumn: '1 / -1' } : {}) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: radius.ctl, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: canReceive ? 'pointer' : 'default', background: cs.bg, border: cs.border, ...(session === 'OOH' ? { gridColumn: '1 / -1' } : {}) }}
                     >
                       {session === 'OOH' ? (
                         <span aria-label={sessionText(session)} style={{ flex: 'none', opacity: 0.7 }}><OutOfHoursMoon color={cs.color} size={12} /></span>
@@ -277,7 +278,7 @@ function miniBtn(color: string): React.CSSProperties {
   return {
     minHeight: 32,
     padding: '0 10px',
-    borderRadius: 999,
+    borderRadius: radius.pill,
     border: `1px solid ${color}55`,
     background: neutral.surface,
     color,

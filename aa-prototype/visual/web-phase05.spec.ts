@@ -76,3 +76,37 @@ test('web phase 05 walkthrough', async ({ page }) => {
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/w-10-gst.png', fullPage: true })
 })
+
+test('web List detail: each Booking opens by keyboard from the patient name (UI unification U1)', async ({ page }) => {
+  await page.goto('/web')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: 'Lists', exact: true }).click()
+  await page.getByText('Southern Cross').first().click()
+  await page.waitForTimeout(300)
+
+  const handles = page.getByRole('button', { name: /^Open Booking for / })
+  expect(await handles.count()).toBeGreaterThan(1)
+  const ellison = page.getByRole('button', { name: /^Open Booking for Margaret Ellison at \d\d:\d\d$/ })
+  await expect(ellison).toBeVisible()
+
+  // Tab moves handle to handle (rows are not focusable), with a visible focus.
+  await handles.first().focus()
+  await page.keyboard.press('Tab')
+  await expect(handles.nth(1)).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(handles.first()).toBeFocused()
+  expect(await handles.first().evaluate((el) => el.matches(':focus-visible'))).toBe(true)
+  await page.screenshot({ path: 'visual/shots/w-11-list-detail-keyboard.png', fullPage: true })
+
+  // Enter on Margaret Ellison's name opens her Booking.
+  const listURL = page.url()
+  await ellison.focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/bookings\//)
+  await expect(page.locator('[data-shot="capture-billing"]').last()).toBeVisible()
+
+  // The mouse still opens a Booking from anywhere on the row (its NHI cell, not the name).
+  await page.goto(listURL)
+  await page.locator('tr', { hasText: 'Margaret Ellison' }).locator('td').nth(2).click()
+  await expect(page).toHaveURL(/\/bookings\//)
+})

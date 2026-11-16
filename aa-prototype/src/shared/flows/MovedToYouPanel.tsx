@@ -1,9 +1,8 @@
-import { format, parseISO } from 'date-fns'
 import { ArrowRightLeft, ChevronRight } from 'lucide-react'
 import { neutral, radius } from '../../theme/tokens'
 import { useAppStore } from '../../store'
 import type { Notification } from '../../domain/types'
-import { drSurname, locationName } from '../format'
+import { drSurname, locationName, shortDay, stampText } from '../format'
 import { useBookingsMovedToMe, useMovedToMe } from './useListMoves'
 import { sessionText } from '../../domain/outOfHours'
 
@@ -14,18 +13,18 @@ function moverName(fromName: string | undefined): string {
 
 /** "Dr Hughes moved Thu 23 Jul AM, St George's, to you." from the pool's record (a snapshot). */
 export function movedToYouLine(n: Notification, names: { from: string | undefined; hospital: string }): string {
-  return `${moverName(names.from)} moved ${format(parseISO(n.dateISO), 'EEE d MMM')} ${sessionText(n.session)}, ${names.hospital}, to you.`
+  return `${moverName(names.from)} moved ${shortDay(n.dateISO)} ${sessionText(n.session)}, ${names.hospital}, to you.`
 }
 
 /** "Dr Souter moved a Booking to you: Wed 22 Jul AM, Christchurch Eye Surgery" (a single Booking, Phase 32a), from the move's audit event. */
 export function movedBookingToYouLine(fromName: string | undefined, where: { dateISO: string; session: string; hospital: string } | undefined): string {
-  const tail = where !== undefined ? `: ${format(parseISO(where.dateISO), 'EEE d MMM')} ${sessionText(where.session)}, ${where.hospital}` : ''
+  const tail = where !== undefined ? `: ${shortDay(where.dateISO)} ${sessionText(where.session)}, ${where.hospital}` : ''
   return `${moverName(fromName)} moved a Booking to you${tail}`
 }
 
 /** List detail's line: "Moved to you by Dr Hughes on Tue 21 Jul" (a List, or a single Booking, Phase 32a). */
 export function movedToYouByLine(atISO: string, fromName: string | undefined): string {
-  return `Moved to you by ${moverName(fromName)} on ${format(parseISO(atISO), 'EEE d MMM')}`
+  return `Moved to you by ${moverName(fromName)} on ${shortDay(atISO)}`
 }
 
 /**
@@ -83,7 +82,7 @@ export function MovedToYouPanel({
       style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span aria-hidden style={{ width: 28, height: 28, borderRadius: 999, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+        <span aria-hidden style={{ width: 28, height: 28, borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
           <ArrowRightLeft size={14} strokeWidth={2.4} />
         </span>
         <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>Moved to you</span>
@@ -111,7 +110,7 @@ function NoticeRow({ row }: { row: Row }) {
     <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <span style={{ fontSize: 13.5, lineHeight: '19px', color: neutral.ink }}>{row.line}</span>
       {row.message !== undefined && <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>"{row.message}"</span>}
-      <span style={{ fontSize: 12, color: neutral.mist }}>{format(parseISO(row.atISO), 'EEE d MMM, HH:mm')}</span>
+      <span style={{ fontSize: 12, color: neutral.mist }}>{stampText(row.atISO)}</span>
     </span>
   )
   return row.onOpen !== undefined ? (

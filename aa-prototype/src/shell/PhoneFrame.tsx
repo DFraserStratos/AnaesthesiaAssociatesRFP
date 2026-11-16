@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useClockTimeLabel } from '../store'
-import { accent, neutral, phoneBackdrop } from '../theme/tokens'
+import { accent, neutral, phoneBackdrop, elevation, radius } from '../theme/tokens'
 import { gradientCssVars } from '../theme/mobileGradient'
 import { AtmosphereLayer, GradientLab, useMobileGradient } from './gradientLab'
 
@@ -116,7 +116,7 @@ function ZoomControl({
   const btn: React.CSSProperties = {
     width: 34,
     height: 34,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     border: `1px solid ${neutral.line}`,
     background: neutral.surface,
     color: neutral.slate,
@@ -139,11 +139,11 @@ function ZoomControl({
         alignItems: 'center',
         gap: 6,
         padding: 6,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         background: 'rgba(255,255,255,0.94)',
         backdropFilter: 'blur(10px)',
         border: `1px solid ${neutral.line}`,
-        boxShadow: '0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09)',
+        boxShadow: elevation.e2,
       }}
     >
       <button type="button" aria-label="Zoom out" style={btn} onClick={() => onChange(scale - SCALE_STEP)}>

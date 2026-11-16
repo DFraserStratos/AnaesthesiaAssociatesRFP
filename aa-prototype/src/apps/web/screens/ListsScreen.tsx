@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { locationName } from '../../../shared/format'
+import { locationName, shortDay } from '../../../shared/format'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import type { AssignedList, Booking, DisplayKey } from '../../../domain/types'
@@ -143,7 +143,7 @@ export function ListsScreen({
     const c = resolveDisplayStatus(r.displayKey, slotStatuses).visual
     const showTimes = r.list !== undefined || r.times.overridden
     const quiet = r.progress === 'submitted'
-    const dateText = format(parseISO(r.dateISO), 'EEE d MMM')
+    const dateText = shortDay(r.dateISO)
     const list = r.list
     return (
       <tr
@@ -162,7 +162,7 @@ export function ListsScreen({
       >
         <Td>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span aria-hidden style={{ width: 3, height: 20, borderRadius: 99, background: c.solid, flex: 'none', opacity: quiet ? 0.45 : 1 }} />
+            <span aria-hidden style={{ width: 3, height: 20, borderRadius: radius.pill, background: c.solid, flex: 'none', opacity: quiet ? 0.45 : 1 }} />
             {list !== undefined ? (
               // The row's keyboard handle: a plain button on the date (the row click stays for the mouse).
               <button

@@ -31,7 +31,7 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
     <section
       data-shot="admin-draft-lists-rail"
       aria-labelledby="admin-draft-lists-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
     >
       <h2 id="admin-draft-lists-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
         {DRAFT_LISTS}
@@ -50,7 +50,7 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
                 type="button"
                 data-draft-rail-row={l.id}
                 onClick={() => onOpenDraftList(l.id)}
-                style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', border: 'none', borderRadius: 10, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+                style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', border: 'none', borderRadius: radius.ctl, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
                 <span style={{ fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>
                   {format(parseISO(l.dateISO), 'EEE d')} {sessionText(l.session)} · {pairingLine(l, masters)}

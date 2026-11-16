@@ -35,7 +35,7 @@ import {
 import { Button } from '../ui'
 import { useSurface, type BookingTotalLine } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, procedureFee } from '../capture'
-import { ageYears, BOOKING_SOURCE_LABELS, formatDob, nhiBadge } from '../format'
+import { ageYears, BOOKING_SOURCE_LABELS, formatCurrency, formatDob, hhmm, nhiBadge } from '../format'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 import {
   CancelBookingSheet,
@@ -81,10 +81,7 @@ type SheetState =
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
-  const next = Math.max(0, Math.min(23 * 60 + 55, base + deltaMin))
-  const h = Math.floor(next / 60)
-  const m = next % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  return hhmm(Math.max(0, Math.min(23 * 60 + 55, base + deltaMin)))
 }
 
 /** Hooks the capture recipes target on a rule's warning row (15a's prepayment; catch-up Phase 21's two). */
@@ -256,7 +253,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     )
 
     const rateLabels = views.map(({ fee }) =>
-      fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ $${fee.unitRate.toFixed(2)}/UNIT`,
+      fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ ${formatCurrency(fee.unitRate)}/UNIT`,
     )
     const rateLabel = rateLabels.every((l) => l === rateLabels[0]) ? (rateLabels[0] ?? null) : null
 
@@ -284,7 +281,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       overridden.length === 0
         ? null
         : overridden.length === 1 && procedures.length === 1
-          ? `Override applied · was $${overridden[0]!.fee.override!.before.toFixed(2)}`
+          ? `Override applied · was ${formatCurrency(overridden[0]!.fee.override!.before)}`
           : `Override applied on ${overridden.length} of ${procedures.length} procedures`
 
     return { lines, rateLabel, overrideNote }

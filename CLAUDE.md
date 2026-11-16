@@ -68,10 +68,6 @@ Not the place to edit requirements:
   throwaway exception to the one-prototype rule. It is a single AA Admin booking screen comparing six (billable party first and price first)
   ways of choosing a Contract, seeded from the real fee files, for stakeholder workshops. The prototype
   conventions (store, demo clock, `PERSIST_VERSION`) do not apply to it; see its `README.md`.
-- **UI library preview** — `ui-library-preview/` (port 5182, `npm run dev:preview`): a second deliberate,
-  throwaway exception. React 19 + shadcn/Base UI workspace that imports the prototype's catalogue rows
-  read-only (`@proto`) and shows each current component beside its live library replacement, with
-  options and Adopt/Adjust/Reject verdicts. Never edit `aa-prototype/` for it; see its `README.md`.
 - **Requirements Board** — `requirements-board/`: a separate local dev tool (Vite + React, port
   5180) for reading, editing and arranging the future-state requirements catalogue in
   `requirements-board/requirements/` (format: `REQ/SCHEMA.md`). It is a **portable kit**: the app,

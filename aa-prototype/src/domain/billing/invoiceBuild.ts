@@ -27,7 +27,7 @@ import type {
   ProcedureId,
 } from '../types'
 import { feeFor, type FeeLine } from './fee'
-import { roundToCents, toCents } from './money'
+import { formatMoney, roundToCents, toCents } from './money'
 import { procedureNeedsPrice } from './contracts'
 import { needsPriceMessage } from './priceRanges'
 import type { Party } from './parties'
@@ -152,7 +152,7 @@ export type BookingBuildResult =
  */
 function describeFeeLine(line: FeeLine): string {
   if (line.chargeBasis === 'rvg' && line.units !== undefined && line.rate !== undefined) {
-    return `${line.description}, ${line.units} units at $${line.rate.toFixed(2)} per unit`
+    return `${line.description}, ${line.units} units at ${formatMoney(line.rate)} per unit`
   }
   return line.description
 }
@@ -255,7 +255,7 @@ export function buildInvoicesForBooking(
           kind: 'exception',
           procedureId: procedure.id,
           code: 'allocationStale',
-          message: `The stored funder allocation adds up to $${allocated.toFixed(2)} but the fee under the governing arrangement is $${fee.total.toFixed(2)}. Reallocate before rebilling.`,
+          message: `The stored funder allocation adds up to ${formatMoney(allocated)} but the fee under the governing arrangement is ${formatMoney(fee.total)}. Reallocate before rebilling.`,
         }
       }
       for (const line of storedLines) {
@@ -328,7 +328,7 @@ export function buildInvoicesForBooking(
         kind: 'exception',
         procedureId: lines[0]?.procedureId ?? '',
         code: 'negativeTotal',
-        message: `The lines billed to one counterparty add up to a negative amount ($${subtotal.toFixed(2)}). Review the pre-payment or price override before rebilling; an overpaid pre-payment needs a manual credit.`,
+        message: `The lines billed to one counterparty add up to a negative amount (${formatMoney(subtotal)}). Review the pre-payment or price override before rebilling; an overpaid pre-payment needs a manual credit.`,
       }
     }
     // A group that nets to $0 raises no invoice — the full-pre-payment case

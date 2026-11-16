@@ -1,5 +1,6 @@
 import { neutral } from '../../theme/tokens'
 import { SuccessOverlay } from '../ui/SuccessOverlay'
+import { formatCurrency, plural } from '../format'
 
 interface CompletionOverlayProps {
   /** BOOKING totals (all procedures summed), not a single procedure's. */
@@ -22,7 +23,7 @@ interface CompletionOverlayProps {
  * an unmount race and there is no reload to fall back on.
  */
 export function CompletionOverlay({ units, fee, showCalculation, onDismiss }: CompletionOverlayProps) {
-  const calculation = showCalculation ? `${units} ${units === 1 ? 'unit' : 'units'} · $${fee.toFixed(2)}` : null
+  const calculation = showCalculation ? `${plural(units, 'unit')} · ${formatCurrency(fee)}` : null
 
   return (
     <SuccessOverlay title="Booking complete" testId="completion-overlay" onDismiss={onDismiss}>

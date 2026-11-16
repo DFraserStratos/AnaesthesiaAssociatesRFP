@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { elevation, neutral, radius, scrim } from '../../theme/tokens'
+import { elevation, neutral, radius, scrim, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 
 interface DialogProps {
@@ -54,7 +54,7 @@ export function Dialog({ open, onClose, children, size = 'default' }: DialogProp
 
   if (!open) return null
   return (
-    <div ref={rootRef} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div ref={rootRef} style={{ position: 'fixed', inset: 0, zIndex: zIndex.dialog, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div
         onClick={onClose}
         aria-hidden

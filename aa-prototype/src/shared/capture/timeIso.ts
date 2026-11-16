@@ -5,19 +5,13 @@
  * the NZ daylight-saving date (Sun 27 Sep 2026, inside the demo horizon).
  */
 
-/** 'HH:mm' from a local-naive ISO datetime. */
-export function isoTimeLabel(iso: string): string {
-  return iso.slice(11, 16)
-}
+import { hhmm } from '../../domain/dateText'
 
 /** Shift a local-naive ISO datetime by whole minutes, clamped to its own day. */
 export function shiftIsoMinutes(iso: string, deltaMin: number): string {
   const date = iso.slice(0, 10)
   const minutes = Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16)) + deltaMin
-  const clamped = Math.max(0, Math.min(23 * 60 + 59, minutes))
-  const h = String(Math.floor(clamped / 60)).padStart(2, '0')
-  const m = String(clamped % 60).padStart(2, '0')
-  return `${date}T${h}:${m}:00`
+  return `${date}T${hhmm(Math.max(0, Math.min(23 * 60 + 59, minutes)))}:00`
 }
 
 /**

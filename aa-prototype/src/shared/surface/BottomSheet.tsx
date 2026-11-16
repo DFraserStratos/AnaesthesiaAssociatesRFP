@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { elevation, neutral, radius, scrim } from '../../theme/tokens'
+import { elevation, neutral, radius, scrim, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import { useRegisterOpenSheet } from './sheetPresence'
 
@@ -46,7 +46,7 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
   }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 70, pointerEvents: closing ? 'none' : 'auto' }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: zIndex.sheet, pointerEvents: closing ? 'none' : 'auto' }}>
       <OpenSheetMarker />
       <div
         onClick={requestClose}
@@ -113,7 +113,7 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
           >
             <span
               aria-hidden
-              style={{ display: 'block', width: 36, height: 4, borderRadius: 99, background: neutral.lineStrong }}
+              style={{ display: 'block', width: 36, height: 4, borderRadius: radius.pill, background: neutral.lineStrong }}
             />
           </button>
         )}

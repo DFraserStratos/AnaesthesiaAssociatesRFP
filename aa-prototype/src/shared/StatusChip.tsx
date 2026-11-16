@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { DisplayKey } from '../domain/types'
 import type { StatusVisual } from '../theme/statusColours'
 import { useDisplayStatus } from './status/useSlotStatuses'
+import { radius } from '../theme/tokens'
 
 interface StatusChipProps {
   /** A List kind or an availability status ID (catch-up Phase 29). */
@@ -55,12 +56,12 @@ export function StatusChipView({
         alignItems: 'center',
         gap: 6,
         background: visual.tint,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         padding: '4px 10px',
         ...style,
       }}
     >
-      <span aria-hidden style={{ width: 7, height: 7, borderRadius: 99, background: visual.solid, flex: 'none' }} />
+      <span aria-hidden style={{ width: 7, height: 7, borderRadius: radius.pill, background: visual.solid, flex: 'none' }} />
       <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 600, color: visual.onTint }}>{label}</span>
     </span>
   )

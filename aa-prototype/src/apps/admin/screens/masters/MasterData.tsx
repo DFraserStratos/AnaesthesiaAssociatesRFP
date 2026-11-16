@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
-import { accent, neutral } from '../../../../theme/tokens'
+import { accent, neutral, radius } from '../../../../theme/tokens'
 import type { Actor } from '../../../../store'
 import { AnaesthetistsView } from './AnaesthetistsView'
 import { HospitalsView } from './HospitalsView'
@@ -54,7 +54,7 @@ export function MasterData({ actor }: MasterDataProps) {
               aria-current={active ? 'page' : undefined}
               data-masters-view={n.view}
               onClick={() => select(n.view)}
-              style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: 'none', background: active ? accent.tint : 'transparent', color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}
+              style={{ textAlign: 'left', padding: '8px 10px', borderRadius: radius.sm, border: 'none', background: active ? accent.tint : 'transparent', color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}
             >
               {n.label}
             </button>

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { FlaskConical } from 'lucide-react'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
-import { accent, elevation, neutral, radius, semantic } from '../theme/tokens'
+import { accent, elevation, neutral, radius, semantic, zIndex } from '../theme/tokens'
 
 /** The harness pill, kept in step with `DemoClockMenu`'s `triggerStyle` (plus no-wrap). */
 const triggerStyle: React.CSSProperties = {
@@ -15,7 +15,7 @@ const triggerStyle: React.CSSProperties = {
   borderRadius: radius.ctl,
   border: '1px solid rgba(255,255,255,0.22)',
   background: 'rgba(255,255,255,0.08)',
-  color: '#FFFFFF',
+  color: neutral.surface,
   font: 'inherit',
   fontSize: 13,
   fontWeight: 600,
@@ -31,7 +31,7 @@ const runStyle: React.CSSProperties = {
   borderRadius: radius.ctl,
   border: `1px solid ${accent.base}`,
   background: accent.base,
-  color: '#FFFFFF',
+  color: neutral.surface,
   cursor: 'pointer',
   flex: 'none',
 }
@@ -124,7 +124,7 @@ export function DemoActionsMenu() {
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            zIndex: 120,
+            zIndex: zIndex.shellMenu,
             width: 'min(360px, calc(100vw - 24px))',
             maxHeight: 'calc(100vh - 72px)',
             overflowY: 'auto',

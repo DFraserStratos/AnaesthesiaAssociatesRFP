@@ -8,22 +8,22 @@
 
 import { format, parseISO } from 'date-fns'
 import type { AvailabilityOutcome } from '../../store'
+import { plural, pluralWord, shortDay } from '../format'
 
 export type AvailabilityOutcomeKind = 'range' | 'series' | 'cleared' | 'seriesDeleted'
 
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
-const sessions = (n: number) => `${n} ${plural(n, 'session', 'sessions')}`
+const sessions = (n: number) => plural(n, 'session')
 
 function when(fromISO?: string, toISO?: string): string {
   if (fromISO === undefined) return ''
-  if (toISO === undefined || toISO === fromISO) return ` on ${format(parseISO(fromISO), 'EEE d MMM')}`
+  if (toISO === undefined || toISO === fromISO) return ` on ${shortDay(fromISO)}`
   return `, ${format(parseISO(fromISO), 'd MMM')} to ${format(parseISO(toISO), 'd MMM')}`
 }
 
 function listLines(outcome: Pick<AvailabilityOutcome, 'holdingLists'>): string[] {
   const lines: string[] = []
   if (outcome.holdingLists > 0) {
-    lines.push(`${plural(outcome.holdingLists, 'The List stays', 'The Lists stay')} in place.`)
+    lines.push(`${pluralWord(outcome.holdingLists, 'The List stays', 'The Lists stay')} in place.`)
   }
   return lines
 }
@@ -51,18 +51,18 @@ export function describeAvailabilityOutcome(
     if (set === 0) parts.push(`Already ${ctx.statusLabel}. Nothing changed.`)
     else parts.push(`${sessions(set)} set to ${ctx.statusLabel}${when(ctx.fromISO, ctx.toISO)}.`)
     if (outcome.seriesEdited > 0) {
-      parts.push(`${outcome.seriesEdited} repeating ${plural(outcome.seriesEdited, 'day', 'days')} changed on ${plural(outcome.seriesEdited, 'its', 'their')} own.`)
+      parts.push(`${outcome.seriesEdited} repeating ${pluralWord(outcome.seriesEdited, 'day')} changed on ${pluralWord(outcome.seriesEdited, 'its', 'their')} own.`)
     }
   } else if (ctx.kind === 'series') {
     const left = outcome.leftAsIs
-    const leftText = left > 0 ? `, ${left} already set left as ${plural(left, 'it is', 'they are')}` : ''
+    const leftText = left > 0 ? `, ${left} already set left as ${pluralWord(left, 'it is', 'they are')}` : ''
     parts.push(`Series saved: ${ctx.seriesLine ?? ctx.statusLabel}. ${sessions(outcome.set)} set${leftText}.`)
   } else if (ctx.kind === 'cleared') {
     parts.push(outcome.set === 0 ? `Already ${ctx.statusLabel}. Nothing changed.` : `Back to ${ctx.statusLabel}${when(ctx.fromISO)}.`)
     if (outcome.seriesEdited > 0) parts.push('It is no longer part of the series.')
   } else {
     const kept = outcome.unchanged
-    const keptText = kept > 0 ? `, ${kept} changed ${plural(kept, 'day', 'days')} kept` : ''
+    const keptText = kept > 0 ? `, ${kept} changed ${pluralWord(kept, 'day')} kept` : ''
     parts.push(`Series deleted. ${sessions(outcome.set)} back to ${ctx.statusLabel}${keptText}.`)
   }
   if (moved !== undefined && moved.lists > 0) parts.push(moved.lists === 1 ? 'Its List went first, where you chose.' : `${moved.lists} Lists went first, where you chose.`)

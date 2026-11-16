@@ -1,4 +1,4 @@
-import { semantic } from '../../theme/tokens'
+import { semantic, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 
 interface TickBadgeProps {
@@ -21,7 +21,7 @@ export function TickBadge({ size = 24, animate = false }: TickBadgeProps) {
       style={{
         width: size,
         height: size,
-        borderRadius: 99,
+        borderRadius: radius.pill,
         background: semantic.success.tint,
         display: 'flex',
         alignItems: 'center',

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
-import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
+import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
@@ -98,7 +98,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
             <div key={l.id} style={{ fontSize: 12.5, color: neutral.ink, display: 'flex', gap: 8, alignItems: 'baseline' }}>
               <span>{listShortLabel(l, masters)} · {dayMicroCap(l.dateISO)}</span>
               <span style={{ color: neutral.mist }}>
-                billed {hhmm(l.billedAtISO)} · {invoiceCountByList[l.id] ?? 0} invoice{(invoiceCountByList[l.id] ?? 0) === 1 ? '' : 's'}
+                billed {hhmm(l.billedAtISO)} · {plural(invoiceCountByList[l.id] ?? 0, 'invoice')}
               </span>
             </div>
           ))}
@@ -109,7 +109,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
       {failedCases.length > 0 && (
         <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: semantic.warning.onTint }}>
-            {failedCases.length} booking{failedCases.length === 1 ? '' : 's'} raised a billing exception
+            {plural(failedCases.length, 'booking')} raised a billing exception
           </span>
           {failedCases.map((c) => (
             <div key={c.id} style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
@@ -243,7 +243,7 @@ function StatusPill({ text, tone }: { text: string; tone?: 'ok' | 'warn' }) {
         ? { background: semantic.warning.tint, color: semantic.warning.onTint }
         : { background: neutral.sunken, color: neutral.slate }
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', ...colours }}>
+    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '3px 9px', whiteSpace: 'nowrap', ...colours }}>
       {text}
     </span>
   )

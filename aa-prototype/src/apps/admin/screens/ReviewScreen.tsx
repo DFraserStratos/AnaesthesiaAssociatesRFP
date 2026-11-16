@@ -345,7 +345,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
               <td style={cellStyle} />
               <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listTotals.units}</td>
               <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listFeeText}</td>
-              <td style={{ ...cellStyle, color: neutral.mist, fontSize: 12 }}>@ ${unitRate.toFixed(2)}/unit (list rate)</td>
+              <td style={{ ...cellStyle, color: neutral.mist, fontSize: 12 }}>@ {formatCurrency(unitRate)}/unit (list rate)</td>
             </tr>
           </tbody>
         </table>

@@ -96,10 +96,9 @@ import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEE
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId } from '../../domain/slots'
 import { SEED_STATUS, statusFor } from '../../domain/slotStatus'
-import { format, parseISO } from 'date-fns'
 import { roundToCents } from '../../domain/billing/money'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
-import { drSurname, formatCurrency } from '../format'
+import { drSurname, formatCurrency, plural, shortDay } from '../format'
 import { isAssignedList } from '../../domain/draftLists'
 import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
@@ -144,7 +143,6 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 function pairingOf(state: AppState, hospitalId: string, surgeonId: string): string {
   return `${state.masters.hospitals[hospitalId]?.name ?? hospitalId} · ${state.masters.surgeons[surgeonId]?.name ?? surgeonId}`
 }
-const dayLabel = (dateISO: string) => format(parseISO(dateISO), 'EEE d MMM')
 const ADMIN_CONFLICTS = '/admin/conflicts'
 /** The hospital's download, as the demo stands it in (catch-up Phase 20a): an integration write, so a locked List refuses it. */
 const HOSPITAL_DOWNLOAD_ACTOR = { who: 'Hospital booking download', role: 'system' as const, source: 'integration' as const }
@@ -337,11 +335,7 @@ function firstOpenInvoicePath(state: AppState): string | null {
 // ---------------------------------------------------------------------------
 
 /** The rule count, said honestly (catch-up Phase 19 registered the second rule). */
-const RULES_NOTE = WARNING_RULE_COUNT === 1 ? '1 rule registered.' : `${WARNING_RULE_COUNT} rules registered.`
-
-function plural(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? '' : 's'}`
-}
+const RULES_NOTE = `${plural(WARNING_RULE_COUNT, 'rule')} registered.`
 
 function raiseSampleDisabled(state: AppState, ctx: DemoTriggerCtx): string | null {
   const bookingId = ctx.params['bookingId']
@@ -406,7 +400,7 @@ function makeAvailableChoices(state: AppState, ctx: DemoTriggerCtx): { id: strin
   if (listId === undefined) return []
   return closedColleagueSessions(state, listId).map((slotId) => {
     const slot = state.schedule.slots[slotId]!
-    return { id: slotId, label: `${drSurname(state.masters.anaesthetists[slot.anaesthetistId]?.name ?? slot.anaesthetistId)}, ${format(parseISO(slot.dateISO), 'EEE d MMM')} ${sessionText(slot.session)}` }
+    return { id: slotId, label: `${drSurname(state.masters.anaesthetists[slot.anaesthetistId]?.name ?? slot.anaesthetistId)}, ${shortDay(slot.dateISO)} ${sessionText(slot.session)}` }
   })
 }
 
@@ -504,7 +498,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ok: true,
         message:
           n > 0
-            ? `Reconciliation poll applied ${n} previously-missed payment${n === 1 ? '' : 's'}.`
+            ? `Reconciliation poll applied ${plural(n, 'previously-missed payment')}.`
             : 'Reconciliation poll ran: no unmirrored payments to catch.',
       }
     },
@@ -526,7 +520,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ok: true,
         message:
           res.value.count > 0
-            ? `Archive job archived ${res.value.count} inactive Xero contact${res.value.count === 1 ? '' : 's'}.`
+            ? `Archive job archived ${plural(res.value.count, 'inactive Xero contact')}.`
             : 'Archive job ran: no contacts past the inactivity window yet.',
       }
     },
@@ -734,7 +728,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         message:
           res.value.raisedCount === 0
             ? `Nothing to raise: every active anaesthetist already has a fee invoice for ${aaFeeMonthLabel(monthISO)}.`
-            : `The scheduled run raised ${res.value.raisedCount} AA fee invoice${res.value.raisedCount === 1 ? '' : 's'} for ${aaFeeMonthLabel(monthISO)}, ${formatCurrency(res.value.total)} incl GST.`,
+            : `The scheduled run raised ${plural(res.value.raisedCount, 'AA fee invoice')} for ${aaFeeMonthLabel(monthISO)}, ${formatCurrency(res.value.total)} incl GST.`,
       }
     },
     indexPath: () => AA_FEE_INVOICES,
@@ -827,7 +821,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const surgeon = state.masters.surgeons[res.value.surgeonId]?.name ?? res.value.surgeonId
       return {
         ok: true,
-        message: `Assigned ${hospital} · ${surgeon} to your ${format(parseISO(res.value.slot.dateISO), 'EEE d MMM')} ${sessionText(res.value.slot.session)} session.`,
+        message: `Assigned ${hospital} · ${surgeon} to your ${shortDay(res.value.slot.dateISO)} ${sessionText(res.value.slot.session)} session.`,
       }
     },
     indexPath: () => null,
@@ -867,14 +861,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
       if (!res.ok) return { ok: false, message: res.message }
       const state = api.getState()
-      const when = `${dayLabel(res.value.slot.dateISO)} ${sessionText(res.value.slot.session)}`
+      const when = `${shortDay(res.value.slot.dateISO)} ${sessionText(res.value.slot.session)}`
       const what = pairingOf(state, res.value.hospitalId, res.value.surgeonId)
       // Never names a preference, a tier, a Draft List or a slot (D44, OQ-64).
       return {
         ok: true,
         message: res.value.logged
           ? `The office logged a request for your ${when} and assigned it: ${what}.`
-          : `The office assigned a waiting request to your ${when}: ${what}, ${res.value.bookings} booking${res.value.bookings === 1 ? '' : 's'}.`,
+          : `The office assigned a waiting request to your ${when}: ${what}, ${plural(res.value.bookings, 'booking')}.`,
       }
     },
     indexPath: () => null,
@@ -912,7 +906,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       if (!res.ok) return { ok: false, message: res.message }
       const state = api.getState()
       const who = drSurname(state.masters.anaesthetists[before.anaesthetistId]?.name ?? before.anaesthetistId)
-      const when = `${format(parseISO(before.dateISO), 'EEE d MMM')} ${sessionText(before.session)}`
+      const when = `${shortDay(before.dateISO)} ${sessionText(before.session)}`
       const status = statusFor(state.masters.slotStatuses, SEED_STATUS.unavailable)?.label ?? 'unavailable'
       const where =
         res.value.toAnaesthetistId !== undefined
@@ -947,7 +941,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const state = api.getState()
       const slot = state.schedule.slots[slotId]!
       const who = drSurname(state.masters.anaesthetists[res.value.anaesthetistId]?.name ?? res.value.anaesthetistId)
-      return { ok: true, message: `${who} made ${format(parseISO(slot.dateISO), 'EEE d MMM')} ${sessionText(slot.session)} available. You can assign to them now.` }
+      return { ok: true, message: `${who} made ${shortDay(slot.dateISO)} ${sessionText(slot.session)} available. You can assign to them now.` }
     },
     indexPath: () => `/admin/draft-lists`,
     indexHint: `Open Assign on a ${DRAFT_LIST}, or Reassign on a List: the button sits on each unavailable colleague's row.`,
@@ -1002,7 +996,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const list = state.schedule.lists[res.value.listId]
       const who = drSurname(state.masters.anaesthetists[res.value.anaesthetistId]?.name ?? res.value.anaesthetistId)
       const where = list !== undefined ? state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId : ''
-      return { ok: true, message: `${who} returned ${dayLabel(res.value.dateISO)} ${sessionText(list?.session ?? '')} (${where}) to the office. It is now a ${DRAFT_LIST}.` }
+      return { ok: true, message: `${who} returned ${shortDay(res.value.dateISO)} ${sessionText(list?.session ?? '')} (${where}) to the office. It is now a ${DRAFT_LIST}.` }
     },
     indexPath: () => '/admin/day/2026-07-21',
   },
@@ -1025,7 +1019,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)
       const where = list !== undefined ? state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId : ''
       // Never names a preference, a tier, a Draft List or a slot (D44, OQ-64).
-      return { ok: true, message: `${who} moved ${dayLabel(res.value.dateISO)} ${sessionText(list?.session ?? '')} (${where}) into your free session.` }
+      return { ok: true, message: `${who} moved ${shortDay(res.value.dateISO)} ${sessionText(list?.session ?? '')} (${where}) into your free session.` }
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: in the framed build, move a List as Dr Souter on Web Availability and see the notice as the office.',
@@ -1047,7 +1041,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const state = api.getState()
       const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)
       const where = state.masters.hospitals[res.value.hospitalId]?.name ?? res.value.hospitalId
-      return { ok: true, message: `${who} moved a Booking (${dayLabel(res.value.dateISO)} ${sessionText(res.value.session)}, ${where}) to Dr Souter. A new List was created.` }
+      return { ok: true, message: `${who} moved a Booking (${shortDay(res.value.dateISO)} ${sessionText(res.value.session)}, ${where}) to Dr Souter. A new List was created.` }
     },
     indexPath: () => '/admin/day/2026-07-22',
   },
@@ -1064,7 +1058,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     choices: (state) =>
       bookingMoveCandidates(state, ANAE.souter).map((c) => ({
         id: c.bookingId,
-        label: `${drSurname(state.masters.anaesthetists[c.fromAnaesthetistId]?.name ?? c.fromAnaesthetistId)} · ${dayLabel(c.dateISO)} ${sessionText(c.session)} · ${state.masters.hospitals[c.hospitalId]?.name ?? c.hospitalId}`,
+        label: `${drSurname(state.masters.anaesthetists[c.fromAnaesthetistId]?.name ?? c.fromAnaesthetistId)} · ${shortDay(c.dateISO)} ${sessionText(c.session)} · ${state.masters.hospitals[c.hospitalId]?.name ?? c.hospitalId}`,
       })),
     defaultChoice: (state) => bookingMoveCandidates(state, ANAE.souter)[0]?.bookingId,
     disabledReason: (state, _ctx, choiceId) => {
@@ -1082,7 +1076,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)
       const where = state.masters.hospitals[res.value.hospitalId]?.name ?? res.value.hospitalId
       // Never names a preference, a tier, a Draft List or a slot (D44, D54).
-      return { ok: true, message: `${who} moved a Booking (${dayLabel(res.value.dateISO)} ${sessionText(res.value.session)}, ${where}) to you. It is on a new List in your free session.` }
+      return { ok: true, message: `${who} moved a Booking (${shortDay(res.value.dateISO)} ${sessionText(res.value.session)}, ${where}) to you. It is on a new List in your free session.` }
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: in the framed build, move a Booking as Dr Souter from its Booking screen and see the new List as the office.',
@@ -1098,7 +1092,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     choices: (state) =>
       CANNED_DRAFT_LIST_REQUESTS.map((r) => {
         const day = cannedRequestDay(state, r.id)!
-        return { id: r.id, label: `${pairingOf(state, r.hospitalId, r.surgeonId)} · ${dayLabel(day.dateISO)} ${sessionText(day.session)} · ${SOURCE_LABELS[r.source]}` }
+        return { id: r.id, label: `${pairingOf(state, r.hospitalId, r.surgeonId)} · ${shortDay(day.dateISO)} ${sessionText(day.session)} · ${SOURCE_LABELS[r.source]}` }
       }),
     disabledReason: (state, _ctx, choiceId) => incomingRequestRefusal(state, choiceId ?? CANNED_DRAFT_LIST_REQUESTS[0].id),
     run: (api, _ctx, choiceId) => {
@@ -1108,7 +1102,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const r = CANNED_DRAFT_LIST_REQUESTS.find((x) => x.id === id)!
       return {
         ok: true,
-        message: `A request came in by ${SOURCE_LABELS[r.source].toLowerCase()}: ${pairingOf(api.getState(), r.hospitalId, r.surgeonId)}, ${dayLabel(res.value.dateISO)} ${sessionText(res.value.session)}. It waits on ${DRAFT_LISTS}, unassigned.`,
+        message: `A request came in by ${SOURCE_LABELS[r.source].toLowerCase()}: ${pairingOf(api.getState(), r.hospitalId, r.surgeonId)}, ${shortDay(res.value.dateISO)} ${sessionText(res.value.session)}. It waits on ${DRAFT_LISTS}, unassigned.`,
       }
     },
     indexPath: () => ADMIN_DRAFT_LISTS,
@@ -1129,7 +1123,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const res = addDraftListForDay(api, dateISO, id)
       if (!res.ok) return { ok: false, message: res.message }
       const c = CANNED_DAY_DRAFT_LISTS.find((x) => x.id === id)!
-      return { ok: true, message: `Added a ${DRAFT_LIST} for ${dayLabel(dateISO)} ${sessionText(c.session)}: ${pairingOf(api.getState(), c.hospitalId, c.surgeonId)}. It shows in the band and the rail card.` }
+      return { ok: true, message: `Added a ${DRAFT_LIST} for ${shortDay(dateISO)} ${sessionText(c.session)}: ${pairingOf(api.getState(), c.hospitalId, c.surgeonId)}. It shows in the band and the rail card.` }
     },
     indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
   },
@@ -1164,7 +1158,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const presses = res.value.presses === 1 ? 'once' : res.value.presses === 2 ? 'twice' : `${res.value.presses} times`
       return {
         ok: true,
-        message: `${who} is marked unavailable for ${dayLabel(res.value.dateISO)} ${sessionText(res.value.session)}. Press Next day ${presses}: when the schedule reaches that day, ${pairingOf(before, rb.hospitalId, rb.surgeonId)} becomes a ${DRAFT_LIST}.`,
+        message: `${who} is marked unavailable for ${shortDay(res.value.dateISO)} ${sessionText(res.value.session)}. Press Next day ${presses}: when the schedule reaches that day, ${pairingOf(before, rb.hospitalId, rb.surgeonId)} becomes a ${DRAFT_LIST}.`,
       }
     },
     indexPath: () => '/admin/masters?view=recurringBookings',

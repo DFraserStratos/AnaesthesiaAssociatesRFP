@@ -67,7 +67,7 @@ describe('ProcedureStack, the compact Review row', () => {
     expect(contract.getAttribute('title')).toContain('Southern Cross knee replacement, held by Southern Cross')
     expect(container.querySelector('[data-shot=procedure-text]')!.getAttribute('title')).toBe('right total knee')
     expect(container.querySelector('[data-shot=procedure-invoice-description]')).toBeNull()
-    expect(screen.getByText('Fixed price $3,565', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Fixed price $3,565.00', { exact: false })).toBeInTheDocument()
     expect(container.textContent).not.toMatch(/[–—]/)
   })
 

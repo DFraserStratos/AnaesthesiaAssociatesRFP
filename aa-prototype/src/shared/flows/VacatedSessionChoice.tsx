@@ -1,7 +1,7 @@
 import { useRef, type KeyboardEvent } from 'react'
 import { vacatedChoices } from '../../domain/listMoves'
 import type { SlotStatusKey } from '../../domain/types'
-import { accent, neutral } from '../../theme/tokens'
+import { accent, neutral, radius } from '../../theme/tokens'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
 
 /**
@@ -105,7 +105,7 @@ export function StatusRadioGroup({
                 gap: 8,
                 height: 40,
                 padding: '0 14px',
-                borderRadius: 999,
+                borderRadius: radius.pill,
                 border: selected ? `2px solid ${accent.base}` : `1px solid ${neutral.line}`,
                 background: selected ? accent.tint : neutral.surface,
                 fontFamily: 'inherit',

@@ -18,7 +18,7 @@ import { ProgressPill, useBookingWarnings, useSurface, WarningTriangle } from '.
 import { ListRow } from '../components'
 import { listRowModel } from './listRowModel'
 import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
-import { dayWithYear, longDay, nhiBadge, shortDay } from '../../../shared/format'
+import { dayWithYear, longDay, nhiBadge, shortDay, plural } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 
 // ---------------------------------------------------------------------------
@@ -139,7 +139,7 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
         onPickDay={onPick}
         dayLabel={(d) => {
           const n = days.get(d)?.lists ?? 0
-          return `${longDay(d)}, ${n === 0 ? 'no Lists' : `${n} ${n === 1 ? 'List' : 'Lists'}`}`
+          return `${longDay(d)}, ${n === 0 ? 'no Lists' : plural(n, 'List')}`
         }}
         renderDay={(d, { today }) => {
           const has = days.has(d)
@@ -149,7 +149,7 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
               <span className="mono" style={{ fontSize: 14, lineHeight: '16px', fontWeight: today || selected ? 700 : 500, color: selected ? accent.base : today ? accent.base : neutral.ink }}>
                 {Number(d.slice(8))}
               </span>
-              <span aria-hidden style={{ width: 5, height: 5, borderRadius: 99, background: has ? neutral.slate : 'transparent' }} />
+              <span aria-hidden style={{ width: 5, height: 5, borderRadius: radius.pill, background: has ? neutral.slate : 'transparent' }} />
             </>
           )
         }}
@@ -171,7 +171,7 @@ export function DayChip({ dateISO, onClose }: { dateISO: string; onClose: () => 
       data-testid="mobile-lists-day-chip"
       aria-label={`${longDay(dateISO)}. Close the day and go back to your Lists`}
       onClick={onClose}
-      style={{ height: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 16px', borderRadius: 999, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+      style={{ height: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 16px', borderRadius: radius.pill, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
     >
       <span className="mono">{label}</span>
       <X size={16} strokeWidth={2.4} aria-hidden />

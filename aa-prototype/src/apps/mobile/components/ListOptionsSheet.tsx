@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { accent, neutral } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import { BottomSheet } from '../../../shared/surface'
 import { Button } from '../../../shared/ui'
 
@@ -43,7 +43,7 @@ export function ListOptionsSheet({ open, title, subtitle, options, onClose }: { 
               minHeight: 60,
               padding: '10px 6px',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: radius.md,
               background: 'none',
               fontFamily: 'inherit',
               textAlign: 'left',
@@ -56,7 +56,7 @@ export function ListOptionsSheet({ open, title, subtitle, options, onClose }: { 
                 width: 40,
                 height: 40,
                 flex: 'none',
-                borderRadius: 12,
+                borderRadius: radius.md,
                 display: 'grid',
                 placeItems: 'center',
                 background: o.disabled ? neutral.sunken : accent.tint,

@@ -25,7 +25,7 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
     <section
       data-shot="admin-needs-invoice-destination"
       aria-labelledby="admin-needs-destination-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
     >
       <h2 id="admin-needs-destination-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
         Needs an invoice destination
@@ -46,7 +46,7 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
               data-shot="needs-destination-row"
               data-booking-id={row.bookingId}
               onClick={() => onOpenBooking(row.dateISO, row.bookingId)}
-              style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 10px', border: 'none', borderRadius: 10, background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 10px', border: 'none', borderRadius: radius.ctl, background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
             >
               <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{row.patientName}</span>
               <span style={{ fontSize: 12, color: neutral.slate }}>

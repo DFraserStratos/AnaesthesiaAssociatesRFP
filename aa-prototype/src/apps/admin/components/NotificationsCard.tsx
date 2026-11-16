@@ -15,6 +15,7 @@ import { activeNotificationCount, latestNotifications, resolveNotification, useA
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import { FormError, TickBadge, TickButton } from '../../../shared/ui'
+import { stampText } from '../../../shared/format'
 
 const RAIL_ROWS = 3
 
@@ -37,7 +38,7 @@ export function NotificationText({ row, compact = false }: { row: NotificationRo
           {alert ? 'Note: ' : ''}"{row.notification.message}"
         </span>
       )}
-      {compact && <span style={{ fontSize: 11, color: neutral.mist }}>{format(parseISO(row.atISO), 'EEE d MMM, HH:mm')} · {row.by}</span>}
+      {compact && <span style={{ fontSize: 11, color: neutral.mist }}>{stampText(row.atISO)} · {row.by}</span>}
       {resolved !== null && <span data-shot="notification-resolved-line" style={{ fontSize: 11.5, color: neutral.mist }}>{resolved}</span>}
     </span>
   )
@@ -135,7 +136,7 @@ export function NotificationsCard({
     <section
       data-shot="admin-notifications-rail"
       aria-labelledby="admin-notifications-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
     >
       <h2 id="admin-notifications-heading" ref={heading} tabIndex={-1} style={{ margin: 0, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, outline: 'none' }}>
         Notifications
@@ -152,7 +153,7 @@ export function NotificationsCard({
               <li
                 key={r.notification.id}
                 data-notification-row={r.notification.id}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, background: neutral.bg, opacity: ticking ? 0.55 : 1, transition: 'opacity 200ms' }}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: radius.ctl, background: neutral.bg, opacity: ticking ? 0.55 : 1, transition: 'opacity 200ms' }}
               >
                 {r.target.kind === 'gone' ? (
                   <span style={{ flex: 1, minWidth: 0 }}>

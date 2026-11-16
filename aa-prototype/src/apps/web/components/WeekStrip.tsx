@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { brand, neutral } from '../../../theme/tokens'
+import { brand, neutral, radius } from '../../../theme/tokens'
 import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
 import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
@@ -128,7 +128,7 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
                   gap: 6,
                   padding: 5,
                   border: isToday ? `2px solid ${brand.base}` : '2px solid transparent',
-                  borderRadius: 12,
+                  borderRadius: radius.md,
                 }}
               >
                 {mergedHoliday && am !== undefined ? (
@@ -191,7 +191,7 @@ function Block({
   const height = tall === true ? 110 : 52
   const resolved = useDisplayStatus(view?.displayKey ?? '')
   if (view === undefined || labels === undefined) {
-    return <div style={{ height, borderRadius: 8, background: neutral.sunken }} aria-hidden />
+    return <div style={{ height, borderRadius: radius.sm, background: neutral.sunken }} aria-hidden />
   }
   const list = view.list
   const c = resolved.visual
@@ -208,7 +208,7 @@ function Block({
       style={{
         height,
         opacity: submitted ? 0.72 : 1,
-        borderRadius: 8,
+        borderRadius: radius.sm,
         background: bg,
         border: isFree ? c.border : 'none',
         borderLeft: isFree ? c.border : `3px solid ${c.solid}`,

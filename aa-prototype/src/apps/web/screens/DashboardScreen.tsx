@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
-import { accent, neutral, semantic } from '../../../theme/tokens'
+import { accent, neutral, semantic, radius } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import { hasLeftMainView } from '../../../domain/listProgress'
 import type { Slot } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
 import { openSlotViews, receivablesAgingFor, useAppStore } from '../../../store'
-import { drSurname, formatCurrency } from '../../../shared/format'
+import { drSurname, formatCurrency, plural, shortDay, longDayNoYear } from '../../../shared/format'
 import { useDefaultStatus, useSurface } from '../../../shared'
 import { sessionKey, useMovableLists, useMoveListPrompt, useMoveTargets } from '../../../shared/flows'
 import { locationName } from '../../../shared/format'
@@ -121,7 +121,7 @@ export function DashboardScreen({
     return rows
   }, [slotState, anaesthetists, anaesthetistId, todayISO])
 
-  const summaryLine = `${format(parseISO(todayISO), 'EEEE d MMMM')} · ${daySummary.lists} ${daySummary.lists === 1 ? 'list' : 'lists'} today · ${daySummary.bookings} ${daySummary.bookings === 1 ? 'booking' : 'bookings'}${daySummary.awaiting > 0 ? ` · ${daySummary.awaiting} awaiting submission` : ''}`
+  const summaryLine = `${longDayNoYear(todayISO)} · ${plural(daySummary.lists, 'list')} today · ${plural(daySummary.bookings, 'booking')}${daySummary.awaiting > 0 ? ` · ${daySummary.awaiting} awaiting submission` : ''}`
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -142,7 +142,7 @@ export function DashboardScreen({
           style={{
             height: 42,
             padding: '0 20px',
-            borderRadius: 12,
+            borderRadius: radius.md,
             border: 'none',
             background: canMove ? accent.base : neutral.line,
             color: canMove ? neutral.surface : neutral.mist,
@@ -162,7 +162,7 @@ export function DashboardScreen({
             <div style={{ fontSize: 18, fontWeight: 700 }}>Which List?</div>
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Your Lists in the next six days. Choose one to move it back to the office or to a colleague.</div>
           </div>
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: 14, overflow: 'hidden' }}>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}>
             {movableLists.map((l, i) => (
               <li key={l.id} style={{ display: 'flex' }}>
               <button
@@ -173,7 +173,7 @@ export function DashboardScreen({
                 }}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: 'none', borderTop: i === 0 ? 'none' : `1px solid ${neutral.sunken}`, background: neutral.surface, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
-                <span className="mono" style={{ width: 92, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{format(parseISO(l.dateISO), 'EEE d MMM')} {sessionText(l.session)}</span>
+                <span className="mono" style={{ width: 92, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{shortDay(l.dateISO)} {sessionText(l.session)}</span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: neutral.ink }}>{locationName(l.hospitalId, masters.hospitals)}</span>
                 <span style={{ fontSize: 13, color: neutral.slate }}>{masters.surgeons[l.surgeonId]?.name ?? ''}</span>
               </button>
@@ -214,8 +214,8 @@ export function DashboardScreen({
                   return (
                     <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ width: 72, fontSize: 12, fontWeight: 600, color: neutral.slate }}>{r.label}</span>
-                      <span style={{ flex: 1, height: 14, borderRadius: 99, background: neutral.sunken, overflow: 'hidden', display: 'block' }}>
-                        <span style={{ display: 'block', height: '100%', borderRadius: 99, background: r.color, opacity: r.opacity, width: `${pct}%` }} />
+                      <span style={{ flex: 1, height: 14, borderRadius: radius.pill, background: neutral.sunken, overflow: 'hidden', display: 'block' }}>
+                        <span style={{ display: 'block', height: '100%', borderRadius: radius.pill, background: r.color, opacity: r.opacity, width: `${pct}%` }} />
                       </span>
                       <span className="mono" style={{ width: 72, textAlign: 'right', fontSize: 12 }}>{formatCurrency(amount)}</span>
                     </div>
@@ -223,7 +223,7 @@ export function DashboardScreen({
                 })}
               </div>
               <div style={{ fontSize: 13, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 12 }}>
-                {receivables.accountsOver60} {receivables.accountsOver60 === 1 ? 'account' : 'accounts'} over 60 days ·{' '}
+                {plural(receivables.accountsOver60, 'account')} over 60 days ·{' '}
                 <LinkButton onClick={onViewOverdue}>view overdue accounts</LinkButton>
               </div>
             </>
@@ -270,16 +270,16 @@ export function DashboardScreen({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {figures !== undefined && figures.leave.length > 0 ? (
               figures.leave.map((l, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: neutral.bg, borderRadius: 10 }}>
-                  <span style={{ width: 4, height: 34, borderRadius: 99, background: STATUS_PALETTE.holiday.solid, flex: 'none' }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: neutral.bg, borderRadius: radius.ctl }}>
+                  <span style={{ width: 4, height: 34, borderRadius: radius.pill, background: STATUS_PALETTE.holiday.solid, flex: 'none' }} />
                   <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 14, fontWeight: 600 }}>{leaveRange(l.fromISO, l.toISO)}</span>
                     <span style={{ fontSize: 12, color: neutral.slate }}>{l.label}</span>
                   </span>
                   {l.status === 'approved' ? (
-                    <span style={{ padding: '4px 10px', borderRadius: 999, background: semantic.success.tint, fontSize: 11, fontWeight: 600, color: semantic.success.onTint }}>Approved</span>
+                    <span style={{ padding: '4px 10px', borderRadius: radius.pill, background: semantic.success.tint, fontSize: 11, fontWeight: 600, color: semantic.success.onTint }}>Approved</span>
                   ) : (
-                    <span style={{ padding: '4px 10px', borderRadius: 999, background: semantic.warning.tint, fontSize: 11, fontWeight: 600, color: semantic.warning.onTint }}>Pending</span>
+                    <span style={{ padding: '4px 10px', borderRadius: radius.pill, background: semantic.warning.tint, fontSize: 11, fontWeight: 600, color: semantic.warning.onTint }}>Pending</span>
                   )}
                 </div>
               ))
@@ -316,7 +316,7 @@ export function DashboardScreen({
                     const canMove = mine !== undefined && mine.targetSlotIds.has(e.slot.id) && movePrompt !== null
                     const chip = {
                       padding: '5px 11px',
-                      borderRadius: 999,
+                      borderRadius: radius.pill,
                       border: 'none',
                       background: openVisual.tint,
                       fontFamily: 'inherit',
@@ -353,12 +353,12 @@ export function DashboardScreen({
 
 function StatTile({ label, value, pill }: { label: string; value: string; pill?: string }) {
   return (
-    <div style={{ background: neutral.bg, borderRadius: 10, padding: '12px 14px' }}>
+    <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: '12px 14px' }}>
       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
         <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{value}</span>
         {pill !== undefined && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: 999, padding: '2px 7px' }}>{pill}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: radius.pill, padding: '2px 7px' }}>{pill}</span>
         )}
       </div>
     </div>

@@ -174,7 +174,7 @@ function PanelAction({ onClick, children, primary }: { onClick: () => void; chil
       style={{
         minHeight: 38,
         padding: '0 14px',
-        borderRadius: 999,
+        borderRadius: radius.pill,
         border: `1px solid ${primary === true ? accent.base : neutral.lineStrong}`,
         background: primary === true ? accent.base : neutral.surface,
         color: primary === true ? neutral.surface : accent.pressed,

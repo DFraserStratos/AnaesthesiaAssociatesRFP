@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { CalendarClock } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
 import { useAppStore, useClockTimeLabel, useToday } from '../store'
 import { demoClockShortcuts } from '../shared/demoClockShortcuts'
-import { elevation, neutral, radius } from '../theme/tokens'
+import { elevation, neutral, radius, zIndex } from '../theme/tokens'
+import { longDay } from '../shared/format'
 
 const triggerStyle: React.CSSProperties = {
   display: 'flex',
@@ -14,7 +14,7 @@ const triggerStyle: React.CSSProperties = {
   borderRadius: radius.ctl,
   border: '1px solid rgba(255,255,255,0.22)',
   background: 'rgba(255,255,255,0.08)',
-  color: '#FFFFFF',
+  color: neutral.surface,
   font: 'inherit',
   fontSize: 13,
   fontWeight: 600,
@@ -50,7 +50,7 @@ export function DemoClockMenu() {
   const panelId = useId()
   const todayISO = useToday()
   const timeLabel = useClockTimeLabel()
-  const dateLabel = format(parseISO(todayISO), 'EEEE d MMMM yyyy')
+  const dateLabel = longDay(todayISO)
   const shortcuts = demoClockShortcuts(useAppStore, todayISO)
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function DemoClockMenu() {
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            zIndex: 120,
+            zIndex: zIndex.shellMenu,
             width: 'min(344px, calc(100vw - 24px))',
             padding: 14,
             background: neutral.surface,

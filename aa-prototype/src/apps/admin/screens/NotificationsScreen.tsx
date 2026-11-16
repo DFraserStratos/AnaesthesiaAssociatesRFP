@@ -135,7 +135,7 @@ function PagerButton({ children, onClick, disabled }: { children: React.ReactNod
       type="button"
       onClick={onClick}
       disabled={disabled}
-      style={{ minHeight: 36, padding: '0 14px', borderRadius: 999, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: disabled ? neutral.mist : neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: disabled ? 'default' : 'pointer' }}
+      style={{ minHeight: 36, padding: '0 14px', borderRadius: radius.pill, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: disabled ? neutral.mist : neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: disabled ? 'default' : 'pointer' }}
     >
       {children}
     </button>

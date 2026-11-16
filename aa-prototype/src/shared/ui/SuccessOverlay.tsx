@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { scheduleCompletionHaptic } from '../../theme/haptics'
 import { motion } from '../../theme/motion'
-import { semantic } from '../../theme/tokens'
+import { semantic, radius, zIndex } from '../../theme/tokens'
 
 interface SuccessOverlayProps {
   title: string
@@ -64,7 +64,7 @@ export function SuccessOverlay({ title, children, testId, onDismiss }: SuccessOv
       style={{
         position: 'absolute',
         inset: 0,
-        zIndex: 60,
+        zIndex: zIndex.overlay,
         background: 'rgba(255,255,255,0.9)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
@@ -82,7 +82,7 @@ export function SuccessOverlay({ title, children, testId, onDismiss }: SuccessOv
           style={{
             width: 96,
             height: 96,
-            borderRadius: 99,
+            borderRadius: radius.pill,
             background: semantic.success.tint,
             display: 'flex',
             alignItems: 'center',

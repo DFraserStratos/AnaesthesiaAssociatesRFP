@@ -73,7 +73,7 @@ is **unification and recognisability, not polish**:
 
 ## What the preview taught us (11 Nov 2026)
 
-The `ui-library-preview/` build rechecked versions and tried every row. Changes to the provisional
+The `ui-library-preview/` build (retired in UI unification Phase U1, 16 Nov 2026; its row list, plan, fit notes and recommendations are kept in `preview-archive/`) rechecked versions and tried every row. Changes to the provisional
 decisions above:
 
 - **Pinned versions** (all exact): React 19.3.1, `@base-ui/react` 1.9.0 (the old
@@ -145,7 +145,7 @@ candidate-ranking pickers (domain ordering rules). Details in the inventories.
 | `research-designed.md` | Beautiful UI, RareUI, Magic UI, Aceternity, 21st.dev, and business-block sources (Tremor, ReUI, Kibo, coss). |
 | `source-video.md` | The video that prompted this: summary, transcript notes and its library links. |
 | `preview-build-prompt.md` | Kick-off prompt for the next step: a separate `ui-library-preview/` workspace showing each current component beside its live library replacement. |
-| `../../ui-library-preview/` | **The preview itself (built 11 Nov 2026).** `npm run dev:preview`, http://localhost:5182/admin, `/web`, `/mobile`, `/theme`. Every catalogue row live twice: current (left) and library replacement (right), with live options for open design choices and exportable Adopt/Adjust/Reject verdicts. See its `README.md`. |
+| `preview-archive/` | **What is left of the preview** (built 11 Nov 2026, retired in UI unification Phase U1 on 16 Nov 2026; the workspace is in git history at commit `af41706e`). `rows.json` and `ROWS.md` (the 170 catalogue rows), `PLAN.md` (the preview's plan and its 11 Nov decisions), `fit/` (the per-slice fit notes and scores, with `KIT.md`) and `recommendations.ts` (the per-row recommendations). |
 
 **Live component catalogue (in the prototype):** `/demo/catalogue/admin`, `/demo/catalogue/web` and
 `/demo/catalogue/mobile` (URL only, not in the app switcher; code in

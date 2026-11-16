@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { neutral, accent, radius, semantic } from '../../../theme/tokens'
+import { neutral, accent, radius, semantic, fontFamily } from '../../../theme/tokens'
 import {
   bookingsOnListByNhi,
   correctEthnicityCode,
@@ -15,7 +15,7 @@ import {
 import { SURGEON_PDFS, FEED_META, type PdfRow, type SurgeonPdf } from '../../../domain/integrations'
 import { validateNhi } from '../../../domain/nhi'
 import { validateEthnicityCode, ETHNICITY_DEMO_SUBSET } from '../../../domain/nzhis'
-import { dayMicroCap, locationName } from '../../../shared/format'
+import { dayMicroCap, locationName, hhmm, plural } from '../../../shared/format'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
@@ -90,7 +90,7 @@ function MessagesTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {attention.length > 0 && (
         <div data-shot="integrations-attention" style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
-          {attention.length} message{attention.length === 1 ? '' : 's'} need attention (dead-letter or manual intervention). Reprocess after fixing the cause below.
+          {plural(attention.length, 'message')} need attention (dead-letter or manual intervention). Reprocess after fixing the cause below.
         </div>
       )}
       {rows.length === 0 ? (
@@ -120,7 +120,7 @@ function MessageLogRow({ row }: { row: IntegrationMonitorRow }) {
   const needsAction = row.status === 'deadLetter' || row.status === 'manualIntervention'
   return (
     <tr>
-      <td className="mono" style={cell}>{row.atISO.slice(11, 16)}</td>
+      <td className="mono" style={cell}>{hhmm(row.atISO)}</td>
       <td style={cell}>{row.feedName}</td>
       <td style={cell}>{row.eventType}</td>
       <td className="mono" style={cell}>{row.messageControlId}</td>
@@ -137,7 +137,7 @@ function MessageLogRow({ row }: { row: IntegrationMonitorRow }) {
           <button
             type="button"
             onClick={() => reprocessMessage(useAppStore, row.id)}
-            style={{ minHeight: 32, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: '#FFFFFF', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+            style={{ minHeight: 32, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
           >
             Reprocess
           </button>
@@ -194,13 +194,13 @@ function MappingRow({ feedId, field, value, actor }: { feedId: string; field: st
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         className="mono"
-        style={{ font: 'inherit', fontFamily: "'Spline Sans Mono', ui-monospace, monospace", fontSize: 12.5, padding: '5px 9px', borderRadius: radius.ctl, border: `1px solid ${changed ? accent.base : neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, width: 160 }}
+        style={{ font: 'inherit', fontFamily: fontFamily.mono, fontSize: 12.5, padding: '5px 9px', borderRadius: radius.ctl, border: `1px solid ${changed ? accent.base : neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, width: 160 }}
       />
       <button
         type="button"
         disabled={!changed}
         onClick={() => setFeedMapping(useAppStore, actor, feedId, field, draft.trim())}
-        style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '5px 12px', borderRadius: radius.ctl, border: 'none', background: changed ? accent.base : neutral.line, color: changed ? '#FFFFFF' : neutral.mist, cursor: changed ? 'pointer' : 'default' }}
+        style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '5px 12px', borderRadius: radius.ctl, border: 'none', background: changed ? accent.base : neutral.line, color: changed ? neutral.surface : neutral.mist, cursor: changed ? 'pointer' : 'default' }}
       >
         Save
       </button>
@@ -337,7 +337,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
             )
           })}
 
-          <button type="button" onClick={ingestAll} style={{ alignSelf: 'flex-start', font: 'inherit', fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: '#FFFFFF', cursor: 'pointer' }}>Ingest all rows</button>
+          <button type="button" onClick={ingestAll} style={{ alignSelf: 'flex-start', font: 'inherit', fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, cursor: 'pointer' }}>Ingest all rows</button>
         </div>
       </div>
     </div>
@@ -353,7 +353,7 @@ function RowField({ label, value, onChange, width, mono, invalid, readOnly }: { 
         readOnly={readOnly === true}
         onChange={(e) => onChange?.(e.target.value)}
         className={mono === true ? 'mono' : undefined}
-        style={{ font: 'inherit', ...(mono === true ? { fontFamily: "'Spline Sans Mono', ui-monospace, monospace" } : {}), fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${invalid === true ? semantic.error.solid : readOnly === true ? neutral.line : neutral.lineStrong}`, background: readOnly === true ? neutral.bg : neutral.surface, color: neutral.ink, width }}
+        style={{ font: 'inherit', ...(mono === true ? { fontFamily: fontFamily.mono } : {}), fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${invalid === true ? semantic.error.solid : readOnly === true ? neutral.line : neutral.lineStrong}`, background: readOnly === true ? neutral.bg : neutral.surface, color: neutral.ink, width }}
       />
     </label>
   )
@@ -394,14 +394,14 @@ function DataQualityCard({ item, actor }: { item: { patientId: string; name: str
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 700 }}>{item.name}</span>
         {item.nhi !== undefined && <span className="mono" style={{ fontSize: 12, color: neutral.mist }}>{item.nhi}</span>}
-        <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '2px 9px', background: semantic.warning.tint, color: semantic.warning.onTint }}>
+        <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '2px 9px', background: semantic.warning.tint, color: semantic.warning.onTint }}>
           Pending correction · received {item.receivedCode}
         </span>
       </div>
       <div style={{ fontSize: 12, color: neutral.slate }}>{item.reason}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Valid NZHIS code" className="mono" style={{ font: 'inherit', fontFamily: "'Spline Sans Mono', ui-monospace, monospace", fontSize: 12.5, padding: '5px 9px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, width: 150 }} />
-        <button type="button" onClick={apply} style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '5px 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: '#FFFFFF', cursor: 'pointer' }}>Apply code</button>
+        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Valid NZHIS code" className="mono" style={{ font: 'inherit', fontFamily: fontFamily.mono, fontSize: 12.5, padding: '5px 9px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, width: 150 }} />
+        <button type="button" onClick={apply} style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '5px 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, cursor: 'pointer' }}>Apply code</button>
       </div>
       {error !== null && <div style={{ fontSize: 12, color: semantic.error.onTint }}>{error}</div>}
     </div>
@@ -469,7 +469,7 @@ function ValidatorsTab() {
         )}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
           {ETHNICITY_DEMO_SUBSET.map((e) => (
-            <span key={e.code} className="mono" style={{ fontSize: 11, background: neutral.sunken, color: neutral.slate, borderRadius: 999, padding: '2px 8px' }} title={`${e.label} · ${e.level1Group}`}>{e.code}</span>
+            <span key={e.code} className="mono" style={{ fontSize: 11, background: neutral.sunken, color: neutral.slate, borderRadius: radius.pill, padding: '2px 8px' }} title={`${e.label} · ${e.level1Group}`}>{e.code}</span>
           ))}
         </div>
       </div>
@@ -479,7 +479,7 @@ function ValidatorsTab() {
 
 const inputStyle: React.CSSProperties = {
   font: 'inherit',
-  fontFamily: "'Spline Sans Mono', ui-monospace, monospace",
+  fontFamily: fontFamily.mono,
   fontSize: 14,
   padding: '8px 12px',
   borderRadius: radius.ctl,
@@ -539,7 +539,7 @@ const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
 
 function StatusChip({ label, status }: { label: string; status: string }) {
   const tone = STATUS_TONE[status] ?? { bg: neutral.sunken, fg: neutral.slate }
-  return <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: tone.bg, color: tone.fg }}>{label}</span>
+  return <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '3px 9px', whiteSpace: 'nowrap', background: tone.bg, color: tone.fg }}>{label}</span>
 }
 
 function EmptyNote({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Moon, Plus, TriangleAlert } from 'lucide-react'
-import { accent, neutral, semantic } from '../../../theme/tokens'
+import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
 import type { DisplayKey, DraftList } from '../../../domain/types'
 import { isClosedKey } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
@@ -15,6 +15,7 @@ import { DraftListBand } from './DraftListBand'
 import { BookingCount } from './draftLists/DraftListParts'
 import { draftListCount } from '../../../shared/scheduleTerms'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
+import { plural } from '../../../shared/format'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
@@ -110,7 +111,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     const draftEnds = draftLists.some((l) => isOutOfHours(l)) ? [hoursOf(eveningDefaults.endTime)] : []
     return rulerFor([...ends, ...draftEnds])
   }, [viewsByAnaesthetist, draftLists, eveningDefaults])
-  const gridline = `repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) ${(100 / ruler.hours).toFixed(4)}%)`
+  const gridline = `repeating-linear-gradient(to right,${neutral.gridline} 0,${neutral.gridline} 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) ${(100 / ruler.hours).toFixed(4)}%)`
   const afterHours = ruler.hours !== DAY_RULER.hours ? blockGeometry(DAY_RULER.start + DAY_RULER.hours, ruler.start + ruler.hours, ruler) : undefined
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<DisplayKey>>(() => new Set())
   const slotStatuses = useSlotStatusRecords()
@@ -203,7 +204,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   }
 
   return (
-    <div style={{ flex: 1, minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)' }}>
+    <div style={{ flex: 1, minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', boxShadow: elevation.e1 }}>
       {/* Ruler header */}
       <div style={{ display: 'flex', padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
         <span style={{ width: 148, flex: 'none', paddingLeft: 16, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, boxSizing: 'border-box' }}>ANAESTHETIST</span>
@@ -232,7 +233,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
             position: 'relative',
             display: 'flex',
             alignItems: 'stretch',
-            borderBottom: '1px solid #F1F4F2',
+            borderBottom: `1px solid ${neutral.gridline}`,
             background: inactive ? neutral.bg : neutral.surface,
             boxShadow: startsInactiveGroup ? `inset 0 3px 0 ${neutral.lineStrong}` : undefined,
           }}
@@ -341,7 +342,7 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
         gap: 6,
         padding: '3px 8px',
         border: `1px solid ${active ? ATTENTION : neutral.line}`,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         background: active ? semantic.warning.tint : neutral.surface,
         color: active ? semantic.warning.onTint : neutral.slate,
         font: 'inherit',
@@ -352,14 +353,14 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
       {icon === 'conflict' ? (
         // The conflict swatch: the block's warning tint and border with its "!" (the legend entry and the filter in one).
         <span aria-hidden data-shot="daygrid-legend-conflict" style={{ position: 'relative', width: 22, height: 13, borderRadius: 4, boxSizing: 'border-box', background: semantic.warning.tint, border: `1.5px solid ${ATTENTION}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 1 }}>
-          <span style={{ width: 9, height: 9, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 7, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+          <span style={{ width: 9, height: 9, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, fontSize: 7, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
         </span>
       ) : icon === 'note' ? (
-        <span aria-hidden style={{ width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
+        <span aria-hidden style={{ width: 7, height: 7, borderRadius: radius.pill, background: neutral.ink, opacity: 0.55 }} />
       ) : icon === 'warning' ? (
-        <span aria-hidden style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TriangleAlert size={8} strokeWidth={3} /></span>
+        <span aria-hidden style={{ width: 13, height: 13, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TriangleAlert size={8} strokeWidth={3} /></span>
       ) : (
-        <span aria-hidden style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+        <span aria-hidden style={{ width: 13, height: 13, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
       )}
       {label}
     </button>
@@ -420,9 +421,9 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   const hasNote = note !== undefined && note.trim() !== ''
   const noteIsSubtitle = hasNote && l2 === note
   const showNoteDot = hasNoteSignal && !listAttention
-  const warningTip = warnings !== undefined ? `${warnings.open} open warning${warnings.open === 1 ? '' : 's'}` : ''
+  const warningTip = warnings !== undefined ? plural(warnings.open, 'open warning') : ''
   const surgeonTip = (conflict || templateLabel !== undefined) && surgeon !== undefined ? surgeon.name : ''
-  const countTip = bookingCount !== undefined ? `${bookingCount} booking${bookingCount === 1 ? '' : 's'}` : ''
+  const countTip = bookingCount !== undefined ? plural(bookingCount, 'booking') : ''
   const tooltip = [surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
 
   return (
@@ -440,7 +441,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
         top: 4,
         bottom: 4,
         boxSizing: 'border-box',
-        borderRadius: 6,
+        borderRadius: radius.xs,
         padding: '3px 6px 3px 8px',
         overflow: 'hidden',
         display: 'flex',
@@ -465,7 +466,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
         // The second line starts with the List's booking count (US-13.1.1): the block's bottom-left corner.
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
           {bookingCount !== undefined && (
-            <span data-shot="daygrid-block-count" data-booking-count={bookingCount} style={{ flex: 'none', minWidth: 14, height: 12, padding: '0 3px', boxSizing: 'border-box', borderRadius: 99, background: 'rgba(255,255,255,0.72)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span data-shot="daygrid-block-count" data-booking-count={bookingCount} style={{ flex: 'none', minWidth: 14, height: 12, padding: '0 3px', boxSizing: 'border-box', borderRadius: radius.pill, background: 'rgba(255,255,255,0.72)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <BookingCount count={bookingCount} style={{ fontSize: 9, lineHeight: '12px', color: bookingCount === 0 ? neutral.mist : colour.onTint }} />
             </span>
           )}
@@ -475,17 +476,18 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
         </span>
       )}
       {listAttention && (
-        <span style={{ position: 'absolute', top: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        // A marker, never a control: the reasons reach assistive tech through the block button's title, so the glyph stays out of its name (U1).
+        <span aria-hidden style={{ position: 'absolute', top: 3, right: 3, width: 13, height: 13, borderRadius: radius.pill, background: ATTENTION, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
       )}
       {showNoteDot && (
-        <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
+        <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: radius.pill, background: neutral.ink, opacity: 0.55 }} />
       )}
       {warnings !== undefined && (
         <span
           role="img"
-          aria-label={`${warnings.open} open warning${warnings.open === 1 ? '' : 's'}`}
-          title={`${warnings.open} open warning${warnings.open === 1 ? '' : 's'}`}
-          style={{ position: 'absolute', bottom: 3, right: 3, height: 13, padding: '0 4px 0 3px', boxSizing: 'border-box', borderRadius: 99, background: warnings.strongest === 'strong' ? semantic.error.solid : ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+          aria-label={plural(warnings.open, 'open warning')}
+          title={plural(warnings.open, 'open warning')}
+          style={{ position: 'absolute', bottom: 3, right: 3, height: 13, padding: '0 4px 0 3px', boxSizing: 'border-box', borderRadius: radius.pill, background: warnings.strongest === 'strong' ? semantic.error.solid : ATTENTION, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
         >
           <TriangleAlert size={8} strokeWidth={3} aria-hidden />
           <span style={{ fontVariantNumeric: 'tabular-nums', lineHeight: '13px' }}>{warnings.open}</span>

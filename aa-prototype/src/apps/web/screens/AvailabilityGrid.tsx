@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { accent, brand, neutral } from '../../../theme/tokens'
+import { accent, brand, neutral, radius } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
 import { resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
-import { initialsOf, locationName, matchesNameQuery } from '../../../shared/format'
+import { initialsOf, locationName, matchesNameQuery, longDayNoYear } from '../../../shared/format'
 import { NameSearchBox } from '../../../shared/ui'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { useNavigate } from 'react-router-dom'
@@ -95,7 +95,7 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
     .filter((r) => (filter === 'free' ? r.hasFree : true))
     .filter((r) => matchesNameQuery(r.name, query))
 
-  const selLong = format(parseISO(selectedDate), 'EEEE d MMMM')
+  const selLong = longDayNoYear(selectedDate)
 
   function cellLabels(view: SlotView | undefined): { l1: string; l2: string } {
     if (view === undefined) return { l1: 'No session', l2: '' }
@@ -127,12 +127,12 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconBtn label="Previous day" onClick={() => shiftDay(-1)}><ChevronLeft size={16} aria-hidden /></IconBtn>
-          <div style={{ height: 38, padding: '0 18px', borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 600 }}>{selLong}</div>
+          <div style={{ height: 38, padding: '0 18px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 600 }}>{selLong}</div>
           <IconBtn label="Next day" onClick={() => shiftDay(1)}><ChevronRight size={16} aria-hidden /></IconBtn>
           <button
             type="button"
             onClick={() => setSelectedDate(todayISO)}
-            style={{ height: 38, padding: '0 14px', borderRadius: 10, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ height: 38, padding: '0 14px', borderRadius: radius.ctl, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             Today
           </button>
@@ -170,7 +170,7 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
             {visible.map((row) => (
               <div key={row.anaesthetistId} data-shot={row.anaesthetistId === anaesthetistId ? 'availability-row-mine' : undefined} style={{ display: 'grid', gridTemplateColumns: columns, gap: '0 12px', alignItems: 'center', padding: '7px 20px', borderBottom: `1px solid ${neutral.sunken}` }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                  <span aria-hidden style={{ width: 30, height: 30, borderRadius: 99, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{row.initials}</span>
+                  <span aria-hidden style={{ width: 30, height: 30, borderRadius: radius.pill, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{row.initials}</span>
                   <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {row.name}
                     {row.anaesthetistId === anaesthetistId && <span style={{ marginLeft: 6, fontSize: 11, color: neutral.mist }}>(you)</span>}
@@ -254,7 +254,7 @@ function Cell({ view, labels, onClick, action, shot, title, quietEmpty = false }
         width: '100%',
       }}
     >
-      {!isFree && <span aria-hidden style={{ width: 4, height: 34, borderRadius: 99, background: c.solid, flex: 'none' }} />}
+      {!isFree && <span aria-hidden style={{ width: 4, height: 34, borderRadius: radius.pill, background: c.solid, flex: 'none' }} />}
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: tc, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels.l1}</span>
         <span style={{ fontSize: 11, color: tc, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels.l2}</span>
@@ -270,7 +270,7 @@ function HeaderCell({ children }: { children: React.ReactNode }) {
 
 function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" aria-label={label} onClick={onClick} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <button type="button" aria-label={label} onClick={onClick} style={{ width: 38, height: 38, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {children}
     </button>
   )
@@ -284,7 +284,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
       style={{
         height: 36,
         padding: '0 16px',
-        borderRadius: 999,
+        borderRadius: radius.pill,
         border: `1px solid ${active ? accent.base : neutral.line}`,
         background: active ? accent.base : neutral.surface,
         color: active ? neutral.surface : neutral.slate,

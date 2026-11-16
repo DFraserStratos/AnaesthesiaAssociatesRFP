@@ -6,7 +6,7 @@
  */
 
 import type { AaFeeInvoice, AaFeeInvoiceLine, AaFeeSettings, XeroAccRec } from '../types'
-import { roundToCents, toCents } from './money'
+import { formatMoney, roundToCents, toCents } from './money'
 import { GST_RATE } from './invoiceBuild'
 import type { BctiRecord } from './bcti'
 
@@ -25,7 +25,7 @@ export interface AaFeeBreakdown {
 export function aaFeeFor(settings: AaFeeSettings, bctiCount: number, bctiLineLabel = 'BCTIs'): AaFeeBreakdown {
   const lines: AaFeeInvoiceLine[] = settings.fixedItems.map((item) => ({ description: item.description, amount: item.amount }))
   const perBcti = roundToCents(settings.perBctiCharge * bctiCount)
-  lines.push({ description: `${bctiLineLabel}: ${bctiCount} x $${settings.perBctiCharge.toFixed(2)}`, amount: perBcti })
+  lines.push({ description: `${bctiLineLabel}: ${bctiCount} x ${formatMoney(settings.perBctiCharge)}`, amount: perBcti })
   const subtotal = roundToCents(aaFeeFixedTotal(settings) + settings.perBctiCharge * bctiCount)
   const gst = roundToCents(subtotal * GST_RATE)
   return { lines, subtotal, gst, total: roundToCents(subtotal + gst) }

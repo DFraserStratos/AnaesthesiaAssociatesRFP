@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { motion } from '../../../theme/motion'
+import { elevation } from '../../../theme/tokens'
 
 export interface SlideLayer {
   key: string
@@ -315,7 +316,7 @@ export function SlideStack({ layers, depth, onPop }: SlideStackProps) {
                 dragX !== null
                   ? 'none'
                   : `transform ${motion.cardAdvance.in}ms ${motion.cardAdvance.easing}`,
-              boxShadow: i === depth && i > 0 ? '-16px 0 32px rgba(23,35,32,0.12)' : 'none',
+              boxShadow: i === depth && i > 0 ? elevation.cardEdge : 'none',
               // Off-screen layers must not intercept taps.
               pointerEvents: i === depth ? 'auto' : 'none',
               // The one place the mobile subtree's blanket `touch-action:

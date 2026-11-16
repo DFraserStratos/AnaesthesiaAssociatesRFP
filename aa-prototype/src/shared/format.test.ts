@@ -1,7 +1,7 @@
 /** Phase 05 — the Monday-anchored week helpers behind the dashboard week strip. */
 
 import { describe, expect, it } from 'vitest'
-import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, surnameOf, titledSurname, waitingLabel, locationName, pairingLine } from './format'
+import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, nameWithoutTitle, surnameOf, titledSurname, waitingLabel, locationName, pairingLine } from './format'
 
 // DEMO_TODAY (2026-07-21) is a Tuesday; its week runs Mon 20 to Sun 26 Jul.
 
@@ -78,6 +78,17 @@ describe('initialsOf', () => {
     expect(initialsOf('Dr James Rutherford')).toBe('JR')
     expect(initialsOf('Souter')).toBe('S')
     expect(initialsOf('')).toBe('')
+  })
+
+  it('strips every title TITLE_PREFIX names, not only Dr (UI unification U1)', () => {
+    expect(initialsOf('Ms A. Reid')).toBe('AR')
+    expect(initialsOf('Prof. Helen Clark')).toBe('HC')
+    expect(surnameOf('Mr B. Yeoman')).toBe('Yeoman')
+    expect(surnameOf('Mrs Ana Tui')).toBe('Tui')
+    expect(nameWithoutTitle('Miss Jo Lee')).toBe('Jo Lee')
+    expect(nameWithoutTitle('Dr Melanie Souter')).toBe('Melanie Souter')
+    expect(nameWithoutTitle('Drew Barrymore')).toBe('Drew Barrymore')
+    expect(drSurname('Dr Melanie Souter')).toBe('Dr Souter')
   })
 })
 

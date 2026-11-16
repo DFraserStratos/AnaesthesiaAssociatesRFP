@@ -6,6 +6,7 @@ import {
   describePriceRange,
   describeRange,
   editRange,
+  formatRangeDate,
   formatRangePrice,
   rangeEnd,
   rangeInForce,
@@ -135,5 +136,13 @@ describe('words', () => {
     ])
     expect(rangeSummaryText(rangeSummary(c, '2026-07-21'))).toBe('$2,800.00 from 1 Jan 2025')
     expect(rangeSummaryText(rangeSummary(c, '2026-07-28'))).toBe('$2,950.00 from 28 Jul 2026')
+  })
+})
+
+describe('formatRangeDate (UI unification U1: plainDate behind it)', () => {
+  it('reads a real day as "1 Oct 2026" and anything else as typed, never throwing', () => {
+    expect(formatRangeDate('2026-10-01')).toBe('1 Oct 2026')
+    expect(formatRangeDate('2026-02-30')).toBe('2026-02-30')
+    expect(formatRangeDate('')).toBe('')
   })
 })

@@ -60,4 +60,4 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
 }
 
 const linkStyle: React.CSSProperties = { border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '6px 4px' }
-const pill: React.CSSProperties = { minHeight: 36, padding: '0 14px', borderRadius: 999, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: accent.pressed, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
+const pill: React.CSSProperties = { minHeight: 36, padding: '0 14px', borderRadius: radius.pill, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: accent.pressed, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }

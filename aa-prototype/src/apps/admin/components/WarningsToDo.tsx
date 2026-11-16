@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
-import { drSurname, shortDay } from '../../../shared/format'
+import { drSurname, shortDay, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { ConflictDot } from './conflicts/ConflictDot'
 import { ClearWarningButton, WarningTriangle, warningTone } from '../../../shared/warnings'
@@ -48,7 +48,7 @@ export function WarningsToDo({
     <section
       data-shot="admin-warnings-todo"
       aria-labelledby="admin-todo-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
     >
       <h2 id="admin-todo-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
         To-do
@@ -63,10 +63,10 @@ export function WarningsToDo({
           type="button"
           data-shot="admin-todo-conflicts"
           onClick={onOpenConflicts}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: 'none', borderRadius: 10, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base, cursor: 'pointer', textAlign: 'left' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: 'none', borderRadius: radius.ctl, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base, cursor: 'pointer', textAlign: 'left' }}
         >
           <ConflictDot />
-          {conflicts} open conflict{conflicts === 1 ? '' : 's'}
+          {plural(conflicts, 'open conflict')}
         </button>
       )}
       {rows.length === 0 && conflicts === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing needs attention.</div>}
@@ -82,7 +82,7 @@ export function WarningsToDo({
                 key={r.warning.key}
                 data-warning-key={r.warning.key}
                 data-shot={TODO_ROW_SHOTS[r.warning.ruleId]}
-                style={{ display: 'flex', gap: 10, padding: '10px 12px', background: neutral.bg, borderRadius: 10, boxShadow: `inset 3px 0 0 ${tone.solid}` }}
+                style={{ display: 'flex', gap: 10, padding: '10px 12px', background: neutral.bg, borderRadius: radius.ctl, boxShadow: `inset 3px 0 0 ${tone.solid}` }}
               >
                 <span style={{ paddingTop: 1 }}>
                   <WarningTriangle warnings={[r.warning]} size="sm" />

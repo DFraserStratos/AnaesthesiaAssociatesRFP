@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react'
-import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, brand, neutral, radius, semantic, surface } from '../../../theme/tokens'
 import type { Actor, CalendarSession } from '../../../store'
 import { blockFill, DockSpacer, resolveDisplayStatus, StatusChip, useAnaesthetistStatusChoices, useDisplayStatus, useSlotStatusRecords } from '../../../shared'
 import {
@@ -104,7 +104,7 @@ export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, on
                     flexDirection: 'column',
                     gap: 3,
                     padding: 3,
-                    borderRadius: 10,
+                    borderRadius: radius.ctl,
                     border: isToday ? `1.5px solid ${brand.base}` : '1.5px solid transparent',
                     background: neutral.surface,
                     opacity: past ? 0.42 : 1,
@@ -146,7 +146,7 @@ export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, on
           right: 0,
           bottom: 0,
           padding: '14px 20px max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-          background: 'rgba(246,248,247,0.92)',
+          background: surface.frosted,
           backdropFilter: 'blur(14px)',
           borderTop: `1px solid ${neutral.line}`,
         }}
@@ -189,7 +189,7 @@ function HalfBlock({ session }: { session: CalendarSession | undefined }) {
     >
       {session.series !== undefined && <Repeat size={9} strokeWidth={2.6} color={v.onTint} aria-hidden />}
       {session.conflict && (
-        <span aria-hidden style={{ position: 'absolute', top: -4, right: -4, width: 11, height: 11, borderRadius: 99, background: semantic.warning.solid, color: neutral.surface, fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        <span aria-hidden style={{ position: 'absolute', top: -4, right: -4, width: 11, height: 11, borderRadius: radius.pill, background: semantic.warning.solid, color: neutral.surface, fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
       )}
     </span>
   )
@@ -202,7 +202,7 @@ function MonthButton({ label, disabled, onClick, children }: { label: string; di
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      style={{ width: 44, height: 44, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
+      style={{ width: 44, height: 44, borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
     >
       {children}
     </button>

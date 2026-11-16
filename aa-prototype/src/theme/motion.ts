@@ -1,5 +1,6 @@
 /**
- * Motion — the four named patterns (Design Language §05), transcribed 1:1.
+ * Motion: the six named patterns (Design Language §05), transcribed 1:1, plus
+ * the plain control fade the sample pages use (`uiFade`, U1).
  * "Delight in the actions, not the chrome." Reduced-motion collapses
  * everything to 80 ms fades (see the media query in `global.css`).
  *
@@ -76,4 +77,12 @@ export const motion = {
   },
   /** Reduced-motion target: everything collapses to an 80 ms fade. */
   reducedMotionFade: 80,
+  /**
+   * A control's state fade (background, colour, a switch knob's travel): 150 ms ease-out
+   * (Mobile App, Mobile Availability, Web Availability; U1). Not one of the named patterns.
+   */
+  uiFade: {
+    duration: 150,
+    easing: easing.easeOut,
+  },
 } as const

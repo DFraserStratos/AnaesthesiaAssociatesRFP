@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeftRight, BellRing, ChevronLeft, Lock, MoreHorizontal, Plus } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
-import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
-import { motion } from '../../../theme/motion'
+import { accent, elevation, neutral, radius, semantic, surface } from '../../../theme/tokens'
+import { motion, easing } from '../../../theme/motion'
 import type { Booking, Procedure } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
 import { bookingContractCue, editRefusal, officeAlertRefusal, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
@@ -12,7 +11,7 @@ import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { AlertOfficeEntry, AlertOfficeSheet, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
-import { slotTimeRange, locationName } from '../../../shared/format'
+import { slotTimeRange, locationName, dayWithYear } from '../../../shared/format'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
@@ -120,7 +119,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const surgeon = surgeons[list.surgeonId]
   const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
-  const dayLabel = list.dateISO === todayISO ? 'Today' : format(parseISO(list.dateISO), 'EEE d MMM yyyy')
+  const dayLabel = list.dateISO === todayISO ? 'Today' : dayWithYear(list.dateISO)
   const authorised = list.state === 'AUTHORISED'
   const sublineParts = [
     surgeon?.name,
@@ -202,7 +201,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
               display: 'grid',
               placeItems: 'center',
               border: 'none',
-              borderRadius: 999,
+              borderRadius: radius.pill,
               background: sheet === 'options' ? accent.tint : 'none',
               color: accent.base,
               cursor: 'pointer',
@@ -234,14 +233,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
             {model.done} of {model.activeCount} complete
           </span>
-          <span style={{ flex: 1, height: 6, borderRadius: 99, background: neutral.line, overflow: 'hidden', display: 'block' }}>
+          <span style={{ flex: 1, height: 6, borderRadius: radius.pill, background: neutral.line, overflow: 'hidden', display: 'block' }}>
             <span
               style={{
                 display: 'block',
                 height: '100%',
-                borderRadius: 99,
+                borderRadius: radius.pill,
                 background: semantic.success.solid,
-                transition: 'width 300ms cubic-bezier(0.2,0.8,0.2,1)',
+                transition: `width 300ms ${easing.card}`,
                 width: `${pct}%`,
               }}
             />
@@ -310,7 +309,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
                 <span
                   style={{
                     padding: '9px 16px',
-                    borderRadius: 999,
+                    borderRadius: radius.pill,
                     background: accent.tint,
                     fontSize: 13,
                     fontWeight: 600,
@@ -377,7 +376,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           paddingRight: 20,
           // Matches the booking dock: inset - 2, floored at the footer's own top pad.
           paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-          background: 'rgba(246,248,247,0.92)',
+          background: surface.frosted,
           backdropFilter: 'blur(14px)',
           borderTop: `1px solid ${neutral.line}`,
         }}

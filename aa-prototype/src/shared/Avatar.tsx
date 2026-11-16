@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { brand, elevation, neutral } from '../theme/tokens'
+import { brand, elevation, neutral, radius } from '../theme/tokens'
 
 interface AvatarProps {
   /** Initials, e.g. "MS". */
@@ -24,7 +24,7 @@ export function Avatar({ initials, size = 44, style }: AvatarProps) {
       style={{
         width: size,
         height: size,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         background: neutral.surface,
         color: brand.base,
         boxShadow: elevation.e1,

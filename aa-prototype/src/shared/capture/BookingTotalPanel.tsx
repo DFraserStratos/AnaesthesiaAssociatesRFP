@@ -3,6 +3,7 @@ import { motion } from '../../theme/motion'
 import type { BookingTotalProps } from '../surface'
 import { useTickingValue } from './useTickingValue'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
+import { formatCurrency } from '../format'
 
 /**
  * The desktop Booking-total panel: everything about what the Booking comes to.
@@ -62,7 +63,7 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
               {line.needsPrice === true ? (
                 <span style={{ flex: 'none' }}>{NEEDS_PRICE_LABEL}</span>
               ) : (
-                <span className="mono" style={{ flex: 'none' }}>${line.amount.toFixed(2)}</span>
+                <span className="mono" style={{ flex: 'none' }}>{formatCurrency(line.amount)}</span>
               )}
             </div>
           ))}
@@ -108,7 +109,7 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
           )}
           <span
             style={{
-              borderRadius: 8,
+              borderRadius: radius.sm,
               padding: '2px 8px',
               marginRight: -8,
               transition: `background ${motion.valueTick.tintDecay}ms ${motion.valueTick.easing}`,
@@ -121,7 +122,7 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
               </span>
             ) : (
               <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>
-                ${f.display.toFixed(2)}
+                {formatCurrency(f.display)}
               </span>
             )}
           </span>

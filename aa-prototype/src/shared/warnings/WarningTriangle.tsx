@@ -3,6 +3,8 @@ import type { Warning } from '../../domain/warnings'
 import { isOpen } from '../../domain/warnings'
 import { strongestOpen } from './useBookingWarnings'
 import { warningTone } from './tone'
+import { radius, neutral } from '../../theme/tokens'
+import { plural } from '../format'
 
 /**
  * The small warning marker on a Booking (US-13.7.3 "Flag"), "much like the
@@ -22,7 +24,7 @@ export function WarningTriangle({ warnings, size = 'md' }: { warnings: readonly 
   const label =
     open.length === 0
       ? `${warnings.length === 1 ? 'Warning' : `${warnings.length} warnings`} cleared: ${warnings[0]!.text}`
-      : `${open.length === 1 ? '1 warning' : `${open.length} warnings`}: ${open.map((w) => w.text).join(' ')}`
+      : `${plural(open.length, 'warning')}: ${open.map((w) => w.text).join(' ')}`
   return (
     <span
       role="img"
@@ -34,7 +36,7 @@ export function WarningTriangle({ warnings, size = 'md' }: { warnings: readonly 
     >
       <span
         aria-hidden
-        style={{ width: d, height: d, borderRadius: 99, background: tone.solid, color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: d, height: d, borderRadius: radius.pill, background: tone.solid, color: neutral.surface, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <TriangleAlert size={size === 'sm' ? 9 : 11} strokeWidth={2.75} />
       </span>

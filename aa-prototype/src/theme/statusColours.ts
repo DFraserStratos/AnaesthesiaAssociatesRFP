@@ -37,6 +37,12 @@ export const STATUS_PALETTE: Record<StatusColourToken, PaletteEntry> = {
 }
 
 /**
+ * Status colours drawn on a solid fill rather than a tint (U1): the Free dot on the
+ * mobile date strip's teal day chip (Mobile Availability mockup). Tokenised, not changed.
+ */
+export const STATUS_ON_FILL = { free: '#8FE3B4' } as const
+
+/**
  * The stripe of a hatched SOLID header (Design Language §02 draws it for the
  * grey token only). Other tokens stripe with their own on-tint, an existing
  * value, so no new hex appears.

@@ -1,6 +1,7 @@
 import { Wordmark } from '../../../shared'
-import { brand, neutral, semantic } from '../../../theme/tokens'
+import { brand, neutral, semantic, radius } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
+import { PERSONAS } from '../../../shell/appConfig'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
 export type NavSection = 'day' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
@@ -53,7 +54,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
     <div style={{ width: 216, flex: 'none', background: neutral.ink, display: 'flex', flexDirection: 'column', padding: '20px 12px', gap: 24, boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 8px' }}>
         <Wordmark tone="dark" size={15} />
-        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', color: '#D89AA9', paddingLeft: 2 }}>ADMIN</span>
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', color: brand.onDarkMuted, paddingLeft: 2 }}>ADMIN</span>
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -75,7 +76,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
                 fontFamily: 'inherit',
                 fontSize: 13.5,
                 fontWeight: activeItem ? 600 : 500,
-                color: activeItem ? '#FFFFFF' : 'rgba(255,255,255,0.9)',
+                color: activeItem ? neutral.surface : 'rgba(255,255,255,0.9)',
                 background: activeItem ? 'rgba(255,255,255,0.08)' : 'transparent',
                 boxShadow: activeItem ? `inset 3px 0 0 ${brand.base}` : 'none',
                 cursor: 'pointer',
@@ -84,7 +85,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
             >
               <span>{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
-                <span data-shot={`nav-badge-${item.section}`} style={{ background: item.badgeTone === 'warn' ? semantic.warning.solid : brand.base, color: '#FFFFFF', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>{item.badge}</span>
+                <span data-shot={`nav-badge-${item.section}`} style={{ background: item.badgeTone === 'warn' ? semantic.warning.solid : brand.base, color: neutral.surface, borderRadius: radius.pill, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>{item.badge}</span>
               )}
             </button>
           )
@@ -94,10 +95,10 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <RolesInfo />
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
-          <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>KW</span>
+          <span aria-hidden style={{ width: 30, height: 30, borderRadius: radius.pill, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{PERSONAS.kirsty.initials}</span>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#FFFFFF' }}>Kirsty W.</span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Office</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.surface }}>{PERSONAS.kirsty.name}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{PERSONAS.kirsty.role}</span>
           </div>
         </div>
       </div>

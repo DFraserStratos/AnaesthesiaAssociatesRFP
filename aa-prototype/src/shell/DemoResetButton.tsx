@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { resetDemo, useAppStore } from '../store'
-import { accent, elevation, neutral, radius, semantic } from '../theme/tokens'
+import { accent, elevation, neutral, radius, semantic, zIndex } from '../theme/tokens'
 
 /**
  * Global recovery control for the demo harness. Resetting replaces the domain
@@ -62,7 +62,7 @@ export function DemoResetButton() {
           borderRadius: radius.ctl,
           border: '1px solid rgba(255,255,255,0.22)',
           background: 'rgba(255,255,255,0.08)',
-          color: '#FFFFFF',
+          color: neutral.surface,
           font: 'inherit',
           fontSize: 13,
           fontWeight: 600,
@@ -82,7 +82,7 @@ export function DemoResetButton() {
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            zIndex: 120,
+            zIndex: zIndex.shellMenu,
             width: 'min(320px, calc(100vw - 24px))',
             padding: 14,
             background: neutral.surface,

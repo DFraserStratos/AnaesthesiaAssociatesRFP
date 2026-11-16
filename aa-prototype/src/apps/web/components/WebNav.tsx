@@ -1,5 +1,5 @@
 import { Logo } from '../../../shared'
-import { brand, neutral } from '../../../theme/tokens'
+import { brand, neutral, radius } from '../../../theme/tokens'
 
 export type WebTab = 'dashboard' | 'lists' | 'availability' | 'accounts'
 
@@ -65,7 +65,7 @@ export function WebNav({ tab, onTab, personaName, initials }: WebNavProps) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 999,
+              borderRadius: radius.pill,
               background: brand.tint,
               color: brand.base,
               display: 'flex',

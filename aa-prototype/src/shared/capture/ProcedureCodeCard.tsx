@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ChevronRight, X } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius, semantic, elevation, zIndex } from '../../theme/tokens'
 import type { Procedure, RvgGroup, RvgGroupId } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { baseUnitsFor, baseUnitsShort, baseUnitsText, isRecordableBaseUnits } from '../../domain/billing/rvgGroups'
@@ -170,7 +170,7 @@ export function RvgCodeField({
                 data-shot="rvg-code-clear"
                 onClick={() => pick(null)}
                 className="aa-rail-focus"
-                style={{ position: 'absolute', top: '50%', right: 6, transform: 'translateY(-50%)', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 999, background: 'transparent', color: neutral.slate, cursor: 'pointer' }}
+                style={{ position: 'absolute', top: '50%', right: 6, transform: 'translateY(-50%)', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: radius.pill, background: 'transparent', color: neutral.slate, cursor: 'pointer' }}
               >
                 <X size={16} aria-hidden />
               </button>
@@ -342,7 +342,7 @@ function RvgTypeahead({
         <div
           data-shot="rvg-type-ahead"
           style={{
-            ...(inFlow ? { marginTop: 6 } : { position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, boxShadow: '0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18)' }),
+            ...(inFlow ? { marginTop: 6 } : { position: 'absolute', zIndex: zIndex.popover, top: 'calc(100% + 6px)', left: 0, right: 0, boxShadow: elevation.e3 }),
             background: neutral.surface,
             border: `1px solid ${neutral.line}`,
             borderRadius: radius.card,

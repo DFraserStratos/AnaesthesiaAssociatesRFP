@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { FlaskConical, Telescope } from 'lucide-react'
-import { neutral, semantic } from '../theme/tokens'
+import { neutral, semantic, radius } from '../theme/tokens'
 
 interface DemoBadgeProps {
   /** Override the label (default "Demo simulation"). */
@@ -33,7 +33,7 @@ export function DemoBadge({ label, tone = 'demo', style }: DemoBadgeProps) {
         background: future ? neutral.sunken : semantic.warning.tint,
         color: future ? neutral.slate : semantic.warning.onTint,
         border: future ? `1px solid ${neutral.lineStrong}` : `1px solid ${semantic.warning.solid}33`,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         padding: '4px 10px',
         fontSize: 11,
         lineHeight: '14px',

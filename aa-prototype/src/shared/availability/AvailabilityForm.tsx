@@ -11,6 +11,7 @@ import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useAvailabilityBounds } from './useAvailability'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
 import { OUT_OF_HOURS_SESSION } from '../outOfHoursTerms'
+import { longDayNoYear } from '../format'
 
 type RepeatChoice = 'none' | '1' | '2' | 'more'
 
@@ -277,7 +278,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
       ) : singleSession || sessions === 'OOH' ? (
         <div data-shot="availability-form-single" style={{ fontSize: 14, color: neutral.ink }}>
           <FieldLabel>Date</FieldLabel>
-          <div style={{ marginTop: 6 }}>{ISO_DATE.test(fromISO) ? format(parseISO(fromISO), 'EEEE d MMMM') : fromISO}</div>
+          <div style={{ marginTop: 6 }}>{ISO_DATE.test(fromISO) ? longDayNoYear(fromISO) : fromISO}</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -318,7 +319,7 @@ function choiceStyle(selected: boolean): CSSProperties {
     alignItems: 'center',
     minHeight: 44,
     padding: 4,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     border: selected ? `2px solid ${accent.base}` : `1px solid ${neutral.line}`,
     margin: selected ? 0 : 1,
     background: neutral.surface,
@@ -330,7 +331,7 @@ function choiceStyle(selected: boolean): CSSProperties {
 function dayChipStyle(selected: boolean): CSSProperties {
   return {
     height: 40,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     border: `1px solid ${selected ? accent.base : neutral.line}`,
     background: selected ? accent.base : neutral.surface,
     color: selected ? neutral.surface : neutral.slate,
@@ -350,7 +351,7 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
       style={{
         minHeight: 36,
         padding: '0 14px',
-        borderRadius: 999,
+        borderRadius: radius.pill,
         border: `1px solid ${selected ? accent.base : neutral.line}`,
         background: selected ? accent.tint : neutral.surface,
         color: selected ? accent.pressed : neutral.slate,

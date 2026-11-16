@@ -24,7 +24,7 @@ import type {
 import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
 import { claimCompletionProblems, preAppliedModifiersFor } from './modifiers'
-import { toCents } from './money'
+import { formatMoney, toCents } from './money'
 import { isRvgKind, procedureNeedsPrice } from './contracts'
 import { HOLDER_MISSING_MESSAGE, holderBilledFor } from './whoIsBilled'
 import { rvgCodeToFill } from './contractRail'
@@ -271,7 +271,7 @@ export function validateBookingForBilling(
       }
       const fee = feeFor(procedure, feeContextFor(procedure, ctx))
       if (fee.total < 0) {
-        fail(id, 'priceOverride', `The price override makes the fee negative ($${fee.total.toFixed(2)}). Adjust the override.`)
+        fail(id, 'priceOverride', `The price override makes the fee negative (${formatMoney(fee.total)}). Adjust the override.`)
       }
     }
 
@@ -285,7 +285,7 @@ export function validateBookingForBilling(
         fail(
           id,
           'billingLines',
-          `Billing line amounts must add up to the procedure fee of $${fee.total.toFixed(2)} (they add up to $${allocated.toFixed(2)}).`,
+          `Billing line amounts must add up to the procedure fee of ${formatMoney(fee.total)} (they add up to ${formatMoney(allocated)}).`,
         )
       }
     }

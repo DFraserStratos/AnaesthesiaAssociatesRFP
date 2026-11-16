@@ -16,7 +16,7 @@ import { sessionText } from '../../../domain/outOfHours'
 
 const pillInput = {
   height: 38,
-  borderRadius: 999,
+  borderRadius: radius.pill,
   border: `1px solid ${neutral.line}`,
   background: neutral.surface,
   fontFamily: 'inherit',
@@ -45,7 +45,7 @@ export function WebSearchField({ query, onQueryChange }: { query: string; onQuer
           type="button"
           aria-label="Clear the search field"
           onClick={() => setText('')}
-          style={{ position: 'absolute', right: 4, width: 30, height: 30, border: 'none', background: 'none', color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: 999 }}
+          style={{ position: 'absolute', right: 4, width: 30, height: 30, border: 'none', background: 'none', color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: radius.pill }}
         >
           <X size={15} aria-hidden />
         </button>
@@ -84,7 +84,7 @@ export function WebDayChip({ dateISO, onClose }: { dateISO: string; onClose: () 
       type="button"
       aria-label={`${longDay(dateISO)}. Close the day and go back to your Lists`}
       onClick={onClose}
-      style={{ height: 32, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 14px', borderRadius: 999, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+      style={{ height: 32, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 14px', borderRadius: radius.pill, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
     >
       <span className="mono">{dayWithYear(dateISO)}</span>
       <X size={14} strokeWidth={2.4} aria-hidden />
@@ -195,7 +195,7 @@ export function WebDayTable({ anaesthetistId, dateISO, todayISO, onOpenList }: {
             <tr key={d.list.id} data-list-id={d.list.id} onClick={() => onOpenList(d.list.id)} style={{ borderBottom: `1px solid ${neutral.sunken}`, cursor: 'pointer' }}>
               <td className="mono" style={td}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span aria-hidden style={{ width: 3, height: 20, borderRadius: 99, background: c.solid }} />
+                  <span aria-hidden style={{ width: 3, height: 20, borderRadius: radius.pill, background: c.solid }} />
                   <button
                     type="button"
                     aria-label={`Open List ${dayWithYear(dateISO)} ${sessionText(d.list.session)}, ${location}`}

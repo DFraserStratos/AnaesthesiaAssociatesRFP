@@ -13,6 +13,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { APP_CONFIG, APP_ORDER, type AppId } from './appConfig'
 import { neutral, accent, semantic, radius, elevation } from '../theme/tokens'
+import { motion } from '../theme/motion'
 
 const ICONS: Record<AppId, LucideIcon> = {
   mobile: Smartphone,
@@ -100,7 +101,7 @@ export function AppSwitcher({ activeApp, onSelect }: AppSwitcherProps) {
           borderRadius: radius.ctl,
           border: '1px solid rgba(255,255,255,0.22)',
           background: 'rgba(255,255,255,0.08)',
-          color: '#FFFFFF',
+          color: neutral.surface,
           font: 'inherit',
           fontSize: 13,
           fontWeight: 600,
@@ -116,7 +117,7 @@ export function AppSwitcher({ activeApp, onSelect }: AppSwitcherProps) {
           size={15}
           strokeWidth={2.5}
           aria-hidden
-          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: `transform ${motion.uiFade.duration}ms` }}
         />
       </button>
 

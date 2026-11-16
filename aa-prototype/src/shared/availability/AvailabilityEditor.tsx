@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { format, parseISO } from 'date-fns'
 import { ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import type { Actor } from '../../store'
 import { AvailabilityForm, ResultLine, type AvailabilityFormInitial } from './AvailabilityForm'
 import { AvailabilitySlotPanel, type ChangeRequest } from './AvailabilitySlotPanel'
 import { useAvailabilityBounds, useAvailabilityDay } from './useAvailability'
+import { dateRange, longDayNoYear } from '../format'
 
 interface AvailabilityEditorProps {
   actor: Actor
@@ -38,8 +38,8 @@ export function AvailabilityEditor({ actor, anaesthetistId, fromISO, toISO, form
   const [line, setLine] = useState<string | null>(null)
 
   const title = range
-    ? `${format(parseISO(fromISO), 'EEE d MMM')} to ${format(parseISO(toISO ?? fromISO), 'EEE d MMM')}`
-    : format(parseISO(fromISO), 'EEEE d MMMM')
+    ? dateRange(fromISO, toISO ?? fromISO)
+    : longDayNoYear(fromISO)
 
   function result(text: string) {
     setLine(text)
@@ -50,7 +50,7 @@ export function AvailabilityEditor({ actor, anaesthetistId, fromISO, toISO, form
     <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {request !== null && !range && formPreset === undefined && (
-          <button type="button" aria-label="Back to the sessions" onClick={() => { setRequest(null); setLine(null) }} style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flex: 'none' }}>
+          <button type="button" aria-label="Back to the sessions" onClick={() => { setRequest(null); setLine(null) }} style={{ width: 32, height: 32, borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flex: 'none' }}>
             <ChevronLeft size={16} aria-hidden />
           </button>
         )}

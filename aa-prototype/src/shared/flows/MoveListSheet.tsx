@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { format, parseISO } from 'date-fns'
 import { Building2, ChevronRight, Users } from 'lucide-react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import {
@@ -12,7 +11,7 @@ import {
 } from '../../store'
 import { defaultVacated, pushTargets, type PushTarget } from '../../domain/listMoves'
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
-import { drSurname, locationName, matchesNameQuery } from '../format'
+import { drSurname, locationName, matchesNameQuery, plural, shortDay } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
 import { Button, NameSearchBox, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
@@ -99,11 +98,11 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
 
   if (list === undefined) return null
 
-  const dayLine = `${format(parseISO(list.dateISO), 'EEE d MMM')} · ${sessionText(list.session)}`
+  const dayLine = `${shortDay(list.dateISO)} · ${sessionText(list.session)}`
   const hospital = locationName(list.hospitalId, hospitals)
   const surgeon = surgeons[list.surgeonId]?.name
   const bookingCount = Object.values(bookings).filter((b) => b.listId === list.id && b.cancellation === undefined).length
-  const bookingWord = `${bookingCount} ${bookingCount === 1 ? 'Booking' : 'Bookings'}`
+  const bookingWord = plural(bookingCount, 'Booking')
   const colleague = targetSlotId !== undefined ? anaesthetists[slots[targetSlotId]?.anaesthetistId ?? ''] : undefined
   const colleagueShort = colleague !== undefined ? drSurname(colleague.name) : 'Your colleague'
 
@@ -172,7 +171,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
                 shot="move-choice-colleague"
                 icon={<Users size={18} strokeWidth={2.2} aria-hidden />}
                 title="Hand on to a colleague"
-                line={targets.length === 0 ? 'No colleague is free in this session.' : `${targets.length} ${targets.length === 1 ? 'colleague is' : 'colleagues are'} free on ${dayLine}.`}
+                line={targets.length === 0 ? 'No colleague is free in this session.' : `${plural(targets.length, 'colleague is', 'colleagues are')} free on ${dayLine}.`}
                 disabled={targets.length === 0}
                 onClick={() => {
                   setRoute('colleague')
@@ -229,7 +228,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span aria-hidden style={{ width: 44, height: 44, borderRadius: 999, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <span aria-hidden style={{ width: 44, height: 44, borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                   <Building2 size={20} strokeWidth={2.2} />
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>

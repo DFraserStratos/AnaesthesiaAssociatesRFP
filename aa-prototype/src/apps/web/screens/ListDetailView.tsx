@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Check, ChevronLeft, Lock, Plus } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
@@ -10,12 +9,13 @@ import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
-import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
+import { formatCurrency, slotTimeRange, locationName, dayWithYear } from '../../../shared/format'
 import { Panel } from '../components'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
+import { easing } from '../../../theme/motion'
 
 interface ListDetailViewProps {
   listId: string
@@ -133,7 +133,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const surgeon = masters.surgeons[list.surgeonId]
   const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
-  const dayLabel = list.dateISO === todayISO ? 'Today' : format(parseISO(list.dateISO), 'EEE d MMM yyyy')
+  const dayLabel = list.dateISO === todayISO ? 'Today' : dayWithYear(list.dateISO)
   const authorised = list.state === 'AUTHORISED'
   const progressLabel = LIST_PROGRESS_LABEL[listProgress(list, [], todayISO)]
   const subline = [surgeon?.name, surgeonSpecialtyLabel(masters, surgeon), dayLabel, times !== undefined ? slotTimeRange(times) : undefined]
@@ -178,7 +178,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
               type="button"
               data-shot="list-move"
               onClick={() => movePrompt.openMove(listId)}
-              style={{ height: 42, padding: '0 18px', borderRadius: 12, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ height: 42, padding: '0 18px', borderRadius: radius.md, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >
               Move this List
             </button>
@@ -201,8 +201,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
             <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
               {model.done} of {model.activeCount} complete
             </span>
-            <span style={{ width: 200, height: 6, borderRadius: 99, background: neutral.line, overflow: 'hidden', display: 'block' }}>
-              <span style={{ display: 'block', height: '100%', borderRadius: 99, background: semantic.success.solid, transition: 'width 300ms cubic-bezier(0.2,0.8,0.2,1)', width: `${pct}%` }} />
+            <span style={{ width: 200, height: 6, borderRadius: radius.pill, background: neutral.line, overflow: 'hidden', display: 'block' }}>
+              <span style={{ display: 'block', height: '100%', borderRadius: radius.pill, background: semantic.success.solid, transition: `width 300ms ${easing.card}`, width: `${pct}%` }} />
             </span>
           </span>
         }
@@ -243,13 +243,24 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                   >
                     <Td mono>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                        <span aria-hidden style={{ width: 3, height: 26, borderRadius: 99, background: STATUS_PALETTE[list.kind].solid, flex: 'none' }} />
+                        <span aria-hidden style={{ width: 3, height: 26, borderRadius: radius.pill, background: STATUS_PALETTE[list.kind].solid, flex: 'none' }} />
                         {r.time}
                       </span>
                     </Td>
                     <Td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none' }}>{r.patientName}</span>
+                        {/* The row's keyboard handle (UI unification U1, U09): a plain button on the patient's name, as the web Lists table's; the row click stays for the mouse. */}
+                        <button
+                          type="button"
+                          aria-label={`Open Booking for ${r.patientName} at ${r.time}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onOpenBooking(r.booking.id)
+                          }}
+                          style={{ border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', textAlign: 'inherit', cursor: 'pointer' }}
+                        >
+                          <span style={{ fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none' }}>{r.patientName}</span>
+                        </button>
                         <WarningTriangle warnings={warningsByBooking.get(r.booking.id) ?? []} size="sm" />
                       </div>
                       <div className="mono" style={{ fontSize: 11.5, color: neutral.mist, marginTop: 2 }}>{r.nhi}</div>
@@ -279,7 +290,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                           Complete <TickBadge size={26} />
                         </span>
                       ) : (
-                        <span style={{ padding: '7px 14px', borderRadius: 999, background: accent.tint, fontSize: 13, fontWeight: 600, color: accent.pressed }}>
+                        <span style={{ padding: '7px 14px', borderRadius: radius.pill, background: accent.tint, fontSize: 13, fontWeight: 600, color: accent.pressed }}>
                           Capture
                         </span>
                       )}
@@ -358,7 +369,7 @@ function SubmitAction({
   const shared = {
     height: 42,
     padding: '0 20px',
-    borderRadius: 12,
+    borderRadius: radius.md,
     border: 'none',
     fontFamily: 'inherit',
     fontSize: 14,

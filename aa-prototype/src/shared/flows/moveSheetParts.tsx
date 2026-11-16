@@ -67,7 +67,7 @@ export function ChoiceRow({ icon, title, line, onClick, disabled = false, shot }
         opacity: disabled ? 0.6 : 1,
       }}
     >
-      <span aria-hidden style={{ width: 36, height: 36, borderRadius: 999, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+      <span aria-hidden style={{ width: 36, height: 36, borderRadius: radius.pill, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
         {icon}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>

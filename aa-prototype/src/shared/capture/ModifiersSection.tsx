@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { accent, fontFamily, neutral, semantic } from '../../theme/tokens'
+import { accent, fontFamily, neutral, semantic, radius } from '../../theme/tokens'
 import type { BillingValidationFailure, ProcedureModifier } from '../../domain/billing'
 import { claimCompletionProblems, removedPreAppliedModifiers } from '../../domain/billing/modifiers'
 import type { ModifierId, Procedure } from '../../domain/types'
@@ -69,7 +69,7 @@ export function ModifiersSection({ procedure, items, actor, editable, failures, 
       tabIndex={-1}
       data-validation-procedure-id={procedure.id}
       data-validation-fields="modifierClaims"
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderRadius: 8 }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderRadius: radius.sm }}
     >
       {/* The seam: the arithmetic above it, the itemised facts that make up M below. */}
       <div style={{ height: 1, background: neutral.line, margin: '2px 0' }} />
@@ -197,7 +197,7 @@ function LedgerRow({
         alignItems: 'baseline',
         padding: '8px 10px',
         margin: '0 -10px',
-        borderRadius: 10,
+        borderRadius: radius.ctl,
         background: warn ? semantic.warning.tint : 'transparent',
       }}
     >
@@ -208,7 +208,7 @@ function LedgerRow({
           alignItems: 'center',
           gap: 6,
           padding: '1px 8px',
-          borderRadius: 999,
+          borderRadius: radius.pill,
           fontSize: 12.5,
           fontWeight: 600,
           lineHeight: '20px',

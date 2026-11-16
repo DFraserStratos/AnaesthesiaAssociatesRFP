@@ -4,7 +4,7 @@ import type { AssignedList, Procedure } from '../../domain/types'
 import { billingReferenceMissing, procedureRequiresPrepayment } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
-import { formatCurrency } from '../format'
+import { formatCurrency, plural } from '../format'
 import { EditBillingSetupSheet, PriceOverrideSheet, FunderAllocationSheet } from '../flows'
 
 interface OfficeBillingSetupProps {
@@ -47,8 +47,8 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
   const overrideLabel = (() => {
     const o = procedure.priceOverride
     if (o === undefined) return 'None'
-    if (o.kind === 'fixedFee') return `Fixed fee $${o.amount.toFixed(2)}`
-    if (o.kind === 'dollarAdjustment') return `Adjustment ${o.amount >= 0 ? '+' : ''}$${o.amount.toFixed(2)}`
+    if (o.kind === 'fixedFee') return `Fixed fee ${formatCurrency(o.amount)}`
+    if (o.kind === 'dollarAdjustment') return `Adjustment ${o.amount >= 0 ? '+' : ''}${formatCurrency(o.amount)}`
     return `Adjustment ${o.percent >= 0 ? '+' : ''}${o.percent}%`
   })()
 
@@ -64,7 +64,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
       <Row label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</Row>
       <Row label="Override">{overrideLabel}</Row>
       <Row label="Funders">
-        {funderLines.length === 0 ? `${lines.length} line${lines.length === 1 ? '' : 's'}, single funder` : `${funderLines.length} of ${lines.length} lines reallocated`}
+        {funderLines.length === 0 ? `${plural(lines.length, 'line')}, single funder` : `${funderLines.length} of ${lines.length} lines reallocated`}
       </Row>
       <Row label="Prepayment">{prepaymentText}</Row>
 

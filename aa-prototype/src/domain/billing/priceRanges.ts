@@ -22,7 +22,8 @@
 
 import type { Contract } from './contracts'
 import { addDaysISO } from '../clock'
-import { roundToCents } from './money'
+import { formatMoney, parseAmountOrNaN, roundToCents } from './money'
+import { plainDate } from '../dateText'
 
 export interface PriceRange {
   /** ISO date the price starts; may be in the past; unique within the Contract. */
@@ -152,12 +153,12 @@ export function editRangeRefusal(ranges: readonly PriceRange[], startISO: string
 }
 
 /**
- * A price as the office types it ("$3,200", "3200.00"), or NaN when blank or
- * not a number: the guard then refuses it in its own words.
+ * A price as the office types it ("$3,200", "3200.00"), read by the one
+ * `parseAmount` (U1), or NaN when it is no amount (blank, negative, not a
+ * number, past the cent): the guard then refuses it in its own words.
  */
 export function parsePriceText(text: string): number {
-  const t = text.replace(/[$,\s]/g, '')
-  return t === '' ? Number.NaN : Number(t)
+  return parseAmountOrNaN(text)
 }
 
 /** Ranges equal start for start and price for price (a save that changes nothing). */
@@ -186,19 +187,14 @@ export function normaliseRanges(ranges: readonly PriceRange[]): PriceRange[] {
 // Words (audit copy and the Contracts list's summary)
 // ---------------------------------------------------------------------------
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
-
-/** "1 Oct 2026". */
+/** "1 Oct 2026" (`plainDate`, question 24's money and contracts shape); anything that is not a real calendar day reads as typed. */
 export function formatRangeDate(dateISO: string): string {
-  const [y, m, d] = dateISO.slice(0, 10).split('-').map(Number)
-  if (y === undefined || m === undefined || d === undefined || Number.isNaN(y + m + d)) return dateISO
-  return `${d} ${MONTHS[m - 1] ?? ''} ${y}`
+  return isCalendarDate(dateISO.slice(0, 10)) ? plainDate(dateISO) : dateISO
 }
 
-/** "$3,200.00". */
+/** "$3,200.00": a range's price as all money prints (`formatMoney`, U1). */
 export function formatRangePrice(price: number): string {
-  const [whole, cents] = roundToCents(price).toFixed(2).split('.')
-  return `$${(whole ?? '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${cents ?? '00'}`
+  return formatMoney(price)
 }
 
 /** "From 1 Oct 2026, $3,200.00": one range, as the audit trail narrates it. */

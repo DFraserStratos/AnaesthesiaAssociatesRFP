@@ -2,24 +2,27 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "21"
+      "U2",
+      "U3"
     ],
-    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b, 20 and 20a are done (2026-11-12). The Contracts track continues with 21, then 21a to 25, in the ROADMAP's run order. The owner-added UI unification phases run between them: U1 after 21, then U2 and U3 side by side in two worktrees, all before 21a; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44."
+    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b, 20, 20a, 21 and U1 are done (2026-11-16). U2 and U3 run side by side in two worktrees, both before 21a; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44. The Contracts track continues with 21a to 25 in the ROADMAP's run order."
   },
   "guidance": {
-    "as_of": "2026-11-12",
-    "headline": "Start 21 now. The procedure text and the invoice description are built.",
-    "headline_sub": "20a (one procedure text per Procedure, exactly as received, the hospital's replacing the rooms' with the original in the History; an invoice description by the order of defaults that the office's edit always overrides, printed on the invoice; one procedure stack on every Booking screen, Admin Review and the List drawer; attachments removed; AR-35's illustrative wording seeded; every seeded figure unchanged) is done. The Contracts track continues with 21 (the payer, insurer or funder, and who is billed), then 21a to 25, in the ROADMAP's run order. Then the UI unification track starts (owner-added 12 November, docs/ui-unification/): U1 runs after 21, then U2 and U3 side by side in two worktrees, all before 21a; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44.",
-    "parallel": "Only 21 is next in the run order. After it comes U1 on its own, then U2 and U3 at the same time, each in its own git worktree and branch from the commit that holds 21 and U1; the one that finishes second merges both on branch ui/u2-u3, and the owner takes that into master before 21a starts. No other UI unification phase runs beside another phase: they edit the same shared files. 17a and 26 have their catch-up dependencies met but come after the Contracts track and U6 in the run order, so run 21 on its own.",
+    "as_of": "2026-11-16",
+    "headline": "Start U2 and U3 side by side. Money, date text and the tokens are one thing each.",
+    "headline_sub": "U1 (one formatMoney, so money reads \"$3,100.00\" everywhere and S5 Beat 4 shows one figure; date, timestamp, plural and HH:MM text in domain/dateText.ts; one parseAmount; the mockups' type, radius, colour, shadow, frosted, fade and focus ring tokens and a zIndex scale, literals equal to a token swapped with no visual change; the web List detail opening by keyboard and five more one-line fixes; src/shared/ui/README.md; ui-library-preview/ retired) is done and committed. Next: U2 (overlays) and U3 (pills, badges and feedback) side by side, then 21a and 22, U4 and U5, 23 to 25, U6.",
+    "parallel": "U2 and U3 run at the same time, each in its own git worktree and branch cut from the commit that holds U1; the one that finishes second merges both on branch ui/u2-u3, and the owner takes that into master before 21a starts. No other UI unification phase runs beside another phase: they edit the same shared files. 17a and 26 have their catch-up dependencies met but come after the Contracts track and U6 in the run order.",
     "safe": {
-      "21": "Its dependency (20a) is done. It re-points 20a's whoIsInvoicedFor to the holder's Party or the payer on the Booking, and replaces 20's billablePartyId and billsHolderInterim."
+      "U2": "U1 is done and committed: U2 reads type.sheetTitle for OverlayHeader and the zIndex scale for useModalLayer (the 200 and 60 clashes are its to settle). Runs beside U3 in its own worktree.",
+      "U3": "U1 is done and committed: U3 reads brand.onDarkMuted for PersonaChip and the now aria-hidden DayGrid \"!\" for AttentionDot. Runs beside U2 in its own worktree."
     },
     "wait": {
-      "U1": "Needs 21 first: 21 is editing ContractRail.tsx and BillingCard.tsx, which U1 touches. Commit 21 and U1 before U2 and U3 start: their worktrees are cut from that commit.",
-      "21a": "Needs 21 first, then U1, then U2 and U3 merged into master (it builds on the shared Pill and Notice).",
-      "22": "Needs 21 and 21a in run order, and U2 and U3 (the sheet header and footer, Pill and Notice).",
+      "21a": "Needs U2 and U3 merged into master (it builds on the shared Pill, Notice and sheet parts). 21 is done: it reads payerContactMissing, invoiceDeliveryFor, the payer and funder rows and PayerSheet.",
+      "22": "Needs 21a in run order, and U2 and U3 (the sheet header and footer, Pill and Notice). 21 is done: it sends by invoiceDeliveryFor and Invoice.billedTo.",
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
-      "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6."
+      "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
+      "U4": "Needs 22 in run order; U1's --focus-ring and parseAmount are ready for it.",
+      "U5": "Needs 22 in run order; runs after U4's answers settle the fields."
     }
   }
 }

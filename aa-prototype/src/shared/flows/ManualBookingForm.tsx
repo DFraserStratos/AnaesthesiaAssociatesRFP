@@ -12,6 +12,7 @@ import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
 import { formatPostalAddress } from '../../domain/billing/payer'
 import { Button, TextField, FieldLabel, Segmented } from '../ui'
+import { formatCurrency } from '../format'
 
 /** Fields a photo extraction may pre-fill. */
 export interface ExtractionFields {
@@ -275,7 +276,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
             <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{pickedContract.name}</span>
             <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>
               {pickedContract.aaCode}
-              {pick?.enteredPrice !== undefined ? ` · $${pick.enteredPrice.toFixed(2)}` : ''}
+              {pick?.enteredPrice !== undefined ? ` · ${formatCurrency(pick.enteredPrice)}` : ''}
             </span>
           </span>
         ) : (

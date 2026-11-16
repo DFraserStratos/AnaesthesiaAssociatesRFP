@@ -22,6 +22,8 @@ export const neutral = {
   sunken: '#EDF1EF',
   bg: '#F6F8F7',
   surface: '#FFFFFF',
+  /** Hour gridlines and row dividers inside the admin day grid, lighter than `line` (Admin Day mockup; U1). */
+  gridline: '#F1F4F2',
 } as const
 
 /** AA crimson — identity only (masthead, wordmark, active nav, avatars). */
@@ -29,6 +31,8 @@ export const brand = {
   base: '#A91E3E',
   deep: '#8C1533',
   tint: '#F7E7EC',
+  /** Muted crimson text on the ink side nav, the "ADMIN" eyebrow (Admin Day and Admin Review mockups; U1). */
+  onDarkMuted: '#D89AA9',
 } as const
 
 /** Deep teal — primary actions & selection only, never status. */
@@ -69,6 +73,23 @@ export const type = {
   caption: { size: 12, line: 16, weight: 500, tracking: '0' },
   micro: { size: 11, line: 14, weight: 600, tracking: '0.06em', caps: true },
   data: { size: 14, line: 20, weight: 500, tracking: '0' },
+  // The sizes the sample pages use beside the Design Language scale (UI unification U1, question 22).
+  // Added for later phases to read; no literal is swapped to them in U1.
+  /** 12.5/18: secondary and table text (Admin Day, Admin Review, Mobile Availability; 600 where it labels). */
+  small: { size: 12.5, line: 18, weight: 400, tracking: '0' },
+  /** 11.5: small captions and table meta (Admin Day, Admin Review). Line height is the caption's. */
+  captionSm: { size: 11.5, line: 16, weight: 500, tracking: '0' },
+  /** 13.5: rail and nav labels (Admin Day, Admin Review, at 500). Line height the app's own. */
+  labelLg: { size: 13.5, line: 18, weight: 500, tracking: '0' },
+  /** 24/30/700: the admin and mobile page title (Admin Day, Admin Review, Mobile App). */
+  pageTitle: { size: 24, line: 30, weight: 700, tracking: '-0.01em' },
+  /** 28/34/700: the web page title (Web Dashboard, Web Availability). Admin 24 and web 28 are both kept (README section 5). */
+  pageTitleWeb: { size: 28, line: 34, weight: 700, tracking: '-0.015em' },
+  /**
+   * 18/24/700: sheet, dialog and drawer titles. The app's own convention, not the design's (no
+   * mockup draws an 18/24 title); question 12 made it the one sheet title. U2's `OverlayHeader` reads it.
+   */
+  sheetTitle: { size: 18, line: 24, weight: 700, tracking: '0' },
 } as const
 
 /** 4pt spacing scale (Design Language §04), keyed by the design's s-N names. */
@@ -85,7 +106,13 @@ export const space = {
 
 /** Corner radii (Design Language §04). Sheets round the top corners only. */
 export const radius = {
+  /** 6: status blocks and small chips (Design Language status blocks; Admin Day; U1). */
+  xs: 6,
+  /** 8: small cards and inner wells (Web Dashboard, Mobile App; U1). */
+  sm: 8,
   ctl: 10,
+  /** 12: mobile capture cards and steppers (Mobile App, Admin Review; U1). */
+  md: 12,
   card: 14,
   panel: 20,
   sheet: 24,
@@ -98,6 +125,33 @@ export const elevation = {
   e1: '0 1px 2px rgba(23,35,32,0.05), 0 2px 6px rgba(23,35,32,0.05)',
   e2: '0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09)',
   e3: '0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18)',
+  /** A segmented control's sliding highlight (Design Language selection-slide demo; Mobile App; U1). */
+  thumb: '0 1px 3px rgba(23,35,32,0.2)',
+  /** The left edge of an advancing mobile card (Mobile App; with `motion.cardAdvance`; U1). */
+  cardEdge: '-16px 0 32px rgba(23,35,32,0.12)',
+} as const
+
+/** Surfaces that are not a flat neutral (U1). */
+export const surface = {
+  /** A sticky translucent dock or header over scrolling content: `neutral.bg` at 92% (Mobile App). */
+  frosted: 'rgba(246,248,247,0.92)',
+} as const
+
+/**
+ * Stacking layers (U1). Not design-sourced: an engineering scale named from the values the app
+ * already uses (detail/H-tokens.md section 7). Known clashes are left for U2's `useModalLayer`:
+ * Dialog and PhoneFrame both sit at 200, and four unrelated layers share 60.
+ */
+export const zIndex = {
+  raised: 1,
+  popover: 30,
+  drawerScrim: 40,
+  drawer: 41,
+  sticky: 45,
+  overlay: 60,
+  sheet: 70,
+  shellMenu: 120,
+  dialog: 200,
 } as const
 
 /** Scrim under sheets (Design Language §04). */

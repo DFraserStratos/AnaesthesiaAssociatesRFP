@@ -1,77 +1,55 @@
 /**
- * Shared formatting + date helpers. Pure string/date formatting only (no store,
- * no domain logic). Every range renders with the word "to", never an en/em dash
- * (CLAUDE.md copy rule); micro-caps and mono-date shapes match the mockups.
+ * Shared formatting helpers: the one import screens use for display text.
+ * Pure string formatting only (no store, no domain logic).
  *
- * Moved from `apps/mobile/format.ts` in Phase 05 so the web lists / dashboard /
- * detail read the same helpers (in particular `slotTimeRange`, which renders
- * a session's effective times: its own where the office set them, else the
- * schedule settings' default). The Monday-anchored week helpers are new for
- * the web dashboard's week strip.
+ * Formatting has one home per kind (UI unification U1):
+ *  - money through `formatMoney` (`domain/billing/money.ts`), re-exported here
+ *    as `formatCurrency` too: "$3,100.00" everywhere (question 21);
+ *  - dates, timestamps, times and counts through `domain/dateText.ts`
+ *    (`shortDay`, `dateRange`, `stampText`, `hhmm`, `plural` ...), re-exported
+ *    here (question 24); every range reads "to", never an en or em dash;
+ *  - person names through `drSurname` and friends below.
+ * No `toFixed(2)` money or `format(..., 'EEE d MMM')` in a component.
  */
 
 import { ageInCompletedYears } from '../domain/billing/modifiers'
-import { addDays, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
+import { TITLE_PREFIX } from '../domain/names'
 import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
-/** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
-export function dayMicroCap(dateISO: string): string {
-  return format(parseISO(dateISO), 'EEE d MMM').toUpperCase()
-}
+export {
+  dateRange,
+  dateTimeMicroCap,
+  dayHeading,
+  dayMicroCap,
+  dayWithYear,
+  formatDob,
+  hhmm,
+  longDay,
+  longDayNoYear,
+  mondayOf,
+  plainDate,
+  plural,
+  pluralWord,
+  receivedDay,
+  shiftWeeks,
+  shortDay,
+  slotTimeRange,
+  stampText,
+  weekDays,
+} from '../domain/dateText'
 
-/** "Fri 13 Mar 2026": a day with its year, for past work (catch-up Phase 38a). */
-export function dayWithYear(dateISO: string): string {
-  return format(parseISO(dateISO.slice(0, 10)), 'EEE d MMM yyyy')
-}
-
-/** "Friday 13 March 2026": the spoken form, for accessible labels. */
-export function longDay(dateISO: string): string {
-  return format(parseISO(dateISO.slice(0, 10)), 'EEEE d MMMM yyyy')
-}
-
-/** "Tue 21 Jul": the short day used beside warnings, drawers and clearances. */
-export function shortDay(dateISO: string): string {
-  return format(parseISO(dateISO.slice(0, 10)), 'EEE d MMM')
-}
-
-/** The "HH:MM" slice of a local-naive ISO datetime ("" when absent/short). */
-export function hhmm(iso: string | undefined): string {
-  return iso !== undefined && iso.length >= 16 ? iso.slice(11, 16) : ''
-}
-
-/** "TUE 21 JUL · 08:00" for a local-naive ISO datetime ("·" when absent). */
-export function dateTimeMicroCap(iso: string | undefined): string {
-  return iso !== undefined && iso.length >= 16 ? `${dayMicroCap(iso.slice(0, 10))} · ${hhmm(iso)}` : '·'
-}
+/** NZ dollars: "$3,100.00" (`formatCurrency` is the name the screens already call). Typed money: `parseAmount`. */
+export { formatMoney, formatMoney as formatCurrency, parseAmount, parseAmountOrNaN } from '../domain/billing/money'
+export type { MoneyFormat } from '../domain/billing/money'
 
 // The audit change string used to live here as `formatAuditChange`, rendering
 // `JSON.stringify(patch)` at clinicians. It is replaced by `src/shared/audit/`
 // — field labels, human values and the change ledger, with Vitest coverage.
 
-/** Day-section heading: prefixes "TODAY · " when the date is the demo today. */
-export function dayHeading(dateISO: string, todayISO: string): string {
-  const cap = dayMicroCap(dateISO)
-  return dateISO === todayISO ? `TODAY · ${cap}` : cap
-}
-
-/** "14 MAR 1954" — the mono DOB line. */
-export function formatDob(dobISO: string): string {
-  return format(parseISO(dobISO), 'd MMM yyyy').toUpperCase()
-}
-
 /** Whole years between a DOB and the demo clock's today: the one age rule (`ageInCompletedYears`, 19b), never its own maths. */
 export function ageYears(dobISO: string, todayISO: string): number {
   return ageInCompletedYears(dobISO, todayISO) ?? 0
-}
-
-/**
- * A session's time range, e.g. "13:00 to 17:30" (catch-up Phase 28: the times
- * are the Slot's, from `effectiveSlotTimes`; the default comes from the
- * schedule settings, never a fallback here).
- */
-export function slotTimeRange(times: { startTime: string; endTime: string }): string {
-  return `${times.startTime} to ${times.endTime}`
 }
 
 export interface NhiBadge {
@@ -86,31 +64,6 @@ export function nhiBadge(nhi: string | undefined): NhiBadge {
   }
   const v = validateNhi(nhi)
   return { text: `NHI ${v.normalised}` }
-}
-
-// ---------------------------------------------------------------------------
-// Week helpers (web dashboard week strip — Monday-anchored)
-// ---------------------------------------------------------------------------
-
-/** ISO date of the Monday of the week containing `dateISO`. */
-export function mondayOf(dateISO: string): string {
-  return format(startOfWeek(parseISO(dateISO), { weekStartsOn: 1 }), 'yyyy-MM-dd')
-}
-
-/** The seven ISO dates Monday..Sunday for the week containing `dateISO`. */
-export function weekDays(dateISO: string): string[] {
-  const monday = parseISO(mondayOf(dateISO))
-  return Array.from({ length: 7 }, (_, i) => format(addDays(monday, i), 'yyyy-MM-dd'))
-}
-
-/** Shift a date by whole weeks, returned as an ISO date. */
-export function shiftWeeks(dateISO: string, weeks: number): string {
-  return format(addDays(parseISO(dateISO), weeks * 7), 'yyyy-MM-dd')
-}
-
-/** NZ dollars, always two decimals (one currency format across the web app). */
-export function formatCurrency(n: number): string {
-  return `$${n.toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 // ---------------------------------------------------------------------------
@@ -130,9 +83,9 @@ export function formatCurrency(n: number): string {
 // cover sheet's mockup reached for a first name instead ("Ask Dr Melanie…");
 // that is the one place the design contradicted itself, and the surname wins.
 
-/** Drop a leading title: "Dr Melanie Souter" -> "Melanie Souter". */
+/** Drop a leading title (Dr, Mr, Ms, Mrs, Miss, Prof: `TITLE_PREFIX`): "Dr Melanie Souter" -> "Melanie Souter". */
 export function nameWithoutTitle(name: string): string {
-  return name.replace(/^Dr\.?\s+/i, '').trim()
+  return name.trim().replace(TITLE_PREFIX, '').trim()
 }
 
 /** "Dr Melanie Souter" -> "Souter" (A-Z sort key, admin row labels). */
@@ -229,9 +182,4 @@ export const INVOICE_DESCRIPTION_ORIGIN_LABELS: Record<InvoiceDescriptionOrigin,
   hospital: 'From the hospital',
   contract: 'From the Contract',
   edited: 'Edited by the office',
-}
-
-/** A received text's day, as its meta line shows it ("Mon 20 Jul"). */
-export function receivedDay(iso: string): string {
-  return shortDay(iso.slice(0, 10))
 }

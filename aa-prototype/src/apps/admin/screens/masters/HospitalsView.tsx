@@ -11,6 +11,7 @@ import { AddHospitalSheet } from '../../flows/AddHospitalSheet'
 import { EditHospitalSheet } from '../../flows/EditHospitalSheet'
 import { selectControlStyle } from '../../flows/fieldChrome'
 import { Header, TextAction } from './chrome'
+import { plural, longDayNoYear } from '../../../../shared/format'
 
 type Sheet =
   | { kind: 'none' }
@@ -85,7 +86,7 @@ export function HospitalsView({ actor }: { actor: Actor }) {
                       onClick={() => setSheet({ kind: 'editHoliday', holidayId: hol.id })}
                       title={`Change or delete ${hol.name}`}
                       className="mono"
-                      style={{ fontSize: 11.5, background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: 999, padding: '3px 10px', color: neutral.slate, cursor: 'pointer', fontFamily: 'inherit' }}
+                      style={{ fontSize: 11.5, background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.pill, padding: '3px 10px', color: neutral.slate, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       {hol.dateISO} · {hol.name}
                     </button>
@@ -180,7 +181,7 @@ function HospitalCalendar({
           const closures = day?.closures ?? []
           const closure = closures[0]
           const listCount = day?.listCount ?? 0
-          const label = `${format(parseISO(dateISO), 'EEEE d MMMM')}: ${closure !== undefined ? `closed, ${closures.map((c) => c.name).join(' and ')}` : 'open'}, ${listCount} List${listCount === 1 ? '' : 's'}`
+          const label = `${longDayNoYear(dateISO)}: ${closure !== undefined ? `closed, ${closures.map((c) => c.name).join(' and ')}` : 'open'}, ${plural(listCount, 'List')}`
           return (
             <button
               key={dateISO}
@@ -189,16 +190,16 @@ function HospitalCalendar({
               data-calendar-day={dateISO}
               disabled={!inHorizon && closure === undefined}
               onClick={() => (closure !== undefined ? onEdit(closure.id) : onAdd(hospitalId, dateISO))}
-              style={{ minHeight: 84, padding: 6, borderRadius: 10, border: `1px solid ${closure !== undefined ? HOLIDAY.solid : neutral.line}`, background: inHorizon ? neutral.surface : neutral.bg, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch', textAlign: 'left', fontFamily: 'inherit', cursor: inHorizon || closure !== undefined ? 'pointer' : 'default' }}
+              style={{ minHeight: 84, padding: 6, borderRadius: radius.ctl, border: `1px solid ${closure !== undefined ? HOLIDAY.solid : neutral.line}`, background: inHorizon ? neutral.surface : neutral.bg, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch', textAlign: 'left', fontFamily: 'inherit', cursor: inHorizon || closure !== undefined ? 'pointer' : 'default' }}
             >
               <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: inHorizon ? neutral.ink : neutral.mist }}>{Number(dateISO.slice(8))}</span>
               {closures.map((c) => (
-                <span key={c.id} style={{ background: HOLIDAY.tint, color: HOLIDAY.onTint, boxShadow: `inset 3px 0 0 ${HOLIDAY.solid}`, borderRadius: 6, padding: '3px 6px 3px 8px', fontSize: 11, fontWeight: 600, lineHeight: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span key={c.id} style={{ background: HOLIDAY.tint, color: HOLIDAY.onTint, boxShadow: `inset 3px 0 0 ${HOLIDAY.solid}`, borderRadius: radius.xs, padding: '3px 6px 3px 8px', fontSize: 11, fontWeight: 600, lineHeight: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.name}
                 </span>
               ))}
               <span style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: neutral.slate }}>
-                {listCount > 0 && <span>{listCount} List{listCount === 1 ? '' : 's'}</span>}
+                {listCount > 0 && <span>{plural(listCount, 'List')}</span>}
                 {closure !== undefined && (day?.conflictedCount ?? 0) > 0 && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: semantic.warning.onTint, fontWeight: 600 }}>
                     <ConflictDot size={12} />

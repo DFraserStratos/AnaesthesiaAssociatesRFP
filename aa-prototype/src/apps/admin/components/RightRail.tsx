@@ -9,6 +9,7 @@ import { DraftListsCard } from './draftLists/DraftListsCard'
 import { NotificationsCard } from './NotificationsCard'
 import type { NotificationTarget } from '../../../store'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
+import { hhmm, longDay } from '../../../shared/format'
 
 interface ReviewRow {
   listId: string
@@ -65,7 +66,7 @@ export function RightRail(props: RightRailProps) {
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {children}
     </div>
   )
@@ -180,7 +181,7 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
               className="aa-admin-calendar-day"
               aria-current={isToday ? 'date' : undefined}
               aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End PageUp PageDown Shift+PageUp Shift+PageDown"
-              aria-label={format(parseISO(iso), 'EEEE d MMMM yyyy')}
+              aria-label={longDay(iso)}
               aria-pressed={isSelected}
               tabIndex={iso === focusedDateISO ? 0 : -1}
               onClick={() => onNavigateDate(iso)}
@@ -190,10 +191,10 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
                 fontSize: 11,
                 lineHeight: '24px',
                 height: 24,
-                borderRadius: 6,
+                borderRadius: radius.xs,
                 border: isSelected && !isToday ? `1px solid ${brand.base}` : '1px solid transparent',
                 fontWeight: isToday ? 700 : 400,
-                color: isToday ? '#FFFFFF' : neutral.ink,
+                color: isToday ? neutral.surface : neutral.ink,
                 background: isToday ? brand.base : 'transparent',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -210,7 +211,7 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
 
 function NavArrow({ label, glyph, onClick }: { label: string; glyph: string; onClick: () => void }) {
   return (
-    <button type="button" aria-label={label} onClick={onClick} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', fontSize: 13, lineHeight: '20px', padding: 0 }}>
+    <button type="button" aria-label={label} onClick={onClick} style={{ width: 22, height: 22, borderRadius: radius.xs, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', fontSize: 13, lineHeight: '20px', padding: 0 }}>
       {glyph}
     </button>
   )
@@ -240,7 +241,7 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
         {notes.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No notes for this day.</div>}
         {notes.map((n) => (
           <div key={n.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, borderLeft: `3px solid ${n.flagged ? semantic.warning.solid : neutral.line}`, paddingLeft: 10 }}>
-            <span className="mono" style={{ fontSize: 10, color: neutral.mist }}>{n.atISO.slice(11, 16)} · {n.initials}</span>
+            <span className="mono" style={{ fontSize: 10, color: neutral.mist }}>{hhmm(n.atISO)} · {n.initials}</span>
             <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>{n.text}</span>
           </div>
         ))}
@@ -259,12 +260,12 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
             <input type="checkbox" checked={flagged} onChange={(e) => setFlagged(e.target.checked)} /> Flag (amber)
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={save} disabled={text.trim() === ''} style={{ flex: 1, height: 34, borderRadius: 10, border: 'none', background: accent.base, color: '#FFFFFF', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: text.trim() === '' ? 'default' : 'pointer', opacity: text.trim() === '' ? 0.5 : 1 }}>Save note</button>
-            <button type="button" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none', height: 34, padding: '0 12px', borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+            <button type="button" onClick={save} disabled={text.trim() === ''} style={{ flex: 1, height: 34, borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: text.trim() === '' ? 'default' : 'pointer', opacity: text.trim() === '' ? 0.5 : 1 }}>Save note</button>
+            <button type="button" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none', height: 34, padding: '0 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} style={{ height: 36, borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>+ Add note</button>
+        <button type="button" onClick={() => setAdding(true)} style={{ height: 36, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>+ Add note</button>
       )}
     </Card>
   )
@@ -284,7 +285,7 @@ function AwaitingReview({ rows, onReviewList }: { rows: ReviewRow[]; onReviewLis
           key={r.listId}
           type="button"
           onClick={() => onReviewList(r.listId)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 12px', background: neutral.bg, borderRadius: 10, border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 12px', background: neutral.bg, borderRadius: radius.ctl, border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
         >
           <span style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.ink }}>{r.title}</span>

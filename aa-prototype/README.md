@@ -160,7 +160,10 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
 - **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the
   procedure stack `booking/ProcedureStack`, schedule rows, flows, status chips, the legacy
   `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output,
-  `scheduleTerms.ts`: every Draft List word, in one place).
+  `scheduleTerms.ts`: every Draft List word, in one place). **Shared UI** (`shared/ui/`,
+  `shared/surface/`, `shared/calendar/`): one component per job; read
+  [`src/shared/ui/README.md`](src/shared/ui/README.md) before adding a button, pill, field or sheet, and
+  for how to add a variant.
 - **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the

@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
 import { formatRangeDate, formatRangePrice, rangeSummary, rangeSummaryText } from '../../../../domain/billing/priceRanges'
+import { formatCurrency } from '../../../../shared/format'
 import type { Contract } from '../../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../../store'
 import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
@@ -25,7 +26,7 @@ import { specialtyNames } from '../../../../domain/specialties'
 import { Button, FieldLabel, Segmented } from '../../../../shared'
 import { NameSearchBox } from '../../../../shared/ui'
 import { BILLS_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
-import { neutral } from '../../../../theme/tokens'
+import { neutral, radius } from '../../../../theme/tokens'
 import { ContractPanel } from '../../flows/ContractEditSheet'
 import { selectControlStyle } from '../../flows/fieldChrome'
 import { Pill } from '../../components/MasterPills'
@@ -139,7 +140,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
       </div>
 
       {results.length === 0 ? (
-        <div data-shot="contract-catalogue" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: '28px 20px', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
+        <div data-shot="contract-catalogue" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '28px 20px', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
           <div style={{ fontSize: 14, fontWeight: 600 }}>No Contracts match.</div>
           <div style={{ fontSize: 13, color: neutral.slate }}>Check the spelling, or search all Contracts, Disabled ones included.</div>
           {filtered && (
@@ -238,7 +239,7 @@ function PricingText({ contract, todayISO }: { contract: Contract; todayISO: str
   if (p.kind === 'rvgContractRate') {
     return (
       <span>
-        RVG at <span className="mono">${p.unitRate.toFixed(2)}</span> per unit
+        RVG at <span className="mono">{formatCurrency(p.unitRate)}</span> per unit
       </span>
     )
   }

@@ -817,7 +817,7 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   date is a new Contract, and the old one is disabled, never deleted."
 - **Expected:** the audit entry shows the pricing before and after; no invoice changes. The Face lift's
   first range now reads **1 Jun 2026 to 30 Jun 2026**, the new one **From 1 Jul 2026** (In force today), and Sophie
-  Matthews' Booking total reads **$3200.00**; the audit shows **Price range added**.
+  Matthews' Booking total reads **$3,200.00**; the audit shows **Price range added**.
 
 **Worth pointing at (optional):** **Admin → Master data → Contracts**: Merivale's three combination
 Contracts (search **H3**: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own

@@ -1,10 +1,11 @@
-import { accent, neutral } from '../../theme/tokens'
+import { accent, neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { clockISO, editProcedure, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
-import { isoTimeLabel, minutesBetweenIso, shiftIsoMinutes } from './timeIso'
+import { minutesBetweenIso, shiftIsoMinutes } from './timeIso'
+import { hhmm } from '../format'
 import { CaptureSection, FailureNotes, NudgeButton } from './ui'
 
 interface TimesCardProps {
@@ -241,7 +242,7 @@ function RecordedTime({
       }}
     >
       <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>{label}</div>
-      <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(iso)}</div>
+      <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{hhmm(iso)}</div>
       {canCapture && (
         <div style={{ display: 'flex', gap: 6 }}>
           <NudgeButton label="−5" onClick={() => onNudge(-5)} />
@@ -291,7 +292,7 @@ function StampButton({
       onClick={onClick}
       style={{
         border: 'none',
-        borderRadius: 12,
+        borderRadius: radius.md,
         background: accent.base,
         color: neutral.surface,
         fontFamily: 'inherit',

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react'
-import { accent, brand, neutral, semantic } from '../../../theme/tokens'
+import { accent, brand, neutral, semantic, radius } from '../../../theme/tokens'
 import { useAppStore, type Actor, type CalendarSession } from '../../../store'
 import { defaultSlotStatus } from '../../../domain/slotStatus'
 import { blockFill, resolveDisplayStatus, StatusChip, useAnaesthetistStatusChoices, useDisplayStatus, useSlotStatusRecords } from '../../../shared'
@@ -83,7 +83,7 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <NavButton label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}><ChevronLeft size={16} aria-hidden /></NavButton>
               <NavButton label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}><ChevronRight size={16} aria-hidden /></NavButton>
-              <button type="button" onClick={() => setMonthISO(firstMonth)} style={{ height: 34, padding: '0 12px', borderRadius: 10, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>This month</button>
+              <button type="button" onClick={() => setMonthISO(firstMonth)} style={{ height: 34, padding: '0 12px', borderRadius: radius.ctl, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>This month</button>
             </div>
           }
         >
@@ -115,7 +115,7 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
                     flexDirection: 'column',
                     gap: 4,
                     padding: 6,
-                    borderRadius: 12,
+                    borderRadius: radius.md,
                     border: selected ? `2px solid ${accent.base}` : isToday ? `2px solid ${brand.base}` : `1px solid ${neutral.line}`,
                     margin: selected || isToday ? 0 : 1,
                     background: selected ? accent.tint : neutral.surface,
@@ -187,7 +187,7 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
       </span>
       {line2 !== '' && <span style={{ fontSize: 10, color: v.onTint, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{line2}</span>}
       {session.conflict && (
-        <span title="This List has a conflict for the office to resolve" style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: 99, background: semantic.warning.solid, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        <span title="This List has a conflict for the office to resolve" style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: radius.pill, background: semantic.warning.solid, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
       )}
     </span>
   )
@@ -195,7 +195,7 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
 
 function NavButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : neutral.slate, cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} style={{ width: 34, height: 34, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : neutral.slate, cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {children}
     </button>
   )
