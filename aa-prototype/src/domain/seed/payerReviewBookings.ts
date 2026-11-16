@@ -66,18 +66,18 @@ interface Spec {
   insuranceApprovalNumber?: string
   /** Not completed (a forward List). */
   open?: true
-  /** Anaesthetic start and handover, as HH:MM on the List's day. */
+  /** Anaesthetic start and finish, as HH:MM on the List's day. */
   start: string
-  handover: string
+  finish: string
 }
 
 const SPECS: readonly Spec[] = [
-  { key: 'childPayer', patientId: PAT_REVIEW.childPayer, time: '08:00', text: 'Strabismus correction, left eye', legacyCode: '42794', contractId: CONTRACT.noContractRvg, start: '08:05', handover: '09:00' },
-  { key: 'payerContactMissing', patientId: PAT_REVIEW.contactMissing, time: '09:15', text: 'Cataract extraction and lens, right', legacyCode: '42702', contractId: CONTRACT.noContractRvg, start: '09:20', handover: '10:00' },
-  { key: 'familyTrustPayer', patientId: PAT_REVIEW.familyTrust, time: '10:15', text: 'Cataract extraction and lens, left', legacyCode: '42702', contractId: CONTRACT.noContractRvg, payer: FAMILY_TRUST_PAYER, start: '10:20', handover: '11:00' },
-  { key: 'approvalMissing', patientId: PAT_REVIEW.approvalMissing, time: '11:15', text: 'Vitrectomy, right', legacyCode: '42725', contractId: CONTRACT.nibRvg, funderPartyId: PARTY.nib, start: '11:20', handover: '12:15' },
-  { key: 'funderNoWarning', patientId: PAT_REVIEW.funderNoWarning, time: '12:30', text: 'Cataract extraction and lens, right', legacyCode: '42702', contractId: CONTRACT.noContractRvg, funderPartyId: PARTY.healthNz, start: '12:35', handover: '13:15' },
-  { key: 'suggestedTag', listId: SUGGESTED_TAG_LIST_ID, patientId: PAT_REVIEW.suggestedTag, time: '08:30', text: 'lap chole', funderPartyId: PARTY.schs, insuranceApprovalNumber: 'SCHS-2026-55120', open: true, start: '', handover: '' },
+  { key: 'childPayer', patientId: PAT_REVIEW.childPayer, time: '08:00', text: 'Strabismus correction, left eye', legacyCode: '42794', contractId: CONTRACT.noContractRvg, start: '08:05', finish: '09:00' },
+  { key: 'payerContactMissing', patientId: PAT_REVIEW.contactMissing, time: '09:15', text: 'Cataract extraction and lens, right', legacyCode: '42702', contractId: CONTRACT.noContractRvg, start: '09:20', finish: '10:00' },
+  { key: 'familyTrustPayer', patientId: PAT_REVIEW.familyTrust, time: '10:15', text: 'Cataract extraction and lens, left', legacyCode: '42702', contractId: CONTRACT.noContractRvg, payer: FAMILY_TRUST_PAYER, start: '10:20', finish: '11:00' },
+  { key: 'approvalMissing', patientId: PAT_REVIEW.approvalMissing, time: '11:15', text: 'Vitrectomy, right', legacyCode: '42725', contractId: CONTRACT.nibRvg, funderPartyId: PARTY.nib, start: '11:20', finish: '12:15' },
+  { key: 'funderNoWarning', patientId: PAT_REVIEW.funderNoWarning, time: '12:30', text: 'Cataract extraction and lens, right', legacyCode: '42702', contractId: CONTRACT.noContractRvg, funderPartyId: PARTY.healthNz, start: '12:35', finish: '13:15' },
+  { key: 'suggestedTag', listId: SUGGESTED_TAG_LIST_ID, patientId: PAT_REVIEW.suggestedTag, time: '08:30', text: 'lap chole', funderPartyId: PARTY.schs, insuranceApprovalNumber: 'SCHS-2026-55120', open: true, start: '', finish: '' },
 ]
 
 export type PayerReviewKey = Spec['key']
@@ -95,7 +95,7 @@ export function seedPayerReviewBookings(next: { booking: number; procedure: numb
   let p = next.procedure
   for (const spec of SPECS) {
     const bookingId = `BK${String(b).padStart(4, '0')}`
-    const completedAtISO = `${DAY}T${spec.handover}:00`
+    const completedAtISO = `${DAY}T${spec.finish}:00`
     const booking: Booking = {
       id: bookingId,
       listId: spec.listId ?? PAYER_REVIEW_LIST_ID,
@@ -125,7 +125,7 @@ export function seedPayerReviewBookings(next: { booking: number; procedure: numb
     if (spec.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(spec.legacyCode)
     if (spec.open !== true) {
       procedure.anaestheticStartISO = `${DAY}T${spec.start}:00`
-      procedure.handoverISO = `${DAY}T${spec.handover}:00`
+      procedure.handoverISO = `${DAY}T${spec.finish}:00`
     }
     procedures.push(procedure)
     ids[spec.key] = bookingId

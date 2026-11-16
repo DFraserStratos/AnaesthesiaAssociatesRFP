@@ -1,3 +1,4 @@
+import type { CompletionContext } from '../domain/billing/completion'
 /**
  * Read helpers over the app state. Plain functions (guards, tests and the
  * inspector share them) plus a few primitive-returning hooks. Components that
@@ -6,6 +7,7 @@
  * every snapshot.
  */
 
+import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
 import { procedureRequiresPrepayment } from '../domain/billing/invoiceBuild'
@@ -13,7 +15,6 @@ import {
   contractRailFor,
   railAnswersFor,
   railAnswersText,
-  rvgCodeToFill,
   type ContractRailView,
   type RailActor,
   type RailContext,
@@ -1210,6 +1211,32 @@ export function payerDetailsFor(state: Pick<AppState, 'masters' | 'schedule'>, b
 }
 
 /** Assemble the validator context for a Booking from store state. */
+/**
+ * The completion rule's context (catch-up Phase 21a): the Contracts, the
+ * List's date, the RVG groups, the modifier master and the patient's date of
+ * birth, built in one place. `completionBlockersFor` and the Booking detail's
+ * live validation both call it, so they cannot drift. Undefined for a Booking
+ * on a Draft List (no anaesthetist yet) or one whose List is gone.
+ */
+export function completionContextFor(
+  state: { masters: AppState['masters']; schedule: Pick<AppState['schedule'], 'bookings' | 'lists' | 'billingLines'> },
+  bookingId: string,
+): CompletionContext | undefined {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) return undefined
+  const list = state.schedule.lists[booking.listId]
+  if (list === undefined || list.anaesthetistId === undefined) return undefined
+  return {
+    contracts: state.masters.contracts,
+    parties: state.masters.parties,
+    rvgGroups: state.masters.rvgGroups,
+    modifiers: state.masters.modifiers,
+    billingLines: Object.values(state.schedule.billingLines),
+    listDateISO: list.dateISO,
+    patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
+  }
+}
+
 export function billingContextForBooking(state: AppState, booking: Booking): BookingBillingContext | undefined {
   const list = state.schedule.lists[booking.listId]
   // A Booking on a Draft List has no anaesthetist yet, so no billing context (catch-up Phase 31).

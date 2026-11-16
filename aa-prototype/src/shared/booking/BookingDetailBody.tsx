@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
-import { listHospitalFor } from '../../domain/listPairing'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
 import {
   childPayerOn,
@@ -10,14 +9,13 @@ import {
   onlyHoldersBilled,
   payerContactMissing,
   payerDetails,
-  validateBookingForBilling,
-  type BillingValidationFailure,
-  type BookingBillingContext,
 } from '../../domain/billing'
+import { completionFailuresFor, type CompletionFailure } from '../../domain/billing/completion'
 import {
   addPostOpAddendum,
   addProcedure,
   completeBooking,
+  completionContextFor,
   editBooking,
   editRefusal,
   isBackdropList,
@@ -134,7 +132,7 @@ const officeActionStyle: React.CSSProperties = {
  * The booking-detail body (Phase 05 extraction). Everything from the old mobile
  * `BookingDetailScreen` below the header: the patient / scheduled-time /
  * notes sections, the per-procedure BTM capture blocks (ordinal
- * ordered), the live `validateBookingForBilling` + the showValidation latch, the
+ * ordered), the live completion rule (`completionFailuresFor`) + the showValidation latch, the
  * cancel / add-procedure / complete / amend handlers, the edit sheets,
  * the completion overlay, and the complete/amend bar. Both mobile's
  * `BookingDetailScreen` and web's `BookingDetailView` are thin chrome wrappers around
@@ -204,28 +202,18 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // Mounted from the first open (and then kept, so the done state outlives the move), not on every Booking screen.
   const [moveMounted, setMoveMounted] = useState(false)
 
-  // Live validation (ctx assembled as billingContextForBooking does). Failures
-  // render per-procedure anchors only after the showValidation latch.
-  const failures: BillingValidationFailure[] = useMemo(() => {
+  // Live validation: the completion rule over the same context `completionBlockersFor` builds
+  // (`completionContextFor`, catch-up Phase 21a). Failures render per-procedure anchors only
+  // after the showValidation latch.
+  const failures: CompletionFailure[] = useMemo(() => {
     // A Booking on a Draft List has no anaesthetist yet, so nothing to validate against (catch-up Phase 31).
-    if (booking === undefined || list === undefined || list.anaesthetistId === undefined || cancelled) return []
-    const anaesthetist = masters.anaesthetists[list.anaesthetistId]
-    if (anaesthetist === undefined) return []
-    const ctx: BookingBillingContext = {
-      anaesthetist,
-      rvgGroups: masters.rvgGroups,
-      contracts: masters.contracts,
-      parties: masters.parties,
-      billingLines: Object.values(billingLinesRecord),
-      listDateISO: list.dateISO,
-      timeRule: masters.rvgTimeRule,
-      patientDobISO: masters.patients[booking.patientId]?.dobISO,
-      modifiers: masters.modifiers,
-    }
-    const hospital = listHospitalFor(list, masters.hospitals)
-    if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
-    return validateBookingForBilling(booking, procedures, ctx)
-  }, [booking, list, cancelled, masters, billingLinesRecord, procedures])
+    if (booking === undefined || cancelled) return []
+    const ctx = completionContextFor(
+      { masters, schedule: { bookings: { [booking.id]: booking }, lists: listsRecord, billingLines: billingLinesRecord } },
+      booking.id,
+    )
+    return ctx === undefined ? [] : completionFailuresFor(booking, procedures, ctx)
+  }, [booking, cancelled, masters, listsRecord, billingLinesRecord, procedures])
 
   const bookingTotals = useMemo(() => {
     if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return { units: 0, total: 0, needsPrice: false }
@@ -579,6 +567,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           {bookingLevelFailures.map((f, i) => (
             <span key={i}>{f.message}</span>
           ))}
+        </Notice>
+      )}
+      {/* What the anaesthetist cannot finish goes to the office (catch-up Phase 21a, US-03.6.3): 32b's alert,
+          beside the office-fixable failures. The Booking still needs completing before the List submits. */}
+      {showValidation && actor.role === 'anaesthetist' && list !== undefined && failures.some((f) => f.fixableBy === 'office') && (
+        <Notice tone="neutral" icon={false} shot="completion-alert-office">
+          The office puts the Contract or the price right. If you cannot finish this Booking, use Alert the office below.
         </Notice>
       )}
     </>

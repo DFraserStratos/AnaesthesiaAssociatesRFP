@@ -1,4 +1,5 @@
 /** Shared primitives for the BTM capture cards (mockup screen 3 anatomy). */
+import { Pill } from '../ui/Pill'
 
 import type { ReactNode } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
@@ -21,8 +22,15 @@ export function CaptureSection({
   gap = 12,
   validationTarget,
   shot,
+  required,
 }: {
   label: string
+  /**
+   * A "Required" caption beside the label (catch-up Phase 21a: the RVG detail
+   * on an RVG kind): neutral until Mark complete's validation latch is on
+   * ('latched'), then the warning tint while the section is still missing.
+   */
+  required?: 'idle' | 'latched'
   /**
    * The `data-shot` hook, without its `capture-` prefix, when it must not follow
    * the label (catch-up Phase 19: the "RVG code" card keeps `capture-procedure-code`,
@@ -53,9 +61,18 @@ export function CaptureSection({
         gap,
       }}
     >
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>
-        {label}
-      </div>
+      {required === undefined ? (
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>
+          {label}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>
+            {label}
+          </div>
+          <RequiredCaption latched={required === 'latched'} />
+        </div>
+      )}
       {children}
       {/* Pass null, not an always-truthy fragment of conditionals: an empty
           wrapper still costs one `gap` of trailing space in the column. */}
@@ -108,10 +125,13 @@ export function StepperButton({
 /** The mockup's small −5 / +5 time nudge button. */
 export function NudgeButton({
   label,
+  ariaLabel,
   onClick,
   disabled,
 }: {
   label: string
+  /** The accessible name ("5 minutes earlier"); the glyph alone names little. */
+  ariaLabel?: string
   onClick: () => void
   disabled?: boolean
 }) {
@@ -119,6 +139,7 @@ export function NudgeButton({
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
       style={{
@@ -166,4 +187,18 @@ export function FailureNotes({ failures }: { failures: readonly BillingValidatio
 /** A quiet single-line caption. */
 export function Caption({ children, color = neutral.mist }: { children: ReactNode; color?: string }) {
   return <div style={{ fontSize: 12, lineHeight: '16px', color }}>{children}</div>
+}
+
+/**
+ * The "Required" caption on a required capture field (catch-up Phase 21a):
+ * quiet mist text until the validation latch is on, then the shared warning
+ * pill. One component, so the section headings and the modifiers step agree.
+ */
+export function RequiredCaption({ latched }: { latched: boolean }) {
+  if (latched) return <Pill tone="warning" shot="capture-required">Required</Pill>
+  return (
+    <span data-shot="capture-required" style={{ fontSize: 11.5, fontWeight: 600, lineHeight: '18px', color: neutral.mist }}>
+      Required
+    </span>
+  )
 }

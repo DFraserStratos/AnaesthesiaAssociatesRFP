@@ -6,11 +6,12 @@
  * semantics the "Use seeded value" reset link relies on.
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { advanceClockMinutes } from './clockActions'
-import { completeBooking, editProcedure, submitList } from './lifecycle'
+import { editProcedure, submitList } from './lifecycle'
 import { auditForEntity, isListBilled, proceduresForBooking } from './selectors'
 import { clockISO, mutate, type Actor } from './mutate'
 import { feeFor, resolveBtm } from '../domain/billing/fee'
@@ -111,7 +112,7 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
     expect(pmBookings.reduce((s, f) => s + (f.units[0] ?? 0), 0)).toBe(41)
     expect(pmBookings.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(1086.5, 2)
 
-    expect(completeBooking(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
+    expect(completeAnswered(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     expect(submitList(api, SOUTER, SOUTER_PM).ok).toBe(true)
     expect(api.getState().schedule.lists[SOUTER_PM]?.state).toBe('SUBMITTED')
 

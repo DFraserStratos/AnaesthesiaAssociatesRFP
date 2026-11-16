@@ -858,6 +858,16 @@ export interface RailAnswers {
   narrow?: string
 }
 
+/**
+ * The office's approval of a Contract change (catch-up Phase 21a): who, when,
+ * and how (Approve on Review, or approved at authorise).
+ */
+export interface ContractApproval {
+  by: string
+  atISO: IsoDateTime
+  how: 'explicit' | 'authorise'
+}
+
 /** Typed price override — mandatory reason whenever present (7th review A6/B5). */
 export type PriceOverride =
   | { kind: 'fixedFee'; amount: number; reason: string }
@@ -970,6 +980,23 @@ export interface Procedure {
   modifierClaims: ModifierClaim[]
   /** The pre-applied modifiers (age, included) the anaesthetist removed. */
   removedModifierIds: ModifierId[]
+  /**
+   * The modifiers step is answered (catch-up Phase 21a; US-03.3.4, US-03.6.1;
+   * our reading of AR-58 A20, which does not say how a step with no modifier
+   * completes): set by claiming a modifier or by "None apply"
+   * (`confirmNoModifiers`). Never cleared by a Contract change or by removing
+   * a claim. Pre-applied age and included modifiers do not count: the step is
+   * the anaesthetist's decision. Required on an RVG kind only (`rvgDetail.ts`).
+   */
+  modifiersConfirmed?: boolean
+  /**
+   * The office's approval of the anaesthetist's latest Contract change
+   * (catch-up Phase 21a; US-07.2.2, US-03.4.1, DM-10): stamped by
+   * `approveContractSelection` (`explicit`) or by `authoriseList` for a change
+   * still unapproved (`authorise`). Whether a change is pending is read from
+   * the audit's order (`contractChangeFor`), so a later change re-opens it.
+   */
+  contractApproval?: ContractApproval
   /**
    * The RVG code, optional (catch-up Phase 19): a reference to one RVG group
    * row by its hidden id. The Procedure's `description` stays the text received.

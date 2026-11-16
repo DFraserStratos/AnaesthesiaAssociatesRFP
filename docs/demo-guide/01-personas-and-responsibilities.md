@@ -42,8 +42,11 @@ Bookings and capture the data AA needs for billing.
    and choose an assigned List; or search by patient name or NHI, or pick a date, to find past work.
 2. Review its time-ordered Bookings.
 3. Open a Booking and confirm patient, procedure, hospital and surgeon context.
-4. Record the procedure (an optional RVG code, picked by typing), start and handover times, any
-   modifiers claimed with a short reason, notes and any allowed additional billing line.
+4. Record only what the Procedure's Contract price needs: on an RVG price, the RVG code (picked by
+   typing), start and finish times and the modifiers step (claimed modifiers each with a short reason,
+   or **None apply**); on a fixed or open price, no times or modifiers, the RVG code optional "for
+   reference", and a typed amount where the price asks for one. Then notes and any allowed additional
+   billing line. What only the office can fix goes to the office with **Alert the office**.
 5. Review the calculated units and fee at her personal dollar-per-unit value.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.
@@ -230,8 +233,10 @@ allowing billing to proceed.
 ### Goals
 
 - Set each Procedure's Contract at booking setup on the step rail (where the invoice goes, then the
-  Contract), and confirm the Contract, who is billed and the reference make sense at review.
-- Spot manually adjusted BTM values and other advisory flags.
+  Contract), and confirm the Contract and who is billed make sense at review.
+- Approve or correct each Contract the anaesthetist changed, and check any typed price against the
+  computed one.
+- Spot manually adjusted BTM values and other advisory flags, none of which blocks authorise.
 - Correct office-owned data without returning the List to the anaesthetist.
 - Authorise a clean List and know that it is now immutable.
 - Monitor later billing, integration and Xero exceptions.
@@ -240,8 +245,13 @@ allowing billing to proceed.
 
 1. Open the Review queue of `SUBMITTED` Lists.
 2. Review every active Booking and its calculated fee.
-3. Inspect flags such as missing references or manual BTM overrides.
-4. Correct billing setup in the office when required.
+3. Inspect flags under each Procedure's stack (procedure text, Contract with who is invoiced, RVG
+   code): a Contract change (**Approve** or **Correct**), a typed price beside the computed one, a
+   Contract not offered on this List, anything needing a price or an invoice destination, a Booking
+   not marked completed, and manual BTM overrides. Resolve the anaesthetist's alerts and check the
+   **Changed** marker for edits since submit.
+4. Correct billing setup in the office when required; authorising approves any Contract change still
+   waiting.
 5. Log a phone note if clarification was needed.
 6. Authorise the List.
 7. Confirm that the Bookings lock and the List hands to billing.

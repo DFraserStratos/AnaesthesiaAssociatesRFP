@@ -3,11 +3,13 @@ import { accent, fontFamily, neutral, semantic, radius } from '../../theme/token
 import type { BillingValidationFailure, ProcedureModifier } from '../../domain/billing'
 import { claimCompletionProblems, removedPreAppliedModifiers } from '../../domain/billing/modifiers'
 import type { ModifierId, Procedure } from '../../domain/types'
-import { modifierFactsFor, removeModifier, restoreModifier, useAppStore, type Actor } from '../../store'
+import { confirmNoModifiers, modifierFactsFor, removeModifier, restoreModifier, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { ModifierPickerSheet } from './ModifierPickerSheet'
-import { Caption, FailureNotes } from './ui'
+import { Caption, FailureNotes, RequiredCaption } from './ui'
+import { modifiersStepAnswered } from '../../domain/billing/completion'
 import { TextAction } from '../ui/TextAction'
+import { Button } from '../ui/Button'
 
 interface ModifiersSectionProps {
   procedure: Procedure
@@ -16,6 +18,15 @@ interface ModifiersSectionProps {
   actor: Actor
   /** False on an additional Procedure or a List the rights rule locks: rows stay, actions go. */
   editable: boolean
+  /**
+   * The modifiers step is required (an RVG kind, catch-up Phase 21a; US-03.3.4,
+   * US-03.3.9): until it is answered, a teal "None apply" sits beside "Add a
+   * modifier" with a "Required" caption; after "None apply", "No modifiers
+   * claimed" with Change.
+   */
+  required?: boolean
+  /** Mark complete's validation latch: the caption takes the warning tint while the step is unanswered. */
+  latched?: boolean
   /** This Procedure's `modifierClaims` failures (after the validation latch). */
   failures: readonly BillingValidationFailure[]
   onError: (message: string) => void
@@ -35,7 +46,7 @@ interface ModifiersSectionProps {
  * dialog on web and Admin. Removing writes at once; claiming writes only when
  * the explanation is given (the picker's Claim).
  */
-export function ModifiersSection({ procedure, items, actor, editable, failures, onError }: ModifiersSectionProps) {
+export function ModifiersSection({ procedure, items, actor, editable, required = false, latched = false, failures, onError }: ModifiersSectionProps) {
   const { variant } = useSurface()
   const web = variant === 'web'
   const schedule = useAppStore((s) => s.schedule)
@@ -62,6 +73,10 @@ export function ModifiersSection({ procedure, items, actor, editable, failures, 
   const preApplied = items.filter((i) => i.origin !== 'chosen')
   const claimed = items.filter((i) => i.origin === 'chosen')
   const empty = items.length === 0 && removed.length === 0
+  // The step is the anaesthetist's answer: a claim, or "None apply" (pre-applied rows do not answer it).
+  const answered = modifiersStepAnswered(procedure)
+  const noneConfirmed = procedure.modifiersConfirmed === true && claimed.length === 0
+  const asking = required && !answered
 
   return (
     <div
@@ -74,18 +89,50 @@ export function ModifiersSection({ procedure, items, actor, editable, failures, 
       {/* The seam: the arithmetic above it, the itemised facts that make up M below. */}
       <div style={{ height: 1, background: neutral.line, margin: '2px 0' }} />
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <span style={{ fontSize: web ? 13 : 14, fontWeight: 600, color: neutral.slate }}>Modifiers</span>
-        {editable && (
+        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontSize: web ? 13 : 14, fontWeight: 600, color: neutral.slate }}>Modifiers</span>
+          {asking && (
+            <RequiredCaption latched={latched} />
+          )}
+        </span>
+        {editable && !asking && (
           <TextAction onClick={() => setPicker({})} shot="modifier-add">
             Add a modifier
           </TextAction>
         )}
       </div>
 
-      {empty && (
-        <div style={{ fontSize: 13, color: neutral.mist, lineHeight: '18px' }}>
-          No modifiers. Add any that apply, each with a short reason.
+      {/* The step unanswered on an RVG kind: two equal answers, none or a claim (AR-58 A20). */}
+      {asking && editable && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
+          <Button variant="pill" shot="capture-modifiers-none" onClick={() => run(confirmNoModifiers(useAppStore, actor, procedure.id))}>
+            None apply
+          </Button>
+          <TextAction onClick={() => setPicker({})} shot="modifier-add">
+            Add a modifier
+          </TextAction>
         </div>
+      )}
+
+      {noneConfirmed ? (
+        <div data-shot="capture-modifiers-none-done" style={{ fontSize: 13, color: neutral.slate, lineHeight: '18px' }}>
+          No modifiers claimed
+          {editable && (
+            <>
+              {' · '}
+              <TextAction small label="Change: add a modifier" onClick={() => setPicker({})}>
+                Change
+              </TextAction>
+            </>
+          )}
+        </div>
+      ) : (
+        empty &&
+        !(asking && editable) && (
+          <div style={{ fontSize: 13, color: neutral.mist, lineHeight: '18px' }}>
+            No modifiers. Add any that apply, each with a short reason.
+          </div>
+        )
       )}
 
       {(preApplied.length > 0 || claimed.length > 0) && (

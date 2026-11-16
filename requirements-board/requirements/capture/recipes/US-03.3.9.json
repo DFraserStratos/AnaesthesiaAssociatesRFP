@@ -1,0 +1,204 @@
+{
+  "id": "US-03.3.9",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rvg-detail",
+      "app": "web",
+      "caption": "What the anaesthetist records follows the Contract's pricing kind",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "rvg-kind",
+          "caption": "An RVG Contract asks for the code, start and finish times and the modifiers step, with None apply",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers-none]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifiers-none]",
+            "[data-shot=capture-rvg-detail]"
+          ]
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price asks for no times or modifiers; the RVG code is optional, for reference",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "click": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=capture-procedure-code][data-rvg-role=reference]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code][data-rvg-role=reference]"
+          ]
+        },
+        {
+          "state": "override-kept",
+          "caption": "A price override keeps the RVG detail on screen",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-adjustment-and-charge]"
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Charge $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"450.00\"]",
+              "value": "450.00"
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed with the patient before surgery"
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=capture-rvg-detail]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-rvg-detail]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rvg-detail",
+      "app": "mobile",
+      "caption": "What the anaesthetist records follows the Contract's pricing kind",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "rvg-kind",
+          "caption": "An RVG Contract asks for start and finish times and the modifiers step, with None apply",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=capture-modifiers-none]"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=capture-modifiers-none]",
+            "[data-testid=slide-booking] [data-shot=capture-rvg-detail]"
+          ]
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price asks for no times or modifiers; the RVG code is optional, for reference",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=capture-billing] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=billing-sheet] [data-shot=rvg-code-add-reference]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-sheet] [data-shot=capture-procedure-code][data-rvg-role=reference]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rvg-detail",
+      "app": "admin",
+      "caption": "What the anaesthetist records follows the Contract's pricing kind",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "state": "rvg-kind",
+          "caption": "The office sees the same RVG detail on an RVG Contract, with None apply",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers-none]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifiers-none]",
+            "[data-shot=capture-rvg-detail]"
+          ]
+        },
+        {
+          "state": "fixed-price",
+          "caption": "On a fixed price the office sees no times or modifiers; the RVG code is optional, for reference",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-08-10/bookings/BK0176"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "click": "[data-shot=rvg-code-add-reference]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=capture-procedure-code][data-rvg-role=reference]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code][data-rvg-role=reference]"
+          ]
+        }
+      ]
+    }
+  ]
+}

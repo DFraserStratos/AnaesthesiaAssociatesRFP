@@ -305,23 +305,32 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 
 1. Dr Souter opens her List and selects the patient Booking.
 2. She confirms patient, operation, hospital and surgeon context.
-3. For each Procedure she may pick an RVG code by typing; on a ranged group she may change the
-   starting figure, and an out-of-range value raises an office warning.
-4. She records the start and handover times.
+3. What each Procedure asks for follows its Contract's pricing kind. On an RVG price (No contract ·
+   RVG and the RVG rate and discount kinds) the RVG code, start and finish times and the modifiers step
+   are required, each with a **Required** caption. On a fixed or open price there are no times, units or
+   modifiers, and the RVG code is optional, "for reference". She picks an RVG code by typing; on a
+   ranged group she may change the starting figure, and an out-of-range value raises an office warning.
+4. On an RVG price she records the start and finish times.
 5. The system calculates tiered Time units:
    - 1 unit per 15 minutes for the first two hours;
    - 1 unit per 10 minutes after two hours.
 6. The age modifier, and any modifier the procedure's base units include (P1 on Neurosurgery and
    Spine codes), are pre-applied and removable; she claims any other modifier that applies, ASA
-   included, each with a short explanation.
+   included, each with a short explanation. If none applies she taps **None apply** (then **No
+   modifiers claimed · Change**); a pre-applied modifier alone does not answer the step.
 7. An included modifier shows at 0 units and cannot be added twice.
 8. Modifiers stack with no limit, each with its own reason; the same modifier is never added twice.
 9. Her Booking shows no units or fee; only Mark complete is pinned. The office sees the full billing
    total on the Admin Booking.
 10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
-11. She selects Mark complete. If anything required is missing, the Booking scrolls to and focuses the
-    first incomplete control while showing its inline validation message. She resolves each item and
-    marks the Booking complete.
+11. She selects Mark complete. It checks exactly three things: every Procedure has a Contract; on an
+    RVG price, the RVG detail (code, start and finish, the modifiers step answered); and a price, not
+    **Needs a price**. It does not check the RVG code on a fixed price, the payer's contact, the approval
+    number or out-of-range base units. If anything required is missing, the Booking scrolls to and
+    focuses the first incomplete control while showing its inline validation message. She resolves each
+    item and marks the Booking complete.
+12. Something only the office can fix shows a pointer to **Alert the office**; she sends it there. Submit
+    still needs every Booking complete.
 
 ### Multiple Procedures
 
@@ -336,7 +345,10 @@ When every active Booking in the List is complete, the List becomes eligible for
 
 ### Demo point
 
-Use Margaret Ellison. She is the one incomplete Booking on Dr Souter's Southern Cross PM List.
+Use Margaret Ellison. She is the one incomplete Booking on Dr Souter's Southern Cross PM List; on her
+RVG price she taps **None apply** before Mark complete. On Dr Souter's Mon 10 Aug PM List, Miriam
+Holloway (Merivale "Facelift plus 1 add on", a fixed price) completes with no times, and Graham Pulley
+(No contract · Fixed price) shows **Needs a price** and refuses Mark complete until an amount is typed.
 
 ### Source
 
@@ -368,13 +380,23 @@ Every active Booking in the List has been marked complete.
    completed again before the office can authorise.
 7. Kirsty opens the Review queue.
 8. She checks the full set of Bookings, including:
-   - Contract, and who is billed;
-   - billing reference;
-   - calculated BTM and fee;
-   - manual adjustment flags.
-9. If something is wrong, Kirsty phones for clarification and corrects it in the office.
+   - each Procedure's stack: procedure text, Contract with who is invoiced, and RVG code, with that
+     Procedure's flags under it;
+   - the payer, and the insurer or funder with its approval number (**Change** opens the Admin Booking);
+   - an open alert from the anaesthetist (a Resolve tick) and open warnings (Clear);
+   - the **Changed** marker for edits since submit;
+   - flags, which never block authorise: **Changed by Dr X: was** the old Contract, **Price typed: $X
+     (computed $Y)**, **Contract not offered on this List** (for example after a move to another
+     surgeon's List), **Needs a price**, **Needs an invoice destination**, **Not marked completed**,
+     **Email or postal address needed** and manual B/T/M notes. A Disabled Contract raises no flag.
+9. She approves (**Approve**) or corrects (**Correct**, which opens the Booking's rail) each Contract
+   change the anaesthetist made, or uses **Approve all N Contract changes**; she checks any typed price
+   against the computed one. If something is wrong, Kirsty phones for clarification and corrects it in
+   the office.
 10. She may log a phone note.
-11. She selects **Authorise for billing**.
+11. She selects **Authorise for billing**. Authorising approves any Contract change still waiting; the
+    confirm says how many. The anaesthetist sees **Awaiting office approval** under the Billing card
+    until then, and **Approved by the office** with the time after.
 12. The List becomes `AUTHORISED`; every Booking is immutable.
 
 ### Handoff

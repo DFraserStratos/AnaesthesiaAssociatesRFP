@@ -111,6 +111,8 @@ test('capture: finish now, complete, submit walk', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/m4-04-finish-stamped.png', fullPage: true })
 
   // Mark complete: catch the overlay mid-choreography (~400 ms in).
+  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
+  await page.locator('[data-shot="capture-modifiers-none"]').click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'visual/shots/m4-05-completion-overlay.png', fullPage: true })
@@ -154,7 +156,7 @@ test('capture: refused completion focuses the first missing field', async ({ pag
   const finish = page.getByRole('button', { name: 'Finish now' })
   await expect(finish).toBeFocused()
   await expect(finish).toBeInViewport()
-  await expect(page.getByText('Record the handover time.')).toBeVisible()
+  await expect(page.getByText('Add the finish time.')).toBeVisible()
 })
 
 test('capture: Chen read-only with adjusted-manually provenance', async ({ page }) => {

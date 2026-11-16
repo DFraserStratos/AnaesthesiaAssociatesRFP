@@ -48,6 +48,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | U2 | Catch-up · UI unification: Overlays | DONE | 2026-11-16 | One modal stack (`useModalLayer`) behind every Dialog, BottomSheet and Admin side panel, fixing the Escape bug; `SidePanel`; `usePopover` and `PopoverPanel`; `OverlayHeader` with the web corner X, `SheetActions`, `ConfirmSheet`, `InlineConfirm`, `DoneStep` on every sheet |
 | U3 | Catch-up · UI unification: Pills, badges and feedback | DONE | 2026-11-16 | Pill (tones, sizes, outline), CountBadge, AttentionDot, Avatar and PersonaChip, FormError (box and inline, every surviving refusal announced), Notice, ResultLine (success green, always-mounted live region) and EmptyState, with the stable call sites moved onto them; every hook kept, no seed change |
 | 38a | Catch-up · Edit until AUTHORISED, the main view and search | DONE | 2026-11-10 | The anaesthetist edits own ACTIVE and SUBMITTED Lists until AUTHORISED (RV-19, D63), audited, last change stands; Review's "Changed since submitted" cue; `authoriseList` completion-gated; one exit `hasLeftMainView` (AUTHORISED) and `LIST_PROGRESS_LABEL` (`domain/listProgress.ts`); invoices in Balances at once (next-day rule gone); `mainViewFor`: mobile and web main views from today with an earlier group; pure search (`domain/bookingSearch.ts`), `store/lookback.ts` selectors, shared `MonthGrid`, mobile search and date sheet, web search and Go to date (`?q=`, `?day=`); authorised List detail shows its invoices; 12 history Lists for Dr Souter Jan to Mar 2026 (29 Bookings, `SEED_LOOKBACK`), no money figure moved; PERSIST 26 to 27; Vitest 1450, Playwright 134; 3-lens review-fix pass; capture 265/265 recipes |
+| 21a | Catch-up · RVG detail by pricing kind, completion and office review | DONE | 2026-11-17 | What a Procedure asks for follows its Contract's pricing kind (`rvgDetail.ts`); completion is three conditions (`completionFailuresFor`) split from the billing validator; `priceStatusFor`; "None apply"; the review-flag list (`reviewFlags.ts`) on a rebuilt Review with Approve and Correct; authorise approves the rest and is never gated; a moved Booking keeps its Contracts and is flagged when it no longer fits. |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
 of a session, leave it IN PROGRESS and state exactly what remains.
@@ -400,6 +401,11 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-11-16 · UI unification U3 (question 15): the Preferred pill is the success tint,** superseding Phase 17's teal-tint Preferred pill (no teal on labels).
 - **2026-11-16 · UI unification U3 (question 16): `Pill` sizes.** `lg` (`4px 10px` 11/600, the Admin Review table and flag pill) for table pills; `md` (`1px 8px` 11.5/18) inline; `sm` (`0 7px` 11/16). The mockup pill sizes in README section 5 stay as drawn.
 - **2026-11-16 · UI unification U3 (readings).** The HistoryTimeline "n changes" pill is neutral (B question 3); the move sheets keep the neutral avatar for colleagues (B question 4); the ListRow "New" badge keeps its ink at 700 and `OutOfHoursPill` is deleted (B question 5); the Day grid block keeps its count inside the warnings badge (B question 6); compact row controls keep a one-line refusal as `FormError variant="inline"` (C question 6).
+- **2026-11-17 · Catch-up Phase 21a (1): completion is three conditions** (US-03.6.1, DM-59, RV-21; supersedes the Phase 04 completion ruling and 19's validator-based completion). `completionFailuresFor` (`domain/billing/completion.ts`) asks only: a Contract; on an RVG kind the RVG code, start, finish and the modifiers step with each claim explained; a price (not "Needs a price"). The route, code-and-times-on-every-Contract demands are gone; `validateBookingForBilling` is the billing run's pre-flight only. See the 21a entry.
+- **2026-11-17 · Catch-up Phase 21a (2): times on RVG kinds only** (US-03.3.3, US-03.3.9, D9; supersedes the 16 October reading that kept them optional on a fixed price). `rvgDetail.ts` is the one predicate: on a fixed or open price no times, units or modifiers are asked or shown, and the RVG code is for reference. Copy says "start" and "finish", never "handover".
+- **2026-11-17 · Catch-up Phase 21a (3): readings built** (AR-58 A20, A41, A48, A49). The modifiers-step marker (`modifiersConfirmed`, set by "None apply" or a claim); "Needs a price" blocks completion; the review-flag list (`REVIEW_FLAG_RULES`, `domain/billing/reviewFlags.ts`); a moved Booking keeps every Contract and is flagged "Contract not offered on this List" when it no longer fits (derived, never stored); with no Contract nothing is required or hidden; a Contract change that newly asks for RVG detail re-opens a completed Booking. An anaesthetist's change is pending until the office approves it, re-picks the Contract or authorises; typing an amount on the same Contract, a first pick on a Procedure with no Contract, and changing back to the Contract the office saw are not changes.
+- **2026-11-17 · Catch-up Phase 21a (4): authorise is never gated by flags** (Phase 07's ruling holds). `authoriseBlockersFor(state, listId)` (`store/lifecycle.ts`) is the one seam and returns none; 25 and 40 add their kinds. Authorise approves every Contract change still waiting in its own commit.
+- **2026-11-17 · Catch-up Phase 21a (5): D81, a Disabled Contract raises no flag** (OQ-135 still open, our default). The candidates test runs with `anyStatus` for the review flag; if OQ-135 is answered "flag it", add one rule to `REVIEW_FLAG_RULES`.
 
 ## Discovered for later — handoff list
 
@@ -3174,3 +3180,103 @@ On branch `ui/u2-u3`, cut from `ui/u2-overlays` at `f09fb0a5` ("U2 complete:"), 
 - **Demo guide:** U3 changed no demo-guide file; U2's patches (the clock popup closing, the cheat sheet's "Closing things") are in the joined guide, and nothing in U3's changes touches a scripted control or label.
 - **Owner ruling, relayed by U3's session:** the Surgeon profile group pills at Pill `lg` (text 12.5 to 11, weight 600) are accepted; that line is struck from U3's "For the owner's review".
 - **For the owner:** take `ui/u2-u3` into `master` before 21a. The worktrees `AnaesthesiaAssociatesRFP-U2` and `-U3` and the branches `ui/u2-overlays`, `ui/u3-pills` and `ui/u2-u3` are left in place for the owner to remove.
+
+### Catch-up Phase 21a · RVG detail by pricing kind, completion and office review (2026-11-16)
+
+**Session 1 (2026-11-16).** Items 1 to 6 and the item 15 fold-ins for the capture cards are built, green and demoable. Session 2 starts at item 7 (the review-flag list in `domain/billing/reviewFlags.ts`), then items 8 to 14, the review pass, capture, the demo guide and the rest of the checklist. Nothing is committed.
+
+**Drift check against `fbdd555`.** Only US-04.3.8 changed in substance: the payment type is always asked under the patient, and "Needs an invoice destination" shows on the List row and the office's list. Session 1 is unaffected; session 2's flag words follow it. Nothing was Retired. OQ-99 is built as answered. OQ-135 is still open, so D81's default (no flag) lands in session 2. 21, 32b, U2 and U3 are DONE, with `ui/u2-u3` merged on master at `c4a2c59c`. Reused: 20's `rvgCodeToFill`, moved (not copied) into `rvgDetail.ts`; 19b's `claimCompletionProblems`, moved into `completion.ts`; 19a's `procedureNeedsPrice` and `rangeInForce`; 32b's `AlertOfficeEntry`. The stored name `handoverISO` is kept.
+
+**Built.**
+- `domain/billing/rvgDetail.ts`: `asksRvgDetail(contract, lines?)`, `rvgDetailFor(contract, lines?)` (`rvgCode` required, reference or optional; `times` and `modifiers` required, hidden or shown) and `rvgCodeToFill`. These are the one place the rule lives.
+- `Procedure.modifiersConfirmed?` (our reading of A20). It is set by `claimModifier` and by the new `confirmNoModifiers(api, actor, procedureId)`, audited `procedure.modifiersConfirm` ("No modifiers claimed"), and is never cleared.
+- `domain/billing/priceStatus.ts`: `priceStatusFor(procedure, contract, listDateISO)` and `computedPriceFor(procedure, contract, feeCtx)`.
+- `domain/billing/completion.ts`: `completionFailuresFor(booking, procedures, ctx)` returns `CompletionFailure { procedureId, code, message, field, fixableBy }`, with `CompletionContext` and `contractChangeAsksRvgDetail`.
+- The store's `completionContextFor(state, bookingId)` builds the context. `completionBlockersFor`, the Booking detail's live validation and `SubmitListSheet` all read through it.
+- Times are "start" and "finish" everywhere: messages, `FIELD_LABELS` and comments.
+- A completed Booking whose Contract moves from a fixed or open price to an RVG kind re-opens in the same commit (`booking.uncomplete` with the reason "Add the RVG detail for the new Contract.").
+- `validateBookingForBilling` is now the run's pre-flight only. Gone: the Contract checks, the RVG code, the code gone, the times, the explanation and the split-prepayment deposit. Kept: the holder missing, no price, Method 3, the override reason and sign, and conservation.
+- `runBillingForList` and `retryBillingCase` now run the pre-flight after a successful build (exception code `preflight`). Before, nothing but completion called the validator.
+- Capture (`BtmCaptureBlock`; mobile, web and Admin share it). On an RVG kind it shows the Times and Units cards in `capture-rvg-detail`, a "Required" caption (`CaptureSection required`, `capture-required`), and a teal "None apply" (`capture-modifiers-none`, then "No modifiers claimed · Change"). A fixed or open price renders none of these; the RVG code is optional for reference, and an open price gets "Add an RVG code for reference" too. "Needs a price" is a warning notice (`capture-price-status`) with no figure. The anaesthetist sees `completion-alert-office` beside failures only the office can fix.
+- Seed: BK0176 `fixedPriceNoTimes` (Merivale's Facelift plus 1 add on) and BK0177 `needsPriceBooking` (No contract · Fixed price, no amount), both on Souter Mon 10 Aug PM with patients PT0158 and PT0159 (`PAT_21A`). Every completed Booking's Procedures carry the marker. `PERSIST_VERSION` 41 to 42.
+
+**Tests.** New: `rvgDetail.test`, `priceStatus.test`, `completion.test`, `store/completionActions.test` and `seed/completionSeed.test`. The validator suite is rewritten for its pre-flight role. A `test/completeAnswered` helper is used in 10 live-flow suites. The parity suites name BK0176 and BK0177 as additions, and the golden canvas gains two rows by hand. 6 Playwright flows gain the "None apply" tap; `mobile-phase04` reads "Add the finish time.". Vitest: 208 files, 2,222 tests. The gate is green across typecheck, build, build-pwa, vitest, verify-board and shots.
+
+**Checked (session 1).** Mobile, web and Admin on Ellison:
+- the "Required" captions show;
+- Mark complete refuses with the modifiers sentence, and on web with "Add the finish time.";
+- "None apply" answers the step, then the Booking completes;
+- no "handover" appears in the page or in the built bundle's copy.
+
+BK0176 renders no times, units or modifiers and completes. BK0177 refuses with "Needs a price". An office-typed open price shows the alert pointer. Evidence: `.build-phase/21a-checklist/`. Design pairs are in `.build-phase/21a-design/`. The Mobile App mockup opens from disk only at its intro card, so the modifiers step was compared with 19b's ledger and chips, the nearest built pattern; nothing needed fixing.
+
+**Handoffs (so far).**
+- **24:** replace the bodies of `priceStatusFor` and `computedPriceFor` and keep their signatures. The validator's no-price branch is yours.
+- **25:** snapshot from the same two functions.
+- **39b:** removes the validator's `BillingLine` branch.
+- **43a:** keeps `rvgDetailFor` and `capture-price-status` on the anaesthetist's screens.
+- **If D9 reverses:** `rvgDetail.ts` is the one place to change.
+
+**Deviations.**
+- `rvgDetailFor` takes the Contract and its billing lines, not `(procedure, contract)`.
+- The no-Contract sentence stays "This procedure needs an invoice destination." (US-04.3.8) rather than the doc's "Choose a Contract for this procedure.".
+- The run's pre-flight was wired in, because nothing else called the validator.
+
+**For the owner's review (session 1).**
+- Readings built:
+  - "Needs a price" blocks completion (A48);
+  - the modifiers-step marker (A20), with a stored claim also counting as the answer;
+  - the form with no Contract (nothing required, nothing hidden);
+  - the re-open on a fixed-to-RVG Contract change;
+  - Method 3 rate x time Procedures ask for no RVG detail;
+  - an additional Procedure has no modifiers step;
+  - history Bookings on AUTHORISED Lists are not held to the rule.
+- An alert does not let an incomplete Booking's List submit.
+- Logged: the Billing lines card still says "The RVG fee bills on its own." on an open price (Phase 20's copy).
+- Screens worth a look:
+  - Ellison's capture on mobile and web as Dr Souter (`/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009`);
+  - BK0176 and BK0177 (`/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176`).
+
+**Session 2 (2026-11-17).** Items 7 to 15, the review pass, the recipes and ATLAS, and the demo guide. The owner said "keep going" after session 1, so session 2 built on the uncommitted session 1 tree. Nothing is committed; the removal of Phase 07's `apps/admin/reviewFlags.ts` and its test is staged (`git rm`).
+
+**Built.**
+- `domain/billing/reviewFlags.ts`: `REVIEW_FLAG_RULES` in order (contractChanged, contractNoLongerFits, needsInvoiceDestination, needsPrice, typedPrice, notCompleted, payerContactMissing, btmOverride), `reviewFlagsForBooking`, `reviewFlagsForList`, `ContractChangeRecord`. Flags never block. "No billing reference" is dropped (D82); the route and ACC flags were already gone. A typed price is an `enteredPrice` on a Contract that is not open, or the office's fixed fee. The B/T/M note shows only on an RVG kind. `contractAllowedOn` and `isContractCandidate` take `{ anyStatus }` (D81).
+- `store/contractApprovalActions.ts`: `contractChangeFor` (pending or approved, read from the audit's order), `approveContractSelection(api, actor, { bookingId, procedureId? })`, `approveContractChangesOnList`, `approveContractRefusal`, `pendingContractChangesOnList`, `approvalsAtAuthorise`, `approveContractChangeAsSimulatedOffice`. Audited `procedure.contractApprove` ("Contract change approved by the office"). `Procedure.contractApproval { by, atISO, how }`, cleared by the anaesthetist's next change. `authoriseList` stamps every pending change in its own commit; `authoriseBlockersFor` is the empty seam.
+- `store/reviewSelectors.ts`: `reviewInputFor`, `reviewFlagsFor`, `reviewFlagsOnList`.
+- Review (`ReviewScreen.tsx`): each Procedure's stack with its own flags (`review-procedure-stack`, `review-flag` with `data-rule`), Approve and Correct (`review-contract-approve`, `review-contract-correct`), "Approved {time}" (`review-contract-approved`), Approve all (`review-contract-approve-all`); the payer with how it is invoiced and the insurer or funder with the approval number (`review-payer`, `review-payer-delivery`, `review-insurance`; Change opens the Admin Booking); 32b's alert with Resolve (`review-alert`); open warnings with Clear (`review-warning-clear`); the late-edit cue (`review-late-edit` around 38a's `review-changed-booking`). The pills are on `Pill` (`lg`), the header and Authorise buttons on the plain `Button`. The authorise confirm says how many changes it approves.
+- The anaesthetist sees "Awaiting office approval" then "Approved by the office {time}" (`shared/booking/ContractApprovalLine.tsx`, `contract-approval-status`) under the Billing card. The Billing card shows a kept Contract that the List does not offer, with "This List does not offer {Contract}. The Booking keeps it; the office checks it at review." (`billing-contract-kept`), instead of the step rail.
+- PWA demo trigger "Office approves this Contract change" (`office-approves-contract-change`, PWA only, office stand-in).
+- Seed (`seed/reviewFlagBookings.ts`): `SEED_LIST_IDS.reviewFlags` = Dr Chen's Tue 14 Jul AM at Christchurch Eye Surgery, SUBMITTED, with BK0178 `contractChangeBooking` (a seeded audit row by Dr Chen), BK0179 `typedPriceBooking` ($1,200.00 typed beside $265.50 computed), BK0180 `reviewNeedsPrice`, BK0181 `otherSurgeonContract`; BK0182 `movableFixedBooking` (Merivale Face lift, Souter Mon 10 Aug PM). Patients PT0160 to PT0164 (`PAT_21A_REVIEW`). `PERSIST_VERSION` 42 to 43. The seeded Review queue is 8 Lists; S2's List raises no flag.
+- Item 15 migrations done: Review's pills and buttons; "Required" is one `RequiredCaption` on `Pill`; the modifiers step reads one `modifiersStepAnswered`.
+
+**Tests.** New: `domain/billing/reviewFlags.test` (every rule, D81, order, cancelled), `store/reviewFlagsStore.test` (the seed markers, S2 none, the empty seam, approval rights and stamps, re-opening, not-a-change cases, approve at authorise, the stand-in, one table-driven test over eight move paths, a later range, a no-range date, an anaesthetist-linked Contract, a typed price kept), the trigger in `demoTriggers.test`, a v42 migrate case, `visual/review-flags-phase21a.spec.ts`. Parity suites and the golden canvas name the five Bookings. Vitest: 209 files, 2,253 tests. Gate green (typecheck, build, build-pwa, vitest, verify-board, shots).
+
+**Checked (session 2).** Review on the review-flags List shows the five flags; Approve turns into "Approved Tue 21 Jul, 08:00" and survives a reload; the phone then reads "Approved by the office". Admin Day's Move of BK0182 to the AM List keeps its Contract and Review flags "Contract not offered on this List"; moving it back clears it. S2's List shows no flags. Approval at authorise, the re-open on a later change, D81 and the typed price kept on a move are pinned by store tests. Evidence: `.build-phase/21a-checklist/`. Design: Review against `Admin Review.dc.html` (the route, Contract and code columns are 20a's stack on purpose); fixed after the pair: flag pills wrap, "Patient pays", warning text clamped, column widths.
+
+**Review pass.** Three Opus reviewers (quality, bugs, plan adherence). Fixed: a false "Contract changed" flag when an amount is typed on the same Contract; changing back to the Contract the office saw; the stale approval stamp; the B/T/M note on a fixed price; the re-open check ignoring rate x time lines; the "Required" pill copies; the duplicated modifiers rule; Review pill sizes; the payer's delivery on Review; stale catalogue rows; "tap" in copy shown on web ("choose None apply"); Approve's accessible name; the submit sheet keeping other blocker lines; the moved Booking's Billing card. Declined: dropping "Contract not offered" when a fixed price has no range on the date (the doc asks for both flags).
+
+**Recipes and ATLAS.** New: US-03.3.9 (`rvg-detail`: web, mobile, admin) and US-04.3.11 (`moved-booking`). Changed: US-03.6.1 (None apply before Mark complete; `fixed-price`, `needs-price`), US-03.3.3 (captions say finish; state ids kept), US-03.3.4 (`fixed-price`), US-07.2.2 (`procedures`, `insurer`, `flags`, `approved`), US-06.4.1 (the fixed-price Booking no longer starts and finishes times). ATLAS updated. **Capture not run**: held for the owner's approval (standing rule); run `phase-check --capture US-03.3.9,US-04.3.11,US-03.6.1,US-03.3.3,US-03.3.4,US-07.2.2,US-06.4.1` once approved.
+
+**Demo guide.** S1 Beat 3 (the "None apply" tap in Sarah Mitchell's capture; the three checks; the BK0176 and BK0177 aside), S2 Beat 4 (Review's stack, payer, flags, Approve and Correct; the review-flags List and moved-Booking asides), the cheat sheet, workflows 4 and 5, personas 1 and 4, `master-demo-guide.html`, the Control Panel S2 text.
+
+**Deviations.** No `capture-rvg-reference` hook: recipes target `[data-shot=capture-procedure-code][data-rvg-role=reference]` (one element cannot carry two `data-shot` values). Review's Change opens the Admin Booking (21's payer sheet lives there) rather than the sheet in place. Approve-all per Booking exists in the store; Review offers per Procedure and per List. "Changed since submit" is 38a's "Changed" pill in a `review-late-edit` wrapper.
+
+**Handoffs.**
+- **24:** replaces the bodies of `priceStatusFor` and `computedPriceFor` (keep the signatures), owns the "no price" pre-flight and who may type the price.
+- **25:** snapshots from them, adds its "Needs a price" blocker to `authoriseBlockersFor` and locks the Contract approval.
+- **27:** keeps a prepaid amount on a move.
+- **33:** created Bookings arrive without a Contract and wait on "Needs an invoice destination".
+- **39b:** removes the validator's `BillingLine` branch.
+- **40:** adds the missing-NHI blocker to `authoriseBlockersFor`.
+- **43a:** keeps the stack, the price status and the RVG detail on the anaesthetist's screens.
+- **If OQ-135 is answered "flag it":** add one rule to `REVIEW_FLAG_RULES`. **If D9 reverses:** `rvgDetail.ts`.
+
+**For `/update-requirements`.** Nothing changes a requirement's text. US-03.3.3's capture state id `handover` is kept; renaming it to `finish` is the catalogue's call.
+
+**For the owner's review.**
+- Default built: D81, a Disabled Contract raises no flag.
+- Readings built: "Needs a price" blocks completion (A48); the review flags (A49); the moved-Booking flag (A41); the modifiers-step marker (A20); an additional Procedure has no modifiers step (it narrows US-03.3.9 AC1 for additional Procedures); the form with no Contract; the re-open on a Contract change that newly asks for RVG detail; "Needs an invoice destination" kept at review though likely unreachable; "Not marked completed" and the B/T/M note kept; an anaesthetist's first pick on a Procedure with no Contract is not a change (no approval flag); approve at authorise stamps only Procedures with a pending change.
+- An alert does not let a List submit with an incomplete Booking.
+- Logged, not fixed: Review shows both the "Not complete" pill and the "Not marked completed" flag (Phase 07's pair); the Billing lines card's "The RVG fee bills on its own." on an open or fixed price (Phase 20's copy).
+- Screens worth a look: Review's flags and Approve as Kirsty (`/admin/review/L-45178-2026-07-14-AM`); Admin Day's Move of Fiona Lattimer (`/admin/day/2026-08-10`) then `/admin/review/L-34821-2026-08-10-AM`; the capture on a fixed price and an RVG price as Dr Souter (`/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176`, `/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`).
+

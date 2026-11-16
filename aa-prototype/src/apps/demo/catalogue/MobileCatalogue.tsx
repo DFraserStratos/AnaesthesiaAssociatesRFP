@@ -3,6 +3,7 @@ import { useMobilePersona, useSeedPicks } from './mobile/persona'
 import * as Ex from './mobile/examples'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerDetailsExample, PayerFieldsExample } from './payerExamples'
+import { ContractApprovalExample } from './contractApprovalExample'
 
 const M = 'Mobile'
 const SW = 'Admin · Web · Mobile'
@@ -97,16 +98,16 @@ export function MobileCatalogue() {
         <CatalogueRow name="StepperButton" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={200}
           what="The 44px round-square minus and plus buttons beside each unit count in capture."
           replaceWith="shadcn Button (icon) + Button Group"
-          note="Glyph-only today, so a screen reader hears just a minus or plus. Needs labels.">
+          note="Takes a label (catch-up Phase 21a: the B, T and M rows and the base-units row name each button).">
           <Ex.StepperButtonExample />
         </CatalogueRow>
         <CatalogueRow name="NudgeButton" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={200}
-          what="The small minus 5 and plus 5 buttons that nudge a stamped start or finish time."
+          what="The small minus 5 and plus 5 buttons that nudge a stamped start or finish time; ariaLabel names them, such as Start 5 minutes earlier."
           replaceWith="shadcn Button (sm, outline) + Button Group">
           <Ex.NudgeButtonExample />
         </CatalogueRow>
         <CatalogueRow name="CaptureSection" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={260}
-          what="The capture card: a micro-caps label, the body, and an optional footer area pinned to the foot."
+          what="The capture card: a micro-caps label, the body, and an optional footer area pinned to the foot; required adds a Required caption that takes the warning tint once Mark complete is refused."
           replaceWith="shadcn Card (CardHeader / CardContent / CardFooter)"
           note="The label should become a real heading.">
           <Ex.CaptureSectionExample />
@@ -304,6 +305,9 @@ export function MobileCatalogue() {
       <LibraryGroup id="custom">
         <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={SW} stage="mobile" height={520} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
           <ProcedureStackExample layout="stacked" />
+        </CatalogueRow>
+        <CatalogueRow name="ContractApprovalLine" source="shared/booking/ContractApprovalLine.tsx" usedIn="Web · Mobile" stage="mobile" height={120} what="Under the anaesthetist's Billing card (catch-up Phase 21a): after they change a Procedure's Contract, Awaiting office approval, then Approved by the office with the time once the office approves it on Review or authorises the List." replaceWith="Custom (a text line)" note="Reads the seeded Contract change on Dr Chen's review-flags List; writes nothing.">
+          <ContractApprovalExample />
         </CatalogueRow>
         <CatalogueRow name="PayerDetailsView" source="shared/booking/PayerDetailsView.tsx" usedIn={SW} stage="mobile" height={640} what="The payer on the Booking (catch-up Phase 21): the name with Patient or the relationship, the email and the NZ Post postal address, and the warning-tint Email or postal address needed and Under 18 chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
           <PayerDetailsExample />

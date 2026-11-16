@@ -3,6 +3,7 @@
  * test uses an isolated, non-persisted store seeded from buildSeed().
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import {
@@ -83,7 +84,7 @@ describe('completeBooking', () => {
   it('completes a valid pending booking (Ellison, once her finish is captured) and audits it', () => {
     const api = store()
     captureEllisonFinish(api)
-    const outcome = completeBooking(api, SOUTER, ELLISON_BOOKING)
+    const outcome = completeAnswered(api, SOUTER, ELLISON_BOOKING)
     expect(outcome).toEqual({ ok: true, value: undefined })
     const booking = api.getState().schedule.bookings[ELLISON_BOOKING]
     expect(booking?.completed).toBe(true)
@@ -121,7 +122,7 @@ describe('submitList', () => {
   it('submits once every booking is completed', () => {
     const api = store()
     captureEllisonFinish(api)
-    expect(completeBooking(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
+    expect(completeAnswered(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     const outcome = submitList(api, SOUTER, SOUTER_PM)
     expect(outcome.ok).toBe(true)
     expect(api.getState().schedule.lists[SOUTER_PM]?.state).toBe('SUBMITTED')
@@ -249,7 +250,7 @@ describe('cancelBooking', () => {
     expect(booking?.cancellation?.source).toBe('anaesthetist')
     expect(auditForEntity(api.getState(), ELLISON_BOOKING).at(-1)?.action).toBe('booking.cancel')
     // Excluded from completion/validation once cancelled.
-    const complete = completeBooking(api, SOUTER, ELLISON_BOOKING)
+    const complete = completeAnswered(api, SOUTER, ELLISON_BOOKING)
     expect(complete.ok).toBe(false)
   })
 

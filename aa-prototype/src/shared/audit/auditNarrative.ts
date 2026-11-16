@@ -235,6 +235,9 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     if (key === 'billsTo' && value === 'payer') return 'The payer'
     if (key === 'status' && Object.hasOwn(STATUS_LABEL, value)) return STATUS_LABEL[value as ContractStatus]
     if (key === 'systemRole' && value === 'noContractRvg') return 'No contract · RVG'
+    // How the office approved a Contract change (catch-up Phase 21a).
+    if (key === 'how' && value === 'explicit') return 'Approve on Review'
+    if (key === 'how' && value === 'authorise') return 'At authorise'
     if (key === 'systemRole' && value === 'openPriceFallback') return 'Fixed price'
     if (key === 'systemRole' && value === 'rvgFallback') return 'No contract · RVG'
     return value

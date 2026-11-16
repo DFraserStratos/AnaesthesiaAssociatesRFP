@@ -43,18 +43,6 @@
           "click": "text=\"Annette Riley\" >> nth=0"
         },
         {
-          "click": "text=\"Start now\""
-        },
-        {
-          "wait": 300
-        },
-        {
-          "click": "text=\"Finish now\""
-        },
-        {
-          "wait": 300
-        },
-        {
           "click": "role=button[name=\"Mark complete\"]"
         },
         {

@@ -50,7 +50,7 @@ export interface BtmBreakdown {
   totalUnits: number
 }
 
-/** Elapsed minutes between the captured anaesthetic start and handover (0 when absent/inverted). */
+/** Elapsed minutes between the captured anaesthetic start and finish (0 when absent/inverted). */
 function capturedMinutes(procedure: Procedure): number {
   if (procedure.anaestheticStartISO === undefined || procedure.handoverISO === undefined) return 0
   const span =

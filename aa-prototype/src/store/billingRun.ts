@@ -49,6 +49,7 @@ import {
 import type { AppStoreApi } from './appStore'
 import { billingContextForBooking, bookingsForList, casesForList, prePaidByProcedure, proceduresForBooking } from './selectors'
 import { getBooking } from './lifecycle'
+import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
 import { onAppEvent } from './events'
 import { handoffCase } from './xeroHandoff'
 
@@ -115,10 +116,20 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
     // event emit, and a throw there would strand the List AUTHORISED-unbilled
     // with the authorise already committed (8th review).
     try {
-      return {
-        bookingId: booking.id,
-        result: buildInvoicesForBooking(booking, proceduresForBooking(state, booking.id), buildCtx),
+      const procedures = proceduresForBooking(state, booking.id)
+      const result = buildInvoicesForBooking(booking, procedures, buildCtx)
+      if (result.kind === 'exception') return { bookingId: booking.id, result }
+      // The run's pre-flight (catch-up Phase 21a): the checks completion no longer
+      // makes (the Method 3 gate, the override reason and sign, conservation) send
+      // the Booking to the monitor instead of building invoices from it.
+      const preflight = validateBookingForBilling(booking, procedures, bookingCtx)[0]
+      if (preflight !== undefined) {
+        return {
+          bookingId: booking.id,
+          result: { kind: 'exception', procedureId: preflight.procedureId ?? '', code: 'preflight', message: preflight.message },
+        }
       }
+      return { bookingId: booking.id, result }
     } catch (error) {
       return {
         bookingId: booking.id,
@@ -396,6 +407,9 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
     // Still failing — the data is not fixed. Leave the case failed unchanged.
     return refuse(result.code, result.message)
   }
+  // The same pre-flight as the run (catch-up Phase 21a).
+  const preflight = validateBookingForBilling(booking, proceduresForBooking(state, booking.id), bookingCtx)[0]
+  if (preflight !== undefined) return refuse('preflight', preflight.message)
 
   const invoiceIds: InvoiceId[] = []
   const metas: MutationMeta[] = []

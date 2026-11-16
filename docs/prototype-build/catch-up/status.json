@@ -2,20 +2,19 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "21a"
+      "22"
     ],
-    "note": "32a, 38a, 32b, 32c, 18, 18a, 19, 19a, 19b, 20, 20a, 21, U1, U2 and U3 are done (2026-11-16). U2 and U3 are joined on branch ui/u2-u3, which the owner takes into master before 21a starts. Then 21a and 22; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44."
+    "note": "21a is built (2026-11-17), both sessions: the form follows the pricing kind, completion is three conditions, and Review has the flag list with Approve and Correct; a moved Booking keeps its Contracts. Not yet committed; its catalogue capture waits for the owner. Run 22 next; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44."
   },
   "guidance": {
-    "as_of": "2026-11-16",
-    "headline": "Start 21a now. One modal layer, one sheet header, footer and confirm, one pill, notice and error box.",
-    "headline_sub": "U2 (one modal stack fixing the Escape bug, SidePanel, the popovers, OverlayHeader with the web corner X, SheetActions, ConfirmSheet, InlineConfirm, DoneStep) and U3 (Pill tones, CountBadge, AttentionDot, Avatar, PersonaChip, FormError, Notice, ResultLine, EmptyState) are done and merged on branch ui/u2-u3, not yet in master. Next in run order: 21a, then 22, then U4 and U5.",
-    "parallel": "None now: 21a runs alone (the Contracts track and the U phases edit the same shared files). 17a and 26 have their catch-up dependencies met but come after the Contracts track and U6 in the run order.",
+    "as_of": "2026-11-17",
+    "headline": "Start 22 now. 21a is done: Review shows each Procedure, its flags and Approve.",
+    "headline_sub": "21a built the pricing-kind predicate, the price status, completion as three conditions, the review-flag list (reviewFlags.ts) on a rebuilt Review, office approval of Contract changes (approved at authorise too, never a gate) and the moved Booking keeping its Contracts. Commit 21a first, and run its capture once you have tested it. Then 22, then U4 and U5.",
+    "parallel": "None now: 22 runs alone (the Contracts track and the U phases edit the same shared files).",
     "safe": {
-      "21a": "21, 32b, U2 and U3 are done; it is next in run order. Take branch ui/u2-u3 into master first: 21a builds on the shared Pill, Notice, FormError and sheet parts (OverlayHeader, SheetActions, ConfirmSheet) and words Review's authorise confirm, now a ConfirmSheet."
+      "22": "Its dependency 21a is done (PROGRESS entry, sessions 1 and 2). Commit 21a first. 22 sends by invoiceDeliveryFor and Invoice.billedTo (21)."
     },
     "wait": {
-      "22": "Needs 21a in run order. U2 and U3 are done (OverlayHeader, SheetActions, Pill, Notice); 21 is done: it sends by invoiceDeliveryFor and Invoice.billedTo.",
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
       "U4": "Needs 22 in run order; U1's --focus-ring and parseAmount are ready for it.",

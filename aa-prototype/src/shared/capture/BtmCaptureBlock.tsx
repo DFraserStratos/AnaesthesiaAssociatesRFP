@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
-import type { BillingValidationFailure } from '../../domain/billing'
+import type { CompletionFailure } from '../../domain/billing/completion'
 import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { procedureFee } from './feeContext'
@@ -13,7 +13,11 @@ import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
 import { BILLING_FAILURE_FIELDS, BillingCard } from '../booking/BillingCard'
 import { ProcedureStack } from '../booking/ProcedureStack'
+import { ContractApprovalLine } from '../booking/ContractApprovalLine'
 import { Notice } from '../ui/Notice'
+import { rvgDetailFor } from '../../domain/billing/rvgDetail'
+import { priceStatusFor } from '../../domain/billing/priceStatus'
+import { needsPriceMessage } from '../../domain/billing/priceRanges'
 
 /** Fields the Contract row anchors (the step rail and "Contract and reference" own them; catch-up Phase 20). */
 // The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
@@ -29,7 +33,7 @@ interface BtmCaptureBlockProps {
   procedureCount: number
   canCapture: boolean
   /** This procedure's validation failures; rendered only after the latch. */
-  failures: BillingValidationFailure[]
+  failures: CompletionFailure[]
   showValidation: boolean
   /** Open the RemoveProcedureSheet for THIS procedure. Never offered on the
    *  Booking's first procedure, which `removeProcedure` refuses to delete. */
@@ -84,9 +88,16 @@ export function BtmCaptureBlock({
     [procedure, list, masters, billingLines, patientId],
   )
 
+  // What this Procedure asks for follows its Contract's pricing kind (catch-up Phase 21a, US-03.3.9):
+  // the one predicate (`rvgDetail.ts`). On a fixed or open price the times, units and modifiers are
+  // not rendered; anything recorded stays on the Procedure and shows again on an RVG kind.
+  const detail = rvgDetailFor(contract, nonRvgLines)
+  const priceStatus = priceStatusFor(procedure, contract, list.dateISO)
+
   const shown = showValidation ? failures : []
   const forFields = (fields: readonly string[]) => shown.filter((f) => fields.includes(f.field))
-  const contextFailures = forFields(CONTEXT_FIELDS)
+  // "Needs a price" shows once, as the price status notice below the card.
+  const contextFailures = forFields(CONTEXT_FIELDS).filter((f) => f.code !== 'needsPrice')
   const anchored = new Set<string>([
     ...CONTEXT_FIELDS,
     'rvgGroupId',
@@ -168,6 +179,8 @@ export function BtmCaptureBlock({
         ordinal={ordinal}
         procedureCount={procedureCount}
       />
+      {/* The anaesthetist's own Contract change and the office's approval (catch-up Phase 21a). */}
+      {stackSurface === 'anaesthetist' && <ContractApprovalLine procedureId={procedure.id} />}
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
@@ -178,24 +191,39 @@ export function BtmCaptureBlock({
       )}
 
 
-      <TimesCard
-        procedure={procedure}
-        actor={actor}
-        canCapture={canCapture}
-        failures={forFields(['anaestheticStartISO', 'handoverISO'])}
-        onError={onError}
-      />
+      {/* "Needs a price" is a state, never a figure (no money on mobile). */}
+      {priceStatus?.status === 'needsPrice' && contract !== undefined && (
+        <Notice tone="warning" icon={false} shot="capture-price-status">
+          {needsPriceMessage(contract, list.dateISO)}
+        </Notice>
+      )}
 
-      <UnitsCard
-        procedure={procedure}
-        btm={fee.btm}
-        rvgGroup={rvgGroup}
-        actor={actor}
-        canCapture={canCapture}
-        isAdditional={procedure.isAdditional}
-        modifierFailures={forFields(['modifierClaims'])}
-        onError={onError}
-      />
+      {detail.times !== 'hidden' && (
+        <div data-shot="capture-rvg-detail" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <TimesCard
+            procedure={procedure}
+            actor={actor}
+            canCapture={canCapture}
+            required={detail.times === 'required'}
+            showValidation={showValidation}
+            failures={forFields(['anaestheticStartISO', 'handoverISO'])}
+            onError={onError}
+          />
+
+          <UnitsCard
+            procedure={procedure}
+            btm={fee.btm}
+            rvgGroup={rvgGroup}
+            actor={actor}
+            canCapture={canCapture}
+            isAdditional={procedure.isAdditional}
+            modifiersRequired={detail.modifiers === 'required'}
+            showValidation={showValidation}
+            modifierFailures={forFields(['modifierClaims'])}
+            onError={onError}
+          />
+        </div>
+      )}
 
       <Pair>
         <OverrideCard

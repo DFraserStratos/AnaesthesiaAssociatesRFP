@@ -44,6 +44,17 @@
  * Rutherford's Wed 22 Jul AM. Unavailability is never a conflict (D59), so his
  * office-recorded sickness returned the List as a Draft List (it takes no
  * session) and the row reads Unavailable with the note, no List, no conflict.
+ *
+ * Catch-up Phase 21a added two rows to `bookings` by hand, nothing else: the
+ * fixed price with no times (BK0176) and the open price that needs a price
+ * (BK0177) on Dr Souter's Mon 10 Aug PM List (`seed/completionBookings.ts`),
+ * appended after BK0175.
+ *
+ * Catch-up Phase 21a session 2 added five rows to `bookings`, one window row's
+ * state and one `seedListIds` entry by hand, nothing else: the review-flags
+ * List's four Bookings (BK0178 to BK0181) on Dr Chen's Tue 14 Jul AM, now
+ * SUBMITTED (`SEED_LIST_IDS.reviewFlags`), and the movable Merivale Booking
+ * (BK0182) on Dr Souter's Mon 10 Aug PM (`seed/reviewFlagBookings.ts`).
  */
 
 import { describe, expect, it } from 'vitest'
@@ -91,6 +102,8 @@ const DELIBERATE: Record<string, Partial<GoldenRow>> = {
   '34821|2026-07-24|PM': { notes: null },
   // Catch-up Phase 21: Dr Chen's Fri 17 Jul AM List holds the payer review Bookings and waits in the Review queue.
   '45178|2026-07-17|AM': { state: 'SUBMITTED' },
+  // Catch-up Phase 21a: Dr Chen's Tue 14 Jul AM List holds the review-flags Bookings and waits in the Review queue.
+  '45178|2026-07-14|AM': { state: 'SUBMITTED' },
 }
 
 const seed = buildSeed()

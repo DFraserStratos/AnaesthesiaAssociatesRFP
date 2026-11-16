@@ -14,6 +14,10 @@ interface UnitsCardProps {
   actor: Actor
   canCapture: boolean
   isAdditional: boolean
+  /** On an RVG kind the modifiers step is required (catch-up Phase 21a): "None apply" and the "Required" caption. */
+  modifiersRequired?: boolean
+  /** Mark complete's validation latch. */
+  showValidation?: boolean
   /** This Procedure's `modifierClaims` failures (the completion backstop, after the latch). */
   modifierFailures?: readonly BillingValidationFailure[]
   onError: (message: string) => void
@@ -29,7 +33,7 @@ interface UnitsCardProps {
  * link is the only way back. On an additional procedure B and M render
  * value + caption with no buttons (the split-billing rule is structural).
  */
-export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, modifierFailures = [], onError }: UnitsCardProps) {
+export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, modifiersRequired = false, showValidation = false, modifierFailures = [], onError }: UnitsCardProps) {
   // The RVG time tiers held as data (catch-up Phase 19a; US-05.2.2): the T caption's title words the rule.
   const timeRule = useAppStore((s) => s.masters.rvgTimeRule)
   function write(patch: ProcedurePatch) {
@@ -86,6 +90,8 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
         items={btm.modifierItems}
         actor={actor}
         editable={canCapture && !isAdditional}
+        required={modifiersRequired && !isAdditional}
+        latched={showValidation}
         failures={modifierFailures}
         onError={onError}
       />
@@ -187,11 +193,11 @@ function StepperRow({
           <span title={captionTitle} style={{ fontSize: 12, color: captionTone === 'warn' ? semantic.warning.onTint : neutral.mist }}>{seededCaption}</span>
         )}
       </span>
-      {steppable && <StepperButton glyph="−" onClick={() => onStep(-1)} disabled={value <= 0} />}
+      {steppable && <StepperButton glyph="−" label={`${title}: one fewer unit`} onClick={() => onStep(-1)} disabled={value <= 0} />}
       <span className="mono" style={{ width: 36, textAlign: 'center', fontSize: 20, fontWeight: 700 }}>
         {value}
       </span>
-      {steppable && <StepperButton glyph="+" onClick={() => onStep(1)} />}
+      {steppable && <StepperButton glyph="+" label={`${title}: one more unit`} onClick={() => onStep(1)} />}
     </div>
   )
 }

@@ -1,11 +1,17 @@
 /**
- * Minimum-data validation for billing a Booking. Returns STRUCTURED field-level
- * failures — the mobile UI renders the messages verbatim (so they are written
- * as user-facing copy, no dashes). An empty array means the Booking is billable.
+ * The billing run's pre-flight (catch-up Phase 21a; DM-59, RV-21). Returns
+ * structured field-level failures, written as user-facing copy (no dashes);
+ * an empty array means the run may build the Booking's invoices. Cancelled
+ * Bookings are excluded entirely (7th review B23).
  *
- * Completion is validation-gated; submission is completion-gated (1st review
- * #1) — this function is the validation half. Cancelled Bookings are excluded
- * from validation entirely (7th review B23).
+ * Completion is no longer read from here: it is `completionFailuresFor`
+ * (`completion.ts`: a Contract, the RVG detail on RVG kinds, a price). The
+ * branches completion superseded are gone (the RVG code and times checks, the
+ * modifier explanation check, the split prepayment deposit, the Contract
+ * checks). What stays is the run's own: a Contract's holder must exist, no
+ * price can be worked out (Phase 24's), the Method 3 gate and the billing
+ * lines (Phase 39b's), the override reason and sign (Phase 39's) and
+ * conservation (Phase 22's).
  */
 
 import type {
@@ -23,11 +29,9 @@ import type {
 } from '../types'
 import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
-import { claimCompletionProblems, preAppliedModifiersFor } from './modifiers'
 import { formatMoney, toCents } from './money'
-import { isRvgKind, procedureNeedsPrice } from './contracts'
+import { procedureNeedsPrice } from './contracts'
 import { HOLDER_MISSING_MESSAGE, holderBilledFor } from './whoIsBilled'
-import { rvgCodeToFill } from './contractRail'
 import { needsPriceMessage } from './priceRanges'
 import type { RvgTimeRule } from './timeUnits'
 
@@ -48,11 +52,6 @@ export interface BillingValidationFailure {
 export const INDIVIDUAL_ARRANGEMENT_MESSAGE =
   'A rate and time billing line needs a governing contract that permits an individually arranged fee structure.'
 
-/** Completion's sentences for the Contract (catch-up Phase 20; US-04.3.4, US-04.3.9, US-03.3.1). */
-export const NEEDS_DESTINATION_FAILURE = 'This procedure needs an invoice destination.'
-export const CONTRACT_GONE_FAILURE = 'The selected Contract no longer exists. Choose another.'
-export const TYPE_THE_PRICE_FAILURE = 'Type the price for this procedure.'
-export const ADD_RVG_CODE_FAILURE = 'Add the RVG code for this procedure.'
 
 /** Who gives a contract reference when billed: a hospital, a surgeon or a surgeons' organisation (by billing identity). */
 const REFERENCE_COUNTERPARTY_KINDS: ReadonlySet<string> = new Set(['hospital', 'surgeon', 'organisation'])
@@ -164,80 +163,8 @@ export function validateBookingForBilling(
   procedures.forEach((procedure) => {
     const id = procedure.id
     const storedLines = ctx.billingLines.filter((l) => l.procedureId === id)
-    const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
-
-    // Each claimed modifier needs its short explanation (and its units where the
-    // RVG value is not a plain number): US-03.6.1's backstop, finished by Phase
-    // 21. Pre-applied modifiers need none; a Procedure with no modifier passes.
-    const preApplied = preAppliedModifiersFor({
-      ...(ctx.patientDobISO !== undefined ? { patientDobISO: ctx.patientDobISO } : {}),
-      procedureDateISO: ctx.listDateISO,
-      ...(rvgGroup !== undefined ? { group: rvgGroup } : {}),
-      modifiers: ctx.modifiers,
-      removedModifierIds: procedure.removedModifierIds,
-    })
-    for (const problem of claimCompletionProblems(procedure.modifierClaims, ctx.modifiers, preApplied)) {
-      fail(id, 'modifierClaims', problem.message)
-    }
-
     const contract =
       procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-
-    // Exactly one Contract (US-04.3.1, US-04.3.4): none is "Needs an invoice
-    // destination"; a dangling id must be chosen again.
-    if (procedure.governingContractId === undefined) {
-      fail(id, 'governingContractId', NEEDS_DESTINATION_FAILURE)
-    } else if (contract === undefined) {
-      fail(id, 'governingContractId', CONTRACT_GONE_FAILURE)
-    }
-
-    // The RVG code is required on a Contract priced from RVG units, No
-    // contract · RVG included, and optional, for reference, on a fixed or open
-    // price (US-03.3.1; D12, D33): the one derived rule, `rvgCodeToFill`.
-    // Phase 21a splits completion out.
-    // A Procedure billed by its own rate x time line (Method 3) is priced
-    // without one.
-    if (contract !== undefined && rvgCodeToFill({ contracts: ctx.contracts }, procedure, storedLines)) {
-      fail(id, 'rvgGroupId', ADD_RVG_CODE_FAILURE)
-    }
-
-    // A code that is set must still point at a row.
-    if (procedure.rvgGroupId !== undefined) {
-      if (rvgGroup === undefined) {
-        fail(id, 'rvgGroupId', 'The RVG code on this Procedure is no longer in the RVG groups. Choose it again.')
-      }
-
-      // Times are captured data whenever the RVG path is billed (RFP principle 10).
-      // On a fixed or open price the RVG code is for reference only and no
-      // units are asked (catch-up Phase 19a; 21a collapses the form), so
-      // missing times are not demanded there; recorded ones must still be in order.
-      const priceWithoutUnits = contract !== undefined && !isRvgKind(contract.pricing.kind)
-      const start = procedure.anaestheticStartISO
-      const handover = procedure.handoverISO
-      if (start === undefined && !priceWithoutUnits) {
-        fail(id, 'anaestheticStartISO', 'Record the anaesthetic start time.')
-      }
-      if (handover === undefined && !priceWithoutUnits) {
-        fail(id, 'handoverISO', 'Record the handover time.')
-      }
-      if (start !== undefined && handover !== undefined && Date.parse(handover) <= Date.parse(start)) {
-        fail(id, 'handoverISO', 'Handover must be after the anaesthetic start.')
-      }
-
-      // Any base-unit value is accepted (D3, RV-10): an out-of-range one raises
-      // the after-procedure `baseUnitsOutsideGuide` warning, never a refusal.
-    }
-
-
-    // A split prepayment on a prepaid Contract needs its deposit (7th review
-    // B6; INTERIM `prepaymentDetail` until Phase 27). No gate (D5).
-    if (
-      contract?.prepaid === true &&
-      procedure.prepaymentDetail?.type === 'split' &&
-      (procedure.prepaymentDetail.depositAmount === undefined || procedure.prepaymentDetail.depositAmount <= 0)
-    ) {
-      fail(id, 'prepaymentDetail', 'Enter the first payment amount for a split prepayment.')
-    }
 
     // Method 3 gate (5th review #1): a rate x time line needs a governing
     // Contract that permits it (`permitsRateTime`, INTERIM until Phase 24).
@@ -254,12 +181,10 @@ export function validateBookingForBilling(
       fail(id, 'governingContractId', HOLDER_MISSING_MESSAGE)
     }
 
-    // A fixed price with no range in force on the List's date: "Needs a price"
-    // (catch-up Phase 19a). An open price with no amount typed asks for it
-    // (US-04.3.9; Phase 24's "Needs a price" replaces the sentence).
+    // No price can be worked out (Phase 24 owns it): a fixed price with no
+    // range in force on the List's date, or an open price with no amount typed.
     if (contract !== undefined && procedureNeedsPrice(contract, ctx.listDateISO, procedure)) {
-      if (contract.pricing.kind === 'open') fail(id, 'enteredPrice', TYPE_THE_PRICE_FAILURE)
-      else fail(id, 'governingContractId', needsPriceMessage(contract, ctx.listDateISO))
+      fail(id, contract.pricing.kind === 'open' ? 'enteredPrice' : 'governingContractId', needsPriceMessage(contract, ctx.listDateISO))
     }
 
     // Price override always carries a reason (7th review A6/B5), and may not

@@ -86,6 +86,8 @@ import {
   closedColleagueSessions,
   officeResolvesAlert,
   officeResolvesAlertRefusal,
+  approveContractChangeAsSimulatedOffice,
+  approveContractRefusal,
   makeAvailableRefusal,
   makeSessionAvailableAsColleague,
 } from '../../store'
@@ -968,6 +970,30 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: "PWA only: the framed build plays the office in Admin (Notifications, Resolve).",
+  },
+  // ── Mobile · Booking: the office approves the anaesthetist's Contract change (catch-up Phase 21a) ──
+  {
+    id: 'office-approves-contract-change',
+    label: 'Office approves this Contract change',
+    description:
+      "Plays the office approving the Contract you changed on this Booking, as Kirsty would with Approve on Review, so the handset shows \"Approved by the office\" instead of \"Awaiting office approval\". In the framed build, approve it on Admin Review.",
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      if (bookingId === undefined) return 'Open a Booking'
+      return approveContractRefusal(state, bookingId)
+    },
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      if (bookingId === undefined) return { ok: false, message: 'Open a Booking' }
+      const res = approveContractChangeAsSimulatedOffice(api, bookingId)
+      return res.ok ? { ok: true, message: 'The office approved your Contract change.' } : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office on Admin Review (Approve).',
   },
   // ── Admin · Day and Notifications: a colleague's own move (catch-up Phase 32) ──
   {

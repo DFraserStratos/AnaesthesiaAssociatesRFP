@@ -20,7 +20,7 @@
  */
 
 import type { Booking, List, ListPhoneNote, Procedure } from '../domain/types'
-import { NEEDS_DESTINATION_FAILURE, validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
+import { completionFailuresFor, type CompletionFailure } from '../domain/billing/completion'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import { pairingIssues } from '../domain/listPairing'
 import {
@@ -33,11 +33,12 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { billingContextForBooking, bookingsForList, proceduresForBooking } from './selectors'
+import { bookingsForList, completionContextFor, proceduresForBooking } from './selectors'
 import { emitAppEvent } from './events'
 import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { claimsAuditView } from '../domain/billing/modifiers'
 import { reconciledForGroup } from './modifierFacts'
+import { approvalsAtAuthorise } from './contractApprovalActions'
 
 // ---------------------------------------------------------------------------
 // Shared checks
@@ -101,34 +102,31 @@ export interface CompletionBlocker {
 
 /**
  * Why a Booking cannot be marked complete, without attempting the mutation.
- * `completeBooking` refuses on the first entry; the mobile submit sheet uses the
- * full list to name each incomplete booking's outstanding failures (Phase 04).
+ * Reads only the completion rule (`completionFailuresFor`, catch-up Phase 21a:
+ * a Contract, the RVG detail on RVG kinds, a price), never the billing
+ * validator. `completeBooking` refuses on the first entry; the submit sheet,
+ * the incomplete list and the Booking detail read the same failures.
  */
 export function completionBlockersFor(state: AppState, booking: Booking): CompletionBlocker[] {
-  const blockers: CompletionBlocker[] = []
-
-  const ctx = billingContextForBooking(state, booking)
+  const ctx = completionContextFor(state, booking.id)
   if (ctx === undefined) {
-    blockers.push({ code: 'missingContext', message: 'This Booking is missing its List or anaesthetist.' })
-    return blockers
+    return [{ code: 'missingContext', message: 'This Booking is missing its List or anaesthetist.' }]
   }
-  const failures = validateBookingForBilling(booking, proceduresForBooking(state, booking.id), ctx)
-  // A Procedure with no Contract refuses in its own words first (US-04.3.4).
-  if (failures.some((f) => f.message === NEEDS_DESTINATION_FAILURE)) {
-    blockers.push({ code: 'needsInvoiceDestination', message: NEEDS_DESTINATION_FAILURE })
-  }
-  if (failures.length > 0) {
-    blockers.push({
-      code: 'validationFailed',
-      message: `This Booking is missing required billing data (${failures.length} ${failures.length === 1 ? 'item' : 'items'}).`,
-      details: failures,
-    })
-  }
-
+  const failures: CompletionFailure[] = completionFailuresFor(booking, proceduresForBooking(state, booking.id), ctx)
+  if (failures.length === 0) return []
+  const blockers: CompletionBlocker[] = []
+  // A Procedure with no Contract refuses in its own words first (US-04.3.4, US-04.3.8).
+  const noContract = failures.find((f) => f.code === 'noContract')
+  if (noContract !== undefined) blockers.push({ code: 'needsInvoiceDestination', message: noContract.message })
+  blockers.push({
+    code: 'validationFailed',
+    message: `This Booking is missing required billing data (${failures.length} ${failures.length === 1 ? 'item' : 'items'}).`,
+    details: failures,
+  })
   return blockers
 }
 
-/** Mark a Booking completed — blocked unless `validateBookingForBilling` passes. */
+/** Mark a Booking completed: blocked unless `completionFailuresFor` passes (catch-up Phase 21a). */
 export function completeBooking(api: AppStoreApi, actor: Actor, bookingId: string): Outcome {
   const state = api.getState()
   const found = getBooking(state, bookingId)
@@ -317,25 +315,53 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
     )
   }
 
+  const blockers = authoriseBlockersFor(state, listId)
+  if (blockers.length > 0) return refuse(blockers[0]!.code, blockers[0]!.message)
+
+  // Every anaesthetist's Contract change still unapproved is approved at
+  // authorise, in the same commit (catch-up Phase 21a, US-07.2.2): never a gate.
+  const approvals = approvalsAtAuthorise(state, actor, listId)
   mutate(
     api,
     actor,
-    {
-      entityType: 'list',
-      entityId: listId,
-      action: 'list.authorise',
-      before: { state: 'SUBMITTED' },
-      after: { state: 'AUTHORISED' },
-    },
+    [
+      {
+        entityType: 'list',
+        entityId: listId,
+        action: 'list.authorise',
+        before: { state: 'SUBMITTED' },
+        after: { state: 'AUTHORISED' },
+      },
+      ...approvals.metas,
+    ],
     (s) => ({
       schedule: {
         ...s.schedule,
         lists: { ...s.schedule.lists, [listId]: { ...list, state: 'AUTHORISED' } },
+        procedures: { ...s.schedule.procedures, ...approvals.procedures },
       },
     }),
   )
   emitAppEvent({ type: 'listAuthorised', listId })
   return ok(undefined)
+}
+
+/** A reason a SUBMITTED List may not be authorised yet (catch-up Phase 21a's seam). */
+export interface AuthoriseBlocker {
+  code: string
+  message: string
+  bookingId?: string
+}
+
+/**
+ * The one place authorise blockers live (catch-up Phase 21a), shared by
+ * `authoriseList`, Review's action bar and the PWA's office stand-ins. It
+ * returns **none in this phase**: review flags never block (Phase 07's ruling,
+ * AR-58 A49). Phase 25 adds its "Needs a price" kind and Phase 40 the missing
+ * NHI. Incomplete Bookings stay `authoriseList`'s own completion gate (38a).
+ */
+export function authoriseBlockersFor(_state: Pick<AppState, 'schedule'>, _listId: string): AuthoriseBlocker[] {
+  return []
 }
 
 // ---------------------------------------------------------------------------

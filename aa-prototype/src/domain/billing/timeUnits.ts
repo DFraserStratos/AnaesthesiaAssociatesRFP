@@ -53,7 +53,7 @@ export function timeUnitsFromMinutes(minutes: number, rule: RvgTimeRule): number
   return units
 }
 
-/** Time units between anaesthetic start and handover under a rule. */
+/** Time units between the anaesthetic start and finish under a rule. */
 export function timeUnits(start: Date, end: Date, rule: RvgTimeRule): number {
   return timeUnitsFromMinutes((end.getTime() - start.getTime()) / 60000, rule)
 }

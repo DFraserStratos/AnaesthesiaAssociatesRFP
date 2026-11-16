@@ -3,11 +3,12 @@
  * US-05.1.1, US-05.1.3, RV-10 under D3).
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { advanceClockMinutes } from './clockActions'
-import { authoriseList, completeBooking, editProcedure, submitList } from './lifecycle'
+import { authoriseList, editProcedure, submitList } from './lifecycle'
 import { clockISO, type Actor } from './mutate'
 import { createRvgGroup, editRvgGroup, pickRvgGroup, restoreRvgGroup, retireRvgGroup } from './rvgGroupActions'
 import { createBooking } from './bookingActions'
@@ -188,7 +189,7 @@ describe('any base-unit value is accepted (D3, RV-10)', () => {
     ])
     expect(feeOf(api, p.id).btm.base.units).toBe(14)
 
-    expect(completeBooking(api, SOUTER, ELLISON).ok).toBe(true)
+    expect(completeAnswered(api, SOUTER, ELLISON).ok).toBe(true)
     expect(submitList(api, SOUTER, SOUTER_PM).ok).toBe(true)
     expect(authoriseList(api, OFFICE, SOUTER_PM).ok).toBe(true)
     expect(openWarnings(api.getState()).some((r) => r.bookingId === ELLISON)).toBe(true)

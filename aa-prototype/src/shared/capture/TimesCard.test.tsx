@@ -81,8 +81,8 @@ describe('Times card action', () => {
     expect(slider.style.transform).toContain('calc(100% + 12px)')
     expect(screen.getByText('Start', { exact: true })).toBeVisible()
     expect(screen.getByText('08:00', { exact: true })).toBeVisible()
-    expect(screen.getByRole('button', { name: '−5' })).toBeVisible()
-    expect(screen.getByRole('button', { name: '+5' })).toBeVisible()
+    expect(screen.getAllByRole('button', { name: /5 minutes earlier/ })[0]!).toBeVisible()
+    expect(screen.getAllByRole('button', { name: /5 minutes later/ })[0]!).toBeVisible()
     expect(screen.queryByText('Stamped from the demo clock')).not.toBeInTheDocument()
   })
 

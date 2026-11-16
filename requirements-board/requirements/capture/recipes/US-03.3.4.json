@@ -93,6 +93,27 @@
             "[data-shot=capture-modifier-claim]"
           ],
           "caption": "Each claimed modifier is itemised with its explanation"
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price has no modifiers step: no times, units or modifiers, the RVG code for reference only",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=capture-billing]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing]"
+          ]
         }
       ]
     },
@@ -183,6 +204,21 @@
             "[data-testid=slide-booking] [data-shot=capture-modifier-claim]"
           ],
           "caption": "Each claimed modifier is itemised with its explanation"
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price has no modifiers step: no times, units or modifiers",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=capture-billing]"
+          ]
         }
       ]
     }

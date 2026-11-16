@@ -255,6 +255,14 @@ Hooks already added:
 | Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
 | Souter Tue 4 Aug AM | `L-34821-2026-08-04-AM` | Targets for S13, S14 and S15. |
 | Souter Mon 3 Aug PM | `L-34821-2026-08-03-PM` | Source list for the S13 move. |
+| Souter Mon 10 Aug PM | `L-34821-2026-08-10-PM` | St George's, Ms G. Lim, ACTIVE. Merivale's Face lift BK0163, and catch-up Phase 21a's BK0176 (fixed price, no times), BK0177 (Needs a price) and BK0182 (the movable Booking). |
+| Souter Mon 10 Aug AM | `L-34821-2026-08-10-AM` | Mr C. Okafor, ACTIVE. The Move target for BK0182 (US-04.3.11). |
+| Chen Tue 14 Jul (`reviewFlags`) | `L-45178-2026-07-14-AM` | Christchurch Eye Surgery, Mr Whitford, SUBMITTED. The review-flags List (catch-up Phase 21a): BK0178 to BK0181. |
+
+**Seed markers** (`SEED_MARKERS.<key>.entityId`, `aa-prototype/src/domain/seed/index.ts`), catch-up Phase 21a:
+`fixedPriceNoTimes` BK0176, `needsPriceBooking` BK0177, `contractChangeBooking` BK0178, `typedPriceBooking`
+BK0179, `reviewNeedsPrice` BK0180, `otherSurgeonContract` BK0181, `movableFixedBooking` BK0182. The List is
+`SEED_LIST_IDS.reviewFlags` (`L-45178-2026-07-14-AM`).
 
 ## Routes
 
@@ -648,6 +656,36 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Other price is Southern Cross · SXAP · Fixed price); BK0034 (Ms Lim: Merivale's items under
   Patient › Standard, Souter's list under Prepaid for the office); BK0023 (Mon 20 AM, SUBMITTED).
 
+### RVG detail, completion and review flags (catch-up Phase 21a)
+
+- **What the form asks follows the pricing kind.** On an RVG Contract the capture form shows
+  `capture-rvg-detail` (times, units and the modifiers step); on a fixed or open price the times, units and
+  modifiers are hidden and the RVG code is for reference only. The live S1 RVG case is Margaret Ellison
+  BK0009 (`L-34821-2026-07-21-PM`): her blockers at reset are "Add any modifiers that apply, or tap None
+  apply." and "Add the finish time.", so a recipe that completes her taps "Finish now" and
+  `[data-shot=capture-modifiers-none]` before Mark complete. Every seeded completed Booking already
+  answers the modifiers step.
+- **Fixed price, no times** (`SEED_MARKERS.fixedPriceNoTimes`): BK0176 Miriam Holloway, "Face lift and
+  upper blepharoplasty" on Merivale's Facelift plus 1 add on, Souter Mon 10 Aug PM 14:45, ACTIVE, no times,
+  code or modifiers. Mark complete passes as it is. Its code row shows only after "Add an RVG code for
+  reference" (`rvg-code-add-reference`; on the phone inside the Billing sheet).
+  `/web/lists/L-34821-2026-08-10-PM/bookings/BK0176`, `/admin/day/2026-08-10/bookings/BK0176`.
+- **Needs a price** (`SEED_MARKERS.needsPriceBooking`): BK0177 Graham Pulley, "Excision of skin lesion,
+  cheek" on No contract · Fixed price with no amount, same List 16:00. The form shows the warning
+  `capture-price-status` ("Needs a price"); Mark complete refuses on the price alone.
+- **The review-flags List** (`SEED_LIST_IDS.reviewFlags` = `L-45178-2026-07-14-AM`, Dr Chen, Tue 14 Jul AM,
+  Christchurch Eye Surgery, Mr Whitford, SUBMITTED, in the Review queue, off every beat):
+  `/admin/review/L-45178-2026-07-14-AM`. BK0178 Diane Fairweather (`contractChangeBooking`: "Changed by Dr
+  Chen: was Cataract IOL (LA by Anaesthetist)" with Approve and Correct); BK0179 Owen Prendergast
+  (`typedPriceBooking`: "Price typed: $1,200.00 (computed ...)"); BK0180 Hemi Walker (`reviewNeedsPrice`:
+  "Needs a price" and "Not marked completed"); BK0181 Rosalind Kerr (`otherSurgeonContract`: "Contract not
+  offered on this List"). S2's Morrison Mon 20 List raises no flag.
+- **The movable Booking** (`SEED_MARKERS.movableFixedBooking`): BK0182 Fiona Lattimer, Face lift (Merivale,
+  linked to Ms Lim), Souter Mon 10 Aug PM 17:00, ACTIVE. On `/admin/day/2026-08-10` open her PM List
+  (`button[data-list-id="L-34821-2026-08-10-PM"]`), click the row's Move, and pick her AM List with Mr Okafor
+  (`L-34821-2026-08-10-AM`). Her Contract is unchanged; `/admin/review/L-34821-2026-08-10-AM` (Review
+  renders any List but a Draft one, ACTIVE included) shows `review-flag` with `data-rule=contractNoLongerFits`.
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -810,6 +848,22 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Admin booking:** "Edit billing setup" (opens "Contract and reference": the Contract row and the
   Billing reference, "Save reference"; the payer moved to the Booking's Payer row in catch-up Phase 21),
   "Price override" (placeholders `-10` and "Why the price differs") and "Funder allocation".
+- **Admin Day's Move (one Booking to another List):** in the List drawer, the Booking row's "Move" (scope it
+  to the row: `[data-testid=admin-list-drawer] >> text="<patient>" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name="Move"]`)
+  opens the dialog "Move booking to another list" (Target day input, defaulting to the List's date; one
+  button per candidate List, "<surname> · <session> · <state>" over "<hospital> · <surgeon>", with an
+  "Advisory: different surgeon" line; no hooks). Pick one with
+  `[role=dialog]:has-text("Move booking to another list") >> button:has-text("Souter"):has-text("Okafor")`;
+  the move is immediate and the dialog closes. The Booking keeps its Contract (catch-up Phase 21a).
+- **The modifiers step's "None apply"** (catch-up Phase 21a, every app): on an RVG Contract with the step
+  unanswered, `[data-shot=capture-modifiers-none]` (teal) sits beside `modifier-add` with the `capture-required`
+  caption; once tapped, `capture-modifiers-none-done` reads "No modifiers claimed · Change". On mobile scope
+  it `[data-testid=slide-booking] [data-shot=capture-modifiers-none]`. It does not cover `modifier-add`.
+- **Approve on Review** (catch-up Phase 21a): on a `contractChanged` flag, `[data-shot=review-contract-approve]`
+  ("Approve", aria "Approve this Contract change") stamps "Approved <time>" (`review-contract-approved`);
+  `[data-shot=review-contract-correct]` opens the Admin Booking. The action bar's
+  `[data-shot=review-contract-approve-all]` approves every pending change on the List. Only on a List not
+  yet authorised.
 - **The payer and the insurer or funder (catch-up Phase 21), every app:** the Booking's Payer section
   `booking-payer-row` with "Change" (aria "Change the payer") opening `payer-sheet` (a Dialog on web and
   Admin, a bottom sheet on the phone): `payer-different-tick` (its `input` checkbox), `payer-patient-details`,
@@ -939,6 +993,19 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - Review (catch-up Phase 38a): `review-changed-since-submitted` (the pill, on the List review and the
   queue row, and on Booking detail for a changed Booking), `review-changed-booking` (the "Changed" tag
   on a row, opens its History), test id `review-authorise-blocked` (why Authorise is disabled)
+- Review (catch-up Phase 21a; the inline pills are now the shared `Pill`, same text):
+  `review-procedure-stack` (one per Procedure inside the `review-procedures` cell), `review-flag` (each flag
+  pill, under its Procedure or in the Flags column, with `data-rule` = `contractChanged` |
+  `contractNoLongerFits` | `needsInvoiceDestination` | `needsPrice` | `typedPrice` | `notCompleted` |
+  `btmOverride`; the payer contact flag keeps `review-payer-contact`), `review-contract-approve` and
+  `review-contract-correct` (teal text actions on a `contractChanged` flag), `review-contract-approved`
+  ("Approved <time>" or "Approved at authorise <time>"), `review-contract-approve-all` (action bar button),
+  `review-payer` and `review-insurance` (the Billed to cell: payer with Change, insurer or funder with its
+  number or "No approval number"; insurance only when the Booking names one, none on Morrison Mon 20),
+  `review-alert` (32b's open alert with Resolve; none at reset), `review-warning-clear` (an open warning with
+  Clear), `review-late-edit` (wraps the `review-changed-booking` pill), and the existing
+  `review-open-booking` ("Open"). Test id `review-authorise-approves` (the confirm's count of approvals).
+  There is no separate `capture-rvg-reference` hook: use `[data-shot=capture-procedure-code][data-rvg-role=reference]`.
 - `data-shot` (catch-up Phase 28): `admin-slot-drawer`, `admin-assign-list`, `assign-hospital`,
   `admin-availability-finder-open`, `admin-availability-finder`, `finder-surgeon`, `finder-count`,
   `admin-schedule-settings`, `admin-session-times`, `admin-session-times-edit`, `admin-horizon-months`,
@@ -1026,6 +1093,18 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - `procedure-header`, `booking-calculation`, `time-capture-track`, `time-action-slider`,
   `completion-overlay`, `dock-spacer`
+- RVG detail and completion (catch-up Phase 21a; mobile, web and Admin): `capture-rvg-detail` (wraps
+  `capture-times` and the Units card with `capture-modifiers`; present only on an RVG pricing kind),
+  `capture-required` (the "Required" caption on times and the modifiers step), `capture-modifiers-none` (the
+  teal "None apply"), `capture-modifiers-none-done` ("No modifiers claimed · Change"), `capture-price-status`
+  (warning notice "Needs a price" on a price with no amount), `capture-adjustment-and-charge` (the override
+  card), `completion-alert-office` (neutral notice pointing to Alert the office for an office-fixable
+  failure). `capture-procedure-code` carries `data-rvg-role` = `required` (an RVG kind with no code yet) |
+  `reference` (a fixed or open price), absent otherwise (a chosen RVG-kind code, no Contract); on a fixed price its caption `rvg-code-optional` reads "RVG code
+  (for reference). Optional: ...", shown after `rvg-code-add-reference` when no code is set.
+- `contract-approval-status` (mobile and web, under the anaesthetist's Billing card): "Awaiting office
+  approval" or "Approved by the office <time>", `data-status` = `pending` | `approved`; only after the
+  anaesthetist changed the Contract herself (none on Dr Souter's Bookings at reset).
 
 **`data-shot` hooks for surgeons, pairings and tiers** (catch-up Phase 17; Admin only)
 
@@ -1149,6 +1228,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: `<listId>|office` or `<listId>|colleague`) | Catch-up Phase 30, re-pointed in 32b. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)") and, in the same step, the List goes back to the Draft Lists or to the first open colleague in the office's order; never a conflict. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
 | `/admin/day/<date>`, `/admin/draft-lists`, `/admin/conflicts` (only while an Assign or Reassign picker is open) | `ask-colleague-make-available` (choice: a closed session id) | Catch-up Phase 32b, badged Colleague stand-in. Plays the anaesthetist freeing their own closed, empty session (Free, as themselves), so the picker row becomes assignable. Shots use the inline copy on the row, `[data-candidate-closed=<reg>] [data-shot=demo-action-ask-colleague-make-available-inline]`, since the dialog's scrim covers the bar. |
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
+| `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-approves-contract-change` | Catch-up Phase 21a, badged Office stand-in, PWA only ("Office approves this Contract change"). Approves the Contract the anaesthetist changed on the Booking, as Approve on Review would, so `contract-approval-status` turns from "Awaiting office approval" to "Approved by the office <time>". Disabled when the Booking has no pending change (true of every Souter Booking at reset: change a Contract on the Billing sheet first). In the framed build use Approve on Admin Review. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Clear restores both. Also in the PWA Demo sheet on a mobile Booking |
 

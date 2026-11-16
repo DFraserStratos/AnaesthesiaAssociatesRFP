@@ -3,6 +3,7 @@
  * FT-03.4, US-04.3.4, US-03.2.3).
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { setEnteredPrice, setProcedureContract, setRailAnswers } from './contractSelectionActions'
@@ -12,7 +13,7 @@ import { bookingsForList, needsInvoiceDestinationBookings, prepaymentStatusFor, 
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import type { Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
-import { NEEDS_DESTINATION_FAILURE } from '../domain/billing/validateBookingForBilling'
+import { NO_CONTRACT_MESSAGE as NEEDS_DESTINATION_FAILURE } from '../domain/billing/completion'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
@@ -37,7 +38,7 @@ function completeOthers(api: BoundAppStore, listId: string): void {
       if (proc(api, p.id).rvgGroupId === undefined) editProcedure(api, OFFICE, p.id, { rvgGroupId: 'RG046' })
       editProcedure(api, OFFICE, p.id, { anaestheticStartISO: '2026-07-23T13:00:00', handoverISO: '2026-07-23T13:30:00' })
     }
-    completeBooking(api, OFFICE, b.id)
+    completeAnswered(api, OFFICE, b.id)
   }
 }
 

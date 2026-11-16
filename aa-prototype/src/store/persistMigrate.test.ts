@@ -18,7 +18,7 @@ import { backfillMerge, createAppStore, freshAppState, PERSIST_KEY, PERSIST_VERS
 import { flushPersist } from './persistStorage'
 import { openOutOfHoursSession } from './outOfHoursActions'
 import { OFFICE_ACTOR } from './demoActors'
-import { ANAE } from '../domain/seed'
+import { ANAE, SEED_LIST_IDS } from '../domain/seed'
 
 describe('persisted store versioning', () => {
   beforeEach(() => {
@@ -520,7 +520,7 @@ describe('insurance on the Booking (catch-up Phase 21 session 2)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v40 store without funders and reseeds them', () => {
-    expect(PERSIST_VERSION).toBe(41)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(41)
     const fresh = freshAppState()
     const bookings = Object.fromEntries(
       Object.entries(fresh.schedule.bookings).map(([id, b]) => {
@@ -533,5 +533,45 @@ describe('insurance on the Booking (catch-up Phase 21 session 2)', () => {
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 40 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.bookings).some((b) => b.funderPartyId === 'PY-NIB')).toBe(true)
+  })
+})
+
+describe('RVG detail by pricing kind and completion (catch-up Phase 21a session 1)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v41 store without the modifiers-step marker and reseeds it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(42)
+    const fresh = freshAppState()
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        const { modifiersConfirmed: _m, ...rest } = p
+        void _m
+        return [id, rest]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, procedures } }, version: 41 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).some((p) => p.modifiersConfirmed === true)).toBe(true)
+  })
+})
+
+describe('office review flags and the movable Booking (catch-up Phase 21a session 2)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v42 store without the review-flags List and reseeds it', () => {
+    expect(PERSIST_VERSION).toBe(43)
+    const fresh = freshAppState()
+    const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).filter(([, b]) => b.listId !== SEED_LIST_IDS.reviewFlags))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 42 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(4)
   })
 })

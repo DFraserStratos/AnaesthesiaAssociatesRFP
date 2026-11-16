@@ -34,7 +34,7 @@
  * List's date (19a, A9). Insurance never narrows (D28). No "show all".
  */
 
-import type { AnaesthetistId, BillingLine, ContractId, HospitalId, Procedure, RailAnswers, SurgeonId } from '../types'
+import type { AnaesthetistId, ContractId, HospitalId, Procedure, RailAnswers, SurgeonId } from '../types'
 import type { Specialty } from '../specialties'
 import { contractFitsSpecialties } from '../specialties'
 import { contractMatchesQuery, isRvgKind, linkFits, noContractRvg, type Contract } from './contracts'
@@ -88,9 +88,14 @@ export function listHospitalParty(parties: RailMasters['parties'], hospitalId: H
   return Object.values(parties).find((p) => p.kind === 'hospital' && p.hospitalId === hospitalId)
 }
 
-/** Every rule but the search: the one predicate the store's guard and every step share. */
-export function isContractCandidate(masters: RailMasters, ctx: RailContext, contract: Contract): boolean {
-  if (contract.status !== 'active') return false
+/**
+ * Every rule but the search: the one predicate the store's guard and every step share.
+ * `anyStatus` switches the status test off (catch-up Phase 21a's review flag
+ * "Contract not offered on this List": a Disabled Contract already on a
+ * Procedure fits by its other rules and raises no flag, D81, OQ-135).
+ */
+export function isContractCandidate(masters: RailMasters, ctx: RailContext, contract: Contract, opts: { anyStatus?: boolean } = {}): boolean {
+  if (opts.anyStatus !== true && contract.status !== 'active') return false
   // No contract · RVG is pinned, and the fallbacks are reached only through
   // "Other price": neither is ever a row (US-04.3.3, US-04.3.9).
   if (contract.systemRole !== undefined) return false
@@ -483,22 +488,7 @@ export function applyContractChange(
   return patch
 }
 
-/**
- * Derived, never stored (US-03.3.1, US-04.3.4): the Procedure is on a Contract
- * priced from RVG units and has no RVG code, so the anaesthetist is asked for
- * it. A Procedure priced by its own rate x time line (Method 3, the hourly
- * arrangements) needs none.
- */
-export function rvgCodeToFill(
-  masters: Pick<RailMasters, 'contracts'>,
-  procedure: Pick<Procedure, 'governingContractId' | 'rvgGroupId'>,
-  lines: readonly Pick<BillingLine, 'chargeBasis'>[] = [],
-): boolean {
-  if (procedure.governingContractId === undefined || procedure.rvgGroupId !== undefined) return false
-  if (lines.some((l) => l.chargeBasis === 'rateTime')) return false
-  const contract = masters.contracts[procedure.governingContractId]
-  return contract !== undefined && isRvgKind(contract.pricing.kind)
-}
+// `rvgCodeToFill` lives in `rvgDetail.ts` (catch-up Phase 21a): the pricing-kind rule has one home.
 
 export const PREPAID_OFFICE_ONLY_MESSAGE = 'Only the office changes a prepaid Contract.'
 export const OFFICE_TYPES_AMOUNT_MESSAGE = 'The office types this amount.'
@@ -531,7 +521,7 @@ export function contractChangeRefusal(
  * guard): a candidate, No contract · RVG, or an open-price fallback of a
  * destination this List offers.
  */
-export function contractAllowedOn(masters: RailMasters, ctx: RailContext, contractId: ContractId): boolean {
+export function contractAllowedOn(masters: RailMasters, ctx: RailContext, contractId: ContractId, opts: { anyStatus?: boolean } = {}): boolean {
   const contract = masters.contracts[contractId]
   if (contract === undefined) return false
   if (contract.systemRole === 'noContractRvg') return true
@@ -545,5 +535,5 @@ export function contractAllowedOn(masters: RailMasters, ctx: RailContext, contra
       return cd.kind === 'special' && cd.holderPartyId === d.holderPartyId
     })
   }
-  return isContractCandidate(masters, ctx, contract)
+  return isContractCandidate(masters, ctx, contract, opts)
 }

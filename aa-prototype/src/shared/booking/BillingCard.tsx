@@ -3,7 +3,7 @@ import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius, semantic, zIndex } from '../../theme/tokens'
 import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { rangeInForce } from '../../domain/billing/priceRanges'
+import { NEEDS_PRICE_LABEL, rangeInForce } from '../../domain/billing/priceRanges'
 import { RvgCodeField } from '../capture/ProcedureCodeCard'
 import { TextAction } from '../ui/TextAction'
 import { formatCurrency, parseAmount, plural } from '../format'
@@ -32,6 +32,7 @@ import { Button } from '../ui/Button'
 import { Pill } from '../ui/Pill'
 import { PopoverPanel } from '../ui/PopoverPanel'
 import { usePopover } from '../ui/usePopover'
+import { Notice } from '../ui/Notice'
 import { contractPriceText } from '../flows/ContractRail'
 import { FormError } from '../ui'
 
@@ -167,6 +168,9 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   const onThisPath = contract !== undefined && view.contract?.rows.some((r) => r.contract.id === contract.id)
   const onThisFallback = contract !== undefined && fallback?.contract.id === contract.id
   const onBackstop = contract !== undefined && view.contract?.rvgBackstop?.id === contract.id
+  // A Contract kept from before a move that this List does not offer stays the Procedure's Contract (US-04.3.11,
+  // catch-up Phase 21a): shown as it is, with a note, never replaced by the List's own options.
+  const keptOffList = contract !== undefined && !(onThisPath || onThisFallback || onBackstop)
 
   /** Answers so far are kept on a Procedure with no Contract (US-04.3.8). */
   const keep = (next: RailAnswers | undefined) => {
@@ -221,7 +225,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   const slots: { n: Step; label: string; value?: string; auto: boolean }[] = [
     { n: 1, label: 'Invoice to', ...(destLabel !== undefined ? { value: destLabel } : {}), auto: view.destination.autoFilled },
     { n: 2, label: view.narrow?.title ?? 'Payment type', ...(narrowLabel !== undefined && (editing === null || editing > 1) ? { value: narrowLabel } : {}), auto: view.narrow?.autoFilled === true },
-    { n: 3, label: 'Price', ...(priceLine !== undefined && (onThisPath || onThisFallback || onBackstop) ? { value: priceLine } : {}), auto: false },
+    { n: 3, label: 'Price', ...(priceLine !== undefined && (onThisPath || onThisFallback || onBackstop || keptOffList) ? { value: priceLine } : {}), auto: false },
   ]
   const price = (c: Contract | undefined, opts: { toggle?: boolean; amount?: boolean } = {}) => (
     <PriceBlock
@@ -292,7 +296,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     const pinned = c?.rows.find((r) => r.pinned)
     const loneStandard = pinned !== undefined && rows.length === 1
     const backstops = [c?.rvgBackstop, fallback?.contract].filter((x): x is Contract => x !== undefined)
-    const current = contract !== undefined && (onThisPath || onThisFallback || onBackstop) ? contract : undefined
+    const current = contract !== undefined && (onThisPath || onThisFallback || onBackstop || keptOffList) ? contract : undefined
     const suggested = loneStandard && current === undefined && c?.autoPick !== undefined && !c.autoPick.viaOtherPrice ? masters.contracts[c.autoPick.contractId] : undefined
     const amountMode = loneStandard ? otherOn || onThisFallback : current?.pricing.kind === 'open'
     const toggle = loneStandard && fallback !== undefined && current !== undefined && (isRvgKind(current.pricing.kind) || onThisFallback)
@@ -313,6 +317,11 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
               />
             </div>
           )}
+          {keptOffList && (
+            <Notice tone="warning" shot="billing-contract-kept">
+              This List does not offer {contract!.name}. The Booking keeps it; the office checks it at review.
+            </Notice>
+          )}
           {suggested !== undefined && !amountMode && (
             <div data-shot="contract-rail-only-contract" style={{ display: 'flex', flexDirection: sheet ? 'column' : 'row', alignItems: sheet ? 'stretch' : 'center', justifyContent: 'space-between', gap: 10, background: accent.tint, borderRadius: radius.ctl, padding: sheet ? 12 : '8px 8px 8px 14px' }}>
               <span style={{ fontSize: 13.5, color: neutral.ink }}>
@@ -321,7 +330,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
               <Button variant="primary" onClick={() => choose(suggested.id)} {...(sheet ? { style: { minHeight: 44 } } : {})}>Use it</Button>
             </div>
           )}
-          {loneStandard && current !== undefined && (
+          {loneStandard && current !== undefined && !keptOffList && (
             <span data-shot="contract-rail-lone" style={{ fontSize: 12.5, color: neutral.slate }}>
               <span style={{ fontWeight: 600, color: neutral.ink }}>{rows[0]!.contract.name}</span> <span className="mono">{rows[0]!.contract.aaCode}</span> · the only Contract here
             </span>
@@ -669,7 +678,7 @@ function ContractCombo({
 
 /** The Price slot's answer in a few words, as the mock's rail ("RVG H6a", "Agreed fee $357.39"). */
 function priceSummary(contract: Contract, procedure: Procedure, rvgGroup: RvgGroup | undefined, dateISO: string, railActor: 'office' | 'anaesthetist'): string {
-  if (contract.pricing.kind === 'open') return procedure.enteredPrice !== undefined ? `Fixed price ${formatCurrency(procedure.enteredPrice)}` : 'Amount to type'
+  if (contract.pricing.kind === 'open') return procedure.enteredPrice !== undefined ? `Fixed price ${formatCurrency(procedure.enteredPrice)}` : NEEDS_PRICE_LABEL
   if (isRvgKind(contract.pricing.kind)) return rvgGroup !== undefined ? `RVG ${rvgGroup.code}` : railActor === 'office' ? 'To the anaesthetist' : 'RVG code to fill in'
   const range = rangeInForce(contract, dateISO)
   if (range === null) return 'Needs a price'
@@ -783,6 +792,18 @@ function PriceBlock({
           onAmount={onAmount}
         />
       )}
+      {/* Ben's second route (US-03.3.9): a typed price with an RVG code kept for reference. */}
+      {mode === 'amount' &&
+        contract !== undefined &&
+        (coded || referenceOpen ? (
+          field('reference')
+        ) : canCapture ? (
+          <span style={{ alignSelf: 'flex-start' }}>
+            <TextAction small shot="rvg-code-add-reference" onClick={() => setReferenceOpen(true)}>
+              Add an RVG code for reference
+            </TextAction>
+          </span>
+        ) : null)}
       {mode === 'rvg' && !rateTime && field(coded ? undefined : 'required')}
       {mode === 'none' && field(undefined, 'Its price follows the Contract, once one is chosen.')}
       {mode === 'fixed' &&

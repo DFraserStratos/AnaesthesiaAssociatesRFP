@@ -42,6 +42,8 @@ export {
   completionBlockersFor,
   submitList,
   authoriseList,
+  authoriseBlockersFor,
+  type AuthoriseBlocker,
   logListNote,
   cancelBooking,
   editBooking,
@@ -242,6 +244,7 @@ export { createRvgGroup, editRvgGroup, retireRvgGroup, restoreRvgGroup, pickRvgG
 // Catch-up Phase 19b: modifiers claimed with an explanation, pre-applied ones removed and put back, AA's own added.
 export {
   claimModifier,
+  confirmNoModifiers,
   editModifierExplanation,
   removeModifier,
   restoreModifier,
@@ -365,6 +368,15 @@ export * from './selectors'
 // Catch-up Phase 38a: the edit window's completeness check, the main view, the
 // "Changed since submitted" cue, look-back and search (selectors only).
 export { incompleteBookingsOn } from './lifecycle'
+export {
+  approveContractChangeAsSimulatedOffice,
+  approveContractChangesOnList,
+  approveContractRefusal,
+  approveContractSelection,
+  contractChangeFor,
+  pendingContractChangesOnList,
+} from './contractApprovalActions'
+export { reviewFlagsFor, reviewFlagsOnList, reviewInputFor } from './reviewSelectors'
 export * from './lookback'
 
 // The step rail's writes and reads (catch-up Phase 20).
@@ -381,5 +393,6 @@ export {
   railMastersOf,
   railStartFor,
   rvgCodeToFillFor,
+  completionContextFor,
   type NeedsInvoiceDestinationRow,
 } from './selectors'

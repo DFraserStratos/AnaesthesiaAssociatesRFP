@@ -1,0 +1,129 @@
+{
+  "id": "US-04.3.11",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "moved-booking",
+      "app": "admin",
+      "caption": "A moved Booking keeps its Contracts; one that no longer fits is flagged at review",
+      "start": "/admin/day/2026-08-10",
+      "states": [
+        {
+          "state": "before",
+          "caption": "Fiona Lattimer's Face lift on Dr Souter's Mon 10 Aug PM List with Ms Lim, Merivale's fixed price",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-08-10-PM\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] >> text=\"Fiona Lattimer\" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1]"
+          ]
+        },
+        {
+          "state": "moving",
+          "caption": "Admin Day's Move offers her Mon 10 Aug AM List with Mr Okafor, the different surgeon advisory only",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-08-10-PM\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> text=\"Fiona Lattimer\" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name=\"Move\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]:has-text(\"Move booking to another list\") >> button:has-text(\"Souter\"):has-text(\"Okafor\")"
+          ]
+        },
+        {
+          "state": "moved",
+          "caption": "Moved to the AM List, the Booking keeps its Contract: Merivale's Face lift",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-08-10-PM\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> text=\"Fiona Lattimer\" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name=\"Move\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[role=dialog]:has-text(\"Move booking to another list\") >> button:has-text(\"Souter\"):has-text(\"Okafor\")"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-08-10/bookings/BK0182"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=capture-billing]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing]"
+          ]
+        },
+        {
+          "state": "flagged",
+          "caption": "Review of the AM List flags it: Contract not offered on this List",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-08-10-PM\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> text=\"Fiona Lattimer\" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name=\"Move\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[role=dialog]:has-text(\"Move booking to another list\") >> button:has-text(\"Souter\"):has-text(\"Okafor\")"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-08-10-AM"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-shot=review-flag][data-rule=contractNoLongerFits]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-flag][data-rule=contractNoLongerFits]"
+          ]
+        }
+      ]
+    }
+  ]
+}

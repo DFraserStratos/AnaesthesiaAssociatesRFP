@@ -150,6 +150,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'rvgGroup.restore': 'RVG group restored',
   // Catch-up Phase 19b (US-03.3.4, US-03.3.8, US-05.1.4, US-05.1.5).
   'procedure.modifierClaim': 'Modifier claimed',
+  'procedure.modifiersConfirm': 'No modifiers claimed',
+  'procedure.contractApprove': 'Contract change approved by the office',
   'procedure.modifierExplanation': 'Modifier explanation changed',
   'procedure.modifierUnclaim': 'Modifier claim removed',
   'procedure.modifierRemove': 'Pre-applied modifier removed',

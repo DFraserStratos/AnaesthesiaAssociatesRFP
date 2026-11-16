@@ -19,7 +19,8 @@ import {
   mayTypeEnteredPrice,
   type RailActor,
 } from '../domain/billing/contractRail'
-import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
+import { mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { REOPENED_FOR_RVG_DETAIL_MESSAGE, contractChangeAsksRvgDetail } from '../domain/billing/completion'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking, withRvgRowChange } from './lifecycle'
 import { railContextForList, railMastersOf } from './selectors'
@@ -131,6 +132,8 @@ export function setProcedureContract(
   }
   // The invoice description follows the Contract's (US-08.4.6, D37) unless the office edited it (D73).
   next.invoiceDescription = refreshedInvoiceDescriptionFor(next, state.masters.contracts)
+  // The anaesthetist's new change waits for the office again (catch-up Phase 21a): any earlier approval stamp goes.
+  if (actor.role === 'anaesthetist') delete next.contractApproval
 
   const view = (p: Procedure) => ({
     governingContractId: p.governingContractId,
@@ -140,9 +143,17 @@ export function setProcedureContract(
     railAnswers: p.railAnswers,
     invoiceDescription: p.invoiceDescription?.text ?? null,
   })
-  mutate(
-    api,
-    actor,
+  // A Contract change that newly asks for RVG detail (a fixed or open price to an RVG kind) re-opens a
+  // completed Booking in the same commit (catch-up Phase 21a, our reading); the reverse never does.
+  const booking = at.booking
+  const reopen =
+    booking.completed &&
+    contractChangeAsksRvgDetail(
+      procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined,
+      state.masters.contracts[contractId],
+      Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId),
+    )
+  const metas: MutationMeta[] = [
     {
       entityType: 'procedure',
       entityId: procedureId,
@@ -150,10 +161,25 @@ export function setProcedureContract(
       before: { ...view(procedure), ...(reconciled !== null ? claimsAuditView(procedure, state.masters.modifiers) : {}) },
       after: { ...view(next), ...(reconciled !== null ? claimsAuditView(next, state.masters.modifiers) : {}) },
     },
-    (s) => ({
-      schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } },
-    }),
-  )
+  ]
+  if (reopen) {
+    metas.push({
+      entityType: 'booking',
+      entityId: booking.id,
+      action: 'booking.uncomplete',
+      before: { completed: true },
+      after: { completed: false, reason: REOPENED_FOR_RVG_DETAIL_MESSAGE },
+    })
+  }
+  mutate(api, actor, metas, (s) => {
+    const bookings = { ...s.schedule.bookings }
+    if (reopen) {
+      const reopened = { ...bookings[booking.id]!, completed: false }
+      delete reopened.completedAtISO
+      bookings[booking.id] = reopened
+    }
+    return { schedule: { ...s.schedule, bookings, procedures: { ...s.schedule.procedures, [procedureId]: next } } }
+  })
   return ok(undefined)
 }
 

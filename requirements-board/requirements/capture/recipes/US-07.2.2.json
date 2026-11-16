@@ -6,13 +6,84 @@
     {
       "name": "review-contracts",
       "app": "admin",
-      "caption": "Office review of each Procedure's text and Contract, with the flags",
+      "caption": "Office review of each Procedure's Contract, codes and flags",
       "start": "/admin/review/L-25490-2026-07-20-AM",
       "states": [
         {
-          "steps": [],
+          "state": "procedures",
+          "caption": "Each Procedure's stack with its Contract and codes, the payer, and Open to the Booking",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-testid=review-detail-table-shell]"
+            "[data-shot=review-procedure-stack] >> nth=0",
+            "[data-shot=review-payer] >> nth=0",
+            "[data-shot=review-open-booking] >> nth=0"
+          ]
+        },
+        {
+          "state": "insurer",
+          "caption": "The payer and the insurer or funder on the row, a missing approval number marked",
+          "steps": [
+            {
+              "goto": "/admin/review/L-45178-2026-07-17-AM"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=review-insurance] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "tr:has([data-shot=review-insurance]) [data-shot=review-payer] >> nth=0",
+            "[data-shot=review-insurance] >> nth=0"
+          ]
+        },
+        {
+          "state": "flags",
+          "caption": "Flags under each Procedure: a Contract change with Approve and Correct, a typed price beside the computed one, a Contract not offered on this List",
+          "steps": [
+            {
+              "goto": "/admin/review/L-45178-2026-07-14-AM"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-flag]",
+            "[data-shot=review-contract-approve]",
+            "[data-shot=review-flag][data-rule=typedPrice]"
+          ]
+        },
+        {
+          "state": "approved",
+          "caption": "Approve accepts the anaesthetist's Contract change and stamps when",
+          "steps": [
+            {
+              "goto": "/admin/review/L-45178-2026-07-14-AM"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=review-contract-approve] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=review-contract-approved]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-contract-approved]"
           ]
         }
       ]

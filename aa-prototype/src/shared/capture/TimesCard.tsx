@@ -12,6 +12,10 @@ interface TimesCardProps {
   procedure: Procedure
   actor: Actor
   canCapture: boolean
+  /** On an RVG kind the times are required (catch-up Phase 21a, US-03.3.3): the "Required" caption. */
+  required?: boolean
+  /** Mark complete's validation latch: the caption takes the warning tint while a time is missing. */
+  showValidation?: boolean
   /** anaestheticStartISO / handoverISO failures (shown post-latch, verbatim). */
   failures: BillingValidationFailure[]
   onError: (message: string) => void
@@ -31,7 +35,7 @@ interface TimesCardProps {
  * lays each label, time and nudge pair into one compact horizontal row. The
  * full-width track avoids nesting the cells inside another pair of columns.
  */
-export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
+export function TimesCard({ procedure, actor, canCapture, required = false, showValidation = false, failures, onError }: TimesCardProps) {
   const { variant } = useSurface()
   const start = procedure.anaestheticStartISO
   const finish = procedure.handoverISO
@@ -56,7 +60,7 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
   function nudgeStart(delta: number) {
     if (start === undefined) return
     let next = shiftIsoMinutes(start, delta)
-    // Keep at least 5 minutes before the handover.
+    // Keep at least 5 minutes before the finish.
     if (finish !== undefined && minutesBetweenIso(next, finish) < 5) next = shiftIsoMinutes(finish, -5)
     write({ anaestheticStartISO: next })
   }
@@ -74,6 +78,7 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
   return (
     <CaptureSection
       label="Times"
+      {...(required ? { required: showValidation && failures.length > 0 ? ('latched' as const) : ('idle' as const) } : {})}
       validationTarget={{
         procedureId: procedure.id,
         fields: ['anaestheticStartISO', 'handoverISO'],
@@ -245,8 +250,8 @@ function RecordedTime({
       <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{hhmm(iso)}</div>
       {canCapture && (
         <div style={{ display: 'flex', gap: 6 }}>
-          <NudgeButton label="−5" onClick={() => onNudge(-5)} />
-          <NudgeButton label="+5" onClick={() => onNudge(5)} />
+          <NudgeButton label="−5" ariaLabel={`${label} 5 minutes earlier`} onClick={() => onNudge(-5)} />
+          <NudgeButton label="+5" ariaLabel={`${label} 5 minutes later`} onClick={() => onNudge(5)} />
         </div>
       )}
     </div>

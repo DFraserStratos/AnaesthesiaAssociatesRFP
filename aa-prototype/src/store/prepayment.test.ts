@@ -10,9 +10,10 @@
  * run bills the remainder (deposit + balance = the full self funded fee).
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { authoriseList, completeBooking, completionBlockersFor, editBooking, submitList } from './lifecycle'
+import { authoriseList, completionBlockersFor, editBooking, submitList } from './lifecycle'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { runBillingForList } from './billingRun'
 import { billingMonitor, bookingsForList, prePaymentInvoicesForBooking, prepaymentStatusFor } from './selectors'
@@ -41,7 +42,7 @@ function listOf(api: BoundAppStore, bookingId: string): string {
 function completeSiblings(api: BoundAppStore, actor: Actor, bookingId: string): void {
   for (const b of bookingsForList(api.getState(), listOf(api, bookingId))) {
     if (b.id === bookingId || b.completed || b.cancellation !== undefined) continue
-    expect(completeBooking(api, actor, b.id)).toMatchObject({ ok: true })
+    expect(completeAnswered(api, actor, b.id)).toMatchObject({ ok: true })
   }
 }
 function prepaymentWarnings(api: BoundAppStore, bookingId: string) {
@@ -64,7 +65,7 @@ describe('an unpaid prepayment never blocks (D5)', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
     const listId = listOf(api, riley)
-    expect(completeBooking(api, SOUTER, riley)).toMatchObject({ ok: true })
+    expect(completeAnswered(api, SOUTER, riley)).toMatchObject({ ok: true })
     expect(api.getState().schedule.bookings[riley]!.completed).toBe(true)
     expect(prepaymentWarnings(api, riley)).toHaveLength(1)
     // US-13.7.1 "saved": an edit to the warned Booking goes through.
@@ -80,7 +81,7 @@ describe('an unpaid prepayment never blocks (D5)', () => {
     const paid = marker('prepaymentPaidBooking')
     expect(prepaymentStatusFor(api.getState(), paid)).toBe('paid')
     expect(prepaymentWarnings(api, paid)).toEqual([])
-    expect(completeBooking(api, SOUTER, paid).ok).toBe(true)
+    expect(completeAnswered(api, SOUTER, paid).ok).toBe(true)
   })
 
   it('a non-prepayment booking raises no prepayment warning', () => {
@@ -117,7 +118,7 @@ describe('raisePreProcedureInvoice', () => {
   it('is refused once the List is authorised (would double charge the balance run)', () => {
     const api = store()
     const paid = marker('prepaymentPaidBooking') // its list has no other bookings to block submit
-    expect(completeBooking(api, OFFICE, paid).ok).toBe(true)
+    expect(completeAnswered(api, OFFICE, paid).ok).toBe(true)
     const listId = listOf(api, paid)
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
@@ -132,7 +133,7 @@ describe('balance after a deposit (deposit + balance = the full self funded fee)
     const listId = listOf(api, riley)
 
     expect(raisePreProcedureInvoice(api, OFFICE, riley).ok).toBe(true)
-    expect(completeBooking(api, SOUTER, riley).ok).toBe(true)
+    expect(completeAnswered(api, SOUTER, riley).ok).toBe(true)
     completeSiblings(api, SOUTER, riley)
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
@@ -156,7 +157,7 @@ describe('the monitor does not conflate the paid pre-invoice with the run', () =
     const api = store()
     const paid = marker('prepaymentPaidBooking')
     const listId = listOf(api, paid)
-    expect(completeBooking(api, OFFICE, paid).ok).toBe(true)
+    expect(completeAnswered(api, OFFICE, paid).ok).toBe(true)
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     expect(runBillingForList(api, listId).ok).toBe(true)

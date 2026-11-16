@@ -1,23 +1,48 @@
 import { useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { AssignedList, Booking, Procedure } from '../../../domain/types'
-import { authoriseList, incompleteBookingsOn, logListNote, useAppStore, useListTimes, type Actor } from '../../../store'
+import {
+  activeAlertFor,
+  approveContractChangesOnList,
+  approveContractSelection,
+  authoriseBlockersFor,
+  authoriseList,
+  clearWarning,
+  contractChangeFor,
+  incompleteBookingsOn,
+  logListNote,
+  pendingContractChangesOnList,
+  resolveNotification,
+  reviewInputFor,
+  useAppStore,
+  useListTimes,
+  type Actor,
+} from '../../../store'
 import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
-import { bookingFee, procedureFee } from '../../../shared/capture'
+import { bookingFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
-import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
+import { reviewFlagsForBooking, type ContractChangeRecord, type ReviewFlag } from '../../../domain/billing/reviewFlags'
+import { approvalNumberMissing } from '../../../domain/billing/insurance'
+import { payerDetails } from '../../../domain/billing/whoIsBilled'
+import { formatPostalAddress } from '../../../domain/billing/payer'
+import { isOpen, type Warning } from '../../../domain/warnings'
+import { stampText } from '../../../domain/dateText'
+import type { Notification } from '../../../domain/types'
 import { procedureStackViewFor } from '../../../store/selectors'
 import { ProcedureStack } from '../../../shared/booking/ProcedureStack'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { FormError } from '../../../shared/ui'
+import { FormError, Pill, TickButton } from '../../../shared/ui'
+import { TextAction } from '../../../shared/ui/TextAction'
+import { ClearWarningButton } from '../../../shared/warnings'
 
 interface ReviewScreenProps {
   listId: string
@@ -45,7 +70,8 @@ const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units',
  * REAL Phase 01 calculator (procedureFee / bookingFee looped over the non-cancelled
  * bookings) — NOT the mockup's simplified numbers (Decisions log). The Billed to
  * column shows who each Booking bills (catch-up Phase 20). FLAGS come from
- * the RFP-grounded `reviewFlags` helper (no invented duration-outlier flag).
+ * the one review-flag list, `domain/billing/reviewFlags.ts` (catch-up Phase 21a: never a block;
+ * no invented duration-outlier flag).
  */
 export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, onOpenBooking }: ReviewScreenProps) {
   const { Overlay } = useSurface()
@@ -56,6 +82,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
   const invoicesRecord = useAppStore((s) => s.billing.invoices)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
+  const notifications = useAppStore((s) => s.notifications)
+  const pendingCount = useAppStore((s) => pendingContractChangesOnList(s, listId).length)
+  const authoriseBlockers = useAppStore(useShallow((s) => authoriseBlockersFor(s, listId)))
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
@@ -76,23 +105,14 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       const procs = Object.values(proceduresRecord)
         .filter((p) => p.bookingId === booking.id)
         .sort((a, b) => a.id.localeCompare(b.id))
-      const views = procs.map((p) => procedureFee({ procedure: p, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId }))
       const totals = bookingFee(procs, list, masters, billingLinesRecord, booking.patientId)
-      const flags = reviewFlagsForBooking({
-        booking,
-        procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, rvgGroup: views[i]!.rvgGroup })),
-        contracts: masters.contracts,
-        parties: masters.parties,
-        ...(masters.patients[booking.patientId] !== undefined ? { patient: masters.patients[booking.patientId] } : {}),
-        timeRule: masters.rvgTimeRule,
-        modifierInputs: {
-          patientDobISO: masters.patients[booking.patientId]?.dobISO,
-          procedureDateISO: list.dateISO,
-          modifiers: masters.modifiers,
-        },
-      })
+      // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
+      const state = useAppStore.getState()
+      const input = reviewInputFor(state, booking)
+      const flags = input !== undefined ? reviewFlagsForBooking(input) : []
+      const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
       const primary: Procedure | undefined = procs[0]
-      const primaryView = views[0]
+      const primaryView = input?.procedures[0]
       // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
       // Procedures column and for who is billed ("Mixed" when Procedures differ; `billablePartyForProcedure`, catch-up Phase 21).
       const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord } }, p.id, 'office')!)
@@ -117,9 +137,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         })
         entityLabels = labels
       }
-      return { booking, primary, primaryView, totals, flags, billedText, procCount: procs.length, entityIds, entityLabels, stackViews }
+      const alert: Notification | undefined = activeAlertFor(state, { listId, bookingId: booking.id })
+      return { booking, primary, primaryView, totals, flags, changes, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
     })
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
+    // The audit feeds the change records; the notifications feed the alerts.
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications])
   const warningsByBooking = useListWarnings(listId)
   // The anaesthetist's changes since submit (catch-up Phase 38a): null once authorised.
   const changed = useChangedSinceSubmitted(listId)
@@ -144,6 +166,10 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
   // A Booking with no price makes the List's fee unknown, never a smaller figure (catch-up Phase 19a).
   const listFeeText = listTotals.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(listTotals.fee)
   const allFlags: ReviewFlag[] = rows.flatMap((r) => r.flags)
+  // Contract changes still waiting: approved together here, or at authorise (catch-up Phase 21a). Never a gate.
+  const pendingChanges = authorised ? 0 : pendingCount
+  // The one blockers seam (empty in this phase: flags never block; 25 and 40 add their kinds).
+  const blockers = authorised ? [] : authoriseBlockers
   const unitRate = anaesthetist?.unitValue ?? 0
 
   const submitAt = audit.filter((a) => a.entityId === listId && a.action === 'list.submit').at(-1)?.atISO
@@ -170,6 +196,10 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
     setConfirmOpen(false)
     if (!outcome.ok) setError(outcome.message)
     else setError(null)
+  }
+
+  function run(outcome: { ok: true } | { ok: false; message: string }) {
+    setError(outcome.ok ? null : outcome.message)
   }
 
   function saveNote() {
@@ -213,7 +243,6 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
               variant="secondary"
               disabled={previousListId === undefined}
               onClick={() => previousListId !== undefined && onOpen(previousListId)}
-              style={{ minHeight: 40, padding: '0 12px', fontSize: 13 }}
             >
               <ArrowLeft size={15} strokeWidth={2.2} aria-hidden /> Previous in queue
             </Button>
@@ -221,14 +250,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
               variant="secondary"
               disabled={nextListId === undefined}
               onClick={() => nextListId !== undefined && onOpen(nextListId)}
-              style={{ minHeight: 40, padding: '0 12px', fontSize: 13 }}
             >
               Next in queue <ArrowRight size={15} strokeWidth={2.2} aria-hidden />
             </Button>
             <Button
               variant="secondary"
               onClick={onViewInvoices}
-              style={{ minHeight: 40, padding: '0 12px', fontSize: 13 }}
             >
               <Receipt size={15} strokeWidth={2.2} aria-hidden /> View invoices
             </Button>
@@ -236,9 +263,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
             <StatusChip status={list.kind} />
             {submitAt !== undefined && !authorised && (
-              <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '4px 10px' }}>
-                Submitted {hhmm(submitAt)}
-              </span>
+              <Pill tone="warning" size="lg">Submitted {hhmm(submitAt)}</Pill>
             )}
             {changed !== null && <ChangedSinceSubmittedPill cue={changed} />}
           </div>
@@ -284,7 +309,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, totals, flags, billedText, entityIds, entityLabels, stackViews }) => {
+            {rows.map(({ booking, primary, primaryView, totals, flags, changes, procIds, billedText, entityIds, entityLabels, stackViews, alert }) => {
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -296,36 +321,59 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                       <WarningTriangle warnings={warningsByBooking.get(booking.id) ?? []} size="sm" />
                       {/* A marker, not an action: the row's teal History link opens what changed. */}
                       {changedIds.has(booking.id) && (
-                        <span
-                          data-shot="review-changed-booking"
-                          title="Changed by the anaesthetist since the List was submitted. History shows what changed."
-                          style={{ border: `1px solid ${semantic.warning.solid}66`, background: neutral.surface, color: semantic.warning.onTint, borderRadius: 999, padding: '1px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
-                        >
-                          Changed
+                        <span data-shot="review-late-edit" style={{ display: 'inline-flex' }}>
+                          <Pill
+                            variant="outline"
+                            tone="warning"
+                            size="lg"
+                            shot="review-changed-booking"
+                            title="Changed by the anaesthetist since the List was submitted. History shows what changed."
+                          >
+                            Changed
+                          </Pill>
                         </span>
                       )}
                       {!booking.completed && booking.cancellation === undefined && (
-                        <span style={{ fontSize: 11, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>Not complete</span>
+                        <Pill tone="warning" size="lg">Not complete</Pill>
                       )}
                     </div>
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'}</div>
+                    {alert !== undefined && <AlertLine alert={alert} onResolve={() => run(resolveNotification(useAppStore, actor, alert.id))} disabled={authorised} />}
+                    <OpenWarnings warnings={warningsByBooking.get(booking.id) ?? []} patientName={patient?.name ?? 'this Booking'} disabled={authorised} onClear={(w) => run(clearWarning(useAppStore, actor, w.bookingId, w.key))} />
                   </td>
-                  <td style={cellStyle}>{billedText}</td>
+                  <td style={{ ...cellStyle, maxWidth: 150 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{billedText}</div>
+                    <PayerAndInsurer booking={booking} onChange={onOpenBooking !== undefined && !authorised ? () => onOpenBooking(list.dateISO, booking.id) : undefined} />
+                  </td>
                   {/* Every Procedure's stack, compact (catch-up Phase 20a; US-07.2.2, US-03.1.9). */}
-                  <td data-shot="review-procedures" style={{ ...cellStyle, minWidth: 260, maxWidth: 340 }}>
+                  <td data-shot="review-procedures" style={{ ...cellStyle, minWidth: 240, maxWidth: 300 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {stackViews.map((view, i) => (
-                        <ProcedureStack key={i} view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
-                      ))}
+                      {stackViews.map((view, i) => {
+                        const procedureId = procIds[i]!
+                        const change = changes[i]
+                        return (
+                          <div key={i} data-shot="review-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <ProcedureStack view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
+                            <ProcedureFlags
+                              flags={flags.filter((f) => f.procedureId === procedureId)}
+                              change={change}
+                              locked={authorised}
+                              patientName={patient?.name ?? 'this Booking'}
+                              onApprove={() => run(approveContractSelection(useAppStore, actor, { bookingId: booking.id, procedureId }))}
+                              {...(onOpenBooking !== undefined ? { onCorrect: () => onOpenBooking(list.dateISO, booking.id) } : {})}
+                            />
+                          </div>
+                        )
+                      })}
                     </div>
                   </td>
                   <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
                   <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
                   <td className={totals.needsPrice ? undefined : 'mono'} style={{ ...numCell, fontWeight: 600 }}>{totals.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(totals.total)}</td>
-                  <td style={cellStyle}>
+                  <td style={{ ...cellStyle, minWidth: 150 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                      {flags.map((f, i) => (
+                      {flags.filter((f) => f.procedureId === undefined).map((f, i) => (
                         <FlagPill key={i} flag={f} />
                       ))}
                       {authorised && <Lock size={13} aria-hidden style={{ color: neutral.mist }} />}
@@ -374,6 +422,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
           {!authorised && allFlags.length > 0 && (
             <div style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{allFlags.length} flag{allFlags.length === 1 ? '' : 's'} open. Check or note them before authorising.</div>
           )}
+          {blockers.map((b) => (
+            <div key={b.code} data-testid="review-authorise-blocker" style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{b.message}</div>
+          ))}
           <div style={{ fontSize: 11.5, color: neutral.mist }}>Authorisation is an OfficeAdmin action · acting as {actor.who} (Office)</div>
         </div>
         {authorised ? (
@@ -381,9 +432,14 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             <Lock size={14} aria-hidden /> Authorised · locked
           </span>
         ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {pendingChanges > 0 && (
+              <Button variant="secondary" shot="review-contract-approve-all" onClick={() => run(approveContractChangesOnList(useAppStore, actor, listId))}>
+                Approve {pendingChanges === 1 ? 'the Contract change' : `all ${pendingChanges} Contract changes`}
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setNoteOpen(true)}>Log phone note</Button>
-            <Button variant="primary" disabled={incompleteNames.length > 0} onClick={() => setConfirmOpen(true)} style={{ minHeight: 48, fontSize: 15 }}>Authorise for billing</Button>
+            <Button variant="primary" disabled={incompleteNames.length > 0 || blockers.length > 0} onClick={() => setConfirmOpen(true)}>Authorise for billing</Button>
           </div>
         )}
       </div>
@@ -400,6 +456,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
           Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
         </div>
+        {pendingChanges > 0 && (
+          <div data-testid="review-authorise-approves" style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px', marginTop: 8 }}>
+            {pendingChanges === 1 ? 'The Contract change still waiting is' : `The ${pendingChanges} Contract changes still waiting are`} approved at authorise.
+          </div>
+        )}
       </ConfirmSheet>
 
       {/* Log phone note */}
@@ -434,11 +495,115 @@ function Tile({ label, value, sub, tone }: { label: string; value: string; sub?:
   )
 }
 
+/** One review flag (catch-up Phase 21a): the shared pill at the Admin Review mockup's table size, warn or neutral. Never a block. */
 function FlagPill({ flag }: { flag: ReviewFlag }) {
-  const warn = flag.tone === 'warn'
   return (
-    <span data-shot={flag.shot} style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 8px', background: warn ? semantic.warning.tint : neutral.sunken, color: warn ? semantic.warning.onTint : neutral.slate }}>
+    <Pill tone={flag.tone === 'warn' ? 'warning' : 'neutral'} size="lg" shot={flag.shot} data-rule={flag.rule} style={{ whiteSpace: 'normal' }}>
       {flag.text}
-    </span>
+    </Pill>
+  )
+}
+
+/**
+ * A Procedure's own flags under its stack, with Approve and Correct on the
+ * anaesthetist's Contract change (US-07.2.2), or "Approved" once the office
+ * has approved it.
+ */
+function ProcedureFlags({
+  flags,
+  change,
+  locked,
+  patientName,
+  onApprove,
+  onCorrect,
+}: {
+  patientName: string
+  flags: readonly ReviewFlag[]
+  change: ContractChangeRecord | undefined
+  locked: boolean
+  onApprove: () => void
+  onCorrect?: () => void
+}) {
+  const approved = change?.status === 'approved' && change.approval !== undefined ? change.approval : undefined
+  if (flags.length === 0 && approved === undefined) return null
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px' }}>
+      {flags.map((f, i) => (
+        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <FlagPill flag={f} />
+          {f.rule === 'contractChanged' && !locked && (
+            <>
+              <TextAction small shot="review-contract-approve" onClick={onApprove} label={`Approve the Contract change for ${patientName}`}>Approve</TextAction>
+              {onCorrect !== undefined && <TextAction small shot="review-contract-correct" onClick={onCorrect} label={`Correct the Contract for ${patientName}`}>Correct</TextAction>}
+            </>
+          )}
+        </span>
+      ))}
+      {approved !== undefined && (
+        <span data-shot="review-contract-approved" style={{ fontSize: 12, color: neutral.slate }}>
+          {approved.how === 'authorise' ? 'Approved at authorise' : 'Approved'} {stampText(approved.atISO)}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** The payer and the insurer or funder (21's), compact for the table, with Change opening the Admin Booking's payer sheet. */
+function PayerAndInsurer({ booking, onChange }: { booking: Booking; onChange?: () => void }) {
+  const masters = useAppStore((s) => s.masters)
+  const payer = payerDetails(booking, masters.patients[booking.patientId])
+  const funder = booking.funderPartyId !== undefined ? masters.parties[booking.funderPartyId] : undefined
+  const missing = approvalNumberMissing(booking, masters.parties)
+  const number = booking.insuranceApprovalNumber?.trim()
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6, fontSize: 12, color: neutral.slate }}>
+      <div data-shot="review-payer" style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+        <span>{booking.payer.kind === 'patient' ? 'Patient pays' : `Payer: ${payer.name}${payer.relationship !== undefined ? ` (${payer.relationship})` : ''}`}</span>
+        {onChange !== undefined && <TextAction small onClick={onChange} label="Change the payer on the Booking">Change</TextAction>}
+      </div>
+      {/* How the payer is invoiced (21's delivery rule: email where there is one, else post). */}
+      {payer.email !== undefined && payer.email.trim() !== '' ? (
+        <span data-shot="review-payer-delivery" style={{ overflowWrap: 'anywhere' }}>Email: {payer.email}</span>
+      ) : payer.postalAddress !== undefined ? (
+        <span data-shot="review-payer-delivery">Post: {formatPostalAddress(payer.postalAddress)}</span>
+      ) : null}
+      {funder !== undefined && (
+        <div data-shot="review-insurance" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span>{funder.kind === 'insurer' ? 'Insurer' : 'Funder'}: {funder.name}</span>
+          {number !== undefined && number !== '' ? (
+            <span className="mono">{number}</span>
+          ) : missing ? (
+            <Pill tone="warning" size="sm">No approval number</Pill>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** 32b's open alert to the office on this Booking, with the office's resolve tick. Never a gate. */
+function AlertLine({ alert, onResolve, disabled }: { alert: Notification; onResolve: () => void; disabled: boolean }) {
+  return (
+    <div data-shot="review-alert" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+      <Pill tone="warning" size="sm">Alert</Pill>
+      <span style={{ fontSize: 12, color: neutral.slate, maxWidth: 220 }}>{alert.message ?? 'The anaesthetist asked the office to check this Booking.'}</span>
+      {!disabled && <TickButton compact onClick={onResolve} label="Resolve the alert">Resolve</TickButton>}
+    </div>
+  )
+}
+
+/** 15a's open warnings with the office's Clear, so they are dealt with where the List is reviewed. Never a gate. */
+function OpenWarnings({ warnings, patientName, disabled, onClear }: { warnings: readonly Warning[]; patientName: string; disabled: boolean; onClear: (w: Warning) => void }) {
+  const open = warnings.filter(isOpen)
+  if (open.length === 0 || disabled) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+      {open.map((w) => (
+        <div key={w.key} data-shot="review-warning-clear" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span title={w.text} style={{ fontSize: 12, lineHeight: '16px', color: neutral.slate, maxWidth: 200, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{w.text}</span>
+          <ClearWarningButton warning={w} compact onClear={() => onClear(w)} label={`${w.strength === 'mild' ? 'Clear (optional)' : 'Clear'} warning for ${patientName}`} />
+        </div>
+      ))}
+    </div>
   )
 }

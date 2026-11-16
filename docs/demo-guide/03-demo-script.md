@@ -182,6 +182,7 @@ working List rather than an empty one.
     laparoscopic · B 5**, tap **Done**, then **Start now**.
   - Without leaving Sarah, select **live clock → +1 hour**, close the popup (Escape, or a click outside it), then select
     **Finish now**.
+  - In the modifiers step, tap the teal **None apply** (it then reads **No modifiers claimed · Change**).
   - Select **Mark complete**.
   - Optional, to show the completion gate: back on the List, select
     **Mark list completed · 3 to finish**.
@@ -207,6 +208,19 @@ working List rather than an empty one.
   modifier, open Callum Graham on her Mon 27 Jul PM List (RVG code S3a): P1 shows selected at 0 and
   cannot be added twice. S2 Beat 3c moves that List to Dr Ropata, so show it before then or after a
   Reset.
+- **Worth pointing at (what a Procedure asks for):** the form follows the Contract's pricing kind. On
+  an RVG price (No contract · RVG and the RVG rate and discount kinds) the RVG code, the start and finish
+  times and the modifiers step are required, each with a **Required** caption; the modifiers step is
+  answered by **None apply** or by claiming a modifier. On a fixed or open price there are no times,
+  units or modifiers, and the RVG code is optional, "for reference". Mark complete checks exactly three
+  things: a Contract, the RVG detail on an RVG price, and a price (not **Needs a price**). It does not
+  check the RVG code on a fixed price, the payer's contact, the approval number or out-of-range base
+  units. Something only the office can fix shows a pointer to **Alert the office**; submit still needs
+  every Booking complete.
+- **Optional aside (fixed price, no times):** on Dr Souter's Mon 10 Aug PM List
+  (`/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176`), Miriam Holloway's Merivale "Facelift plus 1
+  add on" asks for no times or modifiers and completes as she is. Graham Pulley on the same List
+  (No contract · Fixed price) shows **Needs a price** and refuses Mark complete until an amount is typed.
 
 **Discovery point:** settled: a part time interval always rounds up under the RVG tiers (confirmed with
 AA, OQ-75); the tiers are held as data, shown read only under **Admin → Master data → RVG groups**, and
@@ -507,11 +521,36 @@ already seeded.
   - Pause on the submitted List, then select **Authorise for billing → Confirm**.
 - **Say:** "The office reviews the Bookings as a set, a human sanity check, not an automatic gate. If
   something needs clarification the office phones and corrects it here. The List is never returned.
-  Authorisation locks every Booking and hands the whole List to the Billing Engine."
-- **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls. Until
+  Authorisation locks every Booking and hands the whole List to the Billing Engine. Each row shows what
+  the office checks: every Procedure's text, Contract with who is invoiced, and RVG code, the payer, the
+  insurer or funder with its approval number, any alert from the anaesthetist and any edit since
+  submit. Flags point at what needs a look, a Contract she changed, a typed price beside the computed
+  one, a Contract that no longer fits the List, anything still needing a price, but no flag ever blocks.
+  The office approves or corrects each Contract change, and authorising approves the rest."
+- **Expected:** Dr Morrison's Mon 20 Jul AM (`/admin/review/L-25490-2026-07-20-AM`) raises no flags.
+  Each row shows its Procedure stack (procedure text, Contract with who is invoiced, RVG code) and the
+  payer and insurer or funder, with a teal **Change** that opens the Admin Booking. The authorisation
+  banner appears, rows lock, and the Review queue count falls. Until
   this moment the List stayed on Dr Morrison's main view, less prominent, and she could still change
   it; if she had, Review would show **Changed since submitted** with the count. Now it leaves her main
   view and her search finds it.
+- **Optional aside (the review-flags List):** open **Review queue → Dr Alistair Chen, Tue 14 Jul AM
+  (Christchurch Eye Surgery, Dr Whitford)** (`/admin/review/L-45178-2026-07-14-AM`). Diane Fairweather
+  (08:00) reads **Changed by Dr Chen: was Cataract IOL (LA by Anaesthetist)**, now Christchurch Eye
+  Surgery RVG: select **Approve** (it reads **Approved** with the time) or **Correct**, which opens the
+  Booking's rail. Owen Prendergast (09:00, No contract · RVG) reads **Price typed: $1,200.00 (computed
+  $265.50)**. Hemi Walker (10:15, No contract · Fixed price, no amount) reads **Needs a price** and **Not
+  marked completed**: the office types a price and completes it before authorising. Rosalind Kerr (11:00)
+  carries a Merivale fixed price linked to Ms Lim, so it reads **Contract not offered on this List**.
+  While any change waits, the action bar offers **Approve all N Contract changes**; authorising
+  approves any still waiting, and the confirm says how many. A Disabled Contract raises no flag. On the
+  phone the anaesthetist sees **Awaiting office approval** under the Billing card, then **Approved by the
+  office** with the time.
+- **Optional aside (a moved Booking keeps its Contract):** on **Admin Day → Mon 10 Aug**
+  (`/admin/day/2026-08-10`), Move Fiona Lattimer (Merivale Face lift, Dr Souter's PM List at St George's
+  with Ms Lim) to her Mon 10 Aug AM List (Forte, Mr Okafor). The Booking keeps its Contract, and review
+  flags it **Contract not offered on this List**; move it back and the flag clears. No
+  move ever resets a Procedure's Contract or typed price.
 - **Optional aside (the payer review List):** open **Review queue → Dr Alistair Chen, Fri 17 Jul
   (Christchurch Eye Surgery)**. Point at the warning triangles: Ella Moana, 15, is the payer (a mild
   child payer warning) and Janet Ormsby's insurer, NIB, has no approval number (the only insurance

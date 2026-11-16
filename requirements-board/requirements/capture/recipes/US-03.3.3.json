@@ -6,7 +6,7 @@
     {
       "name": "times",
       "app": "web",
-      "caption": "Anaesthetic start and handover times",
+      "caption": "Anaesthetic start and finish times",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
@@ -15,7 +15,7 @@
           "highlight": [
             "[data-shot=capture-times]"
           ],
-          "caption": "Start recorded, handover still to stamp"
+          "caption": "Start recorded, finish still to stamp, both required on an RVG Contract"
         },
         {
           "state": "handover",
@@ -30,14 +30,14 @@
           "highlight": [
             "[data-shot=capture-times]"
           ],
-          "caption": "Handover stamped with Finish now"
+          "caption": "Finish stamped with Finish now"
         }
       ]
     },
     {
       "name": "times",
       "app": "mobile",
-      "caption": "Anaesthetic start and handover times",
+      "caption": "Anaesthetic start and finish times",
       "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
@@ -46,7 +46,7 @@
           "highlight": [
             "[data-shot=capture-times]"
           ],
-          "caption": "Start recorded, handover still to stamp"
+          "caption": "Start recorded, finish still to stamp, both required on an RVG Contract"
         },
         {
           "state": "handover",
@@ -61,7 +61,7 @@
           "highlight": [
             "[data-shot=capture-times]"
           ],
-          "caption": "Handover stamped with Finish now"
+          "caption": "Finish stamped with Finish now"
         }
       ]
     }

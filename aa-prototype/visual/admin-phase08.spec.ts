@@ -258,6 +258,8 @@ test('the authorised design-day list leaves the mobile main view (catch-up Phase
   await page.waitForTimeout(600)
   await page.getByRole('button', { name: 'Finish now' }).click()
   await page.waitForTimeout(400)
+  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
+  await page.locator('[data-shot="capture-modifiers-none"]').click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
   await page.waitForTimeout(1300)
   await page.getByRole('button', { name: 'Mark list completed' }).click()

@@ -196,6 +196,7 @@ export function RvgCodeField({
   return (
     <div
       data-shot="capture-procedure-code"
+      data-rvg-role={codeRole}
       tabIndex={-1}
       data-validation-procedure-id={procedure.id}
       data-validation-fields="rvgGroupId baseUnitsSelected"
@@ -204,7 +205,7 @@ export function RvgCodeField({
       {field}
       {codeRole === 'reference' && (
         <span data-shot="rvg-code-optional" style={{ fontSize: 12.5, color: neutral.slate }}>
-          Optional, for reference: this Contract has its own price.
+          RVG code (for reference). Optional: this Contract has its own price, so no times or modifiers are asked.
         </span>
       )}
       {!coded && emptyHint !== undefined && (
@@ -427,7 +428,7 @@ function RangeUnitsRow({
         </span>
         {canCapture && (
           <>
-            <StepperButton glyph="−" onClick={() => onSelect(Math.max(0, value - 1))} disabled={value <= 0} />
+            <StepperButton glyph="−" label="One fewer base unit" onClick={() => onSelect(Math.max(0, value - 1))} disabled={value <= 0} />
             {editing ? (
               <input
                 ref={inputRef}
@@ -484,7 +485,7 @@ function RangeUnitsRow({
                 {value}
               </button>
             )}
-            <StepperButton glyph="+" onClick={() => onSelect(value + 1)} />
+            <StepperButton glyph="+" label="One more base unit" onClick={() => onSelect(value + 1)} />
           </>
         )}
       </div>

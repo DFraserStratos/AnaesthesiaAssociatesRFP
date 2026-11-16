@@ -158,7 +158,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -176,6 +176,34 @@ export const PAT_REVIEW = {
   funderNoWarning: `PT${String(19 + 132 + 5).padStart(4, '0')}`,
   suggestedTag: `PT${String(19 + 132 + 6).padStart(4, '0')}`,
 } as const
+
+/** Catch-up Phase 21a's dedicated patients (`seed/completionBookings.ts`), after the payer review's. */
+export const PAT_21A = {
+  fixedPriceNoTimes: `PT${String(19 + 132 + 7).padStart(4, '0')}`,
+  needsPrice: `PT${String(19 + 132 + 8).padStart(4, '0')}`,
+} as const
+
+/** Catch-up Phase 21a session 2's dedicated patients (`seed/reviewFlagBookings.ts`), after session 1's. */
+export const PAT_21A_REVIEW = {
+  contractChange: `PT${String(19 + 132 + 9).padStart(4, '0')}`,
+  typedPrice: `PT${String(19 + 132 + 10).padStart(4, '0')}`,
+  needsPrice: `PT${String(19 + 132 + 11).padStart(4, '0')}`,
+  otherSurgeon: `PT${String(19 + 132 + 12).padStart(4, '0')}`,
+  movableFixed: `PT${String(19 + 132 + 13).padStart(4, '0')}`,
+} as const
+
+const REVIEW_FLAG_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_21A_REVIEW.contractChange, nhi: 'ZAX1009', name: 'Diane Fairweather', dobISO: '1953-02-11', phone: '021 555 5989', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.typedPrice, nhi: 'ZAY1004', name: 'Owen Prendergast', dobISO: '1947-11-30', phone: '03 555 6090', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.needsPrice, nhi: 'ZAZ1000', name: 'Hemi Walker', dobISO: '1970-06-18', phone: '021 555 6101', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_21A_REVIEW.otherSurgeon, nhi: 'ZBA1009', name: 'Rosalind Kerr', dobISO: '1961-09-05', phone: '021 555 6212', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.movableFixed, nhi: 'ZBB1004', name: 'Fiona Lattimer', dobISO: '1968-01-24', phone: '021 555 6323', ethnicityCode: '11111' },
+]
+
+const COMPLETION_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_21A.fixedPriceNoTimes, nhi: 'ZAV1008', name: 'Miriam Holloway', dobISO: '1966-04-21', phone: '021 555 5767', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A.needsPrice, nhi: 'ZAW1003', name: 'Graham Pulley', dobISO: '1958-09-03', phone: '021 555 5878', ethnicityCode: '11111' },
+]
 
 const PAYER_REVIEW_PATIENTS: readonly Patient[] = [
   // 15 on the review List's date: the child payer warning (US-11.2.4).

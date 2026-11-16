@@ -103,6 +103,8 @@ test('H4 with 14 typed: the caption, completion goes through, the warning on the
   await page.getByRole('button', { name: 'Done' }).click()
 
   await page.getByRole('button', { name: 'Finish now' }).click()
+  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
+  await page.locator('[data-shot="capture-modifiers-none"]').click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
   await expect(page.getByRole('button', { name: 'Mark list completed' })).toBeVisible()
 

@@ -82,7 +82,35 @@ export function claimModifier(api: AppStoreApi, actor: Actor, procedureId: strin
       before: { modifier: 'none' },
       after: claimAuditView(saved, state.masters.modifiers),
     },
-    write(procedureId, { ...procedure, modifierClaims }),
+    // Claiming answers the modifiers step (catch-up Phase 21a): the marker is never cleared afterwards.
+    write(procedureId, { ...procedure, modifierClaims, modifiersConfirmed: true }),
+  )
+  return ok(undefined)
+}
+
+/**
+ * "None apply" (catch-up Phase 21a; US-03.3.4, US-03.3.9: choosing no
+ * modifier is a valid answer, AR-58 A20, the marker our reading): answers the
+ * modifiers step with no claim. The anaesthetist on their own ACTIVE or
+ * SUBMITTED List and the office (`editRefusal`); idempotent (a second press
+ * writes nothing). Audited `procedure.modifiersConfirm`.
+ */
+export function confirmNoModifiers(api: AppStoreApi, actor: Actor, procedureId: string): Outcome {
+  const loaded = load(api, actor, procedureId)
+  if (!('state' in loaded)) return loaded
+  const { procedure } = loaded
+  if (procedure.modifiersConfirmed === true) return ok(undefined)
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'procedure',
+      entityId: procedureId,
+      action: 'procedure.modifiersConfirm',
+      before: { modifiersConfirmed: false },
+      after: { modifiersConfirmed: true },
+    },
+    write(procedureId, { ...procedure, modifiersConfirmed: true }),
   )
   return ok(undefined)
 }

@@ -110,7 +110,15 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v41: catch-up Phase 21 session 2, insurance on the Booking (US-11.4.3): `Booking.funderPartyId` and
+/** v43: catch-up Phase 21a session 2, office review (US-07.2.2, US-04.3.11): the review-flags List
+ *  (Chen Tue 14 Jul AM, SUBMITTED) with Dr Chen's seeded Contract change, a typed price, a Booking that
+ *  needs a price and a Contract linked to another surgeon; the movable Merivale Booking on Souter Mon 10
+ *  Aug PM; five pinned patients (PT0160 to PT0164); `Procedure.contractApproval`.
+ *  v42: catch-up Phase 21a session 1, RVG detail by pricing kind and completion (US-03.3.9, US-03.6.1):
+ *  `Procedure.modifiersConfirmed` (set on every completed Booking's Procedures) and two Bookings on
+ *  Souter's Mon 10 Aug PM List (the fixed price with no times, the open price that needs a price) with
+ *  their two patients.
+ *  v41: catch-up Phase 21 session 2, insurance on the Booking (US-11.4.3): `Booking.funderPartyId` and
  *  `insuranceApprovalNumber` (NIB on every nib-Contract Booking, AIA on the claim-back Booking, the review
  *  List's NIB and Health NZ cases) and the Southern Cross "Suggested" Booking (BK0175).
  *  v40: catch-up Phase 21 session 1, the payer on the Booking (US-11.2.2, RV-30): `Booking.payer`
@@ -251,7 +259,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 41
+export const PERSIST_VERSION = 43
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

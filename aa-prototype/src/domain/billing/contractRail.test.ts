@@ -3,6 +3,7 @@
  * US-03.4.1), over the seeded masters.
  */
 
+import { rvgCodeToFill } from './rvgDetail'
 import { describe, expect, it } from 'vitest'
 import { buildSeed } from '../seed'
 import type { Contract } from '../types'
@@ -19,7 +20,6 @@ import {
   openPriceFallbackFor,
   railAnswersFor,
   railAnswersText,
-  rvgCodeToFill,
   type RailContext,
   type RailMasters,
 } from './contractRail'

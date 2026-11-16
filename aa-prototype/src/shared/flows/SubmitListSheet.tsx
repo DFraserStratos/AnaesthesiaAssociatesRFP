@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
-import type { BillingValidationFailure } from '../../domain/billing'
+import type { CompletionFailure } from '../../domain/billing/completion'
 import { completionBlockersFor, submitList, useAppStore, type Actor } from '../../store'
 import { Button, FormError } from '../ui'
 import { useSurface } from '../surface'
@@ -43,11 +43,12 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
       .map((booking) => {
         const blockers = completionBlockersFor(state, booking)
-        const messages = blockers.flatMap((b) =>
-          b.code === 'validationFailed'
-            ? (b.details as BillingValidationFailure[]).map((f) => f.message)
-            : [b.message],
-        )
+        // The completion rule's own failures (catch-up Phase 21a), one line each; the blocker summary otherwise.
+        const detailed = blockers.find((b) => b.code === 'validationFailed')
+        // The destination summary repeats the rule's own "needs an invoice destination" line, so it is dropped beside the details; any other blocker keeps its line.
+        const messages = detailed !== undefined
+          ? [...(detailed.details as CompletionFailure[]).map((f) => f.message), ...blockers.filter((x) => x !== detailed && x.code !== 'needsInvoiceDestination').map((x) => x.message)]
+          : blockers.map((x) => x.message)
         return {
           bookingId: booking.id,
           patientName: state.masters.patients[booking.patientId]?.name ?? 'Unknown patient',

@@ -50,6 +50,8 @@ test('mobile anaesthetist Booking pins Mark complete alone and completes without
   await expect(page.getByRole('button', { name: 'Mark complete' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Finish now' }).click()
+  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
+  await page.locator('[data-shot="capture-modifiers-none"]').click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
   const overlay = page.getByTestId('completion-overlay')
   await expect(overlay.getByText('Booking complete', { exact: true })).toBeVisible()

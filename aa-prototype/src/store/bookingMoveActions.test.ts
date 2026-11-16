@@ -6,11 +6,12 @@
  * `reassignBooking` points at it.
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it, vi } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { moveBookingToAnaesthetist } from './listMoveActions'
 import * as lifecycle from './lifecycle'
-import { authoriseList, cancelBooking, completeBooking, reassignBooking, submitList } from './lifecycle'
+import { authoriseList, cancelBooking, reassignBooking, submitList } from './lifecycle'
 import { addPairingPreference } from './officePrivate'
 import { setAvailabilityRange } from './availabilityActions'
 import { runBillingForList, handoffListCases } from './billingRun'
@@ -277,7 +278,7 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
     expect(out.ok).toBe(true)
     if (!out.ok) return
     const them = as(api, receiver)
-    if (api.getState().schedule.bookings[D.prepaidBookingId]?.completed !== true) expect(completeBooking(api, them, D.prepaidBookingId).ok).toBe(true)
+    if (api.getState().schedule.bookings[D.prepaidBookingId]?.completed !== true) expect(completeAnswered(api, them, D.prepaidBookingId).ok).toBe(true)
     expect(submitList(api, them, out.value.createdListId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, out.value.createdListId).ok).toBe(true)
     expect(runBillingForList(api, out.value.createdListId).ok).toBe(true)

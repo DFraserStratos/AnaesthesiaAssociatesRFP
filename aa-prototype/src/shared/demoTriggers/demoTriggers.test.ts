@@ -145,6 +145,29 @@ describe('route scoping', () => {
     expect(Object.values(api.getState().notifications).find((n) => n.kind === 'officeAlert')?.resolvedBy).toBe('AA office (simulated)')
   })
 
+  it('Office approves this Contract change (catch-up Phase 21a): PWA only, badged, on the Booking route; disabled with nothing to approve or on an AUTHORISED List; a second press does nothing new', () => {
+    const api = createAppStore()
+    const t = byId('office-approves-contract-change')
+    expect(t.surfaces).toEqual(['pwa'])
+    expect(t.badge).toBe('office-stand-in')
+    const bookingId = SEED_MARKERS.contractChangeBooking!.entityId
+    const listId = SEED_LIST_IDS.reviewFlags
+    const path = `/mobile/lists/${listId}/bookings/${bookingId}`
+    expect(ids(api, path, 'pwa')).toContain(t.id)
+    expect(ids(api, path, 'bar')).not.toContain(t.id)
+    const ctx = ctxFor(path, { listId, bookingId })
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(t.run(api, ctx)).toEqual({ ok: true, message: 'The office approved your Contract change.' })
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No Contract change to approve')
+    const count = api.getState().audit.length
+    expect(t.run(api, ctx).ok).toBe(false)
+    expect(api.getState().audit.length).toBe(count)
+    const typed = SEED_MARKERS.typedPriceBooking!.entityId
+    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${listId}/bookings/${typed}`, { listId, bookingId: typed }))).toBe('No Contract change to approve')
+    const authorised = Object.values(api.getState().schedule.bookings).find((b) => api.getState().schedule.lists[b.listId]?.state === 'AUTHORISED')!
+    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${authorised.listId}/bookings/${authorised.id}`, { listId: authorised.listId, bookingId: authorised.id }))).toBe("This Booking's List is authorised")
+  })
+
   it('Ask a colleague to make their session available (catch-up Phase 32b): only while a picker is open, badged, never a session holding a List', () => {
     const api = createAppStore()
     const t = byId('ask-colleague-make-available')

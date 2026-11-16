@@ -16,9 +16,10 @@
  * (reset, already authorised, seeded review queue) is a silent no-op.
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../store/appStore'
-import { authoriseList, completeBooking, editProcedure, submitList, uncompleteBooking } from '../store/lifecycle'
+import { authoriseList, editProcedure, submitList, uncompleteBooking } from '../store/lifecycle'
 import { wireBillingRun } from '../store/billingRun'
 import { advanceClockMinutes, resetDemo } from '../store/clockActions'
 import { clockISO, type Actor } from '../store/mutate'
@@ -71,7 +72,7 @@ function submitAsSouter(api: BoundAppStore): void {
   if (procedure === undefined) throw new Error('the Ellison booking has no procedure')
   const handover = editProcedure(api, SOUTER, procedure.id, { handoverISO: clockISO(api.getState().clock) })
   if (!handover.ok) throw new Error(`handover refused: ${handover.message}`)
-  const completed = completeBooking(api, SOUTER, ellison)
+  const completed = completeAnswered(api, SOUTER, ellison)
   if (!completed.ok) throw new Error(`complete refused: ${completed.message}`)
   const submitted = submitList(api, SOUTER, SOUTER_PM)
   if (!submitted.ok) throw new Error(`submit refused: ${submitted.message}`)
@@ -172,7 +173,7 @@ describe('the trigger', () => {
       expect(uncompleteBooking(api, SOUTER, ellison).ok).toBe(true)
       vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
       expect(listState(api, SOUTER_PM)).toBe('SUBMITTED')
-      expect(completeBooking(api, SOUTER, ellison).ok).toBe(true)
+      expect(completeAnswered(api, SOUTER, ellison).ok).toBe(true)
       vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
       expect(listState(api, SOUTER_PM)).toBe('AUTHORISED')
     } finally {

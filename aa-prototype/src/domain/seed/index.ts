@@ -87,6 +87,8 @@ import { MERIVALE_BOOKING_LIST_ID, seedPricedItemBookings } from './pricedItemBo
 import { finaliseSeedProcedureTexts } from './procedureText'
 import { seedSourceWordingBookings } from './sourceWordingBookings'
 import { PAYER_REVIEW_LIST_ID, seedPayerReviewBookings, type PayerReviewKey } from './payerReviewBookings'
+import { seedCompletionBookings, type CompletionBookingKey } from './completionBookings'
+import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
 
 export {
   canvasAnaesthetists,
@@ -390,6 +392,10 @@ interface SeedBuild {
   scenario: BookingScenarioIds
   /** The payer review List's Bookings (catch-up Phase 21), by case. */
   payerReview: Record<PayerReviewKey, string>
+  /** Catch-up Phase 21a's Bookings (the fixed price with no times, the open price that needs a price). */
+  completion: Record<CompletionBookingKey, string>
+  /** Catch-up Phase 21a session 2's Bookings (the review-flags List and the movable fixed price). */
+  reviewFlags: Record<ReviewFlagBookingKey, string>
   /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
   clashes: RecurringClash[]
 }
@@ -442,6 +448,8 @@ function buildSeedInternal(): SeedBuild {
     SEED_LIST_IDS.integrationLocked,
     // Catch-up Phase 21: the payer review List, waiting in the Review queue.
     SEED_LIST_IDS.payerReview,
+    // Catch-up Phase 21a: the review-flags List (Chen Tue 14 Jul AM), waiting in the Review queue.
+    SEED_LIST_IDS.reviewFlags,
   ]) {
     const list = lists[id]
     if (list !== undefined && list.state !== 'DRAFT') lists[id] = { ...list, state: 'SUBMITTED' }
@@ -502,6 +510,19 @@ function buildSeedInternal(): SeedBuild {
   const payerReview = seedPayerReviewBookings(wordingBookings.next)
   for (const b of payerReview.bookings) bookingsRec[b.id] = b
   for (const p of payerReview.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 21a: the fixed price with no times and the open price that needs a price, after every other id.
+  const completionBookings = seedCompletionBookings(payerReview.next)
+  for (const b of completionBookings.bookings) bookingsRec[b.id] = b
+  for (const p of completionBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 21a session 2: the review-flags List's Bookings and the movable fixed price, after every other id.
+  const reviewFlagBookings = seedReviewFlagBookings(completionBookings.next)
+  for (const b of reviewFlagBookings.bookings) bookingsRec[b.id] = b
+  for (const p of reviewFlagBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 21a: every completed Booking's modifiers step is answered (US-03.6.1): a seeded
+  // Booking completed before the step existed carries the marker, so it still passes completion.
+  for (const p of Object.values(proceduresRec)) {
+    if (bookingsRec[p.bookingId]?.completed === true && p.modifiersConfirmed !== true) proceduresRec[p.id] = { ...p, modifiersConfirmed: true }
+  }
   // Catch-up Phase 21 (US-11.4.3): every Booking on nib's Contract names NIB as its insurer, with an
   // approval number (the review List's `approvalMissing` alone has none); the AIA claim-back Booking
   // names AIA Health with a number. They raise no warning, so nothing is seeded as cleared.
@@ -525,6 +546,8 @@ function buildSeedInternal(): SeedBuild {
       ...bookingsBuild.audit,
       // Catch-up Phase 20a: the hospital's download replaced the rooms' "RTK" (AR-35 rows 1 and 2, illustrative).
       { ...wordingBookings.replaceAudit, id: 'seed-rtk-replace' },
+      // Catch-up Phase 21a: Dr Chen's Contract change on the review-flags List, never approved.
+      ...reviewFlagBookings.audit,
       ...seedDraftListAudit(seededDraftLists),
       {
         id: 'seed-sickness-return',
@@ -603,8 +626,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: payerReview.next.booking,
-      procedure: payerReview.next.procedure,
+      booking: reviewFlagBookings.next.booking,
+      procedure: reviewFlagBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21).
@@ -618,7 +641,7 @@ function buildSeedInternal(): SeedBuild {
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, clashes }
+  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, clashes }
 }
 
 /** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
@@ -647,6 +670,8 @@ export const SEED_LIST_IDS = {
   integrationCphList: projectedListId(ANAE.souter, '2026-07-30', 'AM'),
   // Catch-up Phase 21: the payer review List (Dr Chen, Fri 17 Jul AM, Christchurch Eye Surgery), SUBMITTED.
   payerReview: PAYER_REVIEW_LIST_ID,
+  // Catch-up Phase 21a: the review-flags List (Dr Chen, Tue 14 Jul AM, Christchurch Eye Surgery), SUBMITTED.
+  reviewFlags: REVIEW_FLAGS_LIST_ID,
 } as const
 
 /**
@@ -795,13 +820,19 @@ export const MERIVALE_FACE_LIFT_BOOKING_ID: string = (() => {
 /** The payer review List's Bookings (catch-up Phase 21), appended after 20a's: the parity suites name them as additions. */
 export const PAYER_REVIEW_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.payerReview).sort()
 
+/** Catch-up Phase 21a's two Bookings, appended after 21's: the parity suites name them as additions. */
+export const COMPLETION_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.completion).sort()
+
+/** Catch-up Phase 21a session 2's five Bookings, appended after session 1's: the parity suites name them as additions. */
+export const REVIEW_FLAG_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.reviewFlags).sort()
+
 /**
  * The Bookings catch-up Phase 20a appended to carry AR-35's illustrative
  * wording (`seed/sourceWordingBookings.ts`): every Booking after the Merivale
  * Face lift. The parity suites name them as additions.
  */
 export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
-  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id))
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id))
   .sort()
 
 /** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
@@ -1148,5 +1179,49 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityType: 'booking',
     entityId: SEED_BUILD.payerReview.suggestedTag,
     detail: 'Fitzgerald Thu 23 Jul AM (Southern Cross), 08:30, no Contract yet: the step rail marks Southern Cross › SXAP "Suggested"; every path stays offered.',
+  },
+  // Catch-up Phase 21a: what the capture form asks for follows the pricing kind; completion needs a price.
+  fixedPriceNoTimes: {
+    label: 'Fixed price with no times, code or modifiers (Merivale)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.completion.fixedPriceNoTimes,
+    detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 14:45. Merivale's Facelift plus 1 add on: no times or modifiers asked, the RVG code for reference only; Mark complete passes.",
+  },
+  needsPriceBooking: {
+    label: 'Open price with no amount (Needs a price)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.completion.needsPriceBooking,
+    detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 16:00. No contract · Fixed price with no amount typed: \"Needs a price\", and Mark complete refuses until one is typed.",
+  },
+  // Catch-up Phase 21a session 2: the review-flags List (Chen Tue 14 Jul AM, SUBMITTED) and the movable Booking.
+  contractChangeBooking: {
+    label: "The anaesthetist's Contract change awaiting approval",
+    entityType: 'booking',
+    entityId: SEED_BUILD.reviewFlags.contractChangeBooking,
+    detail: 'Chen Tue 14 Jul AM (Christchurch Eye Surgery), 08:00. Dr Chen changed the Contract to Christchurch Eye Surgery RVG: Review flags "Changed by Dr Chen" with Approve and Correct.',
+  },
+  typedPriceBooking: {
+    label: 'Typed price beside the computed price',
+    entityType: 'booking',
+    entityId: SEED_BUILD.reviewFlags.typedPriceBooking,
+    detail: 'Chen Tue 14 Jul AM, 09:00. No contract · RVG with the office\'s fixed fee of $1,200.00: Review shows it beside the computed fee.',
+  },
+  reviewNeedsPrice: {
+    label: 'Needs a price at review',
+    entityType: 'booking',
+    entityId: SEED_BUILD.reviewFlags.reviewNeedsPrice,
+    detail: 'Chen Tue 14 Jul AM, 10:15. No contract · Fixed price with no amount, not complete: "Needs a price" and "Not marked completed". The office types the price and completes it before authorising.',
+  },
+  otherSurgeonContract: {
+    label: "A Contract linked to another surgeon",
+    entityType: 'booking',
+    entityId: SEED_BUILD.reviewFlags.otherSurgeonContract,
+    detail: 'Chen Tue 14 Jul AM, 11:00. Merivale\'s fixed price, linked to Ms Lim, on Dr Whitford\'s List: "Contract not offered on this List".',
+  },
+  movableFixedBooking: {
+    label: 'A fixed-price Booking to move to another surgeon',
+    entityType: 'booking',
+    entityId: SEED_BUILD.reviewFlags.movableFixedBooking,
+    detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 17:00. Merivale's Face lift: Move it on Admin Day to her Mon 10 Aug AM List (Mr Okafor); it keeps its Contract and Review flags it there.",
   },
 }

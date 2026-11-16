@@ -2,10 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import { RVG_MODIFIER_MASTER, mkClaim } from './fixtures'
 import {
-  ADD_RVG_CODE_FAILURE,
-  CONTRACT_GONE_FAILURE,
-  NEEDS_DESTINATION_FAILURE,
-  TYPE_THE_PRICE_FAILURE,
   billingReferenceMissing,
   validateBookingForBilling,
   type BookingBillingContext,
@@ -75,6 +71,17 @@ function fieldsOf(failures: { field: string }[]): string[] {
   return failures.map((f) => f.field)
 }
 
+describe('validateBookingForBilling is the run\'s pre-flight only (catch-up Phase 21a)', () => {
+  it('asks nothing completion asks: no Contract, no RVG code, no times, an unexplained claim and a split prepayment with no deposit all pass here', () => {
+    const bare = mkProcedure({ modifierClaims: [mkClaim('AS3', '  ')] })
+    expect(validateBookingForBilling(booking, [bare], mkCtx())).toEqual([])
+    const noTimes = validProcedure({ anaestheticStartISO: undefined, handoverISO: undefined, rvgGroupId: undefined })
+    expect(validateBookingForBilling(booking, [noTimes], mkCtx())).toEqual([])
+    const split = mkProcedure({ governingContractId: PREPAID.id, prepaymentDetail: { type: 'split' } })
+    expect(validateBookingForBilling(booking, [split], mkCtx())).toEqual([])
+  })
+})
+
 describe('validateBookingForBilling — happy paths', () => {
   it('a complete RVG procedure passes', () => {
     expect(validateBookingForBilling(booking, [validProcedure()], mkCtx())).toEqual([])
@@ -98,108 +105,6 @@ describe('validateBookingForBilling — happy paths', () => {
     // Deliberately broken procedure — still no failures because the Booking is cancelled.
     const broken = mkProcedure()
     expect(validateBookingForBilling(cancelled, [broken], mkCtx())).toEqual([])
-  })
-})
-
-describe('validateBookingForBilling — required data', () => {
-  it('fails a Procedure with no Contract: it needs an invoice destination (US-04.3.4)', () => {
-    const p = validProcedure({ governingContractId: undefined })
-    expect(validateBookingForBilling(booking, [p], mkCtx())).toContainEqual({ procedureId: p.id, field: 'governingContractId', message: NEEDS_DESTINATION_FAILURE })
-  })
-
-  it('fails a Contract that no longer exists', () => {
-    const p = validProcedure({ governingContractId: 'con-gone' })
-    expect(validateBookingForBilling(booking, [p], mkCtx())).toContainEqual({ procedureId: p.id, field: 'governingContractId', message: CONTRACT_GONE_FAILURE })
-  })
-
-  it('requires the RVG code on an RVG kind only; optional on a fixed price (US-03.3.1)', () => {
-    const rvg = mkProcedure({ governingContractId: NO_CONTRACT.id })
-    expect(validateBookingForBilling(booking, [rvg], mkCtx())).toContainEqual({ procedureId: rvg.id, field: 'rvgGroupId', message: ADD_RVG_CODE_FAILURE })
-    const fixed = mkProcedure({ governingContractId: FIXED_IN_FORCE.id })
-    expect(validateBookingForBilling(booking, [fixed], mkCtx())).toEqual([])
-  })
-
-  it('fails an RVG code that no longer points at a row', () => {
-    const p = validProcedure({ rvgGroupId: 'RG-T-GONE' })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(failures.find((f) => f.field === 'rvgGroupId')?.message).toBe(
-      'The RVG code on this Procedure is no longer in the RVG groups. Choose it again.',
-    )
-  })
-
-  it('passes with no base code when a non-RVG line exists', () => {
-    const line: BillingLine = {
-      id: 'bl-1',
-      procedureId: 'proc-1',
-      chargeBasis: 'fixed',
-      amount: 150,
-      description: 'Consult',
-    }
-    const failures = validateBookingForBilling(booking, [mkProcedure({ governingContractId: FIXED_IN_FORCE.id })], mkCtx({ billingLines: [line] }))
-    expect(failures).toEqual([])
-  })
-
-  it('fails missing start/handover times on the RVG path', () => {
-    const p = validProcedure({ anaestheticStartISO: undefined, handoverISO: undefined })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(fieldsOf(failures)).toEqual(
-      expect.arrayContaining(['anaestheticStartISO', 'handoverISO']),
-    )
-  })
-
-  it('fails times out of order', () => {
-    const p = validProcedure({ anaestheticStartISO: HANDOVER_1030, handoverISO: START_0800 })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(failures.some((f) => f.field === 'handoverISO' && /after/.test(f.message))).toBe(true)
-  })
-
-  it('accepts any base-unit value on a ranged group (D3, RV-10): nothing unchosen, nothing out of range refused', () => {
-    const unchosen = validProcedure({ rvgGroupId: BASE_RANGE_5_9.id })
-    expect(validateBookingForBilling(booking, [unchosen], mkCtx())).toEqual([])
-
-    const outside = validProcedure({ rvgGroupId: BASE_RANGE_5_9.id, baseUnitsSelected: 12 })
-    expect(validateBookingForBilling(booking, [outside], mkCtx())).toEqual([])
-
-    const typed = validProcedure({ rvgGroupId: BASE_SINGLE_10.id, baseUnitsCaptured: { units: 40, source: 'overridden' } })
-    expect(validateBookingForBilling(booking, [typed], mkCtx())).toEqual([])
-
-    const inRange = validProcedure({ rvgGroupId: BASE_RANGE_5_9.id, baseUnitsSelected: 7 })
-    expect(validateBookingForBilling(booking, [inRange], mkCtx())).toEqual([])
-  })
-})
-
-describe('validateBookingForBilling — the payer and an Other price', () => {
-  it('never refuses for the payer: a payer with no contact completes (US-11.2.3 is a Review flag; catch-up Phase 21)', () => {
-    const p = validProcedure({ governingContractId: NO_CONTRACT.id })
-    const guardian = { ...booking, payer: { kind: 'other' as const, id: 'BP0009', name: 'No Contact' } }
-    expect(validateBookingForBilling(guardian, [p], mkCtx())).toEqual([])
-  })
-
-  it('an open-price fallback asks for its amount, and passes once one is typed (US-04.3.9)', () => {
-    const none = mkProcedure({ governingContractId: OPEN_FALLBACK.id })
-    expect(validateBookingForBilling(booking, [none], mkCtx())).toEqual([{ procedureId: none.id, field: 'enteredPrice', message: TYPE_THE_PRICE_FAILURE }])
-    expect(validateBookingForBilling(booking, [{ ...none, enteredPrice: 2000 }], mkCtx())).toEqual([])
-  })
-})
-
-describe('validateBookingForBilling — pre-payment typing', () => {
-  const base = { governingContractId: PREPAID.id } as const
-
-  it('a prepaid Contract with no detail passes: the prepayment is the full fee (INTERIM until Phase 27)', () => {
-    const p = validProcedure({ ...base })
-    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
-  })
-
-  it('a split pre-payment without a deposit amount fails', () => {
-    const p = validProcedure({ ...base, prepaymentDetail: { type: 'split' } })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('prepaymentDetail')
-  })
-
-  it('full pre-payment, and split with a deposit, pass', () => {
-    const full = validProcedure({ ...base, prepaymentDetail: { type: 'full' } })
-    const split = validProcedure({ ...base, prepaymentDetail: { type: 'split', depositAmount: 300 } })
-    expect(validateBookingForBilling(booking, [full], mkCtx())).toEqual([])
-    expect(validateBookingForBilling(booking, [split], mkCtx())).toEqual([])
   })
 })
 
@@ -333,35 +238,12 @@ describe('"Needs a price" on a fixed price with no range in force (catch-up Phas
     expect(fieldsOf(validateBookingForBilling(booking, [typed], ctxOn('2026-07-21')))).not.toContain('governingContractId')
   })
 
-  it('a fixed price with a reference RVG code asks for no times (no units on a fixed price)', () => {
-    const inForce = mkCtx({ contracts: { 'con-fx': fixed }, listDateISO: '2026-09-15', listHospitalId: 'hosp-1' })
-    const p = validProcedure({ governingContractId: 'con-fx', anaestheticStartISO: undefined, handoverISO: undefined })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], inForce))).not.toContain('anaestheticStartISO')
-    // An RVG-priced Procedure still needs them.
-    expect(fieldsOf(validateBookingForBilling(booking, [validProcedure({ anaestheticStartISO: undefined })], mkCtx()))).toContain('anaestheticStartISO')
-  })
-
-  it('an open price is never priced at RVG: with no amount typed it asks for one (catch-up Phase 20)', () => {
+  it('an open price is never priced at RVG: with no amount typed no price can be worked out, and a typed one passes', () => {
     const p = validProcedure({ governingContractId: OPEN_FALLBACK.id })
-    expect(validateBookingForBilling(booking, [p], mkCtx()).find((f) => f.field === 'enteredPrice')?.message).toBe(TYPE_THE_PRICE_FAILURE)
-  })
-})
-
-describe('the modifier explanation backstop (catch-up Phase 19b; US-03.6.1, finished by Phase 21)', () => {
-  it('fails a claim with a blank explanation, anchored to modifierClaims, and passes once it has one', () => {
-    const blank = validProcedure({ modifierClaims: [mkClaim('AS3', '  ')] })
-    const failures = validateBookingForBilling(booking, [blank], mkCtx())
-    expect(failures).toEqual([{ procedureId: 'proc-1', field: 'modifierClaims', message: 'Add a short explanation for AS3, or remove it.' }])
-    expect(validateBookingForBilling(booking, [validProcedure()], mkCtx())).toEqual([])
-  })
-
-  it('fails a claim missing the units its printed value needs', () => {
-    const failures = validateBookingForBilling(booking, [validProcedure({ modifierClaims: [mkClaim('PA3', 'Seen in clinic')] })], mkCtx())
-    expect(failures.map((f) => f.message)).toEqual(['Enter the units for PA3 (RVG: 2 + Time, at least 2), or remove it.'])
-  })
-
-  it('passes a Procedure with no modifier at all (FT-03.3: none is a valid answer)', () => {
-    expect(validateBookingForBilling(booking, [validProcedure({ modifierClaims: [] })], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [p], mkCtx()).find((f) => f.field === 'enteredPrice')?.message).toBe(
+      'Needs a price: No contract · Fixed price has no price of its own.',
+    )
+    expect(validateBookingForBilling(booking, [{ ...p, enteredPrice: 2000 }], mkCtx())).toEqual([])
   })
 })
 

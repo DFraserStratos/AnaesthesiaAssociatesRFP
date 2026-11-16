@@ -8,10 +8,11 @@
  * separation (no NHI in billing data).
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { handoffListCases, markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
-import { authoriseList, completeBooking, editProcedure, reassignBooking, submitList } from './lifecycle'
+import { authoriseList, editProcedure, reassignBooking, submitList } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { addPriceRange, disableContract, editContract } from './contractActions'
@@ -521,7 +522,7 @@ describe('the design-day live path', () => {
     const ellison = marker('pendingCaptureBooking')
     const ellisonProc = proceduresForBooking(api.getState(), ellison)[0]!
     expect(editProcedure(api, SOUTER, ellisonProc.id, { handoverISO: clockISO(api.getState().clock) }).ok).toBe(true)
-    expect(completeBooking(api, SOUTER, ellison).ok).toBe(true)
+    expect(completeAnswered(api, SOUTER, ellison).ok).toBe(true)
     expect(submitList(api, SOUTER, SOUTER_PM).ok).toBe(true)
     expect(authoriseList(api, OFFICE, SOUTER_PM).ok).toBe(true)
     const run = runBillingForList(api, SOUTER_PM)

@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 import baseline from './__parity__/phase-18a-baseline.json'
 import { freshAppState } from './appStore'
 import { accpayInvoicesFor } from './selectors'
-import { SPECIALTY_FOR_DIRECTORY_TEXT } from '../domain/seed'
+import { SEED_MARKERS, SPECIALTY_FOR_DIRECTORY_TEXT } from '../domain/seed'
 import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from '../domain/seed/specialistDirectory'
 import { contractFitsSpecialties, surgeonSpecialtyLabel } from '../domain/specialties'
 import { destinationKey, destinationOf, findFallback, impliedDestinations, isOfficeContract, isOpenPriceFallback, isRvgFallback, seedFallbackId } from '../domain/billing/fallbacks'
@@ -135,8 +135,10 @@ describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
 
   it("every seeded Procedure's Contract fits its List's surgeon, so no seeded Booking's Contract is hidden", () => {
     let checked = 0
+    // Catch-up Phase 21a's review-flags List carries one misfit on purpose: "Contract not offered on this List".
+    const misfit = SEED_MARKERS.otherSurgeonContract!.entityId
     for (const p of Object.values(schedule.procedures)) {
-      if (p.governingContractId === undefined) continue
+      if (p.governingContractId === undefined || p.bookingId === misfit) continue
       const list = schedule.lists[schedule.bookings[p.bookingId]!.listId]!
       const contract = masters.contracts[p.governingContractId]!
       expect(contractFitsSpecialties(contract.specialtyIds, masters.surgeons[list.surgeonId]!.specialtyIds), p.id).toBe(true)
@@ -179,9 +181,10 @@ describe('the open-price fallbacks (DM-49, AR-58 5.5)', () => {
     expect(masters.contracts['CT-FIX-SPECIAL-PY-COS']?.fundingTagId).toBeUndefined()
   })
 
-  it('no seeded Procedure sits on a fallback', () => {
+  it('no seeded Procedure sits on a fallback, bar catch-up Phase 21a\'s two open prices that need a price', () => {
     const ids = new Set(fallbacks.map((f) => f.id))
-    expect(Object.values(schedule.procedures).filter((p) => ids.has(p.governingContractId ?? ''))).toEqual([])
+    const needsPrice = new Set([SEED_MARKERS.needsPriceBooking!.entityId, SEED_MARKERS.reviewNeedsPrice!.entityId])
+    expect(Object.values(schedule.procedures).filter((p) => ids.has(p.governingContractId ?? '') && !needsPrice.has(p.bookingId))).toEqual([])
   })
 })
 

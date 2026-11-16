@@ -9,9 +9,10 @@
  * session is available.
  */
 
+import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { authoriseList, completeBooking, editProcedure, submitList } from './lifecycle'
+import { authoriseList, editProcedure, submitList } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { addPostOpAddendum } from './bookingActions'
 import { runBillingForList } from './billingRun'
@@ -106,7 +107,7 @@ describe('addPostOpAddendum', () => {
         billingReference: 'PO-2026-0001',
       }).ok,
     ).toBe(true)
-    expect(completeBooking(api, OFFICE, bookingId).ok).toBe(true)
+    expect(completeAnswered(api, OFFICE, bookingId).ok).toBe(true)
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     expect(runBillingForList(api, listId).ok).toBe(true)

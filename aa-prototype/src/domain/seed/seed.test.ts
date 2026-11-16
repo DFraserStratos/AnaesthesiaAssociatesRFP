@@ -392,7 +392,7 @@ describe('patients & NHIs', () => {
 
   it('seeds ~150 patients, all ethnicity-coded from the demo subset', () => {
     expect(patients.length).toBeGreaterThanOrEqual(145)
-    expect(patients.length).toBeLessThanOrEqual(160)
+    expect(patients.length).toBeLessThanOrEqual(165)
     for (const p of patients) {
       expect(p.ethnicityCode, `${p.hiddenInternalId} has ethnicity`).toBeDefined()
     }

@@ -134,6 +134,38 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - The AIA patient (Marcus Webb) is invoiced under No contract · RVG like any patient, AIA named as the
   insurer with a number, no warning.
 
+### What a Procedure asks for, and Mark complete (catch-up Phase 21a)
+
+- **The form follows the Contract's pricing kind.** On an RVG price (No contract · RVG and the RVG rate
+  and discount kinds) the RVG code, start and finish times and the modifiers step are required, each
+  with a **Required** caption; **None apply** answers the modifiers step (then **No modifiers claimed ·
+  Change**), as does claiming a modifier. On a fixed or open price: no times, units or modifiers, and the
+  RVG code is optional, "for reference".
+- **Mark complete checks exactly three things:** a Contract; the RVG detail on an RVG price; a price,
+  not **Needs a price**. Not checked: the RVG code on a fixed price, the payer's contact, the approval
+  number, out-of-range base units. Times are "start" and "finish", never "handover".
+- What only the office can fix points to **Alert the office**; submit still needs every Booking complete.
+- Seeded on Dr Souter's Mon 10 Aug PM: Miriam Holloway (Merivale fixed price) completes with no times;
+  Graham Pulley (No contract · Fixed price) shows **Needs a price** until an amount is typed.
+
+### Review flags (never block)
+
+- Review shows, per row, each Procedure's stack (procedure text, Contract with who is invoiced, RVG code)
+  with its flags under it; the payer and insurer or funder with approval number (**Change** opens the
+  Admin Booking); an open alert with a Resolve tick; open warnings with Clear; **Changed** for edits since
+  submit.
+- Flags: **Changed by Dr X: was** the old Contract (**Approve** or **Correct**, then **Approved** with
+  the time); **Price typed: $X (computed $Y)**; **Contract not offered on this List**; **Needs a price**;
+  **Needs an invoice destination**; **Not marked completed**; **Email or postal address needed**;
+  manual B/T/M notes. A Disabled Contract raises no flag.
+- **Approve all N Contract changes** in the action bar; authorising approves any still waiting (the
+  confirm says how many). The anaesthetist sees **Awaiting office approval**, then **Approved by the
+  office** with the time.
+- No move ever resets a Procedure's Contract or typed price; a Contract that does not fit the new List
+  is flagged at review.
+- Seeded: Dr Chen's Tue 14 Jul AM at Christchurch Eye Surgery (`/admin/review/L-45178-2026-07-14-AM`)
+  shows each flag; the Review queue holds 8 seeded submitted Lists.
+
 ### Procedure text and the invoice description
 
 - **Procedure text:** the latest plain text received, exactly as sent. The hospital's replaces the

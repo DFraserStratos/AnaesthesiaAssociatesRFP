@@ -200,6 +200,8 @@ test('4 · Mobile as Dr Souter: the List after PM, moon and 18:00; add a Booking
   await page.goto(bookingUrl)
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Finish now' }).click()
+  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
+  await page.locator('[data-shot="capture-modifiers-none"]').click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
   await page.waitForTimeout(1400)
   await page.goto(`/mobile/lists/${id}`)

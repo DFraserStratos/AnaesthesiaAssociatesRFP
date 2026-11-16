@@ -20,15 +20,22 @@
             }
           ],
           "highlight": [
-            "[data-shot=capture-times]"
+            "[data-shot=capture-times]",
+            "[data-shot=capture-modifiers]"
           ],
-          "caption": "Mark complete refused: the missing handover time is flagged"
+          "caption": "Mark complete refused: the missing finish time and the unanswered modifiers step are flagged"
         },
         {
           "state": "complete",
           "steps": [
             {
               "click": "text=\"Finish now\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=capture-modifiers-none]"
             },
             {
               "wait": 400
@@ -43,7 +50,56 @@
           "highlight": [
             "tr:has-text(\"Margaret Ellison\")"
           ],
-          "caption": "Booking marked complete, back on its List"
+          "caption": "Booking marked complete once the finish time is in and the modifiers step is answered, back on its List"
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price passes with no times, code or modifiers, back on its List",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": "tr:has-text(\"Miriam Holloway\") >> text=\"Complete\""
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Miriam Holloway\")"
+          ]
+        },
+        {
+          "state": "needs-price",
+          "caption": "Mark complete refused on a fixed price with no amount: Needs a price",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0177"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=capture-price-status]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing]",
+            "[data-shot=capture-price-status]"
+          ]
         }
       ]
     },
@@ -64,15 +120,22 @@
             }
           ],
           "highlight": [
-            "[data-shot=capture-times]"
+            "[data-testid=slide-booking] [data-shot=capture-times]",
+            "[data-testid=slide-booking] [data-shot=capture-modifiers]"
           ],
-          "caption": "Mark complete refused: the missing handover time is flagged"
+          "caption": "Mark complete refused: the missing finish time and the unanswered modifiers step are flagged"
         },
         {
           "state": "complete",
           "steps": [
             {
               "click": "text=\"Finish now\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=capture-modifiers-none]"
             },
             {
               "wait": 400
@@ -90,7 +153,31 @@
           "highlight": [
             "[data-testid=mobile-booking-commit]"
           ],
-          "caption": "Booking marked complete once the minimum data is in"
+          "caption": "Booking marked complete once the finish time is in and the modifiers step is answered"
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price passes with no times, code or modifiers",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": "[data-testid=mobile-booking-commit] >> text=\"Amend\""
+            },
+            {
+              "wait": 2000
+            }
+          ],
+          "highlight": [
+            "[data-testid=mobile-booking-commit]"
+          ]
         }
       ]
     }

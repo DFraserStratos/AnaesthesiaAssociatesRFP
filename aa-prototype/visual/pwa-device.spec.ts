@@ -113,6 +113,8 @@ test('a List opens, a Booking completes and the List submits, all within the dev
   // surface the PWA bundle deliberately does not contain. "Finish now" stamps
   // whatever the demo clock reads, and the booking completes either way.
   await page.getByRole('button', { name: 'Finish now' }).click()
+  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
+  await page.locator('[data-shot="capture-modifiers-none"]').click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
 
   // The completion overlay auto-dismisses back to the list, where the submit

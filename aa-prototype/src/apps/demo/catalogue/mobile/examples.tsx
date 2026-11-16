@@ -372,9 +372,9 @@ export function StepperButtonExample() {
   return (
     <div style={{ ...row, flexWrap: 'nowrap' }}>
       <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Base units</span>
-      <StepperButton glyph="−" onClick={() => setUnits((u) => Math.max(0, u - 1))} disabled={units === 0} />
+      <StepperButton glyph="−" label="One fewer unit" onClick={() => setUnits((u) => Math.max(0, u - 1))} disabled={units === 0} />
       <span className="mono" style={{ width: 36, textAlign: 'center', fontSize: 20, fontWeight: 700 }}>{units}</span>
-      <StepperButton glyph="+" onClick={() => setUnits((u) => u + 1)} />
+      <StepperButton glyph="+" label="One more unit" onClick={() => setUnits((u) => u + 1)} />
     </div>
   )
 }
@@ -384,9 +384,9 @@ export function NudgeButtonExample() {
   const label = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
   return (
     <div style={{ ...row, flexWrap: 'nowrap' }}>
-      <NudgeButton label="−5" onClick={() => setMins((m) => Math.max(0, m - 5))} />
+      <NudgeButton label="−5" ariaLabel="5 minutes earlier" onClick={() => setMins((m) => Math.max(0, m - 5))} />
       <span className="mono" style={{ fontSize: 28, fontWeight: 700, minWidth: 90, textAlign: 'center' }}>{label}</span>
-      <NudgeButton label="+5" onClick={() => setMins((m) => Math.min(23 * 60 + 55, m + 5))} />
+      <NudgeButton label="+5" ariaLabel="5 minutes later" onClick={() => setMins((m) => Math.min(23 * 60 + 55, m + 5))} />
     </div>
   )
 }
@@ -799,9 +799,18 @@ export function EmptyStateExample() {
 export function CaptureSectionExample() {
   const [note, setNote] = useState('')
   return (
-    <CaptureSection label="Notes" footer={<Caption>Saved when you leave the field.</Caption>}>
-      <TextArea value={note} onChange={setNote} placeholder="Anything the office should know" />
-    </CaptureSection>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <CaptureSection label="Notes" footer={<Caption>Saved when you leave the field.</Caption>}>
+        <TextArea value={note} onChange={setNote} placeholder="Anything the office should know" />
+      </CaptureSection>
+      {/* A required field (catch-up Phase 21a): "Required" in mist, then the warning pill once validation is on. */}
+      <CaptureSection label="Times" required="idle">
+        <Caption>Start and finish, asked on an RVG price.</Caption>
+      </CaptureSection>
+      <CaptureSection label="Times" required="latched">
+        <Caption>After Mark complete with the times missing.</Caption>
+      </CaptureSection>
+    </div>
   )
 }
 
