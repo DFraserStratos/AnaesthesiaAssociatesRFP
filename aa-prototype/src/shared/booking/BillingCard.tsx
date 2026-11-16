@@ -16,6 +16,7 @@ import {
 } from '../../domain/billing/contractRail'
 import { isRvgKind } from '../../domain/billing/contracts'
 import {
+  procedureStackViewFor,
   railActorOf,
   railContextForList,
   railMastersOf,
@@ -35,6 +36,7 @@ import { usePopover } from '../ui/usePopover'
 import { Notice } from '../ui/Notice'
 import { contractPriceText } from '../flows/ContractRail'
 import { FormError } from '../ui'
+import { PaidByRow, type PaidByRowProps } from './PaidByRow'
 
 /**
  * The Booking's Billing card (catch-up Phase 20; US-04.3.8, US-04.3.9,
@@ -118,6 +120,7 @@ function cardLabel(ordinal?: number, count?: number): string {
 // ---------------------------------------------------------------------------
 
 function InlineBillingCard(props: BillingCardProps) {
+  const paidBy = usePaidBy(props)
   return (
     <CaptureSection
       label={cardLabel(props.ordinal, props.procedureCount)}
@@ -125,8 +128,29 @@ function InlineBillingCard(props: BillingCardProps) {
       validationTarget={{ procedureId: props.procedure.id, fields: BILLING_FAILURE_FIELDS }}
     >
       <BillingSteps {...props} layout="side" />
+      {paidBy !== null && <PaidByRow {...paidBy} variant="line" />}
     </CaptureSection>
   )
+}
+
+/**
+ * "Paid by" (catch-up Phase 22, idea 6): who the fee is invoiced to, or its
+ * split, from the stack view; null until the Procedure has a Contract.
+ */
+function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidByRowProps, 'variant'> | null {
+  const masters = useAppStore((s) => s.masters)
+  const procedures = useAppStore((s) => s.schedule.procedures)
+  const bookings = useAppStore((s) => s.schedule.bookings)
+  const lists = useAppStore((s) => s.schedule.lists)
+  const billingLines = useAppStore((s) => s.schedule.billingLines)
+  const surface = actor.role === 'office' ? 'office' : 'anaesthetist'
+  const view = useMemo(
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines } }, procedure.id, surface),
+    [masters, procedures, bookings, lists, billingLines, procedure.id, surface],
+  )
+  if (view?.contract == null) return null
+  const cancelled = bookings[procedure.bookingId]?.cancellation !== undefined
+  return { contract: view.contract, bookingId: procedure.bookingId, procedureId: procedure.id, actor, canEdit: canEdit && !cancelled }
 }
 
 /**
@@ -913,13 +937,14 @@ function ReadOnlySummary({ contract, answersText, officeOnly }: { contract?: Con
 
 /**
  * The phone's Billing card (owner review, 2026-11-16): a short summary (Invoice
- * to, Contract, Price), the whole card one tap target that opens the Billing
- * sheet, where every step, "Price by" and the RVG code are edited through the
+ * to, Contract, Price) that opens the Billing sheet, and a fourth row, Paid by
+ * (catch-up Phase 22, owner review 2026-11-17), that opens the Split sheet; where every step, "Price by" and the RVG code are edited through the
  * same flow as the web and Admin card.
  */
 function MobileBillingCard(props: BillingCardProps) {
   const { procedure, actor, canEdit, canCapture, rvgGroup, codeFailures, ordinal, procedureCount } = props
   const { masters, context, contract, start } = useBilling(procedure)
+  const paidBy = usePaidBy(props)
   const { Overlay } = useSurface()
   const [open, setOpen] = useState(false)
   if (context === undefined) return null
@@ -947,7 +972,8 @@ function MobileBillingCard(props: BillingCardProps) {
   )
 
   return (
-    <>
+    // The card holds two tap targets (idea 6): the summary opens the Billing sheet, Paid by opens the Split sheet.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16 }}>
       <button
         type="button"
         data-shot="capture-billing"
@@ -958,7 +984,7 @@ function MobileBillingCard(props: BillingCardProps) {
         data-validation-procedure-id={procedure.id}
         data-validation-fields={['rvgGroupId', 'baseUnitsSelected', ...BILLING_FAILURE_FIELDS].join(' ')}
         className="aa-rail-focus"
-        style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: radius.ctl, padding: 0, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
       >
         <span style={{ display: 'flex', alignItems: 'baseline', width: '100%' }}>
           <span style={{ flex: 1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</span>
@@ -972,6 +998,7 @@ function MobileBillingCard(props: BillingCardProps) {
           </span>
         )}
       </button>
+      {paidBy !== null && <PaidByRow {...paidBy} variant="summary" />}
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div data-shot="billing-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <OverlayHeader title={label} />
@@ -981,7 +1008,7 @@ function MobileBillingCard(props: BillingCardProps) {
           </Button>
         </div>
       </Overlay>
-    </>
+    </div>
   )
 }
 

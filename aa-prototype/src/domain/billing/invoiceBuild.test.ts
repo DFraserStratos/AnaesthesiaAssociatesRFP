@@ -4,21 +4,22 @@
  * Disabled included; "Needs a price"; none is "Needs an invoice
  * destination", never resolved from the List, catch-up Phase 20), who is
  * billed from the Contract (`billablePartyForProcedure`),
- * layout mapping, line building (override adjustment, stored funder
- * allocation, time-only additional procedures), same-counterparty grouping
- * and the GST demo assumption's maths.
+ * the layout from the Contract (`invoiceLayoutFor`, catch-up Phase 22), line
+ * building (the invoice description, override adjustment, a discount as its
+ * own line, time-only additional procedures), the fee split on the Booking
+ * (US-08.2.3), same-party grouping and the GST demo assumption's maths.
  */
 
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import {
-  GST_RATE,
   buildInvoicesForBooking,
   counterpartyForProcedure,
-  layoutFor,
   resolveContractForProcedure,
   type InvoiceBuildContext,
 } from './invoiceBuild'
+import { GST_RATE, invoiceLayoutFor } from './invoicePresentation'
+import { splitDoesNotFitMessage } from './splitShare'
 import {
   BASE_SINGLE_10,
   HANDOVER_1030,
@@ -30,7 +31,7 @@ import {
   mkProcedure,
   RVG_MODIFIER_MASTER,
 } from './fixtures'
-import type { BillingLine, Contract, Party } from '../types'
+import type { BillingLine, Contract, FeeSplit, Party } from '../types'
 
 /** The holder Parties these tests use (catch-up Phase 18): each bills today's counterparty. */
 const PARTIES: Record<string, Party> = Object.fromEntries(
@@ -138,7 +139,7 @@ describe('resolveContractForProcedure', () => {
   })
 })
 
-describe('counterpartyForProcedure + layoutFor', () => {
+describe('counterpartyForProcedure + invoiceLayoutFor', () => {
   const booking = mkBooking({ patientId: 'pat-1' })
   const guardianBooking = mkBooking({ patientId: 'pat-1', payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother' } })
 
@@ -161,15 +162,24 @@ describe('counterpartyForProcedure + layoutFor', () => {
     expect(counterpartyForProcedure(HOSPITAL_DEFAULT, guardianBooking, PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
   })
 
-  it('layout: contract-holder kinds vs patient kinds', () => {
-    expect(layoutFor({ kind: 'hospital', id: 'x' })).toBe('contractHolder')
-    expect(layoutFor({ kind: 'insurer', id: 'x' })).toBe('contractHolder')
-    expect(layoutFor({ kind: 'surgeon', id: 'x' })).toBe('contractHolder')
-    expect(layoutFor({ kind: 'organisation', id: 'x' })).toBe('contractHolder')
-    expect(layoutFor({ kind: 'party', id: 'x' })).toBe('contractHolder')
-    expect(layoutFor({ kind: 'patient', id: 'x' })).toBe('patient')
-    expect(layoutFor({ kind: 'payer', id: 'x' })).toBe('patient')
-    expect(layoutFor({ kind: 'billableParty', id: 'x' })).toBe('patient')
+  it("layout from the Contract: the holder's when it bills its holder, the patient's when it bills the payer (catch-up Phase 22)", () => {
+    const insurerHeld = mkContract({ id: 'c', holderId: 'party-ins-1' })
+    expect(invoiceLayoutFor(HOSPITAL_DEFAULT, { kind: 'hospital', id: 'hosp-1' }, true)).toBe('contractHolder')
+    expect(invoiceLayoutFor(insurerHeld, { kind: 'insurer', id: 'ins-1' }, true)).toBe('contractHolder')
+    expect(invoiceLayoutFor(NO_CONTRACT, { kind: 'patient', id: 'pat-1' }, true)).toBe('patient')
+    expect(invoiceLayoutFor(NO_CONTRACT, { kind: 'payer', id: 'BP0007' }, true)).toBe('patient')
+  })
+
+  it("an added split party takes its layout by class: a person the patient's, an organisation the holder's", () => {
+    for (const contract of [HOSPITAL_DEFAULT, NO_CONTRACT, undefined]) {
+      expect(invoiceLayoutFor(contract, { kind: 'patient', id: 'x' }, false)).toBe('patient')
+      expect(invoiceLayoutFor(contract, { kind: 'payer', id: 'x' }, false)).toBe('patient')
+      expect(invoiceLayoutFor(contract, { kind: 'insurer', id: 'x' }, false)).toBe('contractHolder')
+      expect(invoiceLayoutFor(contract, { kind: 'hospital', id: 'x' }, false)).toBe('contractHolder')
+      expect(invoiceLayoutFor(contract, { kind: 'surgeon', id: 'x' }, false)).toBe('contractHolder')
+      expect(invoiceLayoutFor(contract, { kind: 'organisation', id: 'x' }, false)).toBe('contractHolder')
+      expect(invoiceLayoutFor(contract, { kind: 'party', id: 'x' }, false)).toBe('contractHolder')
+    }
   })
 })
 
@@ -202,10 +212,14 @@ describe('buildInvoicesForBooking', () => {
     expect(invoice.layout).toBe('contractHolder')
     expect(invoice.lines).toHaveLength(2)
     expect(invoice.lines[0]!.amount).toBe(630)
-    expect(invoice.lines[0]!.description).toContain('21 units at $30.00 per unit')
+    // The fee's own text with no invoice description; the units stay in `units`, and the holder's layout carries the BTM.
+    expect(invoice.lines[0]!).toMatchObject({ kind: 'fee', description: 'Anaesthesia (B + T + M units)', units: 21, btm: { base: 10, time: 11, modifiers: 0, unitValue: 30 } })
+    expect(invoice.lines[0]!.description).not.toContain('per unit')
     expect(invoice.lines[1]!.amount).toBe(330)
     expect(invoice.lines[1]!.units).toBe(11)
     expect(invoice.lines[1]!.description).toContain('time units only')
+    expect(invoice.procedureIds).toEqual(['proc-1', 'proc-2'])
+    expect(invoice.contractId).toBe('con-def')
     expect(invoice.subtotal).toBe(960)
     expect(invoice.gst).toBe(144)
     expect(invoice.total).toBe(1104)
@@ -223,7 +237,21 @@ describe('buildInvoicesForBooking', () => {
     expect(patient!.layout).toBe('patient')
     expect(patient!.lines).toHaveLength(1)
     expect(patient!.lines[0]!.description).toContain('time units only')
+    // The patient's layout carries no BTM breakdown and no cross-match.
+    expect(patient!.lines[0]!.btm).toBeUndefined()
+    expect(patient!.crossMatch).toBeUndefined()
     expect(patient!.subtotal).toBe(330)
+  })
+
+  it("each fee line prints the Procedure's invoice description; the holder's layout adds the cross-match and the holder reference", () => {
+    const worded = { ...primary, invoiceDescription: { text: 'Anaesthesia for knee arthroscopy', origin: 'hospital' as const }, billingReference: 'SG-4471' }
+    const referenced = { ...HOSPITAL_DEFAULT, holderReference: 'SGANAES01' }
+    const result = buildInvoicesForBooking(mkBooking(), [worded], { ...mkCtx({ contracts: { [referenced.id]: referenced } }), surgeonName: 'Mr Test Surgeon' })
+    if (result.kind !== 'invoices') throw new Error('expected invoices')
+    const invoice = result.invoices[0]!
+    expect(invoice.lines[0]!.description).toBe('Anaesthesia for knee arthroscopy')
+    expect(invoice.holderReference).toBe('SGANAES01')
+    expect(invoice.crossMatch).toEqual({ procedureDateISO: LIST_DATE, surgeon: 'Mr Test Surgeon', hospitalRef: 'SG-4471' })
   })
 
   it('a price override lands as an adjustment line carrying its reason, so lines sum to the fee', () => {
@@ -240,28 +268,48 @@ describe('buildInvoicesForBooking', () => {
     expect(invoice.subtotal).toBe(580)
   })
 
-  it('stored funder-override lines ARE the allocation: overridden line to its funder, plain line to the procedure counterparty', () => {
-    const lines: BillingLine[] = [
-      {
-        id: 'bl-1',
-        procedureId: 'proc-1',
-        chargeBasis: 'rvg',
-        amount: 400,
-        description: 'Insurer portion',
-        funderOverride: { kind: 'insurer', id: 'ins-1' },
-      },
-      { id: 'bl-2', procedureId: 'proc-1', chargeBasis: 'rvg', amount: 230, description: 'Patient portion' },
-    ]
-    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ billingLines: lines }))
+  it("a split bills each share to its own party, an invoice each, linked as siblings (catch-up Phase 22, US-08.2.3)", () => {
+    const split: FeeSplit = {
+      shares: [
+        { party: { kind: 'insurer', id: 'ins-1' }, basis: { kind: 'amount', amountExGst: 400 } },
+        { party: { kind: 'patient', id: 'pat-1' }, basis: { kind: 'rest' } },
+      ],
+    }
+    const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, split }], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     expect(result.invoices).toHaveLength(2)
-    const insurer = result.invoices.find((i) => i.counterparty.kind === 'insurer')
-    const hospital = result.invoices.find((i) => i.counterparty.kind === 'hospital')
-    expect(insurer?.subtotal).toBe(400)
-    expect(insurer?.lines[0]!.description).toBe('Insurer portion')
-    expect(hospital?.subtotal).toBe(230)
+    const [insurer, patient] = result.invoices
+    expect(insurer).toMatchObject({ counterparty: { kind: 'insurer', id: 'ins-1' }, layout: 'contractHolder', subtotal: 400, gst: 60, total: 460, procedureIds: ['proc-1'] })
+    expect(insurer!.lines).toEqual([
+      { procedureId: 'proc-1', kind: 'fee', description: 'Anaesthesia (B + T + M units): share of the fee of $630.00 ($400.00)', amount: 400, btm: { base: 10, time: 11, modifiers: 0, units: 21, unitValue: 30 } },
+    ])
+    expect(insurer!.split).toEqual({ procedureId: 'proc-1', feeExGst: 630, shareLabel: '$400.00', isRest: false })
+    expect(patient).toMatchObject({ counterparty: { kind: 'patient', id: 'pat-1' }, layout: 'patient', subtotal: 230, gst: 34.5, total: 264.5 })
+    expect(patient!.lines).toEqual([
+      { procedureId: 'proc-1', kind: 'fee', description: 'Anaesthesia (B + T + M units): share of the fee of $630.00 (the rest)', amount: 230 },
+    ])
+    expect(patient!.split).toEqual({ procedureId: 'proc-1', feeExGst: 630, shareLabel: 'the rest', isRest: true })
+    expect(insurer!.splitSiblings).toEqual([1])
+    expect(patient!.splitSiblings).toEqual([0])
+    // The shares total the fee to the cent.
+    expect(insurer!.subtotal + patient!.subtotal).toBe(630)
   })
 
+  it("a split party who is also another Procedure's party gets one invoice holding both", () => {
+    const split: FeeSplit = {
+      shares: [
+        { party: { kind: 'hospital', id: 'hosp-1' }, basis: { kind: 'percent', percent: 50 } },
+        { party: { kind: 'insurer', id: 'ins-1' }, basis: { kind: 'rest' } },
+      ],
+    }
+    const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, split }, additional], mkCtx())
+    if (result.kind !== 'invoices') throw new Error('expected invoices')
+    expect(result.invoices.map((i) => [i.counterparty.kind, i.subtotal])).toEqual([
+      ['hospital', 315 + 330],
+      ['insurer', 315],
+    ])
+    expect(result.invoices[0]!.procedureIds).toEqual(['proc-1', 'proc-2'])
+  })
   it('a resolution exception on any procedure fails the whole Booking with its procedure id', () => {
     // A Contract that cannot be found on the second procedure fails the Booking.
     const broken = { ...additional, governingContractId: 'con-gone' }
@@ -278,7 +326,7 @@ describe('buildInvoicesForBooking', () => {
     expect(result).toEqual({ kind: 'invoices', invoices: [] })
   })
 
-  it('RVG less a discount rounds the derived rate to cents, so amount and description agree (8th review)', () => {
+  it('RVG less a discount rounds the derived rate to cents and prints the discount as its own line (8th review; catch-up Phase 22)', () => {
     const discounted = mkContract({
       id: 'con-disc',
       pricing: { kind: 'rvgDiscount', discountPct: 7 },
@@ -287,10 +335,12 @@ describe('buildInvoicesForBooking', () => {
     ctx.anaesthetist = mkAnaesthetist({ unitValue: 27.5 })
     const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-disc' }], ctx)
     if (result.kind !== 'invoices') throw new Error('expected invoices')
-    const line = result.invoices[0]!.lines[0]!
-    // 27.50 less 7% = 25.575 → rounds to $25.58 BEFORE charging: 21 x 25.58.
-    expect(line.description).toContain('at $25.58 per unit')
-    expect(line.amount).toBe(537.18)
+    const [fee, discount] = result.invoices[0]!.lines
+    // 27.50 less 7% = 25.575 → rounds to $25.58 BEFORE charging: 21 x 25.58 = $537.18.
+    // The invoice prints the gross at her own $27.50 (21 x 27.50 = $577.50) and the discount as its own line.
+    expect(fee).toMatchObject({ kind: 'fee', amount: 577.5, units: 21, btm: { unitValue: 27.5 } })
+    expect(discount).toMatchObject({ kind: 'discount', description: 'Contract discount, 7% off the unit rate', amount: -40.32 })
+    expect(result.invoices[0]!.subtotal).toBe(537.18)
   })
 
   it('a fixed price is the whole price on an additional Procedure too; no Contract prices a second procedure (RV-07)', () => {
@@ -317,22 +367,21 @@ describe('buildInvoicesForBooking', () => {
     expect(rebuilt.invoices[0]!.subtotal).toBe(3200)
   })
 
-  it('a stale funder allocation is an exception at billing time (8th review)', () => {
-    const lines: BillingLine[] = [
-      {
-        id: 'bl-1',
-        procedureId: 'proc-1',
-        chargeBasis: 'rvg',
-        amount: 400,
-        description: 'Insurer portion',
-        funderOverride: { kind: 'insurer', id: 'ins-1' },
-      },
-      // 400 + 100 = 500, but the fee under the resolved contract is 630.
-      { id: 'bl-2', procedureId: 'proc-1', chargeBasis: 'rvg', amount: 100, description: 'Balance' },
-    ]
-    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ billingLines: lines }))
+  it('a split that no longer fits the fee is an exception at billing time, never a guess (catch-up Phase 22)', () => {
+    // $400 + $100 = $500, but the fee under the resolved Contract is $630.
+    const split: FeeSplit = {
+      shares: [
+        { party: { kind: 'insurer', id: 'ins-1' }, basis: { kind: 'amount', amountExGst: 400 } },
+        { party: { kind: 'patient', id: 'pat-1' }, basis: { kind: 'amount', amountExGst: 100 } },
+      ],
+    }
+    const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, split }], mkCtx())
     expect(result.kind).toBe('exception')
-    if (result.kind === 'exception') expect(result.code).toBe('allocationStale')
+    if (result.kind === 'exception') {
+      expect(result.code).toBe('splitDoesNotFit')
+      expect(result.procedureId).toBe('proc-1')
+      expect(result.message).toBe(splitDoesNotFitMessage(630, 'The shares come to $500.00 but the fee is $630.00. Make them total the fee, or let one party take the rest.'))
+    }
   })
 
   it('a negative counterparty total is an exception, never a negative invoice (8th review)', () => {

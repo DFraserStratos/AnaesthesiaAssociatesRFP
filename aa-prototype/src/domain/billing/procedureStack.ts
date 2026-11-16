@@ -39,6 +39,7 @@ import type { Party, PartyId } from './parties'
 import { rangeInForce } from './priceRanges'
 import type { RvgGroup, RvgGroupId } from './rvgGroups'
 import { billablePartyForProcedure } from './whoIsBilled'
+import { resolveSplit, splitDoesNotFitMessage, splitSummaryText } from './splitShare'
 
 // ---------------------------------------------------------------------------
 // Types the UI reads
@@ -76,6 +77,12 @@ export interface ProcedureStackView {
     holderName: string
     invoiced: InvoicedParty | null
     basis: PricingBasis
+    /**
+     * The fee's split on the Booking (catch-up Phase 22; US-08.2.3), beside
+     * `invoiced` (which stays the Contract's party): "Split: nib $132.50,
+     * Alan Prentice $79.50 (the rest)", or the reason it no longer fits.
+     */
+    split?: { text: string; fits: boolean; parties: number }
   } | null
   /**
    * The RVG code wherever one is held; `toChoose` (the anaesthetist's
@@ -98,6 +105,8 @@ export interface ProcedureStackCtx {
   surface: StackSurface
   /** Names a party the invoice goes to (the store's `counterpartyName`). */
   nameOf: (ref: CounterpartyRef) => string
+  /** The Procedure's fee ex GST, when it is split (null: no price yet). */
+  splitFeeExGst?: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -321,8 +330,24 @@ export function procedureStackView(procedure: Procedure, ctx: ProcedureStackCtx)
             holderName: ctx.parties[contract.holderId]?.name ?? 'Unknown holder',
             invoiced: whoIsInvoicedFor(procedure, ctx),
             basis: pricingBasisFor(procedure, contract, ctx.dateISO),
+            ...splitSummaryFor(procedure, ctx),
           },
     rvg,
+  }
+}
+
+/** The split's line on the Contract part, from `resolveSplit` (never its own maths). */
+function splitSummaryFor(procedure: Procedure, ctx: ProcedureStackCtx): { split?: { text: string; fits: boolean; parties: number } } {
+  if (procedure.split === undefined) return {}
+  const fee = ctx.splitFeeExGst ?? 0
+  const resolved = resolveSplit(fee, procedure.split.shares)
+  if (!resolved.ok) return { split: { text: splitDoesNotFitMessage(fee, resolved.reason), fits: false, parties: procedure.split.shares.length } }
+  return {
+    split: {
+      text: splitSummaryText(resolved.amounts.map((a) => ({ partyName: ctx.nameOf(a.party), amountExGst: a.amountExGst, isRest: a.isRest }))),
+      fits: true,
+      parties: resolved.amounts.length,
+    },
   }
 }
 

@@ -66,7 +66,7 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
       auditForEntity(state, ELLISON_BOOKING).at(-1)?.atISO,
     )
 
-    const cancelTarget = marker('twoFunderBooking')
+    const cancelTarget = marker('feeSplitBooking')
     expect(cancelBooking(api, OFFICE, cancelTarget, 'Rebooked').ok).toBe(true)
     state = api.getState()
     expect(state.schedule.bookings[cancelTarget]?.lastModifiedBy).toBe('Kirsty W.')

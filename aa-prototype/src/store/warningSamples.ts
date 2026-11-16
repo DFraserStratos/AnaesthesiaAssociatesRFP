@@ -12,7 +12,8 @@
  * samples. Catch-up Phase 21 adds a child as the payer on the Booking, which
  * stages on a minor (`targetFor`: the Booking on screen when its patient is
  * under 18, otherwise Grace Park's), so it never lands on `multiWarning`; each
- * later phase adds its sample here (27 a prepaid procedure with no price on
+ * later phase adds its sample here (22 a split that no longer fits the fee,
+ * redirected to the fee-split Booking; 27 a prepaid procedure with no price on
  * the anaesthetist's own Contract; 40 a paying patient with a balance).
  */
 
@@ -163,6 +164,8 @@ const prepaymentSample: WarningSample = {
     if (p === undefined || seed === undefined) return null
     // Never stage over someone's real Contract change: Clear would undo it.
     if (p.governingContractId !== seed.governingContractId) return "This Booking's Contract was changed: use Reset"
+    // A prepaid Procedure cannot be split (catch-up Phase 22): raise the samples from another Booking.
+    if (p.split !== undefined) return "This Booking's fee is split, so it cannot be prepaid: raise the samples from another Booking"
     return prepaidSampleContract(state, bookingId) === undefined ? 'No prepaid Contract fits this Booking' : null
   },
   stage(api, actor, bookingId) {
@@ -463,8 +466,82 @@ const approvalSample: WarningSample = {
   },
 }
 
+// ---------------------------------------------------------------------------
+// The split that no longer fits (catch-up Phase 22; US-08.2.3)
+// ---------------------------------------------------------------------------
+
+/** The seeded split Procedure on a Booking, from the pristine seed. */
+function seedSplitProcedure(bookingId: string): Procedure | undefined {
+  return proceduresForBooking(buildSeed(), bookingId).find((p) => p.split !== undefined)
+}
+
+/** The sample's split: the seed's, with its first typed share raised to $250.00, above the fee, so the rest has nothing left. */
+function sampleSplitFor(seed: Procedure): Procedure['split'] {
+  if (seed.split === undefined) return undefined
+  let raised = false
+  return {
+    shares: seed.split.shares.map((share) => {
+      if (raised || share.basis.kind === 'rest') return share
+      raised = true
+      return { ...share, basis: { kind: 'amount' as const, amountExGst: 250 } }
+    }),
+  }
+}
+
+const splitSample: WarningSample = {
+  ruleId: 'splitDoesNotFit',
+  fields: ['split'],
+  // The Booking on screen when its seed carries a split, otherwise the fee-split Booking.
+  targetFor(_state, bookingId) {
+    return seedSplitProcedure(bookingId) !== undefined ? bookingId : SEED_MARKERS['feeSplitBooking']?.entityId
+  },
+  isStaged(state, bookingId) {
+    const seed = seedSplitProcedure(bookingId)
+    const p = seed !== undefined ? state.schedule.procedures[seed.id] : undefined
+    if (seed === undefined || p === undefined) return false
+    return sameValue(p.split, sampleSplitFor(seed)) && lastChangedByDemo(state, p.id)
+  },
+  seedRaises() {
+    return false
+  },
+  stageRefusal(state, bookingId) {
+    const seed = seedSplitProcedure(bookingId)
+    const p = seed !== undefined ? state.schedule.procedures[seed.id] : undefined
+    if (seed === undefined || p === undefined) return null
+    return sameValue(p.split, seed.split) ? null : "This Booking's split was changed: use Reset"
+  },
+  stage(api, actor, bookingId) {
+    const seed = seedSplitProcedure(bookingId)
+    const current = seed !== undefined ? api.getState().schedule.procedures[seed.id] : undefined
+    const split = seed !== undefined ? sampleSplitFor(seed) : undefined
+    if (seed === undefined || current === undefined || split === undefined) return refuse('noProcedure', 'Nothing to stage on this Booking')
+    // Written as the split stood before the fee moved: the guard in `setProcedureSplit` would refuse it, which is the point.
+    mutate(
+      api,
+      actor,
+      { entityType: 'procedure', entityId: current.id, action: 'procedure.split', before: { split: current.split ?? null }, after: { split } },
+      (st) => ({ schedule: { ...st.schedule, procedures: { ...st.schedule.procedures, [current.id]: { ...current, split } } } }),
+    )
+    return ok(undefined)
+  },
+  restore(state, bookingId) {
+    if (!this.isStaged(state, bookingId)) return undefined
+    const seed = seedSplitProcedure(bookingId)
+    const p = seed !== undefined ? state.schedule.procedures[seed.id] : undefined
+    if (seed === undefined || p === undefined) return undefined
+    const restored: Procedure = { ...p }
+    if (seed.split === undefined) delete restored.split
+    else restored.split = seed.split
+    return { procedures: { ...state.schedule.procedures, [p.id]: restored } }
+  },
+  restoredEntityIds(state, bookingId) {
+    const seed = seedSplitProcedure(bookingId)
+    return seed !== undefined && this.isStaged(state, bookingId) ? [seed.id] : []
+  },
+}
+
 /** One sample per registered rule, in `WARNING_RULES` order. */
-export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample, childPayerSample, approvalSample]
+export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample, childPayerSample, approvalSample, splitSample]
 
 /** Where a sample stages when raised from this Booking (itself, unless the sample redirects). */
 export function sampleTarget(sample: WarningSample, state: SampleState, bookingId: string): string | undefined {
@@ -508,6 +585,7 @@ const SAMPLE_NAMES: Record<WarningRuleId, string> = {
   baseUnitsOutsideGuide: 'base units',
   childPayer: 'child',
   approvalNumberMissing: 'approval number',
+  splitDoesNotFit: 'split',
 }
 
 /** The registered rule count, for the triggers' honest message. */

@@ -40,7 +40,7 @@ test('demo actions: a half payment from an invoice page moves that invoice\'s mo
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
-  await expect(page.getByText(/invoices? raised by the billing run/)).toBeVisible()
+  await expect(page.locator('[data-shot="review-delivery-summary"]')).toHaveText(/invoices? raised\./)
 
   // The Control Panel index's Open screen lands on an open invoice.
   await page.goto('/demo/control')

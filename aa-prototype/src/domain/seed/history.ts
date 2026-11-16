@@ -38,6 +38,8 @@ import type {
   Invoice,
   InvoiceLine,
   List,
+  Party,
+  Patient,
   PaymentIn,
   Procedure,
   Surgeon,
@@ -46,7 +48,8 @@ import type {
   XeroContact,
 } from '../types'
 import { roundToCents } from '../billing/money'
-import { GST_RATE } from '../billing/invoiceBuild'
+import { AA_AGENT, GST_RATE, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } from '../billing/invoicePresentation'
+import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import { xeroIndividualContactName } from '../xeroContact'
 import { ANAE, HOSP, ORG, SURG } from './cast'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
@@ -60,6 +63,9 @@ export interface HistoryMasters {
   hospitals: Record<string, Hospital>
   surgeons: Record<string, Surgeon>
   organisations: Record<string, ContractHolderOrganisation>
+  /** For each invoice's delivery stamp (catch-up Phase 22); absent: the invoice carries none. */
+  parties?: Record<string, Party>
+  patients?: Record<string, Patient>
 }
 
 type PaidState = 'unpaid' | 'paid' | 'missedWebhook'
@@ -404,6 +410,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
   const contactKind = (cp: CounterpartyRef): string => (cp.kind === 'payer' ? 'billableParty' : cp.kind)
 
   const dsbRunId = opts.payablesRunId
+  const supplierAnaesthetist = masters.anaesthetists[anaesthetistId]
+  const supplier = supplierAnaesthetist !== undefined ? supplierFor(supplierAnaesthetist) : undefined
   let seq = 0
   for (const acc of opts.accounts) {
     seq += 1
@@ -485,9 +493,21 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       gst,
       total: acc.total,
       raisedAtISO: acc.raisedISO,
+      // Catch-up Phase 22: the supplier, AA as agent, the Procedure link, and the run's send stamped at raising.
+      procedureIds: [procId],
+      ...(supplier !== undefined ? { supplier } : {}),
+      agent: AA_AGENT,
+    }
+    if (masters.parties !== undefined) {
+      const historyBooking = build.bookings[bookingId]!
+      invoice.delivery = deliveryStampFor(
+        invoiceDeliveryFor(acc.counterparty, historyBooking, masters.patients?.[acc.patientId], masters.parties),
+        acc.raisedISO,
+        'Billing run',
+      )
     }
     build.invoices[invoiceId] = invoice
-    build.invoiceLines[ids.invoiceLine(n)] = { id: ids.invoiceLine(n), invoiceId, procedureId: procId, description: acc.description, amount: subtotal }
+    build.invoiceLines[ids.invoiceLine(n)] = { id: ids.invoiceLine(n), invoiceId, procedureId: procId, kind: 'fee', description: acc.description, amount: subtotal }
 
     // --- Xero: contacts + ACCREC + ACCPAY ---
     const payerContactId = opts.resolveContact(contactKind(acc.counterparty), acc.counterparty.id, payerName(acc.counterparty), payerType(acc.counterparty), acc.archivedContact === true)
@@ -525,6 +545,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       amountAuthorised: paid ? amountPayable : 0,
       amountDisbursed: disbursed,
       status: paid ? 'paid' : 'draft',
+      ...(supplier !== undefined ? { taxInvoice: buyerCreatedTaxInvoiceFor(invoice, supplier) } : {}),
     }
 
     const theCase: BillingCase = {

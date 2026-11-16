@@ -181,6 +181,39 @@ for (const row of invoices) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Catch-up Phase 22 (US-08.2.3, DM-28, RV-31): the per-line funder allocation
+// is retired; a Procedure's fee is split on the Booking. Its only on-purpose
+// difference, exact, mapped back to the fixtures' form only when the row
+// equals its declared value (asserted in "Phase 22 fee split" below):
+//   - Alan Prentice's fee-split Booking (BK0025, the `feeSplitBooking`
+//     marker): on No contract · RVG with no billing lines, nib $132.50 and
+//     the payer the rest, so its second invoice goes to Alan Prentice where it
+//     went to St George's. The same fee ($212), subtotals and totals.
+// ---------------------------------------------------------------------------
+
+const PRENTICE_BOOKING_22 = 'BK0025'
+const PRENTICE_INVOICES_22: InvoiceRow['result'] = {
+  kind: 'invoices',
+  invoices: [
+    { counterparty: 'insurer:I-NIB', subtotal: 132.5, total: 152.38 },
+    { counterparty: 'patient:PT0011', subtotal: 79.5, total: 91.43 },
+  ],
+}
+const PRENTICE_INVOICES_BEFORE_22: InvoiceRow['result'] = {
+  kind: 'invoices',
+  invoices: [
+    { counterparty: 'insurer:I-NIB', subtotal: 132.5, total: 152.38 },
+    { counterparty: 'hospital:H-STG', subtotal: 79.5, total: 91.43 },
+  ],
+}
+const phase22Raw = invoices.map((r) => structuredClone(r))
+for (const row of invoices) {
+  if (row.bookingId === PRENTICE_BOOKING_22 && JSON.stringify(row.result) === JSON.stringify(PRENTICE_INVOICES_22)) {
+    row.result = structuredClone(PRENTICE_INVOICES_BEFORE_22)
+  }
+}
+
 const feeOf = (procedureId: string) => fees.find((f) => f.procedureId === procedureId)
 const invoicesOf = (bookingId: string) => invoices.find((i) => i.bookingId === bookingId)?.result
 
@@ -605,5 +638,22 @@ describe('Phase 21 who is billed (catch-up Phase 21, US-11.2.1, US-11.2.2)', () 
     const grace = phase21Raw.find((i) => i.result.kind === 'invoices' && i.result.invoices.some((x) => x.counterparty === 'payer:BP0001'))
     expect(grace).toBeDefined()
     expect(phase21Raw.some((i) => i.result.kind === 'invoices' && i.result.invoices.some((x) => x.counterparty.startsWith('billableParty:BP0001')))).toBe(false)
+  })
+})
+
+describe('Phase 22 fee split (catch-up Phase 22, US-08.2.3)', () => {
+  it("bills the rest of Prentice's split fee to Alan Prentice, the payer on the Booking, not St George's: the same subtotals and totals", () => {
+    expect(phase22Raw.find((i) => i.bookingId === PRENTICE_BOOKING_22)?.result).toEqual(PRENTICE_INVOICES_22)
+    for (const fixture of [phase18Fixture, phase19Fixture, phase19aFixture, phase19bFixture] as { invoices: InvoiceRow[] }[]) {
+      expect(fixture.invoices.find((i) => i.bookingId === PRENTICE_BOOKING_22)?.result).toEqual(PRENTICE_INVOICES_BEFORE_22)
+    }
+  })
+
+  it("Prentice's Procedure is on No contract · RVG with no billing lines, its fee unmoved at $212 / 8 units", () => {
+    const [proc] = proceduresForBooking(state, PRENTICE_BOOKING_22)
+    expect(proc?.governingContractId).toBe('CT-NO-CONTRACT')
+    expect(Object.values(state.schedule.billingLines).filter((l) => l.procedureId === proc!.id)).toEqual([])
+    expect(feeOf(proc!.id)).toMatchObject({ total: 212, billableUnits: 8 })
+    expect(feeOf(proc!.id)).toEqual((phase18Fixture as { fees: FeeRow[] }).fees.find((f) => f.procedureId === proc!.id))
   })
 })

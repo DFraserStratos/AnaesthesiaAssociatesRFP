@@ -14,6 +14,7 @@
  */
 
 import { isOfficeContract } from '../../../../domain/billing/fallbacks'
+import { contractInvoicingSummary } from '../../../../domain/billing/invoicePresentation'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
@@ -34,7 +35,8 @@ import { isInteractiveRowTarget } from '../../tableChrome'
 import { EditCell, Header, Table, TextAction } from './chrome'
 import { rowCellStyle } from './tableStyles'
 
-const COLUMNS = ['AA code', 'Name', 'Bills', 'Pricing', 'Tags', 'Status', '']
+/** Layout and Delivery are derived and read-only (catch-up Phase 22; US-04.2.8): nothing about invoicing is stored on a Contract. */
+const COLUMNS = ['AA code', 'Name', 'Bills', 'Layout', 'Delivery', 'Pricing', 'Tags', 'Status', '']
 
 export function ContractsView({ actor }: { actor: Actor }) {
   const contracts = useAppStore((s) => s.masters.contracts)
@@ -157,7 +159,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
           )}
         </div>
       ) : (
-        <Table heads={COLUMNS} rightAlign={[6]} shot="contract-catalogue">
+        <Table heads={COLUMNS} rightAlign={[8]} shot="contract-catalogue">
           {groups.map(([holder, list]) => {
             const party = parties[holder]
             return [
@@ -186,6 +188,8 @@ export function ContractsView({ actor }: { actor: Actor }) {
                     )}
                   </td>
                   <td style={rowCellStyle}>{BILLS_LABEL[c.billsTo]}</td>
+                  <td data-shot="contract-layout" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{contractInvoicingSummary(c, party).layout}</td>
+                  <td data-shot="contract-delivery" style={rowCellStyle}>{contractInvoicingSummary(c, party).delivery}</td>
                   <td style={rowCellStyle}><PricingText contract={c} todayISO={today} /></td>
                   <td style={rowCellStyle}>
                     <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>

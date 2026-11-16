@@ -21,6 +21,10 @@
  *    (P0029) bills the payer on the Booking, the patient Gareth Mills, as his
  *    price list says; Hana Park (BP0001) is the payer on Grace Park's Booking
  *    under the counterparty kind `payer` (was `billableParty`), same id.
+ *  - catch-up Phase 22 (US-08.2.3): Alan Prentice's fee-split Procedure
+ *    (P0026, the `feeSplitBooking` marker) is on No contract · RVG (was
+ *    St George's CT-STG-D1), so its Contract bills the payer on the Booking,
+ *    Alan Prentice; nib's share is a split on the Booking, not a billing line.
  * Every other billed party, starting value, prepayment build, ledger line and
  * Xero pair holds as written.
  */
@@ -47,8 +51,15 @@ const DECLARED_CONTRACT: Record<string, string> = {
   P0041: 'CT-SOUTER-RHINO-COS',
 }
 
-/** Catch-up Phase 21's two on-purpose moves of who is billed, mapped back to the fixture's form. */
+/** Catch-up Phase 22's one move: Prentice's fee-split Procedure, on No contract · RVG, billing the payer. */
+const PRENTICE_22 = { procedureId: 'P0026', billedTo: 'patient:PT0011', contract: 'CT-NO-CONTRACT' }
+const PRENTICE_BEFORE_22 = { billedTo: 'hospital:H-STG', contract: 'CT-STG-D1' }
+const isPrentice22 = (row: ProcedureParityRow) =>
+  row.procedureId === PRENTICE_22.procedureId && row.billedTo === PRENTICE_22.billedTo && row.contract === PRENTICE_22.contract
+
+/** Catch-up Phase 21's two on-purpose moves of who is billed (and Phase 22's one), mapped back to the fixture's form. */
 function billedBefore21(row: ProcedureParityRow): string {
+  if (isPrentice22(row)) return PRENTICE_BEFORE_22.billedTo
   if (row.procedureId === 'P0029' && row.billedTo === 'patient:PT0015') return 'surgeon:S-DOYLE'
   if (row.billedTo === 'payer:BP0001') return 'billableParty:BP0001'
   return row.billedTo
@@ -58,6 +69,7 @@ function asBefore(row: ProcedureParityRow): ProcedureParityRow {
   const was = before.procedures.find((r) => r.procedureId === row.procedureId)
   if (was === undefined) return row
   const out = { ...row, billedTo: billedBefore21(row) }
+  if (isPrentice22(row)) out.contract = PRENTICE_BEFORE_22.contract
   if (was.contract === '(none)' && (row.contract === 'CT-NO-CONTRACT' || row.contract === DECLARED_CONTRACT[row.procedureId])) {
     out.contract = '(none)'
   }
@@ -97,5 +109,20 @@ describe('Phase 20 contract parity', () => {
 
   it("bills Doyle's bariatric primary to the payer on the Booking, at his price list (catch-up Phase 21, US-11.2.1)", () => {
     expect(now.procedures.find((r) => r.procedureId === 'P0029')).toMatchObject({ billedTo: 'patient:PT0015', contract: 'CT-DOYLE-BAR' })
+  })
+})
+
+describe('Phase 22 fee split (catch-up Phase 22, US-08.2.3)', () => {
+  it("moves Prentice's fee-split Procedure to No contract · RVG, billing Alan Prentice, the payer on the Booking", () => {
+    expect(before.procedures.find((r) => r.procedureId === PRENTICE_22.procedureId)).toMatchObject(PRENTICE_BEFORE_22)
+    const row = now.procedures.find((r) => r.procedureId === PRENTICE_22.procedureId)
+    expect(row).toMatchObject(PRENTICE_22)
+    // Its starting values and fixed fee hold.
+    const was = before.procedures.find((r) => r.procedureId === PRENTICE_22.procedureId)!
+    expect({ rvgGroupId: row!.rvgGroupId, baseUnitsSelected: row!.baseUnitsSelected, fixedFee: row!.fixedFee }).toEqual({
+      rvgGroupId: was.rvgGroupId,
+      baseUnitsSelected: was.baseUnitsSelected,
+      fixedFee: was.fixedFee,
+    })
   })
 })

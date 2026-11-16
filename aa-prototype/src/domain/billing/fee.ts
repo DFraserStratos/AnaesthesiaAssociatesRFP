@@ -9,7 +9,6 @@ import type {
   BillingLine,
   ChargeBasis,
   Contract,
-  CounterpartyRef,
   PriceOverride,
   Procedure,
   UnitProvenance,
@@ -181,7 +180,6 @@ export interface FeeLine {
   /** $ per unit ('rvg') or $ per hour ('rateTime'). */
   rate?: number
   hours?: number
-  funderOverride?: CounterpartyRef
 }
 
 export interface AppliedOverride {
@@ -301,7 +299,6 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
       fee.hours = line.hours
       fee.rate = line.rate
     }
-    if (line.funderOverride !== undefined) fee.funderOverride = line.funderOverride
     lines.push(fee)
   }
 

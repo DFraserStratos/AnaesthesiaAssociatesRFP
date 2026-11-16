@@ -20,13 +20,12 @@
  */
 
 import { listHospitalFor } from '../domain/listPairing'
-import type { BillingCase, Invoice, InvoiceLine } from '../domain/types'
 import {
   buildPrePaymentInvoiceForBooking,
   type InvoiceBuildContext,
 } from '../domain/billing/invoiceBuild'
+import { materialiseInvoices } from './invoiceMaterialise'
 import {
-  allocateId,
   clockISO,
   mutate,
   ok,
@@ -98,72 +97,22 @@ export function raisePreProcedureInvoice(
     return refuse('notPrepayment', 'This booking has no procedure on a prepaid Contract.')
   }
 
-  const invoiceIds: string[] = []
+  let invoiceIds: string[] = []
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    let counters = s.counters
-    const invoices = { ...s.billing.invoices }
-    const invoiceLines = { ...s.billing.invoiceLines }
-    const cases = { ...s.billing.cases }
-    const atISO = clockISO(s.clock)
-
-    for (const draft of built.invoices) {
-      const bc = allocateId(counters, 'billingCase')
-      counters = bc.counters
-      const inv = allocateId(counters, 'invoice')
-      counters = inv.counters
-      const num = allocateId(counters, 'invoiceNumber')
-      counters = num.counters
-
-      const invoice: Invoice = {
-        id: inv.id,
-        invoiceNumber: num.id,
-        caseReference: bc.id,
-        bookingId,
-        counterparty: draft.counterparty,
-        ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
-        layout: draft.layout,
-        kind: 'prePayment',
-        subtotal: draft.subtotal,
-        gst: draft.gst,
-        total: draft.total,
-        raisedAtISO: atISO,
-      }
-      invoices[inv.id] = invoice
-      for (const line of draft.lines) {
-        const il = allocateId(counters, 'invoiceLine')
-        counters = il.counters
-        const stored: InvoiceLine = {
-          id: il.id,
-          invoiceId: inv.id,
-          description: line.description,
-          amount: line.amount,
-        }
-        if (line.procedureId !== undefined) stored.procedureId = line.procedureId
-        if (line.units !== undefined) stored.units = line.units
-        invoiceLines[il.id] = stored
-      }
-      cases[bc.id] = { id: bc.id, bookingId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
-      invoiceIds.push(inv.id)
-      metas.push({
-        entityType: 'invoice',
-        entityId: inv.id,
-        action: 'invoice.raisePrePayment',
-        after: {
-          invoiceNumber: num.id,
-          caseReference: bc.id,
-          bookingId,
-          counterparty: draft.counterparty,
-          subtotal: draft.subtotal,
-          total: draft.total,
-        },
-        // The Booking is not stamped: raising a pre-invoice is not a Booking edit and
-        // must not restamp lastModified (nor is the List billed).
-        stampBookingId: null,
-      })
-    }
-
-    return { billing: { ...s.billing, invoices, invoiceLines, cases }, counters }
+    // Today the office raises the prepayment invoice itself, so it is sent as
+    // it is raised; Phase 27 raises it unsent and sends it on admin approval
+    // (D6) through the same materialiser's separate send step.
+    const made = materialiseInvoices(s, s.counters, built.invoices, {
+      bookingId,
+      atISO: clockISO(s.clock),
+      kind: 'prePayment',
+      send: true,
+      createAction: 'invoice.raisePrePayment',
+    })
+    invoiceIds = made.invoiceIds
+    metas.push(...made.metas)
+    return { billing: { ...s.billing, invoices: made.invoices, invoiceLines: made.invoiceLines, cases: made.cases }, counters: made.counters }
   })
 
   // Hand the pre-invoice case(s) off to Xero as a full ACCREC+ACCPAY pair

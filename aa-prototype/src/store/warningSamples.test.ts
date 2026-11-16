@@ -25,6 +25,7 @@ import {
   sampleClearRefusal,
   sampleRaiseRefusal,
   stagedSampleBookings,
+  WARNING_SAMPLES,
 } from './warningSamples'
 import { DEMO_TODAY } from '../domain/clock'
 import { buildSeed, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../domain/seed'
@@ -35,6 +36,8 @@ const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
 const GRACE = SEED_MARKERS['guardianMinorBooking']!.entityId
 /** The approval sample's default target: the first seeded NIB Booking with a number on an ACTIVE List off every beat. */
 const NIB_TARGET = 'BK0074'
+/** The split sample's default target (catch-up Phase 22): Alan Prentice's fee-split Booking. */
+const FEE_SPLIT = SEED_MARKERS['feeSplitBooking']!.entityId
 
 /** Force a List's state (its Bookings are not complete, so it cannot be submitted for real here). */
 function setListState(api: BoundAppStore, listId: string, state: 'SUBMITTED' | 'AUTHORISED') {
@@ -85,14 +88,15 @@ describe('raise and clear on the demo day', () => {
     const raised = raiseDaySamples(api)
     // Two samples on each target: the prepayment (strong) and the base units outside the guide (mild);
     // plus, once each (catch-up Phase 21), the child payer sample on Grace Park's Booking (it stages on a
-    // minor) and the approval number sample on the first seeded NIB Booking.
-    expect(raised).toEqual({ ok: true, value: 6 })
+    // minor) and the approval number sample on the first seeded NIB Booking; and (catch-up Phase 22) the
+    // split sample on Alan Prentice's fee-split Booking.
+    expect(raised).toEqual({ ok: true, value: 7 })
     let state = api.getState()
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
       expect(warningsForBooking(state, id).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
     }
     expect([...new Set(openWarnings(state).map((r) => r.bookingId))].sort()).toEqual(
-      [AM_TARGET, PM_TARGET, RILEY, GRACE, NIB_TARGET, SEED_MARKERS['childPayer']!.entityId, SEED_MARKERS['approvalMissing']!.entityId].sort(),
+      [AM_TARGET, PM_TARGET, RILEY, GRACE, NIB_TARGET, FEE_SPLIT, SEED_MARKERS['childPayer']!.entityId, SEED_MARKERS['approvalMissing']!.entityId].sort(),
     )
     // Catch-up Phase 20: the prepayment sample moves the Procedure onto a prepaid Contract (`procedure.contract`).
     const stagedAudit = state.audit.filter((a) => (a.action === 'procedure.update' || a.action === 'procedure.contract') && a.who === DEMO_TRIGGER_ACTOR.who)
@@ -100,14 +104,14 @@ describe('raise and clear on the demo day', () => {
     expect(stagedAudit.filter((a) => a.action === 'procedure.contract')).toHaveLength(2)
     expect(stagedAudit.every((a) => a.source === 'demo' && a.role === 'system')).toBe(true)
     expect(daySampleRaiseRefusal(state)).toBe('Samples already raised')
-    expect(stagedSampleBookings(state)).toEqual([AM_TARGET, PM_TARGET, GRACE, NIB_TARGET].sort())
+    expect(stagedSampleBookings(state)).toEqual([AM_TARGET, PM_TARGET, GRACE, NIB_TARGET, FEE_SPLIT].sort())
 
     // Clear one from the to-do list, then unstage: no clearance is left behind.
     const key = warningsForBooking(state, AM_TARGET!)[0]!.key
     expect(clearWarning(api, OFFICE_ACTOR, AM_TARGET!, key).ok).toBe(true)
     expect(api.getState().schedule.warningClearances[key]).toBeDefined()
 
-    expect(clearAllSamples(api)).toEqual({ ok: true, value: 6 })
+    expect(clearAllSamples(api)).toEqual({ ok: true, value: 7 })
     state = api.getState()
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
       const p = proceduresForBooking(state, id)[0]!
@@ -115,7 +119,8 @@ describe('raise and clear on the demo day', () => {
       expect(warningsForBooking(state, id)).toEqual([])
     }
     expect(state.schedule.warningClearances[key]).toBeUndefined()
-    expect(state.audit.filter((a) => a.action === 'booking.warningSampleUnstaged')).toHaveLength(4) // the two targets, Grace Park's Booking and the NIB Booking (catch-up Phase 21)
+    // The two targets, Grace Park's Booking and the NIB Booking (catch-up Phase 21), and the fee-split Booking (catch-up Phase 22).
+    expect(state.audit.filter((a) => a.action === 'booking.warningSampleUnstaged')).toHaveLength(5)
     expect(stagedSampleBookings(state)).toEqual([])
 
     // Raised again, the cleared sample is open again.
@@ -135,9 +140,10 @@ describe('refusals on one Booking', () => {
   it('Riley already carries the warning; an unseeded or missing Booking is refused', () => {
     const api = createAppStore()
     // Riley's seed raises the prepayment warning, so only the base-units sample stages there
-    // (and, catch-up Phase 21, the child payer sample on Grace Park's Booking and the approval sample on a NIB Booking).
+    // (and, catch-up Phase 21, the child payer sample on Grace Park's Booking and the approval sample on a NIB Booking;
+    // catch-up Phase 22, the split sample on the fee-split Booking).
     expect(sampleRaiseRefusal(api.getState(), RILEY)).toBeNull()
-    expect(raiseSamplesOn(api, RILEY)).toEqual({ ok: true, value: 3 })
+    expect(raiseSamplesOn(api, RILEY)).toEqual({ ok: true, value: 4 })
     expect(warningsForBooking(api.getState(), RILEY).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
     expect(sampleRaiseRefusal(api.getState(), RILEY)).toBe('Samples already raised')
     expect(sampleRaiseRefusal(api.getState(), 'BK9999')).toBe('Samples stage on seeded Bookings only')
@@ -185,7 +191,7 @@ describe('two rules on the multi-warning Booking (catch-up Phase 19)', () => {
     expect(warnings.map((w) => w.strength)).toEqual(['strong', 'mild'])
     expect(new Set(warnings.map((w) => w.key)).size).toBe(2)
     expect(warnings[1]!.text).toMatch(/^Base units \d+ are outside the RVG guide for /)
-    expect(WARNING_RULES.map((r) => r.id)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide', 'childPayer', 'approvalNumberMissing'])
+    expect(WARNING_RULES.map((r) => r.id)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide', 'childPayer', 'approvalNumberMissing', 'splitDoesNotFit'])
   })
 
   it('stages a recorded value of the guide top plus 2, through the audited actions, and restores the seed', () => {
@@ -297,7 +303,8 @@ describe('the child payer sample (catch-up Phase 21; US-11.2.4)', () => {
     const api = createAppStore()
     const grace = api.getState().schedule.bookings[GRACE]!
     setListState(api, grace.listId, 'AUTHORISED')
-    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 3 })
+    // Prepayment, base units, approval number and (catch-up Phase 22) split; the child payer sample skips Grace Park.
+    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
     expect(api.getState().schedule.bookings[GRACE]!.payer.kind).toBe('other')
   })
 })
@@ -344,7 +351,43 @@ describe('review fixes (convention 18): samples', () => {
     // The office updates Hana Park's email on Grace Park's Booking (a real payer edit).
     setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'Hana Park', relationship: 'Mother', email: 'hana.work@example.net' })
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBeNull()
-    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 3 })
+    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
     expect(api.getState().schedule.bookings[GRACE]!.payer.kind).toBe('other')
+  })
+})
+
+describe('the split sample (catch-up Phase 22; US-08.2.3)', () => {
+  const splitWarnings = (api: BoundAppStore) => warningsForBooking(api.getState(), FEE_SPLIT).filter((w) => w.ruleId === 'splitDoesNotFit')
+  const prenticeProcedure = (api: BoundAppStore) => proceduresForBooking(api.getState(), FEE_SPLIT).find((p) => p.split !== undefined)!
+
+  it("stages on Prentice's Procedure from any Booking, warns that the split no longer fits, and Clear restores the seed split", () => {
+    const api = createAppStore()
+    const seedSplit = prenticeProcedure(api).split
+    expect(splitWarnings(api)).toEqual([])
+    expect(raiseSamplesOn(api, AM_TARGET!).ok).toBe(true)
+
+    // nib's typed share is raised to $250, above the fee of $212, leaving nothing for the rest.
+    const staged = prenticeProcedure(api)
+    expect(staged.split?.shares[0]).toMatchObject({ party: { kind: 'insurer' }, basis: { kind: 'amount', amountExGst: 250 } })
+    expect(staged.split?.shares[1]).toEqual(seedSplit?.shares[1])
+    const audit = api.getState().audit.filter((a) => a.action === 'procedure.split' && a.entityId === staged.id).at(-1)
+    expect(audit).toMatchObject({ who: DEMO_TRIGGER_ACTOR.who, source: 'demo', before: { split: seedSplit }, after: { split: staged.split } })
+    const [w] = splitWarnings(api)
+    expect(w?.text).toContain('The split no longer fits the fee of $212.00')
+    expect(stagedSampleBookings(api.getState())).toContain(FEE_SPLIT)
+
+    expect(clearAllSamples(api).ok).toBe(true)
+    expect(prenticeProcedure(api).split).toEqual(seedSplit)
+    expect(splitWarnings(api)).toEqual([])
+    expect(stagedSampleBookings(api.getState())).not.toContain(FEE_SPLIT)
+  })
+})
+
+describe('the prepayment sample never lands on a split fee (catch-up Phase 22)', () => {
+  it('refuses to stage on the fee-split Booking, whose split Procedure cannot be prepaid', () => {
+    const api = createAppStore()
+    const bookingId = SEED_MARKERS['feeSplitBooking']?.entityId ?? ''
+    const prepayment = WARNING_SAMPLES.find((s) => s.ruleId === 'prepaymentUnpaid')
+    expect(prepayment?.stageRefusal?.(api.getState(), bookingId)).toBe("This Booking's fee is split, so it cannot be prepaid: raise the samples from another Booking")
   })
 })

@@ -306,6 +306,13 @@ export interface Anaesthetist {
    * removes their Slots from today on.
    */
   active: boolean
+  /**
+   * The anaesthetist's GST number (catch-up Phase 22; DM-62, US-08.4.5):
+   * optional, held only on the Admin anaesthetist record (the profile shows
+   * none), stored as typed digits. Every receivable invoice prints it in the
+   * supplier block, or "GST number not held" when blank.
+   */
+  gstNumber?: string
 }
 
 export type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
@@ -417,9 +424,8 @@ export interface OfficePrivateSlice {
 /**
  * INTERIM identity (catch-up Phase 18, RV-39): there is no Insurer master any
  * more. An insurer is a Party; this bare record stays only as the id a
- * Party's `billingIdentity` and billing lines' `funderOverride` point at, so no
- * counterparty or Xero contact moves (catch-up Phase 21 keeps it as the
- * Party's billing identity; Phase 22's Split replaces its `funderOverride` use).
+ * Party's `billingIdentity` points at, so no counterparty or Xero contact
+ * moves (catch-up Phase 21 keeps it as the Party's billing identity).
  */
 export interface Insurer {
   id: InsurerId
@@ -1013,20 +1019,44 @@ export interface Procedure {
 
   priceOverride?: PriceOverride
 
+  /**
+   * The split of this Procedure's fee between billable parties (catch-up
+   * Phase 22; US-08.2.3, DM-28): typed by the office or the anaesthetist with
+   * the Split button, through `setProcedureSplit`. Absent means no split: the
+   * party the Contract bills is invoiced in full. Nothing on the Contract
+   * names a split or a default share.
+   */
+  split?: FeeSplit
+
   /** The legacy Outcome panel's Int Notes / Op Notes (Phase 04 capture). */
   intNotes?: string
   opNotes?: string
+}
+
+/** One party's share of a split fee, typed in $ (ex GST) or %, or the rest (catch-up Phase 22). */
+export type SplitShareBasis =
+  | { kind: 'amount'; amountExGst: number }
+  | { kind: 'percent'; percent: number }
+  | { kind: 'rest' }
+
+export interface SplitShare {
+  /** Who pays this share: the same reference the invoice build bills (`billablePartyForProcedure`). */
+  party: CounterpartyRef
+  basis: SplitShareBasis
+}
+
+/** A Procedure's fee split (US-08.2.3): the maths lives only in `domain/billing/splitShare.ts`. */
+export interface FeeSplit {
+  shares: SplitShare[]
 }
 
 /** How a billing line's amount arises (RFP methods; 'rateTime' = Method 3 hours x rate). */
 export type ChargeBasis = 'rvg' | 'fixed' | 'rateTime'
 
 /**
- * A billing line. `funderOverride` (5th review #4) bills the line to that
- * counterparty instead of the Procedure's resolved route — the RFP's
- * one-procedure-two-funders split. CONSERVATION RULE (validator-checked):
- * once any of a procedure's lines carries a funder override, the procedure's
- * stored line amounts must sum, to the cent, to its computed fee.
+ * A captured billing line (fixed or rate x time inputs; an RVG line is never
+ * an input). Who pays is the Procedure's Contract, or its split (catch-up
+ * Phase 22), never the line.
  */
 export interface BillingLine {
   id: string
@@ -1039,7 +1069,6 @@ export interface BillingLine {
   hours?: number
   amount: number
   description: string
-  funderOverride?: CounterpartyRef
 }
 
 // ---------------------------------------------------------------------------
@@ -1243,6 +1272,59 @@ export interface AuditEntry {
 // Billing pipeline (typed now — behaviour lands in Phases 08–09)
 // ---------------------------------------------------------------------------
 
+/** The supplier on a receivable invoice (US-08.4.5): the anaesthetist, as at the run. */
+export interface InvoiceSupplier {
+  anaesthetistId: AnaesthetistId
+  name: string
+  gstNumber?: string
+}
+
+/** AA as agent on a receivable invoice (US-08.4.5), as at the run. */
+export interface InvoiceAgent {
+  name: string
+  gstNumber: string
+}
+
+/** One send of an emailed invoice: the run's, then any office Resend. */
+export interface InvoiceSend {
+  atISO: IsoDateTime
+  to: string
+  by: string
+}
+
+/**
+ * How the invoice went out (catch-up Phase 22; US-08.4.2, FT-08.4): stamped by
+ * the billing run from `invoiceDeliveryFor` (the Party's setting, or the
+ * payer's email, else post). No portal value (D55's default, OQ-114 open).
+ */
+export type InvoiceDelivery =
+  | { method: 'email'; status: 'sent'; sends: InvoiceSend[] }
+  | { method: 'email'; status: 'noAddress' }
+  | { method: 'post'; status: 'toPost'; address: string[]; markedAtISO: IsoDateTime }
+
+/** The split share an invoice was raised for (US-08.2.3). */
+export interface InvoiceSplitInfo {
+  procedureId: ProcedureId
+  /** The Procedure's whole fee, ex GST, that was split. */
+  feeExGst: number
+  /** "$132.50", "62.5%" or "the rest". */
+  shareLabel: string
+  isRest: boolean
+}
+
+/** Links between invoices (Phase 38b adds `additionalTo`, Phase 39 `rebillOf`). */
+export interface InvoiceLineage {
+  role: 'otherShareOfSplit'
+  invoiceId: InvoiceId
+}
+
+/** The holder layout's cross-match fields (US-08.4.1), as at the run. */
+export interface InvoiceCrossMatch {
+  procedureDateISO: IsoDate
+  surgeon?: string
+  hospitalRef?: string
+}
+
 export interface Invoice {
   id: InvoiceId
   invoiceNumber: string
@@ -1251,23 +1333,52 @@ export interface Invoice {
   counterparty: CounterpartyRef
   /** The addressee's name and contact as at the run (catch-up Phase 21), so a payer's details stay with the debt. */
   billedTo?: InvoiceBilledTo
-  /** Invoice layout differs by recipient class (RFP). */
+  /** The holder's layout or the patient's, from the Contract (`invoiceLayoutFor`, catch-up Phase 22), snapshotted at the run. */
   layout: 'contractHolder' | 'patient'
   kind: 'standard' | 'prePayment'
   subtotal: number
   gst: number
   total: number
   raisedAtISO?: IsoDateTime
-  emailedAtISO?: IsoDateTime
+  /** The Procedures this invoice bills, in Booking order (catch-up Phase 22). */
+  procedureIds?: ProcedureId[]
+  /** The anaesthetist as supplier (US-08.4.5), snapshotted at the run. */
+  supplier?: InvoiceSupplier
+  /** AA as agent (US-08.4.5), snapshotted at the run. */
+  agent?: InvoiceAgent
+  /** Set on an invoice raised from a split share (US-08.2.3). */
+  split?: InvoiceSplitInfo
+  /** The Contract's holder reference code (US-04.2.18), on the holder layout. */
+  holderReference?: string
+  /** The holder layout's cross-match fields (US-08.4.1). */
+  crossMatch?: InvoiceCrossMatch
+  /** The other shares of the same split. */
+  lineage?: InvoiceLineage[]
+  /** How it was sent (US-08.4.2); stamped by the run. */
+  delivery?: InvoiceDelivery
+}
+
+/** The B/T/M breakdown printed on a holder-layout fee line (US-08.4.1). */
+export interface InvoiceLineBtm {
+  base: number
+  time: number
+  modifiers: number
+  /** The units charged (time only on an additional procedure). */
+  units: number
+  unitValue: number
 }
 
 export interface InvoiceLine {
   id: string
   invoiceId: InvoiceId
   procedureId?: ProcedureId
+  /** A fee, a discount (its own negative line) or an adjustment (a price override, a prepayment deduction). */
+  kind?: 'fee' | 'discount' | 'adjustment'
   description: string
   units?: number
   amount: number
+  /** Holder layout fee lines only. */
+  btm?: InvoiceLineBtm
 }
 
 export type BillingPipelineStatus =
@@ -1408,6 +1519,26 @@ export interface XeroAccPay {
   amountAuthorised: number
   amountDisbursed: number
   status: 'draft' | 'authorised' | 'paid'
+  /**
+   * The ACCPAY held as a buyer-created tax invoice (catch-up Phase 22;
+   * US-09.1.4): one per receivable invoice, the same value. Wording and the
+   * document's name are provisional (OQ-29). Absent only on records from
+   * before the phase (the seed fills every one).
+   */
+  taxInvoice?: BuyerCreatedTaxInvoice
+}
+
+/** The buyer-created tax invoice wording an ACCPAY carries (US-09.1.4; provisional, OQ-29). */
+export interface BuyerCreatedTaxInvoice {
+  kind: 'buyerCreated'
+  documentName: string
+  wording: string
+  supplierName: string
+  supplierGstNumber?: string
+  agentName: string
+  agentGstNumber: string
+  relatesToInvoiceNumber: string
+  provisional: true
 }
 
 export interface PaymentIn {

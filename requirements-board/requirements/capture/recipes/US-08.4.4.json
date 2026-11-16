@@ -1,12 +1,12 @@
 {
   "id": "US-08.4.4",
   "status": "partial",
-  "absentReason": "Invoices are stored as snapshots that later contract edits do not change, but there is no action to regenerate a past invoice from the locked data and contract version.",
+  "absentReason": "Invoices are stored as snapshots (lines, supplier, agent and delivery) that later Contract edits do not change, but there is no action yet to regenerate a past invoice from the locked data and the price range in force: catch-up Phase 25 builds it.",
   "shots": [
     {
       "name": "snapshot-invoice",
       "app": "admin",
-      "caption": "An invoice kept exactly as raised, its lines fixed from the contract in force",
+      "caption": "An invoice kept exactly as raised: its lines, supplier, agent and delivery stored on it, unchanged by later Contract edits",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -17,7 +17,7 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Hemi Walker\"):has-text(\"Whitaker\") >> nth=0"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Hemi Walker\"):has-text(\"Whitaker\") >> nth=0 >> role=button[name=\"View →\"]"
             },
             {
               "wait": 500

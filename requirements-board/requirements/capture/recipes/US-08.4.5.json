@@ -1,12 +1,12 @@
 {
   "id": "US-08.4.5",
-  "status": "partial",
-  "absentReason": "The invoice names the anaesthetist and states AA bills as agent, but it does not show the anaesthetist as supplier with their GST number.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "agent-line",
       "app": "admin",
-      "caption": "Invoice billed by AA as agent for the anaesthetist",
+      "caption": "Issued by Anaesthesia Associates Limited as agent for the anaesthetist; wording provisional (OQ-29)",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -32,14 +32,151 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=\"View →\"]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=invoice-agency-line]"
+            "[data-shot=invoice-agent-block]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supplier",
+      "app": "admin",
+      "caption": "The anaesthetist is the supplier: their name and GST number head the invoice",
+      "start": "/admin/review/L-34821-2026-07-20-AM",
+      "states": [
+        {
+          "state": "held",
+          "caption": "Dr Souter as supplier, with her GST number",
+          "steps": [
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-supplier]"
+          ]
+        },
+        {
+          "state": "not-held",
+          "caption": "With no GST number on the anaesthetist's record, the invoice reads GST number not held",
+          "steps": [
+            {
+              "goto": "/admin/masters?view=anaesthetists"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"34821\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=anaesthetist-gst-number-field] input",
+              "value": ""
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Save changes\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-20-AM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-supplier]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gst-number",
+      "app": "admin",
+      "caption": "Each anaesthetist's GST number, held on their record and printed on every invoice in their name",
+      "start": "/admin/masters?view=anaesthetists",
+      "states": [
+        {
+          "state": "column",
+          "caption": "The GST number column; Dr Strand's reads Not held",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-gst-number]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Edit an anaesthetist: GST number (optional); blank prints GST number not held",
+          "steps": [
+            {
+              "click": "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"34821\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-gst-number-field]"
           ]
         }
       ]

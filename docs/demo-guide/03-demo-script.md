@@ -13,7 +13,7 @@ Where a scenario needs a worked example, use one recognisable business object:
 
 > Dr Melanie Souter's operating Lists, at Southern Cross, St George's and Forte Health.
 
-The seed keeps her design-day tableau (Tue 21 Jul), the split-billing and two-funder Lists (Mon 20
+The seed keeps her design-day tableau (Tue 21 Jul), the split-billing and fee-split Lists (Mon 20
 Jul), a submitted review-queue List, forward Lists for the integration bookings (Tue 28 Jul), and the
 unfinished Margaret Ellison Booking designed for live capture.
 
@@ -556,7 +556,10 @@ already seeded.
   child payer warning) and Janet Ormsby's insurer, NIB, has no approval number (the only insurance
   warning). Kevin Doherty's row carries **Email or postal address needed**; the Whitcombe Family Trust
   pays by post with no flag; Peter Tawhiri is funded by Health NZ, a funder, so nothing warns. Clear one
-  warning from the Day view's To-do card, then authorise the List anyway: nothing blocks. On Admin Day,
+  warning from the Day view's To-do card, then authorise the List anyway: nothing blocks. Its invoices
+  show the two other delivery cases: the Whitcombe Family Trust's is **To post** (a **Simulated
+  posting** badge and a **Provisional (OQ-122)** pill), and Kevin Doherty's raises **No invoice
+  address**, where the office types an address on the Delivery card and selects **Send**. On Admin Day,
   **Demo actions → Raise sample warnings** brings a child payer warning back on Grace Park's Booking
   (Fri 24), and **Clear sample warnings** puts Hana Park back as her payer.
 
@@ -598,33 +601,62 @@ states, and AA's own monthly fee. **Time:** 8 to 10 minutes. This is the money s
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
 Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM
-(St George's, the two-funder Booking). Their invoices do not exist until you authorise the Lists live.
+(St George's, the fee-split Booking: nib $132.50, Alan Prentice the rest). Their invoices do not exist
+until you authorise the Lists live; the run then sends them.
 
 ### Beat 1: authorise and generate invoices
 
 - **Click:**
   - Go to **Admin → Review queue**.
-  - Process the two Melanie Lists: authorise Forte AM, then use **Next in queue** to authorise
-    St George's PM.
+  - Process the two Melanie Lists: authorise Forte AM (the banner reads "3 invoices raised. 3 emailed,
+    0 to post."), then use **Next in queue** to authorise St George's PM ("4 invoices raised. 4
+    emailed, 0 to post.").
   - Select **View invoices → AA-2026-0002 · Brian Holt → View**.
-  - Pause on the invoice, then select **Email invoice → All invoices**.
-  - Locate the fixed comparison rows and pause:
-    - **AA-2026-0002 · Brian Holt · Forte Health · $365.70** is the one-invoice,
-      same-funder split Booking. (It read $396.18 before catch-up Phase 19b: his ASA II no longer
-      seeds a modifier unit, because the RVG table prices ASA I or II at 0.)
-    - **AA-2026-0005 · Alan Prentice · nib · $152.38** and
-      **AA-2026-0006 · Alan Prentice · St George's · $91.43** are the two invoices from the same
-      Booking at 14:00.
-- **Say:** "The Billing Engine, not Xero, produces the invoice. Each Procedure's Contract decides who
-  is billed: its holder when the Contract bills its holder, otherwise the payer named on the Booking.
-  The run groups each Booking's Procedures by that party. Xero follows as the receivables and banking
-  service."
-- **Expected:** invoice rows appear for both Lists, derived from the same captured data; one invoice
-  for the split-billing Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave
-  her main view (phone and web) as soon as the office authorises them, and their invoices show in her
-  Balances at once, with no Next morning needed.
-- **Optional aside:** to also show the patient invoice layout, reallocate part of the two-funder Booking's
-  fee to the patient via **Funder allocation** before authorising the PM List.
+  - Pause on the **Delivery** card on the invoice rail: the run already emailed it ("Emailed to ... at
+    08:00", a **Simulated send** badge, **Resend** and **Print**). Then pause on the invoice's head: Dr
+    Melanie Souter as supplier with "GST number 104-348-211", the agent block ("Issued by Anaesthesia
+    Associates Limited as agent for Dr Melanie Souter. AA GST number 102-345-678.") with its
+    **Provisional (OQ-29)** pill, and GST (15%) at the foot.
+  - Select **All invoices**, locate the fixed comparison rows and pause:
+    - **AA-2026-0002 · Brian Holt · Forte Health · $365.70** is the one-invoice split-billing
+      Booking. (It read $396.18 before catch-up Phase 19b: his ASA II no longer seeds a modifier
+      unit, because the RVG table prices ASA I or II at 0.)
+    - **AA-2026-0005 · Alan Prentice · nib · $152.38** and **AA-2026-0006 · Alan Prentice · $91.43**
+      (billed to Alan himself) are the two invoices from the same fee-split Booking at 14:00.
+  - Open **AA-2026-0005** ("Emailed to claims@nib.example"): the holder's layout. Point at the line's
+    invoice description, the BTM breakdown ("Base 4 + Time 4 + Modifiers 0 = 8 units at $26.50"), the
+    cross-match strip (procedure date, surgeon, hospital reference) and the split note naming
+    AA-2026-0006. It carries no **Your reference**: Alan's Procedure is on No contract · RVG and split,
+    so nib's share has no holder reference code. The PM List's St George's invoices (its other two
+    Bookings, on St George's RVG) print **Your reference SGANAES01**.
+  - Back to **All invoices**, open **AA-2026-0006** ("Emailed to alan.prentice11@example.net"): the
+    patient's layout, the same lines without the BTM breakdown or the strip.
+- **Say:** "The Billing Engine, not Xero, produces and sends every invoice as part of the run, in Dr
+  Souter's name with her GST number and AA as agent. Each Procedure's Contract decides who is billed:
+  its holder when the Contract bills its holder, otherwise the payer named on the Booking. The layout
+  follows the Contract (the holder's when it bills its holder) and GST is always added at the foot;
+  the Party decides whether its invoice goes by email or post, and a payer with only a postal address
+  gets 'To post'. Alan's knee arthroscopy was split on the Booking: nib pays $132.50 and Alan the rest,
+  so nib is invoiced its share and Alan the gap, each on its own invoice. Xero follows as the
+  receivables and banking service." Name the agent wording as provisional: it waits on AA's
+  accountant (OQ-29).
+- **Expected:** invoice rows appear for both Lists, derived from the same captured data, with the
+  figures unchanged ($365.70; $152.38 and $91.43); one invoice for the split-billing Booking, two for
+  the fee-split Booking, and AA-2026-0006 goes to Alan Prentice (the gap), not St George's. Each
+  invoice shows its delivery stamp. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as
+  soon as the office authorises them, and their invoices show in her Balances at once, with no Next
+  morning needed.
+- **Optional aside (before authorising the PM List):** open Alan's Booking (**Admin → Day → Mon 20
+  Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Change** (on the phone, tap the Paid by row). The "Split the fee" sheet shows the fee, $212.00, and each party
+  with a $ or % share or **Takes the rest**, every amount live, and "$212.00 of $212.00". Type nib's
+  share as **62.5%** instead of $132.50: the same split. Any user can split, including the anaesthetist
+  on her own Booking (phone and web) until the List is authorised, and there is no split setting on
+  the Contract. (Saving nib at 60% instead gives $127.20 and $84.80, $146.28 and $97.52 after GST, so
+  the fixed figures above change; **Remove split** is on the same sheet.)
+- **Optional aside:** the GST number is a field on the Admin anaesthetist record (**Master data →
+  Anaesthetists**, the GST number column; Dr Oliver Strand reads "Not held"), not on the anaesthetist's
+  own profile; blank prints "GST number not held". **Master data → Contracts** shows the read-only
+  Layout and Delivery columns. The agency wording waits on AA's accountant (OQ-29).
 
 ### Beat 2: the Xero collection and payable pair
 
@@ -639,7 +671,10 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
 - **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice, each showing its InvoiceNumber
   and Reference (the ACCPAY's number ends `-P`). The patient, Alan Prentice, is named only in the
   "Linked Billing Engine case" panel, which reads the billing system; read his name from there. On
-  this pair, nib owes $152.38 and the payable to Dr Souter is $152.38.
+  this pair, nib owes $152.38 and the payable to Dr Souter is $152.38. Each ACCPAY carries a
+  **Buyer-created tax invoice** block, with provisional wording (**Provisional (OQ-29)**) naming Dr
+  Souter as supplier (GST 104-348-211) and AA as agent (GST 102-345-678): one per invoice and the same
+  value, so Alan's split gives two.
 
 ### Beat 3: payment, balances and disbursement
 
@@ -699,9 +734,13 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
 - **Expected:** Prentice's Mon 20 Jul Booking and his June ACC Booking, both marked **Invoiced**.
 
 **Discovery points:** whether date of birth joins name and NHI (the three-way match) and whether the
-office needs this search too; the split-billing invoice count (the prototype groups by counterparty, two invoices when funders
-differ); and AA's fee schedule, the paid-only BCTI count and one BCTI per invoice or per procedure
-(all with AA's accountant).
+office needs this search too; the invoice count (one invoice per billable party per Booking; a Split
+on the Booking gives one invoice per share); the split's open details (whether typed % shares must
+total 100, and what the split lines say); the agency wording on the invoice and the buyer-created tax
+invoice, and IRD's new name for that document (OQ-29); BCTI granularity (the prototype builds one per
+invoice; per procedure, per payment or per run is open, OQ-29); what other outputs a Party can have,
+nib's portal among them (OQ-114); posting invoices to a payer with no email (OQ-122); and AA's fee
+schedule and the paid-only BCTI count (with AA's accountant).
 
 ---
 

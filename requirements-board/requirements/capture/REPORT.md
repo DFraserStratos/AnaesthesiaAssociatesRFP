@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 169 | 155 |
-| Partial | 50 | 50 |
-| Absent from the app | 68 | 67 |
+| Captured | 176 | 162 |
+| Partial | 46 | 46 |
+| Absent from the app | 67 | 66 |
 | Failed recipe | 0 | 0 |
-| No recipe | 28 | 28 |
+| No recipe | 26 | 26 |
 
-651 screenshots. Items per app: admin 150, web 76, mobile 72, simulator 35.
+685 screenshots. Items per app: admin 153, web 78, mobile 74, simulator 35.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (68)
+## Absent from the app (67)
 
 - **FT-11.4** Insurers · Retired: removed in Phase 18
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
@@ -43,10 +43,9 @@ None.
 - **US-04.2.5** Multi-procedure rule per Contract · Retired: removed in Phase 19a
 - **US-04.2.6** Adjustment and override permissions · The contract has no settings for whether the anaesthetist may discount or set a final price, or whether the office may override. Its only permission flag is "Permits individual arrangement (Method 3)", which gates rate times time lines. Searched domain/types.ts (Contract), ContractEditSheet.tsx, OverrideCard.tsx and PriceOverrideSheet.tsx.
 - **US-04.2.7** Required booking inputs · A contract cannot declare required booking inputs. Completion checks come from the Contract's pricing kind and fixed validator rules, not from the contract. Searched domain/types.ts (Contract), domain/billing/validateBookingForBilling.ts and ContractEditSheet.tsx.
-- **US-04.2.8** Invoice presentation and delivery · Invoice layout, delivery method and GST treatment are not contract settings. The invoice recipient follows the Contract, delivery is a simulated email, and GST is a fixed 15%. Searched domain/types.ts (Contract), ContractEditSheet.tsx and apps/admin/screens/InvoiceDocument.tsx.
 - **US-04.2.9** Organisational and individual Contracts · Retired: the flat Contract model has no lines, versions or defaults
 - **US-04.2.10** Contract prices effective from a date · Retired: the flat Contract model has no lines, versions or defaults
-- **US-04.2.12** Payment setting: full payment or split · Not built yet: catch-up Phase 22 builds this.
+- **US-04.2.12** Payment setting: full payment or split · Retired: splitting is a button on the Booking (US-08.2.3), built in Phase 22; no Contract payment setting.
 - **US-04.3.6** Hospital data sets the Contract · Not planned: Future Work, in no catch-up phase.
 - **US-04.3.7** Confirm a price with the hospital · Not built yet: catch-up Phase 21 builds this.
 - **US-04.4.1** Mandatory default Contract · Retired: the flat Contract model has no lines, versions or defaults
@@ -89,7 +88,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (50)
+## Partial (46)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
 - **US-02.1.1** Import hospital bookings · No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.
@@ -118,23 +117,19 @@ None.
 - **US-06.3.2** Track prepayment status and alert when outstanding · Status is shown per booking as a prepayment warning (required, outstanding, received) and as a warning on the admin day grid. There is no part paid status and no list of all upcoming prepaid bookings.
 - **US-06.3.3** Alert on unpaid prepayment · An unpaid prepayment is a warning on the admin day grid and at the top of the Booking, never a block. There is no time-based escalation as the procedure date approaches.
 - **US-06.3.5** Re-check when the Booking changes · Whether a prepayment is required is re-derived live from the Procedure's Contract (a prepaid Contract requires it), as shown when the office moves Mrs Riley off Dr Souter's prepaid price list. The prepaid amount is not recalculated when procedures or the Contract change: the deposit or full-fee type is fixed on the procedure until Phase 27.
-- **US-08.2.3** Split one Procedure's fee between two payers · The split is set by the office allocating billing lines to funders on the booking, not by a covered amount or percentage defined on the Contract. The seeded example splits between an insurer and the hospital, not an insurer portion and a patient gap.
 - **US-08.3.3** Patient-linked history survives Xero archiving · Archiving is simulated for Xero contacts only; purging a contact is not shown.
 - **US-08.3.4** Money in and money out · Receipts and disbursements are tracked per invoice and shown per booking, but there is no equilibrium view for AA overall, per anaesthetist or per patient.
 - **US-08.3.5** Per-anaesthetist ledger position · Each anaesthetist sees their own position in the web and mobile apps, but there is no office view of a chosen anaesthetist's ledger position, and the mobile app shows only what is outstanding, not collected or paid out.
-- **US-08.4.2** Send to the invoice email · Emailing is simulated and records only the time sent. Since catch-up Phase 21 the invoice shows the payer's email or postal address as at the run (Invoice to), but sending to it, and posting, are Phase 22's. Portal upload for an insurer is shown.
-- **US-08.4.4** Invoice reproducibility · Invoices are stored as snapshots that later contract edits do not change, but there is no action to regenerate a past invoice from the locked data and contract version.
-- **US-08.4.5** Anaesthetist as supplier, AA as agent · The invoice names the anaesthetist and states AA bills as agent, but it does not show the anaesthetist as supplier with their GST number.
+- **US-08.4.4** Invoice reproducibility · Invoices are stored as snapshots (lines, supplier, agent and delivery) that later Contract edits do not change, but there is no action yet to regenerate a past invoice from the locked data and the price range in force: catch-up Phase 25 builds it.
 - **US-08.4.6** Invoice description on each Procedure · The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).
 - **US-08.6.1** Additional invoice for late charges · The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.
-- **US-09.1.4** ACCPAY as buyer-created tax invoice · The ACCPAY to the anaesthetist exists with payee, bill number and the full payable, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).
 - **US-09.4.1** Dedicated Xero organisation · The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.
 - **US-09.4.2** Duplicate invoice number prevention · The Xero setting is only described in a note on the simulator; it is not modelled as a configurable or enforced setting (open question OQ-11).
 - **US-10.3.2** AA fee visible to the anaesthetist · Web shows AA fee invoices and their status; the mobile app does not show them.
 - **US-11.1.1** Patient record keyed on NHI · Patient details show on each booking; there is no standalone patient record screen, and ethnicity is held but not shown on the patient panel.
 - **US-11.1.4** Patient without NHI · A patient can be created without an NHI (the add booking form leaves it optional) and shows as NHI pending, but there is no way to attach the NHI later: Edit patient details has no NHI field.
 - **US-11.3.2** Alert on booking a patient with unpaid bills · The unpaid prior balance is flagged in the billing monitor once the list is authorised, not as an alert when the booking is created or matched.
-- **US-11.3.3** Follow-up tools · An invoice can be emailed from the invoice document, but once sent there is no re-send, and there is no way to record follow-up actions against a patient's outstanding items.
+- **US-11.3.3** Follow-up tools · Invoices are re-sent from the invoice's Delivery card, but there is no way to record follow-up actions against a patient's outstanding items.
 - **US-12.1.1** Dollar value per unit · Each anaesthetist's dollar value per unit is held and editable, but only by the office in admin Master data. The anaesthetist cannot set it in the mobile or web app.
 - **US-12.1.2** GST period · The GST period is held on the anaesthetist but set by the office in admin Master data, not by the anaesthetist. The web GST view defaults to it and can be switched for viewing only; the mobile app shows the current month only.
 - **US-13.4.1** Maintain reference tables · Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). The RVG modifier rows are as printed (AA's own can be added), and public holidays are held per hospital with no separate master calendar.
@@ -142,7 +137,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (28)
+## No recipe (26)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-02.2.3** Detect Bookings removed from a re-sent List
@@ -154,12 +149,10 @@ None.
 - **US-02.6.3** Office resolves a stub from intake
 - **US-03.1.8** See the prepaid amount on the Booking
 - **US-03.1.10** Booking total on the office's Booking page
-- **US-03.3.9** RVG detail follows the pricing kind
 - **US-03.3.10** See what the price comes to
 - **US-03.7.3** See a Procedure's events
 - **US-03.7.4** Bill a pre-op consult held in AA's room
 - **US-04.2.13** Export and re-import Contracts
-- **US-04.3.11** A moved Booking keeps its Contracts
 - **US-04.4.2** Default RVG Contract for every procedure
 - **US-05.2.8** A Procedure's price follows its Contract until held
 - **US-05.4.3** RVG less the Contract's discount
@@ -173,7 +166,7 @@ None.
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (169)
+## Captured (176)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -237,6 +230,7 @@ None.
 - **US-03.3.4** Choose optional modifiers, each with a short explanation · web, mobile
 - **US-03.3.7** Rate x time capture · web, mobile
 - **US-03.3.8** Age modifier from the patient's age · web, mobile
+- **US-03.3.9** RVG detail follows the pricing kind · web, mobile, admin
 - **US-03.4.1** Anaesthetist can change the Contract · web, mobile
 - **US-03.5.2** BTM still recorded in full · web, mobile
 - **US-03.5.3** Adjustment reason · web, mobile
@@ -245,6 +239,7 @@ None.
 - **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
 - **US-04.1.5** Parties · admin
 - **US-04.2.2** Pricing kinds · admin
+- **US-04.2.8** Invoice presentation and delivery · admin
 - **US-04.2.16** Specialties on a Contract · admin
 - **US-04.2.17** Funding tag on a Contract · admin
 - **US-04.3.1** Exactly one Contract per Procedure · admin
@@ -254,6 +249,7 @@ None.
 - **US-04.3.8** Where the invoice goes, then the Contract · admin, mobile, web
 - **US-04.3.9** The No contract backstops, RVG and Fixed price · admin, mobile
 - **US-04.3.10** Suggested path from the Booking's funder · admin
+- **US-04.3.11** A moved Booking keeps its Contracts · admin
 - **US-05.1.1** RVG groups · admin, web, mobile
 - **US-05.1.3** Anatomy headings and AA groups · admin, web, mobile
 - **US-05.1.4** Modifiers already included in base units · admin, web, mobile
@@ -284,15 +280,19 @@ None.
 - **US-08.1.2** Contract already resolved · admin
 - **US-08.2.1** Group by billable party · admin
 - **US-08.2.2** Prepaid Procedures left off the final invoice · admin
+- **US-08.2.3** Split one Procedure's fee between two payers · admin, web, mobile
 - **US-08.3.1** Linked receivable and payable pair · simulator, admin
 - **US-08.3.2** Ledger is the system of record · web, mobile
 - **US-08.4.1** Generate invoice documents · admin
+- **US-08.4.2** Send to the invoice email · admin
 - **US-08.4.3** Unique invoice numbers · simulator
+- **US-08.4.5** Anaesthetist as supplier, AA as agent · admin
 - **US-08.5.1** Report processing status · admin
 - **US-08.5.2** Booking-level vs List-level failure · admin
 - **US-09.1.1** Invoice pair creation and identification · simulator, admin
 - **US-09.1.2** InvoiceNumber and Reference · simulator
 - **US-09.1.3** Prepayment invoices also paired · simulator
+- **US-09.1.4** ACCPAY as buyer-created tax invoice · simulator
 - **US-09.2.1** Webhook on INVOICE events · simulator
 - **US-09.2.2** Daily reconciliation poll · simulator
 - **US-09.2.3** Idempotent by InvoiceID · simulator

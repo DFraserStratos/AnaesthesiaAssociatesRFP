@@ -7,7 +7,7 @@
 
 import type { AaFeeInvoice, AaFeeInvoiceLine, AaFeeSettings, XeroAccRec } from '../types'
 import { formatMoney, roundToCents, toCents } from './money'
-import { GST_RATE } from './invoiceBuild'
+import { GST_RATE } from './invoicePresentation'
 import type { BctiRecord } from './bcti'
 
 export interface AaFeeBreakdown {

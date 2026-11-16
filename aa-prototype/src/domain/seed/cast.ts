@@ -47,7 +47,7 @@ export const ANAE = {
  * seeded billing history, so every seeded anaesthetist has Slots on every
  * horizon day.
  */
-export const ANAESTHETISTS: readonly Anaesthetist[] = [
+const ANAESTHETIST_RECORDS: readonly Anaesthetist[] = [
   { registrationNumber: ANAE.souter, name: 'Dr Melanie Souter', phone: '021 555 0134', email: 'm.souter@aa-associates.example', unitValue: 26.5, gstPeriod: 'monthly', hpiId: '10SOUM', startDateISO: '2014-02-03', active: true },
   { registrationNumber: ANAE.rutherford, name: 'Dr James Rutherford', phone: '021 555 0217', email: 'j.rutherford@aa-associates.example', unitValue: 32, gstPeriod: 'monthly', hpiId: '11RUTJ', startDateISO: '2009-03-02', active: true },
   { registrationNumber: ANAE.sharma, name: 'Dr Priya Sharma', phone: '021 555 0342', email: 'p.sharma@aa-associates.example', unitValue: 30, gstPeriod: 'monthly', hpiId: '12SHAP', startDateISO: '2016-07-04', active: true },
@@ -63,6 +63,21 @@ export const ANAESTHETISTS: readonly Anaesthetist[] = [
   { registrationNumber: ANAE.ngatai, name: 'Dr Aroha Ngatai', phone: '021 555 1394', email: 'a.ngatai@aa-associates.example', unitValue: 27, gstPeriod: 'monthly', hpiId: '22NGAA', startDateISO: '2022-06-06', active: true },
   { registrationNumber: ANAE.strand, name: 'Dr Oliver Strand', phone: '021 555 1420', email: 'o.strand@aa-associates.example', unitValue: 42, gstPeriod: 'monthly', hpiId: '23STRO', startDateISO: '2024-02-05', active: true },
 ] as const
+
+/**
+ * The anaesthetists' GST numbers (catch-up Phase 22; DM-62, US-08.4.5):
+ * SYNTHETIC, nine digits made from the registration number ("104", the
+ * registration number, "1"), so each is unique and stable; Dr Souter's is
+ * 104-348-211, the one the demo guide quotes. Dr Strand, off every scripted
+ * beat, is left blank so "GST number not held" shows.
+ */
+export function syntheticGstNumber(registrationNumber: string): string {
+  return `104${registrationNumber}1`
+}
+
+export const ANAESTHETISTS: readonly Anaesthetist[] = ANAESTHETIST_RECORDS.map((a) =>
+  a.registrationNumber === ANAE.strand ? a : { ...a, gstNumber: syntheticGstNumber(a.registrationNumber) },
+)
 
 // ---------------------------------------------------------------------------
 // Surgeons (the design's 9 + 1 to reach ~10)
@@ -175,8 +190,7 @@ export const INS = {
 /**
  * INTERIM identities only (catch-up Phase 18, RV-39): every insurer is a Party
  * (`seed/parties.ts`). These bare records remain as the ids an insurer
- * Party's `billingIdentity` and billing lines' `funderOverride` point at, so no
- * counterparty moves. There is no direct-claims flag. Southern Cross Health
+ * Party's `billingIdentity` points at, so no counterparty moves. There is no direct-claims flag. Southern Cross Health
  * Society's id is new with its Party, so the insurer selects can name it.
  */
 export const INSURERS: readonly Insurer[] = [

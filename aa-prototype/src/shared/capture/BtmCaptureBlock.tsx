@@ -120,8 +120,8 @@ export function BtmCaptureBlock({
   const lists = useAppStore((s) => s.schedule.lists)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists } }, procedure.id, stackSurface),
-    [masters, procedures, bookings, lists, procedure.id, stackSurface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, billingLines, procedure.id, stackSurface],
   )
 
   return (
@@ -238,7 +238,6 @@ export function BtmCaptureBlock({
           procedure={procedure}
           nonRvgLines={nonRvgLines}
           contract={contract}
-          masters={masters}
           actor={actor}
           canCapture={canCapture}
           failures={forFields(['billingLines'])}

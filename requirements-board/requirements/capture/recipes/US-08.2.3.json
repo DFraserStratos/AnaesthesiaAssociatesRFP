@@ -1,12 +1,12 @@
 {
   "id": "US-08.2.3",
-  "status": "partial",
-  "absentReason": "The split is set by the office allocating billing lines to funders on the booking, not by a covered amount or percentage defined on the Contract. The seeded example splits between an insurer and the hospital, not an insurer portion and a patient gap.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "split-invoices",
       "app": "admin",
-      "caption": "One procedure's fee split across two invoices, nib and St George's",
+      "caption": "One procedure's fee split on the Booking between nib and the patient, an invoice each",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -55,7 +55,7 @@
     {
       "name": "insured-portion",
       "app": "admin",
-      "caption": "The nib insured portion invoiced to nib on its own",
+      "caption": "nib's share of the fee on its own invoice, with a note naming the other share",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -96,13 +96,14 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Alan Prentice\") >> nth=1"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0005\") >> role=button[name=\"View →\"]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
+            "[data-shot=invoice-split-note]",
             "[data-shot=invoice-lines]"
           ]
         }
@@ -111,7 +112,7 @@
     {
       "name": "remaining-portion",
       "app": "admin",
-      "caption": "The remaining portion invoiced to St George's",
+      "caption": "The patient's gap, the rest of the fee, invoiced to Alan Prentice",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -152,14 +153,154 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Alan Prentice\") >> nth=0"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0006\") >> role=button[name=\"View →\"]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
+            "[data-shot=invoice-split-note]",
             "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "split-button",
+      "app": "admin",
+      "caption": "A Split button on the Procedure: each share typed in $ or %, no setting on the Contract",
+      "start": "/admin/day/2026-07-20/bookings/BK0025",
+      "states": [
+        {
+          "state": "row",
+          "caption": "The Procedure's split line on the Booking: nib $132.50, Alan Prentice the rest",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-split-row]"
+          ]
+        },
+        {
+          "state": "amount",
+          "caption": "The Split sheet: nib's share typed as $132.50, Alan Prentice takes the rest",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            },
+            {
+              "click": "[data-shot=procedure-split-button]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-sheet]"
+          ]
+        },
+        {
+          "state": "percent",
+          "caption": "The same share typed as 62.5%",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            },
+            {
+              "click": "[data-shot=procedure-split-button]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "[data-shot=split-share-input] >> nth=0 >> input",
+              "value": "62.5%"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "split-button",
+      "app": "web",
+      "caption": "The anaesthetist splits a fee on her own Booking: a Split button on the Procedure",
+      "start": "/web/lists/L-34821-2026-07-21-AM/bookings/BK0002",
+      "states": [
+        {
+          "state": "row",
+          "caption": "Not split yet, with the Split button",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-split-row]"
+          ]
+        },
+        {
+          "state": "open",
+          "caption": "The Split sheet: each party's share typed in $ or %, one taking the rest",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            },
+            {
+              "click": "[data-shot=procedure-split-button]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "split-button",
+      "app": "mobile",
+      "caption": "The anaesthetist splits a fee on her own Booking: a Split button on the Procedure",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0002",
+      "states": [
+        {
+          "state": "row",
+          "caption": "Not split yet, with the Split button",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+          ]
+        },
+        {
+          "state": "open",
+          "caption": "The Split sheet: each party's share typed in $ or %, one taking the rest",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=split-sheet]"
           ]
         }
       ]

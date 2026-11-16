@@ -31,7 +31,7 @@
         },
         {
           "state": "authorised",
-          "caption": "List authorised, invoices raised by the billing run",
+          "caption": "List authorised: the billing run raises its invoices and sends each by its party's delivery",
           "steps": [
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

@@ -573,7 +573,8 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     const before = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
     const res = raise.run(api, day)
     expect(res.ok).toBe(true)
-    expect(res.message).toContain('4 rules registered')
+    expect(res.message).toContain('Raised 7 sample warnings')
+    expect(res.message).toContain('5 rules registered')
     // multiWarning (catch-up Phase 19): the prepayment sample and the base-units sample, each with its own text.
     const multi = warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning)
     expect(multi.map((w) => w.ruleId).sort()).toEqual(['baseUnitsOutsideGuide', 'prepaymentUnpaid'])

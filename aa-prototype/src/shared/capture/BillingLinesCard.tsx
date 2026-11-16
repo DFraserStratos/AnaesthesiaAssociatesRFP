@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { accent, neutral, semantic } from '../../theme/tokens'
 import type { BillingLine, Contract, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { counterpartyName, removeBillingLine, useAppStore, type Actor, type AppState } from '../../store'
+import { removeBillingLine, useAppStore, type Actor } from '../../store'
 import { AddBillingLineSheet } from './AddBillingLineSheet'
 import { CaptureSection, Caption, FailureNotes } from './ui'
 
@@ -12,30 +12,25 @@ interface BillingLinesCardProps {
   /** The procedure's stored NON-RVG lines (rvg-basis lines are never fee inputs). */
   nonRvgLines: BillingLine[]
   contract?: Contract | undefined
-  masters: AppState['masters']
   actor: Actor
   canCapture: boolean
-  /** billingLines failures — the Method 3 gate + conservation (verbatim). */
+  /** billingLines failures: the Method 3 gate (verbatim). */
   failures: BillingValidationFailure[]
 }
 
 /**
- * The procedure's captured non-RVG billing lines (mockup pattern extended —
- * 5th review #1). A funder-override line is the office's allocation: it names
- * its funder and hides Remove from the anaesthetist (the store guard refuses
- * anyway); the office may remove. Refusals render verbatim.
+ * The procedure's captured non-RVG billing lines (mockup pattern extended,
+ * 5th review #1). Who pays is the Procedure's Contract or its split (catch-up
+ * Phase 22), never a line. Refusals render verbatim.
  */
 export function BillingLinesCard({
   procedure,
   nonRvgLines,
   contract,
-  masters,
   actor,
   canCapture,
   failures,
 }: BillingLinesCardProps) {
-  // The Booking's other payer is named from the Booking (catch-up Phase 21).
-  const bookings = useAppStore((s) => s.schedule.bookings)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,7 +85,6 @@ export function BillingLinesCard({
       {nonRvgLines.length === 0 && <Caption>No extra billing lines. The RVG fee bills on its own.</Caption>}
 
       {nonRvgLines.map((line) => {
-        const hideRemove = line.funderOverride !== undefined && actor.role === 'anaesthetist'
         return (
           <div key={line.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -100,16 +94,11 @@ export function BillingLinesCard({
                   {line.hours.toFixed(1)} h × ${line.rate.toFixed(2)}
                 </span>
               )}
-              {line.funderOverride !== undefined && (
-                <span style={{ fontSize: 12, color: neutral.slate }}>
-                  Billed to {counterpartyName({ masters, schedule: { bookings } }, line.funderOverride, procedure.bookingId)}
-                </span>
-              )}
             </span>
             <span className="mono" style={{ fontSize: 15, fontWeight: 700, flex: 'none' }}>
               ${line.amount.toFixed(2)}
             </span>
-            {canCapture && !hideRemove && (
+            {canCapture && (
               <button
                 type="button"
                 onClick={() => remove(line.id)}

@@ -132,7 +132,6 @@ function billingLineSnapshot(line: BillingLine): Record<string, unknown> {
     hours: line.hours,
     amount: line.amount,
     description: line.description,
-    funderOverride: line.funderOverride,
   }
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
 }
@@ -249,6 +248,21 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
           atISO: shiftISO(procedureBaseISO, 2 + lineIndex),
         })
       })
+
+      // The fee split the office typed on the Booking (catch-up Phase 22; US-08.2.3).
+      if (procedure.split !== undefined) {
+        push({
+          entityType: 'procedure',
+          entityId: procedure.id,
+          who: OFFICE_NAME,
+          role: 'office',
+          source: 'office',
+          action: 'procedure.split',
+          before: { split: null },
+          after: { split: procedure.split },
+          atISO: shiftISO(procedureBaseISO, 3),
+        })
+      }
 
       const capture = procedureCapture(procedure)
       if (Object.keys(capture).length > 0) {

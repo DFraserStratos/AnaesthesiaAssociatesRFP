@@ -347,3 +347,22 @@ describe('review fixes (catch-up Phase 16)', () => {
     expect(billingMonitor(api.getState()).length).toBe(before)
   })
 })
+
+describe('the AA fee run is unchanged by catch-up Phase 22', () => {
+  it('raises AA fee invoices with no supplier, agent or delivery, and no receivable invoice', () => {
+    const api = store()
+    const invoicesBefore = api.getState().billing.invoices
+    const auditBefore = api.getState().audit.length
+    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' }).ok).toBe(true)
+    const july = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07')
+    expect(july.length).toBeGreaterThan(0)
+    for (const fee of july) {
+      expect(fee).not.toHaveProperty('supplier')
+      expect(fee).not.toHaveProperty('agent')
+      expect(fee).not.toHaveProperty('delivery')
+    }
+    expect(api.getState().billing.invoices).toEqual(invoicesBefore)
+    const sends = api.getState().audit.slice(auditBefore).filter((a) => ['invoice.sent', 'invoice.toPost', 'invoice.notSent'].includes(a.action))
+    expect(sends).toEqual([])
+  })
+})

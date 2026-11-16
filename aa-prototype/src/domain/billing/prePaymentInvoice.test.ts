@@ -14,6 +14,7 @@ import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import {
   buildInvoicesForBooking,
   buildPrePaymentInvoiceForBooking,
+  PREPAID_SPLIT_MESSAGE,
   type InvoiceBuildContext,
 } from './invoiceBuild'
 import { toCents } from './money'
@@ -199,16 +200,22 @@ describe('deposit + balance reconciliation', () => {
     if (balance.kind === 'exception') expect(balance.code).toBe('negativeTotal')
   })
 
-  it('a prepaid procedure that also carries a funder split fails for review', () => {
-    const proc = prepaymentProc()
-    const balance = buildInvoicesForBooking(mkBooking(), [proc], mkCtx({
-      prePaidByProcedure: pp(FULL_FEE),
-      billingLines: [
-        { id: 'bl-1', procedureId: 'proc-pp', chargeBasis: 'rvg', amount: 630, description: 'Split', funderOverride: { kind: 'insurer', id: 'ins-1' } },
-      ],
-    }))
+  it('a prepaid procedure that also carries a fee split fails for review', () => {
+    const proc = prepaymentProc({
+      split: {
+        shares: [
+          { party: { kind: 'insurer', id: 'ins-1' }, basis: { kind: 'amount', amountExGst: 330 } },
+          { party: PATIENT, basis: { kind: 'rest' } },
+        ],
+      },
+    })
+    const balance = buildInvoicesForBooking(mkBooking(), [proc], mkCtx({ prePaidByProcedure: pp(FULL_FEE) }))
     expect(balance.kind).toBe('exception')
-    if (balance.kind === 'exception') expect(balance.code).toBe('prepaidFunderOverride')
+    if (balance.kind === 'exception') {
+      expect(balance.code).toBe('prepaidSplit')
+      expect(balance.procedureId).toBe(proc.id)
+      expect(balance.message).toBe(PREPAID_SPLIT_MESSAGE)
+    }
   })
 
   it('fails for review when the payer changed since the deposit was raised', () => {

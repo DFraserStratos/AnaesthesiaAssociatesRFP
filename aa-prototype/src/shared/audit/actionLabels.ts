@@ -37,6 +37,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.create': 'Procedure added',
   'procedure.update': 'Procedure updated',
   'procedure.contract': 'Contract changed',
+  'procedure.split': 'Fee split',
   'procedure.railAnswers': 'Invoice destination so far',
   'procedure.enteredPrice': 'Typed price changed',
   'procedure.remove': 'Procedure removed',
@@ -45,7 +46,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.invoiceDescription.set': 'Invoice description changed',
   'procedure.invoiceDescription.applyDefault': 'Newer description used on the invoice',
   'billingLine.add': 'Billing line added',
-  'billingLine.update': 'Billing line updated',
   'billingLine.remove': 'Billing line removed',
 
   // --- Lists ---------------------------------------------------------------
@@ -172,7 +172,10 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Billing run & invoices ---------------------------------------------
   'invoice.create': 'Invoice raised',
   'invoice.raisePrePayment': 'Pre-payment invoice raised',
-  'invoice.email': 'Invoice emailed',
+  'invoice.sent': 'Invoice emailed',
+  'invoice.toPost': 'Invoice marked to post',
+  'invoice.notSent': 'Invoice not sent',
+  'invoice.resend': 'Invoice resent',
 
   // --- Integrations --------------------------------------------------------
   'integration.receive': 'Message received',

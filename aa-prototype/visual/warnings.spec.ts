@@ -67,7 +67,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   // Four rules since catch-up Phase 21: each target carries the prepayment and the base-units sample;
   // the child payer sample stages on Grace Park's Booking (Fri 24) and the approval sample on a NIB
   // Booking. With the payer review List's two seeded warnings the card shows its first six rows.
-  expect(raised).toContain('4 rules registered')
+  expect(raised).toContain('5 rules registered')
   await expect(todo.locator('li')).toHaveCount(6)
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(2)
   await page.screenshot({ path: 'visual/shots/w15a-03-samples.png', fullPage: true })

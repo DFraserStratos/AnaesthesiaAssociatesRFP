@@ -5,6 +5,7 @@ import { useWebFixtures } from './web/fixtures'
 import * as D from './web/demos'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerDetailsExample, PayerFieldsExample } from './payerExamples'
+import { PaidByRowExample, PartyPickerExample } from './splitExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -211,6 +212,12 @@ export function WebCatalogue() {
             </CatalogueRow>
             <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={ALL} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None, the patient pays; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
               <FunderDetailsExample />
+            </CatalogueRow>
+            <CatalogueRow name="PartyPicker" source="shared/booking/PartyPicker.tsx" usedIn={ALL} what="Choose who an invoice goes to (catch-up Phase 22): the payer on the Booking and the Contract's party first, then every Party, searchable by name. The Split sheet's party field; Phases 38b, 39 and 39b reuse it." replaceWith="shadcn Combobox (Popover and Command)" note="Fixed options on local state; nothing writes to the demo data.">
+              <PartyPickerExample />
+            </CatalogueRow>
+            <CatalogueRow name="PaidByRow (with SplitFeeSheet)" source="shared/booking/PaidByRow.tsx, shared/flows/SplitFeeSheet.tsx" usedIn={ALL} what="Paid by in the Billing card (catch-up Phase 22, US-08.2.3; owner review 2026-11-17): who the fee is invoiced to, or its split; a split that no longer fits reads in the warning tint. On web and Admin a line at the card's foot with Split or Change; on the phone the Billing summary's fourth row, its own tap target. It opens SplitFeeSheet: a party, a $ or % share and Takes the rest per row, each amount live, Save split and Remove split." replaceWith="Custom (shadcn Sheet and Input inside)" note="Read-only examples over fixed views; the sheet opens on a real Booking.">
+              <PaidByRowExample variant="line" />
             </CatalogueRow>
           <CatalogueRow name="Cell (AvailabilityGrid)" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there." replaceWith="Custom cell on a grid + shadcn Tooltip" note="Recreated: local to AvailabilityGrid.tsx. Non-actionable cells are disabled buttons, unreachable by keyboard.">
             <D.AvailabilityCellDemo f={f} />

@@ -10,41 +10,41 @@
  *    the date (`contractIneffective`: a fixed price with no range in force, or
  *    an open price with no amount typed) is a billing exception the office
  *    resolves in the billing monitor. Nothing is resolved from the List;
- *  - who each Procedure (and each funder-overridden BillingLine) bills to:
- *    the Contract says (`billablePartyForProcedure`, catch-up Phase 21: its
- *    holder, or the payer on the Booking);
+ *  - who each Procedure bills to: the Contract says
+ *    (`billablePartyForProcedure`, catch-up Phase 21: its holder, or the payer
+ *    on the Booking), unless the Procedure's fee is split on the Booking
+ *    (catch-up Phase 22, `splitShare.ts`), when each share bills its party;
  *  - how lines group into invoices: one invoice per Booking per distinct
- *    counterparty (§11 labelled reading — the RFP's "two separate invoices"
- *    split outcome arises when funders differ).
+ *    party (FT-08.2). What each invoice prints is `invoicePresentation.ts`'s.
  */
 
 import type {
   Booking,
   Contract,
+  ContractId,
   CounterpartyRef,
   InvoiceBilledTo,
+  InvoiceCrossMatch,
+  InvoiceSplitInfo,
   Procedure,
   ProcedureId,
 } from '../types'
-import { feeFor, type FeeLine } from './fee'
+import { feeFor } from './fee'
 import { formatMoney, roundToCents, toCents } from './money'
+import { btmOf, crossMatchFor, gstOn, invoiceLayoutFor, invoiceLineViews, type InvoiceLayout, type InvoiceLineView } from './invoicePresentation'
+import { PARTY_GONE_REASON, resolveSplit, shareLabel, splitDoesNotFitMessage, splitLineText } from './splitShare'
+import { splitPartiesOn } from './partyOptions'
 import { procedureNeedsPrice } from './contracts'
 import { needsPriceMessage } from './priceRanges'
 import type { Party } from './parties'
 import { billablePartyForProcedure, billedToFor, HOLDER_MISSING_MESSAGE } from './whoIsBilled'
 import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
 
-/**
- * ASSUMPTION (demo, discovery item): the RFP is silent on invoice GST
- * mechanics — it speaks only of the GST component of amounts received — so
- * invoice documents here show GST-exclusive line amounts plus GST at the NZ
- * standard rate. AA to confirm the intended treatment.
- */
-export const GST_RATE = 0.15
-
 export interface InvoiceBuildContext extends BookingBillingContext {
   /** The Booking's patient id (the payer when the "different payer" tick is clear). */
   patientId: string
+  /** The List's surgeon, by name: the holder layout's cross-match field (catch-up Phase 22). */
+  surgeonName?: string
   /**
    * EX-GST amounts already invoiced ahead of the procedure (Phase 09
    * pre-payment), keyed by procedure id, WITH the counterparty the pre-invoice
@@ -111,61 +111,57 @@ export function counterpartyForProcedure(
 }
 
 
-/**
- * Recipient class drives the document layout (RFP: two invoice layouts): the
- * patient or another payer on the Booking gets the patient layout, and so does
- * Aria's folded record as before (unchanged as 18 and 20 left it; Phase 22
- * makes the layout Contract-driven).
- */
-export function layoutFor(counterparty: CounterpartyRef): 'contractHolder' | 'patient' {
-  return counterparty.kind === 'patient' || counterparty.kind === 'payer' || counterparty.kind === 'billableParty'
-    ? 'patient'
-    : 'contractHolder'
-}
-
-export interface DraftInvoiceLine {
-  procedureId?: ProcedureId
-  description: string
-  units?: number
-  amount: number
-}
+export type DraftInvoiceLine = InvoiceLineView
 
 export interface DraftInvoice {
   counterparty: CounterpartyRef
   /** The payer's details as at the run (`billedToFor`); only for the patient or another payer. */
   billedTo?: InvoiceBilledTo
-  layout: 'contractHolder' | 'patient'
+  layout: InvoiceLayout
   lines: DraftInvoiceLine[]
   subtotal: number
   gst: number
   total: number
+  /** The first Procedure's Contract, in Booking order. */
+  contractId?: ContractId
+  /** The Procedures this invoice bills, in Booking order. */
+  procedureIds: ProcedureId[]
+  /** Set when the invoice holds a split share (its first split line's). */
+  split?: InvoiceSplitInfo
+  /** Indexes, in this result, of the drafts holding the other shares of the same split(s); the run resolves them to ids. */
+  splitSiblings?: number[]
+  /** The Contract's holder reference code, on the holder's layout (US-04.2.18). */
+  holderReference?: string
+  /** The holder layout's cross-match fields (US-08.4.1). */
+  crossMatch?: InvoiceCrossMatch
 }
 
 export type BookingBuildResult =
   | { kind: 'invoices'; invoices: DraftInvoice[] }
   | { kind: 'exception'; procedureId: ProcedureId; code: string; message: string }
 
-/**
- * Snapshot the rate detail into the line description — `InvoiceLine` carries
- * no rate/hours fields, and an invoice must be reproducible against what was
- * true when it was raised (RFP design principle 10).
- */
-function describeFeeLine(line: FeeLine): string {
-  if (line.chargeBasis === 'rvg' && line.units !== undefined && line.rate !== undefined) {
-    return `${line.description}, ${line.units} units at ${formatMoney(line.rate)} per unit`
-  }
-  return line.description
+interface TaggedLine {
+  counterparty: CounterpartyRef
+  /** True when this party is the one the Procedure's Contract bills. */
+  isContractParty: boolean
+  contract: Contract | undefined
+  line: DraftInvoiceLine
+  split?: InvoiceSplitInfo
 }
 
 /**
  * Build the invoice boundaries for one Booking: rate every Procedure with its
- * RESOLVED contract, tag every line with its funder, then group by
- * counterparty — one invoice per Booking per distinct counterparty. Amounts are
- * snapshots; nothing here is recomputed after the run commits.
+ * Contract, bill it to the party the Contract names (or divide it between the
+ * parties of its split, US-08.2.3), then group by party: one invoice per
+ * Booking per distinct party (FT-08.2, US-08.2.1). Amounts are snapshots;
+ * nothing here is recomputed after the run commits.
  *
- * `procedures` must be in Booking order (ordinal = index + 1, the 2nd-procedure
- * contract pricing key). A resolution exception on any Procedure fails the
- * whole Booking (per-booking isolation; the List still completes its run).
+ * A split party who is also another Procedure's billable party on the same
+ * Booking gets one invoice holding both (its `split` then describes the split
+ * line); an invoice spanning Procedures takes the first Procedure's layout
+ * (both logged readings). `procedures` must be in Booking order. A
+ * resolution exception on any Procedure fails the whole Booking (per-booking
+ * isolation; the List still completes its run).
  */
 export function buildInvoicesForBooking(
   booking: Booking,
@@ -175,27 +171,17 @@ export function buildInvoicesForBooking(
   // Cancelled Bookings are retained but never billed (7th review B23).
   if (booking.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
 
-  const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
+  const tagged: TaggedLine[] = []
 
   for (const procedure of procedures) {
     const resolution = resolveContractForProcedure(procedure, ctx)
     if (resolution.kind === 'exception') {
-      return {
-        kind: 'exception',
-        procedureId: procedure.id,
-        code: resolution.code,
-        message: resolution.message,
-      }
+      return { kind: 'exception', procedureId: procedure.id, code: resolution.code, message: resolution.message }
     }
     const contract = resolution.contract
     const procedureCounterparty = counterpartyForProcedure(contract, booking, ctx.parties)
     if (procedureCounterparty === undefined) {
-      return {
-        kind: 'exception',
-        procedureId: procedure.id,
-        code: 'noCounterparty',
-        message: HOLDER_MISSING_MESSAGE,
-      }
+      return { kind: 'exception', procedureId: procedure.id, code: 'noCounterparty', message: HOLDER_MISSING_MESSAGE }
     }
 
     // Price with the resolved Contract (the stored one).
@@ -204,31 +190,16 @@ export function buildInvoicesForBooking(
     else delete feeCtx.contract
     const fee = feeFor(procedure, feeCtx)
 
-    const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
-
-    // A procedure that was pre-invoiced nets its deposit off the balance below
-    // (non-override branch only).
+    // A procedure that was pre-invoiced nets its deposit off the balance below.
     const prePaid = ctx.prePaidByProcedure?.[procedure.id]
     if (prePaid !== undefined) {
-      // A funder split on the same procedure would make "which funder does the
-      // deposit reduce" ambiguous, so refuse it to review.
-      if (storedLines.some((l) => l.funderOverride !== undefined)) {
-        return {
-          kind: 'exception',
-          procedureId: procedure.id,
-          code: 'prepaidFunderOverride',
-          message:
-            'This procedure was pre-invoiced but also carries a funder split. Resolve the allocation before rebilling the balance.',
-        }
+      // A split on a prepaid Procedure would make "which party does the
+      // deposit reduce" ambiguous (INTERIM until Phase 27, which removes it).
+      if (procedure.split !== undefined) {
+        return { kind: 'exception', procedureId: procedure.id, code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE }
       }
       // The deposit credit must land on the party the deposit was invoiced to.
-      // If the payer changed after the deposit was raised (an office edit),
-      // netting against the new party would orphan the old party's deposit, so
-      // fail the Booking for review.
-      if (
-        prePaid.counterparty.kind !== procedureCounterparty.kind ||
-        prePaid.counterparty.id !== procedureCounterparty.id
-      ) {
+      if (prePaid.counterparty.kind !== procedureCounterparty.kind || prePaid.counterparty.id !== procedureCounterparty.id) {
         return {
           kind: 'exception',
           procedureId: procedure.id,
@@ -239,114 +210,159 @@ export function buildInvoicesForBooking(
       }
     }
 
-    if (storedLines.some((l) => l.funderOverride !== undefined)) {
-      // Once any line carries a funder override, the stored lines ARE the
-      // explicit allocation of the WHOLE fee (validator-conserved to the cent
-      // at completion). An un-overridden line bills the procedure's resolved
-      // counterparty — the typed semantic of `funderOverride`.
-      //
-      // Conservation is RE-CHECKED here against the fee under the RESOLVED
-      // contract: masters can change between completion and billing (a rate
-      // edit in place, or a different Contract chosen), and a stale split
-      // must fail the Booking for review, never bill silently short (8th review).
-      const allocated = storedLines.reduce((sum, l) => sum + l.amount, 0)
-      if (toCents(allocated) !== toCents(fee.total)) {
-        return {
-          kind: 'exception',
-          procedureId: procedure.id,
-          code: 'allocationStale',
-          message: `The stored funder allocation adds up to ${formatMoney(allocated)} but the fee under the governing arrangement is ${formatMoney(fee.total)}. Reallocate before rebilling.`,
-        }
+    const wording = procedure.invoiceDescription?.text ?? null
+    const discount =
+      contract?.pricing.kind === 'rvgDiscount' ? { percent: contract.pricing.discountPct, unitValue: ctx.anaesthetist.unitValue } : undefined
+    // Full views (BTM included); the patient layout drops the BTM at grouping.
+    const views = invoiceLineViews('contractHolder', fee, { procedureId: procedure.id, wording, ...(discount !== undefined ? { discount } : {}) })
+
+    if (procedure.split !== undefined) {
+      // US-08.2.3: divide the final fee (after any office override) between
+      // the split's parties. A split that no longer fits fails review; it
+      // never bills a guess.
+      // A share whose party has left the Booking (a renamed or replaced payer) never bills that party.
+      if (!splitPartiesOn(booking, procedure.split.shares, ctx.parties)) {
+        return { kind: 'exception', procedureId: procedure.id, code: 'splitDoesNotFit', message: splitDoesNotFitMessage(fee.total, PARTY_GONE_REASON) }
       }
-      for (const line of storedLines) {
-        const draft: DraftInvoiceLine = {
+      const resolved = resolveSplit(fee.total, procedure.split.shares)
+      if (!resolved.ok) {
+        return { kind: 'exception', procedureId: procedure.id, code: 'splitDoesNotFit', message: splitDoesNotFitMessage(fee.total, resolved.reason) }
+      }
+      // The share line carries the whole Procedure's breakdown at the rate charged (a discount folded in), for cross-matching.
+      const rvgLine = fee.lines.find((l) => l.chargeBasis === 'rvg' && l.rate !== undefined)
+      const btm = rvgLine?.rate !== undefined ? btmOf(fee, rvgLine.rate) : undefined
+      const lineWording = wording !== null && wording.trim() !== '' ? wording : (fee.lines[0]?.description ?? 'Anaesthesia')
+      for (const share of resolved.amounts) {
+        const line: DraftInvoiceLine = {
           procedureId: procedure.id,
-          description: line.description,
-          amount: roundToCents(line.amount),
+          kind: 'fee',
+          description: splitLineText(lineWording, fee.total, share.basis),
+          amount: share.amountExGst,
+          ...(btm !== undefined ? { btm } : {}),
         }
-        if (line.units !== undefined) draft.units = line.units
-        tagged.push({ counterparty: line.funderOverride ?? procedureCounterparty, line: draft })
+        tagged.push({
+          counterparty: share.party,
+          isContractParty: sameRef(share.party, procedureCounterparty),
+          contract,
+          line,
+          split: { procedureId: procedure.id, feeExGst: fee.total, shareLabel: shareLabel(share.basis), isRest: share.isRest },
+        })
       }
       continue
     }
 
-    for (const feeLine of fee.lines) {
-      const draft: DraftInvoiceLine = {
-        procedureId: procedure.id,
-        description: describeFeeLine(feeLine),
-        amount: feeLine.amount,
-      }
-      if (feeLine.units !== undefined) draft.units = feeLine.units
-      tagged.push({ counterparty: feeLine.funderOverride ?? procedureCounterparty, line: draft })
-    }
-    if (fee.override !== null) {
-      tagged.push({
-        counterparty: procedureCounterparty,
-        line: {
-          procedureId: procedure.id,
-          description: `Price override, ${fee.override.override.reason}`,
-          amount: roundToCents(fee.override.after - fee.override.before),
-        },
-      })
-    }
+    for (const view of views) tagged.push({ counterparty: procedureCounterparty, isContractParty: true, contract, line: view })
 
     // Net off any pre-payment already invoiced for this procedure, as a
-    // VISIBLE deduction line on the procedure's resolved counterparty group
-    // (not a fee-line mutation — preserves the principle-10 rate snapshot).
-    // The deposit was raised as an ex-GST subtotal, so it subtracts from the
-    // ex-GST fee subtotal here and the two reconcile to the full fee.
+    // VISIBLE deduction line (not a fee-line mutation: principle 10). The
+    // deposit was raised ex GST, so it subtracts from the ex-GST subtotal.
     if (prePaid !== undefined && prePaid.amount > 0) {
       tagged.push({
         counterparty: procedureCounterparty,
-        line: {
-          procedureId: procedure.id,
-          description: 'Less pre-payment deposit already invoiced',
-          amount: -roundToCents(prePaid.amount),
-        },
+        isContractParty: true,
+        contract,
+        line: { procedureId: procedure.id, kind: 'adjustment', description: 'Less pre-payment deposit already invoiced', amount: -roundToCents(prePaid.amount) },
       })
     }
   }
 
-  // Group by counterparty in first-appearance order (deterministic).
-  const groups = new Map<string, { counterparty: CounterpartyRef; lines: DraftInvoiceLine[] }>()
-  for (const { counterparty, line } of tagged) {
-    const key = `${counterparty.kind}:${counterparty.id}`
-    const group = groups.get(key)
-    if (group === undefined) groups.set(key, { counterparty, lines: [line] })
-    else group.lines.push(line)
+  // Group by party in first-appearance order (deterministic).
+  interface Group {
+    first: TaggedLine
+    /** The first line billed to this party under its own Contract (for the holder reference and the Contract id). */
+    own?: TaggedLine
+    lines: DraftInvoiceLine[]
+    procedureIds: ProcedureId[]
+    split?: InvoiceSplitInfo
+    splitProcedureIds: Set<ProcedureId>
+  }
+  const groups = new Map<string, Group>()
+  for (const entry of tagged) {
+    const key = refKey(entry.counterparty)
+    let group = groups.get(key)
+    if (group === undefined) {
+      group = { first: entry, lines: [], procedureIds: [], splitProcedureIds: new Set() }
+      groups.set(key, group)
+    }
+    group.lines.push(entry.line)
+    if (group.own === undefined && entry.isContractParty && entry.split === undefined) group.own = entry
+    const pid = entry.line.procedureId
+    if (pid !== undefined && !group.procedureIds.includes(pid)) group.procedureIds.push(pid)
+    if (entry.split !== undefined) {
+      group.split ??= entry.split
+      group.splitProcedureIds.add(entry.split.procedureId)
+    }
   }
 
-  const invoices: DraftInvoice[] = []
-  for (const { counterparty, lines } of groups.values()) {
-    const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
+  const kept: { key: string; group: Group; draft: DraftInvoice }[] = []
+  for (const [key, group] of groups) {
+    const { counterparty, contract, isContractParty } = group.first
+    const subtotal = roundToCents(group.lines.reduce((sum, l) => sum + l.amount, 0))
     // A negative invoice is never raised (a real practice issues a credit
-    // note; Xero refuses negative ACCREC totals). Completion validation gates
-    // negative override fees, so this belt catches moved/edge bookings and a
-    // pre-payment (deposit or full estimate) that exceeds the final rated fee.
+    // note; Xero refuses negative ACCREC totals).
     if (subtotal < 0) {
       return {
         kind: 'exception',
-        procedureId: lines[0]?.procedureId ?? '',
+        procedureId: group.lines[0]?.procedureId ?? '',
         code: 'negativeTotal',
         message: `The lines billed to one counterparty add up to a negative amount (${formatMoney(subtotal)}). Review the pre-payment or price override before rebilling; an overpaid pre-payment needs a manual credit.`,
       }
     }
-    // A group that nets to $0 raises no invoice — the full-pre-payment case
-    // (deposit == fee) has nothing left to bill, cleaner than a $0 invoice.
+    // A group that nets to $0 raises no invoice (the full-pre-payment case).
     if (toCents(subtotal) === 0) continue
-    const gst = roundToCents(subtotal * GST_RATE)
+    const gst = gstOn(subtotal)
+    const layout = invoiceLayoutFor(contract, counterparty, isContractParty)
+    const lines = layout === 'contractHolder' ? group.lines : group.lines.map(withoutBtm)
     const billedTo = billedToFor(counterparty, booking, ctx.patient)
-    invoices.push({
+    // The party's own Contract, where one of its lines bills under it, names the holder reference and the Contract.
+    const ownContract = group.own?.contract ?? contract
+    const holderReference = layout === 'contractHolder' ? ownContract?.holderReference : undefined
+    const firstProcedure = procedures.find((p) => p.id === group.procedureIds[0])
+    const draft: DraftInvoice = {
       counterparty,
       ...(billedTo !== undefined ? { billedTo } : {}),
-      layout: layoutFor(counterparty),
+      layout,
       lines,
       subtotal,
       gst,
       total: roundToCents(subtotal + gst),
-    })
+      ...(ownContract !== undefined ? { contractId: ownContract.id } : {}),
+      procedureIds: group.procedureIds,
+      ...(group.split !== undefined ? { split: group.split } : {}),
+      ...(holderReference !== undefined && holderReference.trim() !== '' ? { holderReference } : {}),
+      ...(layout === 'contractHolder' ? { crossMatch: crossMatchFor(ctx.listDateISO, ctx.surgeonName, firstProcedure?.billingReference) } : {}),
+    }
+    kept.push({ key, group, draft })
   }
-  return { kind: 'invoices', invoices }
+
+  // Each split share's invoice points at the invoices holding the other shares.
+  kept.forEach(({ group, draft }, index) => {
+    if (group.splitProcedureIds.size === 0) return
+    const siblings = kept
+      .map((other, i) => ({ other, i }))
+      .filter(({ other, i }) => i !== index && [...group.splitProcedureIds].some((pid) => other.group.splitProcedureIds.has(pid)))
+      .map(({ i }) => i)
+    if (siblings.length > 0) draft.splitSiblings = siblings
+  })
+
+  return { kind: 'invoices', invoices: kept.map((k) => k.draft) }
+}
+
+/** The run's sentence for a split on a prepaid Procedure (INTERIM until Phase 27). */
+export const PREPAID_SPLIT_MESSAGE = 'A prepaid procedure is billed by its prepayment, so its fee cannot be split. Remove the split before rebilling.'
+
+function refKey(ref: CounterpartyRef): string {
+  return `${ref.kind}:${ref.id}`
+}
+
+function sameRef(a: CounterpartyRef, b: CounterpartyRef): boolean {
+  return a.kind === b.kind && a.id === b.id
+}
+
+function withoutBtm(line: DraftInvoiceLine): DraftInvoiceLine {
+  if (line.btm === undefined) return line
+  const { btm: _btm, ...rest } = line
+  return rest
 }
 
 /**
@@ -384,10 +400,14 @@ export function buildPrePaymentInvoiceForBooking(
 ): BookingBuildResult {
   if (booking.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
 
-  const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
+  const tagged: { counterparty: CounterpartyRef; contractId: ContractId; line: DraftInvoiceLine }[] = []
   for (const procedure of procedures) {
     const contract = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
     if (contract === undefined || !procedureRequiresPrepayment(contract)) continue
+    // A split fee is never prepaid by one party (catch-up Phase 22): the office removes the split first.
+    if (procedure.split !== undefined) {
+      return { kind: 'exception', procedureId: procedure.id, code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE }
+    }
     const counterparty = counterpartyForProcedure(contract, booking, ctx.parties)
     if (counterparty === undefined) continue
     const detail = procedure.prepaymentDetail
@@ -397,7 +417,8 @@ export function buildPrePaymentInvoiceForBooking(
       if (amount <= 0) continue
       tagged.push({
         counterparty,
-        line: { procedureId: procedure.id, description: 'Pre-payment deposit', amount },
+        contractId: contract.id,
+        line: { procedureId: procedure.id, kind: 'fee', description: 'Pre-payment deposit', amount },
       })
     } else {
       // Full prepayment: the full fee on the prepaid Contract, via the same
@@ -411,35 +432,40 @@ export function buildPrePaymentInvoiceForBooking(
       if (amount <= 0) continue
       const line: DraftInvoiceLine = {
         procedureId: procedure.id,
+        kind: 'fee',
         description: 'Pre-payment, estimated full fee',
         amount,
       }
       if (fee.billableUnits > 0) line.units = fee.billableUnits
-      tagged.push({ counterparty, line })
+      tagged.push({ counterparty, contractId: contract.id, line })
     }
   }
 
-  const groups = new Map<string, { counterparty: CounterpartyRef; lines: DraftInvoiceLine[] }>()
-  for (const { counterparty, line } of tagged) {
+  const groups = new Map<string, { counterparty: CounterpartyRef; contractId?: ContractId; lines: DraftInvoiceLine[] }>()
+  for (const { counterparty, contractId, line } of tagged) {
     const key = `${counterparty.kind}:${counterparty.id}`
     const group = groups.get(key)
-    if (group === undefined) groups.set(key, { counterparty, lines: [line] })
+    if (group === undefined) groups.set(key, { counterparty, contractId, lines: [line] })
     else group.lines.push(line)
   }
 
   const invoices: DraftInvoice[] = []
-  for (const { counterparty, lines } of groups.values()) {
+  for (const { counterparty, contractId, lines } of groups.values()) {
     const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
-    const gst = roundToCents(subtotal * GST_RATE)
+    const gst = gstOn(subtotal)
     const billedTo = billedToFor(counterparty, booking, ctx.patient)
+    const procedureIds = [...new Set(lines.flatMap((l) => (l.procedureId !== undefined ? [l.procedureId] : [])))]
     invoices.push({
       counterparty,
       ...(billedTo !== undefined ? { billedTo } : {}),
-      layout: 'patient',
+      // A prepaid Contract always bills the payer (D23), so this is the patient's layout.
+      layout: invoiceLayoutFor(contractId !== undefined ? ctx.contracts[contractId] : undefined, counterparty, true),
       lines,
       subtotal,
       gst,
       total: roundToCents(subtotal + gst),
+      ...(contractId !== undefined ? { contractId } : {}),
+      procedureIds,
     })
   }
   return { kind: 'invoices', invoices }

@@ -1,6 +1,6 @@
 /**
  * Money helpers. All fee maths rounds to cents at the point a dollar amount is
- * produced; equality comparisons (e.g. the funder-split conservation rule) go
+ * produced; equality comparisons (e.g. a split's shares against the fee) go
  * through `toCents` so floating point never decides a validation.
  */
 

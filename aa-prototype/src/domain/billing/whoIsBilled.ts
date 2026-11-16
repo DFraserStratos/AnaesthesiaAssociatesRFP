@@ -73,8 +73,8 @@ export function isPayerBilled(contract: Pick<Contract, 'billsTo'> | undefined): 
  * Who a Procedure bills (the one rule): the Contract's holder Party when the
  * Contract bills its holder; otherwise the payer on the Booking. Undefined
  * with no Contract ("Needs an invoice destination") or a holder that no longer
- * exists. Billing lines' `funderOverride` is applied by the invoice build on
- * top of this until Phase 22's Split replaces it.
+ * exists. A fee split on the Booking (catch-up Phase 22) adds parties for that
+ * one Procedure on top of this; it never changes who the Contract bills.
  */
 export function billablePartyForProcedure(
   contract: Pick<Contract, 'billsTo' | 'holderId'> | undefined,
@@ -238,8 +238,8 @@ export function childPayerOn(
   return anyPayerBilled(procedures, contracts)
 }
 
-/** How an invoice to a party is delivered. */
-export type InvoiceDelivery =
+/** How an invoice to a party is to be delivered (the plan; the run stamps `Invoice.delivery` from it, catch-up Phase 22). */
+export type DeliveryPlan =
   | { method: 'email'; to: string }
   | { method: 'post'; lines: string[] }
   | { method: 'none' }
@@ -259,7 +259,7 @@ export function invoiceDeliveryFor(
   booking: Pick<Booking, 'payer' | 'patientId'>,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
   parties: Readonly<Record<string, Party>>,
-): InvoiceDelivery {
+): DeliveryPlan {
   if (isPersonParty(ref)) {
     const details = personDetailsFor(ref, booking, patient)
     if (details === undefined) return { method: 'none' }

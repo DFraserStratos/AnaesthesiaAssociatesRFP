@@ -4,6 +4,7 @@
  * there is no protected default per hospital).
  */
 
+import { GST_NUMBER_INVALID, isValidGstNumber, normaliseGstNumber } from '../domain/billing/invoicePresentation'
 import type {
   Anaesthetist,
   GstPeriod,
@@ -172,6 +173,8 @@ export interface AnaesthetistPatch {
   hpiId?: string
   /** The start date (catch-up Phase 28, US-01.1.3): moving it adds or removes Slots from today on. */
   startDateISO?: string
+  /** The GST number (catch-up Phase 22, DM-62): optional; blank clears it; a typed one must be 8 or 9 digits. */
+  gstNumber?: string
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -219,8 +222,14 @@ export function editAnaesthetist(
   if (patch.startDateISO !== undefined && !ISO_DATE.test(patch.startDateISO)) {
     return refuse('invalidStartDate', 'Choose a valid start date.')
   }
+  if (patch.gstNumber !== undefined) {
+    const gst = normaliseGstNumber(patch.gstNumber.trim())
+    if (gst !== '' && !isValidGstNumber(gst)) return refuse('invalidGstNumber', GST_NUMBER_INVALID)
+    patch = { ...patch, gstNumber: gst }
+  }
 
   const next: Anaesthetist = { ...existing, ...patch }
+  if (next.gstNumber === '') delete next.gstNumber
   const metas: MutationMeta[] = [
     {
       entityType: 'anaesthetist',
@@ -301,6 +310,8 @@ export interface NewAnaesthetistFields {
   hpiId?: string
   /** Required (US-01.1.3): the anaesthetist's Slots are created from this date. */
   startDateISO: string
+  /** Optional (catch-up Phase 22, DM-62): 8 or 9 digits. */
+  gstNumber?: string
 }
 
 /**
@@ -330,6 +341,8 @@ export function addAnaesthetist(
   const clash = hpiCpnClash(state, hpiId)
   if (clash !== null) return clash
   if (!ISO_DATE.test(fields.startDateISO)) return refuse('invalidStartDate', 'Choose a valid start date.')
+  const gstNumber = normaliseGstNumber((fields.gstNumber ?? '').trim())
+  if (gstNumber !== '' && !isValidGstNumber(gstNumber)) return refuse('invalidGstNumber', GST_NUMBER_INVALID)
 
   const todayISO = state.clock.todayISO
   const fromISO = fields.startDateISO > todayISO ? fields.startDateISO : todayISO
@@ -344,6 +357,7 @@ export function addAnaesthetist(
     hpiId,
     startDateISO: fields.startDateISO,
     active: true,
+    ...(gstNumber !== '' ? { gstNumber } : {}),
   }
   const { add: generated, toISO } = anaesthetistCanvasDelta(state, anaesthetist, fromISO)
 

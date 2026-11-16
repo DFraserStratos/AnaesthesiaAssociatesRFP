@@ -215,7 +215,8 @@ export const FIELD_LABELS: Record<string, string> = {
   rate: 'Rate',
   hours: 'Hours',
   amount: 'Amount',
-  funderOverride: 'Billed to',
+  split: 'Split',
+  gstNumber: 'GST number',
 
   // --- Billing run, invoices, payments ------------------------------------
   invoiceNumber: 'Invoice number',
@@ -229,7 +230,7 @@ export const FIELD_LABELS: Record<string, string> = {
   exceptionCount: 'Exceptions',
   billingCaseId: 'Billing case',
   retriedCaseId: 'Retried case',
-  emailedAtISO: 'Emailed at',
+  delivery: 'Delivery',
   code: 'Code',
   increment: 'This payment',
   cumulative: 'Received to date',

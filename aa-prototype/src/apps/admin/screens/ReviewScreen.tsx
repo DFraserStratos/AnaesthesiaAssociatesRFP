@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { runDeliverySummary } from '../../../domain/billing/invoicePresentation'
 import { useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
@@ -40,7 +42,7 @@ import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../componen
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { FormError, Pill, TickButton } from '../../../shared/ui'
+import { FormError, Notice, Pill, ResultLine, TickButton } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
 import { ClearWarningButton } from '../../../shared/warnings'
 
@@ -115,10 +117,16 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       const primaryView = input?.procedures[0]
       // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
       // Procedures column and for who is billed ("Mixed" when Procedures differ; `billablePartyForProcedure`, catch-up Phase 21).
-      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord } }, p.id, 'office')!)
+      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord, billingLines: billingLinesRecord } }, p.id, 'office')!)
       const billed = new Set(stackViews.map((v) => v.contract?.invoiced?.name).filter((n): n is string => n !== undefined))
       const anyMissing = stackViews.some((v) => v.contract === null)
-      const billedText = anyMissing ? 'Needs an invoice destination' : billed.size > 1 ? 'Mixed' : ([...billed][0] ?? 'Needs an invoice destination')
+      // A split fee bills several parties (catch-up Phase 22): "Split" (its parties show in the Procedures cell), or "Mixed".
+      const anySplit = stackViews.some((v) => v.contract?.split !== undefined)
+      const billedText = anyMissing
+        ? 'Needs an invoice destination'
+        : anySplit
+          ? stackViews.length === 1 ? 'Split' : 'Mixed'
+          : billed.size > 1 ? 'Mixed' : ([...billed][0] ?? 'Needs an invoice destination')
       const procIds = new Set(procs.map((p) => p.id))
       const lineIds = Object.values(billingLinesRecord).filter((l) => procIds.has(l.procedureId)).map((l) => l.id)
       const entityIds = [booking.id, ...procs.map((p) => p.id), ...lineIds]
@@ -180,7 +188,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
   // synchronous with authorise, so these exist by the time the banner renders.
   const listBookingIds = new Set(Object.values(bookingsRecord).filter((c) => c.listId === listId).map((c) => c.id))
   // Only standard (run) invoices — a pre-payment pre-invoice is not run output (Phase 09).
-  const raisedCount = Object.values(invoicesRecord).filter((i) => i.kind === 'standard' && listBookingIds.has(i.bookingId)).length
+  const raisedInvoices = Object.values(invoicesRecord).filter((i) => i.kind === 'standard' && listBookingIds.has(i.bookingId))
+  const raisedCount = raisedInvoices.length
+  const noAddressCount = raisedInvoices.filter((i) => i.delivery?.status === 'noAddress').length
 
   // Keep the open list in its former queue position after authorisation so the
   // permanent previous/next controls remain stable while its state changes.
@@ -280,12 +290,19 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: semantic.success.onTint }}>List authorised · locked for billing</div>
               <div style={{ fontSize: 12, color: semantic.success.onTint }}>
-                {dayLabel}{authAt !== undefined ? `, ${hhmm(authAt)}` : ''} · {actor.who} ·{' '}
-                {raisedCount > 0 ? `${raisedCount} invoice${raisedCount === 1 ? '' : 's'} raised by the billing run` : 'Handed to the billing run'}
+                {dayLabel}{authAt !== undefined ? `, ${hhmm(authAt)}` : ''} · {actor.who}
+                {raisedCount === 0 && ' · Handed to the billing run'}
               </div>
+              {raisedCount > 0 && <ResultLine plain line={runDeliverySummary(raisedInvoices)} shot="review-delivery-summary" style={{ marginTop: 2, fontWeight: 600 }} />}
             </div>
           </div>
         </div>
+      )}
+      {/* An invoice raised with no address (catch-up Phase 22): the office adds one and sends it. */}
+      {authorised && noAddressCount > 0 && (
+        <Notice tone="warning" shot="review-no-address" action={<Link to="/admin/billing" style={{ color: accent.base, fontWeight: 600, whiteSpace: 'nowrap' }}>Open Billing monitor</Link>}>
+          {noAddressCount === 1 ? 'One invoice has no invoice address. Add one and send it from the invoice.' : `${noAddressCount} invoices have no invoice address. Add one and send each from its invoice.`}
+        </Notice>
       )}
 
       {/* Summary strip */}
@@ -454,7 +471,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         cancelLabel="Cancel"
       >
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-          Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
+          Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised and sent immediately, one for each billable party. There is no return to the anaesthetist from here.
         </div>
         {pendingChanges > 0 && (
           <div data-testid="review-authorise-approves" style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px', marginTop: 8 }}>

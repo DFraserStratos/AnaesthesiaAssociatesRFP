@@ -192,12 +192,16 @@ export {
 export {
   addBillingLine,
   removeBillingLine,
-  setBillingLineAllocation,
-  setProcedureFunderAllocation,
   type AddBillingLineInput,
-  type BillingLineAllocationPatch,
-  type FunderAllocationEntry,
 } from './billingLineActions'
+export {
+  NO_FEE_TO_SPLIT_MESSAGE,
+  PREPAID_PROCEDURE_MESSAGE,
+  contractPartyFor,
+  partyOptionsForProcedure,
+  procedureFeeNow,
+  setProcedureSplit,
+} from './splitActions'
 export { addDayNote, initialsFor } from './dayNoteActions'
 export {
   createHospital,
@@ -270,7 +274,7 @@ export {
   runBillingForList,
   retryBillingCase,
   chooseContractForFailedBooking,
-  markInvoiceEmailed,
+  resendInvoice,
   wireBillingRun,
   handoffListCases,
   type BillingRunResult,

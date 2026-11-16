@@ -197,16 +197,6 @@ export const CREATABLE_PARTY_KINDS: readonly Exclude<PartyKind, 'aa'>[] = [
 ]
 
 
-/** The insurer Parties a billing line's `funderOverride` can name, each with its interim insurer id, by name (INTERIM until Phase 22's Split). */
-export function insurerPartyOptions(
-  parties: Readonly<Record<PartyId, Party>>,
-): { insurerId: string; party: Party }[] {
-  return Object.values(parties)
-    .filter((p) => p.kind === 'insurer' && p.billingIdentity?.kind === 'insurer')
-    .map((p) => ({ insurerId: (p.billingIdentity as CounterpartyRef).id, party: p }))
-    .sort((a, b) => a.party.name.localeCompare(b.party.name))
-}
-
 /**
  * A free code prefix from a name's initials or first word ("Rangiora Day
  * Surgery" to `RDS`); when those are taken, the base plus one or two more

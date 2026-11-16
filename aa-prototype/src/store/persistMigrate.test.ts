@@ -567,11 +567,34 @@ describe('office review flags and the movable Booking (catch-up Phase 21a sessio
   afterEach(() => localStorage.clear())
 
   it('discards a v42 store without the review-flags List and reseeds it', () => {
-    expect(PERSIST_VERSION).toBe(43)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(43)
     const fresh = freshAppState()
     const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).filter(([, b]) => b.listId !== SEED_LIST_IDS.reviewFlags))
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 42 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(4)
+  })
+})
+
+describe('invoice presentation and the split (catch-up Phase 22)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v43 store whose Prentice Booking carries no split and reseeds it', () => {
+    expect(PERSIST_VERSION).toBe(44)
+    const fresh = freshAppState()
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        const { split: _split, ...rest } = p
+        return [id, rest]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, procedures } }, version: 43 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).filter((p) => p.split !== undefined)).toHaveLength(1)
+    expect(Object.values(s.masters.anaesthetists).filter((a) => a.gstNumber !== undefined).length).toBeGreaterThan(10)
   })
 })

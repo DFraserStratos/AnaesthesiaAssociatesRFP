@@ -119,12 +119,12 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - **Who is billed** is each Contract's own setting: its holder Party when it bills its holder, otherwise
   the **payer named on the Booking**. No contract · RVG, No contract · Fixed price, a surgeon's fixed
   price (Mr Doyle's bariatric list), an anaesthetist's own price list and every prepaid Contract bill
-  the payer. One invoice per party per Booking.
+  the payer. One invoice per billable party per Booking (a Split on the Booking gives one per share).
 - **The payer** is the patient by default, read from the patient record. Tick **Different payer** to
   name anyone else who pays: a parent, a guardian, a benefactor or a family trust. The office and the
   anaesthetist change it until the List is authorised (a sheet on the phone, a dialog on web).
 - A billed payer needs an **email or an NZ Post postal address**; a postal address alone is enough
-  (posting the invoice is Phase 22). Missing both shows **Email or postal address needed** on the
+  (that invoice is marked **To post**). Missing both shows **Email or postal address needed** on the
   Payer row and at Review; it never blocks.
 - **Insurer or funder:** the Booking names one (a Party: NIB and Southern Cross Health Society are
   insurers; ACC and Health NZ are funders) and holds the **approval number**. The office records them;
@@ -183,8 +183,35 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - A second/additional Procedure in the same episode (**Add another procedure**) is time-only; Brian Holt
   on Dr Souter's Mon 20 AM List (the S3 split Booking) shows it.
 - Base and Modifiers cannot be charged again.
-- One Procedure may allocate conserved lines across two funders.
-- The prototype groups lines by counterparty; different funders create separate invoices.
+- **Split** is in the Billing card's Paid by line (on the phone, its fourth row) on each Procedure of a Booking, for the office or the
+  anaesthetist (on her own Booking, phone and web, until the List is authorised). Each party's share is
+  typed in $ or %, one party can take the rest, and each party gets its own invoice. No split setting
+  on the Contract.
+- Alan Prentice (Dr Souter's Mon 20 PM List, the S3 fee-split Booking): Paid by "nib $132.50, Alan Prentice $79.50 (the rest)" of a $212.00 fee; 62.5% for nib is the same split.
+- One invoice per billable party per Booking; a Split gives one invoice per share.
+
+### Invoices
+
+- Every invoice is issued in the anaesthetist's name as supplier, with her GST number ("GST number
+  104-348-211" for Dr Souter; blank prints "GST number not held"), and AA as agent ("Issued by
+  Anaesthesia Associates Limited as agent for ...", AA GST number 102-345-678). The agent wording is
+  **Provisional (OQ-29)**.
+- The GST number is a field on the Admin anaesthetist record (Master data, Anaesthetists), not on the
+  anaesthetist's own profile.
+- Layout follows the Contract: the holder's layout when it bills its holder (each line's invoice
+  description, the BTM breakdown, a cross-match strip of procedure date, surgeon and hospital reference,
+  and the Contract's holder reference code as **Your reference**, for example SGANAES01 or NIBAN2026),
+  otherwise the patient's (no BTM breakdown or strip). Master data, Contracts shows Layout and Delivery
+  read-only.
+- Prices are held GST exclusive; GST (15%) is added at the foot of every invoice.
+- Delivery is the Party's (email or post). The billing run sends each invoice: emailed (**Simulated
+  send**), or marked **To post** for a payer with only a postal address (**Simulated posting**,
+  **Provisional (OQ-122)**). A payer with neither raises **No invoice address**: the office types one
+  and selects **Send**.
+- The invoice rail's Delivery card shows the stamp ("Emailed to ... at 08:00"), **Resend** and
+  **Print**; there is no Email invoice button. The Billing monitor's stage is **Sent or to post**.
+- Each Xero ACCPAY carries one **buyer-created tax invoice** per invoice, the same value, naming the
+  anaesthetist as supplier and AA as agent (**Provisional (OQ-29)**).
 
 ### Contracts
 
@@ -344,7 +371,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Web dashboard, Lists, availability and accounts views
 - Admin day view, changes, cover, review, authorisation, masters and audit
 - Draft Lists, including recurring clashes
-- Billing run and invoice documents (Phase 08)
+- Billing run and invoice documents (Phase 08); invoices in the anaesthetist's name with AA as agent,
+  layout from the Contract, sent by the run by email or marked To post, and a fee Split on the Booking
+  (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
 - Pre-payment, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
@@ -486,7 +515,8 @@ Say:
 
 - RFP grouping text says same-counterparty Procedures share an invoice.
 - Split-billing text says two invoices in both split cases.
-- The prototype groups by counterparty, with two invoices when funders differ.
+- The prototype makes one invoice per billable party per Booking; a Split on the Booking (Paid by in a Procedure's Billing card, each party's share in $ or %, one party taking the rest) gives one
+  invoice per share. No split setting on the Contract.
 
 ### 8. Pre-payment
 

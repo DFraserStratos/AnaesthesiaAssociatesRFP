@@ -444,22 +444,33 @@ The List reaches `AUTHORISED`.
    A surgeon's fixed price, No contract · RVG, No contract · Fixed price, an anaesthetist's own price
    list and every prepaid Contract bill the payer. The Booking's insurer or funder never decides it.
 4. It calculates the fee from the captured snapshot.
-5. It enforces time-only additional Procedures and conserved two-funder allocations.
-6. It groups lines by counterparty per Booking.
-7. It creates one or more invoice documents.
-8. It displays the Party or patient layout as appropriate.
-9. Office can simulate email or print. An insurer's invoice still uses the upload-portal state until delivery reads the Party's setting.
+5. It enforces time-only additional Procedures. A Procedure's fee split on the Booking (the **Split**
+   button in its Billing card's Paid by, typed by the office or the anaesthetist before authorise: each party's
+   share in $ or %, one party taking the rest) bills each party its share.
+6. It makes one invoice per billable party per Booking, and one per share where a fee is split.
+7. It creates one or more invoice documents, each in the anaesthetist's name as supplier with their GST
+   number, and AA as agent (the agent wording is provisional, OQ-29).
+8. The layout comes from the Contract: the holder's when it bills its holder (invoice descriptions, the
+   BTM breakdown, a cross-match strip and the Contract's holder reference code as "Your reference"),
+   otherwise the patient's. Prices are held GST exclusive, with GST at the foot.
+9. The run sends or queues each invoice by the Party's delivery: emailed, or **To post** for a payer
+   with only a postal address (provisional, OQ-122); a payer with neither raises **No invoice
+   address** until the office types one and sends. The office resends only (**Resend** on the
+   invoice rail); there is no separate email step.
 10. Completion of the billing run stamps `billedAt` and removes the List from the anaesthetist's List
     views.
 
 ### Handoff
 
-The Billing Engine sends the invoice values to Xero and expects a matched collection/payable pair.
+The Billing Engine sends the invoice values to Xero and expects a matched collection/payable pair. Each
+ACCPAY carries one buyer-created tax invoice per invoice, the same value, naming the anaesthetist as
+supplier and AA as agent (provisional wording, OQ-29).
 
 ### RFP ambiguity
 
 The RFP contains tension between same-counterparty grouping and a statement that split billing creates
-two invoices. The prototype groups by counterparty: two invoices arise where funders differ.
+two invoices. The prototype makes one invoice per billable party per Booking: two invoices arise where
+a Procedure's fee is split on the Booking.
 
 ### Source
 

@@ -10,6 +10,8 @@ import { APP_CONFIG } from '../../shell/appConfig'
 import { xeroInvoicePairViews, type XeroInvoicePairView } from './xeroPairView'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
 import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
+import { BCTI_DOCUMENT_NAME, GST_NUMBER_NOT_HELD, OQ29_CAPTION, OQ29_PILL, formatGstNumber } from '../../domain/billing/invoicePresentation'
+import { Pill } from '../../shared/ui'
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -389,7 +391,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             from="Anaesthesia Associates"
             to={pair.accPay?.contact?.name ?? 'Anaesthetist'}
           >
-            Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse.
+            Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse. {`Held as a ${BCTI_DOCUMENT_NAME.toLowerCase()} from the anaesthetist, one for each invoice and the same value.`}
           </MoneyFlowCard>
           <AccPayCard pair={pair} />
         </div>
@@ -635,6 +637,25 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MoneyStat label="Disbursed" value={pay.amountDisbursed} />
         <MoneyStat label="Ready to disburse" value={pay.remainingAuthorised} />
       </MoneyGrid>
+
+      {/* The ACCPAY held as a buyer-created tax invoice (catch-up Phase 22; US-09.1.4; provisional, OQ-29). */}
+      {pay.taxInvoice !== undefined && (
+        <div data-shot="xero-accpay-buyer-created" style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <h4 style={{ margin: 0, fontSize: 14 }}>{pay.taxInvoice.documentName}</h4>
+            <Pill size="sm">{OQ29_PILL}</Pill>
+          </div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.5, color: neutral.ink }}>{pay.taxInvoice.wording}</div>
+          <MetaGrid>
+            <MetaItem label="Supplier" value={pay.taxInvoice.supplierName} />
+            <MetaItem label="Supplier GST number" value={pay.taxInvoice.supplierGstNumber !== undefined ? formatGstNumber(pay.taxInvoice.supplierGstNumber) : GST_NUMBER_NOT_HELD} mono={pay.taxInvoice.supplierGstNumber !== undefined} />
+            <MetaItem label="Agent" value={pay.taxInvoice.agentName} />
+            <MetaItem label="Agent GST number" value={formatGstNumber(pay.taxInvoice.agentGstNumber)} mono />
+            <MetaItem label="For invoice" value={pay.taxInvoice.relatesToInvoiceNumber} mono />
+          </MetaGrid>
+          <div style={{ fontSize: 11.5, color: neutral.mist }}>{OQ29_CAPTION}</div>
+        </div>
+      )}
     </RecordCard>
   )
 }

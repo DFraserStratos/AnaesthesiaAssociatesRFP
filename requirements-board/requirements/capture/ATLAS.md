@@ -246,8 +246,8 @@ Hooks already added:
 | Souter Tue 21 PM | `L-34821-2026-07-21-PM` | Southern Cross, Ms K. Patel. 4 bookings, Ellison pending, ACTIVE. |
 | Morrison Mon 20 | `L-25490-2026-07-20-AM` | SUBMITTED. 6 complete and 1 cancelled. |
 | Whitaker Fri 17 | `L-36208-2026-07-17-AM` | SUBMITTED. |
-| Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Split billing, Brian Holt. |
-| Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. Two funders: Alan Prentice (`BK0025`), nib plus St George's. Dr Souter can still change it (catch-up Phase 38a): "Amend" on a Booking makes Review show "Changed since submitted" and disables Authorise until it is completed again. |
+| Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Forte Health, Brian Holt's two Procedures on one invoice. Authorised first, it raises AA-2026-0002 to 0004. |
+| Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. The fee-split Booking: Alan Prentice (`BK0025`), one Procedure's fee split between nib ($132.50) and Alan Prentice (the rest); see [Invoice presentation, delivery and the split](#invoice-presentation-delivery-and-the-split-catch-up-phase-22). Dr Souter can still change it (catch-up Phase 38a): "Amend" on a Booking makes Review show "Changed since submitted" and disables Authorise until it is completed again. |
 | Souter Fri 24 AM | `L-34821-2026-07-24-AM` | Pre-payment **unpaid** (Annette Riley). |
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target. |
@@ -262,7 +262,8 @@ Hooks already added:
 **Seed markers** (`SEED_MARKERS.<key>.entityId`, `aa-prototype/src/domain/seed/index.ts`), catch-up Phase 21a:
 `fixedPriceNoTimes` BK0176, `needsPriceBooking` BK0177, `contractChangeBooking` BK0178, `typedPriceBooking`
 BK0179, `reviewNeedsPrice` BK0180, `otherSurgeonContract` BK0181, `movableFixedBooking` BK0182. The List is
-`SEED_LIST_IDS.reviewFlags` (`L-45178-2026-07-14-AM`).
+`SEED_LIST_IDS.reviewFlags` (`L-45178-2026-07-14-AM`). Catch-up Phase 22: `feeSplitBooking` BK0025 ("One
+procedure's fee split between nib and the patient"; it replaces `twoFunderBooking`).
 
 ## Routes
 
@@ -295,9 +296,9 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
-| `/admin/invoices` | Invoice list. |
-| `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail. |
-| `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. |
+| `/admin/invoices` | Invoice list (office pipeline only; the seeded history invoices are left out), newest id first. Columns: Number, Patient / booking (a link to the Booking), Anaesthetist, List (a link to the day), List date, Raised, Counterparty (a split share adds the "Split" chip `invoice-list-split`), Layout (Patient or Holder), Total, Delivery (`invoice-list-delivery`, `data-delivery` sent, toPost, noAddress), and "View →". Open an invoice with `[data-testid=invoice-list-table-shell] tr:has-text("AA-2026-0005") >> role=button[name="View →"]`: a bare row click can land on a row link. |
+| `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail (catch-up Phase 22): Delivery (`invoice-delivery`), Related invoices on a split share (`invoice-related`), Xero handoff. Any invoice id opens, the history ones too (`HINV13`). |
+| `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. The pipeline stage after Invoices generated reads "Sent or to post" (catch-up Phase 22); a List with an invoice that has no invoice address shows `monitor-no-address` ("1 invoice needs an invoice address." with the link "Add an address and send"). |
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
@@ -686,6 +687,41 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   (`L-34821-2026-08-10-AM`). Her Contract is unchanged; `/admin/review/L-34821-2026-08-10-AM` (Review
   renders any List but a Draft one, ACTIVE included) shows `review-flag` with `data-rule=contractNoLongerFits`.
 
+### Invoice presentation, delivery and the split (catch-up Phase 22)
+
+- **The fee-split Booking** (`SEED_MARKERS.feeSplitBooking`, `scenario.feeSplit`): BK0025 Alan Prentice, Knee arthroscopy
+  (P0026) on No contract · RVG, Souter Mon 20 PM (`L-34821-2026-07-20-PM`, SUBMITTED), fee $212.00 before GST. The office
+  split it on the Booking (a seeded audit row by Kirsty W.): nib $132.50, Alan Prentice the rest ($79.50). Its Billing card's
+  Paid by line on `/admin/day/2026-07-20/bookings/BK0025` reads "nib $132.50, Alan Prentice $79.50 (the rest)"
+  (`procedure-split-summary`; owner review 2026-11-17, idea 6). There is no Funder allocation and no billing-line allocation any more.
+- **S3 invoice numbers** (authorise AM, then PM, through `/admin/review/<listId>`): AM raises AA-2026-0002 Brian Holt to
+  Forte Health ($365.70, holder layout), 0003 and 0004; PM raises AA-2026-0005 nib ($152.38, holder layout, emailed to
+  claims@nib.example, with the split note), AA-2026-0006 Alan Prentice ($91.43, patient layout, emailed to
+  alan.prentice11@example.net), and 0007 and 0008 to St George's (holder layout, "Your reference SGANAES01"). PM's banner
+  reads "4 invoices raised. 4 emailed, 0 to post." Authorise only PM and the numbering starts at AA-2026-0002. Invoice ids
+  are runtime, so find an invoice by its number in the list.
+- **Supplier and agent:** every invoice is issued in the anaesthetist's name with their GST number (`invoice-supplier`);
+  seeded GST numbers are `104<registration>1` (Dr Souter 104-348-211) on every anaesthetist but Dr Strand (47733), whose
+  record reads "Not held" and whose invoices would read "GST number not held". AA as agent has the synthetic GST number
+  102-345-678. To shoot "GST number not held" on a live invoice, edit Dr Souter on `/admin/masters?view=anaesthetists`,
+  clear "GST number (optional)", save, then authorise the Mon 20 AM List: AA-2026-0002's supplier reads "GST number not
+  held".
+- **Holder reference codes** (printed as "Your reference" on the holder's layout only): St George's RVG (`CT-STG-D1`)
+  `SGANAES01`, nib RVG (`CT-NIB-D1`) `NIBAN2026`; no other Contract holds one. nib's split share is on No contract · RVG,
+  so it prints none: shoot "Your reference" on AA-2026-0007 or 0008.
+- **Layout follows the Contract:** the holder's layout when it bills its holder (Aria's `BP0002` record included), the
+  patient's when it bills the payer. `INV0001` (the paid prepayment) is the seeded patient-layout invoice.
+- **Delivery:** every hospital, nib, COS and Aria Party delivers by email; Unisports (`PY-UNI`) by post. A payer's
+  invoice goes to the payer's email, else their postal address. On the payer review List (`L-45178-2026-07-17-AM`),
+  authorising raises "5 invoices raised. 3 emailed, 1 to post. 1 needs an invoice address.": BK0172 Robert Whitcombe
+  (payer the Whitcombe Family Trust, PO Box, no email) is "To post" with "Simulated posting" and "Provisional (OQ-122)";
+  BK0171 Kevin Doherty's reads "No invoice address" with an email field and Send, and the Billing monitor shows
+  `monitor-no-address`.
+- **The guardian's invoice:** no live List bills Grace Park, but the history invoice AA-2026-H13 (`/admin/invoices/HINV13`,
+  Paediatric strabismus, May 2026) is billed to Hana Park and reads "Emailed to hana.park@example.net".
+- **History invoices** carry the supplier, agent and delivery stamped at raising; every seeded ACCPAY carries the
+  buyer-created tax invoice (`xero-accpay-buyer-created` on `/demo/xero/invoices/XRH01`).
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -847,7 +883,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `[data-testid=list-reassignment-overlay]` appears.
 - **Admin booking:** "Edit billing setup" (opens "Contract and reference": the Contract row and the
   Billing reference, "Save reference"; the payer moved to the Booking's Payer row in catch-up Phase 21),
-  "Price override" (placeholders `-10` and "Why the price differs") and "Funder allocation".
+  and "Price override" (placeholders `-10` and "Why the price differs"). "Funder allocation" is gone (catch-up Phase 22):
+  a fee is split with the Split button on the Procedure instead.
 - **Admin Day's Move (one Booking to another List):** in the List drawer, the Booking row's "Move" (scope it
   to the row: `[data-testid=admin-list-drawer] >> text="<patient>" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name="Move"]`)
   opens the dialog "Move booking to another list" (Target day input, defaulting to the List's date; one
@@ -908,7 +945,30 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   - Buttons ‹, ›, Today, -4w, -1w, +1w, +4w.
   - `input[type=date]` accepts a fill.
   - Mini calendar days are named like "Wednesday 22 July 2026".
-- **Invoice:** "Email invoice" shows "Simulated send"; "Print".
+- **Invoice** (catch-up Phase 22): there is no "Email invoice" button; the billing run sends. The rail's Delivery card
+  (`invoice-delivery`) holds, when emailed, "Emailed to <address> at <time>", the "Simulated send" badge, "Resend"
+  (`[data-shot=invoice-delivery] >> role=button[name="Resend"]`, which adds the send history
+  `[data-testid=invoice-send-history]`) and "Print"; when To post, the address, "Simulated posting", "Provisional (OQ-122)",
+  an "Or email it to" field (`[data-testid=invoice-send-email]`) with "Send" and "Print"; with no invoice address, the
+  warning "No invoice address", an "Email address" field and "Send".
+- **Split sheet** (catch-up Phase 22; a dialog on web and Admin, a bottom sheet on mobile, titled "Split the fee"): on a
+  Booking, scroll to `[data-shot=procedure-split-row]` (the Paid by line at the foot of the Billing card on web and Admin)
+  and click `[data-shot=procedure-split-button]` ("Split", or "Change" once split). On mobile Paid by is the Billing
+  summary's fourth row, itself `[data-testid=slide-booking] [data-shot=procedure-split-button]` (its own tap target; the
+  rest of the summary is `capture-billing`).
+  Paid by reads the party the Contract bills (both surfaces) or the split's parties and amounts; on the phone with "Tap
+  to split the fee" or "Split 2 ways" under it. Inside `[data-shot=split-sheet]`: the fee `split-fee`, one `[data-shot=split-row][data-row=<n>]` per party
+  (party picker `[data-testid=party-picker-toggle]`, options `[data-shot=party-option]`, search `party-picker-search`),
+  `[data-shot=split-share-input] >> input` ($ or %, a TextField; for example `>> nth=0 >> input` filled "62.5%"), the switch
+  `[data-shot=split-rest-toggle]` ("Takes the rest"), the amount `split-amount`, "Add a party" (`split-add-party`), the
+  total `split-total` ("$212.00 of $212.00"), then "Save split" (`split-save`) and, on a split Procedure, "Remove split"
+  (`split-remove`). On BK0025 row 0 is nib ($132.50) and row 1 Alan Prentice (the rest). A share that no longer fits
+  raises the `splitDoesNotFit` warning. The office and the anaesthetist on her own Booking can split until the List is
+  AUTHORISED; Dr Souter's ACTIVE `/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0002` (and the web route) shows it.
+- **GST number** (Master data, Anaesthetists, catch-up Phase 22): a row's Edit
+  (`[data-shot=masters-anaesthetists] tr[data-anaesthetist="34821"] >> button:text-is("Edit")`) opens the Edit sheet with
+  `[data-shot=anaesthetist-gst-number-field]` ("GST number (optional)", blank prints "GST number not held"); save with
+  `[role=dialog] >> role=button[name="Save changes"]`. The Add sheet has the same field.
 - **Master data:** "Edit", "Save changes", and "Add hospital" (field "Hospital name", then the
   optional "Contact email"). Catch-up Phase 17 sheets: "Add surgeon" / a surgeon row's "Edit" /
   profile "Edit details" (`surgeon-edit-sheet`), "Add room" / "Edit <room name>"
@@ -927,6 +987,25 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase 22 (`data-shot` unless marked): the invoice document's `invoice-supplier` (the anaesthetist's name and
+  GST number), `invoice-holder-reference` ("Your reference", holder layout only), `invoice-agent-block` (AA's logo, the
+  sentence "Issued by Anaesthesia Associates Limited as agent for <supplier>" and the "Provisional (OQ-29)" pill;
+  `invoice-agency-line` is now only that sentence, inside the block), `invoice-split-note` (a split share's note with
+  "Open <number>" links), `invoice-lines` (rows carry `data-line-kind`), `invoice-btm-breakdown` (holder layout),
+  `invoice-cross-match` (holder layout), `invoice-gst-caption` ("Prices are held GST exclusive. GST is added at the foot
+  of the invoice."), `invoice-money-states`; the rail's `invoice-delivery` (`data-delivery` sent | toPost | noAddress),
+  test ids `invoice-send-email` and `invoice-send-history`, `invoice-related` (Related invoices on a split share). The
+  "Email invoice" button is gone. Invoices list: `invoice-list-delivery` (`data-delivery`), `invoice-list-split`. Review:
+  `review-delivery-summary` inside `review-authorised-banner` ("4 invoices raised. 4 emailed, 0 to post."). Billing
+  monitor: `monitor-no-address`. Master data: `contract-layout` and `contract-delivery` (Contracts table cells; nib reads
+  Holder's layout and Email, `tr[data-system=noContractRvg]` Patient's layout and "Payer's email or post"),
+  `anaesthetist-gst-number` (Anaesthetists table cell), `anaesthetist-gst-number-field` (Edit sheet). Xero:
+  `xero-accpay-buyer-created` inside `xero-accpay-card`. Split (Paid by in the Billing card): `procedure-split-row` (web
+  and Admin line, `data-split` none | fits | doesNotFit), `procedure-split-summary` (the value), `procedure-split-button`
+  (web Split or Change; the whole Paid by row on mobile, `data-split`), the compact stack line `procedure-split`, `split-sheet`,
+  `split-fee`, `split-row` (`data-row`), `split-share-input`, `split-rest-toggle`, `split-amount`, `split-total`,
+  `split-add-party`, `split-save`, `split-remove`, `party-picker`, `party-option`, `party-picker-search`, test id
+  `party-picker-toggle`.
 - Catch-up Phase U3: `aa-fee-run-result` and `aa-fee-settings-result` (AA fees screen: the run result line and the settings save line, both the shared `ResultLine`; refusals there are `FormError`, `role=alert`).
 - Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,
   `contract-rail-other-price`, `contract-rail-amount`, `contract-rail-outcome`, `contract-rail-enter-rvg`,
@@ -1041,7 +1120,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - `integration-workspace`, `integration-inspector`, `integration-library`
 - `xero-invoice-table`, `xero-invoice-table-shell`, `xero-invoice-row-<accRecId>`, `xero-pair-detail`,
-  `xero-money-flow-grid`, `xero-invoice-identifiers`, `xero-aa-fee-pair`, `xero-accrec-card`, `xero-accpay-card`
+  `xero-money-flow-grid`, `xero-invoice-identifiers`, `xero-aa-fee-pair`, `xero-accrec-card`, `xero-accpay-card` (with
+  the buyer-created block `[data-shot=xero-accpay-buyer-created]` inside it since catch-up Phase 22)
 - AA fee: `admin-aa-fee-invoices`, `admin-aa-fee-settings`, `billing-aa-fee-invoices`, `web-accounts-aa-fees`
 
 **Mobile**
@@ -1076,8 +1156,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   Contract and the RVG code `capture-procedure-code` are both in the Billing card `capture-billing`). Compact,
   in Admin Review's `review-procedures` cell and the List drawer's `drawer-procedure-stack`, it also has
   `procedure-contract` (Contract and pricing basis) and `procedure-rvg-code`. `procedure-description` (the
-  manual form); the anaesthetist's billing reference field is gone (catch-up Phase 21: the approval number on `booking-funder-row` takes its place); `invoice-billed-to` (the payer's email or postal address under "Invoice to"); `invoice-procedure-heading` (one
-  heading row per Procedure in `invoice-lines`, the only place the invoice description shows);
+  manual form); the anaesthetist's billing reference field is gone (catch-up Phase 21: the approval number on `booking-funder-row` takes its place); `invoice-billed-to` (the payer's email or postal address under "Invoice to"); the invoice description prints on
+  each line of `invoice-lines` (catch-up Phase 22; `invoice-procedure-heading` is gone);
   `review-open-booking`. `data-testid=procedure-header` is the card's heading row, with Remove on an added procedure only.
   The attachment hooks are gone. `booking-source` (the source line)
 
@@ -1202,7 +1282,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 |---|---|---|
 | S1 · Booking to theatre | Reset only. | On Mobile Lists, run `fire-hospital-message` (MSG-STG-1001), then Sarah Mitchell appears on Souter Tue 28 Jul AM. |
 | S2 · Office day | Reset only. | Admin work. |
-| S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38). |
+| S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38, its share of the fee-split Booking) and emails every invoice. |
 | S4 · Exceptions | Reset only. | Mobile, then the Admin screens below. |
 | S5 · Compliance tour | Reset, three audited edits on David Chen's booking, then authorises Whitaker Fri 17, which raises invoices. | Admin audit and Xero. |
 
@@ -1230,7 +1310,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-approves-contract-change` | Catch-up Phase 21a, badged Office stand-in, PWA only ("Office approves this Contract change"). Approves the Contract the anaesthetist changed on the Booking, as Approve on Review would, so `contract-approval-status` turns from "Awaiting office approval" to "Approved by the office <time>". Disabled when the Booking has no pending change (true of every Souter Booking at reset: change a Contract on the Billing sheet first). In the framed build use Approve on Admin Review. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
-| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Clear restores both. Also in the PWA Demo sheet on a mobile Booking |
+| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
 mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up
@@ -1281,7 +1361,8 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   4s later. Shoot the submitted state within that window, or shoot it on web.
 - **Numbers created at runtime vary.** Runtime invoice and Xero numbers depend on the order
   things are authorised. Reach them by clicking rows rather than hard-coding IDs, except
-  `INV0001` and `XRB0`, which are seeded.
+  `INV0001`, `XRB0` and the history ids (`HINV<nn>`, `XRH<nn>`), which are seeded. The S3 invoice numbers are stable
+  when AM is authorised before PM (see the Phase 22 seed notes), so a row can be picked by its number.
 - **Overlays auto-dismiss** after about 1s: the completion overlay, the submission overlay and
   success overlays. Wait about 350ms, then shoot.
 - **The mobile booking's header actions fold away** when `mobile-booking-scroll` is scrolled.

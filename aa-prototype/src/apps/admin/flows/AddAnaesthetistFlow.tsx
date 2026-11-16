@@ -32,6 +32,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
   const [unitValue, setUnitValue] = useState('30')
   const [gstPeriod, setGstPeriod] = useState<GstPeriod>('monthly')
   const [hpiId, setHpiId] = useState('')
+  const [gstNumber, setGstNumber] = useState('')
   const todayISO = useToday()
   const [startDateISO, setStartDateISO] = useState(todayISO)
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +47,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
       setUnitValue('30')
       setGstPeriod('monthly')
       setHpiId('')
+      setGstNumber('')
       setStartDateISO(todayISO)
       setError(null)
       setResult(null)
@@ -58,7 +60,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
       setError('The unit value must be a number greater than zero.')
       return
     }
-    const outcome = addAnaesthetist(useAppStore, actor, { registrationNumber, name, phone, email, unitValue: uv, gstPeriod, hpiId, startDateISO })
+    const outcome = addAnaesthetist(useAppStore, actor, { registrationNumber, name, phone, email, unitValue: uv, gstPeriod, hpiId, startDateISO, gstNumber })
     if (!outcome.ok) {
       setError(outcome.message)
       return
@@ -84,6 +86,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
         <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono />
         <Segmented label="GST period" value={gstPeriod} options={GST_OPTIONS} onChange={setGstPeriod} />
         <TextField label="HPI CPN (optional)" value={hpiId} onChange={setHpiId} mono />
+        <TextField label="GST number (optional)" value={gstNumber} onChange={setGstNumber} mono placeholder="123-456-789" />
         <div data-shot="admin-add-anaesthetist-start">
           <TextField
             label="Start date"

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
+import { needAddressText } from '../../../domain/billing/invoicePresentation'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
@@ -279,6 +280,16 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
           </div>
         ))}
       </div>
+
+      {/* An invoice raised with no invoice address (catch-up Phase 22): the office adds one and sends it from the invoice. */}
+      {row.noAddressCount > 0 && row.firstNoAddressInvoiceId !== undefined && (
+        <div data-shot="monitor-no-address" style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
+          {`${row.noAddressCount === 1 ? '1 invoice' : `${row.noAddressCount} invoices`} ${needAddressText(row.noAddressCount).replace(/^\d+ /, '')}.`}{' '}
+          <Link to={`/admin/invoices/${row.firstNoAddressInvoiceId}`} style={{ color: accent.base, fontWeight: 600 }}>
+            Add an address and send
+          </Link>
+        </div>
+      )}
 
       {/* Per-booking rows */}
       <div style={{ overflowX: 'auto', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>

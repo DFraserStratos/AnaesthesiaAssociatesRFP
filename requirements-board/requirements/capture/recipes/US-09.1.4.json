@@ -1,22 +1,22 @@
 {
   "id": "US-09.1.4",
-  "status": "partial",
-  "absentReason": "The ACCPAY to the anaesthetist exists with payee, bill number and the full payable, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "accpay-record",
       "app": "simulator",
-      "caption": "ACCPAY to the anaesthetist, without buyer-created tax invoice wording",
+      "caption": "The ACCPAY is held as a buyer-created tax invoice, one for each invoice and the same value; wording and granularity provisional (OQ-29)",
       "start": "/demo/xero/invoices/XRH01",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-shot=xero-accpay-card]"
+              "scroll": "[data-shot=xero-accpay-buyer-created]"
             }
           ],
           "highlight": [
-            "[data-shot=xero-accpay-card]"
+            "[data-shot=xero-accpay-buyer-created]"
           ]
         }
       ]

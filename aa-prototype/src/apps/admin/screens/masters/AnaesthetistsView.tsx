@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { neutral } from '../../../../theme/tokens'
+import { formatGstNumber } from '../../../../domain/billing/invoicePresentation'
 import { format, parseISO } from 'date-fns'
 import { Link, useNavigate } from 'react-router-dom'
 import { tierFor } from '../../../../domain/pairingPreferences'
@@ -33,7 +35,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
         sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
         action={<Button variant="secondary" onClick={() => setAdding(true)}>Add anaesthetist</Button>}
       />
-      <Table heads={['Name', 'Reg', 'Tier', 'Unit $', 'GST', 'Phone', 'Start date', 'Active', '']} rightAlign={[8]} shot="masters-anaesthetists">
+      <Table heads={['Name', 'Reg', 'Tier', 'Unit $', 'GST', 'GST number', 'Phone', 'Start date', 'Active', '']} rightAlign={[9]} shot="masters-anaesthetists">
         {rows.map((a) => (
           <tr
             key={a.registrationNumber}
@@ -52,6 +54,9 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
             <td style={rowCellStyle}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
             <td className="mono" style={rowCellStyle}>{a.unitValue.toFixed(2)}</td>
             <td style={rowCellStyle}>{a.gstPeriod}</td>
+            <td data-shot="anaesthetist-gst-number" className={a.gstNumber !== undefined ? 'mono' : undefined} style={{ ...rowCellStyle, whiteSpace: 'nowrap', ...(a.gstNumber === undefined ? { color: neutral.mist } : {}) }}>
+              {a.gstNumber !== undefined ? formatGstNumber(a.gstNumber) : 'Not held'}
+            </td>
             <td style={rowCellStyle}>{a.phone}</td>
             <td className="mono" style={rowCellStyle}>{format(parseISO(a.startDateISO), 'd MMM yyyy')}</td>
             <td style={rowCellStyle}>{a.active ? 'Yes' : 'No'}</td>

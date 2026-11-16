@@ -30,7 +30,9 @@ import { NOT_A_CANDIDATE_MESSAGE, applyContractChange, contractAllowedOn } from 
 import { withRvgRowChange } from './lifecycle'
 import { railContextForList, railMastersOf } from './selectors'
 import { listHospitalFor } from '../domain/listPairing'
-import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine, Procedure } from '../domain/types'
+import type { BillingCase, BookingId, InvoiceDelivery, InvoiceId, Procedure } from '../domain/types'
+import { emailProblem } from '../domain/billing/payer'
+import { materialiseInvoices } from './invoiceMaterialise'
 import {
   buildInvoicesForBooking,
   type BookingBuildResult,
@@ -46,7 +48,7 @@ import {
   type MutationMeta,
   type Outcome,
 } from './mutate'
-import type { AppStoreApi } from './appStore'
+import type { AppState, AppStoreApi } from './appStore'
 import { billingContextForBooking, bookingsForList, casesForList, prePaidByProcedure, proceduresForBooking } from './selectors'
 import { getBooking } from './lifecycle'
 import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
@@ -108,6 +110,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       ...bookingCtx,
       listDateISO: list.dateISO,
       patientId: booking.patientId,
+      ...surgeonNameFor(state, list.surgeonId),
       ...listHospitalFor(list, state.masters.hospitals),
       ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
     }
@@ -120,7 +123,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       const result = buildInvoicesForBooking(booking, procedures, buildCtx)
       if (result.kind === 'exception') return { bookingId: booking.id, result }
       // The run's pre-flight (catch-up Phase 21a): the checks completion no longer
-      // makes (the Method 3 gate, the override reason and sign, conservation) send
+      // makes (the Method 3 gate, the override reason and sign, a split that no longer fits) send
       // the Booking to the monitor instead of building invoices from it.
       const preflight = validateBookingForBilling(booking, procedures, bookingCtx)[0]
       if (preflight !== undefined) {
@@ -153,6 +156,9 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
     const invoiceLines = { ...s.billing.invoiceLines }
     const cases = { ...s.billing.cases }
     const atISO = clockISO(s.clock)
+    let sentCount = 0
+    let toPostCount = 0
+    let notSentCount = 0
 
     for (const { bookingId, result } of built) {
       if (result.kind === 'exception') {
@@ -195,63 +201,13 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         continue
       }
 
-      const bookingInvoiceIds: InvoiceId[] = []
-      for (const draft of result.invoices) {
-        const bc = allocateId(counters, 'billingCase')
-        counters = bc.counters
-        const inv = allocateId(counters, 'invoice')
-        counters = inv.counters
-        const num = allocateId(counters, 'invoiceNumber')
-        counters = num.counters
-
-        // The BillingCase id doubles as the internal CaseReference (links the
-        // invoice back to its Booking; display-only, never the remittance key).
-        const invoice: Invoice = {
-          id: inv.id,
-          invoiceNumber: num.id,
-          caseReference: bc.id,
-          bookingId,
-          counterparty: draft.counterparty,
-          ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
-          layout: draft.layout,
-          kind: 'standard',
-          subtotal: draft.subtotal,
-          gst: draft.gst,
-          total: draft.total,
-          raisedAtISO: atISO,
-        }
-        invoices[inv.id] = invoice
-        for (const line of draft.lines) {
-          const il = allocateId(counters, 'invoiceLine')
-          counters = il.counters
-          const stored: InvoiceLine = {
-            id: il.id,
-            invoiceId: inv.id,
-            description: line.description,
-            amount: line.amount,
-          }
-          if (line.procedureId !== undefined) stored.procedureId = line.procedureId
-          if (line.units !== undefined) stored.units = line.units
-          invoiceLines[il.id] = stored
-        }
-        cases[bc.id] = { id: bc.id, bookingId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
-        bookingInvoiceIds.push(inv.id)
-        metas.push({
-          entityType: 'invoice',
-          entityId: inv.id,
-          action: 'invoice.create',
-          after: {
-            invoiceNumber: num.id,
-            caseReference: bc.id,
-            bookingId,
-            counterparty: draft.counterparty,
-            subtotal: draft.subtotal,
-            gst: draft.gst,
-            total: draft.total,
-          },
-          stampBookingId: null,
-        })
-      }
+      const made = materialiseInvoices(s, counters, result.invoices, { bookingId, atISO, kind: 'standard', send: true, createAction: 'invoice.create' }, { invoices, invoiceLines, cases })
+      counters = made.counters
+      const bookingInvoiceIds = made.invoiceIds
+      metas.push(...made.metas)
+      sentCount += made.sentCount
+      toPostCount += made.toPostCount
+      notSentCount += made.notSentCount
 
       invoiceIds.push(...bookingInvoiceIds)
       metas.push({
@@ -267,7 +223,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       entityType: 'list',
       entityId: listId,
       action: 'list.billed',
-      after: { billedAtISO: atISO, invoiceCount: invoiceIds.length, exceptionCount: exceptions.length },
+      after: { billedAtISO: atISO, invoiceCount: invoiceIds.length, exceptionCount: exceptions.length, sentCount, toPostCount, notSentCount },
       stampBookingId: null,
     })
 
@@ -393,6 +349,7 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
     ...bookingCtx,
     listDateISO: list.dateISO,
     patientId: booking.patientId,
+    ...surgeonNameFor(state, list.surgeonId),
     ...listHospitalFor(list, state.masters.hospitals),
     ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
   }
@@ -411,64 +368,22 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
   const preflight = validateBookingForBilling(booking, proceduresForBooking(state, booking.id), bookingCtx)[0]
   if (preflight !== undefined) return refuse('preflight', preflight.message)
 
-  const invoiceIds: InvoiceId[] = []
+  let invoiceIds: InvoiceId[] = []
   const metas: MutationMeta[] = []
   mutate(api, BILLING_RETRY_ACTOR, metas, (s) => {
-    let counters = s.counters
-    const invoices = { ...s.billing.invoices }
-    const invoiceLines = { ...s.billing.invoiceLines }
-    const cases = { ...s.billing.cases }
     const atISO = clockISO(s.clock)
-
-    result.invoices.forEach((draft, index) => {
-      // The first invoice reuses the failed case's id (flip failed -> invoiced,
-      // dropping its `failure`); any extra invoices allocate fresh cases (COS is
-      // single-counterparty, so this is a defensive belt).
-      let bcId = failed.id
-      if (index > 0) {
-        const bc = allocateId(counters, 'billingCase')
-        counters = bc.counters
-        bcId = bc.id
-      }
-      const inv = allocateId(counters, 'invoice')
-      counters = inv.counters
-      const num = allocateId(counters, 'invoiceNumber')
-      counters = num.counters
-
-      const invoice: Invoice = {
-        id: inv.id,
-        invoiceNumber: num.id,
-        caseReference: bcId,
-        bookingId: booking.id,
-        counterparty: draft.counterparty,
-        ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
-        layout: draft.layout,
-        kind: 'standard',
-        subtotal: draft.subtotal,
-        gst: draft.gst,
-        total: draft.total,
-        raisedAtISO: atISO,
-      }
-      invoices[inv.id] = invoice
-      for (const line of draft.lines) {
-        const il = allocateId(counters, 'invoiceLine')
-        counters = il.counters
-        const stored: InvoiceLine = { id: il.id, invoiceId: inv.id, description: line.description, amount: line.amount }
-        if (line.procedureId !== undefined) stored.procedureId = line.procedureId
-        if (line.units !== undefined) stored.units = line.units
-        invoiceLines[il.id] = stored
-      }
-      cases[bcId] = { id: bcId, bookingId: booking.id, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
-      invoiceIds.push(inv.id)
-      metas.push({
-        entityType: 'invoice',
-        entityId: inv.id,
-        action: 'invoice.create',
-        after: { invoiceNumber: num.id, caseReference: bcId, bookingId: booking.id, counterparty: draft.counterparty, total: draft.total },
-        stampBookingId: null,
-      })
+    // The first invoice reuses the failed case's id (flip failed -> invoiced,
+    // dropping its `failure`); any extra invoices allocate fresh cases.
+    const made = materialiseInvoices(s, s.counters, result.invoices, {
+      bookingId: booking.id,
+      atISO,
+      kind: 'standard',
+      send: true,
+      createAction: 'invoice.create',
+      reuseCaseId: failed.id,
     })
-
+    invoiceIds = made.invoiceIds
+    metas.push(...made.metas)
     metas.push({
       entityType: 'booking',
       entityId: booking.id,
@@ -476,57 +391,55 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
       after: { invoiceIds, retriedCaseId: failed.id },
       stampBookingId: null,
     })
-
-    return { billing: { ...s.billing, invoices, invoiceLines, cases }, counters }
+    return { billing: { ...s.billing, invoices: made.invoices, invoiceLines: made.invoiceLines, cases: made.cases }, counters: made.counters }
   })
 
   return ok({ invoiceIds, exceptions: [] })
 }
 
 /**
- * Mark an invoice emailed (the RFP: invoices are "printed" and emailed from
- * the Billing Engine — the demo marks the send and badges it as simulated).
- * Direct-claim insurer invoices are refused: nib presentation runs through
- * their upload portal instead.
+ * The office's Resend on the invoice rail (catch-up Phase 22; US-08.4.2): the
+ * run already sent or queued every invoice, so this only appends a send. An
+ * emailed invoice is sent again (to `to` when given, else its address); an
+ * invoice with no address, or one marked to post, is emailed once an address
+ * is typed (the print view stays). Office only; audited `invoice.resend`.
  */
-export function markInvoiceEmailed(api: AppStoreApi, actor: Actor, invoiceId: string): Outcome {
+export function resendInvoice(api: AppStoreApi, actor: Actor, invoiceId: string, opts: { to?: string } = {}): Outcome {
   const state = api.getState()
   const invoice = state.billing.invoices[invoiceId]
-  // Guard order per the lifecycle convention (authoriseList): entity, then its
-  // intrinsic/state facts, then the actor's role.
   if (invoice === undefined) return refuse('notFound', 'Invoice not found.')
-  if (invoice.counterparty.kind === 'insurer') {
-    return refuse(
-      'uploadPortal',
-      'Direct claim insurer invoices are presented via the insurer upload portal, not emailed.',
-    )
-  }
-  if (invoice.emailedAtISO !== undefined) {
-    return refuse('alreadyEmailed', 'This invoice has already been marked emailed.')
-  }
-  if (actor.role !== 'office') {
-    return refuse('officeOnly', 'Only the office can mark an invoice emailed.')
-  }
+  if (invoice.delivery === undefined) return refuse('notSendable', 'This invoice is not sent by the billing run.')
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can resend an invoice.')
+  const typed = opts.to?.trim()
+  const problem = typed !== undefined && typed !== '' ? emailProblem(typed) : null
+  if (problem !== null) return refuse('emailInvalid', problem)
+  const previous = invoice.delivery.status === 'sent' ? invoice.delivery.sends[invoice.delivery.sends.length - 1]?.to : undefined
+  const to = typed !== undefined && typed !== '' ? typed : previous
+  if (to === undefined) return refuse('noAddress', 'Type an email address to send this invoice to.')
 
-  const emailedAtISO = clockISO(state.clock)
+  const atISO = clockISO(state.clock)
+  const sends = invoice.delivery.status === 'sent' ? invoice.delivery.sends : []
+  const delivery: InvoiceDelivery = { method: 'email', status: 'sent', sends: [...sends, { atISO, to, by: actor.who }] }
   mutate(
     api,
     actor,
     {
       entityType: 'invoice',
       entityId: invoiceId,
-      action: 'invoice.email',
-      after: { emailedAtISO },
+      action: 'invoice.resend',
+      before: { delivery: invoice.delivery.status },
+      after: { to, atISO },
       stampBookingId: null,
     },
-    (s) => ({
-      billing: {
-        ...s.billing,
-        invoices: { ...s.billing.invoices, [invoiceId]: { ...invoice, emailedAtISO } },
-      },
-    }),
+    (s) => ({ billing: { ...s.billing, invoices: { ...s.billing.invoices, [invoiceId]: { ...invoice, delivery } } } }),
   )
   return ok(undefined)
+}
+
+/** The List's surgeon by name, for the holder layout's cross-match (catch-up Phase 22). */
+export function surgeonNameFor(state: Pick<AppState, 'masters'>, surgeonId: string | undefined): { surgeonName?: string } {
+  const name = surgeonId !== undefined ? state.masters.surgeons[surgeonId]?.name : undefined
+  return name !== undefined ? { surgeonName: name } : {}
 }
 
 /**

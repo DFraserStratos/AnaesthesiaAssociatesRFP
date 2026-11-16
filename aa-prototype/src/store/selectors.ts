@@ -52,7 +52,9 @@ import type {
   DisplayKey,
   SlotStatusKey,
 } from '../domain/types'
-import type { BookingBillingContext } from '../domain/billing/validateBookingForBilling'
+import { feeContextFor, type BookingBillingContext } from '../domain/billing/validateBookingForBilling'
+import { feeFor } from '../domain/billing/fee'
+import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
@@ -740,7 +742,12 @@ export interface MonitorListRow {
   anaesthetistName: string
   hospitalName?: string
   invoiceCount: number
-  emailedCount: number
+  /** Invoices sent or marked to post (catch-up Phase 22). */
+  deliveredCount: number
+  /** Invoices raised with no invoice address. */
+  noAddressCount: number
+  /** The first such invoice, for the monitor's link. */
+  firstNoAddressInvoiceId?: string
   failedCount: number
   /** Cases whose Xero handoff faulted (Phase 10). */
   handoffFailedCount: number
@@ -828,7 +835,10 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
     const handoffEligible = listRunCases.filter((c) => c.invoiceId !== undefined && c.status !== 'failed').length
 
     const failedCount = bookingRows.filter((r) => r.status === 'failed').length
-    const emailedCount = stdInvoices.filter((i) => i.emailedAtISO !== undefined).length
+    const emailedCount = stdInvoices.filter((i) => i.delivery?.status === 'sent').length
+    const toPostCount = stdInvoices.filter((i) => i.delivery?.status === 'toPost').length
+    const noAddressInvoices = stdInvoices.filter((i) => i.delivery?.status === 'noAddress')
+    const deliveredCount = emailedCount + toPostCount
     const billed = list.billedAtISO !== undefined
 
     const stages: MonitorStage[] = [
@@ -851,9 +861,18 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       },
       {
         key: 'emailed',
-        label: 'Emailed / presented',
-        state: stdInvoices.length === 0 ? 'pending' : emailedCount === 0 ? 'pending' : emailedCount === stdInvoices.length ? 'done' : 'partial',
-        detail: `${emailedCount} of ${stdInvoices.length} sent.`,
+        label: 'Sent or to post',
+        state:
+          stdInvoices.length === 0
+            ? 'pending'
+            : noAddressInvoices.length > 0
+              ? 'partial'
+              : deliveredCount === stdInvoices.length
+                ? 'done'
+                : deliveredCount === 0
+                  ? 'pending'
+                  : 'partial',
+        detail: deliveryCountsText(emailedCount, toPostCount, noAddressInvoices.length),
       },
       {
         key: 'xero',
@@ -882,7 +901,9 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       list,
       anaesthetistName: state.masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId,
       invoiceCount: stdInvoices.length,
-      emailedCount,
+      deliveredCount,
+      noAddressCount: noAddressInvoices.length,
+      ...(noAddressInvoices[0] !== undefined ? { firstNoAddressInvoiceId: noAddressInvoices[0].id } : {}),
       failedCount,
       handoffFailedCount,
       stages,
@@ -1237,7 +1258,10 @@ export function completionContextFor(
   }
 }
 
-export function billingContextForBooking(state: AppState, booking: Booking): BookingBillingContext | undefined {
+export function billingContextForBooking(
+  state: { masters: AppState['masters']; schedule: Pick<AppState['schedule'], 'lists' | 'billingLines'> },
+  booking: Booking,
+): BookingBillingContext | undefined {
   const list = state.schedule.lists[booking.listId]
   // A Booking on a Draft List has no anaesthetist yet, so no billing context (catch-up Phase 31).
   if (list === undefined || list.anaesthetistId === undefined) return undefined
@@ -2056,7 +2080,7 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
  * `ProcedureStack` component renders what this returns and derives nothing.
  */
 export function procedureStackViewFor(
-  state: Pick<AppState, 'masters'> & { schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> },
+  state: Pick<AppState, 'masters'> & { schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>> },
   procedureId: string,
   surface: StackSurface,
 ): ProcedureStackView | undefined {
@@ -2065,7 +2089,15 @@ export function procedureStackViewFor(
   const booking = state.schedule.bookings[procedure.bookingId]
   if (booking === undefined) return undefined
   const list = state.schedule.lists[booking.listId]
+  // A split's summary needs the fee as the run computes it (catch-up Phase 22).
+  let splitFeeExGst: number | null | undefined
+  if (procedure.split !== undefined) {
+    const ctx = billingContextForBooking({ masters: state.masters, schedule: { lists: state.schedule.lists, billingLines: state.schedule.billingLines ?? {} } }, booking)
+    const fee = ctx !== undefined && procedure.governingContractId !== undefined ? feeFor(procedure, feeContextFor(procedure, ctx)) : undefined
+    splitFeeExGst = fee === undefined || fee.needsPrice ? null : fee.total
+  }
   return procedureStackView(procedure, {
+    ...(splitFeeExGst !== undefined ? { splitFeeExGst } : {}),
     contracts: state.masters.contracts,
     parties: state.masters.parties,
     rvgGroups: state.masters.rvgGroups,

@@ -21,6 +21,6 @@ export { PostalAddressFields, addressDraftOf, EMPTY_ADDRESS, type PostalAddressD
 export { RemoveProcedureSheet } from './RemoveProcedureSheet'
 export { EditBillingSetupSheet } from './EditBillingSetupSheet'
 export { PriceOverrideSheet } from './PriceOverrideSheet'
-export { FunderAllocationSheet } from './FunderAllocationSheet'
 export { SubmitListSheet } from './SubmitListSheet'
 export { EditInvoiceDescriptionSheet } from './EditInvoiceDescriptionSheet'
+export { SplitFeeSheet } from './SplitFeeSheet'

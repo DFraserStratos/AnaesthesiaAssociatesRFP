@@ -95,18 +95,27 @@ describe('S3 · money end-to-end', () => {
         // ASA I or II is worth 0 in the RVG table: 12 units, not 13, at $26.50 = $318 + GST.
         total: 365.7,
       })
-      const pair = invoicesFor(SEED_MARKERS['twoFunderBooking']?.entityId ?? '')
+      // The fee split on the Booking (catch-up Phase 22; US-08.2.3): nib $132.50, Alan Prentice the rest.
+      const pair = invoicesFor(SEED_MARKERS['feeSplitBooking']?.entityId ?? '')
       expect(pair).toHaveLength(2)
-      expect(pair.find((i) => i.counterparty.kind === 'insurer')).toMatchObject({
-        invoiceNumber: 'AA-2026-0005',
-        counterparty: { kind: 'insurer', id: INS.nib },
-        total: 152.38,
-      })
-      expect(pair.find((i) => i.counterparty.kind === 'hospital')).toMatchObject({
-        invoiceNumber: 'AA-2026-0006',
-        counterparty: { kind: 'hospital', id: HOSP.stg },
-        total: 91.43,
-      })
+      const nib = pair.find((i) => i.counterparty.kind === 'insurer')
+      const alan = pair.find((i) => i.counterparty.kind === 'patient')
+      expect(nib).toMatchObject({ invoiceNumber: 'AA-2026-0005', counterparty: { kind: 'insurer', id: INS.nib }, subtotal: 132.5, total: 152.38, layout: 'contractHolder' })
+      expect(alan).toMatchObject({ invoiceNumber: 'AA-2026-0006', counterparty: { kind: 'patient' }, billedTo: { name: 'Alan Prentice' }, subtotal: 79.5, total: 91.43, layout: 'patient' })
+      expect(nib?.delivery).toMatchObject({ method: 'email', status: 'sent', sends: [{ to: 'claims@nib.example' }] })
+      expect(alan?.delivery).toMatchObject({ method: 'email', status: 'sent' })
+      expect(nib?.lineage).toEqual([{ role: 'otherShareOfSplit', invoiceId: alan?.id }])
+      expect(alan?.lineage).toEqual([{ role: 'otherShareOfSplit', invoiceId: nib?.id }])
+      // Every S3 invoice is sent; none lacks an address.
+      const s3 = [...split, ...pair]
+      expect(s3.every((i) => i.delivery?.status === 'sent')).toBe(true)
+      // Each ACCPAY carries its own buyer-created wording and equals its receivable.
+      const accPays = Object.values(api.getState().xero.accPays)
+      for (const inv of pair) {
+        const accPay = accPays.find((p) => p.invoiceNumber === `${inv.invoiceNumber}-P`)
+        expect(accPay?.amountPayable).toBe(inv.total)
+        expect(accPay?.taxInvoice?.relatesToInvoiceNumber).toBe(inv.invoiceNumber)
+      }
 
       // Pay the first open ACCREC in full via a webhook.
       const target = openAccRecs(api.getState())[0]

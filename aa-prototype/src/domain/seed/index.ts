@@ -147,7 +147,7 @@ export interface SeedMasters {
   specialties: Record<string, Specialty>
   /** AA's funding tags in step-rail order (catch-up Phase 18a; US-13.4.5): SXAP, HNZ, ACC. */
   fundingTags: Record<string, FundingTag>
-  /** The billing identities behind insurer Parties and `funderOverride` (no view, no flag; kept by catch-up Phase 21, Phase 22's Split replaces the override). */
+  /** The billing identities behind insurer Parties (no view, no flag; kept by catch-up Phase 21). */
   insurers: Record<string, Insurer>
   /** The billing identity behind the COS surgeon-group Party (kept by catch-up Phase 21). */
   organisations: Record<string, ContractHolderOrganisation>
@@ -967,11 +967,11 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: scenario.splitBilling,
       detail: 'Second procedure isAdditional: time units only on the BTM path.',
     },
-    twoFunderBooking: {
-      label: 'One procedure, two funders',
+    feeSplitBooking: {
+      label: "One procedure's fee split between nib and the patient",
       entityType: 'booking',
-      entityId: scenario.twoFunder,
-      detail: 'Two stored rvg lines, one with a nib funder override; amounts conserve to the fee.',
+      entityId: scenario.feeSplit,
+      detail: 'Split on the Booking: nib $132.50 and Alan Prentice the rest, an invoice each.',
     },
     rateTimeBooking: {
       label: 'Rate x time booking (Method 3)',

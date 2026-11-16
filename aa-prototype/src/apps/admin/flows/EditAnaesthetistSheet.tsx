@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { formatGstNumber, normaliseGstNumber } from '../../../domain/billing/invoicePresentation'
 import { Link } from 'react-router-dom'
 import { neutral } from '../../../theme/tokens'
 import type { Anaesthetist, GstPeriod } from '../../../domain/types'
@@ -39,6 +40,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
   const [gstPeriod, setGstPeriod] = useState<GstPeriod>(anaesthetist.gstPeriod)
   const [active, setActive] = useState<'active' | 'inactive'>(anaesthetist.active ? 'active' : 'inactive')
   const [startDateISO, setStartDateISO] = useState(anaesthetist.startDateISO)
+  const [gstNumber, setGstNumber] = useState(anaesthetist.gstNumber !== undefined ? formatGstNumber(anaesthetist.gstNumber) : '')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
       setActive(anaesthetist.active ? 'active' : 'inactive')
       setHpiId(anaesthetist.hpiId)
       setStartDateISO(anaesthetist.startDateISO)
+      setGstNumber(anaesthetist.gstNumber !== undefined ? formatGstNumber(anaesthetist.gstNumber) : '')
       setError(null)
     }
   }, [open, anaesthetist])
@@ -70,6 +73,8 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
       ...(startDateISO !== anaesthetist.startDateISO ? { startDateISO } : {}),
       // Only a changed HPI CPN is sent, so an unrelated save logs no HPI CPN row.
       ...(normaliseHpiCpn(hpiId) !== anaesthetist.hpiId ? { hpiId } : {}),
+      // The GST number (catch-up Phase 22, DM-62): only a change is sent; blank clears it.
+      ...(normaliseGstNumber(gstNumber.trim()) !== (anaesthetist.gstNumber ?? '') ? { gstNumber } : {}),
     })
     if (!outcome.ok) {
       setError(outcome.message)
@@ -97,6 +102,9 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <TextField label="HPI CPN (optional)" value={hpiId} onChange={setHpiId} mono placeholder="12ABCD" />
+        <div data-shot="anaesthetist-gst-number-field">
+          <TextField label="GST number (optional)" value={gstNumber} onChange={setGstNumber} mono placeholder="123-456-789" hint="Printed on every invoice issued in their name. Leave it blank if it is not held." />
+        </div>
         <Segmented label="GST period" value={gstPeriod} options={GST_OPTIONS} onChange={setGstPeriod} />
         <TextField
           label="Start date"

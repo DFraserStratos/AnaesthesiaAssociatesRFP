@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../store/appStore'
 import { authoriseList, editProcedure, submitList, uncompleteBooking } from '../store/lifecycle'
 import { wireBillingRun } from '../store/billingRun'
+import { authoriseAsSimulatedOffice } from '../store/officeStandIn'
 import { advanceClockMinutes, resetDemo } from '../store/clockActions'
 import { clockISO, type Actor } from '../store/mutate'
 import { casesForList, invoicesForList, isListBilled, proceduresForBooking } from '../store/selectors'
@@ -441,5 +442,57 @@ describe('silent no-ops', () => {
       unwire()
       unwireBilling()
     }
+  })
+})
+
+describe('the auto-authorise runs the same send as the stand-in (catch-up Phase 22)', () => {
+  beforeEach(() => setOfficeSimulationEnabled(true))
+
+  /** Each invoice on the List with its delivery stamp and its send audit rows. */
+  function sendsOf(api: BoundAppStore) {
+    const state = api.getState()
+    return invoicesForList(state, SOUTER_PM)
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((inv) => ({
+        id: inv.id,
+        delivery: inv.delivery,
+        audit: state.audit
+          .filter((a) => a.entityId === inv.id && ['invoice.sent', 'invoice.toPost', 'invoice.notSent'].includes(a.action))
+          .map((a) => ({ action: a.action, who: a.who, after: a.after })),
+      }))
+  }
+
+  it('stamps delivery and audits each send as the Billing run, exactly as the stand-in does', () => {
+    const auto = store()
+    const unwireBilling = wireBillingRun(auto)
+    const unwire = wireOfficeSimulation(auto)
+    let autoSends: ReturnType<typeof sendsOf>
+    try {
+      submitAsSouter(auto)
+      vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
+      expect(listState(auto, SOUTER_PM)).toBe('AUTHORISED')
+      autoSends = sendsOf(auto)
+    } finally {
+      unwire()
+      unwireBilling()
+    }
+    expect(autoSends).toHaveLength(4)
+    const atISO = clockISO(auto.getState().clock)
+    for (const row of autoSends) {
+      expect(row.delivery).toBeDefined()
+      expect(row.audit).toHaveLength(1)
+      expect(row.audit[0]!.who).toBe('Billing run')
+      if (row.delivery?.status === 'sent') {
+        expect(row.delivery.sends).toEqual([expect.objectContaining({ atISO, by: 'Billing run' })])
+        expect(row.audit[0]!.action).toBe('invoice.sent')
+      }
+    }
+    expect(autoSends.some((r) => r.delivery?.status === 'sent')).toBe(true)
+
+    const manual = store()
+    submitAsSouter(manual)
+    const res = authoriseAsSimulatedOffice(manual, SOUTER_PM)
+    expect(res.ok && res.value.billed).toBe(true)
+    expect(sendsOf(manual)).toEqual(autoSends)
   })
 })

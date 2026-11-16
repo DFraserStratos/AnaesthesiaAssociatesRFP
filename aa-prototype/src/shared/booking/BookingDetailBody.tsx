@@ -720,7 +720,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
             {actor.role === 'office' && (
               <OfficeBillingSetup
                 procedure={procedure}
-                list={list}
                 ordinal={index + 1}
                 actor={actor}
                 canEdit={canEdit}

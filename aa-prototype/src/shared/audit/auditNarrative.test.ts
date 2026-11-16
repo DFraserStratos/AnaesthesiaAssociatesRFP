@@ -123,7 +123,7 @@ describe('formatAuditValue', () => {
       'Fixed fee $850.00 · Agreed by phone',
     )
     expect(formatAuditValue('prepaymentDetail', { type: 'split', depositAmount: 200 })).toBe('Split · deposit $200.00')
-    expect(formatAuditValue('funderOverride', { kind: 'hospital', id: 'HH001' })).toBe('Hospital HH001')
+    expect(formatAuditValue('counterparty', { kind: 'hospital', id: 'HH001' })).toBe('Hospital HH001')
     expect(formatAuditValue('completed', true)).toBe('yes')
     expect(formatAuditValue('total', 1234.5)).toBe('$1,234.50')
     expect(formatAuditValue('handoverISO', '2026-07-21T10:15:00')).toBe('21 Jul 10:15')
@@ -230,7 +230,8 @@ function emittedActionCodes(): string[] {
   const codes = new Set<string>()
   for (const [file, source] of Object.entries({ ...STORE_SOURCES, ...SEED_SOURCES })) {
     if (file.endsWith('.test.ts')) continue // fixtures may invent codes
-    for (const match of source.matchAll(/action: '([^']+)'/g)) codes.add(match[1]!)
+    // `createAction:` is the invoice materialiser's argument (catch-up Phase 22), passed through to `action:`.
+    for (const match of source.matchAll(/(?:\baction|createAction): '([^']+)'/g)) codes.add(match[1]!)
   }
   return [...codes].sort()
 }

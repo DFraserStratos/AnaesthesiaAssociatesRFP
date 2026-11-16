@@ -172,6 +172,8 @@ function CompactStack({ view, surface, heading }: ProcedureStackProps) {
         ),
         contract === null,
       )}
+      {contract?.split !== undefined &&
+        line('procedure-split', 'Split', contract.split.text, <span style={{ color: contract.split.fits ? neutral.ink : undefined, fontWeight: 600 }}>{contract.split.text}</span>, false)}
       {rvg !== null &&
         line(
           'procedure-rvg-code',

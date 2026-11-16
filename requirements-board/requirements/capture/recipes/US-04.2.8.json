@@ -1,6 +1,88 @@
 {
   "id": "US-04.2.8",
-  "status": "absent",
-  "absentReason": "Invoice layout, delivery method and GST treatment are not contract settings. The invoice recipient follows the Contract, delivery is a simulated email, and GST is a fixed 15%. Searched domain/types.ts (Contract), ContractEditSheet.tsx and apps/admin/screens/InvoiceDocument.tsx.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contracts-table",
+      "app": "admin",
+      "caption": "No per-Contract invoicing settings: the layout follows whether the Contract bills its holder, delivery is set on the Party (email or post), every price is held GST exclusive and the holder reference code is printed",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "caption": "Contracts with their Layout and Delivery: nib RVG bills its holder by Email, No contract · RVG bills the payer by the payer's email or post",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "RVG"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-catalogue] [data-shot=contract-layout]",
+            "[data-shot=contract-catalogue] [data-shot=contract-delivery]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "invoice-holder-reference",
+      "app": "admin",
+      "caption": "A St George's invoice in the holder's layout, printing the Contract's holder reference code as Your reference",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0007\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-holder-reference]",
+            "[data-shot=invoice-btm-breakdown]"
+          ]
+        }
+      ]
+    }
+  ]
 }

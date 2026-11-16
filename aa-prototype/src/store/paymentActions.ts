@@ -26,7 +26,7 @@
 import type { BillingCase, PaymentIn, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
-import { GST_RATE } from '../domain/billing/invoiceBuild'
+import { GST_RATE } from '../domain/billing/invoicePresentation'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 

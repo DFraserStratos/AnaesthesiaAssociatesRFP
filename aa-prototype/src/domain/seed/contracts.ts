@@ -102,12 +102,13 @@ const rate = (unitRate: number): ContractPricing => ({ kind: 'rvgContractRate', 
 const SEED: readonly SeedContract[] = [
   { id: CONTRACT.noContractRvg, name: 'No contract · RVG', holderId: PARTY.aa, billsTo: 'payer', pricing: RVG, anaesthetistMayOverridePrice: true, systemRole: 'noContractRvg', aaCode: 'AA-RVG' },
   // The hospitals' and nib's plain RVG Contracts (formerly the protected default Type 1s).
-  { id: CONTRACT.stgRvg, name: "St George's RVG", holderId: PARTY.stg, billsTo: 'holder', pricing: RVG },
+  // The holder reference codes on St George's and nib's billed Contracts are SYNTHETIC (catch-up Phase 22): printed on their invoices (US-04.2.18).
+  { id: CONTRACT.stgRvg, name: "St George's RVG", holderId: PARTY.stg, billsTo: 'holder', pricing: RVG, holderReference: 'SGANAES01' },
   { id: CONTRACT.sxRvg, name: 'Southern Cross RVG', holderId: PARTY.sx, billsTo: 'holder', pricing: RVG },
   { id: CONTRACT.forteRvg, name: 'Forte Health RVG', holderId: PARTY.forte, billsTo: 'holder', pricing: RVG },
   { id: CONTRACT.cesRvg, name: 'Christchurch Eye Surgery RVG', holderId: PARTY.ces, billsTo: 'holder', pricing: RVG },
   { id: CONTRACT.cphRvg, name: 'Christchurch Public RVG', holderId: PARTY.cph, billsTo: 'holder', pricing: RVG },
-  { id: CONTRACT.nibRvg, name: 'nib RVG', holderId: PARTY.nib, billsTo: 'holder', pricing: RVG },
+  { id: CONTRACT.nibRvg, name: 'nib RVG', holderId: PARTY.nib, billsTo: 'holder', pricing: RVG, holderReference: 'NIBAN2026' },
   // RVG at the Contract's rate. SXAP is $26.50 (Decisions log 2026-07-23).
   { id: CONTRACT.sxap, name: 'Southern Cross Affiliated Provider', holderId: PARTY.sx, billsTo: 'holder', pricing: rate(26.5), fundingTagId: TAG.sxap },
   { id: CONTRACT.healthNz, name: 'Health NZ agreed rate', holderId: PARTY.cph, billsTo: 'holder', pricing: rate(23), fundingTagId: TAG.hnz },

@@ -26,7 +26,10 @@ import {
 import type { Booking, Procedure, Session } from '../domain/types'
 import type { AppState, AppStoreApi } from './appStore'
 import { clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
-import { prepaymentStatusFor } from './selectors'
+import { billingContextForBooking, prepaymentStatusFor } from './selectors'
+import { feeFor } from '../domain/billing/fee'
+import { splitPartiesOn } from '../domain/billing/partyOptions'
+import { feeContextFor } from '../domain/billing/validateBookingForBilling'
 import { compareSessions } from '../domain/outOfHours'
 
 /** The state slices the warning selectors read. */
@@ -56,7 +59,27 @@ function factsFor(state: WarningState, booking: Booking, procedures: readonly Pr
     contracts: state.masters.contracts,
     parties: state.masters.parties,
     ...(state.masters.patients[booking.patientId] !== undefined ? { patient: state.masters.patients[booking.patientId] } : {}),
+    ...splitFeesFor(state, booking, procedures),
   }
+}
+
+/** Each split Procedure's fee ex GST and whether its parties are still billable (catch-up Phase 22), as the run checks them. */
+function splitFeesFor(state: WarningState, booking: Booking, procedures: readonly Procedure[]): { splits?: Record<string, { feeExGst: number | null; partiesOn: boolean }> } {
+  const split = procedures.filter((p) => p.split !== undefined)
+  if (split.length === 0) return {}
+  const ctx = billingContextForBooking(state, booking)
+  if (ctx === undefined) return {}
+  const splits: Record<string, { feeExGst: number | null; partiesOn: boolean }> = {}
+  for (const procedure of split) {
+    const partiesOn = splitPartiesOn(booking, procedure.split?.shares ?? [], state.masters.parties)
+    if (procedure.governingContractId === undefined) {
+      splits[procedure.id] = { feeExGst: null, partiesOn }
+      continue
+    }
+    const fee = feeFor(procedure, feeContextFor(procedure, ctx))
+    splits[procedure.id] = { feeExGst: fee.needsPrice ? null : fee.total, partiesOn }
+  }
+  return { splits }
 }
 
 /** The facts every rule may read for one Booking (undefined when it or its List is missing). */

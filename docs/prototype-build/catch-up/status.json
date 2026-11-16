@@ -2,23 +2,23 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "22"
+      "U4"
     ],
-    "note": "21a is built (2026-11-17), both sessions: the form follows the pricing kind, completion is three conditions, and Review has the flag list with Approve and Correct; a moved Booking keeps its Contracts. Not yet committed; its catalogue capture waits for the owner. Run 22 next; U4 and U5 after 22 and before 23; U6 after 25; U7 before 44."
+    "note": "22 is built (2026-11-17): invoices in the anaesthetist's name with AA as agent (provisional, OQ-29), laid out from the Contract with GST at the foot, sent by the run (emailed, To post or no address); a Split button divides a Procedure's fee in $ or % between parties, each invoiced on its own; the ACCPAY carries provisional buyer-created wording. Committed (21a too). Run U4 next, then U5, then 23; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start 22 now. 21a is done: Review shows each Procedure, its flags and Approve.",
-    "headline_sub": "21a built the pricing-kind predicate, the price status, completion as three conditions, the review-flag list (reviewFlags.ts) on a rebuilt Review, office approval of Contract changes (approved at authorise too, never a gate) and the moved Booking keeping its Contracts. Commit 21a first, and run its capture once you have tested it. Then 22, then U4 and U5.",
-    "parallel": "None now: 22 runs alone (the Contracts track and the U phases edit the same shared files).",
+    "headline": "Start U4 now. 22 is done: invoices are sent by the run and a fee can be split on the Booking.",
+    "headline_sub": "22 built the invoice in the anaesthetist's name with AA as agent, layout from the Contract, the run's sending (emailed, To post, no address) through one materialiser, the Split button with typed $ or % shares (funderOverride gone) and the buyer-created ACCPAY wording. It is done and committed, with 21a. Then U4, then U5, then 23.",
+    "parallel": "None now: U4 runs alone (a U phase never runs beside a catch-up phase, and U5 follows U4).",
     "safe": {
-      "22": "Its dependency 21a is done (PROGRESS entry, sessions 1 and 2). Commit 21a first. 22 sends by invoiceDeliveryFor and Invoice.billedTo (21)."
+      "U4": "Every dependency is done and committed (U2, U3, 21a and 22) and it is next in run order. U4 edits the same shared fields 22 used (the Split sheet's share field and the invoice rail's email field are TextFields now)."
     },
     "wait": {
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
-      "U4": "Needs 22 in run order; U1's --focus-ring and parseAmount are ready for it.",
-      "U5": "Needs 22 in run order; runs after U4's answers settle the fields."
+      "U5": "Needs U4 (its only dependency) and runs straight after it.",
+      "23": "Needs U5 (and 22, now done); runs after U4 and U5."
     }
   }
 }

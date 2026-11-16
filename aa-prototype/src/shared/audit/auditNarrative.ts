@@ -248,6 +248,23 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     return value.length === 1 ? '1 item' : `${value.length} items`
   }
   if (isRecord(value)) {
+    // A fee split (catch-up Phase 22; US-08.2.3): "I-NIB $132.50, Patient PT0004 the rest".
+    if (key === 'split' && Array.isArray(value.shares)) {
+      return value.shares
+        .map((share: unknown) => {
+          if (!isRecord(share) || !isRecord(share.party) || !isRecord(share.basis)) return '?'
+          const party = formatShape(share.party) ?? '?'
+          const basis = share.basis
+          const label =
+            basis.kind === 'amount' && typeof basis.amountExGst === 'number'
+              ? formatCurrency(basis.amountExGst)
+              : basis.kind === 'percent' && typeof basis.percent === 'number'
+                ? `${basis.percent}%`
+                : 'the rest'
+          return `${party} ${label}`
+        })
+        .join(', ')
+    }
     // A procedure text with its source and time (catch-up Phase 20a): "'RTK' (Surgeon's rooms PDF, 14 Jul 09:00)".
     if (key === 'procedureText' && typeof value.text === 'string') {
       const source = typeof value.source === 'string' && Object.hasOwn(PROCEDURE_TEXT_SOURCE_LABELS, value.source)

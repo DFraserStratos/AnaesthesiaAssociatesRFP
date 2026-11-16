@@ -16,6 +16,8 @@
  * their linked schedule Bookings receive rich history centrally in `seed/audit.ts`.
  */
 
+import { AA_AGENT, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } from '../billing/invoicePresentation'
+import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import type {
   AaFeeInvoice,
   BillingCase,
@@ -109,6 +111,9 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
 }
 
 /** Idempotency key for the seeded pre-payment receipt (BC0001). */
+/** The sender the run stamps (the store's `BILLING_RUN_SENDER`; the seed cannot import the store). */
+const BILLING_RUN_SENDER_NAME = 'Billing run'
+
 const SEED_PREPAYMENT_KEY = 'SEED-PREPAY-BC0001'
 
 /**
@@ -124,6 +129,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
     hospitals: seed.masters.hospitals,
     surgeons: seed.masters.surgeons,
     organisations: seed.masters.organisations,
+    parties: seed.masters.parties,
+    patients: seed.masters.patients,
   })
 
   const invoices: Record<string, Invoice> = { ...history.invoices }
@@ -179,6 +186,10 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
     return `${f.prefix}${String(n[kind]).padStart(f.pad, '0')}`
   }
 
+  const anaesthetist = anaesthetistId !== undefined ? seed.masters.anaesthetists[anaesthetistId] : undefined
+  const supplier = anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined
+  const patient = seed.masters.patients[booking.patientId]
+
   built.invoices.forEach((draft, index) => {
     const caseId = next('billingCase')
     const invoiceId = next('invoice')
@@ -196,10 +207,15 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
       gst: draft.gst,
       total: draft.total,
       raisedAtISO: SEED_PREPAYMENT_RAISED_ISO,
+      // Catch-up Phase 22: the supplier, AA as agent, the Procedure links and the run's send, as the materialiser stamps them.
+      procedureIds: [...draft.procedureIds],
+      ...(supplier !== undefined ? { supplier } : {}),
+      agent: AA_AGENT,
+      delivery: deliveryStampFor(invoiceDeliveryFor(draft.counterparty, booking, patient, seed.masters.parties), SEED_PREPAYMENT_RAISED_ISO, BILLING_RUN_SENDER_NAME),
     }
     for (const line of draft.lines) {
       const lineId = next('invoiceLine')
-      const stored: InvoiceLine = { id: lineId, invoiceId, description: line.description, amount: line.amount }
+      const stored: InvoiceLine = { id: lineId, invoiceId, kind: line.kind, description: line.description, amount: line.amount }
       if (line.procedureId !== undefined) stored.procedureId = line.procedureId
       if (line.units !== undefined) stored.units = line.units
       invoiceLines[lineId] = stored
@@ -247,6 +263,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
         amountAuthorised: amountPayable,
         amountDisbursed: amountPayable,
         status: 'paid',
+        ...(supplier !== undefined ? { taxInvoice: buyerCreatedTaxInvoiceFor({ invoiceNumber, supplier, agent: AA_AGENT }, supplier) } : {}),
       }
       disbursements[`DSBB${index}`] = { id: `DSBB${index}`, accPayId, amount: amountPayable, atISO: SEED_PREPAYMENT_DISBURSED_ISO, payablesRunId: 'PR-SEED-01' }
     }

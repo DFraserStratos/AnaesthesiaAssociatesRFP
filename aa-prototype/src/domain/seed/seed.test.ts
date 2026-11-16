@@ -7,7 +7,7 @@
 
 import { assigned, assignedLists } from '../../test/lists'
 import { describe, expect, it } from 'vitest'
-import { buildSeed, ANAE, HOSP, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
+import { buildSeed, ANAE, HOSP, INS, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
 import { conflictFactsFor, expectedConflicts, holidayIndex } from '../conflicts'
 import { ANAESTHETISTS } from './cast'
 import { RECURRING_BOOKINGS } from './recurringBookings'
@@ -16,6 +16,8 @@ import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
 import { feeFor } from '../billing/fee'
 import { contractRefusal, noContractRvg } from '../billing/contracts'
+import { isValidGstNumber, normaliseGstNumber } from '../billing/invoicePresentation'
+import { resolveSplit } from '../billing/splitShare'
 import { billingReferenceMissing, validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
 import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
@@ -431,7 +433,7 @@ describe('patients & NHIs', () => {
 
 describe('design-day fees (the mockup figures, from the real calculator)', () => {
   const cases: Array<{ marker: string; total: number; units: number }> = [
-    { marker: 'twoFunderBooking', total: 212, units: 8 },
+    { marker: 'feeSplitBooking', total: 212, units: 8 },
   ]
 
   function feeForBooking(bookingId: string): { totals: number[]; unitSums: number[] } {
@@ -541,18 +543,55 @@ describe('scenario states', () => {
     }
   })
 
-  it('the two-funder booking passes conservation via validateBookingForBilling', () => {
-    const marker = SEED_MARKERS['twoFunderBooking']
+  it('the fee-split booking is valid, on No contract · RVG with no stored lines, its split resolving to $132.50 and $79.50', () => {
+    const marker = SEED_MARKERS['feeSplitBooking']
     if (marker === undefined) throw new Error('marker missing')
     const booking = seed.schedule.bookings[marker.entityId]
     if (booking === undefined) throw new Error('booking missing')
-    const failures = validateBookingForBilling(booking, proceduresForBooking(seed, booking.id), billingContextFor(seed, booking))
+    const procedures = proceduresForBooking(seed, booking.id)
+    const failures = validateBookingForBilling(booking, procedures, billingContextFor(seed, booking))
     expect(failures).toEqual([])
-    const lines = Object.values(seed.schedule.billingLines).filter(
-      (l) => proceduresForBooking(seed, booking.id).some((p) => p.id === l.procedureId),
-    )
-    expect(lines.some((l) => l.funderOverride !== undefined)).toBe(true)
-    expect(lines.length).toBe(2)
+    expect(procedures).toHaveLength(1)
+    const procedure = procedures[0]!
+    expect(procedure.governingContractId).toBe(noContractRvg(seed.masters.contracts).id)
+    expect(Object.values(seed.schedule.billingLines).filter((l) => l.procedureId === procedure.id)).toEqual([])
+    expect(procedure.split).toEqual({
+      shares: [
+        { party: { kind: 'insurer', id: INS.nib }, basis: { kind: 'amount', amountExGst: 132.5 } },
+        { party: { kind: 'patient', id: booking.patientId }, basis: { kind: 'rest' } },
+      ],
+    })
+    const resolved = resolveSplit(212, procedure.split!.shares)
+    expect(resolved.ok && resolved.amounts.map((a) => a.amountExGst)).toEqual([132.5, 79.5])
+  })
+
+  it('no seeded billing line carries a funder, and no Contract holds a split or payment setting (catch-up Phase 22)', () => {
+    // Who pays is the Contract or the Procedure's split, never a line: no line carries a funder key.
+    for (const line of Object.values(seed.schedule.billingLines)) {
+      expect(Object.keys(line).filter((k) => /funder/i.test(k)), line.id).toEqual([])
+    }
+    const keysOf = (value: unknown): string[] =>
+      value !== null && typeof value === 'object'
+        ? Object.entries(value as Record<string, unknown>).flatMap(([k, v]) => [k, ...keysOf(v)])
+        : []
+    for (const contract of Object.values(seed.masters.contracts)) {
+      expect(keysOf(contract).filter((k) => /split|paymentSetting/i.test(k)), contract.id).toEqual([])
+    }
+  })
+
+  it('exactly one seeded Procedure carries a split: the fee-split Booking', () => {
+    const split = Object.values(seed.schedule.procedures).filter((p) => p.split !== undefined)
+    expect(split.map((p) => p.bookingId)).toEqual([SEED_MARKERS['feeSplitBooking']?.entityId])
+  })
+
+  it('every held anaesthetist GST number is valid and unique; Dr Strand holds none', () => {
+    const anaesthetists = Object.values(seed.masters.anaesthetists)
+    const held = anaesthetists.flatMap((a) => (a.gstNumber !== undefined ? [normaliseGstNumber(a.gstNumber)] : []))
+    expect(held.length).toBe(anaesthetists.length - 1)
+    for (const gst of held) expect(isValidGstNumber(gst), gst).toBe(true)
+    expect(new Set(held).size).toBe(held.length)
+    expect(seed.masters.anaesthetists[ANAE.strand]?.gstNumber).toBeUndefined()
+    expect(seed.masters.anaesthetists[ANAE.souter]?.gstNumber).toBe('104348211')
   })
 
   it("the seeded review Lists' non-cancelled bookings are completed and valid", () => {

@@ -1,7 +1,9 @@
 /**
  * Billing-run orchestration tests (Phase 08): wiring + idempotence, guards,
  * grouping, every seeded charge-basis exemplar (each pricing kind, rate x time,
- * two-funder, split pair, insured reimbursement, the COS surgeon-group holder),
+ * the fee split on the Booking, split pair, insured reimbursement, the COS
+ * surgeon-group holder), delivery stamped by the run and the office's Resend
+ * (catch-up Phase 22),
  * a Disabled Contract still billing and the "Needs a price" exception,
  * override + snapshot immunity, unique invoice numbers, the design-day live
  * path, system-sourced audit, the billedAt view effect and identity
@@ -9,22 +11,23 @@
  */
 
 import { completeAnswered } from '../test/completeAnswered'
+import { splitLineText } from '../domain/billing/splitShare'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { handoffListCases, markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
+import { handoffListCases, resendInvoice, retryBillingCase, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
 import { authoriseList, editProcedure, reassignBooking, submitList } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { addPriceRange, disableContract, editContract } from './contractActions'
 import { needsPriceMessage } from '../domain/billing/priceRanges'
 import { editAnaesthetist } from './mastersActions'
-import { setBillingLineAllocation } from './billingLineActions'
+import { setProcedureSplit } from './splitActions'
 import { advanceClockMinutes } from './clockActions'
 import { clockISO, type Actor } from './mutate'
 import { accpayInvoicesFor, invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
 import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, CONTRACT } from '../domain/seed'
 import { roundToCents } from '../domain/billing/money'
-import type { Invoice, InvoiceLine } from '../domain/types'
+import type { Invoice, InvoiceLine, Party } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -81,6 +84,24 @@ function invoicesForBooking(api: BoundAppStore, bookingId: string): Invoice[] {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
+/** The Procedure's invoice description: what its fee line prints (catch-up Phase 22). */
+function wordingOf(api: BoundAppStore, procedureId: string | undefined): string | undefined {
+  return procedureId !== undefined ? api.getState().schedule.procedures[procedureId]?.invoiceDescription?.text : undefined
+}
+
+/** Edit one holder Party in place (a direct state edit, as the Master data sheet would save it). */
+function patchParty(api: BoundAppStore, partyId: string, patch: (party: Party) => Party): void {
+  api.setState((s) => {
+    const party = s.masters.parties[partyId]
+    if (party === undefined) throw new Error(`missing party ${partyId}`)
+    return { masters: { ...s.masters, parties: { ...s.masters.parties, [partyId]: patch(party) } } }
+  })
+}
+
+function listBilledAudit(api: BoundAppStore, listId: string) {
+  return api.getState().audit.filter((a) => a.action === 'list.billed' && a.entityId === listId).at(-1)
+}
+
 describe('wiring and guards', () => {
   it('wireBillingRun makes authorise raise invoices; a second run is refused (idempotence)', () => {
     const api = store()
@@ -130,11 +151,17 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     billMorrison(api)
     const accInvoice = invoicesForBooking(api, marker('accRelatedBooking'))[0]
     expect(accInvoice).toBeDefined()
-    expect(linesOf(api, accInvoice!.id)[0]!.description).toContain('at $25.00 per unit')
+    // The holder's layout carries the BTM breakdown at the unit value charged; the line prints the invoice description.
+    const accLine = linesOf(api, accInvoice!.id)[0]!
+    expect(accLine.btm?.unitValue).toBe(25)
+    expect(accLine.amount).toBe(roundToCents(accLine.units! * 25))
+    expect(accLine.description).toBe(wordingOf(api, accLine.procedureId))
     const missingRefBookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
     const standardInvoice = invoicesForBooking(api, missingRefBookingId)[0]
     expect(standardInvoice).toBeDefined()
-    expect(linesOf(api, standardInvoice!.id)[0]!.description).toContain('at $35.00 per unit')
+    const standardLine = linesOf(api, standardInvoice!.id)[0]!
+    expect(standardLine.btm?.unitValue).toBe(35)
+    expect(standardLine.amount).toBe(roundToCents(standardLine.units! * 35))
   })
 
   it("once billed and handed to Xero, the ACC booking reads ACC from its Contract's tag, and only it (catch-up Phase 18a)", () => {
@@ -197,7 +224,10 @@ describe('charge bases and holders', () => {
     expect(invoices).toHaveLength(5)
     for (const inv of invoices) {
       expect(inv.counterparty).toEqual({ kind: 'hospital', id: HOSP.cph })
-      expect(linesOf(api, inv.id)[0]!.description).toContain('at $23.00 per unit')
+      const line = linesOf(api, inv.id)[0]!
+      expect(line.btm?.unitValue).toBe(23)
+      expect(line.amount).toBe(roundToCents(line.units! * 23))
+      expect(line.description).toBe(wordingOf(api, line.procedureId))
     }
   })
 
@@ -215,23 +245,31 @@ describe('charge bases and holders', () => {
     expect(linesOf(api, inv.id).map((l) => l.amount)).toEqual([2800, 61])
     expect(inv.subtotal).toBe(2861)
     expect(inv.total).toBe(3290.15)
-    expect(linesOf(api, inv.id)[1]!.description).toContain('time units only')
+    // The hernia: 2 time units at Dr Fitzgerald's $30.50, printed with its own invoice description.
+    const hernia = linesOf(api, inv.id)[1]!
+    expect(hernia.units).toBe(2)
+    expect(hernia.description).toBe(wordingOf(api, hernia.procedureId))
+    // The patient's layout carries no BTM breakdown.
+    expect(linesOf(api, inv.id).every((l) => l.btm === undefined)).toBe(true)
     // The payer's details are snapshotted with the debt.
     expect(inv.billedTo?.name).toBe('Gareth Mills')
   })
 
-  it('the rate x time booking bills hours x the agreed rate under the billableParty-held contract', () => {
+  it("the rate x time booking bills hours x the agreed rate under the billableParty-held contract, on the holder's layout", () => {
     const api = store()
     const bookingId = marker('rateTimeBooking')
     stageAndBill(api, listOf(api, bookingId))
     const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
     expect(invoice!.counterparty).toEqual({ kind: 'billableParty', id: BP.ariaClinic })
-    expect(invoice!.layout).toBe('patient')
+    // Catch-up Phase 22: the layout comes from the Contract, which bills its holder (it was the patient's by counterparty kind).
+    expect(invoice!.layout).toBe('contractHolder')
     const lines = linesOf(api, invoice!.id)
     expect(lines).toHaveLength(1)
+    // 3 hours at the agreed $480 an hour; the line prints the invoice description, and no BTM (not an RVG fee).
     expect(lines[0]!.amount).toBe(1440)
-    expect(lines[0]!.description).toContain('hours')
+    expect(lines[0]!.description).toBe(wordingOf(api, lines[0]!.procedureId))
+    expect(lines[0]!.btm).toBeUndefined()
   })
 
   it('the AIA claim booking is on No contract · RVG and bills the PATIENT at her anaesthetist rate (not the insurer)', () => {
@@ -243,7 +281,10 @@ describe('charge bases and holders', () => {
     const patientId = api.getState().schedule.bookings[bookingId]!.patientId
     expect(invoice!.counterparty).toEqual({ kind: 'patient', id: patientId })
     expect(invoice!.layout).toBe('patient')
-    expect(linesOf(api, invoice!.id)[0]!.description).toContain('at $32.00 per unit')
+    const line = linesOf(api, invoice!.id)[0]!
+    expect(line.amount).toBe(roundToCents(line.units! * 32))
+    expect(line.btm).toBeUndefined()
+    expect(line.description).toBe(wordingOf(api, line.procedureId))
   })
 
   it("the COS booking bills the surgeon group's organisation counterparty at its Contract's rate ($24/unit)", () => {
@@ -253,7 +294,9 @@ describe('charge bases and holders', () => {
     const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
     expect(invoice!.counterparty).toEqual({ kind: 'organisation', id: ORG.cos })
-    expect(linesOf(api, invoice!.id)[0]!.description).toContain('at $24.00 per unit')
+    const line = linesOf(api, invoice!.id)[0]!
+    expect(line.btm?.unitValue).toBe(24)
+    expect(line.amount).toBe(roundToCents(line.units! * 24))
   })
 })
 
@@ -267,10 +310,11 @@ describe('split billing', () => {
     expect(invoices[0]!.counterparty).toEqual({ kind: 'hospital', id: HOSP.forte })
     const lines = linesOf(api, invoices[0]!.id)
     expect(lines).toHaveLength(2)
-    // 30 minutes = 2 time units at Souter's $26.50.
-    expect(lines[1]!.description).toContain('time units only')
+    // 30 minutes = 2 time units at Souter's $26.50: time only.
+    expect(lines[1]!.description).toBe(wordingOf(api, lines[1]!.procedureId))
     expect(lines[1]!.units).toBe(2)
     expect(lines[1]!.amount).toBe(53)
+    expect(lines[1]!.btm).toMatchObject({ time: 2, unitValue: 26.5 })
   })
 
   it('different funders: moving the additional procedure to No contract · RVG bills the patient, TWO invoices (the §11 reading)', () => {
@@ -286,44 +330,68 @@ describe('split billing', () => {
     expect(patientInvoice).toBeDefined()
     expect(patientInvoice!.layout).toBe('patient')
     expect(patientInvoice!.subtotal).toBe(53)
-    expect(linesOf(api, patientInvoice!.id)[0]!.description).toContain('time units only')
+    expect(linesOf(api, patientInvoice!.id)[0]!).toMatchObject({ units: 2, amount: 53 })
   })
 
-  it('two funders, as seeded: the un-overridden line bills the procedure counterparty (St George)', () => {
+  it('the fee split as seeded: nib $132.50 on the holder layout, Alan Prentice the rest on the patient layout, linked (catch-up Phase 22)', () => {
     const api = store()
-    const bookingId = marker('twoFunderBooking')
-    stageAndBill(api, listOf(api, bookingId))
-    const invoices = invoicesForBooking(api, bookingId)
-    expect(invoices).toHaveLength(2)
-    const nib = invoices.find((i) => i.counterparty.kind === 'insurer')
-    const hospital = invoices.find((i) => i.counterparty.kind === 'hospital')
-    expect(nib?.counterparty).toEqual({ kind: 'insurer', id: INS.nib })
-    expect(nib?.subtotal).toBe(132.5)
-    expect(hospital?.counterparty).toEqual({ kind: 'hospital', id: HOSP.stg })
-    expect(hospital?.subtotal).toBe(79.5)
-  })
-
-  it('two funders, office-allocated to the patient: nib and patient invoices ($132.50 + $79.50)', () => {
-    const api = store()
-    const bookingId = marker('twoFunderBooking')
-    const patientId = api.getState().schedule.bookings[bookingId]!.patientId
+    const bookingId = marker('feeSplitBooking')
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
-    const plainLine = Object.values(api.getState().schedule.billingLines).find(
-      (l) => l.procedureId === proc.id && l.funderOverride === undefined,
-    )
-    expect(plainLine).toBeDefined()
-    const allocated = setBillingLineAllocation(api, OFFICE, plainLine!.id, {
-      funderOverride: { kind: 'patient', id: patientId },
-    })
-    expect(allocated.ok).toBe(true)
+    expect(proc.governingContractId).toBe(CONTRACT.noContractRvg)
     stageAndBill(api, listOf(api, bookingId))
     const invoices = invoicesForBooking(api, bookingId)
     expect(invoices).toHaveLength(2)
-    const patientInvoice = invoices.find((i) => i.counterparty.kind === 'patient')
-    expect(patientInvoice?.counterparty).toEqual({ kind: 'patient', id: patientId })
-    expect(patientInvoice?.subtotal).toBe(79.5)
-    expect(patientInvoice?.layout).toBe('patient')
-    expect(invoices.find((i) => i.counterparty.kind === 'insurer')?.subtotal).toBe(132.5)
+    const nib = invoices.find((i) => i.counterparty.kind === 'insurer')!
+    const alan = invoices.find((i) => i.counterparty.kind === 'patient')!
+    expect(nib).toMatchObject({ counterparty: { kind: 'insurer', id: INS.nib }, layout: 'contractHolder', subtotal: 132.5, total: 152.38, procedureIds: [proc.id] })
+    expect(alan).toMatchObject({ counterparty: { kind: 'patient', id: PAT.prentice }, layout: 'patient', subtotal: 79.5, total: 91.43, billedTo: { name: 'Alan Prentice' } })
+    expect(nib.split).toEqual({ procedureId: proc.id, feeExGst: 212, shareLabel: '$132.50', isRest: false })
+    expect(alan.split).toEqual({ procedureId: proc.id, feeExGst: 212, shareLabel: 'the rest', isRest: true })
+    const wording = wordingOf(api, proc.id)!
+    expect(linesOf(api, nib.id).map((l) => [l.description, l.amount])).toEqual([
+      [splitLineText(wording, 212, { kind: 'amount', amountExGst: 132.5 }), 132.5],
+    ])
+    expect(linesOf(api, alan.id).map((l) => [l.description, l.amount])).toEqual([[splitLineText(wording, 212, { kind: 'rest' }), 79.5]])
+    // Split lineage ids resolve to the real stored invoices.
+    const stored = api.getState().billing.invoices
+    expect(nib.lineage).toEqual([{ role: 'otherShareOfSplit', invoiceId: alan.id }])
+    expect(alan.lineage).toEqual([{ role: 'otherShareOfSplit', invoiceId: nib.id }])
+    for (const inv of [nib, alan]) {
+      for (const link of inv.lineage ?? []) expect(stored[link.invoiceId]?.bookingId).toBe(bookingId)
+    }
+  })
+
+  it('the office re-splits by percent before authorising: 50% to nib, the rest to Alan ($106 + $106)', () => {
+    const api = store()
+    const bookingId = marker('feeSplitBooking')
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
+    const resplit = setProcedureSplit(api, OFFICE, bookingId, proc.id, {
+      shares: [
+        { party: { kind: 'insurer', id: INS.nib }, basis: { kind: 'percent', percent: 50 } },
+        { party: { kind: 'patient', id: PAT.prentice }, basis: { kind: 'rest' } },
+      ],
+    })
+    expect(resplit.ok).toBe(true)
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
+    expect(invoices.map((i) => [i.counterparty.kind, i.subtotal])).toEqual([
+      ['insurer', 106],
+      ['patient', 106],
+    ])
+    expect(invoices[0]!.split?.shareLabel).toBe('50%')
+  })
+
+  it("removing the split bills the whole fee to the Contract's party: one invoice to Alan Prentice for $212", () => {
+    const api = store()
+    const bookingId = marker('feeSplitBooking')
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
+    expect(setProcedureSplit(api, OFFICE, bookingId, proc.id, null).ok).toBe(true)
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
+    expect(invoices).toHaveLength(1)
+    expect(invoices[0]).toMatchObject({ counterparty: { kind: 'patient', id: PAT.prentice }, layout: 'patient', subtotal: 212 })
+    expect(invoices[0]!.split).toBeUndefined()
+    expect(invoices[0]!.lineage).toBeUndefined()
   })
 })
 
@@ -337,7 +405,7 @@ describe('contract lifecycle at billing time', () => {
     expect(invoices).toHaveLength(5)
     for (const inv of invoices) {
       // Still the Health NZ $23 rate, billed to Christchurch Public.
-      expect(linesOf(api, inv.id)[0]!.description).toContain('at $23.00 per unit')
+      expect(linesOf(api, inv.id)[0]!.btm?.unitValue).toBe(23)
       expect(inv.counterparty).toEqual({ kind: 'hospital', id: HOSP.cph })
     }
   })
@@ -415,21 +483,135 @@ describe('invoice identity and delivery', () => {
     }
   })
 
-  it('markInvoiceEmailed: office stamps + audits once; anaesthetist refused; insurer invoices go via the portal', () => {
+  it('every invoice of an authorised List carries its delivery, stamped at the clock time by the run', () => {
     const api = store()
     stageAndBill(api, MORRISON_LIST)
-    const hospitalInvoice = invoicesForList(api.getState(), MORRISON_LIST)[0]!
-    expect(markInvoiceEmailed(api, SOUTER, hospitalInvoice.id)).toMatchObject({ ok: false, code: 'officeOnly' })
-    expect(markInvoiceEmailed(api, OFFICE, hospitalInvoice.id).ok).toBe(true)
-    const stamped = api.getState().billing.invoices[hospitalInvoice.id]!
-    expect(stamped.emailedAtISO).toBe(clockISO(api.getState().clock))
-    expect(api.getState().audit.filter((a) => a.action === 'invoice.email' && a.entityId === hospitalInvoice.id)).toHaveLength(1)
-    expect(markInvoiceEmailed(api, OFFICE, hospitalInvoice.id)).toMatchObject({ ok: false, code: 'alreadyEmailed' })
+    const atISO = clockISO(api.getState().clock)
+    const invoices = invoicesForList(api.getState(), MORRISON_LIST)
+    expect(invoices).toHaveLength(6)
+    for (const inv of invoices) {
+      expect(inv.delivery).toEqual({ method: 'email', status: 'sent', sends: [{ atISO, to: 'accounts@stgeorges.example', by: 'Billing run' }] })
+      expect(api.getState().audit.filter((a) => a.action === 'invoice.sent' && a.entityId === inv.id)).toHaveLength(1)
+    }
+    expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ invoiceCount: 6, exceptionCount: 0, sentCount: 6, toPostCount: 0, notSentCount: 0 })
+  })
 
-    const twoFunderBooking = marker('twoFunderBooking')
-    stageAndBill(api, listOf(api, twoFunderBooking))
-    const nibInvoice = invoicesForBooking(api, twoFunderBooking).find((i) => i.counterparty.kind === 'insurer')!
-    expect(markInvoiceEmailed(api, OFFICE, nibInvoice.id)).toMatchObject({ ok: false, code: 'uploadPortal' })
+  it('a postal-only payer is marked to post: the Whitcombe Family Trust on the payer review List', () => {
+    const api = store()
+    const listId = SEED_LIST_IDS.payerReview
+    expect(api.getState().schedule.lists[listId]?.state).toBe('SUBMITTED')
+    expect(api.getState().schedule.bookings['BK0172']?.listId).toBe(listId)
+    stageAndBill(api, listId)
+    const atISO = clockISO(api.getState().clock)
+    const trust = invoicesForBooking(api, 'BK0172')
+    expect(trust).toHaveLength(1)
+    expect(trust[0]).toMatchObject({ counterparty: { kind: 'payer' }, billedTo: { name: 'Whitcombe Family Trust' } })
+    expect(trust[0]!.delivery).toEqual({ method: 'post', status: 'toPost', address: ['PO Box 13245', 'Christchurch 8141'], markedAtISO: atISO })
+    expect(api.getState().audit.filter((a) => a.action === 'invoice.toPost' && a.entityId === trust[0]!.id)).toHaveLength(1)
+    const after = listBilledAudit(api, listId)?.after as { invoiceCount: number; sentCount: number; toPostCount: number; notSentCount: number }
+    expect(after.toPostCount).toBe(1)
+    expect(after.sentCount + after.toPostCount + after.notSentCount).toBe(after.invoiceCount)
+  })
+
+  it("a holder Party set to post has its invoices marked to post at its postal address", () => {
+    const api = store()
+    patchParty(api, 'PY-STG', (p) => ({ ...p, deliveryMethod: 'post', postalAddress: 'PO Box 4321, Christchurch 8140' }))
+    stageAndBill(api, MORRISON_LIST)
+    const atISO = clockISO(api.getState().clock)
+    for (const inv of invoicesForList(api.getState(), MORRISON_LIST)) {
+      expect(inv.delivery).toEqual({ method: 'post', status: 'toPost', address: ['PO Box 4321, Christchurch 8140'], markedAtISO: atISO })
+    }
+    expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ sentCount: 0, toPostCount: 6, notSentCount: 0 })
+  })
+
+  it("a Party with no email raises its invoices with no address, never failing the Booking", () => {
+    const api = store()
+    patchParty(api, 'PY-STG', (p) => {
+      const { email: _email, ...rest } = p
+      return rest
+    })
+    const result = stageAndBill(api, MORRISON_LIST)
+    expect(result.exceptions).toEqual([])
+    const invoices = invoicesForList(api.getState(), MORRISON_LIST)
+    expect(invoices).toHaveLength(6)
+    for (const inv of invoices) {
+      expect(inv.delivery).toEqual({ method: 'email', status: 'noAddress' })
+      expect(api.getState().billing.cases[inv.caseReference]?.status).toBe('invoiced')
+      expect(api.getState().audit.filter((a) => a.action === 'invoice.notSent' && a.entityId === inv.id)).toHaveLength(1)
+    }
+    expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ sentCount: 0, toPostCount: 0, notSentCount: 6 })
+  })
+
+  it("another payer on the Booking is emailed at the payer's address: Grace Park's Booking to Hana Park", () => {
+    const api = store()
+    const bookingId = 'BK0033'
+    const booking = api.getState().schedule.bookings[bookingId]!
+    expect(booking.payer).toMatchObject({ kind: 'other', name: 'Hana Park', email: 'hana.park@example.net' })
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
+    expect(editProcedure(api, OFFICE, proc.id, { anaestheticStartISO: '2026-07-24T08:00:00', handoverISO: '2026-07-24T09:00:00' }).ok).toBe(true)
+    expect(completeAnswered(api, OFFICE, bookingId).ok).toBe(true)
+    stageAndBill(api, booking.listId)
+    const invoices = invoicesForBooking(api, bookingId)
+    expect(invoices).toHaveLength(1)
+    expect(invoices[0]).toMatchObject({ counterparty: { kind: 'payer' }, billedTo: { name: 'Hana Park', email: 'hana.park@example.net' }, layout: 'patient' })
+    expect(invoices[0]!.delivery).toMatchObject({ method: 'email', status: 'sent', sends: [{ to: 'hana.park@example.net', by: 'Billing run' }] })
+  })
+
+  it('resendInvoice: office only; a second send is appended to the history, audited invoice.resend', () => {
+    const api = store()
+    stageAndBill(api, MORRISON_LIST)
+    const invoice = invoicesForList(api.getState(), MORRISON_LIST)[0]!
+    const runAt = clockISO(api.getState().clock)
+    expect(resendInvoice(api, SOUTER, invoice.id)).toMatchObject({ ok: false, code: 'officeOnly' })
+    advanceClockMinutes(api, 30)
+    const resendAt = clockISO(api.getState().clock)
+    expect(resendInvoice(api, OFFICE, invoice.id).ok).toBe(true)
+    expect(resendInvoice(api, OFFICE, invoice.id, { to: 'payables@stgeorges.example' }).ok).toBe(true)
+    expect(api.getState().billing.invoices[invoice.id]!.delivery).toEqual({
+      method: 'email',
+      status: 'sent',
+      sends: [
+        { atISO: runAt, to: 'accounts@stgeorges.example', by: 'Billing run' },
+        { atISO: resendAt, to: 'accounts@stgeorges.example', by: 'Kirsty W.' },
+        { atISO: resendAt, to: 'payables@stgeorges.example', by: 'Kirsty W.' },
+      ],
+    })
+    const audit = api.getState().audit.filter((a) => a.action === 'invoice.resend' && a.entityId === invoice.id)
+    expect(audit).toHaveLength(2)
+    expect(audit[1]).toMatchObject({ who: 'Kirsty W.', before: { delivery: 'sent' }, after: { to: 'payables@stgeorges.example', atISO: resendAt } })
+    // A malformed address is refused and nothing is appended.
+    expect(resendInvoice(api, OFFICE, invoice.id, { to: 'not an email' })).toMatchObject({ ok: false, code: 'emailInvalid' })
+    expect(api.getState().billing.invoices[invoice.id]!.delivery).toMatchObject({ sends: { length: 3 } })
+  })
+
+  it('resendInvoice recovers an invoice raised with no address, and one marked to post, once an address is typed', () => {
+    const api = store()
+    patchParty(api, 'PY-STG', (p) => {
+      const { email: _email, ...rest } = p
+      return rest
+    })
+    stageAndBill(api, MORRISON_LIST)
+    const [first, second] = invoicesForList(api.getState(), MORRISON_LIST)
+    expect(first!.delivery?.status).toBe('noAddress')
+    // No address to resend to until one is typed.
+    expect(resendInvoice(api, OFFICE, first!.id)).toMatchObject({ ok: false, code: 'noAddress' })
+    expect(resendInvoice(api, OFFICE, first!.id, { to: 'accounts@stgeorges.example' }).ok).toBe(true)
+    expect(api.getState().billing.invoices[first!.id]!.delivery).toEqual({
+      method: 'email',
+      status: 'sent',
+      sends: [{ atISO: clockISO(api.getState().clock), to: 'accounts@stgeorges.example', by: 'Kirsty W.' }],
+    })
+    expect(api.getState().audit.filter((a) => a.action === 'invoice.resend' && a.entityId === first!.id)[0]?.before).toEqual({ delivery: 'noAddress' })
+    // The others stay as raised.
+    expect(api.getState().billing.invoices[second!.id]!.delivery?.status).toBe('noAddress')
+
+    const post = store()
+    stageAndBill(post, SEED_LIST_IDS.payerReview)
+    const trust = invoicesForBooking(post, 'BK0172')[0]!
+    expect(trust.delivery?.status).toBe('toPost')
+    expect(resendInvoice(post, OFFICE, trust.id)).toMatchObject({ ok: false, code: 'noAddress' })
+    expect(resendInvoice(post, OFFICE, trust.id, { to: 'trustees@whitcombe.example' }).ok).toBe(true)
+    expect(post.getState().billing.invoices[trust.id]!.delivery).toMatchObject({ method: 'email', status: 'sent', sends: [{ to: 'trustees@whitcombe.example' }] })
   })
 })
 
@@ -470,18 +652,34 @@ describe('review-pass hardening (8th review)', () => {
     }
   })
 
-  it('a stale funder allocation fails the booking for review instead of billing silently short', () => {
+  it('a split that no longer fits the fee fails the booking for review instead of billing a guess; the retry stamps delivery', () => {
     const api = store()
-    const bookingId = marker('twoFunderBooking')
-    // The $132.50/$79.50 split conserved against 8 units at $26.50; a rate
-    // change after completion makes it stale.
-    expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 30 }).ok).toBe(true)
+    const bookingId = marker('feeSplitBooking')
+    // nib's typed $132.50 fitted 8 units at $26.50 ($212); at $15 the fee is $120, leaving nothing for the rest.
+    expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 15 }).ok).toBe(true)
     const result = stageAndBill(api, listOf(api, bookingId))
     const exception = result.exceptions.find((e) => e.bookingId === bookingId)
-    expect(exception).toMatchObject({ code: 'allocationStale' })
+    expect(exception).toMatchObject({ code: 'splitDoesNotFit' })
     expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
     const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === bookingId)
-    expect(failed?.failure?.message).toContain('$212.00')
+    expect(failed?.failure?.message).toContain('$120.00')
+
+    // The rate is put back; the office retries and both shares are raised and sent at the clock time.
+    expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 26.5 }).ok).toBe(true)
+    advanceClockMinutes(api, 15)
+    const retried = retryBillingCase(api, OFFICE, failed!.id)
+    expect(retried.ok).toBe(true)
+    const atISO = clockISO(api.getState().clock)
+    const invoices = invoicesForBooking(api, bookingId)
+    expect(invoices.map((i) => [i.counterparty.kind, i.total])).toEqual([
+      ['insurer', 152.38],
+      ['patient', 91.43],
+    ])
+    for (const inv of invoices) {
+      expect(inv.raisedAtISO).toBe(atISO)
+      expect(inv.delivery).toMatchObject({ method: 'email', status: 'sent', sends: [{ atISO, by: 'Billing run' }] })
+    }
+    expect(invoices[0]!.lineage).toEqual([{ role: 'otherShareOfSplit', invoiceId: invoices[1]!.id }])
   })
 
   it('a Contract governing booked procedures is never deleted: it is disabled and still there at billing time', () => {
@@ -506,12 +704,10 @@ describe('review-pass hardening (8th review)', () => {
     expect(invoicesForList(api.getState(), MORRISON_LIST)).toHaveLength(5)
   })
 
-  it('insurer invoices refuse email on the intrinsic fact before the role check', () => {
+  it('resend checks the invoice before the role: an unknown invoice is notFound for anyone', () => {
     const api = store()
-    const bookingId = marker('twoFunderBooking')
-    stageAndBill(api, listOf(api, bookingId))
-    const nib = invoicesForBooking(api, bookingId).find((i) => i.counterparty.kind === 'insurer')!
-    expect(markInvoiceEmailed(api, SOUTER, nib.id)).toMatchObject({ ok: false, code: 'uploadPortal' })
+    expect(resendInvoice(api, SOUTER, 'INV-nope')).toMatchObject({ ok: false, code: 'notFound' })
+    expect(resendInvoice(api, OFFICE, 'INV-nope')).toMatchObject({ ok: false, code: 'notFound' })
   })
 })
 

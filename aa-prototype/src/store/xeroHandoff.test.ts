@@ -80,10 +80,23 @@ describe('Xero handoff — the atomic pair', () => {
       expect(accPay.amountPayable).toBe(accRec.amountDue)
       expect(Object.keys(accPay).sort()).toEqual([
         'accRecId', 'amountAuthorised', 'amountDisbursed', 'amountPayable', 'anaesthetistId',
-        'contactId', 'id', 'invoiceNumber', 'issuedAtISO', 'reference', 'status',
+        'contactId', 'id', 'invoiceNumber', 'issuedAtISO', 'reference', 'status', 'taxInvoice',
       ])
       expect(accPay.amountAuthorised).toBe(0)
       expect(accPay.amountDisbursed).toBe(0)
+      // US-09.1.4 (provisional, OQ-29): the ACCPAY stands as the buyer-created tax invoice for its receivable.
+      expect(accPay.taxInvoice).toMatchObject({
+        kind: 'buyerCreated',
+        documentName: 'Buyer-created tax invoice',
+        supplierName: 'Dr Kate Morrison',
+        supplierGstNumber: '104254901',
+        agentName: 'Anaesthesia Associates Limited',
+        relatesToInvoiceNumber: invoice.invoiceNumber,
+        provisional: true,
+      })
+      expect(accPay.taxInvoice?.wording).toContain(`for services invoiced on ${invoice.invoiceNumber}.`)
+      const paired = api.getState().audit.filter((a) => a.entityId === c.id && a.action === 'xero.pairCreated').at(-1)
+      expect(paired?.after).toMatchObject({ accPayId: accPay.id, taxInvoiceProvisional: true })
     }
     // One ACCREC per case on this list (scoped — the seed pre-populates Xero).
     const listInvoiceIds = new Set(cases.map((c) => c.invoiceId))

@@ -17,7 +17,7 @@ export type WarningKind = 'beforeProcedure' | 'afterProcedure'
 export type WarningStrength = 'mild' | 'strong'
 
 /** Every registered rule. Phases 19, 21, 27 and 40 widen the union. */
-export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide' | 'childPayer' | 'approvalNumberMissing'
+export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide' | 'childPayer' | 'approvalNumberMissing' | 'splitDoesNotFit'
 
 /** The derived prepayment state a rule may read (the store's `prepaymentStatusFor`). */
 export type WarningPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
@@ -42,6 +42,12 @@ export interface WarningFacts {
   contracts?: Readonly<Record<string, Pick<Contract, 'billsTo'>>>
   /** The Parties (catch-up Phase 21): the Booking's funder's kind and name. Absent: `approvalNumberMissing` finds nothing. */
   parties?: Readonly<Record<string, Pick<Party, 'kind' | 'name'>>>
+  /**
+   * Each split Procedure's fee ex GST as the run would compute it (catch-up
+   * Phase 22), or null with no price yet, and whether every share's party can
+   * still be billed on the Booking. Absent: `splitDoesNotFit` finds nothing.
+   */
+  splits?: Readonly<Record<ProcedureId, { feeExGst: number | null; partiesOn: boolean }>>
 }
 
 export type WarningParams = Readonly<Record<string, number>>

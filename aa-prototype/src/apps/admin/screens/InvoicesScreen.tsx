@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import type { Invoice } from '../../../domain/types'
+import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
+import { Pill } from '../../../shared/ui'
 import type { Actor } from '../../../store'
 import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
@@ -20,7 +23,7 @@ const headCellStyle = adminHead()
 
 /**
  * The invoices raised by the billing run (Phase 08; B6). A table of every
- * invoice with its delivery status, a recently-billed strip, and an inline
+ * invoice with how the run delivered it (emailed, to post, or no address), a recently-billed strip, and an inline
  * document view — inline rather than a dialog, because the print stylesheet
  * isolates the `.aa-invoice-doc` node and a fixed-position Dialog ancestor
  * would break `position: absolute` print isolation.
@@ -74,7 +77,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
             <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> All invoices
           </button>
         </div>
-        <InvoiceDocument invoiceId={selectedInvoiceId} actor={actor} />
+        <InvoiceDocument key={selectedInvoiceId} invoiceId={selectedInvoiceId} actor={actor} />
       </div>
     )
   }
@@ -84,9 +87,9 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Invoices</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 720 }}>
-          Raised by the billing run when a list is authorised. Procedures billed to the same counterparty share one
-          invoice per Booking; where funders differ, separate invoices are raised, one per funder. This reading of the
-          RFP split billing wording is held as a discovery question.
+          Raised and sent by the billing run when a list is authorised: one invoice per billable party per Booking, and
+          one per share where a procedure&apos;s fee is split on the Booking. Each is emailed, or marked to post, as its
+          party&apos;s delivery says.
         </div>
       </div>
 
@@ -129,7 +132,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1380 }}>
             <thead>
               <tr>
-                {['Number', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Status', ''].map((h, i) => (
+                {['Number', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Delivery', ''].map((h, i) => (
                   <th
                     key={h === '' ? 'view' : h}
                     style={{
@@ -207,17 +210,16 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   </td>
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{list !== undefined ? dayMicroCap(list.dateISO) : '·'}</td>
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dateTimeMicroCap(invoice.raisedAtISO)}</td>
-                  <td style={cellStyle}>{invoiceAddresseeName({ masters, schedule, billing }, invoice)}</td>
-                  <td style={cellStyle}>{invoice.layout === 'patient' ? 'Patient' : 'Party'}</td>
+                  <td style={cellStyle}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      {invoiceAddresseeName({ masters, schedule, billing }, invoice)}
+                      {invoice.split !== undefined && <Pill size="sm" shot="invoice-list-split">Split</Pill>}
+                    </span>
+                  </td>
+                  <td style={cellStyle}>{layoutShortLabel(invoice.layout)}</td>
                   <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatCurrency(invoice.total)}</td>
                   <td style={cellStyle}>
-                    {invoice.counterparty.kind === 'insurer' ? (
-                      <StatusPill tone="warn" text="Upload portal" />
-                    ) : invoice.emailedAtISO !== undefined ? (
-                      <StatusPill tone="ok" text={`Emailed ${hhmm(invoice.emailedAtISO)}`} />
-                    ) : (
-                      <StatusPill text="Not emailed" />
-                    )}
+                    <DeliveryPill invoice={invoice} />
                   </td>
                   <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
                     <button onClick={() => onSelect(invoice.id)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -235,16 +237,13 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   )
 }
 
-function StatusPill({ text, tone }: { text: string; tone?: 'ok' | 'warn' }) {
-  const colours =
-    tone === 'ok'
-      ? { background: semantic.success.tint, color: semantic.success.onTint }
-      : tone === 'warn'
-        ? { background: semantic.warning.tint, color: semantic.warning.onTint }
-        : { background: neutral.sunken, color: neutral.slate }
+/** The invoice's delivery as the run stamped it (catch-up Phase 22; FT-08.4), on U3's `Pill`. */
+function DeliveryPill({ invoice }: { invoice: Invoice }) {
+  const label = invoiceDeliveryLabel(invoice.delivery)
+  const text = label.short
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '3px 9px', whiteSpace: 'nowrap', ...colours }}>
+    <Pill tone={label.tone} shot="invoice-list-delivery" data-delivery={invoice.delivery?.status ?? 'none'} title={label.text} style={{ whiteSpace: 'nowrap' }}>
       {text}
-    </span>
+    </Pill>
   )
 }

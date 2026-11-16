@@ -33,6 +33,7 @@
  * One `mutate`, `source:'system'` audit (`xero.contactResolved`, `xero.pairCreated`).
  */
 
+import { buyerCreatedTaxInvoiceFor, supplierFor } from '../domain/billing/invoicePresentation'
 import type { Anaesthetist, Booking, CounterpartyRef, XeroContact } from '../domain/types'
 import { xeroIndividualContactName } from '../domain/xeroContact'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -284,6 +285,8 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
       amountAuthorised: 0,
       amountDisbursed: 0,
       status: 'draft',
+      // The ACCPAY stands as the buyer-created tax invoice (US-09.1.4; provisional, OQ-29): one per receivable, the same value.
+      taxInvoice: buyerCreatedTaxInvoiceFor(invoice, supplierFor(anaesthetist)),
     }
     // Clear any prior handoff fault on success (a resolved-and-retried case).
     const updated = { ...existing, accRecId: xr.id, accPayId: xp.id, status: 'handedOff' as const }
@@ -303,6 +306,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
         payeeContactId: payee.contactId,
         amountDue: invoice.total,
         amountPayable: invoice.total,
+        taxInvoiceProvisional: true,
       },
     })
 

@@ -6,14 +6,15 @@
     {
       "name": "invoice-gst",
       "app": "admin",
-      "caption": "Invoice with GST exclusive amounts, GST and the inclusive total",
+      "caption": "Every price held GST exclusive, with GST added at the foot of the invoice",
       "start": "/admin/invoices/INV0001",
       "states": [
         {
           "steps": [],
           "highlight": [
             ".aa-invoice-doc div:has(> span:text-is(\"Subtotal\"))",
-            ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))"
+            ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))",
+            "[data-shot=invoice-gst-caption]"
           ]
         }
       ]

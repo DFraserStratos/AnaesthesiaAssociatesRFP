@@ -77,6 +77,7 @@ import {
 } from './admin/storeExamples'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerDetailsExample, PayerFieldsExample } from './payerExamples'
+import { PaidByRowExample, PartyPickerExample } from './splitExamples'
 
 const A = 'Admin'
 const AW = 'Admin · Web'
@@ -326,6 +327,12 @@ export function AdminCatalogue() {
         <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={AWM} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None, the patient pays; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
           <FunderDetailsExample />
         </CatalogueRow>
+        <CatalogueRow name="PartyPicker" source="shared/booking/PartyPicker.tsx" usedIn={AWM} what="Choose who an invoice goes to (catch-up Phase 22): the payer on the Booking and the Contract's party first, then every Party, searchable by name. The Split sheet's party field; Phases 38b, 39 and 39b reuse it." replaceWith="shadcn Combobox (Popover and Command)" note="Fixed options on local state; nothing writes to the demo data.">
+          <PartyPickerExample />
+        </CatalogueRow>
+        <CatalogueRow name="PaidByRow (with SplitFeeSheet)" source="shared/booking/PaidByRow.tsx, shared/flows/SplitFeeSheet.tsx" usedIn={AWM} what="Paid by in the Billing card (catch-up Phase 22, US-08.2.3; owner review 2026-11-17): who the fee is invoiced to, or its split; a split that no longer fits reads in the warning tint. On web and Admin a line at the card's foot with Split or Change; on the phone the Billing summary's fourth row, its own tap target. It opens SplitFeeSheet: a party, a $ or % share and Takes the rest per row, each amount live, Save split and Remove split." replaceWith="Custom (shadcn Sheet and Input inside)" note="Read-only examples over fixed views; the sheet opens on a real Booking.">
+          <PaidByRowExample variant="line" />
+        </CatalogueRow>
         <CatalogueRow name="DayGrid" source="apps/admin/components/DayGrid.tsx" usedIn={A} what={`The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the ${DRAFT_LIST} band and the filter footer. Cut down to 10 rows.`} replaceWith="Custom on primitives (grid roles, Tooltip, TanStack Virtual)" note="Blocks open the real SlotDrawer, and its actions write to the demo store." height={620}>
           <DayGridExample />
         </CatalogueRow>
@@ -341,7 +348,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Billing pipeline stepper (PipelineCard)" source="apps/admin/screens/BillingMonitorScreen.tsx" usedIn={A} what="Each billed List's stages (authorised, run, invoices, emailed, Xero) as tinted chips joined by arrows." replaceWith="Custom on shadcn Badge + Tooltip" note="Not exported, and the real screen's AA fee link leaves the page: rebuilt from StageChip, fed by the real billingMonitor selector. Chips are buttons here so the detail can be shown.">
           <PipelineStepperExample />
         </CatalogueRow>
-        <CatalogueRow name="InvoiceDocument" source="apps/admin/screens/InvoiceDocument.tsx" usedIn={A} what="The invoice as a print-styled document (patient or insurer layout, serif voice) with its info rail. Shown at half size." replaceWith="Custom (print-styled page)" note="Keep it out of a fixed Dialog for print isolation. Its rail actions write to the demo store." height={520}>
+        <CatalogueRow name="InvoiceDocument" source="apps/admin/screens/InvoiceDocument.tsx" usedIn={A} what="The invoice as a print-styled document (serif voice): the anaesthetist as supplier with their GST number, AA's agent block with the Provisional (OQ-29) pill, the holder's or the patient's layout (the BTM breakdown, cross-match strip and Your reference on the holder's), a split share's note, GST at the foot, and its rail: the Delivery card (Emailed, To post or No invoice address, with Resend or Send), Related invoices and the Xero handoff. Shown at half size." replaceWith="Custom (print-styled page)" note="Keep it out of a fixed Dialog for print isolation. Its rail actions write to the demo store." height={520}>
           <InvoiceDocumentExample />
         </CatalogueRow>
         <CatalogueRow name="AnaesthetistCandidates" source="apps/admin/components/pairing/AnaesthetistCandidates.tsx" usedIn={A} what="The ranked anaesthetist picker: a name search, a tier filter and tiered, shuffled-within-tier rows." replaceWith="Custom on Base UI Combobox / listbox" note="Ranking is a domain rule; adds listbox semantics and arrow keys." height={420}>

@@ -82,7 +82,7 @@ async function waitForPersistedCaseOfOpenInvoice(page: Page): Promise<void> {
     .toBe(true)
 }
 
-test('authorise raises invoices; contract-holder document + email + print', async ({ page }) => {
+test('authorise raises and sends invoices; contract-holder document, Resend and print', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
@@ -97,9 +97,9 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
   await page.waitForTimeout(400)
 
-  // The run is synchronous: the banner counts the raised invoices.
+  // The run is synchronous and sends each invoice (catch-up Phase 22): the banner counts them.
   await expect(page.getByText('List authorised · locked for billing')).toBeVisible()
-  await expect(page.getByText(/6 invoices raised by the billing run/)).toBeVisible()
+  await expect(page.locator('[data-shot="review-delivery-summary"]')).toHaveText(/^6 invoices raised\. \d+ emailed, \d+ to post\./)
   await page.screenshot({ path: 'visual/shots/a8-01-authorised-banner.png', fullPage: true })
 
   // Jump to the Invoices section.
@@ -140,8 +140,14 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await page.waitForTimeout(300)
   await expect(page.getByText('TAX INVOICE')).toBeVisible()
   await expect(page.getByText('Attn: Accounts')).toBeVisible()
-  await expect(page.getByText(/Billed by Anaesthesia Associates as agent for/)).toBeVisible()
+  // Issued in the anaesthetist's name with AA as agent (US-08.4.5; provisional, OQ-29).
+  await expect(page.locator('[data-shot="invoice-supplier"]')).toContainText('Dr Kate Morrison')
+  await expect(page.locator('[data-shot="invoice-supplier"]')).toContainText(/GST number \d{3}-\d{3}-\d{3}/)
+  await expect(page.locator('[data-shot="invoice-agent-block"]')).toContainText(/Issued by Anaesthesia Associates Limited as agent for Dr Kate Morrison\. AA GST number/)
+  await expect(page.locator('[data-shot="invoice-agent-block"]')).toContainText('Provisional (OQ-29)')
   await expect(page.getByText('GST (15%)')).toBeVisible()
+  await expect(page.locator('[data-shot="invoice-gst-caption"]')).toHaveText('Prices are held GST exclusive. GST is added at the foot of the invoice.')
+  await expect(page.getByRole('button', { name: /^Email inv/ })).toHaveCount(0)
 
   // Desktop composition: a centred 760px document + 24px gap + 264px sticky rail.
   const detailLayout = await page.getByTestId('invoice-detail-workspace').evaluate((workspace) => {
@@ -174,7 +180,10 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   expect(detailLayout.railPosition).toBe('sticky')
   expect(detailLayout.railTop).toBe('24px')
 
-  const emailBox = await page.getByRole('button', { name: 'Email invoice' }).boundingBox()
+  // The run already emailed it: the Delivery card says where, with Resend beside Print.
+  await expect(page.locator('[data-shot="invoice-delivery"]')).toContainText(/Emailed to \S+@\S+ at \d{2}:\d{2}/)
+  await expect(page.getByText('Simulated send')).toBeVisible()
+  const emailBox = await page.getByRole('button', { name: 'Resend' }).boundingBox()
   const printBox = await page.getByRole('button', { name: 'Print' }).boundingBox()
   if (emailBox === null || printBox === null) throw new Error('Invoice action buttons are missing')
   expect(emailBox.height).toBeCloseTo(40, 0)
@@ -189,11 +198,6 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByTestId('xero-accpay-reference')).toHaveText(/AA-2026-\d{4}-P/)
   await page.screenshot({ path: 'visual/shots/a8-03-contract-holder-doc.png', fullPage: true })
 
-  // Email = mark emailed-at, demo-badged as a simulated send.
-  await page.getByRole('button', { name: 'Email invoice' }).click()
-  await page.waitForTimeout(300)
-  await expect(page.getByText('Simulated send')).toBeVisible()
-  await expect(page.getByText(/Emailed \d/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a8-04-emailed.png', fullPage: true })
 
   // Print isolation: in print media only the document is visible.
@@ -239,6 +243,10 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByTestId('xero-handoff-status')).toHaveText('Xero handoff pending')
   await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
   await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
+
+  // Resend appends a second send to the history (the office only resends).
+  await page.getByRole('button', { name: 'Resend' }).click()
+  await expect(page.getByTestId('invoice-send-history').locator('li')).toHaveCount(2)
 })
 
 test('the authorised design-day list leaves the mobile main view (catch-up Phase 38a: at AUTHORISED)', async ({ page }) => {
@@ -295,7 +303,7 @@ test('the authorised design-day list leaves the mobile main view (catch-up Phase
   await page.waitForTimeout(200)
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
   await page.waitForTimeout(400)
-  await expect(page.getByText(/4 invoices raised by the billing run/)).toBeVisible()
+  await expect(page.locator('[data-shot="review-delivery-summary"]')).toHaveText(/^4 invoices raised\./)
 
   // Authorised = gone from the anaesthetist's main view (catch-up Phase 38a; search still finds it).
   await page.goto('/mobile')
@@ -320,7 +328,7 @@ test('invoice rail keeps a failed Xero handoff visible and actionable', async ({
   await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
-  await expect(page.getByText(/6 invoices raised by the billing run/)).toBeVisible()
+  await expect(page.locator('[data-shot="review-delivery-summary"]')).toHaveText(/^6 invoices raised\./)
 
   // Resolve the invoice id from the persisted result of that real mechanism,
   // then open the ordinary routed invoice page. Polled, because the persist
@@ -337,7 +345,7 @@ test('invoice rail keeps a failed Xero handoff visible and actionable', async ({
   await expect(status.locator('xpath=ancestor::section')).toHaveCSS('background-color', 'rgb(249, 240, 220)')
 })
 
-test('exemplar staging via the guard console: patient layout + nib upload portal', async ({ page }) => {
+test('exemplar staging via the guard console: patient layout and the fee split', async ({ page }) => {
   await page.goto('/demo/data')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
@@ -361,7 +369,7 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
   await runGuard('Submit list', /2026-07-16 AM · Dr James Rutherford/)
   await runGuard('Authorise list', /2026-07-16 AM · Dr James Rutherford/)
 
-  // Two-funder exemplar (Souter Mon 20 PM): as seeded it splits nib + St George's.
+  // The fee-split exemplar (Souter Mon 20 PM): nib $132.50 and Alan Prentice the rest (catch-up Phase 22).
   await runGuard('Submit list', /2026-07-20 PM · Dr Melanie Souter/)
   await runGuard('Authorise list', /2026-07-20 PM · Dr Melanie Souter/)
 
@@ -372,8 +380,8 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
   await page.getByRole('button', { name: 'Invoices' }).first().click()
   await page.waitForTimeout(300)
 
-  // The nib line-split invoice presents via the upload portal, never email.
-  await expect(page.getByText('Upload portal').first()).toBeVisible()
+  // Both shares are emailed by the run (nib's Party delivers by email; no portal, D55).
+  await expect(page.getByText('Upload portal')).toHaveCount(0)
   const alanRows = page.getByTestId('invoice-list-table-shell').locator('tbody tr').filter({ hasText: 'Alan Prentice' })
   await expect(alanRows).toHaveCount(2)
   await expect(alanRows.locator('td:nth-child(3)')).toHaveText(['Dr Melanie Souter', 'Dr Melanie Souter'])
@@ -382,7 +390,9 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
     /St George's · PM.*Ms G\. Lim/,
   ])
   await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
-  expect((await alanRows.locator('td:nth-child(7)').allTextContents()).sort()).toEqual(["St George's", 'nib'])
+  expect((await alanRows.locator('td:nth-child(7)').allTextContents()).map((t) => t.replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
+  await expect(alanRows.locator('[data-shot="invoice-list-split"]')).toHaveCount(2)
+  await expect(alanRows.locator('[data-shot="invoice-list-delivery"]')).toHaveText([/^Emailed \d{2}:\d{2}$/, /^Emailed \d{2}:\d{2}$/])
   await page.screenshot({ path: 'visual/shots/a8-06-invoices-mixed.png', fullPage: true })
 
   // Open the patient-layout invoice: the AIA claim is No contract · RVG billed
@@ -396,8 +406,7 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
   await expect(page.getByText(/claim this invoice from your insurer/)).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
 
-  // Direct-claim insurer invoices keep the upload handoff honest: status and
-  // demo badge in the rail, Print available, and no invented portal action.
+  // nib's share: holder layout, emailed to nib, the split note linking Alan's share.
   await page.getByRole('button', { name: 'All invoices' }).click()
   const nibRow = page
     .getByTestId('invoice-list-table-shell')
@@ -407,9 +416,16 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
     .first()
   await nibRow.getByRole('button', { name: 'View →' }).click()
   const insurerRail = page.getByTestId('invoice-info-rail')
-  await expect(insurerRail.getByText('Present via nib upload portal')).toBeVisible()
-  await expect(insurerRail.getByText('Simulated portal handoff')).toBeVisible()
-  await expect(insurerRail.getByRole('button', { name: 'Email invoice' })).toHaveCount(0)
+  await expect(insurerRail.locator('[data-shot="invoice-delivery"]')).toContainText('Emailed to claims@nib.example')
+  await expect(insurerRail.getByText('Present via nib upload portal')).toHaveCount(0)
+  await expect(insurerRail.getByRole('button', { name: /^Email inv/ })).toHaveCount(0)
+  await expect(page.getByText('Attn: Accounts')).toBeVisible()
+  // The split is under No contract · RVG, which has no holder reference code to print.
+  await expect(page.locator('[data-shot="invoice-holder-reference"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="invoice-btm-breakdown"]')).toContainText('Base 4 + Time 4 + Modifiers 0 = 8 units at $26.50')
+  await expect(page.locator('[data-shot="invoice-cross-match"]')).toContainText('Surgeon')
+  await expect(page.locator('[data-shot="invoice-split-note"]')).toContainText('This fee of $212.00 is split. The other share is invoiced separately to Alan Prentice, AA-2026-')
+  await expect(page.locator('.aa-invoice-doc')).toContainText('$152.38')
   const insurerPrintBox = await insurerRail.getByRole('button', { name: 'Print' }).boundingBox()
   if (insurerPrintBox === null) throw new Error('Insurer Print action is missing')
   expect(insurerPrintBox.height).toBeCloseTo(40, 0)

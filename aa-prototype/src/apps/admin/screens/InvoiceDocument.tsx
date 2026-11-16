@@ -1,15 +1,30 @@
-import { Fragment, useMemo, useState } from 'react'
-import { invoiceLineGroups } from '../../../domain/billing/procedureStack'
+import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Printer, Mail, Upload, Clock } from 'lucide-react'
-import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
+import { Link } from 'react-router-dom'
+import { Printer, Mail, Clock, Send } from 'lucide-react'
+import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
-import { invoiceAddresseeName, invoiceLinesFor, markInvoiceEmailed, useAppStore } from '../../../store'
-import type { BillingCase, Invoice } from '../../../domain/types'
-import { GST_RATE, postalAddressLines, procedureRequiresPrepayment } from '../../../domain/billing'
+import { invoiceAddresseeName, invoiceLinesFor, resendInvoice, useAppStore } from '../../../store'
+import type { BillingCase, Invoice, InvoiceLineBtm } from '../../../domain/types'
+import {
+  GST_RATE,
+  GST_TREATMENT_CAPTION,
+  OQ122_PILL,
+  OQ29_CAPTION,
+  OQ29_PILL,
+  agentStatement,
+  btmBreakdownText,
+  formatMoney,
+  invoiceDeliveryLabel,
+  postalAddressLines,
+  procedureRequiresPrepayment,
+  splitNoteText,
+  supplierGstText,
+} from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
-import { dateTimeMicroCap, formatCurrency, hhmm } from '../../../shared/format'
-import { FormError } from '../../../shared/ui'
+import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
+import { dayWithYear } from '../../../domain/dateText'
+import { FormError, Notice, Pill, TextField } from '../../../shared/ui'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -17,13 +32,16 @@ interface InvoiceDocumentProps {
 }
 
 /**
- * The on-screen invoice document (Phase 08; B6). Two layouts by recipient
- * class — contract holder vs patient — with the RFP's agency wording on both
- * ("Agent" has a specific GST interpretation, so invoices go out from the
- * Billing Engine, not Xero). The patient layout reflects the Procedure's
- * prepaid Contract in its note (`patientInvoiceNote`). No design mockup covers an invoice,
- * so this extends the Design Language tokens: serif for the document voice,
- * mono for money, crimson only as the masthead identity.
+ * The on-screen invoice document (Phase 08; B6; catch-up Phase 22). Issued in
+ * the anaesthetist's name with their GST number, AA named as agent (US-08.4.5;
+ * provisional, OQ-29), laid out as its Contract says (US-08.4.1: the holder's
+ * layout carries the BTM breakdown, the cross-match strip and the Contract's
+ * holder reference code; the patient's neither), every price GST exclusive
+ * with GST at the foot (US-05.2.7). Everything printed is the run's snapshot
+ * on the invoice and its lines, never the live masters. The rail shows how the
+ * run sent it (US-08.4.2); the office only resends. No design mockup covers an
+ * invoice, so this extends the Design Language tokens: serif for the document
+ * voice, mono for money, crimson only as identity (the AA logo in the agent block).
  *
  * The `.aa-invoice-doc` node is what the print stylesheet isolates — the
  * information rail beside it never prints. NHI never appears here (D9).
@@ -59,11 +77,14 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const addressee = invoiceAddresseeName({ masters, schedule: { bookings: bookingsRecord } }, invoice)
 
   const isPatientLayout = invoice.layout === 'patient'
-  const isInsurerDirect = invoice.counterparty.kind === 'insurer'
-  // A grouped invoice can span procedures: list every distinct reference.
-  const billingReferences = [
-    ...new Set(procedures.map((p) => p.billingReference).filter((r): r is string => r !== undefined && r.trim() !== '')),
-  ]
+  // The supplier as at the run (catch-up Phase 22); an invoice from before it falls back to the List's anaesthetist.
+  const supplier = invoice.supplier ?? (anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name } : undefined)
+  // The split's other shares, by number and addressee (US-08.2.3).
+  const siblings = (invoice.lineage ?? [])
+    .map((l) => billing.invoices[l.invoiceId])
+    .filter((i): i is Invoice => i !== undefined)
+    .map((i) => ({ invoice: i, name: invoiceAddresseeName({ masters, schedule: { bookings: bookingsRecord } }, i) }))
+  const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
   // The Procedure on a prepaid Contract, if any (INTERIM until Phase 27): the
   // patient note's prepayment wording follows it (catch-up Phase 20).
   const prepaymentProc = procedures.find((p) =>
@@ -71,9 +92,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   )
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
-  function doEmail() {
-    const outcome = markInvoiceEmailed(useAppStore, actor, invoiceId)
+  function doSend(to?: string): boolean {
+    const outcome = resendInvoice(useAppStore, actor, invoiceId, to !== undefined ? { to } : {})
     setError(outcome.ok ? null : outcome.message)
+    return outcome.ok
   }
 
   const metaLabel = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: neutral.mist }
@@ -96,10 +118,15 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         className="aa-invoice-doc"
         style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
       >
-        {/* Masthead */}
+        {/* Masthead: the supplier, the anaesthetist (US-08.4.5) */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Logo height={26} />
+          <div data-shot="invoice-supplier" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontFamily: fontFamily.serif, fontSize: 21, color: neutral.ink }}>{supplier?.name ?? 'The anaesthetist'}</div>
+            {supplier !== undefined && (
+              <div className={supplier.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: neutral.slate }}>
+                {supplierGstText(supplier)}
+              </div>
+            )}
             <div style={{ fontSize: 11.5, color: neutral.slate }}>Christchurch · New Zealand</div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -115,8 +142,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{dateTimeMicroCap(invoice.raisedAtISO)}</div>
           </div>
           <div>
-            <div style={metaLabel}>Anaesthetist</div>
-            <div style={{ fontSize: 12.5, marginTop: 3 }}>{anaesthetist?.name ?? '·'}</div>
+            <div style={metaLabel}>Procedure date</div>
+            <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{procedureDateISO !== undefined ? dayWithYear(procedureDateISO) : '·'}</div>
           </div>
           <div>
             <div style={metaLabel}>Case reference</div>
@@ -129,11 +156,20 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={metaLabel}>Invoice to</div>
           <div style={{ fontSize: 15.5, fontWeight: 700 }}>{addressee}</div>
-          {!isPatientLayout && <div style={{ fontSize: 12.5, color: neutral.slate }}>Attn: Accounts</div>}
+          {!isPatientLayout && (
+            <div style={{ display: 'flex', gap: 16, fontSize: 12.5, color: neutral.slate }}>
+              <span>Attn: Accounts</span>
+              {invoice.holderReference !== undefined && (
+                <span data-shot="invoice-holder-reference">
+                  Your reference <span className="mono" style={{ color: neutral.ink }}>{invoice.holderReference}</span>
+                </span>
+              )}
+            </div>
+          )}
           {/* The payer's email, or postal address in NZ Post layout, as at the run (catch-up Phase 21). */}
           {invoice.billedTo !== undefined && (
             <div data-shot="invoice-billed-to" style={{ display: 'flex', flexDirection: 'column', gap: 1, fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>
-              {invoice.billedTo.email !== undefined && <span>{invoice.billedTo.email}</span>}
+              {invoice.billedTo.email !== undefined && <span className="mono" style={{ fontSize: 12 }}>{invoice.billedTo.email}</span>}
               {invoice.billedTo.email === undefined && invoice.billedTo.postalAddress !== undefined &&
                 postalAddressLines(invoice.billedTo.postalAddress).map((line) => <span key={line}>{line}</span>)}
             </div>
@@ -141,15 +177,31 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           {isPatientLayout && invoice.counterparty.kind === 'payer' && patient !== undefined && (
             <div style={{ fontSize: 12.5, color: neutral.slate }}>For the care of {patient.name}</div>
           )}
-          {!isPatientLayout && billingReferences.length > 0 && (
-            <div style={{ fontSize: 12.5, color: neutral.slate }}>
-              Reference <span className="mono">{billingReferences.join(' · ')}</span>
+        </div>
+
+        {/* AA as agent (US-08.4.5; provisional, OQ-29) */}
+        <div
+          data-shot="invoice-agent-block"
+          style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '12px 14px' }}
+        >
+          <Logo height={20} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+            <div data-shot="invoice-agency-line" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
+              {agentStatement(supplier?.name ?? 'the anaesthetist', invoice.agent)}
             </div>
-          )}
-          <div data-shot="invoice-agency-line" style={{ fontSize: 12.5, color: neutral.slate, fontStyle: 'italic' }}>
-            Billed by Anaesthesia Associates as agent for {anaesthetist?.name ?? 'the anaesthetist'}.
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <Pill size="sm" style={{ flex: 'none' }}>{OQ29_PILL}</Pill>
+              <span style={{ fontSize: 11, lineHeight: '16px', color: neutral.mist }}>{OQ29_CAPTION}</span>
+            </div>
           </div>
         </div>
+
+        {/* A split share's note (US-08.2.3): the other shares, each linked. */}
+        {invoice.split !== undefined && siblings.length > 0 && (
+          <div data-shot="invoice-split-note" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate, borderLeft: `3px solid ${neutral.lineStrong}`, padding: '2px 0 2px 12px' }}>
+            {splitNoteText(invoice.split.feeExGst, siblings.map((s) => ({ partyName: s.name, invoiceNumber: s.invoice.invoiceNumber })))}
+          </div>
+        )}
 
         {/* The patient note (patient layout only): prepayment wording when a
             Procedure is on a prepaid Contract, else payment on receipt. */}
@@ -169,27 +221,28 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             </tr>
           </thead>
           <tbody>
-            {/* One heading row per Procedure: its invoice description (catch-up Phase 20a, US-08.4.6). */}
-            {invoiceLineGroups(lines, proceduresRecord).map((group, gi) => (
-              <Fragment key={group.procedureId ?? `loose-${gi}`}>
-                {group.heading !== undefined && (
-                  <tr data-shot="invoice-procedure-heading">
-                    <td colSpan={3} style={{ ...docCell, fontWeight: 600, color: neutral.ink, paddingTop: gi === 0 ? undefined : 14 }}>
-                      {group.heading}
-                    </td>
-                  </tr>
-                )}
-                {group.lines.map((line) => (
-                  <tr key={line.id}>
-                    <td style={{ ...docCell, ...(group.heading !== undefined ? { paddingLeft: 18 } : {}) }}>{line.description}</td>
-                    <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.units ?? ''}</td>
-                    <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(line.amount)}</td>
-                  </tr>
-                ))}
-              </Fragment>
+            {/* Each line prints the Procedure's invoice description (US-08.4.1, US-08.4.6), as the run snapshotted it. */}
+            {lines.map((line) => (
+              <tr key={line.id} data-line-kind={line.kind ?? 'fee'}>
+                <td style={docCell}>
+                  <div>{line.description}</div>
+                  {line.btm !== undefined && <BtmBreakdown btm={line.btm} />}
+                </td>
+                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.units ?? ''}</td>
+                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(line.amount)}</td>
+              </tr>
             ))}
           </tbody>
         </table>
+
+        {/* The holder layout's cross-match strip (US-08.4.1). */}
+        {!isPatientLayout && invoice.crossMatch !== undefined && (
+          <div data-shot="invoice-cross-match" style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: radius.ctl, padding: '8px 12px' }}>
+            <CrossMatchItem label="Procedure date" value={dayWithYear(invoice.crossMatch.procedureDateISO)} />
+            {invoice.crossMatch.surgeon !== undefined && <CrossMatchItem label="Surgeon" value={invoice.crossMatch.surgeon} plain />}
+            {invoice.crossMatch.hospitalRef !== undefined && <CrossMatchItem label="Hospital reference" value={invoice.crossMatch.hospitalRef} />}
+          </div>
+        )}
 
         {/* Totals */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
@@ -205,7 +258,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             anaesthetist. Two independent, separately-tracked states. */}
         {theCase !== undefined && theCase.accRecId !== undefined && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
-            <StateChip
+            <MoneyStatePill
               on={theCase.paidInAtISO !== undefined}
               label={
                 theCase.paidInAtISO !== undefined
@@ -215,7 +268,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
                     : 'Awaiting payment'
               }
             />
-            <StateChip
+            <MoneyStatePill
               on={theCase.disbursedAtISO !== undefined}
               label={
                 theCase.disbursedAtISO !== undefined
@@ -228,19 +281,12 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           </div>
         )}
 
-        <div style={{ fontSize: 10.5, color: neutral.mist, borderTop: `1px solid ${neutral.line}`, paddingTop: 10 }}>
-          GST at the NZ standard rate of {GST_RATE * 100}% is a demo assumption; the RFP describes only the GST component of amounts received. A discovery item for AA.
+        <div data-shot="invoice-gst-caption" style={{ fontSize: 10.5, color: neutral.mist, borderTop: `1px solid ${neutral.line}`, paddingTop: 10 }}>
+          {GST_TREATMENT_CAPTION}
         </div>
       </div>
 
-      <InvoiceInfoRail
-        invoice={invoice}
-        billingCase={theCase}
-        addressee={addressee}
-        isInsurerDirect={isInsurerDirect}
-        error={error}
-        onEmail={doEmail}
-      />
+      <InvoiceInfoRail invoice={invoice} billingCase={theCase} siblings={siblings} error={error} onSend={doSend} />
     </div>
   )
 }
@@ -248,20 +294,16 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 function InvoiceInfoRail({
   invoice,
   billingCase,
-  addressee,
-  isInsurerDirect,
+  siblings,
   error,
-  onEmail,
+  onSend,
 }: {
   invoice: Invoice
   billingCase: BillingCase | undefined
-  addressee: string
-  isInsurerDirect: boolean
+  siblings: readonly { invoice: Invoice; name: string }[]
   error: string | null
-  onEmail: () => void
+  onSend: (to?: string) => boolean
 }) {
-  const emailedAtISO = invoice.emailedAtISO
-  const showEmailAction = !isInsurerDirect && emailedAtISO === undefined
   const handoffFailed = billingCase?.handoffFailure !== undefined
   const handoffComplete = billingCase?.accRecId !== undefined
   // The InvoiceNumbers stored on the Xero records (US-09.1.1), not derived here.
@@ -279,39 +321,25 @@ function InvoiceInfoRail({
       style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}
     >
       <RailCard title="Delivery">
-        {isInsurerDirect ? (
-          <>
-            <RailStatus tone="warning" icon={<Upload size={16} aria-hidden />}>
-              Present via {addressee} upload portal
-            </RailStatus>
-            <DemoBadge label="Simulated portal handoff" style={{ alignSelf: 'flex-start' }} />
-          </>
-        ) : emailedAtISO !== undefined ? (
-          <>
-            <RailStatus tone="success" icon={<Mail size={16} aria-hidden />}>
-              Emailed {hhmm(emailedAtISO)}
-            </RailStatus>
-            <DemoBadge label="Simulated send" style={{ alignSelf: 'flex-start' }} />
-          </>
-        ) : null}
-
-        <div data-testid="invoice-action-row" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-          {showEmailAction && (
-            <Button variant="primary" onClick={onEmail} style={compactEmailButtonStyle}>
-              <Mail size={15} aria-hidden /> Email invoice
-            </Button>
-          )}
-          <Button
-            variant="secondary"
-            onClick={() => window.print()}
-            style={showEmailAction ? compactPrintButtonStyle : compactFullButtonStyle}
-          >
-            <Printer size={15} aria-hidden /> Print
-          </Button>
-        </div>
-
+        <DeliveryState invoice={invoice} onSend={onSend} />
         <FormError message={error} />
       </RailCard>
+
+      {siblings.length > 0 && (
+        <RailCard title="Related invoices">
+          <div data-shot="invoice-related" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12, color: neutral.slate }}>The other shares of this split fee.</div>
+            {siblings.map((s) => (
+              <Link key={s.invoice.id} to={`/admin/invoices/${s.invoice.id}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, color: neutral.ink, textDecoration: 'none' }}>
+                <span>
+                  <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{s.invoice.invoiceNumber}</span> {s.name}
+                </span>
+                <span className="mono">{formatMoney(s.invoice.total)}</span>
+              </Link>
+            ))}
+          </div>
+        </RailCard>
+      )}
 
       <RailCard title="Xero handoff" warning={handoffFailed}>
         <div
@@ -346,6 +374,113 @@ function InvoiceInfoRail({
   )
 }
 
+/**
+ * The Delivery card's body (catch-up Phase 22; US-08.4.2, FT-08.4): what the
+ * billing run did with the invoice. Emailed (success, the send history, a
+ * Resend); To post (neutral, a print view, OQ-122's provisional pill, and Send
+ * once an email is typed); no invoice address (warning, an email field and a
+ * teal Send). Print is always there. No posting or email integration.
+ */
+function DeliveryState({ invoice, onSend }: { invoice: Invoice; onSend: (to?: string) => boolean }) {
+  const [to, setTo] = useState('')
+  const delivery = invoice.delivery
+  const label = invoiceDeliveryLabel(delivery)
+  const sendTyped = () => {
+    if (onSend(to.trim())) setTo('')
+  }
+  const print = (
+    <Button variant="secondary" onClick={() => window.print()} style={compactPrintButtonStyle}>
+      <Printer size={15} aria-hidden /> Print
+    </Button>
+  )
+  const emailField = (fieldLabel: string) => (
+    <div data-testid="invoice-send-email" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <TextField label={fieldLabel} value={to} onChange={setTo} type="email" placeholder="accounts@example.com" />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button variant="pill" onClick={sendTyped} disabled={to.trim() === ''} style={compactEmailButtonStyle}>
+          <Send size={15} aria-hidden /> Send
+        </Button>
+        {print}
+      </div>
+    </div>
+  )
+
+  if (delivery === undefined) {
+    return (
+      <div data-shot="invoice-delivery" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Notice tone="neutral" icon={<Mail size={16} aria-hidden />}>{label.text}</Notice>
+        <Button variant="secondary" onClick={() => window.print()} style={compactFullButtonStyle}>
+          <Printer size={15} aria-hidden /> Print
+        </Button>
+      </div>
+    )
+  }
+  if (delivery.status === 'sent') {
+    return (
+      <div data-shot="invoice-delivery" data-delivery="sent" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Notice tone="success" icon={<Mail size={16} aria-hidden />}>
+          <span style={{ overflowWrap: 'anywhere', fontWeight: 600 }}>{label.text}</span>
+        </Notice>
+        <DemoBadge label="Simulated send" style={{ alignSelf: 'flex-start' }} />
+        {delivery.sends.length > 1 && (
+          <ol data-testid="invoice-send-history" style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: neutral.slate }}>
+            {delivery.sends.map((send, i) => (
+              <li key={`${send.atISO}-${i}`}>
+                <span className="mono">{dateTimeMicroCap(send.atISO)}</span> to {send.to}, by {send.by}
+              </li>
+            ))}
+          </ol>
+        )}
+        <div data-testid="invoice-action-row" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+          <Button variant="pill" onClick={() => onSend()} style={compactEmailButtonStyle}>
+            <Send size={15} aria-hidden /> Resend
+          </Button>
+          {print}
+        </div>
+      </div>
+    )
+  }
+  if (delivery.status === 'toPost') {
+    return (
+      <div data-shot="invoice-delivery" data-delivery="toPost" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Notice tone="neutral" icon={<Printer size={16} aria-hidden />} title={label.text}>
+          {delivery.address.map((line) => (
+            <div key={line}>{line}</div>
+          ))}
+        </Notice>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <DemoBadge label="Simulated posting" />
+          <Pill size="sm">{OQ122_PILL}</Pill>
+        </div>
+        {emailField('Or email it to')}
+      </div>
+    )
+  }
+  return (
+    <div data-shot="invoice-delivery" data-delivery="noAddress" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Notice tone="warning">{label.text}</Notice>
+      {emailField('Email address')}
+    </div>
+  )
+}
+
+/** One holder-layout line's B/T/M breakdown (US-08.4.1), worded by `btmBreakdownText`. */
+function BtmBreakdown({ btm }: { btm: InvoiceLineBtm }) {
+  return (
+    <div data-shot="invoice-btm-breakdown" className="mono" style={{ fontSize: 11.5, color: neutral.slate, marginTop: 3 }}>
+      {btmBreakdownText(btm)}
+    </div>
+  )
+}
+
+function CrossMatchItem({ label, value, plain = false }: { label: string; value: string; plain?: boolean }) {
+  return (
+    <span>
+      {label} <span className={plain ? undefined : 'mono'} style={{ color: neutral.ink, fontWeight: 600 }}>{value}</span>
+    </span>
+  )
+}
+
 function RailCard({
   title,
   warning = false,
@@ -373,37 +508,6 @@ function RailCard({
   )
 }
 
-function RailStatus({
-  tone,
-  icon,
-  children,
-}: {
-  tone: 'success' | 'warning'
-  icon: ReactNode
-  children: ReactNode
-}) {
-  const colours = tone === 'success' ? semantic.success : semantic.warning
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 8,
-        padding: '9px 10px',
-        borderRadius: radius.ctl,
-        background: colours.tint,
-        color: colours.onTint,
-        fontSize: 12.5,
-        lineHeight: '18px',
-        fontWeight: 600,
-      }}
-    >
-      <span style={{ display: 'inline-flex', marginTop: 1, flex: 'none' }}>{icon}</span>
-      <span>{children}</span>
-    </div>
-  )
-}
-
 function XeroReference({ label, value, testId }: { label: string; value: string; testId: string }) {
   return (
     <div>
@@ -415,25 +519,12 @@ function XeroReference({ label, value, testId }: { label: string; value: string;
   )
 }
 
-/** A two-state money chip: a filled tick when the state is reached, muted otherwise. */
-function StateChip({ on, label }: { on: boolean; label: string }) {
+/** A two-state money pill (U3's `Pill`): a tick when the state is reached, a circle otherwise. */
+function MoneyStatePill({ on, label }: { on: boolean; label: string }) {
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        fontSize: 12,
-        fontWeight: 600,
-        borderRadius: radius.pill,
-        padding: '5px 12px',
-        background: on ? semantic.success.tint : neutral.sunken,
-        color: on ? semantic.success.onTint : neutral.slate,
-      }}
-    >
-      <span aria-hidden>{on ? '✓' : '○'}</span>
+    <Pill tone={on ? 'success' : 'neutral'} leading={<span aria-hidden>{on ? '✓' : '○'}</span>}>
       {label}
-    </span>
+    </Pill>
   )
 }
 

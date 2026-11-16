@@ -110,7 +110,11 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v43: catch-up Phase 21a session 2, office review (US-07.2.2, US-04.3.11): the review-flags List
+/** v44: catch-up Phase 22, invoice presentation, delivery and the split (US-08.2.3, US-08.4.2, US-08.4.5,
+ *  US-09.1.4): `Procedure.split` (Prentice's fee split on the Booking, the two funder lines gone),
+ *  `Anaesthetist.gstNumber`, invoices' supplier, agent, delivery and Procedure links, the ACCPAY's
+ *  `taxInvoice`, holder reference codes on St George's and nib's RVG Contracts. Reseeds on load.
+ *  v43: catch-up Phase 21a session 2, office review (US-07.2.2, US-04.3.11): the review-flags List
  *  (Chen Tue 14 Jul AM, SUBMITTED) with Dr Chen's seeded Contract change, a typed price, a Booking that
  *  needs a price and a Contract linked to another surgeon; the movable Merivale Booking on Souter Mon 10
  *  Aug PM; five pinned patients (PT0160 to PT0164); `Procedure.contractApproval`.
@@ -259,7 +263,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 43
+export const PERSIST_VERSION = 44
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

@@ -1,5 +1,5 @@
 import { roundToCents } from '../../domain/billing'
-import type { InvoiceLine, XeroAccRec, XeroContact } from '../../domain/types'
+import type { BuyerCreatedTaxInvoice, InvoiceLine, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
 
 export interface XeroContactView {
@@ -42,6 +42,8 @@ export interface XeroInvoicePairView {
     amountDisbursed: number
     remainingAuthorised: number
     status: 'draft' | 'authorised' | 'paid'
+    /** The buyer-created tax invoice as stored at handoff (catch-up Phase 22; US-09.1.4), passed through. */
+    taxInvoice?: BuyerCreatedTaxInvoice
   }
   engine: {
     caseId?: string
@@ -150,6 +152,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
                   Math.max(0, accPay.amountAuthorised - accPay.amountDisbursed),
                 ),
                 status: accPay.status,
+                ...(accPay.taxInvoice !== undefined ? { taxInvoice: accPay.taxInvoice } : {}),
               },
             }
           : {}),

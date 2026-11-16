@@ -502,9 +502,7 @@ export function addProcedure(
  *    CANCELLATION, which is the refusal's pointer.
  *  - **Its billing lines go with it**, each separately audited in the same
  *    commit, so no line is orphaned onto a procedure that no longer exists
- *    (an orphan would break the completion validator's conservation check and
- *    the invoice build). A line carrying an office funder allocation blocks an
- *    anaesthetist, exactly as `removeBillingLine` does.
+ *    (an orphan would break the invoice build).
  */
 export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: string): Outcome {
   const state = api.getState()
@@ -535,12 +533,6 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
   }
 
   const lines = Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId)
-  if (actor.role === 'anaesthetist' && lines.some((l) => l.funderOverride !== undefined)) {
-    return refuse(
-      'funderAllocationOfficeOnly',
-      'This procedure carries a billing line the office allocated to a funder. Only the office can remove it.',
-    )
-  }
 
   const metas: MutationMeta[] = [
     {

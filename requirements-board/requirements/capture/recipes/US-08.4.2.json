@@ -1,13 +1,13 @@
 {
   "id": "US-08.4.2",
-  "status": "partial",
-  "absentReason": "Emailing is simulated and records only the time sent. Since catch-up Phase 21 the invoice shows the payer's email or postal address as at the run (Invoice to), but sending to it, and posting, are Phase 22's. Portal upload for an insurer is shown.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "email-invoice",
       "app": "admin",
-      "caption": "Sending the invoice to the invoice email",
-      "start": "/admin/invoices",
+      "caption": "The billing run sends each invoice by its party's delivery: emailed to the invoice email, or marked to post",
+      "start": "/admin/review/L-34821-2026-07-20-PM",
       "setup": [
         {
           "scenario": "S3"
@@ -31,94 +31,140 @@
       "states": [
         {
           "state": "ready",
-          "caption": "Invoice ready to email",
+          "caption": "Authorising the List raises its invoices and sends them: 4 invoices raised, 4 emailed, 0 to post",
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
             },
             {
-              "wait": 500
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 800
             }
           ],
           "highlight": [
-            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Delivery\"))"
+            "[data-shot=review-authorised-banner]"
           ]
         },
         {
           "state": "emailed",
-          "caption": "Invoice emailed, simulated send",
+          "caption": "nib's invoice emailed by the run to claims@nib.example, the email on nib's Party",
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
             },
             {
-              "wait": 500
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
             },
             {
-              "click": "role=button[name=\"Email invoice\"]"
+              "wait": 800
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0005\") >> role=button[name=\"View →\"]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Delivery\"))"
+            "[data-shot=invoice-delivery]"
           ]
-        }
-      ]
-    },
-    {
-      "name": "portal-upload",
-      "app": "admin",
-      "caption": "Insurer invoice queued for the insurer's upload portal",
-      "start": "/admin/invoices",
-      "setup": [
-        {
-          "scenario": "S3"
         },
         {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 800
-        },
-        {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 800
-        }
-      ],
-      "states": [
-        {
+          "state": "guardian",
+          "caption": "Grace Park's invoice emailed to her mother, Hana Park, the payer on the Booking",
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Alan Prentice\") >> nth=1"
+              "goto": "/admin/invoices/HINV13"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Delivery\"))"
+            "[data-shot=invoice-delivery]"
+          ]
+        },
+        {
+          "state": "to-post",
+          "caption": "A payer with only a postal address: the invoice is marked To post with a print view; posting is provisional (OQ-122)",
+          "steps": [
+            {
+              "goto": "/admin/review/L-45178-2026-07-17-AM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Robert Whitcombe\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-delivery]"
+          ]
+        },
+        {
+          "state": "no-address",
+          "caption": "No invoice address on the Booking: the office types an email and sends the invoice",
+          "steps": [
+            {
+              "goto": "/admin/review/L-45178-2026-07-17-AM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Kevin Doherty\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-delivery]"
           ]
         }
       ]

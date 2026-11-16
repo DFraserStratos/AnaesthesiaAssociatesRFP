@@ -17,7 +17,8 @@ import {
   mkProcedure,
   START_0800,
 } from './fixtures'
-import type { BillingLine, Procedure } from '../types'
+import type { BillingLine, FeeSplit, Procedure, SplitShareBasis } from '../types'
+import { splitDoesNotFitMessage } from './splitShare'
 import { HOLDER_MISSING_MESSAGE } from './whoIsBilled'
 
 /** The hospital's plain RVG Contract, billing its holder (catch-up Phase 20: every Procedure carries one Contract). */
@@ -162,38 +163,44 @@ describe('validateBookingForBilling — price override reason', () => {
   })
 })
 
-describe('validateBookingForBilling — two-funder conservation', () => {
-  // The spot-check procedure fee: (10 + 11 + 3) x 30 = $720.
-  const allocation = (secondAmount: number): BillingLine[] => [
-    {
-      id: 'bl-a',
-      procedureId: 'proc-1',
-      chargeBasis: 'rvg',
-      amount: 500,
-      description: 'Hospital portion',
-    },
-    {
-      id: 'bl-b',
-      procedureId: 'proc-1',
-      chargeBasis: 'rvg',
-      amount: secondAmount,
-      description: 'Insurer portion',
-      funderOverride: { kind: 'insurer', id: 'ins-direct' },
-    },
-  ]
-
-  it('an allocation that conserves the procedure fee passes', () => {
-    const ctx = mkCtx({ billingLines: allocation(190) })
-    expect(validateBookingForBilling(booking, [validProcedure()], ctx)).toEqual([])
+describe('validateBookingForBilling: a split that no longer fits the fee (catch-up Phase 22)', () => {
+  // The spot-check procedure fee: (10 + 11 + 2) x 30 = $690.
+  const split = (insurer: SplitShareBasis, patient: SplitShareBasis): FeeSplit => ({
+    shares: [
+      { party: { kind: 'insurer', id: 'ins-direct' }, basis: insurer },
+      { party: { kind: 'patient', id: booking.patientId }, basis: patient },
+    ],
   })
 
-  it('a non-conserving allocation fails with the fee in the message', () => {
-    const ctx = mkCtx({ billingLines: allocation(200) })
-    const failures = validateBookingForBilling(booking, [validProcedure()], ctx)
+  it('a split that fits the procedure fee passes', () => {
+    const p = validProcedure({ split: split({ kind: 'amount', amountExGst: 190 }, { kind: 'rest' }) })
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
+    const exact = validProcedure({ split: split({ kind: 'amount', amountExGst: 500 }, { kind: 'amount', amountExGst: 190 }) })
+    expect(validateBookingForBilling(booking, [exact], mkCtx())).toEqual([])
+  })
+
+  it('amounts that no longer total the fee fail on the split field with both figures in the message', () => {
+    const p = validProcedure({ split: split({ kind: 'amount', amountExGst: 500 }, { kind: 'amount', amountExGst: 200 }) })
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(failures).toHaveLength(1)
-    expect(failures[0]?.field).toBe('billingLines')
+    expect(failures[0]?.procedureId).toBe(p.id)
+    expect(failures[0]?.field).toBe('split')
     expect(failures[0]?.message).toContain('$690.00')
     expect(failures[0]?.message).toContain('$700.00')
+    expect(failures[0]?.message).toBe(splitDoesNotFitMessage(690, 'The shares come to $700.00 but the fee is $690.00. Make them total the fee, or let one party take the rest.'))
+  })
+
+  it('a $ share at or above the fee beside a rest fails on the split field', () => {
+    const p = validProcedure({ split: split({ kind: 'amount', amountExGst: 690 }, { kind: 'rest' }) })
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
+    expect(fieldsOf(failures)).toEqual(['split'])
+    expect(failures[0]?.message).toContain('leaves nothing for the rest of the fee of $690.00')
+  })
+
+  it('billing lines alone never fail: who pays is the Contract or the split, never a line', () => {
+    const lines: BillingLine[] = [{ id: 'bl-a', procedureId: 'proc-1', chargeBasis: 'fixed', amount: 40, description: 'Ancillary flat fee' }]
+    const p = validProcedure({ id: 'proc-1' })
+    expect(validateBookingForBilling(booking, [p], mkCtx({ billingLines: lines }))).toEqual([])
   })
 })
 

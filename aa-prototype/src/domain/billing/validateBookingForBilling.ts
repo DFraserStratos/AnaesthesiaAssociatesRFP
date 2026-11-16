@@ -11,7 +11,7 @@
  * checks). What stays is the run's own: a Contract's holder must exist, no
  * price can be worked out (Phase 24's), the Method 3 gate and the billing
  * lines (Phase 39b's), the override reason and sign (Phase 39's) and
- * conservation (Phase 22's).
+ * a split that no longer fits (Phase 22's).
  */
 
 import type {
@@ -29,7 +29,9 @@ import type {
 } from '../types'
 import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
-import { formatMoney, toCents } from './money'
+import { formatMoney } from './money'
+import { PARTY_GONE_REASON, resolveSplit, splitDoesNotFitMessage } from './splitShare'
+import { splitPartiesOn } from './partyOptions'
 import { procedureNeedsPrice } from './contracts'
 import { HOLDER_MISSING_MESSAGE, holderBilledFor } from './whoIsBilled'
 import { needsPriceMessage } from './priceRanges'
@@ -116,9 +118,8 @@ export interface BookingBillingContext {
 
 /**
  * Assemble the `feeFor` context for one procedure from a booking billing
- * context. Single-sourced so the completion validator's
- * conservation check and the office's per-line allocation guard (Phase 06's
- * `setBillingLineAllocation`) compute the procedure fee identically.
+ * context. Single-sourced so the run, the pre-flight, the split's checks and
+ * the warnings compute the procedure fee identically.
  */
 export function feeContextFor(
   procedure: Procedure,
@@ -200,19 +201,14 @@ export function validateBookingForBilling(
       }
     }
 
-    // Conservation (5th review #4): once any line carries a funder override,
-    // the stored lines are the explicit allocation of the WHOLE fee — their
-    // amounts must sum, to the cent, to the computed fee.
-    if (storedLines.some((l) => l.funderOverride !== undefined)) {
+    // A split that no longer fits the fee (catch-up Phase 22; US-08.2.3):
+    // the fee changed under a typed $ share, so the run fails the Booking for
+    // review rather than billing a guess.
+    if (procedure.split !== undefined) {
       const fee = feeFor(procedure, feeContextFor(procedure, ctx))
-      const allocated = storedLines.reduce((sum, l) => sum + l.amount, 0)
-      if (toCents(allocated) !== toCents(fee.total)) {
-        fail(
-          id,
-          'billingLines',
-          `Billing line amounts must add up to the procedure fee of ${formatMoney(fee.total)} (they add up to ${formatMoney(allocated)}).`,
-        )
-      }
+      const resolved = resolveSplit(fee.total, procedure.split.shares)
+      if (!splitPartiesOn(booking, procedure.split.shares, ctx.parties)) fail(id, 'split', splitDoesNotFitMessage(fee.total, PARTY_GONE_REASON))
+      else if (!resolved.ok) fail(id, 'split', splitDoesNotFitMessage(fee.total, resolved.reason))
     }
   })
 

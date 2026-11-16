@@ -10,6 +10,7 @@
  */
 
 import type {
+  FeeSplit,
   AuditEntry,
   BillingLine,
   Booking,
@@ -45,7 +46,7 @@ export interface BookingScenarioIds {
   chen: string
   ellison: string
   splitBilling: string
-  twoFunder: string
+  feeSplit: string
   cancelled: string
   rateTime: string
   rateTimeCapture: string
@@ -293,6 +294,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     billingReference?: string
     isAdditional?: boolean
     timeUnitsOverride?: number
+    /** The fee split typed on the Booking (catch-up Phase 22; US-08.2.3). */
+    split?: FeeSplit
   }
 
   function addProcedure(booking: Booking, spec: ProcedureSpec): Procedure {
@@ -317,6 +320,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     if (spec.timeUnitsOverride !== undefined) {
       procedure.timeUnitsCaptured = { units: spec.timeUnitsOverride, source: 'overridden' }
     }
+    if (spec.split !== undefined) procedure.split = spec.split
     procedures.push(procedure)
     return procedure
   }
@@ -624,40 +628,36 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   addListAudit(souterMon20Am, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '12:20'))
 
   // -------------------------------------------------------------------------
-  // Souter Mon 20 PM St George's / Ms Lim — the two-funder booking
+  // Souter Mon 20 PM St George's / Ms Lim: the fee-split booking
   // -------------------------------------------------------------------------
 
   const souterMon20Pm = projectedListId(ANAE.souter, MON20, 'PM')
 
-  // Fee: B4 + T4 (60 min) + M0 (AS1) = 8 units x $26.50 = $212.00. Once any
-  // line carries a funder override, the stored lines are the explicit
-  // allocation of the WHOLE fee (validator-checked to the cent).
-  const twoFunderBooking = addBooking({
+  // Fee: B4 + T4 (60 min) + M0 (AS1) = 8 units x $26.50 = $212.00, on No
+  // contract · RVG, which bills the payer on the Booking (Alan Prentice).
+  // The office split the fee on the Booking (catch-up Phase 22; US-08.2.3):
+  // nib pays $132.50 and Alan the rest, each invoiced on its own invoice.
+  const feeSplitBooking = addBooking({
     listId: souterMon20Pm,
     patientId: PAT.prentice,
     scheduledTime: '14:00',
     completedAtISO: iso(MON20, '15:05'),
     auditComplete: true,
   })
-  const twoFunderProc = addProcedure(twoFunderBooking, {
-    procedureText: 'Knee arthroscopy, funding split with nib',
+  addProcedure(feeSplitBooking, {
+    procedureText: 'Knee arthroscopy',
     legacyCode: '49558',
     startISO: iso(MON20, '14:00'),
     handoverISO: iso(MON20, '15:00'),
     asaClass: 'AS1',
-    governingContractId: CONTRACT.stgRvg,
+    governingContractId: CONTRACT.noContractRvg,
     billingReference: 'SG-2026-0791',
-  })
-  addLine(twoFunderProc, {
-    chargeBasis: 'rvg',
-    amount: 132.5,
-    description: 'nib insured portion',
-    funderOverride: { kind: 'insurer', id: INS.nib },
-  })
-  addLine(twoFunderProc, {
-    chargeBasis: 'rvg',
-    amount: 79.5,
-    description: 'Patient portion',
+    split: {
+      shares: [
+        { party: { kind: 'insurer', id: INS.nib }, basis: { kind: 'amount', amountExGst: 132.5 } },
+        { party: { kind: 'patient', id: PAT.prentice }, basis: { kind: 'rest' } },
+      ],
+    },
   })
 
   const rangeBooking = addBooking({
@@ -1269,7 +1269,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       chen: chenBooking.id,
       ellison: ellisonBooking.id,
       splitBilling: splitBooking.id,
-      twoFunder: twoFunderBooking.id,
+      feeSplit: feeSplitBooking.id,
       cancelled: cancelledBooking.id,
       rateTime: rateTimeBooking.id,
       rateTimeCapture: rateTimeCaptureBooking.id,
