@@ -7,14 +7,14 @@ import { useSurface } from '../surface'
 import { minutesBetweenIso, shiftIsoMinutes } from './timeIso'
 import { hhmm } from '../format'
 import { CaptureSection, FailureNotes, NudgeButton } from './ui'
+import { ADD_FINISH_MESSAGE, ADD_START_MESSAGE } from '../../domain/billing/completion'
 
 interface TimesCardProps {
   procedure: Procedure
   actor: Actor
   canCapture: boolean
-  /** On an RVG kind the times are required (catch-up Phase 21a, US-03.3.3): the "Required" caption. */
+  /** Kept for callers (catch-up Phase 21a); the card shows no "Required" caption (owner review, 2026-11-17). */
   required?: boolean
-  /** Mark complete's validation latch: the caption takes the warning tint while a time is missing. */
   showValidation?: boolean
   /** anaestheticStartISO / handoverISO failures (shown post-latch, verbatim). */
   failures: BillingValidationFailure[]
@@ -35,7 +35,7 @@ interface TimesCardProps {
  * lays each label, time and nudge pair into one compact horizontal row. The
  * full-width track avoids nesting the cells inside another pair of columns.
  */
-export function TimesCard({ procedure, actor, canCapture, required = false, showValidation = false, failures, onError }: TimesCardProps) {
+export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
   const { variant } = useSurface()
   const start = procedure.anaestheticStartISO
   const finish = procedure.handoverISO
@@ -72,13 +72,14 @@ export function TimesCard({ procedure, actor, canCapture, required = false, show
     write({ handoverISO: next })
   }
 
-  const startFailures = failures.filter((f) => f.field === 'anaestheticStartISO')
-  const finishFailures = failures.filter((f) => f.field === 'handoverISO')
+  // A missing time is shown by the red outline on its action alone (owner review, 2026-11-17): no "Required"
+  // caption and no "Add the start/finish time." note. Only a time that is wrong (finish before start) gets a note.
+  const missing = new Set([ADD_START_MESSAGE, ADD_FINISH_MESSAGE])
+  const notes = failures.filter((f) => !missing.has(f.message))
 
   return (
     <CaptureSection
       label="Times"
-      {...(required ? { required: showValidation && failures.length > 0 ? ('latched' as const) : ('idle' as const) } : {})}
       validationTarget={{
         procedureId: procedure.id,
         fields: ['anaestheticStartISO', 'handoverISO'],
@@ -96,7 +97,7 @@ export function TimesCard({ procedure, actor, canCapture, required = false, show
         compact={variant === 'web'}
       />
 
-      <FailureNotes failures={[...startFailures, ...finishFailures]} />
+      <FailureNotes failures={notes} />
     </CaptureSection>
   )
 }

@@ -6,8 +6,8 @@ import type { ModifierId, Procedure } from '../../domain/types'
 import { confirmNoModifiers, modifierFactsFor, removeModifier, restoreModifier, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { ModifierPickerSheet } from './ModifierPickerSheet'
-import { Caption, FailureNotes, RequiredCaption } from './ui'
-import { modifiersStepAnswered } from '../../domain/billing/completion'
+import { FailureNotes, RequiredCaption } from './ui'
+import { MODIFIERS_STEP_MESSAGE, modifiersStepAnswered } from '../../domain/billing/completion'
 import { TextAction } from '../ui/TextAction'
 import { Button } from '../ui/Button'
 
@@ -46,6 +46,9 @@ interface ModifiersSectionProps {
  * dialog on web and Admin. Removing writes at once; claiming writes only when
  * the explanation is given (the picker's Claim).
  */
+/** How far the modifiers block reaches into the Units card's 16px padding, so its focus ring hugs the card. */
+const INSET_REACH = 12
+
 export function ModifiersSection({ procedure, items, actor, editable, required = false, latched = false, failures, onError }: ModifiersSectionProps) {
   const { variant } = useSurface()
   const web = variant === 'web'
@@ -84,7 +87,11 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
       tabIndex={-1}
       data-validation-procedure-id={procedure.id}
       data-validation-fields="modifierClaims"
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderRadius: radius.sm }}
+      className="aa-validation-inset"
+      // The last block of the Units card: it reaches to 4px inside the card's padding (16) so its focus ring
+      // sits near the card's edge, and its corners are concentric with the card's (owner review, 2026-11-17):
+      // card radius 14 = this radius (9) + the 5px between it and the card's outer edge (16 - 12 padding, + 1 border).
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: `0 -${INSET_REACH}px -${INSET_REACH}px`, padding: `0 ${INSET_REACH}px ${INSET_REACH}px`, borderRadius: radius.card - (16 - INSET_REACH + 1) }}
     >
       {/* The seam: the arithmetic above it, the itemised facts that make up M below. */}
       <div style={{ height: 1, background: neutral.line, margin: '2px 0' }} />
@@ -95,45 +102,12 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
             <RequiredCaption latched={latched} />
           )}
         </span>
-        {editable && !asking && (
+        {editable && !asking && !noneConfirmed && (
           <TextAction onClick={() => setPicker({})} shot="modifier-add">
             Add a modifier
           </TextAction>
         )}
       </div>
-
-      {/* The step unanswered on an RVG kind: two equal answers, none or a claim (AR-58 A20). */}
-      {asking && editable && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
-          <Button variant="pill" shot="capture-modifiers-none" onClick={() => run(confirmNoModifiers(useAppStore, actor, procedure.id))}>
-            None apply
-          </Button>
-          <TextAction onClick={() => setPicker({})} shot="modifier-add">
-            Add a modifier
-          </TextAction>
-        </div>
-      )}
-
-      {noneConfirmed ? (
-        <div data-shot="capture-modifiers-none-done" style={{ fontSize: 13, color: neutral.slate, lineHeight: '18px' }}>
-          No modifiers claimed
-          {editable && (
-            <>
-              {' · '}
-              <TextAction small label="Change: add a modifier" onClick={() => setPicker({})}>
-                Change
-              </TextAction>
-            </>
-          )}
-        </div>
-      ) : (
-        empty &&
-        !(asking && editable) && (
-          <div style={{ fontSize: 13, color: neutral.mist, lineHeight: '18px' }}>
-            No modifiers. Add any that apply, each with a short reason.
-          </div>
-        )
-      )}
 
       {(preApplied.length > 0 || claimed.length > 0) && (
         <div role="list" aria-label="Modifiers on this procedure" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -182,11 +156,46 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
         </div>
       ))}
 
-      {/* A claim's own problem shows on its row; anything else the validator says shows here. */}
-      <FailureNotes failures={failures.filter((f) => !Array.from(problems.values()).includes(f.message))} />
-      <Caption>
-        Values from the NZSA RVG 2021 modifier table. Age, and any modifier the base units include, are applied for you and can be removed.
-      </Caption>
+      {/* The answer, where the question was asked: below the modifiers already applied. */}
+      {noneConfirmed ? (
+        <div data-shot="capture-modifiers-none-done" style={{ fontSize: 13, color: neutral.slate, lineHeight: '18px' }}>
+          No modifiers claimed
+          {editable && (
+            <>
+              {' · '}
+              <TextAction small label="Change: add a modifier" onClick={() => setPicker({})}>
+                Change
+              </TextAction>
+            </>
+          )}
+        </div>
+      ) : (
+        empty &&
+        !(asking && editable) && (
+          <div style={{ fontSize: 13, color: neutral.mist, lineHeight: '18px' }}>
+            No modifiers. Add any that apply, each with a short reason.
+          </div>
+        )
+      )}
+
+      {/* The step unanswered on an RVG kind: one question, two answers of equal weight, below the modifiers
+          already applied (AR-58 A20; owner review, 2026-11-17), on the outlined rounded rectangle every
+          other tap target in the card uses (a fully round shape here reads as a label). Neither is the default: a claim the anaesthetist
+          is owed must be as easy as none. */}
+      {asking && editable && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button variant="secondary" shot="capture-modifiers-none" style={{ flex: web ? '0 0 auto' : 1 }} onClick={() => run(confirmNoModifiers(useAppStore, actor, procedure.id))}>
+            None apply
+          </Button>
+          <Button variant="secondary" shot="modifier-add" style={{ flex: web ? '0 0 auto' : 1 }} onClick={() => setPicker({})}>
+            Add a modifier
+          </Button>
+        </div>
+      )}
+
+      {/* A claim's own problem shows on its row. The unanswered step is shown by the Required pill and the red
+          ring alone (owner review, 2026-11-17): no note. Anything else the validator says shows here. */}
+      <FailureNotes failures={failures.filter((f) => f.message !== MODIFIERS_STEP_MESSAGE && !Array.from(problems.values()).includes(f.message))} />
 
       {picker !== null && (
         <ModifierPickerSheet

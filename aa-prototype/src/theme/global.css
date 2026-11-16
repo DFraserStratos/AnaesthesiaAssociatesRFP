@@ -395,6 +395,13 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   outline-offset: 3px;
 }
 
+/* A block that already reaches to the card's edge draws its ring inside itself, so the ring's
+   corners stay concentric with the card's (catch-up Phase 21a, the modifiers step). */
+.aa-validation-inset[data-validation-fields]:focus-visible,
+.aa-validation-inset[data-validation-focus='true']:focus {
+  outline-offset: -3px;
+}
+
 .aa-clickable-table-row {
   cursor: pointer;
 }

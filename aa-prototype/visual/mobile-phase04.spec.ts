@@ -156,7 +156,8 @@ test('capture: refused completion focuses the first missing field', async ({ pag
   const finish = page.getByRole('button', { name: 'Finish now' })
   await expect(finish).toBeFocused()
   await expect(finish).toBeInViewport()
-  await expect(page.getByText('Add the finish time.')).toBeVisible()
+  // The red outline on Finish now is the only cue for a missing time (owner review, 2026-11-17): no note, no Required pill.
+  await expect(page.getByText('Add the finish time.')).toHaveCount(0)
 })
 
 test('capture: Chen read-only with adjusted-manually provenance', async ({ page }) => {
