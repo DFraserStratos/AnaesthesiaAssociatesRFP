@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { elevation, neutral, radius, scrim, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import { useRegisterOpenSheet } from './sheetPresence'
+import { useModalLayer } from './useModalLayer'
 
 interface BottomSheetProps {
   open: boolean
@@ -27,6 +28,12 @@ interface BottomSheetProps {
  */
 export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheetProps) {
   const [closing, setClosing] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  // The one modal stack (U2): Escape (a keyboard on the installed PWA, F
+  // question 7) closes the top sheet through the same slide-down as the scrim
+  // and handle; focus goes in and comes back; the screens behind are inert.
+  useModalLayer({ open, onClose: requestClose, rootRef, panelRef })
 
   useEffect(() => {
     if (!closing) return undefined
@@ -39,14 +46,14 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
     return () => window.clearTimeout(timeout)
   }, [closing, onClose])
 
-  if (!open) return null
-
   function requestClose() {
     if (!closing) setClosing(true)
   }
 
+  if (!open) return null
+
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: zIndex.sheet, pointerEvents: closing ? 'none' : 'auto' }}>
+    <div ref={rootRef} style={{ position: 'absolute', inset: 0, zIndex: zIndex.sheet, pointerEvents: closing ? 'none' : 'auto' }}>
       <OpenSheetMarker />
       <div
         onClick={requestClose}
@@ -61,9 +68,12 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
         }}
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal
+        tabIndex={-1}
         style={{
+          outline: 'none',
           position: 'absolute',
           left: 0,
           right: 0,

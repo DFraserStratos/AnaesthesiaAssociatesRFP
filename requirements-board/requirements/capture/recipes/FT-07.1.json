@@ -48,7 +48,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=admin-list-drawer] > div:first-child"
+            "[data-testid=admin-list-drawer] > header"
           ],
           "caption": "The same List once Dr Fitzgerald is assigned: ACTIVE"
         }

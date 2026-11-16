@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   Smartphone,
   Monitor,
@@ -12,7 +11,8 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { APP_CONFIG, APP_ORDER, type AppId } from './appConfig'
-import { neutral, accent, semantic, radius, elevation } from '../theme/tokens'
+import { neutral, accent, semantic, radius } from '../theme/tokens'
+import { PopoverPanel, usePopover } from '../shared/ui'
 import { motion } from '../theme/motion'
 
 const ICONS: Record<AppId, LucideIcon> = {
@@ -37,7 +37,7 @@ interface AppSwitcherProps {
  * the same app (persistence lives in the shell store).
  */
 export function AppSwitcher({ activeApp, onSelect }: AppSwitcherProps) {
-  const [open, setOpen] = useState(false)
+  const { open, setOpen, toggle, rootRef, panelId, triggerProps } = usePopover()
   const active = APP_CONFIG[activeApp]
 
   function choose(id: AppId) {
@@ -88,10 +88,11 @@ export function AppSwitcher({ activeApp, onSelect }: AppSwitcherProps) {
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={rootRef} style={{ position: 'relative' }}>
       <button
+        {...triggerProps}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -122,27 +123,7 @@ export function AppSwitcher({ activeApp, onSelect }: AppSwitcherProps) {
       </button>
 
       {open && (
-        <>
-          {/* click-away backdrop */}
-          <div
-            onClick={() => setOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 90 }}
-          />
-          <div
-            role="menu"
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              right: 0,
-              zIndex: 100,
-              width: 300,
-              background: neutral.surface,
-              border: `1px solid ${neutral.line}`,
-              borderRadius: radius.panel,
-              boxShadow: elevation.e3,
-              padding: 8,
-            }}
-          >
+          <PopoverPanel id={panelId} placement="end" width={300} padding={8}>
             <div
               style={{
                 fontSize: 11,
@@ -175,8 +156,7 @@ export function AppSwitcher({ activeApp, onSelect }: AppSwitcherProps) {
               Demo surfaces
             </div>
             {demos.map(renderItem)}
-          </div>
-        </>
+          </PopoverPanel>
       )}
     </div>
   )

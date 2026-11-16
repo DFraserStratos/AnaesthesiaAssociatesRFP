@@ -11,9 +11,8 @@
  */
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim, zIndex } from '../../../theme/tokens'
+import { accent, neutral, radius } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { HistorySheet } from '../../../shared/booking'
@@ -24,7 +23,6 @@ import { drSurname, locationName, pairingLine, shortDay } from '../../../shared/
 import { DRAFT_LIST, ORIGIN_LABELS, ORIGIN_SHORT_LABELS, SOURCE_LABELS, unavailableDetail } from '../../../shared/scheduleTerms'
 import { removeBlockedReason } from '../../../domain/draftLists'
 import { surnameFirst } from '../util'
-import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 import { ConflictPanel } from './conflicts/ConflictPanel'
 import { EditListSheet } from '../flows/EditListSheet'
 import { MoveBookingFlow } from '../flows/MoveBookingFlow'
@@ -35,6 +33,7 @@ import { TierPill, PreferredPill, useSuggestionKey } from './pairing'
 import { useDraftListCandidates } from './pairing/DraftListCandidates'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from './draftLists/DraftListParts'
 import { ActionBtn, DrawerLink, Row, Section } from './drawerParts'
+import { SidePanel } from './SidePanel'
 import { sessionText } from '../../../domain/outOfHours'
 
 type Sheet = 'none' | 'assign' | 'edit' | 'redate' | 'remove' | 'history' | 'addBooking' | { move: string } | { assignTo: string }
@@ -98,20 +97,22 @@ function DraftBody({
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
-      <div
-        data-testid="admin-list-drawer"
-        data-shot="admin-draft-list-drawer"
-        data-list-id={list.id}
-        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}
-      >
-        <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <SidePanel
+        open
+        onClose={onClose}
+        width="list"
+        testId="admin-list-drawer"
+        shot="admin-draft-list-drawer"
+        panelAttrs={{ 'data-list-id': list.id }}
+        bodyGap={18}
+        above={
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <DraftStateChip />
               <UnassignedPill />
             </div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{locationName(list.hospitalId, masters.hospitals)}</div>
+        }
+        title={locationName(list.hospitalId, masters.hospitals)}
+        meta={
             <div style={{ fontSize: 13, color: neutral.slate, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <span>{shortDay(list.dateISO)} · {sessionText(list.session)}</span>
               <span aria-hidden>·</span>
@@ -119,13 +120,19 @@ function DraftBody({
               <span aria-hidden>·</span>
               <BookingCount count={active.length} style={{ fontSize: 12.5 }} noun />
             </div>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
-            <X size={20} aria-hidden />
-          </button>
-        </div>
-
-        <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+        }
+        footerTestId="admin-list-actions"
+        footerLayout="row"
+        footer={
+          <>
+          <ActionBtn primary disabled={passed} title={passed ? 'This day has passed. Change its date or remove it.' : undefined} onClick={() => setSheet('assign')}>Assign</ActionBtn>
+          <ActionBtn onClick={() => setSheet('edit')}>Edit</ActionBtn>
+          <ActionBtn onClick={() => setSheet('redate')}>Change date</ActionBtn>
+          <ActionBtn disabled={active.length > 0} title={active.length > 0 ? removeBlockedReason(active.length) : undefined} onClick={() => setSheet('remove')}>Remove</ActionBtn>
+          <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+          </>
+        }
+      >
           <ConflictPanel list={list} actor={actor} />
           {passed && (
             <div role="status" style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
@@ -207,16 +214,7 @@ function DraftBody({
               Add Booking
             </button>
           </Section>
-        </div>
-
-        <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-          <ActionBtn primary disabled={passed} title={passed ? 'This day has passed. Change its date or remove it.' : undefined} onClick={() => setSheet('assign')}>Assign</ActionBtn>
-          <ActionBtn onClick={() => setSheet('edit')}>Edit</ActionBtn>
-          <ActionBtn onClick={() => setSheet('redate')}>Change date</ActionBtn>
-          <ActionBtn disabled={active.length > 0} title={active.length > 0 ? removeBlockedReason(active.length) : undefined} onClick={() => setSheet('remove')}>Remove</ActionBtn>
-          <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
-        </div>
-      </div>
+      </SidePanel>
 
       <AssignDraftListSheet
         open={sheet === 'assign' || assignTo !== undefined}

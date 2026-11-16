@@ -131,7 +131,8 @@ export function AppShell() {
       </header>
 
       {/* ── Routed app ──────────────────────────────────────── */}
-      <main style={{ flex: 1, minHeight: 0, overflow: 'auto', background: neutral.bg }}>
+      {/* The modal scope (U2): an open dialog makes the app inert, never the harness bar. */}
+      <main data-aa-modal-scope style={{ flex: 1, minHeight: 0, overflow: 'auto', background: neutral.bg }}>
         <Outlet />
       </main>
     </div>

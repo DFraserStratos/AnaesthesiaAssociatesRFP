@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { resetDemo, useAppStore } from '../store'
-import { accent, elevation, neutral, radius, semantic, zIndex } from '../theme/tokens'
+import { PopoverPanel, usePopover } from '../shared/ui'
+import { accent, neutral, radius, semantic } from '../theme/tokens'
 
 /**
  * Global recovery control for the demo harness. Resetting replaces the domain
@@ -9,34 +10,8 @@ import { accent, elevation, neutral, radius, semantic, zIndex } from '../theme/t
  * (the current app).
  */
 export function DemoResetButton() {
-  const [confirming, setConfirming] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const panelId = useId()
+  const { open: confirming, setOpen: setConfirming, toggle, closeToTrigger, rootRef, triggerRef, panelId, triggerProps } = usePopover()
   const titleId = useId()
-
-  useEffect(() => {
-    if (!confirming) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) {
-        setConfirming(false)
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
-      setConfirming(false)
-      triggerRef.current?.focus()
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [confirming])
 
   function confirmReset() {
     resetDemo(useAppStore)
@@ -47,12 +22,10 @@ export function DemoResetButton() {
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       <button
-        ref={triggerRef}
+        {...triggerProps}
         type="button"
         aria-label="Reset demo data"
-        aria-expanded={confirming}
-        aria-controls={panelId}
-        onClick={() => setConfirming((value) => !value)}
+        onClick={toggle}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -74,24 +47,7 @@ export function DemoResetButton() {
       </button>
 
       {confirming ? (
-        <div
-          id={panelId}
-          role="dialog"
-          aria-labelledby={titleId}
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            zIndex: zIndex.shellMenu,
-            width: 'min(320px, calc(100vw - 24px))',
-            padding: 14,
-            background: neutral.surface,
-            color: neutral.ink,
-            border: `1px solid ${neutral.line}`,
-            borderRadius: radius.card,
-            boxShadow: elevation.e3,
-          }}
-        >
+        <PopoverPanel id={panelId} placement="end" role="dialog" labelledBy={titleId} width="min(320px, calc(100vw - 24px))">
           <div id={titleId} style={{ fontSize: 14, lineHeight: 1.3, fontWeight: 700 }}>
             Reset all demo data?
           </div>
@@ -119,10 +75,7 @@ export function DemoResetButton() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setConfirming(false)
-                triggerRef.current?.focus()
-              }}
+              onClick={closeToTrigger}
               style={{
                 minHeight: 36,
                 padding: '0 12px',
@@ -142,7 +95,7 @@ export function DemoResetButton() {
           <p style={{ margin: '10px 0 0', color: semantic.warning.onTint, fontSize: 11.5, lineHeight: 1.4 }}>
             Your current app and display choices are preserved.
           </p>
-        </div>
+        </PopoverPanel>
       ) : null}
     </div>
   )

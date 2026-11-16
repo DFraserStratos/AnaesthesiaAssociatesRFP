@@ -48,8 +48,9 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   await expect(row).toContainText('Annette Riley')
   await expect(row.locator('[data-shot="booking-warning"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/w15a-02-drawer-outline.png' })
+  // The drawer closes on Escape (UI unification U2: one modal layer).
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByTestId('admin-list-drawer')).toHaveCount(0)
 
   // Clear empties Riley's row; the outline drops with it. (The payer review List's
   // child payer, catch-up Phase 21, stays on the list: it is on Fri 17.)

@@ -140,6 +140,8 @@ export function MobileApp({
           Availability / Balances / More and the Lists base (Phase 13). */}
       <div
         data-aa-mobile-product
+        // The modal scope (U2): an open sheet makes the screens inert, never the PhoneFrame toolbar or host chrome.
+        data-aa-modal-scope
         style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}
       >
         {/* The one move sheet (catch-up Phase 32) renders after the screens and the tab bar, above both. */}

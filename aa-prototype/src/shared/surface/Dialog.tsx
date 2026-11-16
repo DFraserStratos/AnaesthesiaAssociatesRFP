@@ -1,6 +1,7 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { elevation, neutral, radius, scrim, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
+import { useModalLayer } from './useModalLayer'
 
 interface DialogProps {
   open: boolean
@@ -12,45 +13,22 @@ interface DialogProps {
   size?: 'default' | 'wide'
 }
 
-/** The open dialogs' root elements: Escape closes only the topmost (last in document order). */
-const OPEN_DIALOGS = new Set<HTMLElement>()
-
-function isTopmost(el: HTMLElement): boolean {
-  for (const other of OPEN_DIALOGS) {
-    if (other !== el && el.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING) return false
-  }
-  return true
-}
-
 /**
  * The web `SurfaceProvider`'s `Overlay` (convention 16): a centred desktop
  * dialog with the same `{open, onClose, children, hideHandle}` signature as the
  * mobile `BottomSheet`, so every shared flow/capture sheet renders unchanged on
  * both platforms. Scrim (`aa-fade-in`) + a `radius.panel` card at `elevation.e3`;
- * closes on Escape or a scrim click. `position:fixed; inset:0` so it centres over
- * the viewport regardless of where the detail panel sits.
+ * closes on Escape (the one modal stack, `useModalLayer`) or a scrim click.
+ * `position:fixed; inset:0` so it centres over the viewport regardless of where
+ * the detail panel sits.
  */
 export function Dialog({ open, onClose, children, size = 'default' }: DialogProps) {
-  // The latest onClose, so the effect below runs only on open and close and a
-  // re-render never moves this dialog up the stack.
-  const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+  // One modal stack (U2): Escape closes only the top layer (the RVG code
+  // picker over the Add booking dialog, catch-up Phase 19), focus goes in and
+  // comes back, Tab stays inside, the page behind is inert.
   const rootRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = rootRef.current
-    if (!open || el === null) return undefined
-    OPEN_DIALOGS.add(el)
-    function onKey(e: KeyboardEvent) {
-      // Escape closes only the topmost dialog (catch-up Phase 19: the RVG code
-      // picker opens over the Add booking dialog, which must survive it).
-      if (e.key === 'Escape' && el !== null && isTopmost(el)) onCloseRef.current()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      OPEN_DIALOGS.delete(el)
-    }
-  }, [open])
+  const panelRef = useRef<HTMLDivElement>(null)
+  useModalLayer({ open, onClose, rootRef, panelRef })
 
   if (!open) return null
   return (
@@ -66,10 +44,13 @@ export function Dialog({ open, onClose, children, size = 'default' }: DialogProp
         }}
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal
+        tabIndex={-1}
         style={{
           position: 'relative',
+          outline: 'none',
           width: size === 'wide' ? 'min(760px, 100%)' : 'min(520px, 100%)',
           maxHeight: '86vh',
           overflow: 'auto',

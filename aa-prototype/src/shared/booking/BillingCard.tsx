@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
-import { accent, neutral, radius, semantic, elevation, zIndex } from '../../theme/tokens'
+import { accent, neutral, radius, semantic, zIndex } from '../../theme/tokens'
 import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { rangeInForce } from '../../domain/billing/priceRanges'
@@ -29,6 +29,8 @@ import { useSurface } from '../surface'
 import { CaptureSection, FailureNotes } from '../capture/ui'
 import { Button } from '../ui/Button'
 import { Pill } from '../ui/Pill'
+import { PopoverPanel } from '../ui/PopoverPanel'
+import { usePopover } from '../ui/usePopover'
 import { contractPriceText } from '../flows/ContractRail'
 
 /**
@@ -557,25 +559,10 @@ function ContractCombo({
 }) {
   const parties = useAppStore((s) => s.masters.parties)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const [open, setOpen] = useState(false)
+  // The one popover behaviour (U2): outside click closes; Escape closes this
+  // list only (never the sheet under it) and puts focus back on the combo.
+  const { open, setOpen, rootRef, panelId, triggerProps } = usePopover()
   const [q, setQ] = useState('')
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return undefined
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current !== null && !rootRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('mousedown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open])
 
   // The rail's own rows for this step (No contract · RVG pinned first, never searched away); the search
   // narrows them with 18's matcher fields, shown here.
@@ -602,10 +589,10 @@ function ContractCombo({
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       <button
+        {...triggerProps}
         type="button"
         data-shot="contract-combo"
         aria-haspopup="listbox"
-        aria-expanded={open}
         className="aa-rail-focus"
         onClick={() => {
           setOpen(!open)
@@ -624,10 +611,7 @@ function ContractCombo({
         <ChevronDown size={18} color={neutral.slate} aria-hidden />
       </button>
       {open && (
-        <div
-          data-shot="contract-combo-list"
-          style={{ ...(inFlow ? { marginTop: 6 } : { position: 'absolute', zIndex: zIndex.popover, top: 'calc(100% + 6px)', left: 0, right: 0, boxShadow: elevation.e3 }), background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}
-        >
+        <PopoverPanel id={panelId} shot="contract-combo-list" placement={inFlow ? 'inline' : 'fill'} padding={0}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: `1px solid ${neutral.line}` }}>
             <Search size={16} color={neutral.mist} aria-hidden />
             <input
@@ -677,7 +661,7 @@ function ContractCombo({
             {q.trim() !== '' && matched === 0 && <div style={{ padding: '10px 14px', fontSize: 13.5, color: neutral.mist }}>No Contract matches "{q.trim()}".</div>}
             {rows.length === 0 && <div style={{ padding: '10px 14px', fontSize: 13.5, color: neutral.mist }}>No Contract of its own fits this List.</div>}
           </div>
-        </div>
+        </PopoverPanel>
       )}
     </div>
   )

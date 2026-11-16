@@ -1,9 +1,10 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FlaskConical } from 'lucide-react'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
-import { accent, elevation, neutral, radius, semantic, zIndex } from '../theme/tokens'
+import { PopoverPanel, usePopover } from '../shared/ui'
+import { accent, neutral, radius, semantic } from '../theme/tokens'
 
 /** The harness pill, kept in step with `DemoClockMenu`'s `triggerStyle` (plus no-wrap). */
 const triggerStyle: React.CSSProperties = {
@@ -48,51 +49,23 @@ const runStyle: React.CSSProperties = {
 export function DemoActionsMenu() {
   const rows = useDemoTriggerRows('bar')
   const { pathname } = useLocation()
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const { open, setOpen, toggle, rootRef, panelId, triggerProps } = usePopover()
   const titleId = useId()
-  const panelId = useId()
 
   // Navigating (a link, or browser Back with no pointerdown) closes the menu,
   // so it never reappears already open on the next screen with entries.
-  useEffect(() => setOpen(false), [pathname])
-
-  useEffect(() => {
-    if (!open) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) {
-        setOpen(false)
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      triggerRef.current?.focus()
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
+  useEffect(() => setOpen(false), [pathname, setOpen])
 
   if (rows.length === 0) return null
 
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       <button
-        ref={triggerRef}
+        {...triggerProps}
         type="button"
         data-shot="demo-actions"
         aria-label={`Demo actions for this screen, ${rows.length}`}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggle}
         style={triggerStyle}
       >
         <FlaskConical size={16} strokeWidth={2} aria-hidden />
@@ -116,26 +89,7 @@ export function DemoActionsMenu() {
       </button>
 
       {open ? (
-        <div
-          id={panelId}
-          role="dialog"
-          aria-labelledby={titleId}
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            zIndex: zIndex.shellMenu,
-            width: 'min(360px, calc(100vw - 24px))',
-            maxHeight: 'calc(100vh - 72px)',
-            overflowY: 'auto',
-            padding: 14,
-            background: neutral.surface,
-            color: neutral.ink,
-            border: `1px solid ${neutral.line}`,
-            borderRadius: radius.card,
-            boxShadow: elevation.e2,
-          }}
-        >
+        <PopoverPanel id={panelId} placement="end" role="dialog" labelledBy={titleId} width="min(360px, calc(100vw - 24px))" maxHeight="calc(100vh - 72px)">
           <div id={titleId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <DemoBadge label="Demo trigger" />
             <span style={{ fontSize: 11.5, color: neutral.mist }}>On this screen</span>
@@ -197,7 +151,7 @@ export function DemoActionsMenu() {
               )
             })}
           </div>
-        </div>
+        </PopoverPanel>
       ) : null}
     </div>
   )

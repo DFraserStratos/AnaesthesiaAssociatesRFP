@@ -16,6 +16,8 @@ import {
   FormErrorExample,
   InlineBannerExample,
   MasterPanelExample,
+  PopoverPanelExample,
+  SidePanelExample,
   MasterPillsExample,
   MastersSubNavExample,
   MasterTableExample,
@@ -108,17 +110,23 @@ export function AdminCatalogue() {
         <CatalogueRow name="SignalFilterButton (DayGrid focus filters)" source="apps/admin/components/DayGrid.tsx" usedIn={A} what="The Day grid footer's aria-pressed pills (Needs attention, Conflict, Has note, Has warnings) that narrow and regroup the rows, with Reset filters." replaceWith="shadcn ToggleGroup (multiple) / Toggle" note="Not exported: the row mounts the real DayGrid with an empty roster, so only its live footer shows.">
           <FocusFiltersExample />
         </CatalogueRow>
-        <CatalogueRow name="Dialog (useSurface().Overlay)" source="shared/surface/Dialog.tsx" usedIn={AWM} what="The web Overlay every Admin sheet opens in: a centred card over a scrim, closed by Escape or a scrim click. About 37 uses." replaceWith="shadcn Dialog" note="Adds focus trap, initial focus and restore, scroll lock, portal and aria-labelledby; retires the OPEN_DIALOGS stack.">
+        <CatalogueRow name="Dialog (useSurface().Overlay)" source="shared/surface/Dialog.tsx" usedIn={AWM} what="The web Overlay every Admin sheet opens in: a centred card over a scrim, closed by Escape or a scrim click. On the one modal stack (useModalLayer, U2): one Escape closes only the top layer, focus goes in, stays in and comes back, the page behind is inert. About 37 uses." replaceWith="shadcn Dialog" note="Adds scroll lock and aria-labelledby; no portal (the phone frame is scaled).">
           <OverlayExample />
         </CatalogueRow>
-        <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px right side panel the Contract and Party editors open in, with a dialog role, Escape and focus in and back." replaceWith="shadcn Sheet (side)" note="Adds the missing focus trap and portal.">
+        <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." replaceWith="shadcn Sheet (side)" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
           <MasterPanelExample />
         </CatalogueRow>
-        <CatalogueRow name="SlotDrawer" source="apps/admin/components/SlotDrawer.tsx" usedIn={A} what="The 440px session drawer: an empty session's actions, or a List's details, bookings and actions with nested sheets." replaceWith="shadcn Sheet (side)" note="Adds dialog role, Escape and focus handling. Its actions (assign, edit, reassign, status) write to the demo store, and its List links leave this page.">
+        <CatalogueRow name="SidePanel" source="apps/admin/components/SidePanel.tsx" usedIn={A} what="The one Admin right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel). On the one modal stack." replaceWith="shadcn Sheet (side)">
+          <SidePanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="PopoverPanel" source="shared/ui/PopoverPanel.tsx" usedIn={AWM} what="The one popover panel and behaviour (usePopover, U2): a white card at the card radius and e3 under its trigger; outside click closes, Escape closes and returns focus. The harness menus and the Contract combo use it." replaceWith="shadcn Popover">
+          <PopoverPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="SlotDrawer" source="apps/admin/components/SlotDrawer.tsx" usedIn={A} what="The 440px session drawer on SidePanel: an empty session's actions, or a List's details, bookings and actions with nested sheets. A named dialog with Escape, focus in and back." replaceWith="shadcn Sheet (side)" note="Its actions (assign, edit, reassign, status) write to the demo store, and its List links leave this page.">
           <SlotDrawerExample />
           <StageHint>Opens over the page from the right.</StageHint>
         </CatalogueRow>
-        <CatalogueRow name="DraftListDrawer" source="apps/admin/components/DraftListDrawer.tsx" usedIn={A} what={`The same drawer for a ${DRAFT_LIST} (no session yet): its details, bookings and Assign, Redate, Edit and Remove.`} replaceWith="shadcn Sheet (side)" note="Disabled reasons live only in title tooltips. Its actions write to the demo store.">
+        <CatalogueRow name="DraftListDrawer" source="apps/admin/components/DraftListDrawer.tsx" usedIn={A} what={`The same drawer on SidePanel for a ${DRAFT_LIST} (no session yet): its details, bookings and Assign, Redate, Edit and Remove.`} replaceWith="shadcn Sheet (side)" note="Disabled reasons live only in title tooltips. Its actions write to the demo store.">
           <DraftListDrawerExample />
         </CatalogueRow>
         <CatalogueRow name="ClearConflictSheet" source="apps/admin/components/conflicts/ClearConflictSheet.tsx" usedIn={A} what="Confirms clearing a hospital-closure conflict on a List, with an optional note." replaceWith="shadcn AlertDialog" note="Correct alertdialog role, focus on the safe action. Confirming clears the conflict in the demo store.">
@@ -201,7 +209,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="BackLink is left out: it is a router Link.">
           <ProfileChromeExample />
         </CatalogueRow>
-        <CatalogueRow name="drawerParts (Section, Row, DrawerLink, ActionBtn)" source="apps/admin/components/drawerParts.tsx" usedIn={A} what="The drawers' section headings, label and value rows, inline links and action buttons." replaceWith="shadcn Button + DropdownMenu" note="SlotDrawer re-declares its own copies; merge them.">
+        <CatalogueRow name="drawerParts (Section, Row, DrawerLink, ActionBtn)" source="apps/admin/components/drawerParts.tsx" usedIn={A} what="The drawers' section headings, label and value rows, inline links and action buttons, shared by SlotDrawer and DraftListDrawer (one copy since U2)." replaceWith="shadcn Button + DropdownMenu" note="U5 folds ActionBtn into Button.">
           <DrawerPartsExample />
         </CatalogueRow>
       </LibraryGroup>

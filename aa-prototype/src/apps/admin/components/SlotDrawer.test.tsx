@@ -5,6 +5,7 @@
  */
 
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { useState } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE, HOSP, SURG } from '../../../domain/seed'
@@ -62,5 +63,50 @@ describe('SlotDrawer', () => {
     expect(screen.getByTestId('admin-list-drawer')).toHaveAttribute('data-slot-id', slotIdFor(ANAE.sharma, '2026-07-21', 'PM'))
     act(() => vi.advanceTimersByTime(1100))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('is a named modal dialog (U2 SidePanel): the h2 names it, the hooks sit on the dialog element', () => {
+    renderDrawer(STRAND_PM)
+    const dialog = screen.getByRole('dialog', { name: 'Strand, Oliver' })
+    expect(dialog).toBe(screen.getByTestId('admin-list-drawer'))
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveAttribute('data-shot', 'admin-slot-drawer')
+    expect(dialog).toHaveAttribute('data-slot-id', STRAND_PM)
+    expect(within(dialog).getByRole('heading', { level: 2, name: 'Strand, Oliver' })).toBeInTheDocument()
+    expect(document.activeElement).toBe(dialog)
+  })
+
+  it('Escape closes the drawer and focus returns to the control that opened it', () => {
+    function Opener() {
+      const [open, setOpen] = useState(false)
+      return (
+        <MemoryRouter>
+          <SurfaceProvider variant="web">
+            <button onClick={() => setOpen(true)}>Open session</button>
+            {open && <SlotDrawer slotId={STRAND_PM} actor={OFFICE} onClose={() => setOpen(false)} onOpenBooking={vi.fn()} />}
+          </SurfaceProvider>
+        </MemoryRouter>
+      )
+    }
+    render(<Opener />)
+    const opener = screen.getByRole('button', { name: 'Open session' })
+    opener.focus()
+    fireEvent.click(opener)
+    expect(screen.getByTestId('admin-list-drawer')).toBeInTheDocument()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(screen.queryByTestId('admin-list-drawer')).toBeNull()
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('a sheet opened from the drawer closes first on Escape, then the drawer', () => {
+    const onClose = renderDrawer(STRAND_PM)
+    const drawer = screen.getByTestId('admin-list-drawer')
+    fireEvent.click(within(drawer).getByRole('button', { name: 'History' }))
+    expect(screen.getAllByRole('dialog')).toHaveLength(2)
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
   })
 })

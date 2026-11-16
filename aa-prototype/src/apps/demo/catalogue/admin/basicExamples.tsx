@@ -16,7 +16,7 @@ import {
   useSurface,
   WarningTriangle,
 } from '../../../../shared'
-import { NameSearchBox, Pill, SlidingSegmentedControl, TickButton } from '../../../../shared/ui'
+import { NameSearchBox, Pill, PopoverPanel, SlidingSegmentedControl, TickButton, usePopover } from '../../../../shared/ui'
 import { VacatedSessionChoice } from '../../../../shared/flows'
 import { matchesNameQuery } from '../../../../domain/names'
 import { openWarnings, useAppStore, useToday } from '../../../../store'
@@ -32,6 +32,7 @@ import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/compon
 import { ActionBtn, DrawerLink, Row as DrawerRow, Section as DrawerSection } from '../../../admin/components/drawerParts'
 import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
+import { SidePanel } from '../../../admin/components/SidePanel'
 import { Header, Table, TextAction, EditCell } from '../../../admin/screens/masters/chrome'
 import { rowCellStyle } from '../../../admin/screens/masters/tableStyles'
 import { SessionTimesFields, timesDraftError, type TimesDraft } from '../../../admin/flows/SessionTimesFields'
@@ -657,6 +658,50 @@ export function StatusBlockExample() {
           <StatusBlock key={k} status={k} title={label(k)} style={{ height: 40 }} />
         ))}
       </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// UI unification U2: the one side panel and the one popover panel.
+
+export function SidePanelExample() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Open drawer</Button>
+      <SidePanel
+        open={open}
+        onClose={() => setOpen(false)}
+        width="list"
+        title="Example drawer"
+        meta={<div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Tue 21 Jul · PM</div>}
+        footer={
+          <>
+            <ActionBtn primary onClick={() => setOpen(false)}>Done</ActionBtn>
+            <ActionBtn onClick={() => setOpen(false)}>Close</ActionBtn>
+          </>
+        }
+      >
+        <DrawerSection label="Session">
+          <DrawerRow label="Times">13:00 to 17:30</DrawerRow>
+        </DrawerSection>
+        <div style={{ fontSize: 13, color: neutral.slate }}>Escape closes it and focus returns to the button. The record width (600px) is MasterPanel.</div>
+      </SidePanel>
+    </div>
+  )
+}
+
+export function PopoverPanelExample() {
+  const { open, toggle, rootRef, panelId, triggerProps } = usePopover()
+  return (
+    <div ref={rootRef} style={{ position: 'relative', display: 'inline-block' }}>
+      <button type="button" {...triggerProps} onClick={toggle} style={textActionStyle}>Open popover</button>
+      {open && (
+        <PopoverPanel id={panelId} placement="end" width={260}>
+          <div style={{ fontSize: 13, color: neutral.slate }}>An outside click closes it; Escape closes it and puts focus back on the button.</div>
+        </PopoverPanel>
+      )}
     </div>
   )
 }

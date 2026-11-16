@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, scrim, semantic, zIndex } from '../../../theme/tokens'
+import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/scheduleTerms'
 import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, procedureStackViewFor, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
@@ -14,6 +13,8 @@ import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
 import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange, shortDay } from '../../../shared/format'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
+import { SidePanel } from './SidePanel'
+import { ActionBtn, DrawerLink, Row, Section } from './drawerParts'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
@@ -23,7 +24,6 @@ import { EditSlotTimesSheet } from '../flows/EditSlotTimesSheet'
 import { SessionStatusSheet } from '../flows/SessionStatusSheet'
 import type { AssignedList, Slot } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
-import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 import { surgeonProfilePath } from '../mastersPaths'
 import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
@@ -130,24 +130,32 @@ function ListBody({
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
-      <div data-testid="admin-list-drawer" data-slot-id={slot.id} data-list-id={list.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : list.anaesthetistId}</div>
+      <SidePanel
+        open
+        onClose={onClose}
+        width="list"
+        testId="admin-list-drawer"
+        panelAttrs={{ 'data-slot-id': slot.id, 'data-list-id': list.id }}
+        title={anae !== undefined ? surnameFirst(anae.name) : list.anaesthetistId}
+        meta={
+          <>
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{shortDay(list.dateISO)} · {sessionText(list.session)} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
             <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <StatusChip status={list.kind} />
             </div>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
-            <X size={20} aria-hidden />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          </>
+        }
+        footerTestId="admin-list-actions"
+        footerLayout="wrap"
+        footer={
+          <>
+            <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
+            {list.state !== 'AUTHORISED' && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
+            {list.state !== 'AUTHORISED' && <ActionBtn shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })}>Change status</ActionBtn>}
+            <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+          </>
+        }
+      >
           <ConflictPanel list={list} actor={actor} />
           {/* An open "Alert the office" on this List (catch-up Phase 32b, US-03.6.3), with the tick. */}
           <OfficeAlertLine actor={actor} target={{ listId: list.id }} />
@@ -235,17 +243,7 @@ function ListBody({
               )
             })}
           </Section>
-
-        </div>
-
-        {/* Actions */}
-        <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
-          {list.state !== 'AUTHORISED' && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
-          {list.state !== 'AUTHORISED' && <ActionBtn shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })}>Change status</ActionBtn>}
-          <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
-        </div>
-      </div>
+      </SidePanel>
 
       <HistorySheet open={sheet === 'history'} entityIds={[listId, slot.id]} title="List history" onClose={() => setSheet('none')} />
 
@@ -299,20 +297,51 @@ function EmptySessionDrawer({
   }
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
-      <div data-testid="admin-list-drawer" data-shot="admin-slot-drawer" data-slot-id={slot.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : slot.anaesthetistId}</div>
+      <SidePanel
+        open
+        onClose={onClose}
+        width="list"
+        testId="admin-list-drawer"
+        shot="admin-slot-drawer"
+        panelAttrs={{ 'data-slot-id': slot.id }}
+        title={anae !== undefined ? surnameFirst(anae.name) : slot.anaesthetistId}
+        meta={
+          <>
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{shortDay(slot.dateISO)} · {sessionText(slot.session)}</div>
             <div style={{ marginTop: 8 }}><StatusChip status={slot.status} /></div>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
-            <X size={20} aria-hidden />
-          </button>
-        </div>
-
-        <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          </>
+        }
+        footerTestId="admin-list-actions"
+        footerLayout="column"
+        footer={
+          <>
+          {/* The one primary on its own row, the session's other actions beneath. */}
+          {open ? (
+            <>
+              <div style={{ display: 'flex' }}>
+                <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+                <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>
+                <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
+                <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+              <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
+              <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+            </div>
+          )}
+          {evening && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ActionBtn shot="drawer-close-out-of-hours" disabled={closeBlocked !== null} onClick={closeSession}>{CLOSE_OUT_OF_HOURS}</ActionBtn>
+              {closeBlocked !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{closeBlocked}</span>}
+            </div>
+          )}
+          </>
+        }
+      >
           <Section label="Session">
             <Row label="Status">
               {displayStatusLabel(slot.status, statuses, true)}
@@ -352,78 +381,10 @@ function EmptySessionDrawer({
           {error !== null && (
             <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
           )}
-        </div>
-
-        {/* The one primary on its own row, the session's other actions beneath. */}
-        <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {open ? (
-            <>
-              <div style={{ display: 'flex' }}>
-                <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-                <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>
-                <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
-                <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
-              </div>
-            </>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-              <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
-              <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
-            </div>
-          )}
-          {evening && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ActionBtn shot="drawer-close-out-of-hours" disabled={closeBlocked !== null} onClick={closeSession}>{CLOSE_OUT_OF_HOURS}</ActionBtn>
-              {closeBlocked !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{closeBlocked}</span>}
-            </div>
-          )}
-        </div>
-      </div>
+      </SidePanel>
 
       <HistorySheet open={sheet === 'history'} entityIds={[slot.id]} title="Session history" onClose={() => setSheet('none')} />
     </>
-  )
-}
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</div>
-      {children}
-    </div>
-  )
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-      <span style={{ width: 72, flex: 'none', fontSize: 12, color: neutral.mist }}>{label}</span>
-      <span style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{children}</span>
-    </div>
-  )
-}
-
-function DrawerLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', borderRadius: radius.sm, padding: '4px 10px' }}>
-      {children}
-    </button>
-  )
-}
-
-function ActionBtn({ onClick, children, primary, shot, disabled }: { onClick: () => void; children: React.ReactNode; primary?: boolean; shot?: string; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      data-shot={shot}
-      onClick={onClick}
-      disabled={disabled}
-      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? neutral.surface : disabled === true ? neutral.mist : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: disabled === true ? 'default' : 'pointer' }}
-    >
-      {children}
-    </button>
   )
 }
 

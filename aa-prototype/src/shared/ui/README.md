@@ -57,6 +57,10 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `BottomSheet` | `surface/BottomSheet.tsx` | The phone's bottom sheet | U2 (`useModalLayer`, `OverlayHeader`, `SheetActions`) |
 | `SurfaceProvider` | `surface/SurfaceProvider.tsx` | Chooses sheet or dialog per surface; the frosted dock | U2 |
 | `MonthGrid` | `calendar/MonthGrid.tsx` | The mobile "Go to a date" month calendar | U4 (`useCalendarKeys`, `MonthHeaderRow`) |
+| `useModalLayer` | `surface/useModalLayer.ts` | The one modal stack (U2): one Escape closes only the top layer, focus in, trapped and back, the background inert within the closest `[data-aa-modal-scope]`, every close through the layer's one `onClose`. Dialog, BottomSheet and SidePanel use it; popovers join as `kind: 'popover'` | Phase 35 (close guard on the one `onClose`) |
+| `usePopover` | `ui/usePopover.ts` | The one popover behaviour (U2): open state, outside `pointerdown`, Escape back to the trigger, `aria-expanded` and `aria-controls` | Phase 43a (`InfoTip`) |
+| `PopoverPanel` | `ui/PopoverPanel.tsx` | The one popover panel (U2): card radius, e3, placed `end`, `fill` or `inline` | Phase 43a (`InfoTip`) |
+| `SidePanel` (Admin only) | `apps/admin/components/SidePanel.tsx` | The right-docked Admin panel (U2): `list` 440px drawers, `record` 600px (`MasterPanel`); h2 at 18/700 names the dialog; corner X; e3 | Phases 33a, 35, 43a (`HelpPanel`) |
 
 Text helpers (not components, same rule): `formatMoney`, `parseAmount`, `parseAmountOrNaN`
 (`src/domain/billing/money.ts`) and `dateRange`, `stampText`, `hhmm`, `plural`, `longDayNoYear` and the day

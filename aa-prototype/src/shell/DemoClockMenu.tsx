@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId } from 'react'
 import { CalendarClock } from 'lucide-react'
 import { useAppStore, useClockTimeLabel, useToday } from '../store'
 import { demoClockShortcuts } from '../shared/demoClockShortcuts'
-import { elevation, neutral, radius, zIndex } from '../theme/tokens'
+import { PopoverPanel, usePopover } from '../shared/ui'
+import { neutral, radius } from '../theme/tokens'
 import { longDay } from '../shared/format'
 
 const triggerStyle: React.CSSProperties = {
@@ -43,48 +44,20 @@ const shortcutStyle: React.CSSProperties = {
  * transient screen state alone: store subscribers update live around it.
  */
 export function DemoClockMenu() {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const { open, toggle, rootRef, panelId, triggerProps } = usePopover()
   const titleId = useId()
-  const panelId = useId()
   const todayISO = useToday()
   const timeLabel = useClockTimeLabel()
   const dateLabel = longDay(todayISO)
   const shortcuts = demoClockShortcuts(useAppStore, todayISO)
 
-  useEffect(() => {
-    if (!open) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) {
-        setOpen(false)
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      triggerRef.current?.focus()
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
-
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       <button
-        ref={triggerRef}
+        {...triggerProps}
         type="button"
         aria-label={`Demo clock, ${dateLabel} at ${timeLabel}`}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggle}
         style={triggerStyle}
       >
         <CalendarClock size={16} strokeWidth={2} aria-hidden />
@@ -92,24 +65,7 @@ export function DemoClockMenu() {
       </button>
 
       {open ? (
-        <div
-          id={panelId}
-          role="dialog"
-          aria-labelledby={titleId}
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            zIndex: zIndex.shellMenu,
-            width: 'min(344px, calc(100vw - 24px))',
-            padding: 14,
-            background: neutral.surface,
-            color: neutral.ink,
-            border: `1px solid ${neutral.line}`,
-            borderRadius: radius.card,
-            boxShadow: elevation.e3,
-          }}
-        >
+        <PopoverPanel id={panelId} placement="end" role="dialog" labelledBy={titleId} width="min(344px, calc(100vw - 24px))">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <span
               aria-hidden
@@ -167,7 +123,7 @@ export function DemoClockMenu() {
           <p style={{ margin: '10px 0 0', color: neutral.mist, fontSize: 11.5, lineHeight: 1.4 }}>
             Updates apply immediately and keep this screen open.
           </p>
-        </div>
+        </PopoverPanel>
       ) : null}
     </div>
   )

@@ -45,4 +45,31 @@ describe('BottomSheet dismissal', () => {
     act(() => vi.advanceTimersByTime(motion.sheetIn.out))
     expect(onClose).toHaveBeenCalledOnce()
   })
+
+  it('closes on Escape with the same exit motion (U2, F question 7), the top sheet only', () => {
+    vi.useFakeTimers()
+    const outer = vi.fn()
+    const inner = vi.fn()
+    render(
+      <BottomSheet open onClose={outer}>
+        Outer sheet
+        <BottomSheet open onClose={inner}>
+          Inner sheet
+        </BottomSheet>
+      </BottomSheet>,
+    )
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    act(() => vi.advanceTimersByTime(motion.sheetIn.out))
+    expect(inner).toHaveBeenCalledOnce()
+    expect(outer).not.toHaveBeenCalled()
+  })
+
+  it('moves focus into the sheet on open', () => {
+    render(
+      <BottomSheet open onClose={() => {}}>
+        Sheet content
+      </BottomSheet>,
+    )
+    expect(document.activeElement).toBe(screen.getByRole('dialog'))
+  })
 })

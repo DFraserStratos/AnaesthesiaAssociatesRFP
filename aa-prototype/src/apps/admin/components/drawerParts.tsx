@@ -1,8 +1,10 @@
 /**
  * The parts the Admin List drawers share (catch-up Phase 32c): a labelled
  * section, a label and value row, the small teal-text link button and the
- * footer action button (teal only when primary). Used by the Draft List
- * drawer and the out-of-hours List drawer.
+ * footer action button (teal only when primary, grey when a primary is
+ * disabled). Used inside `SidePanel` by the Draft List drawer and by
+ * SlotDrawer's List and empty-session drawers (one copy since UI unification
+ * U2; U5 later folds `ActionBtn` into `Button`).
  */
 
 import { accent, neutral, radius } from '../../../theme/tokens'

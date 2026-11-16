@@ -2,6 +2,7 @@
 export { BottomSheet } from './BottomSheet'
 export { Dialog } from './Dialog'
 export { SurfaceProvider } from './SurfaceProvider'
+export { useModalLayer, MODAL_SCOPE_ATTR, type ModalLayerOptions, type ModalLayerKind } from './useModalLayer'
 export {
   useSurface,
   type Surface,
