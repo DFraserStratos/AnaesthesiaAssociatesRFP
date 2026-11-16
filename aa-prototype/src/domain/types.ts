@@ -30,7 +30,12 @@ export type IsoDateTime = string
 export type WallTime = string
 
 export type PatientId = string
-export type BillablePartyId = string
+/**
+ * A payer named on a Booking in place of the patient (catch-up Phase 21): the
+ * `BP####` id the retired guardian master used, so a re-expressed guardian
+ * keeps its Xero contact (allocated from `counters.billableParty`).
+ */
+export type PayerId = string
 /** An anaesthetist's ID IS their registration number (RFP master; 2nd review #2). */
 export type AnaesthetistId = string
 export type HospitalId = string
@@ -145,8 +150,22 @@ export type ActorRole = 'anaesthetist' | 'office' | 'system'
 export type AuditSource = 'anaesthetist' | 'office' | 'integration' | 'system' | 'demo'
 
 /**
- * A billing counterparty reference — who money is owed by / billed to.
- * Used by BillingLine funder overrides (5th review #4) and Invoices.
+ * A billing counterparty reference: who money is owed by, billed to. Used by
+ * BillingLine funder overrides (5th review #4) and Invoices; worked out by
+ * `billablePartyForProcedure` (`domain/billing/whoIsBilled.ts`) alone.
+ *
+ * - `patient`: the patient is the payer on the Booking (`id` the patient).
+ * - `payer`: another payer named on the Booking (`id` its `BP####`; catch-up
+ *   Phase 21, AR-44 `#payer`), resolved from that Booking or the invoice's
+ *   `billedTo` snapshot, never from a master.
+ * - `hospital`, `insurer`, `surgeon`, `organisation`, `billableParty`: a holder
+ *   Party's billing identity, the one each Party already carried
+ *   (`Party.billingIdentity`), so no seeded counterparty or Xero contact
+ *   moves. `billableParty` is only Aria's record (`BP0002`), folded from the
+ *   retired guardian master into its Party; it is never a payer.
+ * - `party`: a holder Party with no older identity (`id` its `PartyId`).
+ *
+ * Each id resolves one way only.
  */
 export type CounterpartyKind =
   | 'hospital'
@@ -154,7 +173,9 @@ export type CounterpartyKind =
   | 'surgeon'
   | 'organisation'
   | 'patient'
+  | 'payer'
   | 'billableParty'
+  | 'party'
 export interface CounterpartyRef {
   kind: CounterpartyKind
   id: string
@@ -185,7 +206,8 @@ export interface Patient {
   dobISO: IsoDate
   phone?: string
   email?: string
-  address?: string
+  /** In the NZ Post address standard (catch-up Phase 21, US-11.2.3); read as the payer's when the patient pays. */
+  postalAddress?: PostalAddress
   /** NZHIS Level 4 ethnicity code — only ever a validated code is stored. */
   ethnicityCode?: string
   /**
@@ -197,18 +219,60 @@ export interface Patient {
 }
 
 /**
- * Billable Party — a non-patient payer override, most commonly a guardian
- * paying for a minor. Deliberately NOT a Patient row (3rd review #6): guardians
- * hold no NHI, and the RFP treats "Patient and Billable Party records" as
- * parallel classes. Gets its own hidden-ID Xero contact (4th review #5).
+ * A postal address in the NZ Post address standard (US-11.2.3; Greg, 28
+ * October): an address line (a street address, PO Box or Private Bag), an
+ * optional second line (unit, building or RD), suburb, town or city and a
+ * four-digit postcode. `formatPostalAddress` and `postalAddressProblem`
+ * (`domain/billing/payer.ts`) are its only rules.
  */
-export interface BillableParty {
-  hiddenInternalId: BillablePartyId
+export interface PostalAddress {
+  line1: string
+  line2?: string
+  suburb?: string
+  city: string
+  postcode: string
+}
+
+/**
+ * The payer named on a Booking (catch-up Phase 21; US-11.2.2, DM-11, RV-30;
+ * AR-44 `#payer`, `#patient`): who is invoiced whenever a Procedure's Contract
+ * does not bill its holder (`billablePartyForProcedure`).
+ *
+ * - `patient`: the "different payer" tick is clear (Greg, 28 October). The
+ *   name, email and postal address are read from the patient record; the two
+ *   optional fields hold ones typed for this Booking where the record has
+ *   none (never written back).
+ * - `other`: the tick is set. Any party who pays: a parent, a guardian, a
+ *   benefactor or a family trust. `id` is a `BP####` id, so a guardian
+ *   re-expressed from the retired master keeps its Xero contact.
+ *
+ * Contact is optional in the type so a payer can be saved before it is known;
+ * the payer sheet asks and Review flags a billed payer with neither
+ * (`payerContactMissing`), never a completion check (our reading).
+ *
+ * The catalogue's reading: one payer per Booking, changeable by the office and
+ * the anaesthetist until AUTHORISED. Greg's v6 holds the payer per booking
+ * procedure, admin only, and wanted one billable-party table; this one type,
+ * its one writer (`setBookingPayer`) and its one reader keep that change a
+ * contained edit. Replaces the guardian master and `Procedure.billablePartyId`.
+ */
+export type BookingPayer =
+  | { kind: 'patient'; email?: string; postalAddress?: PostalAddress }
+  | {
+      kind: 'other'
+      id: PayerId
+      name: string
+      relationship?: string
+      email?: string
+      postalAddress?: PostalAddress
+      phone?: string
+    }
+
+/** Who an invoice was addressed to when it was raised (catch-up Phase 21): the payer's details stay with the debt. Phase 22 sends from it. */
+export interface InvoiceBilledTo {
   name: string
-  relationshipToPatient: string
-  phone?: string
   email?: string
-  address?: string
+  postalAddress?: PostalAddress
 }
 
 /**
@@ -353,8 +417,9 @@ export interface OfficePrivateSlice {
 /**
  * INTERIM identity (catch-up Phase 18, RV-39): there is no Insurer master any
  * more. An insurer is a Party; this bare record stays only as the id a
- * Party's `legacyCounterparty` and billing lines' `funderOverride` point at, so no
- * counterparty or Xero contact moves (Phases 20 and 21 retire it).
+ * Party's `billingIdentity` and billing lines' `funderOverride` point at, so no
+ * counterparty or Xero contact moves (catch-up Phase 21 keeps it as the
+ * Party's billing identity; Phase 22's Split replaces its `funderOverride` use).
  */
 export interface Insurer {
   id: InsurerId
@@ -363,8 +428,9 @@ export interface Insurer {
 
 /**
  * INTERIM identity (catch-up Phase 18): the old contract-holder organisation,
- * kept only as the counterparty a surgeon-group Party's `legacyCounterparty`
- * points at (Canterbury Orthopaedic Surgeons). Phase 21 retires it.
+ * kept only as the counterparty a surgeon-group Party's `billingIdentity`
+ * points at (Canterbury Orthopaedic Surgeons). Catch-up Phase 21 keeps it as
+ * that Party's billing identity, so no issued counterparty moves.
  */
 export interface ContractHolderOrganisation {
   id: OrganisationId
@@ -736,6 +802,25 @@ export interface Booking {
    * trail stays the record of where each change came from.
    */
   source?: BookingSource
+  /** The payer on the Booking (catch-up Phase 21, US-11.2.2): set on every creation path, written only by `setBookingPayer`. */
+  payer: BookingPayer
+  /**
+   * The Booking's insurer or funder (catch-up Phase 21; US-11.4.3, DM-12): a
+   * Party of kind `insurer` (NIB, Southern Cross Health Society) or `funder`
+   * (ACC, Health NZ); absent when the patient pays. AR-58's name (earlier
+   * plans called it `insurerHolderId`). Never a counterparty: it never
+   * decides who is billed and never narrows the Contracts offered; it only
+   * marks one path "Suggested" on the step rail (US-04.3.10). Written only by
+   * `setBookingInsurance`.
+   *
+   * OQ-93 answered: fields on the Booking; no narrowing; the approval number
+   * is the one acceptance reference; the only insurance warning is a missing
+   * number on an insurer. D82 (OQ-136 open, default): no other holder
+   * reference is kept on the Booking.
+   */
+  funderPartyId?: string
+  /** The insurer's approval number for the claim (US-11.4.3): the office and, on the day, the anaesthetist record it; the anaesthetist sees it. */
+  insuranceApprovalNumber?: string
   cancellation?: BookingCancellation
   notes?: string
   /** Stamped in lockstep with every audit entry (7th review A8). */
@@ -864,20 +949,7 @@ export interface Procedure {
    * generalises it.
    */
   enteredPrice?: number
-  /**
-   * INTERIM override until Phase 21's payer on the Booking: someone other
-   * than the patient pays (a guardian, a named payer). Read by
-   * `billedPartyFor` only when the Contract bills the payer.
-   */
-  billablePartyId?: BillablePartyId
-  /**
-   * INTERIM until Phase 21 (one seeded Booking, Doyle's bariatric primary):
-   * the office billed this Contract's holder although the Contract bills the
-   * payer, as the retired contract-holder route did. `billedPartyFor` honours
-   * it; a Contract change clears it; nothing in the app sets it. Phase 21's
-   * payer on the Booking replaces it.
-   */
-  billsHolderInterim?: true
+
   /** INTERIM (Phase 20): read only on a prepaid Contract; Phase 27 removes it. */
   prepaymentDetail?: PrepaymentDetail
   /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
@@ -1150,6 +1222,8 @@ export interface Invoice {
   caseReference: string
   bookingId: BookingId
   counterparty: CounterpartyRef
+  /** The addressee's name and contact as at the run (catch-up Phase 21), so a payer's details stay with the debt. */
+  billedTo?: InvoiceBilledTo
   /** Invoice layout differs by recipient class (RFP). */
   layout: 'contractHolder' | 'patient'
   kind: 'standard' | 'prePayment'

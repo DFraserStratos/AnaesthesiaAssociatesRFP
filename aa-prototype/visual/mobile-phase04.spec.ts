@@ -29,7 +29,8 @@ test('mobile Booking header groups status and History above the Patient card', a
   const actions = page.getByTestId('mobile-booking-header-actions')
   const status = actions.getByText('Private', { exact: true }).locator('..')
   const history = actions.getByRole('button', { name: 'History', exact: true })
-  const patient = page.getByText('Patient', { exact: true }).locator('../..')
+  // The Patient card by its hook: "Patient" is also the payer's relationship since catch-up Phase 21.
+  const patient = page.locator('[data-shot="booking-patient"]')
 
   await expect(history).toBeVisible()
   const headerBox = await header.boundingBox()

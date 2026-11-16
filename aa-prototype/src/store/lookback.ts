@@ -15,7 +15,7 @@ import type { AssignedList, AuditEntry, Booking, Procedure, Session } from '../d
 import type { AppState } from './appStore'
 import {
   bookingCountsByList,
-  counterpartyName,
+  invoiceAddresseeName,
   isBackdropList,
   scheduleHorizon,
   slotViewsForAnaesthetist,
@@ -398,7 +398,7 @@ export function invoicesForListView(state: Pick<AppState, 'schedule' | 'billing'
         invoiceId: i.id,
         bookingId: i.bookingId,
         invoiceNumber: i.invoiceNumber,
-        party: counterpartyName(state, i.counterparty),
+        party: invoiceAddresseeName(state, i),
         ...(i.raisedAtISO !== undefined ? { issuedISO: i.raisedAtISO } : {}),
         total: i.total,
         paid,

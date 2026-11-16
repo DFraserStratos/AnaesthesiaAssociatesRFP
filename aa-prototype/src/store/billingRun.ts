@@ -25,8 +25,7 @@
 
 import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
-import { noRouteCounterpartyMessage } from '../domain/billing/parties'
-import { billedPartyFor } from '../domain/billing/whoIsBilled'
+import { HOLDER_MISSING_MESSAGE, holderBilledFor } from '../domain/billing/whoIsBilled'
 import { NOT_A_CANDIDATE_MESSAGE, applyContractChange, contractAllowedOn } from '../domain/billing/contractRail'
 import { withRvgRowChange } from './lifecycle'
 import { railContextForList, railMastersOf } from './selectors'
@@ -202,6 +201,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
           caseReference: bc.id,
           bookingId,
           counterparty: draft.counterparty,
+          ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
           layout: draft.layout,
           kind: 'standard',
           subtotal: draft.subtotal,
@@ -313,10 +313,9 @@ export function chooseContractForFailedBooking(
   // An open price needs its amount typed on the step rail, which the
   // billing monitor does not ask for (catch-up Phase 20).
   if (!contractChoosableForProcedure(contract)) return refuse('openPriceNotChosen', OPEN_PRICE_NOT_CHOSEN_MESSAGE)
-  // INTERIM until Phase 21: whoever the Contract bills needs a billing record,
-  // or the retry would fail again.
-  if (billedPartyFor(procedure, contract, state.masters.parties, state.schedule.bookings[procedure.bookingId]?.patientId ?? '') === undefined) {
-    return refuse('noRouteCounterparty', noRouteCounterpartyMessage(contract.name))
+  // A Contract that bills its holder needs that Party, or the retry would fail again.
+  if (contract.billsTo === 'holder' && holderBilledFor(contract, state.masters.parties) === undefined) {
+    return refuse('holderMissing', HOLDER_MISSING_MESSAGE)
   }
   if (procedure.governingContractId === contractId) return ok(undefined)
   // The step rail's candidate rule (US-04.3.2): no "show all" here either.
@@ -428,6 +427,7 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
         caseReference: bcId,
         bookingId: booking.id,
         counterparty: draft.counterparty,
+        ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
         layout: draft.layout,
         kind: 'standard',
         subtotal: draft.subtotal,

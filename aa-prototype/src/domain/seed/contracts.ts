@@ -13,8 +13,8 @@
  *   this id and DOYLE-001 ($2,800, then $2,950 from 28 Jul 2026); his sleeve
  *   gastrectomy, the CES schedule items, Merivale's combinations and Dr
  *   Souter's prepaid price list follow it. They bill the payer where their
- *   holder is a surgeon, group or anaesthetist (Doyle's bariatric primary
- *   still bills Mr Doyle through `billsHolderInterim` until Phase 21, logged).
+ *   holder is a surgeon, group or anaesthetist (Doyle's bariatric Booking
+ *   included since catch-up Phase 21, when the interim holder flag went).
  * - COS ACC fixed fees has one range from 1 Aug 2026, after the billing-failure
  *   demo's Thu 16 Jul List, so that Booking still "Needs a price".
  *
@@ -113,7 +113,7 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.healthNz, name: 'Health NZ agreed rate', holderId: PARTY.cph, billsTo: 'holder', pricing: rate(23), fundingTagId: TAG.hnz },
   { id: CONTRACT.stgAcc, name: "ACC elective services via St George's", holderId: PARTY.stg, billsTo: 'holder', pricing: rate(25), fundingTagId: TAG.acc },
   // Doyle's gastric bypass: his old $2,800 row and the upcoming $2,950 as ranges; bills the
-  // payer (the route still bills Doyle until Phase 21). His sleeve gastrectomy is in pricedItems.ts.
+  // payer on the Booking (catch-up Phase 21). His sleeve gastrectomy is in pricedItems.ts.
   { id: CONTRACT.doyleBariatric, name: 'Gastric bypass', invoiceDescription: 'Gastric bypass, laparoscopic', holderId: PARTY.doyle, billsTo: 'payer', pricing: fixed(['2025-01-01', 2800], ['2026-07-28', 2950]), defaultRvgGroupId: RVG_GROUP.aaGastricBypass, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
   { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // The Method 3 gate (`permitsRateTime`, INTERIM until Phase 24), linked to

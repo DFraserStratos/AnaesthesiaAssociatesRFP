@@ -331,8 +331,12 @@ describe('review fixes (catch-up Phase 16)', () => {
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
     runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
     const serialised = JSON.stringify(api.getState().xero)
-    const people = [...Object.values(api.getState().masters.patients), ...Object.values(api.getState().masters.billableParties)]
-    for (const p of people) for (const v of [p.name, p.phone, p.email, p.address]) if (v) expect(serialised).not.toContain(v)
+    // Patients and the other payers named on Bookings (catch-up Phase 21: no payer master).
+    const people = [
+      ...Object.values(api.getState().masters.patients).map((p) => [p.name, p.phone, p.email, p.postalAddress?.line1]),
+      ...Object.values(api.getState().schedule.bookings).flatMap((b) => (b.payer.kind === 'other' ? [[b.payer.name, b.payer.phone, b.payer.email, b.payer.postalAddress?.line1]] : [])),
+    ]
+    for (const values of people) for (const v of values) if (v) expect(serialised).not.toContain(v)
     for (const p of Object.values(api.getState().masters.patients)) if (p.nhi) expect(serialised).not.toContain(p.nhi)
   })
 

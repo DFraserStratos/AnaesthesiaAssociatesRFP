@@ -110,7 +110,14 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v39: catch-up Phase 20 (9), owner review 2026-11-16: every hospital tag and Special holder gains
+/** v41: catch-up Phase 21 session 2, insurance on the Booking (US-11.4.3): `Booking.funderPartyId` and
+ *  `insuranceApprovalNumber` (NIB on every nib-Contract Booking, AIA on the claim-back Booking, the review
+ *  List's NIB and Health NZ cases) and the Southern Cross "Suggested" Booking (BK0175).
+ *  v40: catch-up Phase 21 session 1, the payer on the Booking (US-11.2.2, RV-30): `Booking.payer`
+ *  on every Booking (Hana Park, BP0001, on Grace Park's), `Procedure.billablePartyId`,
+ *  `billsHolderInterim` and the `billableParties` master gone, `Patient.address` re-expressed as
+ *  an NZ Post `postalAddress` with seeded emails, `Invoice.billedTo`, and the payer review List.
+ *  v39: catch-up Phase 20 (9), owner review 2026-11-16: every hospital tag and Special holder gains
  *  an RVG backstop Contract (`CT-RVG-<key>`, `systemRole: 'rvgFallback'`) beside its Fixed price one.
  *  v38: catch-up Phase 20a, procedure text (US-02.5.7, US-08.4.6): `Procedure.description`
  *  replaced by one `procedureText` (the hospital's replacing the rooms', the replaced text in
@@ -244,7 +251,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 39
+export const PERSIST_VERSION = 41
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

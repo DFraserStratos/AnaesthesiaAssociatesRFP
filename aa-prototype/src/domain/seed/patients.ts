@@ -1,5 +1,5 @@
 /**
- * Seed patients (~150, all fictional) and the two BillableParty records.
+ * Seed patients (~150, all fictional) and the seeded payer records.
  *
  * Pinned rows: the four design-day PM patients (NHIs from the mockups; David
  * Chen's ZAE0311 corrected to ZAE0310 — the mockup value fails the mod 11
@@ -8,37 +8,44 @@
  * provisional no-NHI patient (the PDF pathway story; renders "NHI pending").
  * The generic pool is generated from the seeded RNG — mostly current-format
  * NHIs with several new-format ones, every patient carrying an NZHIS Level 4
- * ethnicity code from the demo subset.
+ * ethnicity code from the demo subset. Catch-up Phase 21 appends the payer
+ * review patients after the pool (so no generated id moves) and gives every
+ * patient a deterministic email and NZ Post postal address, derived from the
+ * id with no RNG draw, except the ones left blank on purpose.
  */
 
-import type { BillableParty, Patient } from '../types'
+import type { BookingPayer, Patient, PostalAddress } from '../types'
 import { generateNhi } from '../nhi'
 import { ETHNICITY_DEMO_SUBSET } from '../nzhis'
 import { slotRng } from './slotHash'
 
+/**
+ * The `BP####` ids the retired guardian master held (catch-up Phase 21, RV-30):
+ * `guardian` is now Hana Park's id as the payer on Grace Park's Booking; Aria's
+ * is the billing identity its Party carries (`seed/parties.ts`). Both keep
+ * their Xero contacts. New payers are allocated from `counters.billableParty`.
+ */
 export const BP = {
   guardian: 'BP0001',
   ariaClinic: 'BP0002',
 } as const
 
-export const BILLABLE_PARTIES: readonly BillableParty[] = [
-  {
-    hiddenInternalId: BP.guardian,
-    name: 'Hana Park',
-    relationshipToPatient: 'Mother',
-    phone: '021 555 7301',
-    email: 'hana.park@example.net',
-    address: '18 Clifford Avenue, Fendalton, Christchurch',
-  },
-  {
-    hiddenInternalId: BP.ariaClinic,
-    name: 'Aria Skin and Laser Clinic',
-    relationshipToPatient: 'Contracting clinic',
-    phone: '03 555 8140',
-    email: 'accounts@aria-clinic.example',
-    address: '210 Papanui Road, Merivale, Christchurch',
-  },
-] as const
+/** The next payer id the seed leaves for runtime allocation (BP0001, Aria's BP0002 and the seeded family trust's BP0003 are taken). */
+export const SEED_PAYER_COUNTER = 4
+
+/** Hana Park's postal address (re-expressed from the retired master's free text). */
+const HANA_PARK_ADDRESS: PostalAddress = { line1: '18 Clifford Avenue', suburb: 'Fendalton', city: 'Christchurch', postcode: '8052' }
+
+/** Hana Park, Grace Park's mother, as the payer on her Booking (the retired guardian row, BP0001). */
+export const HANA_PARK_PAYER: BookingPayer = {
+  kind: 'other',
+  id: BP.guardian,
+  name: 'Hana Park',
+  relationship: 'Mother',
+  email: 'hana.park@example.net',
+  phone: '021 555 7301',
+  postalAddress: HANA_PARK_ADDRESS,
+}
 
 /** Pinned patient ids the booking seeder references by name. */
 export const PAT = {
@@ -151,7 +158,91 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  return patients
+  patients.push(...PAYER_REVIEW_PATIENTS)
+  return patients.map(withSeedContact)
+}
+
+/**
+ * The payer review patients (catch-up Phase 21): dedicated pinned patients
+ * for the payer review List and the Southern Cross "Suggested" Booking,
+ * appended after the generated pool so no generated id moves. Fixed, valid
+ * NHIs; none is ever handed out by `takePatient`.
+ */
+export const PAT_REVIEW = {
+  childPayer: `PT${String(19 + 132 + 1).padStart(4, '0')}`,
+  contactMissing: `PT${String(19 + 132 + 2).padStart(4, '0')}`,
+  familyTrust: `PT${String(19 + 132 + 3).padStart(4, '0')}`,
+  approvalMissing: `PT${String(19 + 132 + 4).padStart(4, '0')}`,
+  funderNoWarning: `PT${String(19 + 132 + 5).padStart(4, '0')}`,
+  suggestedTag: `PT${String(19 + 132 + 6).padStart(4, '0')}`,
+} as const
+
+const PAYER_REVIEW_PATIENTS: readonly Patient[] = [
+  // 15 on the review List's date: the child payer warning (US-11.2.4).
+  { hiddenInternalId: PAT_REVIEW.childPayer, nhi: 'ZAP3318', name: 'Ella Moana', dobISO: '2011-03-08', phone: '021 555 5101', ethnicityCode: '21111' },
+  // An adult with no email and no postal address on file: "Email or postal address needed" (US-11.2.3).
+  { hiddenInternalId: PAT_REVIEW.contactMissing, nhi: 'ZAQ4425', name: 'Kevin Doherty', dobISO: '1972-10-14', phone: '03 555 5212', ethnicityCode: '11111' },
+  // An adult whose payer is a family trust by post (no flag; Phase 22 posts its invoice).
+  { hiddenInternalId: PAT_REVIEW.familyTrust, nhi: 'ZAR5532', name: 'Robert Whitcombe', dobISO: '1949-05-02', phone: '03 555 5323', ethnicityCode: '11111' },
+  // Session 2's insurance cases (US-11.4.3) and the "Suggested" Booking (US-04.3.10).
+  { hiddenInternalId: PAT_REVIEW.approvalMissing, nhi: 'ZAS6640', name: 'Janet Ormsby', dobISO: '1981-08-27', phone: '021 555 5434', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_REVIEW.funderNoWarning, nhi: 'ZAT7757', name: 'Peter Tawhiri', dobISO: '1964-12-09', phone: '021 555 5545', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_REVIEW.suggestedTag, nhi: 'ZAU8864', name: 'Lucy Fairhall', dobISO: '1977-02-16', phone: '021 555 5656', ethnicityCode: '11111' },
+]
+
+/** Patients left with no email or postal address on purpose. */
+const NO_CONTACT: ReadonlySet<string> = new Set([PAT_REVIEW.contactMissing])
+
+/** A Christchurch suburb and its NZ Post postcode, picked by id for the seed's addresses. */
+const SUBURBS: readonly { suburb: string; postcode: string }[] = [
+  { suburb: 'Fendalton', postcode: '8052' },
+  { suburb: 'Merivale', postcode: '8014' },
+  { suburb: 'Riccarton', postcode: '8041' },
+  { suburb: 'Sydenham', postcode: '8023' },
+  { suburb: 'St Albans', postcode: '8014' },
+  { suburb: 'Papanui', postcode: '8053' },
+  { suburb: 'Cashmere', postcode: '8022' },
+  { suburb: 'Sumner', postcode: '8081' },
+  { suburb: 'Halswell', postcode: '8025' },
+  { suburb: 'Burnside', postcode: '8053' },
+  { suburb: 'Hornby', postcode: '8042' },
+  { suburb: 'Linwood', postcode: '8062' },
+]
+
+const STREETS: readonly string[] = [
+  'Clyde Road', 'Ilam Road', 'Papanui Road', 'Strickland Street', 'Bealey Avenue', 'Harewood Road',
+  'Dyers Pass Road', 'Nayland Street', 'Halswell Road', 'Memorial Avenue', 'Main South Road', 'Linwood Avenue',
+  'Rossall Street', 'Innes Road', 'Colombo Street', 'Barrington Street', 'Wairakei Road', 'Hills Road',
+]
+
+/** `Sarah Mitchell` → `sarah.mitchell`: letters only, lower case, joined by dots. */
+function emailLocalPart(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[^A-Za-z ]/g, '')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .join('.')
+}
+
+/**
+ * The seed's contact for a patient (catch-up Phase 21, US-11.2.3): an
+ * `@example.net` email (the id's number keeps it unique) and an NZ Post postal
+ * address, both derived from the id, so no RNG draw moves. Grace Park, a
+ * child, shares her mother's postal address and has no email.
+ */
+function withSeedContact(patient: Patient): Patient {
+  if (NO_CONTACT.has(patient.hiddenInternalId)) return patient
+  const n = Number(patient.hiddenInternalId.replace(/\D/g, '')) || 0
+  if (patient.hiddenInternalId === PAT.park) return { ...patient, postalAddress: HANA_PARK_ADDRESS }
+  const place = SUBURBS[n % SUBURBS.length] as { suburb: string; postcode: string }
+  const street = STREETS[(n * 7) % STREETS.length] as string
+  return {
+    ...patient,
+    email: `${emailLocalPart(patient.name)}${n}@example.net`,
+    postalAddress: { line1: `${(n * 13) % 240 + 2} ${street}`, suburb: place.suburb, city: 'Christchurch', postcode: place.postcode },
+  }
 }
 
 /** Ids of the generic pool (assigned to generated bookings in order). */

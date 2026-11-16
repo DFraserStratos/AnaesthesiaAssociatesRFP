@@ -14,6 +14,7 @@ import type {
   BillingLine,
   Booking,
   BookingCancellation,
+  BookingPayer,
   BookingSource,
   IntegrationCorrelationRef,
   AssignedList,
@@ -27,7 +28,7 @@ import { projectedListId } from '../slots'
 import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
 import { CONTRACT } from './contracts'
 import { PRICED_ITEM } from './pricedItems'
-import { BP, PAT, genericPatientIds } from './patients'
+import { HANA_PARK_PAYER, PAT, genericPatientIds } from './patients'
 import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP, rvgGroupIdForLegacyCode } from './rvgGroups'
 import { compareSessions } from '../outOfHours'
 import { claimsForSeedAsa } from './modifiers'
@@ -196,6 +197,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     auditComplete?: boolean
     /** Integration provenance (Phase 11) — modify messages locate the Booking by it. */
     correlationRef?: IntegrationCorrelationRef
+    /** The payer on the Booking (catch-up Phase 21): the patient unless given. */
+    payer?: BookingPayer
   }
 
   function anaesthetistNameFor(listId: string): string {
@@ -213,6 +216,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       listId: spec.listId,
       patientId: spec.patientId,
       completed: spec.completedAtISO !== undefined,
+      payer: spec.payer ?? { kind: 'patient' },
       lastModifiedBy: spec.completedAtISO !== undefined ? who : 'Kirsty W.',
       // Completed bookings carry their completion time; not-yet-completed bookings
       // are stamped at the seed clock (Tue 21 Jul 08:00), never their list's
@@ -283,8 +287,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     asaClass?: 'AS1' | 'AS2' | 'AS3' | 'AS4'
     /** The Contract the office chose (catch-up Phase 20: exactly one per Procedure; none needs an invoice destination). */
     governingContractId?: string
-    billablePartyId?: string
-    billsHolderInterim?: true
     /** The step rail's answers so far on a Procedure with no Contract (catch-up Phase 20). */
     railAnswers?: RailAnswers
     prepaymentDetail?: { type: 'full' | 'split'; depositAmount?: number }
@@ -309,8 +311,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     if (spec.startISO !== undefined) procedure.anaestheticStartISO = spec.startISO
     if (spec.handoverISO !== undefined) procedure.handoverISO = spec.handoverISO
     if (spec.governingContractId !== undefined) procedure.governingContractId = spec.governingContractId
-    if (spec.billablePartyId !== undefined) procedure.billablePartyId = spec.billablePartyId
-    if (spec.billsHolderInterim === true) procedure.billsHolderInterim = true
     if (spec.railAnswers !== undefined) procedure.railAnswers = spec.railAnswers
     if (spec.prepaymentDetail !== undefined) procedure.prepaymentDetail = spec.prepaymentDetail
     if (spec.billingReference !== undefined) procedure.billingReference = spec.billingReference
@@ -706,8 +706,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // second procedure, so the old ordinal row went and the concurrent hernia
   // repair is on No contract · RVG, priced at RVG under today's
   // additional-procedure rule (time units only) until Phase 23. No contract ·
-  // RVG is AA's and bills the payer, so until Phase 21 it rides the patient
-  // way (AA, its holder, is never billed).
+  // RVG is AA's and bills the payer on the Booking (AA, its holder, is never
+  // billed); since catch-up Phase 21 the bypass bills the payer too.
   const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
   const bariatricBooking = addBooking({
     listId: fitzTue14,
@@ -724,9 +724,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(TUE14, '10:15'),
     asaClass: 'AS3',
     governingContractId: CONTRACT.doyleBariatric,
-    // INTERIM until Phase 21: billed to Mr Doyle, as the retired contract-holder
-    // route billed it, though his price list bills the payer (D48).
-    billsHolderInterim: true,
+    // Doyle's price list bills the payer on the Booking (catch-up Phase 21,
+    // US-11.2.1): until then the retired contract-holder route billed Mr Doyle.
     billingReference: 'BAR-2026-014',
   })
   addProcedure(bariatricBooking, {
@@ -751,7 +750,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   const rateTimeProc = addProcedure(rateTimeBooking, {
     procedureText: 'Abdominoplasty, individually arranged hourly rate (Aria Skin and Laser Clinic)',
-    billablePartyId: BP.ariaClinic,
     governingContractId: CONTRACT.ariaHourly,
   })
   addLine(rateTimeProc, {
@@ -829,12 +827,12 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     listId: chenFri24,
     patientId: PAT.park,
     scheduledTime: '08:30',
+    payer: HANA_PARK_PAYER,
   })
   addProcedure(guardianBooking, {
     procedureText: 'Strabismus correction, guardian to be invoiced',
     legacyCode: '42794',
     governingContractId: CONTRACT.noContractRvg,
-    billablePartyId: BP.guardian,
   })
 
   // Pre-payment (split deposit) — the UNPAID exemplar, on Souter's own Fri 24
@@ -893,7 +891,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   })
   addProcedure(rateTimeCaptureBooking, {
     procedureText: 'Laser skin resurfacing, individually arranged hourly rate (Aria Skin and Laser Clinic)',
-    billablePartyId: BP.ariaClinic,
     governingContractId: CONTRACT.ariaHourly,
   })
 

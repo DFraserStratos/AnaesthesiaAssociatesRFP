@@ -4,6 +4,8 @@ import type { Patient } from '../../domain/types'
 import { editPatient, useAppStore, type Actor } from '../../store'
 import { Button, TextField } from '../ui'
 import { useSurface } from '../surface'
+import { cleanPostalAddress } from '../../domain/billing/payer'
+import { PostalAddressFields, addressDraftOf, type PostalAddressDraft } from './PostalAddressFields'
 
 interface EditPatientSheetProps {
   open: boolean
@@ -20,7 +22,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
   const [dob, setDob] = useState(patient.dobISO)
   const [phone, setPhone] = useState(patient.phone ?? '')
   const [email, setEmail] = useState(patient.email ?? '')
-  const [address, setAddress] = useState(patient.address ?? '')
+  const [address, setAddress] = useState<PostalAddressDraft>(addressDraftOf(patient.postalAddress))
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
       setDob(patient.dobISO)
       setPhone(patient.phone ?? '')
       setEmail(patient.email ?? '')
-      setAddress(patient.address ?? '')
+      setAddress(addressDraftOf(patient.postalAddress))
       setError(null)
     }
   }, [open, patient])
@@ -40,7 +42,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
       useAppStore,
       actor,
       patient.hiddenInternalId,
-      { name: name.trim(), dobISO: dob, phone: phone.trim(), email: email.trim(), address: address.trim() },
+      { name: name.trim(), dobISO: dob, phone: phone.trim(), email: email.trim(), postalAddress: cleanPostalAddress(address) },
       bookingId,
     )
     if (!outcome.ok) {
@@ -58,7 +60,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
         <TextField label="Date of birth" value={dob} onChange={setDob} type="date" />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
-        <TextField label="Address" value={address} onChange={setAddress} />
+        <PostalAddressFields value={address} onChange={setAddress} shot="patient-postal-address" />
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
             {error}

@@ -47,7 +47,6 @@ function billingContextFor(state: SeedState, booking: Booking): BookingBillingCo
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
     parties: state.masters.parties,
-    billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: state.masters.rvgTimeRule,
@@ -393,7 +392,7 @@ describe('patients & NHIs', () => {
 
   it('seeds ~150 patients, all ethnicity-coded from the demo subset', () => {
     expect(patients.length).toBeGreaterThanOrEqual(145)
-    expect(patients.length).toBeLessThanOrEqual(155)
+    expect(patients.length).toBeLessThanOrEqual(160)
     for (const p of patients) {
       expect(p.ethnicityCode, `${p.hiddenInternalId} has ethnicity`).toBeDefined()
     }

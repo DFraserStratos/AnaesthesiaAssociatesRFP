@@ -53,6 +53,9 @@ function factsFor(state: WarningState, booking: Booking, procedures: readonly Pr
     prepaymentStatus: prepaymentStatusFor(state, booking.id),
     todayISO: state.clock.todayISO,
     rvgGroups: state.masters.rvgGroups,
+    contracts: state.masters.contracts,
+    parties: state.masters.parties,
+    ...(state.masters.patients[booking.patientId] !== undefined ? { patient: state.masters.patients[booking.patientId] } : {}),
   }
 }
 

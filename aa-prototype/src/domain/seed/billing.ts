@@ -95,7 +95,6 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     rvgGroups: seed.masters.rvgGroups,
     contracts: seed.masters.contracts,
     parties: seed.masters.parties,
-    billableParties: seed.masters.billableParties,
     billingLines: Object.values(seed.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: seed.masters.rvgTimeRule,
@@ -168,9 +167,10 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
   const anaesthetistId = seed.schedule.lists[booking.listId]?.anaesthetistId
   const payeeContactId = anaesthetistId !== undefined ? contactIdCache[`anaesthetist:${anaesthetistId}`] : undefined
   // No personal information in Xero (US-09.3.1): the neutral label built from the hidden id.
-  const cpName = (cp: { kind: string; id: string }): string =>
-    xeroIndividualContactName(cp.kind === 'billableParty' ? 'billableParty' : 'patient', cp.id)
-  const cpType = (kind: string): XeroContact['type'] => (kind === 'billableParty' ? 'billableParty' : 'patient')
+  // Another payer on a Booking keeps the `billableParty` contact namespace its BP id always had (catch-up Phase 21).
+  const individual = (kind: string): 'billableParty' | 'patient' => (kind === 'billableParty' || kind === 'payer' ? 'billableParty' : 'patient')
+  const cpName = (cp: { kind: string; id: string }): string => xeroIndividualContactName(individual(cp.kind), cp.id)
+  const cpType = (kind: string): XeroContact['type'] => individual(kind)
 
   const n = { invoice: 0, invoiceLine: 0, billingCase: 0, invoiceNumber: 0 }
   const next = (kind: keyof typeof n): string => {
@@ -189,6 +189,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
       caseReference: caseId,
       bookingId: prepaidBookingId,
       counterparty: draft.counterparty,
+      ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
       layout: draft.layout,
       kind: 'prePayment',
       subtotal: draft.subtotal,
@@ -207,7 +208,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
     // Seeded PAID pre-payment: fully received, authorised and disbursed.
     // Give it a Xero pair + receipt so it reads consistently (D-pre-invoice-pair).
     const cp = draft.counterparty
-    const payerKey = `${cp.kind}:${cp.id}`
+    const payerKey = `${individual(cp.kind)}:${cp.id}`
     let payerContactId = contactIdCache[payerKey]
     if (payerContactId === undefined) {
       payerContactId = `XCB${index}`

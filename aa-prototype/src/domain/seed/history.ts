@@ -51,7 +51,7 @@ import { xeroIndividualContactName } from '../xeroContact'
 import { ANAE, HOSP, ORG, SURG } from './cast'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { CONTRACT, PLAIN_RVG_CONTRACT_BY_HOSPITAL } from './contracts'
-import { BP, genericPatientIds, PAT } from './patients'
+import { BP, genericPatientIds, HANA_PARK_PAYER, PAT } from './patients'
 import { seedText } from './procedureText'
 
 /** The masters buildHistory needs (structural — avoids a circular import of SeedMasters). */
@@ -242,7 +242,7 @@ const ACCOUNTS: readonly HistoryAccount[] = [
   { key: 'pa04', patientId: PAT.riley, counterparty: { kind: 'patient', id: PAT.riley }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Cosmetic procedure, self funded', serviceISO: '2026-05-10', raisedISO: '2026-05-11T09:00:00', total: 900.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-05-18T10:00:00', disbursedAtISO: '2026-05-20T09:00:00', archivedContact: true },
   // Billable-party (guardian) paid account — a non-patient individual contact
   // that the nightly archive job can retire (the billableParty-eligible path).
-  { key: 'pa05', patientId: PAT.park, counterparty: { kind: 'billableParty', id: BP.guardian }, surgeonId: SURG.reid, listHospitalId: HOSP.ces, description: 'Paediatric strabismus, guardian funded', serviceISO: '2026-05-08', raisedISO: '2026-05-09T09:00:00', total: 540.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-05-14T10:00:00', disbursedAtISO: '2026-05-16T09:00:00' },
+  { key: 'pa05', patientId: PAT.park, counterparty: { kind: 'payer', id: BP.guardian }, surgeonId: SURG.reid, listHospitalId: HOSP.ces, description: 'Paediatric strabismus, guardian funded', serviceISO: '2026-05-08', raisedISO: '2026-05-09T09:00:00', total: 540.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-05-14T10:00:00', disbursedAtISO: '2026-05-16T09:00:00' },
   // --- Browsable history, January to March 2026 (catch-up Phase 38a) ---
   // Twelve multi-Booking Lists Dr Souter can find by search or by date, at her
   // usual hospitals with their surgeons, appended so every existing id, invoice
@@ -389,16 +389,19 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       // No personal information in Xero (US-09.3.1): individual contacts carry
       // only the neutral label built from the hidden id.
       case 'patient': return xeroIndividualContactName('patient', cp.id)
+      case 'payer':
       case 'billableParty': return xeroIndividualContactName('billableParty', cp.id)
       default: return cp.id
     }
   }
   const payerType = (cp: CounterpartyRef): XeroContact['type'] =>
-    cp.kind === 'patient' ? 'patient' : cp.kind === 'billableParty' ? 'billableParty' : 'organisation'
+    cp.kind === 'patient' ? 'patient' : cp.kind === 'billableParty' || cp.kind === 'payer' ? 'billableParty' : 'organisation'
   // The RFP billing routes: patient/billableParty payers → the Billable Party
   // route; every organisational holder (hospital/insurer/surgeon/organisation) →
   // the contract-holder route (the RFP names it 'hospital').
-  const isPatientRoute = (cp: CounterpartyRef): boolean => cp.kind === 'patient' || cp.kind === 'billableParty'
+  const isPatientRoute = (cp: CounterpartyRef): boolean => cp.kind === 'patient' || cp.kind === 'payer'
+  // A payer on a Booking keeps the Xero contact namespace its `BP####` id always had (catch-up Phase 21).
+  const contactKind = (cp: CounterpartyRef): string => (cp.kind === 'payer' ? 'billableParty' : cp.kind)
 
   const dsbRunId = opts.payablesRunId
   let seq = 0
@@ -439,6 +442,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       patientId: acc.patientId,
       completed: true,
       completedAtISO: acc.raisedISO,
+      // The payer on the Booking (catch-up Phase 21): Hana Park on Grace Park's guardian-funded account, else the patient.
+      payer: acc.counterparty.kind === 'payer' && acc.counterparty.id === BP.guardian ? HANA_PARK_PAYER : { kind: 'patient' },
       ...(acc.scheduledTime !== undefined ? { scheduledTime: acc.scheduledTime } : {}),
       lastModifiedBy: 'Billing run',
       lastModifiedAtISO: acc.raisedISO,
@@ -459,7 +464,6 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       removedModifierIds: [],
     }
     if (acc.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(acc.legacyCode)
-    if (acc.counterparty.kind === 'billableParty') procedure.billablePartyId = acc.counterparty.id
     // Historical holder-billed procedures carry a billing reference (they are
     // billed + often paid), so they never read as the seeded "missing ref" gaps.
     if (!isPatientRoute(acc.counterparty)) procedure.billingReference = `HIST-${acc.key.toUpperCase()}`
@@ -474,6 +478,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       caseReference: caseId,
       bookingId,
       counterparty: acc.counterparty,
+      ...(acc.counterparty.kind === 'payer' && acc.counterparty.id === BP.guardian ? { billedTo: { name: 'Hana Park', email: 'hana.park@example.net' } } : {}),
       layout: isPatientRoute(acc.counterparty) ? 'patient' : 'contractHolder',
       kind: 'standard',
       subtotal,
@@ -485,7 +490,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
     build.invoiceLines[ids.invoiceLine(n)] = { id: ids.invoiceLine(n), invoiceId, procedureId: procId, description: acc.description, amount: subtotal }
 
     // --- Xero: contacts + ACCREC + ACCPAY ---
-    const payerContactId = opts.resolveContact(acc.counterparty.kind, acc.counterparty.id, payerName(acc.counterparty), payerType(acc.counterparty), acc.archivedContact === true)
+    const payerContactId = opts.resolveContact(contactKind(acc.counterparty), acc.counterparty.id, payerName(acc.counterparty), payerType(acc.counterparty), acc.archivedContact === true)
     const accRecId = ids.accRec(n)
     const accPayId = ids.accPay(n)
     const paid = acc.paidState === 'paid'

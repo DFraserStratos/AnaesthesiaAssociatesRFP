@@ -1,6 +1,190 @@
 {
   "id": "US-11.2.3",
-  "status": "absent",
-  "absentReason": "No invoice email is captured or required for patient-direct billing; searched the add booking form, billing setup sheet, patient edit sheet and billing guards for an invoice email field or rule.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "payer-contact-required",
+      "app": "admin",
+      "caption": "A billed payer needs an email or a postal address",
+      "start": "/admin/day/2026-07-17/bookings/BK0171",
+      "states": [
+        {
+          "state": "flagged",
+          "caption": "A billed payer with neither an email nor a postal address: \"Email or postal address needed\"",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-payer-row]"
+          ]
+        },
+        {
+          "state": "postal",
+          "caption": "A postal address alone is enough: the request is gone",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Address\"]",
+              "value": "4 Beach Road"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Town or city\"]",
+              "value": "Christchurch"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Postcode\"]",
+              "value": "8081"
+            },
+            {
+              "click": "[data-shot=payer-sheet] >> role=button[name=\"Save payer\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-payer-row]"
+          ]
+        },
+        {
+          "state": "ask",
+          "caption": "The payer sheet asks for one, and saves without it",
+          "steps": [
+            {
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=payer-contact-ask]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "review-payer-contact",
+      "app": "admin",
+      "caption": "Office review flags a billed payer with neither, never a block",
+      "start": "/admin/review/L-45178-2026-07-17-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-payer-contact]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payer-contact-required",
+      "app": "mobile",
+      "caption": "A billed payer needs an email or a postal address",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "states": [
+        {
+          "state": "flagged",
+          "caption": "Another payer named with no email or postal address: \"Email or postal address needed\"",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=payer-different-tick] input"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Name\"]",
+              "value": "Mere Chen"
+            },
+            {
+              "click": "[data-shot=payer-sheet] >> role=button[name=\"Save payer\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-payer-row]"
+          ]
+        },
+        {
+          "state": "postal",
+          "caption": "A postal address alone is enough: the request is gone",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=payer-different-tick] input"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Name\"]",
+              "value": "Mere Chen"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Address\"]",
+              "value": "PO Box 4410"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Town or city\"]",
+              "value": "Christchurch"
+            },
+            {
+              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Postcode\"]",
+              "value": "8140"
+            },
+            {
+              "click": "[data-shot=payer-sheet] >> role=button[name=\"Save payer\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-payer-row]"
+          ]
+        }
+      ]
+    }
+  ]
 }

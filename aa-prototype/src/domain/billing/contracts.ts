@@ -94,7 +94,7 @@ export interface Contract {
   /**
    * AR-58 `billsTo`: its holder, or the payer on the Booking (D2, US-04.2.1).
    * Decides where the Contract sits on the step rail (`destinationOf`) and,
-   * INTERIM until Phase 21, who a Procedure on it bills (`billedPartyFor`).
+   * who a Procedure on it bills (`billablePartyForProcedure`, catch-up Phase 21).
    */
   billsTo: BillsTo
   /** AR-58 `linkedSurgeonIds`: surgeons whose Lists it is offered on (OQ-105: individual surgeons, never rooms). */

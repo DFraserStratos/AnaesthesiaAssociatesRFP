@@ -10,7 +10,8 @@
  * the web dashboard's week strip.
  */
 
-import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
+import { ageInCompletedYears } from '../domain/billing/modifiers'
+import { addDays, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
 import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
@@ -59,9 +60,9 @@ export function formatDob(dobISO: string): string {
   return format(parseISO(dobISO), 'd MMM yyyy').toUpperCase()
 }
 
-/** Whole years between a DOB and the demo clock's today. */
+/** Whole years between a DOB and the demo clock's today: the one age rule (`ageInCompletedYears`, 19b), never its own maths. */
 export function ageYears(dobISO: string, todayISO: string): number {
-  return differenceInYears(parseISO(todayISO), parseISO(dobISO))
+  return ageInCompletedYears(dobISO, todayISO) ?? 0
 }
 
 /**

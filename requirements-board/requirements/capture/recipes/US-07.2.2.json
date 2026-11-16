@@ -37,7 +37,7 @@
         },
         {
           "state": "edit",
-          "caption": "Contract and payer, the Contract chosen on the step rail",
+          "caption": "Contract and reference, the Contract chosen on the step rail",
           "steps": [
             {
               "click": "role=button[name=\"Edit billing setup\"]"

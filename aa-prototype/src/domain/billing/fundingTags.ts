@@ -27,7 +27,7 @@ export interface FundingTag {
   code: string
   /** Display order, 1 upward: the step rail's order. Renumbered on every move. */
   order: number
-  /** The insurer or funder whose work arrives under this tag (A25). Only Phase 21's "Suggested" reads it. */
+  /** The insurer or funder whose work arrives under this tag (A25). Only the step rail's "Suggested" reads it (`fundingTagForFunder`, catch-up Phase 21). */
   funderPartyId?: PartyId
 }
 
@@ -36,6 +36,15 @@ type Tags = Readonly<Record<FundingTagId, FundingTag>>
 /** The list in step-rail order. */
 export function fundingTagsInOrder(tags: Tags): FundingTag[] {
   return Object.values(tags).sort((a, b) => a.order - b.order || a.code.localeCompare(b.code))
+}
+
+/**
+ * The funding tag that names this insurer or funder (`funderPartyId`), first
+ * in AA's order; undefined when none does. Only the step rail's "Suggested"
+ * reads it (catch-up Phase 21, US-04.3.10; AR-58 A25: a tag names its funder).
+ */
+export function fundingTagForFunder(tags: Tags, funderPartyId: PartyId): FundingTag | undefined {
+  return fundingTagsInOrder(tags).find((t) => t.funderPartyId === funderPartyId)
 }
 
 /** Whether a tag is ACC: its code is `ACC`, ignoring case (codes are unique). */

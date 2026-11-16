@@ -18,7 +18,7 @@ import phase18Fixture from './__parity__/phase-18-baseline.json'
 import phase19Fixture from './__parity__/phase-19-baseline.json'
 import phase19aFixture from './__parity__/phase-19a-baseline.json'
 import phase19bFixture from './__parity__/phase-19b-baseline.json'
-import { MERIVALE_FACE_LIFT_BOOKING_ID, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
+import { MERIVALE_FACE_LIFT_BOOKING_ID, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 import { freshAppState } from './appStore'
 import { billingContextForBooking, bookingsForList, prePaidByProcedure, proceduresForBooking } from './selectors'
 import { procedureFee } from '../shared/capture/feeContext'
@@ -146,6 +146,41 @@ for (const row of invoices) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Catch-up Phase 21 (FT-11.2, US-11.2.1, US-11.2.2, DM-11, RV-30): each
+// Contract decides who is billed, and the payer lives on the Booking. Its only
+// on-purpose differences, exact, mapped back to the fixtures' form only when
+// the row equals its declared value (asserted in "Phase 21 who is billed"):
+//   - Doyle's bariatric Booking (BK0028): his price list bills the payer, so
+//     the gastric bypass ($2,800) joins the hernia ($61) on one invoice to the
+//     patient, Gareth Mills ($2,861 + GST = $3,290.15). Not yet invoiced in
+//     the seed; no S1 to S5 beat shows it.
+//   - Hana Park (BP0001) is the payer on Grace Park's Booking rather than a
+//     guardian master row: the same id, name and Xero contact under the kind
+//     `payer` (was `billableParty`).
+// ---------------------------------------------------------------------------
+
+const DOYLE_BOOKING_21 = 'BK0028'
+const DOYLE_INVOICES_21: InvoiceRow['result'] = {
+  kind: 'invoices',
+  invoices: [{ counterparty: 'patient:PT0015', subtotal: 2861, total: 3290.15 }],
+}
+const phase21Raw = invoices.map((r) => structuredClone(r))
+for (const row of invoices) {
+  if (row.bookingId === DOYLE_BOOKING_21 && JSON.stringify(row.result) === JSON.stringify(DOYLE_INVOICES_21)) {
+    row.result = {
+      kind: 'invoices',
+      invoices: [
+        { counterparty: 'surgeon:S-DOYLE', subtotal: 2800, total: 3220 },
+        { counterparty: 'patient:PT0015', subtotal: 61, total: 70.15 },
+      ],
+    }
+  }
+  if (row.result.kind === 'invoices') {
+    for (const inv of row.result.invoices) if (inv.counterparty === 'payer:BP0001') inv.counterparty = 'billableParty:BP0001'
+  }
+}
+
 const feeOf = (procedureId: string) => fees.find((f) => f.procedureId === procedureId)
 const invoicesOf = (bookingId: string) => invoices.find((i) => i.bookingId === bookingId)?.result
 
@@ -159,8 +194,9 @@ const invoicesOf = (bookingId: string) => invoices.find((i) => i.bookingId === b
  * so the bariatric Booking's ordinal row ($950) went. The concurrent hernia
  * (P0030, additional) is on No contract · RVG, priced at RVG time units only
  * (2 units at Dr Fitzgerald's $30.50 = $61) and, AA's Contract billing the
- * payer, invoiced to the patient (Gareth Mills, PT0015) until Phase 21. Doyle's
- * invoice keeps the gastric bypass at $2,800 (+ GST $420).
+ * payer, invoiced to the patient (Gareth Mills, PT0015). Doyle's invoice kept
+ * the gastric bypass at $2,800 (+ GST $420) until catch-up Phase 21 billed it to
+ * the payer too (the declared Phase 21 move above).
  */
 const HERNIA_FEE = { procedureId: 'P0030', total: 61, billableUnits: 2, lines: [{ basis: 'rvg', amount: 61 }] }
 const HERNIA_INVOICES: InvoiceRow['result'] = {
@@ -245,6 +281,7 @@ const ADDED_BOOKINGS: Record<string, string> = {
   [MERIVALE_FACE_LIFT_BOOKING_ID]: "Phase 19a · Merivale's Face lift",
   // Catch-up Phase 20a: AR-35's illustrative wording (the "RTK" Booking and the expert rows), uncaptured.
   ...Object.fromEntries(SOURCE_WORDING_BOOKING_IDS.map((id) => [id, "Phase 20a · AR-35's illustrative wording"])),
+  ...Object.fromEntries(PAYER_REVIEW_BOOKING_IDS.map((id) => [id, 'Phase 21 · the payer review List'])),
 }
 
 /**
@@ -255,7 +292,8 @@ const ADDED_BOOKINGS: Record<string, string> = {
 const FOSTER_BOOKING_20A = SEED_MARKERS.integrationS14!.entityId
 const FOSTER_PROCEDURE_20A = Object.values(state.schedule.procedures).find((p) => p.bookingId === FOSTER_BOOKING_20A)!.id
 /** Phase 20a's appended Bookings and their Procedures (named additions). */
-const ADDED_BOOKINGS_20A = new Set(SOURCE_WORDING_BOOKING_IDS)
+/** Phase 20a's named additions, and Phase 21's payer review List beside them (set aside the same way). */
+const ADDED_BOOKINGS_20A = new Set([...SOURCE_WORDING_BOOKING_IDS, ...PAYER_REVIEW_BOOKING_IDS])
 const ADDED_PROCEDURES_20A = new Set(Object.values(state.schedule.procedures).filter((p) => ADDED_BOOKINGS_20A.has(p.bookingId)).map((p) => p.id))
 
 function addedProcedureIds(): Set<string> {
@@ -542,12 +580,28 @@ describe('Phase 20 one Contract per Procedure parity', () => {
     expect(state.schedule.procedures[NAIR_PREPAID_PROCEDURE]?.governingContractId).toBe('CT-SOUTER-RHINO-COS')
   })
 
-  it('every Procedure carries a Contract but the seven route-less Bookings', () => {
+  it('every Procedure carries a Contract but the seven route-less Bookings (and Phase 21\'s Suggested Booking, waiting on the office)', () => {
     for (const p of Object.values(state.schedule.procedures)) {
       const booking = state.schedule.bookings[p.bookingId]
       if (booking === undefined || booking.cancellation !== undefined) continue
+      if (p.bookingId === SEED_MARKERS['suggestedTag']!.entityId) {
+        expect(p.governingContractId, p.id).toBeUndefined()
+        continue
+      }
       if (PHASE_20_NO_CONTRACT_BOOKINGS.has(p.bookingId)) expect(p.governingContractId, p.id).toBeUndefined()
       else expect(p.governingContractId, p.id).toBeDefined()
     }
+  })
+})
+
+describe('Phase 21 who is billed (catch-up Phase 21, US-11.2.1, US-11.2.2)', () => {
+  it("bills Doyle's bariatric Booking to the payer on the Booking: one invoice to the patient at the Contract's price", () => {
+    expect(phase21Raw.find((i) => i.bookingId === DOYLE_BOOKING_21)?.result).toEqual(DOYLE_INVOICES_21)
+  })
+
+  it('bills Hana Park as the payer on Grace Park\'s Booking, the same id as the retired guardian row', () => {
+    const grace = phase21Raw.find((i) => i.result.kind === 'invoices' && i.result.invoices.some((x) => x.counterparty === 'payer:BP0001'))
+    expect(grace).toBeDefined()
+    expect(phase21Raw.some((i) => i.result.kind === 'invoices' && i.result.invoices.some((x) => x.counterparty.startsWith('billableParty:BP0001')))).toBe(false)
   })
 })

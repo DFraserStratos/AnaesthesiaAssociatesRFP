@@ -1,0 +1,69 @@
+{
+  "id": "US-04.3.10",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "suggested-path",
+      "app": "admin",
+      "caption": "The Booking's funder marks one path Suggested and never narrows the choice",
+      "start": "/admin/day/2026-07-23/bookings/BK0175",
+      "states": [
+        {
+          "state": "tag",
+          "caption": "Southern Cross Health Society suggests Southern Cross › SXAP; Patient and Special stay offered",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing]"
+          ]
+        },
+        {
+          "state": "nib",
+          "caption": "NIB with a nib Contract on the List suggests Special › NIB",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-17/bookings/BK0173"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-rail-start-again]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-rail-option=special]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing]"
+          ]
+        },
+        {
+          "state": "none",
+          "caption": "With no funder, Patient › Standard is suggested",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-27/bookings/BK0035"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing]"
+          ]
+        }
+      ]
+    }
+  ]
+}

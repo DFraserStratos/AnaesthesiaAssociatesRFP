@@ -14,7 +14,7 @@ import { Caption, FailureNotes } from './ui'
 import { BILLING_FAILURE_FIELDS, BillingCard } from '../booking/BillingCard'
 import { ProcedureStack } from '../booking/ProcedureStack'
 
-/** Fields the Contract row anchors (the step rail and "Contract and payer" own them; catch-up Phase 20). */
+/** Fields the Contract row anchors (the step rail and "Contract and reference" own them; catch-up Phase 20). */
 // The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
 const CONTEXT_FIELDS = BILLING_FAILURE_FIELDS
 

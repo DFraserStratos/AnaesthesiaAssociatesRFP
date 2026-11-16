@@ -34,6 +34,8 @@ export function BillingLinesCard({
   canCapture,
   failures,
 }: BillingLinesCardProps) {
+  // The Booking's other payer is named from the Booking (catch-up Phase 21).
+  const bookings = useAppStore((s) => s.schedule.bookings)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -100,7 +102,7 @@ export function BillingLinesCard({
               )}
               {line.funderOverride !== undefined && (
                 <span style={{ fontSize: 12, color: neutral.slate }}>
-                  Billed to {counterpartyName({ masters }, line.funderOverride)}
+                  Billed to {counterpartyName({ masters, schedule: { bookings } }, line.funderOverride, procedure.bookingId)}
                 </span>
               )}
             </span>

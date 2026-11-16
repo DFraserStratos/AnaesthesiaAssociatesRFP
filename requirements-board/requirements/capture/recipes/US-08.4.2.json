@@ -1,7 +1,7 @@
 {
   "id": "US-08.4.2",
   "status": "partial",
-  "absentReason": "Emailing is simulated and records only the time sent; the invoice does not show or use an invoice email address captured on the booking, so sending to a guardian's address is not shown. Portal upload for an insurer is shown.",
+  "absentReason": "Emailing is simulated and records only the time sent. Since catch-up Phase 21 the invoice shows the payer's email or postal address as at the run (Invoice to), but sending to it, and posting, are Phase 22's. Portal upload for an insurer is shown.",
   "shots": [
     {
       "name": "email-invoice",

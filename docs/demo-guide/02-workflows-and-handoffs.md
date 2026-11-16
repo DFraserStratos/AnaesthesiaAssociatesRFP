@@ -416,8 +416,11 @@ The List reaches `AUTHORISED`.
 1. The Billing Engine iterates each active Booking and its Procedures.
 2. It reads each Procedure's one Contract; a Procedure with none fails as "Needs an invoice
    destination".
-3. The Contract says who is billed: its holder (a hospital, an insurer, a surgeon or group), or the
-   patient (or the payer named on the Procedure).
+3. Each Procedure's Contract says who is billed: its holder Party when the Contract bills its holder
+   (a hospital, an insurer, a surgeon group), otherwise the payer named on the Booking: the patient,
+   or whoever the **Different payer** tick names (a parent, a guardian, a benefactor, a family trust).
+   A surgeon's fixed price, No contract · RVG, No contract · Fixed price, an anaesthetist's own price
+   list and every prepaid Contract bill the payer. The Booking's insurer or funder never decides it.
 4. It calculates the fee from the captured snapshot.
 5. It enforces time-only additional Procedures and conserved two-funder allocations.
 6. It groups lines by counterparty per Booking.
@@ -470,7 +473,7 @@ An invoice has been generated.
 8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
    Billing Engine's mirror, not from direct Xero queries.
 9. Eligible individual Xero contacts may later be archived to manage active-contact volume. These
-   patient and guardian contacts carry only the hidden internal ID: no name, NHI or other personal
+   patient and payer contacts carry only the hidden internal ID: no name, NHI or other personal
    information.
 
 ### Handoff
@@ -551,9 +554,23 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   clearance is recorded and audited, and the Booking shows who cleared it and when.
 - The to-do list holds warnings that need action only. Notices that need none go to the shared
   notification pool when it is built.
-- Today's rule is the unpaid prepayment. Later rules add theirs: base units outside the range, a
-  child as the payer on the Booking, insurer-will-pay with no insurer Contract, a prepaid procedure
-  with no price, and a paying patient with a balance.
+- The rules today: the unpaid prepayment (strong), base units outside the range, a child as the payer
+  on the Booking (catch-up Phase 21) and an insurer named with no approval number (catch-up Phase 21,
+  NIB or Southern Cross Health Society only, never ACC or Health NZ), all mild but the first. Later
+  rules add a prepaid procedure with no price and a paying patient with a balance. There is no warning
+  for an insurer named without an insurer Contract.
+
+#### Booking setup: the payer and the insurer or funder (catch-up Phase 21)
+
+- Every new Booking names a payer: the patient, prefilled from the patient record, with no step
+  taken. The add form (manual entry, phone advice, the anaesthetist's ad hoc Booking) and the Booking's
+  **Payer** row offer the **Different payer** tick for someone else who pays.
+- A billed payer needs an email or an NZ Post postal address. The payer sheet asks; Review flags
+  **Email or postal address needed**; nothing blocks.
+- The Booking's **Insurer or funder** row holds the insurer or funder (a Party) and the approval number,
+  from the source data where an intake path carries them (the hospital matching screen, Phase 33) or
+  recorded by the office; the anaesthetist sees the number and can enter it on the day. The funder
+  marks one path **Suggested** on the step rail and never narrows it.
 
 #### Post-operative addition
 

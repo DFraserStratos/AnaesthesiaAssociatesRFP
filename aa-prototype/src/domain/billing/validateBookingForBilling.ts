@@ -10,13 +10,13 @@
 
 import type {
   Anaesthetist,
-  BillableParty,
   BillingLine,
   Booking,
   Contract,
   Modifier,
   ModifierId,
   Party,
+  Patient,
   Procedure,
   RvgGroup,
   RvgGroupId,
@@ -25,9 +25,8 @@ import { feeFor } from './fee'
 import { groupOf } from './rvgGroups'
 import { claimCompletionProblems, preAppliedModifiersFor } from './modifiers'
 import { toCents } from './money'
-import { noRouteCounterpartyMessage } from './parties'
 import { isRvgKind, procedureNeedsPrice } from './contracts'
-import { billedPartyFor } from './whoIsBilled'
+import { HOLDER_MISSING_MESSAGE, holderBilledFor } from './whoIsBilled'
 import { rvgCodeToFill } from './contractRail'
 import { needsPriceMessage } from './priceRanges'
 import type { RvgTimeRule } from './timeUnits'
@@ -55,28 +54,33 @@ export const CONTRACT_GONE_FAILURE = 'The selected Contract no longer exists. Ch
 export const TYPE_THE_PRICE_FAILURE = 'Type the price for this procedure.'
 export const ADD_RVG_CODE_FAILURE = 'Add the RVG code for this procedure.'
 
-/** Who gives a contract or approval reference when billed: a hospital, a surgeon or a surgeons' organisation (INTERIM until Phase 21). */
+/** Who gives a contract reference when billed: a hospital, a surgeon or a surgeons' organisation (by billing identity). */
 const REFERENCE_COUNTERPARTY_KINDS: ReadonlySet<string> = new Set(['hospital', 'surgeon', 'organisation'])
+/** The same, for a holder Party billed as itself (catch-up Phase 21): a hospital, a surgeon or a surgeon group. */
+const REFERENCE_PARTY_KINDS: ReadonlySet<string> = new Set(['hospital', 'surgeon', 'surgeonGroup'])
 
 /**
  * A4's "reference completeness" check, single-sourced (6th review #6): the
- * holder's contract or approval reference is expected when the Procedure
- * bills a hospital or a surgeon holder (catch-up Phase 20, keyed on who the
- * Contract bills, INTERIM until Phase 21); an insurer's Contract, a price list
- * billing the payer, a clinic billing a payer record, an open-price fallback
- * and No contract · RVG expect none. True when it is expected and absent or
- * blank. The office billing setup and the authorisation-review flags both read
- * this one predicate.
+ * holder's contract or approval reference is expected when the Procedure's
+ * Contract bills a hospital or a surgeon holder (keyed on who is billed,
+ * `holderBilledFor`); an insurer's Contract, a Contract billing the payer, an
+ * open-price fallback and No contract · RVG expect none. True when it is
+ * expected and absent or blank. The office billing setup and the
+ * authorisation-review flags read this one predicate. Catch-up Phase 21 builds
+ * no other holder reference (OQ-136, D82); 21a settles this flag with Review.
  */
 export function billingReferenceMissing(
-  procedure: Pick<Procedure, 'billingReference' | 'governingContractId' | 'billsHolderInterim' | 'billablePartyId'>,
+  procedure: Pick<Procedure, 'billingReference' | 'governingContractId'>,
   contracts: Readonly<Record<string, Contract>>,
   parties: Readonly<Record<string, Party>>,
 ): boolean {
   const contract = procedure.governingContractId !== undefined ? contracts[procedure.governingContractId] : undefined
   if (contract === undefined || contract.systemRole !== undefined) return false
-  const billed = billedPartyFor(procedure, contract, parties, '')
-  if (billed === undefined || !REFERENCE_COUNTERPARTY_KINDS.has(billed.kind)) return false
+  const billed = holderBilledFor(contract, parties)
+  if (billed === undefined) return false
+  // A holder Party billed as itself (no older identity, e.g. Unisports) is judged by its Party kind.
+  const expects = billed.kind === 'party' ? REFERENCE_PARTY_KINDS.has(parties[billed.id]?.kind ?? '') : REFERENCE_COUNTERPARTY_KINDS.has(billed.kind)
+  if (!expects) return false
   return procedure.billingReference === undefined || procedure.billingReference.trim() === ''
 }
 
@@ -88,7 +92,6 @@ export interface BookingBillingContext {
   contracts: Readonly<Record<string, Contract>>
   /** The Party master (catch-up Phase 18): the Contracts' holders. */
   parties: Readonly<Record<string, Party>>
-  billableParties: Readonly<Record<string, BillableParty>>
   /** ALL stored billing lines; filtered per procedure by `procedureId`. */
   billingLines: readonly BillingLine[]
   /** The List's billing hospital (absent at AA's rooms). */
@@ -104,6 +107,12 @@ export interface BookingBillingContext {
   patientDobISO: string | undefined
   /** The modifier master (`masters.modifiers`, catch-up Phase 19b). */
   modifiers: Readonly<Record<ModifierId, Modifier>>
+  /**
+   * The patient record, for the `billedTo` snapshot of a payer-billed invoice
+   * (catch-up Phase 21). Optional: without it the snapshot carries only what
+   * the Booking holds. Never read by a fee or a validation rule.
+   */
+  patient?: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'>
 }
 
 /**
@@ -219,10 +228,6 @@ export function validateBookingForBilling(
       // the after-procedure `baseUnitsOutsideGuide` warning, never a refusal.
     }
 
-    // The payer override must resolve when present (INTERIM until Phase 21).
-    if (procedure.billablePartyId !== undefined && ctx.billableParties[procedure.billablePartyId] === undefined) {
-      fail(id, 'billablePartyId', 'The billable party on this procedure could not be found.')
-    }
 
     // A split prepayment on a prepaid Contract needs its deposit (7th review
     // B6; INTERIM `prepaymentDetail` until Phase 27). No gate (D5).
@@ -242,10 +247,11 @@ export function validateBookingForBilling(
       }
     }
 
-    // Who the Contract bills needs a billing record (INTERIM until Phase 21),
-    // the billing resolver's own sentence.
-    if (contract !== undefined && billedPartyFor(procedure, contract, ctx.parties, booking.patientId) === undefined) {
-      fail(id, 'governingContractId', noRouteCounterpartyMessage(contract.name))
+    // A Contract that bills its holder needs that Party to exist (the run's
+    // own sentence); one that bills the payer always has the payer on the
+    // Booking (catch-up Phase 21).
+    if (contract?.billsTo === 'holder' && holderBilledFor(contract, ctx.parties) === undefined) {
+      fail(id, 'governingContractId', HOLDER_MISSING_MESSAGE)
     }
 
     // A fixed price with no range in force on the List's date: "Needs a price"

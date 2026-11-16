@@ -121,6 +121,7 @@ export function raisePreProcedureInvoice(
         caseReference: bc.id,
         bookingId,
         counterparty: draft.counterparty,
+        ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
         layout: draft.layout,
         kind: 'prePayment',
         subtotal: draft.subtotal,

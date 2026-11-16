@@ -19,7 +19,7 @@
         },
         {
           "state": "edit",
-          "caption": "The office sets the Contract at setup: Contract and payer",
+          "caption": "The office sets the Contract at setup: Contract and reference",
           "steps": [
             {
               "click": "role=button[name=\"Edit billing setup\"]"

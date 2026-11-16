@@ -1,0 +1,137 @@
+{
+  "id": "US-11.4.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "insurer-approval",
+      "app": "admin",
+      "caption": "Insurer or funder and approval number on the Booking; a missing number is the only insurance warning, for an insurer only",
+      "start": "/admin/day/2026-07-17/bookings/BK0173",
+      "states": [
+        {
+          "state": "missing",
+          "caption": "NIB named with no approval number: the warning, and \"No approval number\" on the row",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-funder-row]",
+            "[data-shot=booking-approval-warning]"
+          ]
+        },
+        {
+          "state": "recorded",
+          "caption": "The office records the insurer or funder and the approval number",
+          "steps": [
+            {
+              "click": "[data-shot=booking-funder-row] >> role=button[name=\"Change the insurer or funder\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=funder-sheet] >> role=textbox[name=\"Approval number\"]",
+              "value": "NIB-2026-55190"
+            }
+          ],
+          "highlight": [
+            "[data-shot=funder-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "funder-no-warning",
+      "app": "admin",
+      "caption": "Health NZ is a funder, not an insurer: no warning without a number",
+      "start": "/admin/day/2026-07-17/bookings/BK0174",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-funder-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-funder-row]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "approval-on-the-day",
+      "app": "mobile",
+      "caption": "The anaesthetist sees the number and may change it on the day",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0003",
+      "states": [
+        {
+          "state": "warning",
+          "caption": "NIB named with no approval number: the anaesthetist sees the warning",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-funder-row]"
+            },
+            {
+              "click": "[data-shot=booking-funder-row] >> role=button[name=\"Add insurer or funder\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=funder-sheet] >> role=radio[name=\"nib\"]"
+            },
+            {
+              "click": "[data-shot=funder-sheet] >> role=button[name=\"Save\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-approval-warning]"
+          ]
+        },
+        {
+          "state": "number",
+          "caption": "Entered on the day, the number shows and the warning is gone",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-funder-row]"
+            },
+            {
+              "click": "[data-shot=booking-funder-row] >> role=button[name=\"Add insurer or funder\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=funder-sheet] >> role=radio[name=\"nib\"]"
+            },
+            {
+              "fill": "[data-shot=funder-sheet] >> role=textbox[name=\"Approval number\"]",
+              "value": "NIB-2026-4471"
+            },
+            {
+              "click": "[data-shot=funder-sheet] >> role=button[name=\"Save\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=booking-funder-row]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-funder-row]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   PARTY_REFUSAL_MESSAGES,
   partyRefusal,
-  routeCounterpartyForParty,
   suggestCodePrefix,
   type Party,
   type PartyRefusalContext,
@@ -80,15 +79,6 @@ describe('partyRefusal', () => {
   })
 })
 
-describe('routeCounterpartyForParty (INTERIM until Phase 21)', () => {
-  it("bills a Party's interim counterparty, else a hospital Party's hospital, else nothing", () => {
-    expect(routeCounterpartyForParty(mkParty())).toEqual({ kind: 'hospital', id: 'hosp-1' })
-    expect(routeCounterpartyForParty({ ...bareInsurer, legacyCounterparty: { kind: 'insurer', id: 'I-ACU' } })).toEqual({ kind: 'insurer', id: 'I-ACU' })
-    expect(routeCounterpartyForParty(bareInsurer)).toBeUndefined()
-    expect(routeCounterpartyForParty(undefined)).toBeUndefined()
-  })
-})
-
 describe('suggestCodePrefix', () => {
   it('uses initials, then the first word, then a free letter', () => {
     expect(suggestCodePrefix('Rangiora Day Surgery', new Set())).toBe('RDS')
@@ -111,7 +101,7 @@ describe('review-pass guards (catch-up Phase 18)', () => {
   })
 
   it("keeps the kind of a Party that stands behind Bookings' counterparty, even holding no Contract", () => {
-    const aia: Party = { id: 'py-aia', kind: 'insurer', name: 'AIA', codePrefix: 'AIA', legacyCounterparty: { kind: 'insurer', id: 'I-AIA' } }
+    const aia: Party = { id: 'py-aia', kind: 'insurer', name: 'AIA', codePrefix: 'AIA', billingIdentity: { kind: 'insurer', id: 'I-AIA' } }
     expect(partyRefusal({ ...aia, kind: 'funder' }, ctx({ prev: aia }))?.code).toBe('kindFixedWhileHolding')
   })
 

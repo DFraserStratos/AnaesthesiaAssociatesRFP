@@ -51,22 +51,28 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Close' }).click()
 
-  // Clear empties the row; the outline drops with it.
-  await todo.getByRole('button', { name: 'Clear' }).click()
-  await expect(todo).toContainText('No open warnings.')
+  // Clear empties Riley's row; the outline drops with it. (The payer review List's
+  // child payer, catch-up Phase 21, stays on the list: it is on Fri 17.)
+  await todo.getByRole('button', { name: 'Clear warning for Annette Riley' }).click()
+  await expect(todo).not.toContainText('Annette Riley')
+  await expect(todo.locator('[data-shot="todo-child-warning"]')).toHaveCount(1)
+  await expect(todo.locator('[data-shot="todo-approval-warning"]')).toHaveCount(1)
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(0)
 
   // Samples on the demo day fill the list; clearing them empties it again.
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
   const raised = await runDemoAction(page, 'raise-sample-warnings', { close: true })
-  // Two rules since catch-up Phase 19: each target carries the prepayment and the base-units sample.
-  expect(raised).toContain('2 rules registered')
-  await expect(todo.locator('li')).toHaveCount(4)
+  // Four rules since catch-up Phase 21: each target carries the prepayment and the base-units sample;
+  // the child payer sample stages on Grace Park's Booking (Fri 24) and the approval sample on a NIB
+  // Booking. With the payer review List's two seeded warnings the card shows its first six rows.
+  expect(raised).toContain('4 rules registered')
+  await expect(todo.locator('li')).toHaveCount(6)
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(2)
   await page.screenshot({ path: 'visual/shots/w15a-03-samples.png', fullPage: true })
   await runDemoAction(page, 'clear-sample-warnings', { close: true })
-  await expect(todo.locator('li')).toHaveCount(0)
+  // The payer review List's seeded child payer and approval warnings stay.
+  await expect(todo.locator('li')).toHaveCount(2)
 })
 
 test('admin: the Booking detail shows the warning first, with Raise pre-procedure invoice on its row', async ({ page }) => {

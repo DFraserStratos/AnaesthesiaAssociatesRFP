@@ -20,11 +20,13 @@ const PILL: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-export type PillTone = 'neutral' | 'success'
+export type PillTone = 'neutral' | 'success' | 'warning'
 
 const TONES: Record<PillTone, { background: string; color: string }> = {
   neutral: { background: neutral.sunken, color: neutral.slate },
   success: { background: semantic.success.tint, color: semantic.success.onTint },
+  /** Something to check, never a block (catch-up Phase 21: a payer with no contact, a child payer). */
+  warning: { background: semantic.warning.tint, color: semantic.warning.onTint },
 }
 
 export function Pill({ tone = 'neutral', children, shot, size = 'default' }: { tone?: PillTone; children: ReactNode; shot?: string; size?: 'default' | 'small' }) {

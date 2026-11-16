@@ -90,7 +90,6 @@ function existingDraft(entry: AuditEntry): AuditDraft {
 function procedureSetup(procedure: Procedure): Record<string, unknown> {
   const after: Record<string, unknown> = {
     governingContractId: procedure.governingContractId,
-    billablePartyId: procedure.billablePartyId,
     prepaymentDetail: procedure.prepaymentDetail,
     billingReference: procedure.billingReference,
     isAdditional: procedure.isAdditional,

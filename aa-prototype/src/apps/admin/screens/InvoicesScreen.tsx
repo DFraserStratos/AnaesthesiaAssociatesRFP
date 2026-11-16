@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
-import { billedLists, counterpartyName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
+import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { listShortLabel, listSourceLabels } from '../util'
@@ -207,7 +207,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   </td>
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{list !== undefined ? dayMicroCap(list.dateISO) : '·'}</td>
                   <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dateTimeMicroCap(invoice.raisedAtISO)}</td>
-                  <td style={cellStyle}>{counterpartyName({ masters }, invoice.counterparty)}</td>
+                  <td style={cellStyle}>{invoiceAddresseeName({ masters, schedule, billing }, invoice)}</td>
                   <td style={cellStyle}>{invoice.layout === 'patient' ? 'Patient' : 'Party'}</td>
                   <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatCurrency(invoice.total)}</td>
                   <td style={cellStyle}>

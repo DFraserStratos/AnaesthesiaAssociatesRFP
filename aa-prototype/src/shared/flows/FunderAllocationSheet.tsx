@@ -57,6 +57,7 @@ export function FunderAllocationSheet({ open, procedure, list, actor, onClose }:
   )
 
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
+  const payer = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.payer)
 
   const { feeTotal, needsPrice } = useMemo(() => {
     try {
@@ -83,11 +84,12 @@ export function FunderAllocationSheet({ open, procedure, list, actor, onClose }:
       const h = masters.hospitals[list.hospitalId]
       if (h !== undefined) opts.push({ key: `hospital:${h.id}`, label: `Hospital · ${h.name}`, ref: { kind: 'hospital', id: h.id } })
     }
-    for (const party of Object.values(masters.billableParties)) {
-      opts.push({ key: `billableParty:${party.hiddenInternalId}`, label: `Billable party · ${party.name}`, ref: { kind: 'billableParty', id: party.hiddenInternalId } })
+    // The Booking's other payer, when one is ticked (catch-up Phase 21: the payer lives on the Booking).
+    if (payer?.kind === 'other') {
+      opts.push({ key: `payer:${payer.id}`, label: `Payer · ${payer.name}`, ref: { kind: 'payer', id: payer.id } })
     }
     return opts
-  }, [masters, list.hospitalId, patientId])
+  }, [masters, list.hospitalId, patientId, payer])
 
   const [drafts, setDrafts] = useState<LineDraft[]>([])
   const [error, setError] = useState<string | null>(null)

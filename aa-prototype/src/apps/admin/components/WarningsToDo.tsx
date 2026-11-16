@@ -10,6 +10,12 @@ import { sessionText } from '../../../domain/outOfHours'
 /** Rows shown before "Show all". */
 export const TODO_VISIBLE_ROWS = 6
 
+/** Hooks the capture recipes target on a rule's To-do rows (catch-up Phase 21). */
+const TODO_ROW_SHOTS: Partial<Record<string, string>> = {
+  childPayer: 'todo-child-warning',
+  approvalNumberMissing: 'todo-approval-warning',
+}
+
 /**
  * The dashboard to-do list (US-13.7.2): every OPEN warning, all dates, soonest
  * first, each with Open and the office's Clear. Warnings that need action
@@ -75,6 +81,7 @@ export function WarningsToDo({
               <li
                 key={r.warning.key}
                 data-warning-key={r.warning.key}
+                data-shot={TODO_ROW_SHOTS[r.warning.ruleId]}
                 style={{ display: 'flex', gap: 10, padding: '10px 12px', background: neutral.bg, borderRadius: 10, boxShadow: `inset 3px 0 0 ${tone.solid}` }}
               >
                 <span style={{ paddingTop: 1 }}>

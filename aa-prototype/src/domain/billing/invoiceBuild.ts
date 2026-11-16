@@ -11,8 +11,8 @@
  *    an open price with no amount typed) is a billing exception the office
  *    resolves in the billing monitor. Nothing is resolved from the List;
  *  - who each Procedure (and each funder-overridden BillingLine) bills to:
- *    the Contract says (`billedPartyFor`, INTERIM until Phase 21's payer on
- *    the Booking);
+ *    the Contract says (`billablePartyForProcedure`, catch-up Phase 21: its
+ *    holder, or the payer on the Booking);
  *  - how lines group into invoices: one invoice per Booking per distinct
  *    counterparty (§11 labelled reading — the RFP's "two separate invoices"
  *    split outcome arises when funders differ).
@@ -22,6 +22,7 @@ import type {
   Booking,
   Contract,
   CounterpartyRef,
+  InvoiceBilledTo,
   Procedure,
   ProcedureId,
 } from '../types'
@@ -29,8 +30,8 @@ import { feeFor, type FeeLine } from './fee'
 import { roundToCents, toCents } from './money'
 import { procedureNeedsPrice } from './contracts'
 import { needsPriceMessage } from './priceRanges'
-import { noRouteCounterpartyMessage, type Party } from './parties'
-import { billedPartyFor } from './whoIsBilled'
+import type { Party } from './parties'
+import { billablePartyForProcedure, billedToFor, HOLDER_MISSING_MESSAGE } from './whoIsBilled'
 import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
 
 /**
@@ -42,7 +43,7 @@ import { feeContextFor, type BookingBillingContext } from './validateBookingForB
 export const GST_RATE = 0.15
 
 export interface InvoiceBuildContext extends BookingBillingContext {
-  /** The Booking's patient: who a Contract that bills the payer bills by default (7th review A1). */
+  /** The Booking's patient id (the payer when the "different payer" tick is clear). */
   patientId: string
   /**
    * EX-GST amounts already invoiced ahead of the procedure (Phase 09
@@ -97,24 +98,27 @@ export function resolveContractForProcedure(procedure: Procedure, ctx: InvoiceBu
 }
 
 /**
- * Who the Procedure bills to: the Contract says (`billedPartyFor`, INTERIM
- * until Phase 21). A Contract that bills its holder bills that Party, usually
- * a hospital, but surgeon-held, group-held (TMJ, COS) and insurer-held ones
- * bill their holder (1st review #5); one that bills the payer bills the
- * Procedure's payer override, else the patient (7th review A1).
+ * Who the Procedure bills to, through the one rule (`billablePartyForProcedure`,
+ * catch-up Phase 21): the holder Party when the resolved Contract bills its
+ * holder, otherwise the payer on the Booking.
  */
 export function counterpartyForProcedure(
-  procedure: Procedure,
   resolvedContract: Contract | undefined,
-  patientId: string,
+  booking: Pick<Booking, 'payer' | 'patientId'>,
   parties: Readonly<Record<string, Party>>,
 ): CounterpartyRef | undefined {
-  return billedPartyFor(procedure, resolvedContract, parties, patientId)
+  return billablePartyForProcedure(resolvedContract, booking, parties)
 }
 
-/** Recipient class drives the document layout (RFP: two invoice layouts). */
+
+/**
+ * Recipient class drives the document layout (RFP: two invoice layouts): the
+ * patient or another payer on the Booking gets the patient layout, and so does
+ * Aria's folded record as before (unchanged as 18 and 20 left it; Phase 22
+ * makes the layout Contract-driven).
+ */
 export function layoutFor(counterparty: CounterpartyRef): 'contractHolder' | 'patient' {
-  return counterparty.kind === 'patient' || counterparty.kind === 'billableParty'
+  return counterparty.kind === 'patient' || counterparty.kind === 'payer' || counterparty.kind === 'billableParty'
     ? 'patient'
     : 'contractHolder'
 }
@@ -128,6 +132,8 @@ export interface DraftInvoiceLine {
 
 export interface DraftInvoice {
   counterparty: CounterpartyRef
+  /** The payer's details as at the run (`billedToFor`); only for the patient or another payer. */
+  billedTo?: InvoiceBilledTo
   layout: 'contractHolder' | 'patient'
   lines: DraftInvoiceLine[]
   subtotal: number
@@ -182,13 +188,13 @@ export function buildInvoicesForBooking(
       }
     }
     const contract = resolution.contract
-    const procedureCounterparty = counterpartyForProcedure(procedure, contract, ctx.patientId, ctx.parties)
+    const procedureCounterparty = counterpartyForProcedure(contract, booking, ctx.parties)
     if (procedureCounterparty === undefined) {
       return {
         kind: 'exception',
         procedureId: procedure.id,
         code: 'noCounterparty',
-        message: noRouteCounterpartyMessage(contract?.name ?? 'This Contract'),
+        message: HOLDER_MISSING_MESSAGE,
       }
     }
 
@@ -329,8 +335,10 @@ export function buildInvoicesForBooking(
     // (deposit == fee) has nothing left to bill, cleaner than a $0 invoice.
     if (toCents(subtotal) === 0) continue
     const gst = roundToCents(subtotal * GST_RATE)
+    const billedTo = billedToFor(counterparty, booking, ctx.patient)
     invoices.push({
       counterparty,
+      ...(billedTo !== undefined ? { billedTo } : {}),
       layout: layoutFor(counterparty),
       lines,
       subtotal,
@@ -343,14 +351,11 @@ export function buildInvoicesForBooking(
 
 /**
  * INTERIM until Phase 27 (catch-up Phase 20; D23, US-04.3.4): a Procedure
- * requires prepayment when its Contract is prepaid and it is billed to a
- * person (the patient or the payer override), never a holder.
+ * requires prepayment when its Contract is prepaid, which always bills the
+ * payer on the Booking (OQ-73 at Confirm, D23), never a holder.
  */
-export function procedureRequiresPrepayment(
-  procedure: Pick<Procedure, 'billablePartyId' | 'billsHolderInterim'>,
-  contract: Pick<Contract, 'prepaid' | 'billsTo'> | undefined,
-): boolean {
-  return contract?.prepaid === true && contract.billsTo === 'payer' && procedure.billsHolderInterim !== true
+export function procedureRequiresPrepayment(contract: Pick<Contract, 'prepaid' | 'billsTo'> | undefined): boolean {
+  return contract?.prepaid === true && contract.billsTo === 'payer'
 }
 
 /**
@@ -369,8 +374,8 @@ export function procedureRequiresPrepayment(
  * Deposit lines are EX-GST subtotals (an $800 deposit invoices as
  * 800 / GST 120 / total 920); the later balance run subtracts the same ex-GST
  * figure from the ex-GST fee subtotal, so deposit + balance reconciles to the
- * full fee. Grouped by counterparty (the payer override else the patient);
- * always the patient layout.
+ * full fee. Grouped by who is billed (the payer on the Booking, the patient
+ * unless another payer is ticked); always the patient layout.
  */
 export function buildPrePaymentInvoiceForBooking(
   booking: Booking,
@@ -382,8 +387,8 @@ export function buildPrePaymentInvoiceForBooking(
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
   for (const procedure of procedures) {
     const contract = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-    if (contract === undefined || !procedureRequiresPrepayment(procedure, contract)) continue
-    const counterparty = counterpartyForProcedure(procedure, contract, ctx.patientId, ctx.parties)
+    if (contract === undefined || !procedureRequiresPrepayment(contract)) continue
+    const counterparty = counterpartyForProcedure(contract, booking, ctx.parties)
     if (counterparty === undefined) continue
     const detail = procedure.prepaymentDetail
     if (detail?.type === 'split') {
@@ -426,8 +431,10 @@ export function buildPrePaymentInvoiceForBooking(
   for (const { counterparty, lines } of groups.values()) {
     const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
     const gst = roundToCents(subtotal * GST_RATE)
+    const billedTo = billedToFor(counterparty, booking, ctx.patient)
     invoices.push({
       counterparty,
+      ...(billedTo !== undefined ? { billedTo } : {}),
       layout: 'patient',
       lines,
       subtotal,

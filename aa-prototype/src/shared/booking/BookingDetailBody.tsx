@@ -5,6 +5,11 @@ import type { Procedure } from '../../domain/types'
 import { listHospitalFor } from '../../domain/listPairing'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
 import {
+  childPayerOn,
+  approvalNumberMissing,
+  onlyHoldersBilled,
+  payerContactMissing,
+  payerDetails,
   validateBookingForBilling,
   type BillingValidationFailure,
   type BookingBillingContext,
@@ -36,6 +41,8 @@ import {
   CancelBookingSheet,
   EditPatientSheet,
   MoveBookingToColleagueSheet,
+  PayerSheet,
+  FunderSheet,
   AlertOfficeEntry,
   OfficeAlertLine,
   RemoveProcedureSheet,
@@ -44,6 +51,8 @@ import {
 } from '../flows'
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
+import { PayerDetailsView } from './PayerDetailsView'
+import { FunderDetailsView } from './FunderDetailsView'
 import { contractAllowedOn, contractChangeRefusal, railAnswersFor } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
 
@@ -66,6 +75,8 @@ type SheetState =
   | 'none'
   | 'cancel'
   | 'patient'
+  | 'payer'
+  | 'funder'
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
 
 function shiftTime(time: string, deltaMin: number): string {
@@ -76,9 +87,16 @@ function shiftTime(time: string, deltaMin: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-function Section({ label, action, children }: { label: string; action?: React.ReactNode; children: React.ReactNode }) {
+/** Hooks the capture recipes target on a rule's warning row (15a's prepayment; catch-up Phase 21's two). */
+const BOOKING_WARNING_SHOTS: Partial<Record<string, string>> = {
+  prepaymentUnpaid: 'booking-prepayment',
+  childPayer: 'booking-child-warning',
+  approvalNumberMissing: 'booking-approval-warning',
+}
+
+function Section({ label, action, children, shot }: { label: string; action?: React.ReactNode; children: React.ReactNode; shot?: string }) {
   return (
-    <div data-shot={`booking-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div data-shot={shot ?? `booking-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</div>
         {action}
@@ -88,10 +106,10 @@ function Section({ label, action, children }: { label: string; action?: React.Re
   )
 }
 
-function EditLink({ onClick }: { onClick: () => void }) {
+function EditLink({ onClick, label = 'Edit', ariaLabel }: { onClick: () => void; label?: string; ariaLabel?: string }) {
   return (
-    <button onClick={onClick} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
-      Edit
+    <button onClick={onClick} aria-label={ariaLabel} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+      {label}
     </button>
   )
 }
@@ -199,7 +217,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       rvgGroups: masters.rvgGroups,
       contracts: masters.contracts,
       parties: masters.parties,
-      billableParties: masters.billableParties,
       billingLines: Object.values(billingLinesRecord),
       listDateISO: list.dateISO,
       timeRule: masters.rvgTimeRule,
@@ -333,7 +350,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // answers with its Contract ticked when it is still on offer (one tap to
   // confirm, never stored silently). Closing the rail adds nothing.
   const firstProcedure = procedures[0]
-  const addRailContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list) : undefined), [masters, list])
+  const addRailContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list, booking) : undefined), [masters, list, booking])
   const addRailTick =
     firstProcedure?.governingContractId !== undefined &&
     addRailContext !== undefined &&
@@ -519,7 +536,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         warnings={warnings}
         actor={actor}
         canClear={isOffice}
-        rowShot={(w) => (w.ruleId === 'prepaymentUnpaid' ? 'booking-prepayment' : undefined)}
+        rowShot={(w) => BOOKING_WARNING_SHOTS[w.ruleId]}
         extra={(w) =>
           w.ruleId === 'prepaymentUnpaid' && isOffice && prepaymentStatus === 'required' && canEdit ? (
             <button onClick={doRaisePrepayment} style={officeActionStyle}>
@@ -602,6 +619,44 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
             </>
           )}
         </div>
+      </Section>
+      {/* The payer on the Booking (catch-up Phase 21; US-11.2.2 to US-11.2.4):
+          who is invoiced when a Contract does not bill its holder. The office
+          and the anaesthetist change it until AUTHORISED. No money. */}
+      <Section
+        label="Payer"
+        shot="booking-payer-row"
+        action={canEdit ? <EditLink label="Change" ariaLabel="Change the payer" onClick={() => setSheet('payer')} /> : undefined}
+      >
+        <PayerDetailsView
+          details={payerDetails(booking, patient)}
+          // The office alone is told a holder pays (US-15.0.1: no holder billing setting on anaesthetist screens).
+          holdersOnly={isOffice && onlyHoldersBilled(procedures, masters.contracts)}
+          contactMissing={payerContactMissing(booking, patient, procedures, masters.contracts)}
+          child={childPayerOn(booking, patient, procedures, masters.contracts, list.dateISO)}
+        />
+      </Section>
+      {/* The insurer or funder and the approval number (catch-up Phase 21;
+          US-11.4.3): the office and, on the day, the anaesthetist record
+          them; the anaesthetist sees the number. Never who is invoiced. */}
+      <Section
+        label="Insurer or funder"
+        shot="booking-funder-row"
+        action={
+          canEdit ? (
+            <EditLink
+              label={booking.funderPartyId === undefined ? 'Add insurer or funder' : 'Change'}
+              ariaLabel={booking.funderPartyId === undefined ? 'Add insurer or funder' : 'Change the insurer or funder'}
+              onClick={() => setSheet('funder')}
+            />
+          ) : undefined
+        }
+      >
+        <FunderDetailsView
+          funder={booking.funderPartyId !== undefined ? masters.parties[booking.funderPartyId] : undefined}
+          approvalNumber={booking.insuranceApprovalNumber}
+          approvalMissing={approvalNumberMissing(booking, masters.parties)}
+        />
       </Section>
       {/* How the Booking entered the system (DM-39): one quiet line when it is
           recorded, nothing when it is not. Display-only; nothing reads it. */}
@@ -810,6 +865,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       <CancelBookingSheet open={sheet === 'cancel'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
+      )}
+      {!cancelled && (
+        <PayerSheet open={sheet === 'payer'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
+      )}
+      {!cancelled && (
+        <FunderSheet open={sheet === 'funder'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
       )}
       {typeof sheet === 'object' && sheet.kind === 'removeProcedure' && proceduresRecord[sheet.procedureId] !== undefined && (
         <RemoveProcedureSheet

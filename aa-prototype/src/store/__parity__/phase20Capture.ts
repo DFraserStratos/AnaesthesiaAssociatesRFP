@@ -66,7 +66,7 @@ export function captureProcedures(state: AppState): ProcedureParityRow[] {
         contract = `exception:${resolved.code}`
       } else {
         contract = resolved.contract?.id ?? '(none)'
-        const cp = counterpartyForProcedure(procedure, resolved.contract, booking.patientId, state.masters.parties)
+        const cp = counterpartyForProcedure(resolved.contract, booking, state.masters.parties)
         billedTo = cp === undefined ? 'undefined' : `${cp.kind}:${cp.id}`
       }
     }

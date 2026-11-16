@@ -49,7 +49,7 @@ export function PartyPanel({ open, actor, party, onClose }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   // The store's rule (partyRefusal): the kind is fixed while it holds Contracts or stands behind Bookings.
-  const kindFixed = editing && (facts.holdsContracts || party?.legacyCounterparty !== undefined)
+  const kindFixed = editing && (facts.holdsContracts || party?.billingIdentity !== undefined)
 
   const takenPrefixes = useMemo(
     () => new Set(Object.values(masters.parties).filter((p) => p.id !== party?.id).map((p) => p.codePrefix)),

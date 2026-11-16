@@ -89,6 +89,8 @@ const golden = JSON.parse(goldenRaw) as Golden
 const DELIBERATE: Record<string, Partial<GoldenRow>> = {
   '34821|2026-07-24|AM': { notes: null },
   '34821|2026-07-24|PM': { notes: null },
+  // Catch-up Phase 21: Dr Chen's Fri 17 Jul AM List holds the payer review Bookings and waits in the Review queue.
+  '45178|2026-07-17|AM': { state: 'SUBMITTED' },
 }
 
 const seed = buildSeed()

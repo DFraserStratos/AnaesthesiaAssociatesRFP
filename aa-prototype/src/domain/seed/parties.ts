@@ -1,8 +1,8 @@
 /**
  * Seed Parties (catch-up Phase 18; US-04.1.5, DM-48; AR-58 2.1). Every seeded
  * holder, insurer and funder becomes a Party: the old holders keep billing the
- * same counterparty through `legacyCounterparty` (INTERIM until Phase 21),
- * and a hospital Party bills its hospital.
+ * same counterparty through `billingIdentity` (kept by catch-up Phase 21 so no
+ * issued invoice or Xero contact moves), and a hospital Party bills its hospital.
  *
  * Billing details are filled where a Contract bills the Party (A43); the
  * funders, AIA, Southern Cross Health Society, Merivale and Dr Souter hold
@@ -49,9 +49,9 @@ export const PARTIES: readonly Party[] = [
 
   // Insurers. nib is billed by its Contract and delivers by email (D55's
   // default: no portal value). AIA and Southern Cross Health Society hold nothing.
-  { id: PARTY.nib, kind: 'insurer', name: 'nib', codePrefix: 'NIB', billingName: 'nib nz limited', email: 'claims@nib.example', deliveryMethod: 'email', legacyCounterparty: { kind: 'insurer', id: INS.nib } },
-  { id: PARTY.schs, kind: 'insurer', name: 'Southern Cross Health Society', codePrefix: 'SCHS', legacyCounterparty: { kind: 'insurer', id: INS.schs } },
-  { id: PARTY.aia, kind: 'insurer', name: 'AIA Health', codePrefix: 'AIA', legacyCounterparty: { kind: 'insurer', id: INS.aia } },
+  { id: PARTY.nib, kind: 'insurer', name: 'nib', codePrefix: 'NIB', billingName: 'nib nz limited', email: 'claims@nib.example', deliveryMethod: 'email', billingIdentity: { kind: 'insurer', id: INS.nib } },
+  { id: PARTY.schs, kind: 'insurer', name: 'Southern Cross Health Society', codePrefix: 'SCHS', billingIdentity: { kind: 'insurer', id: INS.schs } },
+  { id: PARTY.aia, kind: 'insurer', name: 'AIA Health', codePrefix: 'AIA', billingIdentity: { kind: 'insurer', id: INS.aia } },
 
   // Funders (A42: a kind apart from insurer), holding nothing; 18a's funding tags point at them.
   { id: PARTY.acc, kind: 'funder', name: 'ACC', codePrefix: 'ACC' },
@@ -60,13 +60,13 @@ export const PARTIES: readonly Party[] = [
   { id: PARTY.veterans, kind: 'funder', name: 'Veterans Affairs', codePrefix: 'VA' },
 
   // Surgeon groups.
-  { id: PARTY.cos, kind: 'surgeonGroup', name: 'Canterbury Orthopaedic Surgeons', codePrefix: 'COS', billingName: 'Canterbury Orthopaedic Surgeons Limited', email: 'accounts@canterburyortho.example', deliveryMethod: 'email', legacyCounterparty: { kind: 'organisation', id: ORG.cos } },
-  { id: PARTY.aria, kind: 'surgeonGroup', name: 'Aria Skin and Laser Clinic', codePrefix: 'ARIA', billingName: 'Aria Skin and Laser Clinic', email: 'accounts@aria-clinic.example', deliveryMethod: 'email', legacyCounterparty: { kind: 'billableParty', id: BP.ariaClinic } },
+  { id: PARTY.cos, kind: 'surgeonGroup', name: 'Canterbury Orthopaedic Surgeons', codePrefix: 'COS', billingName: 'Canterbury Orthopaedic Surgeons Limited', email: 'accounts@canterburyortho.example', deliveryMethod: 'email', billingIdentity: { kind: 'organisation', id: ORG.cos } },
+  { id: PARTY.aria, kind: 'surgeonGroup', name: 'Aria Skin and Laser Clinic', codePrefix: 'ARIA', billingName: 'Aria Skin and Laser Clinic', email: 'accounts@aria-clinic.example', deliveryMethod: 'email', billingIdentity: { kind: 'billableParty', id: BP.ariaClinic } },
   { id: PARTY.unisports, kind: 'surgeonGroup', name: 'Unisports Ortho', codePrefix: 'UNI', billingName: 'Unisports Orthopaedics Limited', postalAddress: 'PO Box 29 101, Riccarton, Christchurch 8440', deliveryMethod: 'post' },
   { id: PARTY.merivale, kind: 'surgeonGroup', name: 'Merivale Plastic Surgery', codePrefix: 'MER' },
 
   // A surgeon, and an anaesthetist (19a seeds her price list).
-  { id: PARTY.doyle, kind: 'surgeon', name: 'Mr P. Doyle', codePrefix: 'DOYLE', legacyCounterparty: { kind: 'surgeon', id: SURG.doyle } },
+  { id: PARTY.doyle, kind: 'surgeon', name: 'Mr P. Doyle', codePrefix: 'DOYLE', billingIdentity: { kind: 'surgeon', id: SURG.doyle } },
   { id: PARTY.souter, kind: 'anaesthetist', name: 'Dr Melanie Souter', codePrefix: 'SOUTER' },
 ] as const
 

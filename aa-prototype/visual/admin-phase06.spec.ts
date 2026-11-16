@@ -200,7 +200,7 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await lookup.click()
 
   await expect(page.getByLabel('NHI')).toHaveValue('DEM1239')
-  await expect(page.getByLabel('Name')).toHaveValue('Demo Patient')
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Demo Patient')
   await expect(page.getByLabel('Date of birth')).toHaveValue('1990-01-01')
   await expect(page.getByLabel('Phone')).toHaveValue('021 555 0190')
   await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('A3')

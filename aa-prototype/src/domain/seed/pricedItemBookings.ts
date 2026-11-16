@@ -39,6 +39,7 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
     patientId: MERIVALE_BOOKING_PATIENT_ID,
     scheduledTime: '13:30',
     completed: false,
+    payer: { kind: 'patient' },
     // The seed's source rule: St George's sends a feed, so its Bookings are hospital downloads.
     source: 'hospitalDownload',
     lastModifiedBy: 'Kirsty W.',

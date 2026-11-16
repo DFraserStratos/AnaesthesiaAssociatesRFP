@@ -477,12 +477,61 @@ describe('the RVG backstops (catch-up Phase 20 (9))', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v38 store without the RVG backstop Contracts and reseeds them', () => {
-    expect(PERSIST_VERSION).toBe(39)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(39)
     const fresh = freshAppState()
     const contracts = Object.fromEntries(Object.entries(fresh.masters.contracts).filter(([, c]) => c.systemRole !== 'rvgFallback'))
     const stale = { ...fresh, masters: { ...fresh.masters, contracts } }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 38 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.masters.contracts).some((c) => c.systemRole === 'rvgFallback')).toBe(true)
+  })
+})
+
+describe('the payer on the Booking (catch-up Phase 21)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v39 store with per-Procedure payers and reseeds every Booking with a payer', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(40)
+    const fresh = freshAppState()
+    const bookings = Object.fromEntries(
+      Object.entries(fresh.schedule.bookings).map(([id, b]) => {
+        const { payer: _drop, ...rest } = b
+        void _drop
+        return [id, rest]
+      }),
+    )
+    const stale = { ...fresh, schedule: { ...fresh.schedule, bookings }, masters: { ...fresh.masters, billableParties: {} } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 39 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.bookings).every((b) => b.payer !== undefined)).toBe(true)
+    expect(s.masters as unknown as Record<string, unknown>).not.toHaveProperty('billableParties')
+  })
+})
+
+describe('insurance on the Booking (catch-up Phase 21 session 2)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v40 store without funders and reseeds them', () => {
+    expect(PERSIST_VERSION).toBe(41)
+    const fresh = freshAppState()
+    const bookings = Object.fromEntries(
+      Object.entries(fresh.schedule.bookings).map(([id, b]) => {
+        const { funderPartyId: _f, insuranceApprovalNumber: _n, ...rest } = b
+        void _f
+        void _n
+        return [id, rest]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 40 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.bookings).some((b) => b.funderPartyId === 'PY-NIB')).toBe(true)
   })
 })

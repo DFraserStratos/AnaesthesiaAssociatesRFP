@@ -4,9 +4,9 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Printer, Mail, Upload, Clock } from 'lucide-react'
 import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
-import { counterpartyName, invoiceLinesFor, markInvoiceEmailed, useAppStore } from '../../../store'
+import { invoiceAddresseeName, invoiceLinesFor, markInvoiceEmailed, useAppStore } from '../../../store'
 import type { BillingCase, Invoice } from '../../../domain/types'
-import { GST_RATE, procedureRequiresPrepayment } from '../../../domain/billing'
+import { GST_RATE, postalAddressLines, procedureRequiresPrepayment } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 
@@ -54,7 +54,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const anaesthetist = list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
   const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
-  const addressee = counterpartyName({ masters }, invoice.counterparty)
+  // The name as at the run for a payer (catch-up Phase 21: `billedTo`), else the counterparty's.
+  const addressee = invoiceAddresseeName({ masters, schedule: { bookings: bookingsRecord } }, invoice)
 
   const isPatientLayout = invoice.layout === 'patient'
   const isInsurerDirect = invoice.counterparty.kind === 'insurer'
@@ -65,7 +66,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   // The Procedure on a prepaid Contract, if any (INTERIM until Phase 27): the
   // patient note's prepayment wording follows it (catch-up Phase 20).
   const prepaymentProc = procedures.find((p) =>
-    procedureRequiresPrepayment(p, p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined),
+    procedureRequiresPrepayment(p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined),
   )
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
@@ -128,7 +129,15 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <div style={metaLabel}>Invoice to</div>
           <div style={{ fontSize: 15.5, fontWeight: 700 }}>{addressee}</div>
           {!isPatientLayout && <div style={{ fontSize: 12.5, color: neutral.slate }}>Attn: Accounts</div>}
-          {isPatientLayout && invoice.counterparty.kind === 'billableParty' && patient !== undefined && (
+          {/* The payer's email, or postal address in NZ Post layout, as at the run (catch-up Phase 21). */}
+          {invoice.billedTo !== undefined && (
+            <div data-shot="invoice-billed-to" style={{ display: 'flex', flexDirection: 'column', gap: 1, fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>
+              {invoice.billedTo.email !== undefined && <span>{invoice.billedTo.email}</span>}
+              {invoice.billedTo.email === undefined && invoice.billedTo.postalAddress !== undefined &&
+                postalAddressLines(invoice.billedTo.postalAddress).map((line) => <span key={line}>{line}</span>)}
+            </div>
+          )}
+          {isPatientLayout && invoice.counterparty.kind === 'payer' && patient !== undefined && (
             <div style={{ fontSize: 12.5, color: neutral.slate }}>For the care of {patient.name}</div>
           )}
           {!isPatientLayout && billingReferences.length > 0 && (

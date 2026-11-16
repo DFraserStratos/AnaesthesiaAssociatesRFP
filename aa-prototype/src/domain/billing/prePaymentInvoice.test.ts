@@ -61,7 +61,6 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT, [PREPAID.id]: PREPAID },
     parties: { [PARTY.id]: PARTY, [ANAES_PARTY.id]: ANAES_PARTY },
-    billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,
     timeRule: DEFAULT_RVG_TIME_RULE,
@@ -73,7 +72,7 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
 
 const PATIENT = { kind: 'patient' as const, id: 'pat-1' }
 /** The prePaidByProcedure ctx entry for proc-pp (default: raised to the patient). */
-const pp = (amount: number, counterparty: { kind: 'patient' | 'billableParty'; id: string } = PATIENT) => ({
+const pp = (amount: number, counterparty: { kind: 'patient' | 'payer'; id: string } = PATIENT) => ({
   'proc-pp': { amount, counterparty },
 })
 
@@ -130,14 +129,13 @@ describe('buildPrePaymentInvoiceForBooking', () => {
     expect(invoice.lines[0]!.units).toBe(21)
   })
 
-  it('routes the pre-invoice to a typed BillableParty when set (guardian pays)', () => {
-    const proc = prepaymentProc({
-      prepaymentDetail: { type: 'split', depositAmount: 300 },
-      billablePartyId: 'bp-7',
-    })
-    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [proc], mkCtx())
+  it('addresses the pre-invoice to another payer on the Booking (a guardian pays; catch-up Phase 21)', () => {
+    const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 300 } })
+    const booking = mkBooking({ payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother', email: 'angela@example.net' } })
+    const result = buildPrePaymentInvoiceForBooking(booking, [proc], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
-    expect(result.invoices[0]!.counterparty).toEqual({ kind: 'billableParty', id: 'bp-7' })
+    expect(result.invoices[0]!.counterparty).toEqual({ kind: 'payer', id: 'BP0007' })
+    expect(result.invoices[0]!.billedTo).toEqual({ name: 'Angela Park', email: 'angela@example.net' })
   })
 })
 
@@ -219,7 +217,7 @@ describe('deposit + balance reconciliation', () => {
     const balance = buildInvoicesForBooking(
       mkBooking(),
       [proc],
-      mkCtx({ prePaidByProcedure: pp(300, { kind: 'billableParty', id: 'bp-9' }) }),
+      mkCtx({ prePaidByProcedure: pp(300, { kind: 'payer', id: 'BP0009' }) }),
     )
     expect(balance.kind).toBe('exception')
     if (balance.kind === 'exception') expect(balance.code).toBe('prepaidCounterpartyChanged')

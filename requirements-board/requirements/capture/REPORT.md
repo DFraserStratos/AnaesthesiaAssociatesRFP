@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 164 | 150 |
-| Partial | 51 | 51 |
-| Absent from the app | 70 | 69 |
+| Captured | 169 | 155 |
+| Partial | 50 | 50 |
+| Absent from the app | 68 | 67 |
 | Failed recipe | 0 | 0 |
-| No recipe | 30 | 30 |
+| No recipe | 28 | 28 |
 
-627 screenshots. Items per app: admin 146, web 74, mobile 68, simulator 35.
+651 screenshots. Items per app: admin 150, web 76, mobile 72, simulator 35.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (70)
+## Absent from the app (68)
 
 - **FT-11.4** Insurers · Retired: removed in Phase 18
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
@@ -73,8 +73,6 @@ None.
 - **US-10.2.6** Approve the period's BCTIs for payment · Not built yet: catch-up Phase 39a builds this.
 - **US-10.2.7** Weekly payment cycle · Not built yet: catch-up Phase 39a builds this.
 - **US-11.1.5** Intake rows waiting for an NHI · Not built yet: catch-up Phase 40 builds this.
-- **US-11.2.3** Payer email or postal address required when the payer is billed · No invoice email is captured or required for patient-direct billing; searched the add booking form, billing setup sheet, patient edit sheet and billing guards for an invoice email field or rule.
-- **US-11.2.4** Warn when a child is the payer on the Booking · Not built yet: catch-up Phase 21 builds this.
 - **US-11.3.1** Patient outstanding bills view · There is no patient view listing a patient's invoices across anaesthetists; the admin Invoices screen lists invoices without a per-patient view, and the web and mobile accounts show only the anaesthetist's own payables.
 - **US-11.4.1** Insurer master data · Retired: removed in Phase 18
 - **US-11.4.2** Insured patient who forwards the invoice · Retired: removed in Phase 18
@@ -91,7 +89,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (51)
+## Partial (50)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
 - **US-02.1.1** Import hospital bookings · No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.
@@ -124,7 +122,7 @@ None.
 - **US-08.3.3** Patient-linked history survives Xero archiving · Archiving is simulated for Xero contacts only; purging a contact is not shown.
 - **US-08.3.4** Money in and money out · Receipts and disbursements are tracked per invoice and shown per booking, but there is no equilibrium view for AA overall, per anaesthetist or per patient.
 - **US-08.3.5** Per-anaesthetist ledger position · Each anaesthetist sees their own position in the web and mobile apps, but there is no office view of a chosen anaesthetist's ledger position, and the mobile app shows only what is outstanding, not collected or paid out.
-- **US-08.4.2** Send to the invoice email · Emailing is simulated and records only the time sent; the invoice does not show or use an invoice email address captured on the booking, so sending to a guardian's address is not shown. Portal upload for an insurer is shown.
+- **US-08.4.2** Send to the invoice email · Emailing is simulated and records only the time sent. Since catch-up Phase 21 the invoice shows the payer's email or postal address as at the run (Invoice to), but sending to it, and posting, are Phase 22's. Portal upload for an insurer is shown.
 - **US-08.4.4** Invoice reproducibility · Invoices are stored as snapshots that later contract edits do not change, but there is no action to regenerate a past invoice from the locked data and contract version.
 - **US-08.4.5** Anaesthetist as supplier, AA as agent · The invoice names the anaesthetist and states AA bills as agent, but it does not show the anaesthetist as supplier with their GST number.
 - **US-08.4.6** Invoice description on each Procedure · The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).
@@ -135,7 +133,6 @@ None.
 - **US-10.3.2** AA fee visible to the anaesthetist · Web shows AA fee invoices and their status; the mobile app does not show them.
 - **US-11.1.1** Patient record keyed on NHI · Patient details show on each booking; there is no standalone patient record screen, and ethnicity is held but not shown on the patient panel.
 - **US-11.1.4** Patient without NHI · A patient can be created without an NHI (the add booking form leaves it optional) and shows as NHI pending, but there is no way to attach the NHI later: Edit patient details has no NHI field.
-- **US-11.2.2** Payer on the Booking, editable to a guardian · Admin only: the office sets a guardian or other payer in the billing setup. There is no invoice email for the billable party, and the anaesthetist apps show the billable party read-only without a way to change it.
 - **US-11.3.2** Alert on booking a patient with unpaid bills · The unpaid prior balance is flagged in the billing monitor once the list is authorised, not as an alert when the booking is created or matched.
 - **US-11.3.3** Follow-up tools · An invoice can be emailed from the invoice document, but once sent there is no re-send, and there is no way to record follow-up actions against a patient's outstanding items.
 - **US-12.1.1** Dollar value per unit · Each anaesthetist's dollar value per unit is held and editable, but only by the office in admin Master data. The anaesthetist cannot set it in the mobile or web app.
@@ -145,7 +142,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (30)
+## No recipe (28)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-02.2.3** Detect Bookings removed from a re-sent List
@@ -162,7 +159,6 @@ None.
 - **US-03.7.3** See a Procedure's events
 - **US-03.7.4** Bill a pre-op consult held in AA's room
 - **US-04.2.13** Export and re-import Contracts
-- **US-04.3.10** Suggested path from the Booking's funder
 - **US-04.3.11** A moved Booking keeps its Contracts
 - **US-04.4.2** Default RVG Contract for every procedure
 - **US-05.2.8** A Procedure's price follows its Contract until held
@@ -171,14 +167,13 @@ None.
 - **US-06.3.7** Contract changed after a prepayment is sent or paid
 - **US-08.6.5** Credit note option on additional invoices
 - **US-08.6.6** Start a rebill from a copy of the original lines
-- **US-11.4.3** Insurance and approval number on the Booking
 - **US-13.2.4** Reconciliation status at a glance
 - **US-13.5.3** Sign in to the anaesthetist app
 - **US-13.6.5** Practice manager and PA contacts
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (164)
+## Captured (169)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -258,6 +253,7 @@ None.
 - **US-04.3.5** Contract locked at AUTHORISED · admin
 - **US-04.3.8** Where the invoice goes, then the Contract · admin, mobile, web
 - **US-04.3.9** The No contract backstops, RVG and Fixed price · admin, mobile
+- **US-04.3.10** Suggested path from the Booking's funder · admin
 - **US-05.1.1** RVG groups · admin, web, mobile
 - **US-05.1.3** Anatomy headings and AA groups · admin, web, mobile
 - **US-05.1.4** Modifiers already included in base units · admin, web, mobile
@@ -315,6 +311,10 @@ None.
 - **US-11.1.2** Dual-format NHI validation · admin
 - **US-11.1.3** Deduplicate on NHI · web, mobile
 - **US-11.2.1** Patient billed when the Contract does not bill its holder · admin
+- **US-11.2.2** Payer on the Booking, editable to a guardian · admin, web, mobile
+- **US-11.2.3** Payer email or postal address required when the payer is billed · admin, mobile
+- **US-11.2.4** Warn when a child is the payer on the Booking · admin, web, mobile
+- **US-11.4.3** Insurance and approval number on the Booking · admin, mobile
 - **US-12.1.4** Anaesthetist identity, contact and bank details · admin
 - **US-12.2.1** Outstanding balances list · web, mobile
 - **US-12.2.2** GST report · web, mobile

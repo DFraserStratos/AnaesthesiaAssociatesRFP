@@ -33,13 +33,14 @@ describe('upsertPatient', () => {
       nhi: 'cqy9304',
       name: 'Sarah Mitchell',
       dobISO: '1988-04-12',
-      address: '4 Beach Road, Sumner, Christchurch',
+      postalAddress: { line1: '4 Beach Road', suburb: 'Sumner', city: 'Christchurch', postcode: '8081' },
     })
     expect(outcome.ok).toBe(true)
     if (outcome.ok) {
       expect(outcome.value.outcome).toBe('reused')
       expect(outcome.value.patient.hiddenInternalId).toBe(PAT.mitchell)
-      expect(outcome.value.patient.address).toBe('4 Beach Road, Sumner, Christchurch')
+      // Sarah Mitchell's seeded address stands: an existing record is only enriched where blank.
+      expect(outcome.value.patient.postalAddress?.line1).toBeDefined()
     }
     expect(Object.keys(api.getState().masters.patients).length).toBe(before)
     expect(api.getState().audit.at(-1)?.action).toBe('patient.reuse')

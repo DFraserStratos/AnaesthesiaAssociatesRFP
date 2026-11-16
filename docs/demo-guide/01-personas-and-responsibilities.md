@@ -62,6 +62,9 @@ Bookings and capture the data AA needs for billing.
    as typed).
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
+11. Name another payer on a Booking (**Payer → Change → Different payer**: a parent, a guardian, a
+    benefactor or a family trust), and enter the insurer's approval number on the day when she learns
+    it (**Insurer or funder**); she sees the number the Booking holds.
 
 ### Permissions
 
@@ -170,7 +173,9 @@ short-notice cover.
    holidays (adding, editing and deleting closures), and surgeons, their rooms and groups, the office's private pairing preferences and the
    anaesthetists' priority tiers.
 10. Review the audit history when a change needs explanation.
-11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with.
+11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with,
+    chasing a missing approval number with the surgeon's rooms and checking a child payer's parent
+    or guardian details.
 12. Assign Draft Lists: Lists with no anaesthetist yet, picked from a grouped, tier-ordered list.
 13. See the team's notifications of Lists anaesthetists have moved and their alerts to the office,
     tick each one resolved once dealt with (it leaves for the whole office; Show resolved brings it
@@ -313,10 +318,10 @@ the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch
 |---|---|
 | Surgeon or surgeon-room coordinator | Requests a Free List, phones changes and emails PDF Lists/Bookings |
 | Hospital/PAS | Sends new, changed, rescheduled and cancelled appointments |
-| Patient or guardian | Supplies billing details and may receive the invoice |
+| Patient or another payer | The payer named on the Booking (the patient, or a parent, guardian, benefactor or family trust); receives the invoice when the Contract does not bill its holder |
 | Hospital or other Party | May receive and pay the invoice where a Contract bills it |
 | Insurer | A Party; invoiced only where a Contract bills it |
-| Patient's reimbursement insurer | Reimburses the patient; AA does not invoice it directly |
+| Patient's reimbursement insurer | Named on the Booking with its approval number; reimburses the patient, who is invoiced under No contract · RVG like any patient (the AIA Booking) |
 | Billing Engine | Calculates, groups and issues invoices |
 | Xero | Provides accounts receivable and banking functions |
 

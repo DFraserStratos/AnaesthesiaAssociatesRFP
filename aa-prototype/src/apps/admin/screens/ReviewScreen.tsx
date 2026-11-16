@@ -81,6 +81,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, rvgGroup: views[i]!.rvgGroup })),
         contracts: masters.contracts,
         parties: masters.parties,
+        ...(masters.patients[booking.patientId] !== undefined ? { patient: masters.patients[booking.patientId] } : {}),
         timeRule: masters.rvgTimeRule,
         modifierInputs: {
           patientDobISO: masters.patients[booking.patientId]?.dobISO,
@@ -91,7 +92,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
       // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
-      // Procedures column and for who is billed ("Mixed" when Procedures differ; INTERIM until Phase 21).
+      // Procedures column and for who is billed ("Mixed" when Procedures differ; `billablePartyForProcedure`, catch-up Phase 21).
       const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord } }, p.id, 'office')!)
       const billed = new Set(stackViews.map((v) => v.contract?.invoiced?.name).filter((n): n is string => n !== undefined))
       const anyMissing = stackViews.some((v) => v.contract === null)
@@ -437,7 +438,7 @@ function Tile({ label, value, sub, tone }: { label: string; value: string; sub?:
 function FlagPill({ flag }: { flag: ReviewFlag }) {
   const warn = flag.tone === 'warn'
   return (
-    <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 8px', background: warn ? semantic.warning.tint : neutral.sunken, color: warn ? semantic.warning.onTint : neutral.slate }}>
+    <span data-shot={flag.shot} style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 8px', background: warn ? semantic.warning.tint : neutral.sunken, color: warn ? semantic.warning.onTint : neutral.slate }}>
       {flag.text}
     </span>
   )

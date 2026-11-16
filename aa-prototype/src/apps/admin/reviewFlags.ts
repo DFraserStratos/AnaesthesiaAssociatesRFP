@@ -19,9 +19,9 @@
  * them here.
  */
 
-import type { Booking, Contract, Party, Procedure, RvgGroup, RvgTimeRule } from '../../domain/types'
+import type { Booking, Contract, Party, Patient, Procedure, RvgGroup, RvgTimeRule } from '../../domain/types'
 import { resolveBtm, type BtmBreakdown, type FeeResult, type ModifierInputs } from '../../domain/billing/fee'
-import { billingReferenceMissing } from '../../domain/billing'
+import { billingReferenceMissing, PAYER_CONTACT_NEEDED, payerContactMissing } from '../../domain/billing'
 
 export type FlagTone = 'neutral' | 'warn'
 
@@ -30,6 +30,8 @@ export interface ReviewFlag {
   text: string
   bookingId: string
   procedureId?: string
+  /** A `data-shot` hook for the capture recipes (catch-up Phase 21). */
+  shot?: string
 }
 
 export interface ReviewProcedureInput {
@@ -46,6 +48,8 @@ export interface ReviewBookingInput {
   /** The Contracts and their holders, for the reference check (catch-up Phase 20). */
   contracts: Readonly<Record<string, Contract>>
   parties: Readonly<Record<string, Party>>
+  /** The Booking's patient: the payer when the "different payer" tick is clear (catch-up Phase 21). */
+  patient?: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'>
   /** The RVG time rule held as data (`masters.rvgTimeRule`), for the natural T. */
   timeRule: RvgTimeRule
   /**
@@ -71,7 +75,7 @@ function naturalBtm(
 }
 
 /** Flags for a single Booking. A cancelled Booking yields none (excluded from review). */
-export function reviewFlagsForBooking({ booking, procedures, contracts, parties, timeRule, modifierInputs }: ReviewBookingInput): ReviewFlag[] {
+export function reviewFlagsForBooking({ booking, procedures, contracts, parties, patient, timeRule, modifierInputs }: ReviewBookingInput): ReviewFlag[] {
   if (booking.cancellation !== undefined) return []
   const flags: ReviewFlag[] = []
 
@@ -82,7 +86,13 @@ export function reviewFlagsForBooking({ booking, procedures, contracts, parties,
 
   // (e) an unpaid prepayment is no longer a Review flag: it is a warning
   // (catch-up Phase 15a), shown on the row by the warning triangle, as every
-  // later warning rule is (21's insurer-will-pay at office review among them).
+  // later warning rule is (21's child payer and missing approval number).
+
+  // (f) a billed payer with neither an email nor a postal address (US-11.2.3,
+  // catch-up Phase 21): asked on the payer sheet, flagged here, never a block.
+  if (payerContactMissing(booking, patient, procedures.map((p) => p.procedure), contracts)) {
+    flags.push({ tone: 'neutral', text: PAYER_CONTACT_NEEDED, bookingId: booking.id, shot: 'review-payer-contact' })
+  }
 
   for (const { procedure, fee, rvgGroup } of procedures) {
     // (b) missing billing reference where the Contract bills a hospital or surgeon holder.

@@ -6,13 +6,57 @@
     {
       "name": "default-payer",
       "app": "admin",
-      "caption": "Billable party defaults to the patient",
+      "caption": "Under No contract · RVG the payer on the Booking is billed: the patient, as the Billing card says",
       "start": "/admin/day/2026-07-21/bookings/BK0008",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-shot=office-billing-setup-1]"
+            "[data-shot=booking-payer-row]",
+            "[data-shot=capture-billing]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "surgeon-fixed-price",
+      "app": "admin",
+      "caption": "A surgeon's fixed price bills the payer: Mr Doyle's bariatric price list invoices the patient, Gareth Mills",
+      "start": "/admin/review/L-43015-2026-07-14-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Gareth Mills\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "insured-claims-back",
+      "app": "admin",
+      "caption": "An insured patient who claims the money back is invoiced under No contract · RVG like any patient",
+      "start": "/admin/review/L-29104-2026-07-16-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Marcus Webb\")"
           ]
         }
       ]

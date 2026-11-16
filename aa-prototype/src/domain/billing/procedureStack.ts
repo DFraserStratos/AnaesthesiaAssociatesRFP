@@ -23,6 +23,7 @@
  */
 
 import type {
+  Booking,
   CounterpartyRef,
   InvoiceDescription,
   InvoiceDescriptionOrigin,
@@ -37,7 +38,7 @@ import { isRvgKind } from './contracts'
 import type { Party, PartyId } from './parties'
 import { rangeInForce } from './priceRanges'
 import type { RvgGroup, RvgGroupId } from './rvgGroups'
-import { billedPartyFor } from './whoIsBilled'
+import { billablePartyForProcedure } from './whoIsBilled'
 
 // ---------------------------------------------------------------------------
 // Types the UI reads
@@ -90,7 +91,8 @@ export interface ProcedureStackCtx {
   contracts: Readonly<Record<string, Contract>>
   parties: Readonly<Record<PartyId, Party>>
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
-  patientId: string
+  /** The Booking's payer and patient: who a Contract that bills the payer bills (catch-up Phase 21). */
+  booking: Pick<Booking, 'payer' | 'patientId'>
   /** The procedure date: the List's. */
   dateISO: string
   surface: StackSurface
@@ -237,30 +239,19 @@ export function newerInvoiceDescription(
 // ---------------------------------------------------------------------------
 
 /**
- * Who the Procedure's invoice goes to, by name: one function wrapping 20's
- * `billedPartyFor` (never a second derivation). INTERIM: Phase 21 re-points it
- * to the holder's Party or the payer on the Booking (AR-61 `who-is-billed`).
+ * Who the Procedure's invoice goes to, by name: the one rule,
+ * `billablePartyForProcedure` (catch-up Phase 21; AR-61 `who-is-billed`):
+ * the holder's Party when its Contract bills its holder, otherwise the payer
+ * on the Booking (the patient, or another payer). Never a second derivation.
  */
 export function whoIsInvoicedFor(
-  procedure: Pick<Procedure, 'governingContractId' | 'billablePartyId' | 'billsHolderInterim'>,
-  ctx: Pick<ProcedureStackCtx, 'contracts' | 'parties' | 'patientId' | 'nameOf'>,
+  procedure: Pick<Procedure, 'governingContractId'>,
+  ctx: Pick<ProcedureStackCtx, 'contracts' | 'parties' | 'booking' | 'nameOf'>,
 ): InvoicedParty | null {
   const contract = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-  const ref = billedPartyFor(procedure, contract, ctx.parties, ctx.patientId)
-  if (ref === undefined) {
-    // A holder Party with no counterparty yet still has a name to show.
-    if (contract !== undefined && contract.billsTo === 'holder') {
-      const holder = ctx.parties[contract.holderId]
-      if (holder !== undefined) return { name: holder.name, kind: 'holder' }
-    }
-    return null
-  }
-  const kind: InvoicedParty['kind'] =
-    contract !== undefined && (contract.billsTo === 'holder' || procedure.billsHolderInterim === true)
-      ? 'holder'
-      : ref.kind === 'patient'
-        ? 'patient'
-        : 'payer'
+  const ref = billablePartyForProcedure(contract, ctx.booking, ctx.parties)
+  if (ref === undefined) return null
+  const kind: InvoicedParty['kind'] = ref.kind === 'patient' ? 'patient' : ref.kind === 'payer' ? 'payer' : 'holder'
   return { name: ctx.nameOf(ref), kind }
 }
 

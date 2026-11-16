@@ -77,7 +77,7 @@ describe('editParty', () => {
     const nib = api.getState().masters.parties[PARTY.nib]!
     expect(editParty(api, OFFICE, PARTY.nib, { ...fieldsOf(nib), email: 'accounts@nib.example' }).ok).toBe(true)
     const state = api.getState()
-    expect(state.masters.parties[PARTY.nib]).toMatchObject({ email: 'accounts@nib.example', legacyCounterparty: nib.legacyCounterparty })
+    expect(state.masters.parties[PARTY.nib]).toMatchObject({ email: 'accounts@nib.example', billingIdentity: nib.billingIdentity })
     const entry = state.audit.at(-1)
     expect(entry).toMatchObject({ action: 'party.update', entityId: PARTY.nib, before: { email: nib.email }, after: { email: 'accounts@nib.example' } })
   })

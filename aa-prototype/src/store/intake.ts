@@ -6,7 +6,8 @@
  * one Patient row, before Xero contact resolution ever matters.
  */
 
-import type { Patient } from '../domain/types'
+import type { Patient, PostalAddress } from '../domain/types'
+import { emailProblem, formatPostalAddress, postalAddressProblem } from '../domain/billing/payer'
 import { validateNhi } from '../domain/nhi'
 import { validateEthnicityCode } from '../domain/nzhis'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -19,7 +20,7 @@ export interface PatientIntakeDetails {
   dobISO: string
   phone?: string
   email?: string
-  address?: string
+  postalAddress?: PostalAddress
   ethnicityCode?: string
 }
 
@@ -72,7 +73,7 @@ export function upsertPatient(
       let enriched: Patient = { ...existing }
       if (existing.phone === undefined && details.phone !== undefined) enriched.phone = details.phone
       if (existing.email === undefined && details.email !== undefined) enriched.email = details.email
-      if (existing.address === undefined && details.address !== undefined) enriched.address = details.address
+      if (existing.postalAddress === undefined && details.postalAddress !== undefined) enriched.postalAddress = details.postalAddress
       if (existing.ethnicityCode === undefined) enriched = withEthnicity(enriched, details.ethnicityCode)
       mutate(
         api,
@@ -108,7 +109,7 @@ export function upsertPatient(
     if (normalisedNhi !== undefined) patient.nhi = normalisedNhi
     if (details.phone !== undefined) patient.phone = details.phone
     if (details.email !== undefined) patient.email = details.email
-    if (details.address !== undefined) patient.address = details.address
+    if (details.postalAddress !== undefined) patient.postalAddress = details.postalAddress
     patient = withEthnicity(patient, details.ethnicityCode)
     created = patient
     metas.push({
@@ -132,7 +133,7 @@ export function upsertPatient(
 // ---------------------------------------------------------------------------
 
 /** Editable patient demographics (Phase 03 Booking-screen patient block). */
-export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone' | 'email' | 'address'>>
+export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone' | 'email' | 'postalAddress'>>
 
 /**
  * Edit a Patient's demographics, audited `patient.update` (phase doc item 3).
@@ -158,6 +159,18 @@ export function editPatient(
     const rights = editRefusal(actor, found.list)
     if (rights !== null) return rights
   }
+  // The payer rules (catch-up Phase 21): an email's shape and an NZ Post address.
+  const badEmail = emailProblem(patch.email)
+  if (badEmail !== null) return refuse('emailInvalid', badEmail)
+  if (patch.postalAddress !== undefined) {
+    const badAddress = postalAddressProblem(patch.postalAddress)
+    if (badAddress !== null) return refuse('postalAddressInvalid', badAddress)
+  }
+  // History reads an address as one line.
+  const narrate = (values: Partial<Patient>): Record<string, unknown> =>
+    Object.fromEntries(
+      Object.entries(values).map(([k, v]) => [k, k === 'postalAddress' && v !== undefined ? formatPostalAddress(v as PostalAddress) : v]),
+    )
 
   mutate(
     api,
@@ -166,8 +179,8 @@ export function editPatient(
       entityType: 'patient',
       entityId: patientId,
       action: 'patient.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, patient[k as keyof Patient]])),
-      after: patch,
+      before: narrate(Object.fromEntries(Object.keys(patch).map((k) => [k, patient[k as keyof Patient]])) as Partial<Patient>),
+      after: narrate(patch),
     },
     (s) => ({
       masters: {

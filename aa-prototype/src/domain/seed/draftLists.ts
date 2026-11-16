@@ -110,6 +110,7 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       patientId: spec.patientId,
       scheduledTime: spec.time,
       completed: false,
+      payer: { kind: 'patient' },
       source: 'admin',
       notes: spec.note,
       lastModifiedBy: OFFICE,

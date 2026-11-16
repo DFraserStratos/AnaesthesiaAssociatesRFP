@@ -196,7 +196,6 @@ export {
   type BillingLineAllocationPatch,
   type FunderAllocationEntry,
 } from './billingLineActions'
-export { createBillableParty, type BillablePartyDetails } from './billablePartyActions'
 export { addDayNote, initialsFor } from './dayNoteActions'
 export {
   createHospital,
@@ -288,6 +287,10 @@ export {
   allSampleClearRefusal,
   raiseSamplesOn,
   clearSamplesOn,
+  clearSamplesFor,
+  sampleBookingsFor,
+  sampleTarget,
+  skippedSampleNotes,
   raiseDaySamples,
   clearAllSamples,
   type WarningSample,
@@ -366,8 +369,10 @@ export * from './lookback'
 
 // The step rail's writes and reads (catch-up Phase 20).
 export { contractPickRefusal, railActorOf, setEnteredPrice, setProcedureContract, setRailAnswers } from './contractSelectionActions'
+export { CHOOSE_INSURER_OR_FUNDER, setBookingInsurance, type InsuranceInput } from './insuranceActions'
+export { PAYER_NAME_REQUIRED, payerAuditText, payerFromInput, payerInputRefusal, setBookingPayer, type PayerInput } from './payerActions'
 export {
-  billedPartyForProcedure,
+  billablePartyForProcedureId,
   contractRailForNewBooking,
   contractRailForProcedure,
   needsInvoiceDestinationBookings,

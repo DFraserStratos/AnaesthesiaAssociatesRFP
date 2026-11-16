@@ -32,13 +32,14 @@ import {
   WARNING_RULE_COUNT,
   allSampleClearRefusal,
   clearAllSamples,
-  clearSamplesOn,
+  clearSamplesFor,
   clearWarning,
   daySampleRaiseRefusal,
   raiseDaySamples,
   raiseSamplesOn,
   sampleClearRefusal,
   sampleRaiseRefusal,
+  skippedSampleNotes,
   warningsForBooking,
   armHandoffFault,
   assignNextFreeSlotAsSimulatedOffice,
@@ -91,7 +92,7 @@ import {
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
-import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
+import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId } from '../../domain/slots'
 import { SEED_STATUS, statusFor } from '../../domain/slotStatus'
@@ -1173,21 +1174,23 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'raise-sample-warnings',
     label: 'Raise sample warnings',
     description:
-      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: today an unpaid prepayment. Later rules add theirs: base units outside the range, a child as the payer on the Booking, insurer-will-pay with no insurer Contract, a prepaid procedure with no price, a paying patient with a balance.",
+      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: an unpaid prepayment, base units outside the range, a child as the payer on the Booking (on the Booking on screen when its patient is under 18, otherwise on Grace Park's), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). Later rules add theirs: a prepaid procedure with no price, a paying patient with a balance.",
     screen: 'Admin · Day and Booking detail, Mobile · Booking',
     routes: SAMPLE_WARNING_ROUTES,
     surfaces: ['bar', 'pwa'],
     disabledReason: raiseSampleDisabled,
     run: (api, ctx) => {
       const bookingId = ctx.params['bookingId']
+      const notes = skippedSampleNotes(api.getState(), bookingId ?? SEED_WARNING_SAMPLE_BOOKINGS.targets[0])
       const res = bookingId === undefined ? raiseDaySamples(api) : raiseSamplesOn(api, bookingId)
       if (!res.ok) return { ok: false, message: res.message }
+      const skipped = notes.length > 0 ? ` ${notes.join(' ')}` : ''
       return {
         ok: true,
         message:
           bookingId === undefined
-            ? `Raised ${plural(res.value, 'sample warning')} on Dr Rutherford's Tue 21 Jul Lists. They show on the To-do card, the day grid and each Booking. ${RULES_NOTE}`
-            : `Raised ${plural(res.value, 'sample warning')} on this Booking: the triangle and the warning at the top of the Booking. ${RULES_NOTE}`,
+            ? `Raised ${plural(res.value, 'sample warning')} on Dr Rutherford's Tue 21 Jul Lists, Grace Park's Booking and a NIB Booking. They show on the To-do card, the day grid and each Booking. ${RULES_NOTE}${skipped}`
+            : `Raised ${plural(res.value, 'sample warning')}: the triangle and the warning at the top of the Booking. The child payer sample stages on a minor's Booking (Grace Park's unless this one is a child's) and the approval number sample on an insurer's (BK0074 unless this one names an insurer). ${RULES_NOTE}${skipped}`,
       }
     },
     indexPath: () => '/admin/day/2026-07-21',
@@ -1203,7 +1206,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     disabledReason: clearSampleDisabled,
     run: (api, ctx) => {
       const bookingId = ctx.params['bookingId']
-      const res = bookingId === undefined ? clearAllSamples(api) : clearSamplesOn(api, bookingId)
+      const res = bookingId === undefined ? clearAllSamples(api) : clearSamplesFor(api, bookingId)
       if (!res.ok) return { ok: false, message: res.message }
       return { ok: true, message: `Removed ${plural(res.value, 'sample warning')}. The seeded values are back.` }
     },

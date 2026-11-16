@@ -6,6 +6,7 @@ import {
   CONTRACT_GONE_FAILURE,
   NEEDS_DESTINATION_FAILURE,
   TYPE_THE_PRICE_FAILURE,
+  billingReferenceMissing,
   validateBookingForBilling,
   type BookingBillingContext,
 } from './validateBookingForBilling'
@@ -14,7 +15,6 @@ import {
   BASE_SINGLE_10,
   HANDOVER_1030,
   mkAnaesthetist,
-  mkBillableParty,
   mkBooking,
   mkContract,
   mkParty,
@@ -22,7 +22,7 @@ import {
   START_0800,
 } from './fixtures'
 import type { BillingLine, Procedure } from '../types'
-import { noRouteCounterpartyMessage } from './parties'
+import { HOLDER_MISSING_MESSAGE } from './whoIsBilled'
 
 /** The hospital's plain RVG Contract, billing its holder (catch-up Phase 20: every Procedure carries one Contract). */
 const PLAIN_RVG = mkContract({ id: 'con-plain', name: 'Test hospital RVG' })
@@ -43,11 +43,10 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
     contracts: CONTRACTS,
     parties: {
       'party-hosp-1': mkParty(),
-      'party-ins': mkParty({ id: 'party-ins', kind: 'insurer', name: 'Southern Health', codePrefix: 'SHI', hospitalId: undefined, legacyCounterparty: { kind: 'insurer', id: 'ins-direct' } }),
+      'party-ins': mkParty({ id: 'party-ins', kind: 'insurer', name: 'Southern Health', codePrefix: 'SHI', hospitalId: undefined, billingIdentity: { kind: 'insurer', id: 'ins-direct' } }),
       'party-aa': mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined }),
       'party-anaes': mkParty({ id: 'party-anaes', kind: 'anaesthetist', name: 'Dr Test', codePrefix: 'DRT', hospitalId: undefined }),
     },
-    billableParties: { 'bp-1': mkBillableParty() },
     billingLines: [],
     listDateISO: '2026-07-21',
     timeRule: DEFAULT_RVG_TIME_RULE,
@@ -169,10 +168,11 @@ describe('validateBookingForBilling — required data', () => {
   })
 })
 
-describe('validateBookingForBilling — the payer override and an Other price', () => {
-  it('fails an unresolvable billable-party override', () => {
-    const p = validProcedure({ governingContractId: NO_CONTRACT.id, billablePartyId: 'bp-ghost' })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('billablePartyId')
+describe('validateBookingForBilling — the payer and an Other price', () => {
+  it('never refuses for the payer: a payer with no contact completes (US-11.2.3 is a Review flag; catch-up Phase 21)', () => {
+    const p = validProcedure({ governingContractId: NO_CONTRACT.id })
+    const guardian = { ...booking, payer: { kind: 'other' as const, id: 'BP0009', name: 'No Contact' } }
+    expect(validateBookingForBilling(guardian, [p], mkCtx())).toEqual([])
   })
 
   it('an open-price fallback asks for its amount, and passes once one is typed (US-04.3.9)', () => {
@@ -292,14 +292,21 @@ describe('validateBookingForBilling — two-funder conservation', () => {
   })
 })
 
-describe('who the Contract bills needs a billing record (catch-up Phase 18 review pass; INTERIM until Phase 21)', () => {
+describe('who the Contract bills (catch-up Phase 21: a holder Party bills as itself; only a missing holder fails)', () => {
   const recordless = mkParty({ id: 'party-group', kind: 'surgeonGroup', name: 'Group', codePrefix: 'GRP', hospitalId: undefined })
   const groupHeld = mkContract({ id: 'con-grp', name: 'Group RVG', holderId: 'party-group' })
+  const orphan = mkContract({ id: 'con-orphan', name: 'Orphan RVG', holderId: 'party-gone' })
 
-  it('a holder-billed Contract whose holder has no billing record fails with the resolver sentence', () => {
+  it('a holder Party with no older billing identity is billed as itself, so nothing fails', () => {
     const p = validProcedure({ governingContractId: 'con-grp' })
     const ctx = mkCtx({ contracts: { ...CONTRACTS, 'con-grp': groupHeld }, parties: { ...mkCtx().parties, [recordless.id]: recordless } })
-    expect(validateBookingForBilling(booking, [p], ctx).find((f) => f.field === 'governingContractId')?.message).toBe(noRouteCounterpartyMessage('Group RVG'))
+    expect(validateBookingForBilling(booking, [p], ctx).find((f) => f.field === 'governingContractId')).toBeUndefined()
+  })
+
+  it('a holder-billed Contract whose holder is gone fails with the run sentence', () => {
+    const p = validProcedure({ governingContractId: 'con-orphan' })
+    const ctx = mkCtx({ contracts: { ...CONTRACTS, 'con-orphan': orphan } })
+    expect(validateBookingForBilling(booking, [p], ctx).find((f) => f.field === 'governingContractId')?.message).toBe(HOLDER_MISSING_MESSAGE)
   })
 
   it('a Contract billing the payer bills the patient, so AA holding it needs no record', () => {
@@ -355,5 +362,15 @@ describe('the modifier explanation backstop (catch-up Phase 19b; US-03.6.1, fini
 
   it('passes a Procedure with no modifier at all (FT-03.3: none is a valid answer)', () => {
     expect(validateBookingForBilling(booking, [validProcedure({ modifierClaims: [] })], mkCtx())).toEqual([])
+  })
+})
+
+describe('billingReferenceMissing for a Party billed as itself (catch-up Phase 21 review)', () => {
+  it('asks a surgeon group billed as itself for its reference, as COS is asked', () => {
+    const group = mkParty({ id: 'party-group', kind: 'surgeonGroup', name: 'Group', codePrefix: 'GRP', hospitalId: undefined })
+    const held = mkContract({ id: 'con-grp', name: 'Group RVG', holderId: 'party-group' })
+    const p = validProcedure({ governingContractId: 'con-grp' })
+    expect(billingReferenceMissing(p, { 'con-grp': held }, { 'party-group': group })).toBe(true)
+    expect(billingReferenceMissing({ ...p, billingReference: 'G-1' }, { 'con-grp': held }, { 'party-group': group })).toBe(false)
   })
 })

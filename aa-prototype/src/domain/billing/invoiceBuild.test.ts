@@ -3,7 +3,7 @@
  * 18): the Contract-resolution truth table (the stored Contract governs,
  * Disabled included; "Needs a price"; none is "Needs an invoice
  * destination", never resolved from the List, catch-up Phase 20), who is
- * billed from the Contract (`billedPartyFor`),
+ * billed from the Contract (`billablePartyForProcedure`),
  * layout mapping, line building (override adjustment, stored funder
  * allocation, time-only additional procedures), same-counterparty grouping
  * and the GST demo assumption's maths.
@@ -36,10 +36,10 @@ import type { BillingLine, Contract, Party } from '../types'
 const PARTIES: Record<string, Party> = Object.fromEntries(
   [
     mkParty(),
-    mkParty({ id: 'party-ins-1', kind: 'insurer', name: 'Insurer', codePrefix: 'INS', hospitalId: undefined, legacyCounterparty: { kind: 'insurer', id: 'ins-1' } }),
-    mkParty({ id: 'party-surgeon', kind: 'surgeon', name: 'Surgeon', codePrefix: 'SUR', hospitalId: undefined, legacyCounterparty: { kind: 'surgeon', id: 'surg-9' } }),
-    mkParty({ id: 'party-org', kind: 'surgeonGroup', name: 'Group', codePrefix: 'ORG', hospitalId: undefined, legacyCounterparty: { kind: 'organisation', id: 'org-cos' } }),
-    mkParty({ id: 'party-bp', kind: 'surgeonGroup', name: 'Clinic', codePrefix: 'CLN', hospitalId: undefined, legacyCounterparty: { kind: 'billableParty', id: 'bp-1' } }),
+    mkParty({ id: 'party-ins-1', kind: 'insurer', name: 'Insurer', codePrefix: 'INS', hospitalId: undefined, billingIdentity: { kind: 'insurer', id: 'ins-1' } }),
+    mkParty({ id: 'party-surgeon', kind: 'surgeon', name: 'Surgeon', codePrefix: 'SUR', hospitalId: undefined, billingIdentity: { kind: 'surgeon', id: 'surg-9' } }),
+    mkParty({ id: 'party-org', kind: 'surgeonGroup', name: 'Group', codePrefix: 'ORG', hospitalId: undefined, billingIdentity: { kind: 'organisation', id: 'org-cos' } }),
+    mkParty({ id: 'party-bp', kind: 'surgeonGroup', name: 'Clinic', codePrefix: 'CLN', hospitalId: undefined, billingIdentity: { kind: 'billableParty', id: 'bp-1' } }),
     mkParty({ id: 'party-aa', kind: 'aa', name: 'Anaesthesia Associates', codePrefix: 'AA', hospitalId: undefined }),
   ].map((p) => [p.id, p]),
 )
@@ -60,7 +60,6 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT, [NO_CONTRACT.id]: NO_CONTRACT },
     parties: PARTIES,
-    billableParties: {},
     billingLines: [],
     listDateISO: LIST_DATE,
     timeRule: DEFAULT_RVG_TIME_RULE,
@@ -140,23 +139,26 @@ describe('resolveContractForProcedure', () => {
 })
 
 describe('counterpartyForProcedure + layoutFor', () => {
+  const booking = mkBooking({ patientId: 'pat-1' })
+  const guardianBooking = mkBooking({ patientId: 'pat-1', payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother' } })
+
   it('a Contract that bills its holder bills the HOLDER: hospital, surgeon or organisation', () => {
     const surgeonHeld = mkContract({ id: 'c', holderId: 'party-surgeon' })
     const orgHeld = mkContract({ id: 'c', holderId: 'party-org' })
-    expect(counterpartyForProcedure(mkProcedure(), HOSPITAL_DEFAULT, 'pat-1', PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
-    expect(counterpartyForProcedure(mkProcedure(), surgeonHeld, 'pat-1', PARTIES)).toEqual({ kind: 'surgeon', id: 'surg-9' })
-    expect(counterpartyForProcedure(mkProcedure(), orgHeld, 'pat-1', PARTIES)).toEqual({ kind: 'organisation', id: 'org-cos' })
+    expect(counterpartyForProcedure(HOSPITAL_DEFAULT, booking, PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
+    expect(counterpartyForProcedure(surgeonHeld, booking, PARTIES)).toEqual({ kind: 'surgeon', id: 'surg-9' })
+    expect(counterpartyForProcedure(orgHeld, booking, PARTIES)).toEqual({ kind: 'organisation', id: 'org-cos' })
   })
 
-  it('an insurer-held Contract bills the insurer; a Contract billing the payer bills the override, else the patient (INTERIM until 21)', () => {
+  it('an insurer-held Contract bills the insurer; a Contract billing the payer bills the payer on the Booking (catch-up Phase 21)', () => {
     const insurerHeld = mkContract({ id: 'c', holderId: 'party-ins-1' })
-    expect(counterpartyForProcedure(mkProcedure(), insurerHeld, 'pat-1', PARTIES)).toEqual({ kind: 'insurer', id: 'ins-1' })
-    expect(counterpartyForProcedure(mkProcedure(), NO_CONTRACT, 'pat-1', PARTIES)).toEqual({ kind: 'patient', id: 'pat-1' })
-    expect(counterpartyForProcedure(mkProcedure({ billablePartyId: 'bp-7' }), NO_CONTRACT, 'pat-1', PARTIES)).toEqual({ kind: 'billableParty', id: 'bp-7' })
+    expect(counterpartyForProcedure(insurerHeld, booking, PARTIES)).toEqual({ kind: 'insurer', id: 'ins-1' })
+    expect(counterpartyForProcedure(NO_CONTRACT, booking, PARTIES)).toEqual({ kind: 'patient', id: 'pat-1' })
+    expect(counterpartyForProcedure(NO_CONTRACT, guardianBooking, PARTIES)).toEqual({ kind: 'payer', id: 'BP0007' })
   })
 
-  it('a payer override never moves a holder-billed Procedure', () => {
-    expect(counterpartyForProcedure(mkProcedure({ billablePartyId: 'bp-7' }), HOSPITAL_DEFAULT, 'pat-1', PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
+  it('another payer on the Booking never moves a holder-billed Procedure', () => {
+    expect(counterpartyForProcedure(HOSPITAL_DEFAULT, guardianBooking, PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
   })
 
   it('layout: contract-holder kinds vs patient kinds', () => {
@@ -164,7 +166,9 @@ describe('counterpartyForProcedure + layoutFor', () => {
     expect(layoutFor({ kind: 'insurer', id: 'x' })).toBe('contractHolder')
     expect(layoutFor({ kind: 'surgeon', id: 'x' })).toBe('contractHolder')
     expect(layoutFor({ kind: 'organisation', id: 'x' })).toBe('contractHolder')
+    expect(layoutFor({ kind: 'party', id: 'x' })).toBe('contractHolder')
     expect(layoutFor({ kind: 'patient', id: 'x' })).toBe('patient')
+    expect(layoutFor({ kind: 'payer', id: 'x' })).toBe('patient')
     expect(layoutFor({ kind: 'billableParty', id: 'x' })).toBe('patient')
   })
 })

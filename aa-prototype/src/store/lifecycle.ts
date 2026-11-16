@@ -481,7 +481,7 @@ export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, r
 }
 
 /** The fields only the step rail writes (catch-up Phase 20). */
-const CONTRACT_FIELDS = ['governingContractId', 'railAnswers', 'enteredPrice', 'billsHolderInterim'] as const
+const CONTRACT_FIELDS = ['governingContractId', 'railAnswers', 'enteredPrice'] as const
 
 /**
  * The procedure text and the invoice description (catch-up Phase 20a): the

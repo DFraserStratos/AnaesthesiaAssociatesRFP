@@ -483,7 +483,15 @@ function OptionList({
               }}
             >
               <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{o.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{o.label}</span>
+                  {/* The Booking's funder marks one path (catch-up Phase 21, US-04.3.10): never a filter. */}
+                  {o.suggested === true && (
+                    <Pill size="small" shot="rail-suggested">
+                      Suggested
+                    </Pill>
+                  )}
+                </span>
                 {o.hint !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{o.hint}</span>}
               </span>
               <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }} aria-label={`${o.count} ${o.count === 1 ? 'Contract' : 'Contracts'}`}>

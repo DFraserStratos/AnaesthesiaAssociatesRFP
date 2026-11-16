@@ -12,7 +12,6 @@
 import type {
   Anaesthetist,
   AuditEntry,
-  BillableParty,
   BillingLine,
   Booking,
   Contract,
@@ -67,12 +66,12 @@ import {
 import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS } from './contracts'
-import { PARTIES } from './parties'
+import { PARTIES, PARTY } from './parties'
 import { SPECIALTIES } from './specialties'
 import { FUNDING_TAGS } from './fundingTags'
 import { RECURRING_BOOKINGS } from './recurringBookings'
 import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
-import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
+import { PAT, SEED_PAYER_COUNTER, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_GROUPS } from './rvgGroups'
 import { defaultAppSettings } from '../warnings/settings'
@@ -87,6 +86,7 @@ import { ACCEPTANCE_BEAT_LIST_ID, seedBookingMoveBookings } from './bookingMoves
 import { MERIVALE_BOOKING_LIST_ID, seedPricedItemBookings } from './pricedItemBookings'
 import { finaliseSeedProcedureTexts } from './procedureText'
 import { seedSourceWordingBookings } from './sourceWordingBookings'
+import { PAYER_REVIEW_LIST_ID, seedPayerReviewBookings, type PayerReviewKey } from './payerReviewBookings'
 
 export {
   canvasAnaesthetists,
@@ -113,7 +113,7 @@ export { PARTY, PARTIES } from './parties'
 export { SPC, SPECIALTIES, SPECIALTY_FOR_DIRECTORY_TEXT } from './specialties'
 export { TAG, FUNDING_TAGS } from './fundingTags'
 export { RVG_GROUP, RVG_GROUPS, LEGACY_CODE_TO_RVG_GROUP, AA_OWN_ROW_KEYS } from './rvgGroups'
-export { BP, PAT } from './patients'
+export { BP, PAT, PAT_REVIEW, HANA_PARK_PAYER } from './patients'
 export {
   ANAESTHETIST_DASHBOARD,
   deriveDashboardFigures,
@@ -145,9 +145,9 @@ export interface SeedMasters {
   specialties: Record<string, Specialty>
   /** AA's funding tags in step-rail order (catch-up Phase 18a; US-13.4.5): SXAP, HNZ, ACC. */
   fundingTags: Record<string, FundingTag>
-  /** INTERIM identities behind insurer Parties and `funderOverride` (no view, no flag; Phases 21 and 22 retire them). */
+  /** The billing identities behind insurer Parties and `funderOverride` (no view, no flag; kept by catch-up Phase 21, Phase 22's Split replaces the override). */
   insurers: Record<string, Insurer>
-  /** INTERIM identity behind the COS surgeon-group Party (Phase 21 retires it). */
+  /** The billing identity behind the COS surgeon-group Party (kept by catch-up Phase 21). */
   organisations: Record<string, ContractHolderOrganisation>
   contracts: Record<string, Contract>
   /**
@@ -169,7 +169,6 @@ export interface SeedMasters {
   recurringBookings: Record<string, RecurringBooking>
   holidays: Record<string, HospitalHoliday>
   patients: Record<string, Patient>
-  billableParties: Record<string, BillableParty>
 }
 
 export interface SeedSchedule {
@@ -389,6 +388,8 @@ function applyPhase09Slots({ slots, lists }: Canvas): void {
 interface SeedBuild {
   state: SeedState
   scenario: BookingScenarioIds
+  /** The payer review List's Bookings (catch-up Phase 21), by case. */
+  payerReview: Record<PayerReviewKey, string>
   /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
   clashes: RecurringClash[]
 }
@@ -439,6 +440,8 @@ function buildSeedInternal(): SeedBuild {
     SEED_LIST_IDS.souterMon20Pm,
     SEED_LIST_IDS.billingFailure,
     SEED_LIST_IDS.integrationLocked,
+    // Catch-up Phase 21: the payer review List, waiting in the Review queue.
+    SEED_LIST_IDS.payerReview,
   ]) {
     const list = lists[id]
     if (list !== undefined && list.state !== 'DRAFT') lists[id] = { ...list, state: 'SUBMITTED' }
@@ -495,6 +498,21 @@ function buildSeedInternal(): SeedBuild {
   const wordingBookings = seedSourceWordingBookings(pricedItemBookings.next, (listId) => lists[listId]?.dateISO ?? DEMO_TODAY)
   for (const b of wordingBookings.bookings) bookingsRec[b.id] = b
   for (const p of wordingBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 21: the payer review List's Bookings, after every other id.
+  const payerReview = seedPayerReviewBookings(wordingBookings.next)
+  for (const b of payerReview.bookings) bookingsRec[b.id] = b
+  for (const p of payerReview.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 21 (US-11.4.3): every Booking on nib's Contract names NIB as its insurer, with an
+  // approval number (the review List's `approvalMissing` alone has none); the AIA claim-back Booking
+  // names AIA Health with a number. They raise no warning, so nothing is seeded as cleared.
+  const onNib = new Set(Object.values(proceduresRec).filter((p) => p.governingContractId === CONTRACT.nibRvg).map((p) => p.bookingId))
+  for (const id of onNib) {
+    const b = bookingsRec[id]
+    if (b === undefined || b.funderPartyId !== undefined) continue
+    bookingsRec[id] = { ...b, funderPartyId: PARTY.nib, insuranceApprovalNumber: `NIB-AP-${id.slice(2)}` }
+  }
+  const aia = bookingsRec[bookingsBuild.scenario.aiaClaim]
+  if (aia !== undefined) bookingsRec[aia.id] = { ...aia, funderPartyId: PARTY.aia, insuranceApprovalNumber: 'AIA-2026-30418' }
   // Catch-up Phase 20a: each seeded Procedure's text source and time, and its invoice description.
   finaliseSeedProcedureTexts(proceduresRec, bookingsRec, lists, byId(CONTRACTS, (c) => c.id))
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
@@ -561,7 +579,6 @@ function buildSeedInternal(): SeedBuild {
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
       patients: patientsRec,
-      billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
     },
     schedule: {
       slots,
@@ -586,11 +603,12 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: wordingBookings.next.booking,
-      procedure: wordingBookings.next.procedure,
+      booking: payerReview.next.booking,
+      procedure: payerReview.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
-      billableParty: BILLABLE_PARTIES.length + 1,
+      // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21).
+      billableParty: SEED_PAYER_COUNTER,
       dayNote: DAY_NOTE_NEXT,
       list: 1,
       hospital: 1,
@@ -600,7 +618,7 @@ function buildSeedInternal(): SeedBuild {
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario, clashes }
+  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, clashes }
 }
 
 /** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
@@ -627,6 +645,8 @@ export const SEED_LIST_IDS = {
   integrationMoveSourceStgList: projectedListId(ANAE.souter, '2026-08-03', 'PM'),
   integrationSxList: projectedListId(ANAE.souter, '2026-07-28', 'PM'),
   integrationCphList: projectedListId(ANAE.souter, '2026-07-30', 'AM'),
+  // Catch-up Phase 21: the payer review List (Dr Chen, Fri 17 Jul AM, Christchurch Eye Surgery), SUBMITTED.
+  payerReview: PAYER_REVIEW_LIST_ID,
 } as const
 
 /**
@@ -772,13 +792,16 @@ export const MERIVALE_FACE_LIFT_BOOKING_ID: string = (() => {
   return found.id
 })()
 
+/** The payer review List's Bookings (catch-up Phase 21), appended after 20a's: the parity suites name them as additions. */
+export const PAYER_REVIEW_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.payerReview).sort()
+
 /**
  * The Bookings catch-up Phase 20a appended to carry AR-35's illustrative
  * wording (`seed/sourceWordingBookings.ts`): every Booking after the Merivale
  * Face lift. The parity suites name them as additions.
  */
 export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
-  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID)
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id))
   .sort()
 
 /** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
@@ -950,10 +973,10 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: "Billed under ACC elective services via St George's, which carries the ACC funding tag; sources W4's ACC column once invoiced.",
     },
     guardianMinorBooking: {
-      label: 'Guardian pays for a minor',
+      label: 'A parent pays for a minor',
       entityType: 'booking',
       entityId: scenario.guardianMinor,
-      detail: 'Grace Park (12); billable party override set to her mother.',
+      detail: 'Grace Park (12); her mother, Hana Park, is the payer on the Booking (Different payer ticked): no child warning.',
     },
     prepaymentBooking: {
       label: 'Pre-payment booking (split, unpaid)',
@@ -1088,5 +1111,42 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityType: 'booking',
     entityId: RTK_BOOKING_ID,
     detail: "Souter Tue 4 Aug AM (St George's), 09:30; the rooms' RTK is in its History.",
+  },
+  // Catch-up Phase 21: the payer review List (Dr Chen, Fri 17 Jul AM, Christchurch Eye Surgery, SUBMITTED).
+  childPayer: {
+    label: 'Child as the payer (Ella Moana, 15)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.payerReview.childPayer,
+    detail: 'Payer review List, 08:00. The patient pays under No contract · RVG: the mild child payer warning, on the to-do list and the Booking.',
+  },
+  payerContactMissing: {
+    label: 'Payer with no email or postal address',
+    entityType: 'booking',
+    entityId: SEED_BUILD.payerReview.payerContactMissing,
+    detail: 'Payer review List, 09:15. Kevin Doherty has neither on file: "Email or postal address needed" on the Payer row and the Review row.',
+  },
+  familyTrustPayer: {
+    label: 'Family trust paying by post',
+    entityType: 'booking',
+    entityId: SEED_BUILD.payerReview.familyTrustPayer,
+    detail: 'Payer review List, 10:15. The Whitcombe Family Trust is ticked as payer with a postal address and no email: no flag.',
+  },
+  approvalMissing: {
+    label: 'Insurer named, no approval number (NIB)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.payerReview.approvalMissing,
+    detail: "Payer review List, 11:15. NIB on nib's Contract with no approval number: the one insurance warning; the step rail suggests Special › NIB.",
+  },
+  funderNoWarning: {
+    label: 'Funder with no approval number (Health NZ)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.payerReview.funderNoWarning,
+    detail: 'Payer review List, 12:30. Health NZ is a funder, not an insurer: no warning.',
+  },
+  suggestedTag: {
+    label: 'Southern Cross Health Society suggests SXAP',
+    entityType: 'booking',
+    entityId: SEED_BUILD.payerReview.suggestedTag,
+    detail: 'Fitzgerald Thu 23 Jul AM (Southern Cross), 08:30, no Contract yet: the step rail marks Southern Cross › SXAP "Suggested"; every path stays offered.',
   },
 }

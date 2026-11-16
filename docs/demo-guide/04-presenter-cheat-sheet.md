@@ -107,8 +107,28 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 
 The office sets it at booking setup; the anaesthetist sees the same rail and can finish or change it
 until the List is authorised, never onto or off a prepaid Contract. A Contract bills its holder or the
-patient as it says. A patient with insurance who pays AA is on No contract · RVG (or a price list) and
-claims back themselves; nib is billed only through nib's own Contract.
+payer on the Booking as it says. A patient with insurance who pays AA is on No contract · RVG (or a
+price list) and claims back themselves; nib is billed only through nib's own Contract.
+
+### The payer and the insurer or funder (catch-up Phase 21)
+
+- **Who is billed** is each Contract's own setting: its holder Party when it bills its holder, otherwise
+  the **payer named on the Booking**. No contract · RVG, No contract · Fixed price, a surgeon's fixed
+  price (Mr Doyle's bariatric list), an anaesthetist's own price list and every prepaid Contract bill
+  the payer. One invoice per party per Booking.
+- **The payer** is the patient by default, read from the patient record. Tick **Different payer** to
+  name anyone else who pays: a parent, a guardian, a benefactor or a family trust. The office and the
+  anaesthetist change it until the List is authorised (a sheet on the phone, a dialog on web).
+- A billed payer needs an **email or an NZ Post postal address**; a postal address alone is enough
+  (posting the invoice is Phase 22). Missing both shows **Email or postal address needed** on the
+  Payer row and at Review; it never blocks.
+- **Insurer or funder:** the Booking names one (a Party: NIB and Southern Cross Health Society are
+  insurers; ACC and Health NZ are funders) and holds the **approval number**. The office records them;
+  the anaesthetist sees the number and may change it on the day. A missing number on an insurer is the
+  only insurance warning, shown to the office and the anaesthetist. The funder never decides who is
+  billed and never narrows the Contracts: it only marks one path **Suggested** on the step rail.
+- The AIA patient (Marcus Webb) is invoiced under No contract · RVG like any patient, AIA named as the
+  insurer with a number, no warning.
 
 ### Procedure text and the invoice description
 
@@ -357,7 +377,7 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - One RFP section said NHI could be a searchable Xero contact cross-reference; Appendix 2 said NHI
   never leaves the practice system.
 - Confirmed with AA: no NHI or other personal information in Xero, patient names included. Patient and
-  guardian contacts are named only by their hidden internal ID.
+  payer contacts are named only by their hidden internal ID.
 
 Say:
 
@@ -440,6 +460,10 @@ Say:
 - The escalation as the date nears and the automatic prepayment invoice come later (catch-up Phase 27).
 - Warnings: one routine; a To-do card in Admin; a small triangle on Bookings in all three apps; the
   warning at the top of the Booking when it opens. Never a block, and no confirm step at submit.
+- Catch-up Phase 21 adds two mild before-procedure rules: a **child as the payer** (under 18 on the
+  List date, the patient paying for a Procedure billed to the payer; none when another payer is ticked
+  or the Contract bills its holder) and an **insurer with no approval number** (NIB or Southern Cross
+  Health Society only; never ACC or Health NZ). Both clear from the To-do card.
 
 ### 9. Concurrency
 

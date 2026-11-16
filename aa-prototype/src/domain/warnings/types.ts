@@ -11,13 +11,13 @@
  * Pure (enforced by `domainPurity.test.ts`).
  */
 
-import type { AaFeeSettings, ActorRole, Booking, BookingId, IsoDate, IsoDateTime, List, Procedure, ProcedureId, RvgGroup, RvgGroupId, ScheduleSettings } from '../types'
+import type { AaFeeSettings, ActorRole, Booking, BookingId, Contract, IsoDate, Party, IsoDateTime, List, Patient, Procedure, ProcedureId, RvgGroup, RvgGroupId, ScheduleSettings } from '../types'
 
 export type WarningKind = 'beforeProcedure' | 'afterProcedure'
 export type WarningStrength = 'mild' | 'strong'
 
 /** Every registered rule. Phases 19, 21, 27 and 40 widen the union. */
-export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide'
+export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide' | 'childPayer' | 'approvalNumberMissing'
 
 /** The derived prepayment state a rule may read (the store's `prepaymentStatusFor`). */
 export type WarningPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
@@ -36,6 +36,12 @@ export interface WarningFacts {
   todayISO: IsoDate
   /** The RVG groups (catch-up Phase 19), for `baseUnitsOutsideGuide`. Absent: that rule finds nothing. */
   rvgGroups?: Readonly<Record<RvgGroupId, RvgGroup>>
+  /** The Booking's patient (catch-up Phase 21), for `childPayer`. Absent: that rule finds nothing. */
+  patient?: Pick<Patient, 'name' | 'dobISO'>
+  /** The Contracts (catch-up Phase 21): who each Procedure bills. Absent: `childPayer` finds nothing. */
+  contracts?: Readonly<Record<string, Pick<Contract, 'billsTo'>>>
+  /** The Parties (catch-up Phase 21): the Booking's funder's kind and name. Absent: `approvalNumberMissing` finds nothing. */
+  parties?: Readonly<Record<string, Pick<Party, 'kind' | 'name'>>>
 }
 
 export type WarningParams = Readonly<Record<string, number>>

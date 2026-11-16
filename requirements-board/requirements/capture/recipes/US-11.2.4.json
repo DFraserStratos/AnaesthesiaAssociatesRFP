@@ -1,6 +1,146 @@
 {
   "id": "US-11.2.4",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 21 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "todo-child-warning",
+      "app": "admin",
+      "caption": "A child as the payer is a mild warning on the to-do list, never a block",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "raised",
+          "caption": "A child as the payer is a mild warning on the to-do list, never a block",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=todo-child-warning]"
+          ]
+        },
+        {
+          "state": "cleared",
+          "caption": "An admin clears it and it leaves the to-do list",
+          "steps": [
+            {
+              "click": "[data-shot=todo-child-warning] >> role=button[name=/Clear/]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-warnings-todo]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-child-warning",
+      "app": "admin",
+      "caption": "Ella Moana, 15, is the payer: the warning shows first on the Booking, with \"Under 18\" on the Payer row",
+      "start": "/admin/day/2026-07-17/bookings/BK0170",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-child-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-child-warning",
+      "app": "web",
+      "caption": "The anaesthetist sees the same mild warning when the patient paying is under 18",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "role=dialog >> input[type=date]",
+              "value": "2012-05-01"
+            },
+            {
+              "click": "role=button[name=\"Save details\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-child-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-child-warning",
+      "app": "mobile",
+      "caption": "On the phone the warning shows at the top of the Booking on opening",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "role=dialog >> input[type=date]",
+              "value": "2012-05-01"
+            },
+            {
+              "click": "role=button[name=\"Save details\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=booking-child-warning]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-child-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "guardian-payer-no-warning",
+      "app": "admin",
+      "caption": "No warning when a parent is the payer, or when a Contract bills its holder",
+      "start": "/admin/day/2026-07-24/bookings/BK0033",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-payer-row]"
+          ]
+        }
+      ]
+    }
+  ]
 }

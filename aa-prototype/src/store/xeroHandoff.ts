@@ -33,7 +33,7 @@
  * One `mutate`, `source:'system'` audit (`xero.contactResolved`, `xero.pairCreated`).
  */
 
-import type { Anaesthetist, CounterpartyRef, XeroContact } from '../domain/types'
+import type { Anaesthetist, Booking, CounterpartyRef, XeroContact } from '../domain/types'
 import { xeroIndividualContactName } from '../domain/xeroContact'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -75,20 +75,30 @@ export function anaesthetistContactSpec(anaesthetist: Pick<Anaesthetist, 'regist
   }
 }
 
-/** The payer contact spec for an invoice counterparty (no NHI or other personal information; convention 8). */
-export function payerContactSpec(cp: CounterpartyRef, masters: AppState['masters']): ContactSpec {
-  const key = `${cp.kind}:${cp.id}`
+/**
+ * The payer contact spec for an invoice counterparty (no NHI or other
+ * personal information; convention 8). Another payer on a Booking (catch-up
+ * Phase 21) keys on the `billableParty` namespace its `BP####` id always had,
+ * so a guardian re-expressed as a payer (Hana Park, BP0001) keeps its Xero
+ * contact; Aria's folded record (BP0002) keeps its own. The ids never clash:
+ * payer ids are allocated from the same counter.
+ */
+export function payerContactSpec(
+  cp: CounterpartyRef,
+  masters: AppState['masters'],
+  booking?: Pick<Booking, 'id'>,
+): ContactSpec {
   if (cp.kind === 'patient') {
     // ContactNumber = the patient's hidden internal id (never the NHI); the
     // name is the neutral label built from it (no personal information in Xero).
-    return { key, contactNumber: cp.id, name: xeroIndividualContactName('patient', cp.id), type: 'patient' }
+    return { key: `patient:${cp.id}`, contactNumber: cp.id, name: xeroIndividualContactName('patient', cp.id), type: 'patient' }
   }
-  if (cp.kind === 'billableParty') {
-    return { key, contactNumber: cp.id, name: xeroIndividualContactName('billableParty', cp.id), type: 'billableParty' }
+  if (cp.kind === 'payer' || cp.kind === 'billableParty') {
+    return { key: `billableParty:${cp.id}`, contactNumber: cp.id, name: xeroIndividualContactName('billableParty', cp.id), type: 'billableParty' }
   }
-  // hospital / insurer / surgeon / organisation → one persistent organisation
-  // contact, keyed by the (globally-unique) holder id.
-  return { key, contactNumber: cp.id, name: counterpartyName({ masters }, cp), type: 'organisation' }
+  // hospital / insurer / surgeon / organisation / party → one persistent
+  // organisation contact, keyed by the (globally-unique) holder id.
+  return { key: `${cp.kind}:${cp.id}`, contactNumber: cp.id, name: counterpartyName({ masters }, cp, booking?.id), type: 'organisation' }
 }
 
 export interface ResolveResult {

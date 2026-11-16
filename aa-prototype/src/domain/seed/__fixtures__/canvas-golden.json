@@ -13091,6 +13091,36 @@
       "patientId": "PT0027"
     },
     {
+      "id": "BK0170",
+      "listId": "L-45178-2026-07-17-AM",
+      "patientId": "PT0152"
+    },
+    {
+      "id": "BK0171",
+      "listId": "L-45178-2026-07-17-AM",
+      "patientId": "PT0153"
+    },
+    {
+      "id": "BK0172",
+      "listId": "L-45178-2026-07-17-AM",
+      "patientId": "PT0154"
+    },
+    {
+      "id": "BK0173",
+      "listId": "L-45178-2026-07-17-AM",
+      "patientId": "PT0155"
+    },
+    {
+      "id": "BK0174",
+      "listId": "L-45178-2026-07-17-AM",
+      "patientId": "PT0156"
+    },
+    {
+      "id": "BK0175",
+      "listId": "L-43015-2026-07-23-AM",
+      "patientId": "PT0157"
+    },
+    {
       "id": "HBK01",
       "listId": "L-HIST-01",
       "patientId": "PT0001"
@@ -13318,7 +13348,8 @@
     "integrationModifyStgList": "L-34821-2026-08-04-AM",
     "integrationMoveSourceStgList": "L-34821-2026-08-03-PM",
     "integrationSxList": "L-34821-2026-07-28-PM",
-    "integrationCphList": "L-34821-2026-07-30-AM"
+    "integrationCphList": "L-34821-2026-07-30-AM",
+    "payerReview": "L-45178-2026-07-17-AM"
   },
   "farEdge": {
     "25490|2026-11-15|AM": {

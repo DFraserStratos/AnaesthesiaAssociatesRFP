@@ -1,38 +1,93 @@
 {
   "id": "US-11.2.2",
-  "status": "partial",
-  "absentReason": "Admin only: the office sets a guardian or other payer in the billing setup. There is no invoice email for the billable party, and the anaesthetist apps show the billable party read-only without a way to change it.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "guardian-payer",
       "app": "admin",
-      "caption": "Guardian set as the billable party for a child",
+      "caption": "Hana Park, Grace Park's mother, is the payer on the Booking, with her email and postal address",
       "start": "/admin/day/2026-07-24/bookings/BK0033",
       "states": [
         {
           "state": "set",
-          "caption": "Guardian set as the billable party for a child",
-          "steps": [],
+          "caption": "Hana Park, Grace Park's mother, is the payer on the Booking, with her email and postal address",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-shot=office-billing-setup-1]"
+            "[data-shot=booking-payer-row]"
           ]
         },
         {
           "state": "edit",
-          "caption": "Choosing the payer, or adding a new guardian",
+          "caption": "Different payer ticked: name, relationship, email and an NZ Post postal address",
           "steps": [
             {
-              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Edit billing setup\"]"
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=payer-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-payer",
+      "app": "web",
+      "caption": "The anaesthetist changes the payer in a dialog: the patient by default, or someone else who pays",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
             },
             {
               "wait": 400
             },
             {
-              "scroll": "[role=dialog] select >> nth=0"
+              "click": "[data-shot=payer-different-tick] input"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=payer-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-payer",
+      "app": "mobile",
+      "caption": "On the phone the payer opens in a bottom sheet, prefilled from the patient record",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-payer-row]"
+            },
+            {
+              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=payer-sheet]"
           ]
         }
       ]

@@ -39,7 +39,7 @@ import type { Specialty } from '../specialties'
 import { contractFitsSpecialties } from '../specialties'
 import { contractMatchesQuery, isRvgKind, linkFits, noContractRvg, type Contract } from './contracts'
 import { destinationKey, destinationOf, findFallback, findRvgFallback, type InvoiceDestination } from './fallbacks'
-import { fundingTagsInOrder, type FundingTag, type FundingTagId } from './fundingTags'
+import { fundingTagForFunder, fundingTagsInOrder, type FundingTag, type FundingTagId } from './fundingTags'
 import type { Party, PartyId } from './parties'
 import { rangeInForce } from './priceRanges'
 import { fillFromContract } from './startingValues'
@@ -67,6 +67,12 @@ export interface RailContext {
   hospitalId?: HospitalId
   surgeonId?: SurgeonId
   anaesthetistId?: AnaesthetistId
+  /**
+   * The Booking's insurer or funder (catch-up Phase 21, US-04.3.10): read only
+   * by `suggestedPathFor`, which marks one path "Suggested". It never changes
+   * the candidates, their order or which step fills itself in.
+   */
+  funderPartyId?: PartyId
 }
 
 /** Who is on the rail: the office, or the anaesthetist on their own List (FT-03.4). */
@@ -172,6 +178,8 @@ export interface RailOption {
   count: number
   /** Whether it can be chosen. A hospital tag with no Contract still can (its step fills in the fallback); Prepaid with none cannot, nor ever for the anaesthetist. */
   selectable: boolean
+  /** The path the Booking's funder suggests (catch-up Phase 21, US-04.3.10): a mark only, never a filter or an answer. */
+  suggested?: true
 }
 
 export interface RailStep {
@@ -216,6 +224,8 @@ export interface ContractRailView {
   contract?: ContractStep
   /** The answers in force, including those filled in: what `setRailAnswers` stores. */
   answers?: RailAnswers
+  /** The path the Booking's funder suggests, if any (catch-up Phase 21, US-04.3.10): a mark only. */
+  suggested?: RailAnswers
 }
 
 export const RAIL_ROW_LIMIT = 50
@@ -285,6 +295,33 @@ function step(options: RailOption[], given: string | undefined, live: (o: RailOp
 }
 
 /**
+ * The path the Booking's funder suggests (catch-up Phase 21; US-04.3.10,
+ * Donald's D7; AR-58's `suggested(B, L)`, near L687-691). Our readings, kept
+ * here and logged: the order of the tests, and Patient › Standard for a
+ * Booking with no funder (self-funded).
+ *
+ * 1. No funder: Patient › Standard.
+ * 2. The funder holds a Contract offered on this List: Special › that holder
+ *    (NIB with nib's Contract).
+ * 3. Otherwise the List's hospital under the funding tag that names the funder
+ *    (`fundingTagForFunder`: Southern Cross Health Society suggests SXAP).
+ * 4. Else nothing.
+ *
+ * A mark only: the candidates, their order and every path's Contracts are the
+ * same with or without it, and nothing is pre-selected.
+ */
+export function suggestedPathFor(masters: RailMasters, ctx: RailContext): RailAnswers | undefined {
+  if (ctx.funderPartyId === undefined) return { destination: 'patient', narrow: 'standard' }
+  const funder = ctx.funderPartyId
+  // The whole List's candidates, as the office sees them (a mark is the same for everyone).
+  const all = grouped(masters, ctx, 'office', '')
+  if ((all.specialByHolder.get(funder)?.length ?? 0) > 0) return { destination: 'special', narrow: funder }
+  const tag = fundingTagForFunder(masters.fundingTags, funder)
+  if (tag !== undefined && hospitalTagsFor(masters, ctx).some((t) => t.id === tag.id)) return { destination: 'hospital', narrow: tag.id }
+  return undefined
+}
+
+/**
  * The rail at the answers so far (US-04.3.8): each step's options with their
  * counts, the answer in force and whether it filled itself in, step 3's rows
  * and "Other price". Pure and deterministic; the office and the anaesthetist
@@ -320,7 +357,10 @@ export function contractRailFor(
   destinationOptions.push({ value: 'special', label: 'Special', hint: 'An insurer, a funder or a surgeon who is billed', count: specialCount, selectable: specialCount > 0 })
   // Live: Patient always (No contract · RVG); the hospital whenever offered (its fallback fills an emptied tag); Special when it holds any.
   const destination = step(destinationOptions, given?.destination, (o) => o.selectable)
-  const view: ContractRailView = { destination }
+  // The funder's one "Suggested" path (US-04.3.10), marked after every answer is worked out.
+  const suggested = suggestedPathFor(masters, ctx)
+  for (const o of destinationOptions) if (suggested?.destination === o.value) o.suggested = true
+  const view: ContractRailView = { destination, ...(suggested !== undefined ? { suggested } : {}) }
   if (destination.answer === undefined) return view
   const dest = destination.answer as RailAnswers['destination']
 
@@ -346,6 +386,7 @@ export function contractRailFor(
       .sort((a, b) => a.label.localeCompare(b.label))
     live = () => true
   }
+  for (const o of narrowOptions) if (suggested?.destination === dest && suggested.narrow === o.value) o.suggested = true
   const narrow = step(narrowOptions, given?.destination === dest ? given.narrow : undefined, live)
   view.narrow = { ...narrow, title: narrowTitle(dest) }
   view.answers = narrow.answer !== undefined ? { destination: dest, narrow: narrow.answer } : { destination: dest }
@@ -435,7 +476,6 @@ export function applyContractChange(
     governingContractId: nextContractId,
     railAnswers: undefined,
     priceOverride: undefined,
-    billsHolderInterim: undefined,
     enteredPrice: next?.pricing.kind === 'open' ? opts.enteredPrice : undefined,
   }
   const fill = fillFromContract(procedure, next, masters.rvgGroups)

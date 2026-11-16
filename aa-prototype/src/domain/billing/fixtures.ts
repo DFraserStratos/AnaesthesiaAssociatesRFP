@@ -6,7 +6,6 @@
 
 import type {
   Anaesthetist,
-  BillableParty,
   Booking,
   Contract,
   Insurer,
@@ -71,6 +70,7 @@ export function mkBooking(overrides: Partial<Booking> = {}): Booking {
     listId: 'list-1',
     patientId: 'pat-1',
     completed: false,
+    payer: { kind: 'patient' },
     lastModifiedBy: 'Dr Melanie Souter',
     lastModifiedAtISO: '2026-07-21T08:00:00',
     ...overrides,
@@ -117,15 +117,6 @@ export function mkParty(overrides: Partial<Party> = {}): Party {
     billingName: 'Test Hospital Limited',
     email: 'accounts@test-hospital.example',
     deliveryMethod: 'email',
-    ...overrides,
-  }
-}
-
-export function mkBillableParty(overrides: Partial<BillableParty> = {}): BillableParty {
-  return {
-    hiddenInternalId: 'bp-1',
-    name: 'Angela Park',
-    relationshipToPatient: 'Mother',
     ...overrides,
   }
 }

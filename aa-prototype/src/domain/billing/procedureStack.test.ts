@@ -60,7 +60,7 @@ const ctx = (surface: ProcedureStackCtx['surface'] = 'anaesthetist'): ProcedureS
   contracts,
   parties: masters.parties,
   rvgGroups: masters.rvgGroups,
-  patientId: 'PT0001',
+  booking: { payer: { kind: 'patient' }, patientId: 'PT0001' },
   dateISO: '2026-08-04',
   surface,
   nameOf,
@@ -101,10 +101,11 @@ describe('procedureStackView', () => {
     expect(procedureStackView(p, ctx('anaesthetist')).rvg).toBe('toChoose')
   })
 
-  it('names who is invoiced through 20\'s billedPartyFor: the patient on No contract · RVG', () => {
+  it('names who is invoiced through billablePartyForProcedure: the payer on the Booking on No contract · RVG (catch-up Phase 21)', () => {
     const p = proc({ governingContractId: NO_CONTRACT.id })
     expect(whoIsInvoicedFor(p, ctx())).toEqual({ name: 'patient:PT0001', kind: 'patient' })
-    expect(whoIsInvoicedFor({ ...p, billablePartyId: 'BP1' }, ctx())).toEqual({ name: 'billableParty:BP1', kind: 'payer' })
+    const guardian = { ...ctx(), booking: { payer: { kind: 'other' as const, id: 'BP1', name: 'Hana Park' }, patientId: 'PT0001' } }
+    expect(whoIsInvoicedFor(p, guardian)).toEqual({ name: 'payer:BP1', kind: 'payer' })
   })
 })
 

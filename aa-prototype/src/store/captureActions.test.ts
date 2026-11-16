@@ -293,10 +293,10 @@ describe('addProcedure', () => {
     expect(procedure?.procedureText).toBeNull()
     expect(procedure?.rvgGroupId).toBeUndefined()
     // It picks its own Contract on the step rail (catch-up Phase 20, US-03.2.3):
-    // none is inherited; only the payer override is copied. "Add another
-    // procedure" is the only way to add an additional Procedure.
+    // none is inherited; the payer is the Booking's (catch-up Phase 21). "Add
+    // another procedure" is the only way to add an additional Procedure.
     expect(procedure?.governingContractId).toBeUndefined()
-    expect(procedure?.billablePartyId).toBe(first?.billablePartyId)
+    void first
 
     const entry = auditForEntity(api.getState(), outcome.value.procedureId).at(-1)
     expect(entry?.action).toBe('procedure.create')

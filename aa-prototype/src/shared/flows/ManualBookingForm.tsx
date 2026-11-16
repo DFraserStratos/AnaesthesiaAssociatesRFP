@@ -1,3 +1,4 @@
+import { DifferentPayerTick, EMPTY_OTHER_PAYER, OtherPayerFields, otherPayerInput, type OtherPayerDraft } from './PayerFields'
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
@@ -9,6 +10,7 @@ import { ContractRail, type ContractRailPick } from './ContractRail'
 import { DemoBadge } from '../DemoBadge'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
+import { formatPostalAddress } from '../../domain/billing/payer'
 import { Button, TextField, FieldLabel, Segmented } from '../ui'
 
 /** Fields a photo extraction may pre-fill. */
@@ -49,7 +51,6 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const masters = useAppStore((s) => s.masters)
   const list = useAppStore((s) => s.schedule.lists[listId])
   const railContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list) : undefined), [masters, list])
-  const billableParties = masters.billableParties
 
   const [nhi, setNhi] = useState(initial?.nhi ?? '')
   const [name, setName] = useState(initial?.name ?? '')
@@ -68,7 +69,14 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const [pick, setPick] = useState<ContractRailPick | undefined>(undefined)
   const [answers, setAnswers] = useState<RailAnswers | undefined>(undefined)
   const [railOpen, setRailOpen] = useState(false)
-  const [billablePartyId, setBillablePartyId] = useState('')
+  // The payer (catch-up Phase 21, US-11.2.2): the patient unless the tick names someone else.
+  const [differentPayer, setDifferentPayer] = useState(false)
+  const [otherPayer, setOtherPayer] = useState<OtherPayerDraft>(EMPTY_OTHER_PAYER)
+  // The existing patient record this NHI matches, if any: its email and postal address are the payer's.
+  const knownPatient = useMemo(() => {
+    const key = nhi.trim().toUpperCase()
+    return key === '' ? undefined : Object.values(masters.patients).find((p) => p.nhi === key)
+  }, [nhi, masters.patients])
   const [billingReference, setBillingReference] = useState(initial?.billingReference ?? '')
 
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
@@ -124,7 +132,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       ...(pick !== undefined ? { governingContractId: pick.contractId } : {}),
       ...(pick?.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {}),
       ...(pick === undefined && answers !== undefined ? { railAnswers: answers } : {}),
-      ...(billablePartyId !== '' ? { billablePartyId } : {}),
+      ...(differentPayer ? { payer: otherPayerInput(otherPayer) } : {}),
       ...(billingReference.trim() !== '' ? { billingReference: billingReference.trim() } : {}),
       ...(source !== undefined ? { source } : {}),
     })
@@ -306,23 +314,29 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         />
       )}
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <FieldLabel>Payer (defaults to the patient)</FieldLabel>
-        <select
-          value={billablePartyId}
-          onChange={(e) => setBillablePartyId(e.target.value)}
-          style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 15 }}
-        >
-          <option value="">The patient pays</option>
-          {Object.values(billableParties).map((b) => (
-            <option key={b.hiddenInternalId} value={b.hiddenInternalId}>
-              {b.name} ({b.relationshipToPatient})
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* The payer, prefilled from the patient (US-11.2.2 AC1): the tick names someone else. */}
+      <div data-shot="add-booking-payer" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <FieldLabel>Payer</FieldLabel>
+        {!differentPayer && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 14, color: neutral.ink }}>
+            <span>
+              {name.trim() !== '' ? name.trim() : 'The patient'}
+              <span style={{ color: neutral.slate }}> · Patient</span>
+            </span>
+            {/* The record's own contact when the NHI matches one; a new patient's is added on the Booking's Payer row. */}
+            {knownPatient?.email !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{knownPatient.email}</span>}
+            {knownPatient?.postalAddress !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{formatPostalAddress(knownPatient.postalAddress)}</span>}
+            {knownPatient?.email === undefined && knownPatient?.postalAddress === undefined && (
+              <span style={{ fontSize: 13, color: neutral.slate }}>No email or postal address on file yet: add one on the Booking&apos;s Payer row.</span>
+            )}
+          </div>
+        )}
+        <DifferentPayerTick checked={differentPayer} onChange={setDifferentPayer} />
+        {differentPayer && <OtherPayerFields draft={otherPayer} onChange={setOtherPayer} />}
+      </div>
 
-      <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract or approval reference" />
+      {/* The holder's reference is the office's (the approval number lives on the Booking's Insurer or funder row, catch-up Phase 21). */}
+      {isOffice && <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract reference" />}
 
       {error !== null && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>

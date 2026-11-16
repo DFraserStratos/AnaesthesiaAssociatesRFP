@@ -26,7 +26,7 @@ type Sheet = 'none' | 'setup' | 'override' | 'funder'
  * a prepaid Contract; INTERIM until Phase 27). The Contract, its holder and who
  * is invoiced are the procedure stack's (catch-up Phase 20a), so they are not
  * repeated here. "Edit billing setup" opens
- * "Contract and payer" (the payer override and the reference).
+ * "Contract and reference" (the reference; the payer is on the Booking since catch-up Phase 21).
  */
 export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }: OfficeBillingSetupProps) {
   const masters = useAppStore((s) => s.masters)
@@ -38,7 +38,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
   const funderLines = lines.filter((l) => l.funderOverride !== undefined)
   const refMissing = billingReferenceMissing(procedure, masters.contracts, masters.parties)
   // Prepayment follows a prepaid Contract (INTERIM until Phase 27); read-only here.
-  const prepaymentText = !procedureRequiresPrepayment(procedure, contract)
+  const prepaymentText = !procedureRequiresPrepayment(contract)
     ? 'Not required'
     : procedure.prepaymentDetail?.type === 'split' && procedure.prepaymentDetail.depositAmount !== undefined
       ? `Required · ${formatCurrency(procedure.prepaymentDetail.depositAmount)} seeded`

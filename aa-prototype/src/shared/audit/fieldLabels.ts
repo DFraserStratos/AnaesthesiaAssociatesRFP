@@ -47,8 +47,11 @@ export const FIELD_LABELS: Record<string, string> = {
   governingContractId: 'Contract',
   railAnswers: 'Invoice destination so far',
   enteredPrice: 'Typed price',
-  billablePartyId: 'Payer',
-  billsHolderInterim: 'Billed to the holder',
+  payer: 'Payer',
+  payerContact: 'Payer contact',
+  insurerOrFunder: 'Insurer or funder',
+  funderPartyId: 'Insurer or funder',
+  insuranceApprovalNumber: 'Approval number',
   prepaymentDetail: 'Prepayment',
   billingReference: 'Billing reference',
   isAdditional: 'Additional procedure',
@@ -160,20 +163,18 @@ export const FIELD_LABELS: Record<string, string> = {
   billingName: 'Billing name',
   postalAddress: 'Postal address',
   deliveryMethod: 'Delivery',
-  legacyCounterparty: 'Billing record',
+  billingIdentity: 'Billing record',
 
-  // --- Patient & billable party -------------------------------------------
+  // --- Patient and payer -------------------------------------------------
   nhi: 'NHI',
   dobISO: 'Date of birth',
   phone: 'Phone',
   email: 'Email',
-  address: 'Address',
   ethnicityCode: 'Ethnicity code',
   ethnicityPending: 'Ethnicity pending correction',
   pending: 'Pending correction',
   matchedByNhi: 'Matched by NHI',
   provisional: 'Provisional record',
-  relationshipToPatient: 'Relationship to patient',
 
   // --- Anaesthetist --------------------------------------------------------
   registrationNumber: 'Registration number',

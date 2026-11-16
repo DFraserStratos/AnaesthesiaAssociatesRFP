@@ -10,8 +10,9 @@
  * Contract's `billsTo`; where a Contract is offered is the Contract's own
  * links (AR-58 2.2).
  *
- * Every rule about a Party lives here (`partyRefusal`, `routeCounterpartyForParty`,
- * `suggestCodePrefix`), behind the types the UI reads.
+ * Every rule about a Party lives here (`partyRefusal`, `suggestCodePrefix`),
+ * behind the types the UI reads. Who is billed reads a Party only through
+ * `billablePartyForProcedure` (`whoIsBilled.ts`, catch-up Phase 21).
  */
 
 import type { CounterpartyRef, Hospital, HospitalId } from '../types'
@@ -62,12 +63,15 @@ export interface Party {
   /** AR-58 `hospitalId`: kind `hospital` only, and then required. Never AA's rooms. */
   hospitalId?: HospitalId
   /**
-   * Ours, INTERIM until Phase 21: the record today's invoices go to, so no
-   * counterparty or Xero contact moves while who is billed is interim
-   * (`{ insurer, I-NIB }`, `{ organisation, O-COS }`). Read only by
-   * `routeCounterpartyForParty` and `insurerPartyOptions`; 21 deletes it.
+   * Ours: the hidden identity invoices and Xero key on when a Contract bills
+   * this Party (`{ insurer, I-NIB }`, `{ organisation, O-COS }`, Aria's
+   * `{ billableParty, BP0002 }` folded from the retired guardian master in
+   * catch-up Phase 21), so no issued counterparty or Xero contact moves. A
+   * hospital Party with none bills as its hospital; any other Party with none
+   * bills as `{ party, <its id> }` (`holderCounterparty`, `whoIsBilled.ts`).
+   * Never shown and never edited.
    */
-  legacyCounterparty?: CounterpartyRef
+  billingIdentity?: CounterpartyRef
 }
 
 export interface PartyRefusal {
@@ -157,8 +161,8 @@ export function partyRefusal(next: Party, ctx: PartyRefusalContext): PartyRefusa
   }
 
   // A Party that holds Contracts, or stands behind Bookings' counterparty
-  // (`legacyCounterparty`, e.g. an insurer named on Procedures), keeps its kind.
-  if (ctx.prev !== undefined && ctx.prev.kind !== next.kind && (ctx.holdsContracts || ctx.prev.legacyCounterparty !== undefined)) {
+  // (`billingIdentity`, e.g. an insurer named on Procedures), keeps its kind.
+  if (ctx.prev !== undefined && ctx.prev.kind !== next.kind && (ctx.holdsContracts || ctx.prev.billingIdentity !== undefined)) {
     return refusal('kindFixedWhileHolding')
   }
   if (ctx.prev !== undefined && ctx.prev.hospitalId !== next.hospitalId && ctx.holdsContracts) {
@@ -181,18 +185,6 @@ export function billingDetailsRefusal(party: Party): PartyRefusal | null {
   return null
 }
 
-/**
- * INTERIM until Phase 21: the counterparty a Contract held by this Party
- * bills (`billedPartyFor`), so no seeded counterparty or Xero contact moves.
- * Reads no billing setting (never `billsTo`). Undefined is a plain billing
- * exception at run time, never a throw. Phase 21 deletes it.
- */
-export function routeCounterpartyForParty(party: Party | undefined): CounterpartyRef | undefined {
-  if (party === undefined) return undefined
-  if (party.legacyCounterparty !== undefined) return party.legacyCounterparty
-  if (party.kind === 'hospital' && party.hospitalId !== undefined) return { kind: 'hospital', id: party.hospitalId }
-  return undefined
-}
 
 /** The kinds the office can create: exactly one AA Party exists, seeded and read-only. */
 export const CREATABLE_PARTY_KINDS: readonly Exclude<PartyKind, 'aa'>[] = [
@@ -204,22 +196,14 @@ export const CREATABLE_PARTY_KINDS: readonly Exclude<PartyKind, 'aa'>[] = [
   'anaesthetist',
 ]
 
-/**
- * The sentence for a Contract whose holder has no billing record on today's
- * counterparty (INTERIM until Phase 21 bills Parties directly): its holder is
- * billed only once a Party carries a counterparty.
- */
-export function noRouteCounterpartyMessage(contractName: string): string {
-  return `${contractName} cannot be billed yet: its holder has no billing record. Choose another Contract.`
-}
 
 /** The insurer Parties a billing line's `funderOverride` can name, each with its interim insurer id, by name (INTERIM until Phase 22's Split). */
 export function insurerPartyOptions(
   parties: Readonly<Record<PartyId, Party>>,
 ): { insurerId: string; party: Party }[] {
   return Object.values(parties)
-    .filter((p) => p.kind === 'insurer' && p.legacyCounterparty?.kind === 'insurer')
-    .map((p) => ({ insurerId: (p.legacyCounterparty as CounterpartyRef).id, party: p }))
+    .filter((p) => p.kind === 'insurer' && p.billingIdentity?.kind === 'insurer')
+    .map((p) => ({ insurerId: (p.billingIdentity as CounterpartyRef).id, party: p }))
     .sort((a, b) => a.party.name.localeCompare(b.party.name))
 }
 

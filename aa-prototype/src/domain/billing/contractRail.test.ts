@@ -309,3 +309,60 @@ describe('contractChangeRefusal and contractAllowedOn', () => {
     expect(openPriceFallbackFor(masters, { kind: 'patient', prepaid: true })?.name).toBe('Prepaid · Fixed price')
   })
 })
+
+describe('suggestedPathFor: the funder marks one path (catch-up Phase 21, US-04.3.10, D7)', () => {
+  /** The rail with every `suggested` mark stripped: what is offered, in order. */
+  const offered = (view: ReturnType<typeof contractRailFor>) => JSON.parse(JSON.stringify(view, (k, v) => (k === 'suggested' ? undefined : v)))
+  const forte = ctx({ hospitalId: 'H-FORTE', surgeonId: 'S-OKAFOR' })
+  // Forte holds no SXAP Contract in the seed: the AC's Forte example adds one.
+  const forteSxap: Contract = { ...seed.masters.contracts['CT-SXAP']!, id: 'CT-TEST-FORTE-SXAP', aaCode: 'FORTE-099', holderId: 'PY-FORTE', name: 'Forte SXAP' }
+  const withForteSxap: RailMasters = { ...masters, contracts: { ...masters.contracts, [forteSxap.id]: forteSxap } }
+
+  it('Southern Cross Health Society at Forte marks Forte › SXAP (AC "Suggested")', () => {
+    const view = contractRailFor(withForteSxap, { ...forte, funderPartyId: 'PY-SCHS' }, undefined, { actor: 'office' })
+    expect(view.suggested).toEqual({ destination: 'hospital', narrow: 'TAG-SXAP' })
+    expect(view.destination.options.filter((o) => o.suggested).map((o) => o.value)).toEqual(['hospital'])
+    const tags = contractRailFor(withForteSxap, { ...forte, funderPartyId: 'PY-SCHS' }, { destination: 'hospital' }, { actor: 'office' })
+    expect(tags.narrow?.options.filter((o) => o.suggested).map((o) => o.label)).toEqual(['SXAP'])
+  })
+
+  it("NIB with nib's Contract offered marks Special › NIB (AC \"Funder's own Contracts\")", () => {
+    const view = contractRailFor(masters, { ...forte, funderPartyId: 'PY-NIB' }, { destination: 'special' }, { actor: 'office' })
+    expect(view.suggested).toEqual({ destination: 'special', narrow: 'PY-NIB' })
+    expect(view.narrow?.options.filter((o) => o.suggested).map((o) => o.value)).toEqual(['PY-NIB'])
+  })
+
+  it('no funder marks Patient › Standard (AC "No funder")', () => {
+    const view = contractRailFor(masters, forte, { destination: 'patient' }, { actor: 'office' })
+    expect(view.suggested).toEqual({ destination: 'patient', narrow: 'standard' })
+    expect(view.destination.options.find((o) => o.value === 'patient')?.suggested).toBe(true)
+    expect(view.narrow?.options.find((o) => o.value === 'standard')?.suggested).toBe(true)
+  })
+
+  it('Health NZ with no Contract of its own and no HNZ tag at the hospital marks nothing (AC "No match")', () => {
+    const view = contractRailFor(masters, { ...forte, funderPartyId: 'PY-HNZ' }, undefined, { actor: 'office' })
+    expect(view.suggested).toBeUndefined()
+    expect(view.destination.options.some((o) => o.suggested)).toBe(false)
+  })
+
+  it('never narrows: every path, its Contracts and their order are identical with and without a funder, and nothing is pre-selected (AC "Never narrows")', () => {
+    const answers: (RailAnswersOrUndefined)[] = [undefined, { destination: 'patient' }, { destination: 'patient', narrow: 'standard' }, { destination: 'special' }, { destination: 'special', narrow: 'PY-NIB' }, { destination: 'hospital' }]
+    for (const funder of [undefined, 'PY-NIB', 'PY-SCHS', 'PY-HNZ', 'PY-ACC', 'PY-AIA']) {
+      for (const given of answers) {
+        for (const actor of ['office', 'anaesthetist'] as const) {
+          const plain = contractRailFor(withForteSxap, forte, given, { actor })
+          const marked = contractRailFor(withForteSxap, { ...forte, ...(funder !== undefined ? { funderPartyId: funder } : {}) }, given, { actor })
+          expect(offered(marked), `${funder} ${JSON.stringify(given)} ${actor}`).toEqual(offered(plain))
+          expect(marked.destination.answer).toBe(plain.destination.answer)
+        }
+      }
+    }
+  })
+
+  it('Southern Cross Health Society at Southern Cross marks Southern Cross › SXAP (the seeded case)', () => {
+    const view = contractRailFor(masters, ctx({ hospitalId: 'H-SX', surgeonId: 'S-PATEL', funderPartyId: 'PY-SCHS' }), undefined, { actor: 'office' })
+    expect(view.suggested).toEqual({ destination: 'hospital', narrow: 'TAG-SXAP' })
+  })
+})
+
+type RailAnswersOrUndefined = Parameters<typeof contractRailFor>[2]

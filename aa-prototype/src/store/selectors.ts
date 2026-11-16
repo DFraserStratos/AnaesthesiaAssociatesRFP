@@ -19,7 +19,7 @@ import {
   type RailContext,
   type RailMasters,
 } from '../domain/billing/contractRail'
-import { billedPartyFor } from '../domain/billing/whoIsBilled'
+import { billablePartyForProcedure, partyForCounterparty, payerDetails, type PayerDetails } from '../domain/billing/whoIsBilled'
 import type {
   AssignedList,
   DraftList,
@@ -576,7 +576,7 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
           invoice !== undefined
             ? patientNameFor(state, state.schedule.bookings[invoice.bookingId]?.patientId ?? '')
             : 'Patient unavailable',
-        counterpartyLabel: invoice !== undefined ? counterpartyName(state, invoice.counterparty) : r.contactId,
+        counterpartyLabel: invoice !== undefined ? invoiceAddresseeName(state, invoice) : r.contactId,
         amountDue: r.amountDue,
         amountReceived: r.amountReceived,
         remaining: roundToCents(r.amountDue - r.amountReceived),
@@ -633,7 +633,7 @@ export function bookingRequiresPrepayment(state: Pick<AppState, 'schedule' | 'ma
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined || booking.cancellation !== undefined) return false
   return proceduresForBooking(state, bookingId).some((p) =>
-    procedureRequiresPrepayment(p, p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined),
+    procedureRequiresPrepayment(p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined),
   )
 }
 
@@ -959,7 +959,7 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
     patientId: booking.patientId,
     patientName: patientNameFor(state, booking.patientId),
     counterparty: invoice.counterparty,
-    counterpartyLabel: counterpartyName(state, invoice.counterparty),
+    counterpartyLabel: invoiceAddresseeName(state, invoice),
     // An archived account keeps the old system's marker; every other reads its Contract's tag.
     accFunded: c.archivedAccRelated === true || proceduresForBooking(state, c.bookingId).some((p) => procedureAccFunded(state.masters, p)),
     amountTotal: invoice.total,
@@ -1053,7 +1053,7 @@ export function gstActivityFor(
         receiptId: r.id,
         atISO: r.atISO,
         invoiceNumber: invoice?.invoiceNumber ?? '·',
-        payerLabel: invoice !== undefined ? counterpartyName(state, invoice.counterparty) : '·',
+        payerLabel: invoice !== undefined ? invoiceAddresseeName(state, invoice) : '·',
         grossAmount: r.grossAmount,
         gstAmount: r.gstAmount,
       }
@@ -1127,7 +1127,7 @@ export function paymentHistoryFor(
       caseId: c.id,
       invoiceNumber: invoice.invoiceNumber,
       patientName: patientNameFor(state, booking.patientId),
-      payerLabel: counterpartyName(state, invoice.counterparty),
+      payerLabel: invoiceAddresseeName(state, invoice),
       receivedAtISO,
       grossReceived: c.receivedAmount,
       releasedAmount: c.authorisedAmount,
@@ -1143,8 +1143,37 @@ export function paymentHistoryFor(
   )
 }
 
+/** The state `counterpartyName` and `payerRecordFor` read: the masters, and the Bookings and invoices where a payer is named. */
+export type CounterpartyNameState = Pick<AppState, 'masters'> & {
+  schedule?: Pick<AppState['schedule'], 'bookings'>
+  billing?: Pick<AppState['billing'], 'invoices'>
+}
+
+/**
+ * The other payer named on a Booking (catch-up Phase 21), by its `BP####`
+ * id: the one selector that resolves a `payer` counterparty. It reads the
+ * given Booking first, then any Booking naming that payer, then an invoice's
+ * `billedTo` snapshot (the payer's details stay with the debt). Never a master.
+ */
+export function payerRecordFor(
+  state: CounterpartyNameState,
+  payerId: string,
+  bookingId?: string,
+): { name: string; email?: string; relationship?: string } | undefined {
+  const bookings = state.schedule?.bookings ?? {}
+  const own = bookingId !== undefined ? bookings[bookingId]?.payer : undefined
+  if (own?.kind === 'other' && own.id === payerId) return own
+  for (const b of Object.values(bookings)) {
+    if (b.payer?.kind === 'other' && b.payer.id === payerId) return b.payer
+  }
+  for (const inv of Object.values(state.billing?.invoices ?? {})) {
+    if (inv.counterparty.kind === 'payer' && inv.counterparty.id === payerId && inv.billedTo !== undefined) return inv.billedTo
+  }
+  return undefined
+}
+
 /** Display name for a billing counterparty (any kind), falling back to its id. */
-export function counterpartyName(state: Pick<AppState, 'masters'>, ref: CounterpartyRef): string {
+export function counterpartyName(state: CounterpartyNameState, ref: CounterpartyRef, bookingId?: string): string {
   switch (ref.kind) {
     case 'hospital':
       return state.masters.hospitals[ref.id]?.name ?? ref.id
@@ -1156,9 +1185,28 @@ export function counterpartyName(state: Pick<AppState, 'masters'>, ref: Counterp
       return state.masters.organisations[ref.id]?.name ?? ref.id
     case 'patient':
       return state.masters.patients[ref.id]?.name ?? ref.id
+    case 'payer':
+      return payerRecordFor(state, ref.id, bookingId)?.name ?? ref.id
     case 'billableParty':
-      return state.masters.billableParties[ref.id]?.name ?? ref.id
+    case 'party':
+      return partyForCounterparty(ref, state.masters.parties)?.name ?? ref.id
   }
+}
+
+/**
+ * The name an issued invoice is addressed to (catch-up Phase 21): the payer's
+ * name as at the run (`billedTo`), else the counterparty's name, resolved on
+ * the invoice's own Booking. Every list that names an invoice reads this.
+ */
+export function invoiceAddresseeName(state: CounterpartyNameState, invoice: Pick<Invoice, 'billedTo' | 'counterparty' | 'bookingId'>): string {
+  return invoice.billedTo?.name ?? counterpartyName(state, invoice.counterparty, invoice.bookingId)
+}
+
+/** The payer's details on a Booking (catch-up Phase 21): the patient's record unless another payer is ticked. */
+export function payerDetailsFor(state: Pick<AppState, 'masters' | 'schedule'>, bookingId: string): PayerDetails | undefined {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) return undefined
+  return payerDetails(booking, state.masters.patients[booking.patientId])
 }
 
 /** Assemble the validator context for a Booking from store state. */
@@ -1173,13 +1221,14 @@ export function billingContextForBooking(state: AppState, booking: Booking): Boo
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
     parties: state.masters.parties,
-    billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: state.masters.rvgTimeRule,
     patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
     modifiers: state.masters.modifiers,
   }
+  const patient = state.masters.patients[booking.patientId]
+  if (patient !== undefined) ctx.patient = patient
   const hospital = listHospitalFor(list, state.masters.hospitals)
   if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
   return ctx
@@ -1200,7 +1249,6 @@ export interface EntityCounts {
   recurringBookings: number
   slots: number
   patients: number
-  billableParties: number
   lists: number
   /** Live Draft Lists (catch-up Phase 31). */
   draftLists: number
@@ -1224,7 +1272,6 @@ export function entityCounts(state: AppState): EntityCounts {
     modifiers: Object.keys(state.masters.modifiers).length,
     recurringBookings: Object.keys(state.masters.recurringBookings).length,
     patients: Object.keys(state.masters.patients).length,
-    billableParties: Object.keys(state.masters.billableParties).length,
     slots: Object.keys(state.schedule.slots).length,
     lists: Object.keys(state.schedule.lists).length,
     draftLists: waitingDraftLists(state).length,
@@ -1849,8 +1896,10 @@ export function railMastersOf(state: Pick<AppState, 'masters'>): RailMasters {
 }
 
 /** A List as the step rail sees it: its date, billing hospital (never AA rooms), surgeon and anaesthetist. */
-export function railContextForList(state: Pick<AppState, 'masters'>, list: List): RailContext {
+export function railContextForList(state: Pick<AppState, 'masters'>, list: List, booking?: Pick<Booking, 'funderPartyId'>): RailContext {
   const ctx: RailContext = { listDateISO: list.dateISO }
+  // The Booking's funder only marks a path "Suggested" (catch-up Phase 21, US-04.3.10).
+  if (booking?.funderPartyId !== undefined) ctx.funderPartyId = booking.funderPartyId
   const hospitalId = listHospitalFor(list, state.masters.hospitals).listHospitalId
   if (hospitalId !== undefined) ctx.hospitalId = hospitalId
   if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
@@ -1863,7 +1912,7 @@ export function railContextForProcedure(state: Pick<AppState, 'masters' | 'sched
   const procedure = state.schedule.procedures[procedureId]
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-  return list !== undefined ? railContextForList(state, list) : undefined
+  return list !== undefined ? railContextForList(state, list, booking) : undefined
 }
 
 /** The rail for a Procedure at the given answers (default: its answers so far, or its Contract's). */
@@ -1905,13 +1954,13 @@ export function rvgCodeToFillFor(state: Pick<AppState, 'masters' | 'schedule'>, 
   return procedure !== undefined && rvgCodeToFill(state.masters, procedure, lines)
 }
 
-/** Who a Procedure bills (INTERIM until Phase 21's payer on the Booking). */
-export function billedPartyForProcedure(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): CounterpartyRef | undefined {
+/** Who a Procedure bills, by id: the store's wrapper of the one rule, `billablePartyForProcedure` (catch-up Phase 21). */
+export function billablePartyForProcedureId(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): CounterpartyRef | undefined {
   const procedure = state.schedule.procedures[procedureId]
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
   if (procedure === undefined || booking === undefined) return undefined
   const contract = procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined
-  return billedPartyFor(procedure, contract, state.masters.parties, booking.patientId)
+  return billablePartyForProcedure(contract, booking, state.masters.parties)
 }
 
 export interface NeedsInvoiceDestinationRow {
@@ -1993,9 +2042,9 @@ export function procedureStackViewFor(
     contracts: state.masters.contracts,
     parties: state.masters.parties,
     rvgGroups: state.masters.rvgGroups,
-    patientId: booking.patientId,
+    booking,
     dateISO: list?.dateISO ?? '',
     surface,
-    nameOf: (ref) => counterpartyName(state, ref),
+    nameOf: (ref) => counterpartyName(state, ref, booking.id),
   })
 }

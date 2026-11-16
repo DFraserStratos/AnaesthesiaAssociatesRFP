@@ -81,14 +81,19 @@ test('desktop header actions are grouped with the records they act on', async ({
   await expect(pageHeader.getByRole('button', { name: 'History' })).toBeVisible()
 
   // The Procedure card is read-only: no Edit (catch-up Phase 20a, owner review). The
-  // anaesthetist's billing reference sits in the Billing card instead.
+  // anaesthetist records the approval number on the Booking's insurer or funder row
+  // (catch-up Phase 21), not a billing reference in the Billing card.
   const procedureHeader = page.getByTestId('procedure-header')
   await expect(procedureHeader.getByText('Procedure', { exact: true })).toBeVisible()
   await expect(procedureHeader.getByRole('button', { name: 'Edit' })).toHaveCount(0)
-  const reference = page.locator('[data-shot=billing-reference] input').first()
-  await expect(reference).toBeVisible()
-  await reference.fill('SX-TEST-0001')
-  await reference.press('Enter')
-  await expect(reference).toHaveValue('SX-TEST-0001')
+  await expect(page.locator('[data-shot=billing-reference]')).toHaveCount(0)
+  const funder = page.locator('[data-shot="booking-funder-row"]')
+  await expect(funder).toBeVisible()
+  await funder.getByRole('button', { name: /insurer or funder/ }).click()
+  const sheet = page.locator('[data-shot="funder-sheet"]')
+  await sheet.getByRole('radio', { name: 'nib' }).click()
+  await sheet.getByLabel('Approval number').fill('NIB-TEST-0001')
+  await sheet.getByRole('button', { name: 'Save' }).click()
+  await expect(funder.locator('[data-shot="funder-approval-number"]')).toHaveText('NIB-TEST-0001')
 })
 

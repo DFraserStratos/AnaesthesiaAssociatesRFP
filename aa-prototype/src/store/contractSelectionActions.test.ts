@@ -175,7 +175,7 @@ describe('creation, added Procedures and completion (US-04.3.4, US-03.2.3)', () 
     expect(made.ok).toBe(true)
   })
 
-  it('an added Procedure picks its own Contract or has none, and copies the payer override', () => {
+  it('an added Procedure picks its own Contract or has none (the payer is the Booking\'s, catch-up Phase 21)', () => {
     const api = store()
     const guardian = marker('guardianMinorBooking')
     const first = firstProcOf(api, guardian)
@@ -183,7 +183,8 @@ describe('creation, added Procedures and completion (US-04.3.4, US-03.2.3)', () 
     expect(none.ok).toBe(true)
     if (!none.ok) return
     expect(proc(api, none.value.procedureId).governingContractId).toBeUndefined()
-    expect(proc(api, none.value.procedureId).billablePartyId).toBe(first.billablePartyId)
+    expect(api.getState().schedule.bookings[guardian]?.payer.kind).toBe('other')
+    void first
     const picked = addProcedure(api, OFFICE, guardian, { governingContractId: 'CT-NO-CONTRACT' })
     expect(picked.ok && proc(api, picked.value.procedureId).governingContractId).toBe('CT-NO-CONTRACT')
   })

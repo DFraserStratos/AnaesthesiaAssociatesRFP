@@ -543,8 +543,10 @@ Authorising Morrison raises 6 invoices.
 **Also seeded:**
 
 - A cancelled booking on Morrison's list.
-- Guardian of a minor: Grace Park.
-- An insured-reimbursement booking: Rutherford, Thu 16 AM.
+- A parent paying for a minor: Grace Park (BK0033, Chen Fri 24 AM), Hana Park (Mother) the payer on
+  the Booking (`BP0001`, Different payer ticked), no child warning.
+- An insured-reimbursement booking: Rutherford, Thu 16 AM (BK0030, Marcus Webb): No contract · RVG,
+  invoiced to the patient, AIA Health named as insurer with number `AIA-2026-30418`, no warning.
 - A provisional patient with no NHI.
 - Repeat patients: Mitchell and Walker.
 - Procedures missing a billing reference.
@@ -602,13 +604,31 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `tr[data-shot=out-of-hours-row]`), `/web` (the week strip block `[data-slot-id="S-34821-2026-07-21-OOH"]`) or
   `/web/availability` (an Out-of-hours column on a day that has one).
 
-### One Contract per Procedure (catch-up Phase 20)
+### One Contract per Procedure (catch-up Phase 20) and who is billed (catch-up Phase 21)
 
 - Every seeded Procedure carries one Contract; there is no billing route, payment category or
-  Procedure insurer. Who is billed follows the Contract: a hospital's Contract bills the hospital,
-  nib's bills nib, No contract · RVG (`CT-NO-CONTRACT`) and the surgeon or anaesthetist price lists
-  bill the patient (or the Procedure's payer, BP0001 guardian, BP0002 Aria). Doyle's bariatric primary
-  (BK0028, P0029) still bills Mr Doyle (interim until Phase 21).
+  Procedure insurer. Who is billed follows the Contract (`billablePartyForProcedure`): one that bills
+  its holder bills the holder Party (a hospital, nib, COS, the Aria clinic's `BP0002` record); any other
+  (No contract · RVG `CT-NO-CONTRACT`, the surgeon and anaesthetist price lists, every prepaid one)
+  bills the payer on the Booking. Doyle's bariatric Booking (BK0028) is one invoice to the patient,
+  Gareth Mills ($2,861 + GST).
+- **The payer on the Booking (catch-up Phase 21):** every seeded patient has an `@example.net` email and
+  an NZ Post postal address, except Kevin Doherty (none on purpose); every Booking's payer is the patient
+  except Grace Park's (Hana Park, `BP0001`) and the family trust below (`BP0003`). New payers are `BP0004`
+  on.
+- **The payer review List (catch-up Phase 21):** `SEED_LIST_IDS.payerReview` = `L-45178-2026-07-17-AM`
+  (Dr Chen, Fri 17 Jul, Christchurch Eye Surgery, Ms Reid), SUBMITTED, in the Review queue, off every
+  beat. BK0170 Ella Moana, 15 (`childPayer`: child payer warning); BK0171 Kevin Doherty
+  (`payerContactMissing`: "Email or postal address needed" chip and Review flag `review-payer-contact`);
+  BK0172 Robert Whitcombe, payer the Whitcombe Family Trust by post (`familyTrustPayer`, no flag);
+  BK0173 Janet Ormsby, NIB on `CT-NIB-D1` with no approval number (`approvalMissing`: the approval
+  warning; the rail suggests Special › NIB); BK0174 Peter Tawhiri, Health NZ with no number
+  (`funderNoWarning`, no warning). Patients `PT0152` to `PT0156`.
+- **Insurer or funder (catch-up Phase 21):** every Booking on nib's Contract names NIB with number
+  `NIB-AP-<booking number>` (for example BK0074 `NIB-AP-0074`, the approval sample's default target),
+  except BK0173. BK0175 Lucy Fairhall (`suggestedTag`, `PT0157`): Dr Fitzgerald's Thu 23 Jul AM List at
+  Southern Cross, Southern Cross Health Society with `SCHS-2026-55120`, no Contract yet, so the Billing
+  card opens on step 1 with Southern Cross marked Suggested.
 - Prepaid Contracts: Dr Souter's price list (`CT-SOUTER-RHINO` $1,200, `-BLEPH`, `-BREAST`, and
   `CT-SOUTER-RHINO-COS` $238.50, plastic surgery and ENT). Riley (BK0034, P0036) is on the Rhinoplasty
   and Nair's cosmetic component (BK0038, P0041) on `CT-SOUTER-RHINO-COS`.
@@ -715,7 +735,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **History:** `role=button[name="History"]` opens a dialog titled "Booking history". On mobile it is
   inside `[data-testid=mobile-booking-header-actions]`.
 - **Cancel booking:** "Cancel booking", then fill `role=textbox[name="Reason"]`, then confirm.
-- **Edit:** "Edit" in the Patient section. The Procedure card has no Edit (catch-up Phase 20a); the anaesthetist's billing reference is `[data-shot=billing-reference] input`.
+- **Edit:** "Edit" in the Patient section (`[data-shot=booking-patient] >> role=button[name="Edit"]`; the patient sheet's address is NZ Post fields, `patient-postal-address`). The Procedure card has no Edit (catch-up Phase 20a). The Payer and Insurer or funder sections follow the Patient section (catch-up Phase 21).
 - **Submit list:** "Mark list completed".
   - If blocked, the sheet "Bookings still to finish" opens.
   - If ready, a confirm sheet opens. Then "Submit to office" shows
@@ -772,9 +792,19 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
   session `select[data-shot=reassign-vacated]` defaults to Free and lists the availability statuses in use) "Confirm reassignment".
   `[data-testid=list-reassignment-overlay]` appears.
-- **Admin booking:** "Edit billing setup" (opens "Contract and payer": the Contract row, Payer,
-  Billing reference, "Save payer and reference"), "Price override" (placeholders `-10` and "Why the
-  price differs") and "Funder allocation".
+- **Admin booking:** "Edit billing setup" (opens "Contract and reference": the Contract row and the
+  Billing reference, "Save reference"; the payer moved to the Booking's Payer row in catch-up Phase 21),
+  "Price override" (placeholders `-10` and "Why the price differs") and "Funder allocation".
+- **The payer and the insurer or funder (catch-up Phase 21), every app:** the Booking's Payer section
+  `booking-payer-row` with "Change" (aria "Change the payer") opening `payer-sheet` (a Dialog on web and
+  Admin, a bottom sheet on the phone): `payer-different-tick` (its `input` checkbox), `payer-patient-details`,
+  `payer-child-hint`, `payer-other-fields` (Name, relationship chips, "Other relationship", Email,
+  `payer-postal-address` with Address, "Unit, building or RD (optional)", "Suburb (optional)", "Town or
+  city", Postcode, "Phone (optional)"), `payer-contact-ask`, "Save payer". The Insurer or funder section
+  `booking-funder-row` with "Add" (aria "Add insurer or funder") or "Change" (aria "Change the insurer or
+  funder") opening `funder-sheet`: chips `funder-none` ("None, the patient pays"), one per insurer and
+  funder by name (for example "nib"), "Approval number", "Save". Row hooks `funder-approval-number`,
+  `funder-approval-missing`, `payer-contact-missing`, `payer-under-18`.
 - **The step rail (catch-up Phase 20), Admin and web:** inline on the Booking, the "Billing" card
   `[data-shot=capture-billing]` (one per Procedure; `>> nth=0` for the first), no click to open, no
   "Needs an invoice destination" bar (that shows on List rows and Admin Day's card only). Steps
@@ -831,12 +861,14 @@ the exception: use the `trigger` step)
 - Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,
   `contract-rail-other-price`, `contract-rail-amount`, `contract-rail-outcome`, `contract-rail-enter-rvg`,
   `contract-rail-pinned`, `contract-rail-only-option`; the Contract row `procedure-contract-row` in the
-  sheets (`edit-procedure-contract`, `contract-and-payer-contract`); the mobile Billing rows
+  sheets (`edit-procedure-contract`, `contract-and-reference-contract`); the mobile Billing rows
   `billing-contract-rows`,
   `needs-invoice-destination`, `contract-set-by-office`, `contract-price-cleared`; the RVG cues
   `rvg-code-optional`, `list-row-contract-cue`; the Admin Day card
-  `admin-needs-invoice-destination` and its rows `needs-destination-row`; `contract-and-payer`,
-  `manual-contract`.
+  `admin-needs-invoice-destination` and its rows `needs-destination-row`; `contract-and-reference`,
+  `manual-contract`; the Suggested pill `rail-suggested` on the step tile the Booking's funder suggests
+  (catch-up Phase 21; tiles carry `data-rail-option="<value>"`); the add form's payer block
+  `add-booking-payer`.
 - Out-of-hours sessions (catch-up Phase 32c): `out-of-hours-open` (the row control), `out-of-hours-open-sheet`,
   `daygrid-evening-block` (any block in the out-of-hours session, with `data-out-of-hours`; the after-hours zone
   behind it is `[data-after-hours]`), `drawer-session-draft-lists`, `drawer-close-out-of-hours`; the
@@ -948,7 +980,11 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   card in the Admin Day rail), `daygrid-block-warnings` (a day-grid block button whose List has an
   open warning; click it to open the drawer), `drawer-booking-warning` (an outlined Booking row in
   the List drawer). `daygrid-block-prepayment` and the "Pre-payment flagged" filter are gone: the
-  filter is "Has warnings".
+  filter is "Has warnings". Catch-up Phase 21: the warnings panel row `booking-child-warning` (a child
+  as the payer) and `booking-approval-warning` (an insurer with no approval number); the To-do rows
+  `todo-child-warning` and `todo-approval-warning` (each with "Clear (optional) warning for <patient>").
+  At reset the To-do card holds Riley's prepayment and the payer review List's two (Ella Moana, Janet
+  Ormsby), all dates.
 
 **`data-shot` hooks for the procedure stack and source** (use as `[data-shot=...]`; catch-up Phase 20a)
 
@@ -957,7 +993,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   Contract and the RVG code `capture-procedure-code` are both in the Billing card `capture-billing`). Compact,
   in Admin Review's `review-procedures` cell and the List drawer's `drawer-procedure-stack`, it also has
   `procedure-contract` (Contract and pricing basis) and `procedure-rvg-code`. `procedure-description` (the
-  manual form); `billing-reference` (the anaesthetist's billing reference field at the foot of the Billing card and its phone sheet; there is no Edit procedure sheet); `invoice-procedure-heading` (one
+  manual form); the anaesthetist's billing reference field is gone (catch-up Phase 21: the approval number on `booking-funder-row` takes its place); `invoice-billed-to` (the payer's email or postal address under "Invoice to"); `invoice-procedure-heading` (one
   heading row per Procedure in `invoice-lines`, the only place the invoice description shows);
   `review-open-booking`. `data-testid=procedure-header` is the card's heading row, with Remove on an added procedure only.
   The attachment hooks are gone. `booking-source` (the source line)
@@ -1098,7 +1134,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>`, `/admin/draft-lists`, `/admin/conflicts` (only while an Assign or Reassign picker is open) | `ask-colleague-make-available` (choice: a closed session id) | Catch-up Phase 32b, badged Colleague stand-in. Plays the anaesthetist freeing their own closed, empty session (Free, as themselves), so the picker row becomes assignable. Shots use the inline copy on the row, `[data-candidate-closed=<reg>] [data-shot=demo-action-ask-colleague-make-available-inline]`, since the dialog's scrim covers the bar. |
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
-| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
+| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Clear restores both. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
 mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up

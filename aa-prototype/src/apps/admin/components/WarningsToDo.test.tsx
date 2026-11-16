@@ -11,9 +11,12 @@ import { TODO_VISIBLE_ROWS, WarningsToDo } from './WarningsToDo'
 
 const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
 
+/** The payer review List's seeded child payer and missing approval number (catch-up Phase 21), set aside so these cases read Riley's alone. */
+const REVIEW_LIST = new Set([SEED_MARKERS['childPayer']!.entityId, SEED_MARKERS['approvalMissing']!.entityId])
+
 function Harness({ onOpen = vi.fn() }: { onOpen?: (d: string, b: string) => void }) {
   const state = useAppStore()
-  return <WarningsToDo rows={openWarnings(state)} actor={OFFICE_ACTOR} onOpenBooking={onOpen} />
+  return <WarningsToDo rows={openWarnings(state).filter((r) => !REVIEW_LIST.has(r.bookingId))} actor={OFFICE_ACTOR} onOpenBooking={onOpen} />
 }
 
 beforeEach(() => {
@@ -40,8 +43,9 @@ describe('WarningsToDo', () => {
     render(<Harness />)
     expect(screen.getAllByRole('listitem')).toHaveLength(1)
     act(() => { raiseDaySamples(useAppStore) })
-    // Two samples on each of the two pinned targets (catch-up Phase 19 added the base-units rule).
-    expect(screen.getAllByRole('listitem')).toHaveLength(5)
+    // Two samples on each of the two pinned targets, the child payer sample on Grace Park's Booking and
+    // the approval number sample on the first seeded NIB Booking (catch-up Phase 21): six rows shown.
+    expect(screen.getAllByRole('listitem')).toHaveLength(6)
   })
 
   it('Clear removes the row at once and writes the audit row (Cleared)', () => {

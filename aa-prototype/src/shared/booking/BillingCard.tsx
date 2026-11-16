@@ -16,7 +16,6 @@ import {
 } from '../../domain/billing/contractRail'
 import { isRvgKind } from '../../domain/billing/contracts'
 import {
-  editProcedure,
   railActorOf,
   railContextForList,
   railMastersOf,
@@ -29,6 +28,7 @@ import {
 import { useSurface } from '../surface'
 import { CaptureSection, FailureNotes } from '../capture/ui'
 import { Button } from '../ui/Button'
+import { Pill } from '../ui/Pill'
 import { contractPriceText } from '../flows/ContractRail'
 
 /**
@@ -65,7 +65,7 @@ type Step = 1 | 2 | 3
  * Billing card for any of them (the Booking's procedure card has no Edit since
  * catch-up Phase 20a's owner review).
  */
-export const BILLING_FAILURE_FIELDS = ['governingContractId', 'enteredPrice', 'billablePartyId', 'prepaymentDetail'] as const
+export const BILLING_FAILURE_FIELDS = ['governingContractId', 'enteredPrice', 'prepaymentDetail'] as const
 
 interface BillingCardProps {
   procedure: Procedure
@@ -97,7 +97,7 @@ function useBilling(procedure: Procedure) {
   const schedule = useAppStore((s) => s.schedule)
   const booking = schedule.bookings[procedure.bookingId]
   const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
-  const context = useMemo(() => (list !== undefined ? railContextForList({ masters }, list) : undefined), [masters, list])
+  const context = useMemo(() => (list !== undefined ? railContextForList({ masters }, list, booking) : undefined), [masters, list, booking])
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
   const start = railStartFor({ masters, schedule }, procedure.id)
   return { masters, schedule, context, contract, start, list }
@@ -371,50 +371,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
         <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '8px 12px', fontSize: 13.5 }}>{error}</div>
       )}
       {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
-      {railActor === 'anaesthetist' && <BillingReferenceField procedure={procedure} actor={actor} canEdit={canEdit} onError={onError} />}
     </div>
-  )
-}
-
-/**
- * The hospital's approval or contract reference, for the anaesthetist (the
- * office edits it in "Edit billing setup"). Saved on leaving the field,
- * through `editProcedure`. INTERIM until Phase 21 puts the approval number on
- * the Booking.
- */
-function BillingReferenceField({ procedure, actor, canEdit, onError }: { procedure: Procedure; actor: Actor; canEdit: boolean; onError: (message: string) => void }) {
-  const stored = procedure.billingReference ?? ''
-  const [value, setValue] = useState(stored)
-  useEffect(() => setValue(stored), [stored])
-  if (!canEdit && stored === '') return null
-  function save() {
-    const next = value.trim()
-    if (next === stored) return
-    const outcome = editProcedure(useAppStore, actor, procedure.id, { billingReference: next !== '' ? next : undefined })
-    if (!outcome.ok) {
-      onError(outcome.message)
-      setValue(stored)
-    }
-  }
-  return (
-    <label data-shot="billing-reference" style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
-      <span style={{ fontSize: 13, color: neutral.slate, flex: 'none' }}>Billing reference</span>
-      {canEdit ? (
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={save}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-          }}
-          placeholder="The hospital's approval or contract reference"
-          className="mono"
-          style={{ flex: 1, minWidth: 0, fontSize: 14, padding: '8px 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, color: neutral.ink, fontFamily: 'inherit' }}
-        />
-      ) : (
-        <span className="mono" style={{ fontSize: 14, color: neutral.ink }}>{stored}</span>
-      )}
-    </label>
   )
 }
 
@@ -553,7 +510,15 @@ function ChoiceTiles({ options, value, stacked, onPick }: { options: readonly Ra
               fontFamily: 'inherit',
             }}
           >
-            <span style={{ fontSize: 15, fontWeight: 700, color: on ? accent.base : neutral.ink }}>{o.label}</span>
+            <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: on ? accent.base : neutral.ink }}>{o.label}</span>
+              {/* The Booking's funder marks one path (catch-up Phase 21, US-04.3.10): never a filter. */}
+              {o.suggested === true && (
+                <Pill size="small" shot="rail-suggested">
+                  Suggested
+                </Pill>
+              )}
+            </span>
             {o.hint !== undefined && <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>{o.hint}</span>}
             <span style={{ marginTop: 'auto', paddingTop: 6, fontSize: 12, color: empty ? neutral.mist : neutral.slate }}>
               {empty ? 'None for this List' : `${o.count} ${o.count === 1 ? 'Contract' : 'Contracts'}`}
@@ -977,9 +942,8 @@ function MobileBillingCard(props: BillingCardProps) {
         {...(rvgGroup !== undefined && procedure.rvgGroupId !== undefined ? { sub: rvgGroup.description } : {})}
         todo={rvgTodo ? 'Choose the RVG code' : priceLine === undefined ? 'Follows the Contract' : undefined}
         todoAccent={rvgTodo}
-        last={railActor !== 'anaesthetist' || procedure.billingReference === undefined}
+        last
       />
-      {railActor === 'anaesthetist' && procedure.billingReference !== undefined && <SummaryRow label="Reference" value={procedure.billingReference} last />}
     </>
   )
 

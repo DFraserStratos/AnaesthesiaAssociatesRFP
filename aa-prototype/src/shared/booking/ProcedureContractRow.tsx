@@ -38,7 +38,7 @@ export const SET_BY_THE_OFFICE = 'Set by the office'
  * same point for the office and the anaesthetist. A prepaid Contract reads
  * "Set by the office" for the anaesthetist (A17). On the Booking the procedure
  * stack shows the Contract (catch-up Phase 20a); this row stays in the edit
- * sheet "Contract and payer".
+ * sheet "Contract and reference".
  */
 export function ProcedureContractRow({ procedure, actor, canEdit, caption, shot = 'procedure-contract-row' }: ProcedureContractRowProps) {
   const masters = useAppStore((s) => s.masters)
@@ -48,7 +48,7 @@ export function ProcedureContractRow({ procedure, actor, canEdit, caption, shot 
 
   const booking = schedule.bookings[procedure.bookingId]
   const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
-  const context = useMemo(() => (list !== undefined ? railContextForList({ masters }, list) : undefined), [masters, list])
+  const context = useMemo(() => (list !== undefined ? railContextForList({ masters }, list, booking) : undefined), [masters, list, booking])
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
   const railActor = railActorOf(actor)
   const officeOnly = railActor === 'anaesthetist' && contract?.prepaid === true

@@ -70,6 +70,7 @@ import {
   WarningsToDoExample,
 } from './admin/storeExamples'
 import { ProcedureStackExample } from './procedureStackExample'
+import { FunderDetailsExample, PayerDetailsExample, PayerFieldsExample } from './payerExamples'
 
 const A = 'Admin'
 const AW = 'Admin · Web'
@@ -146,7 +147,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={AWM} what="A small tinted chip for a List kind or availability status, coloured from the status master." replaceWith="shadcn Badge (6 status variants)">
           <StatusChipExample />
         </CatalogueRow>
-        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="Neutral and success label pills, never teal or crimson, so no pill reads as a button." replaceWith="shadcn Badge">
+        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="Neutral, success and warning label pills, never teal or crimson, so no pill reads as a button (the warning tone since catch-up Phase 21: a payer with no contact, Under 18, no approval number)." replaceWith="shadcn Badge">
           <PillExample />
         </CatalogueRow>
         <CatalogueRow name="MasterPills" source="apps/admin/components/MasterPills.tsx" usedIn={A} what="Admin's import path for Pill, used for Party kinds, Contract tags, Active and RVG anatomy headings." replaceWith="shadcn Badge" note="A re-export only: delete it in the migration.">
@@ -291,6 +292,15 @@ export function AdminCatalogue() {
       <LibraryGroup id="custom">
         <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={AWM} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
           <ProcedureStackExample />
+        </CatalogueRow>
+        <CatalogueRow name="PayerDetailsView" source="shared/booking/PayerDetailsView.tsx" usedIn={AWM} what="The payer on the Booking (catch-up Phase 21): the name with Patient or the relationship, the email and the NZ Post postal address, and the warning-tint Email or postal address needed and Under 18 chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
+          <PayerDetailsExample />
+        </CatalogueRow>
+        <CatalogueRow name="PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)" source="shared/flows/PayerFields.tsx, PostalAddressFields.tsx" usedIn={AWM} what="The payer form's parts, in PayerSheet and the add forms: the Different payer tick, then the other payer's name, relationship chips, email, NZ Post postal address and phone." replaceWith="shadcn Checkbox card, ToggleGroup and Input" note="Local state only; nothing writes to the demo data.">
+          <PayerFieldsExample />
+        </CatalogueRow>
+        <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={AWM} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None, the patient pays; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
+          <FunderDetailsExample />
         </CatalogueRow>
         <CatalogueRow name="DayGrid" source="apps/admin/components/DayGrid.tsx" usedIn={A} what={`The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the ${DRAFT_LIST} band and the filter footer. Cut down to 10 rows.`} replaceWith="Custom on primitives (grid roles, Tooltip, TanStack Virtual)" note="Blocks open the real SlotDrawer, and its actions write to the demo store." height={620}>
           <DayGridExample />

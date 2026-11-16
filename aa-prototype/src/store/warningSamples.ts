@@ -8,17 +8,19 @@
  * and deterministic, so unstage works after a reload too), dropping the staged
  * warnings' clearances so raising them again shows them open.
  *
- * Two rules are registered (catch-up Phase 19 added out-of-range base units),
- * so the pinned `multiWarning` Booking shows two warnings; each later phase
- * adds its sample here (21 a child
- * as the payer on the Booking, and insurer-will-pay with no insurer Contract;
- * 27 a prepaid procedure with no price on the anaesthetist's own Contract; 40
- * a paying patient with a balance).
+ * The pinned `multiWarning` Booking shows the prepayment and base-units
+ * samples. Catch-up Phase 21 adds a child as the payer on the Booking, which
+ * stages on a minor (`targetFor`: the Booking on screen when its patient is
+ * under 18, otherwise Grace Park's), so it never lands on `multiWarning`; each
+ * later phase adds its sample here (27 a prepaid procedure with no price on
+ * the anaesthetist's own Contract; 40 a paying patient with a balance).
  */
 
-import { buildSeed, RVG_GROUP, SEED_WARNING_SAMPLE_BOOKINGS } from '../domain/seed'
+import { buildSeed, RVG_GROUP, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../domain/seed'
+import { ADULT_AGE, childPayerOn, isPayerBilled } from '../domain/billing/whoIsBilled'
+import { ageInCompletedYears } from '../domain/billing/modifiers'
 import { baseUnitsFor, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
-import type { Procedure } from '../domain/types'
+import type { Booking, Procedure } from '../domain/types'
 import { WARNING_RULES, type WarningRuleId } from '../domain/warnings'
 import type { AppState, AppStoreApi } from './appStore'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
@@ -28,6 +30,9 @@ import { pickRvgGroup } from './rvgGroupActions'
 import { bookingRequiresPrepayment, prePaymentInvoicesForBooking, proceduresForBooking, railContextForList, railMastersOf } from './selectors'
 import { contractCandidatesFor, openPriceFallbackFor } from '../domain/billing/contractRail'
 import { setProcedureContract } from './contractSelectionActions'
+import { payerAuditText, sameData, setBookingPayer } from './payerActions'
+import { setBookingInsurance } from './insuranceActions'
+import { approvalNumberMissing, hasApprovalNumber } from '../domain/billing/insurance'
 
 /** What the staging checks read: the schedule and masters, and the audit trail that says who last changed it. */
 type SampleState = Pick<AppState, 'schedule' | 'audit' | 'masters'>
@@ -53,10 +58,21 @@ export interface WarningSample {
   /** Stage the condition. The caller has checked the Booking is a seeded, editable target. */
   stage(api: AppStoreApi, actor: Actor, bookingId: string): Outcome
   /** The fields to restore from the seed, as a schedule patch, or undefined when nothing is staged. */
-  restore(state: SampleState, bookingId: string): Pick<AppState['schedule'], 'procedures'> | undefined
+  restore(state: SampleState, bookingId: string): Partial<Pick<AppState['schedule'], 'procedures' | 'bookings'>> | undefined
+  /** The Booking fields the sample stages, restored and audited on unstage (catch-up Phase 21). */
+  bookingFields?: readonly (keyof Booking)[]
+  /**
+   * Where the sample stages when raised from a Booking (catch-up Phase 21): by
+   * default that Booking; the child payer sample redirects to a minor's.
+   * Undefined when the sample has nowhere to stage.
+   */
+  targetFor?(state: SampleState, bookingId: string): string | undefined
   /** The audited entities the restore changes, for the unstage's audit metas. */
   restoredEntityIds(state: SampleState, bookingId: string): string[]
 }
+
+/** Audit actions on a Booking that change none of the values a sample stages. */
+const NOT_A_VALUE_CHANGE: ReadonlySet<string> = new Set(['booking.warningCleared', 'booking.warningSampleUnstaged'])
 
 /** The last audit entry per entity id (one pass, cached per audit array). */
 const lastAuditCache = new WeakMap<readonly AppState['audit'][number][], Map<string, AppState['audit'][number]>>()
@@ -64,7 +80,8 @@ function lastAuditByEntity(audit: AppState['audit']): Map<string, AppState['audi
   const cached = lastAuditCache.get(audit)
   if (cached !== undefined) return cached
   const out = new Map<string, AppState['audit'][number]>()
-  for (const entry of audit) out.set(entry.entityId, entry)
+  // An office Clear on the To-do card, or an unstage, is not a change to the sample's values (catch-up Phase 21 review).
+  for (const entry of audit) if (!NOT_A_VALUE_CHANGE.has(entry.action)) out.set(entry.entityId, entry)
   lastAuditCache.set(audit, out)
   return out
 }
@@ -92,7 +109,6 @@ const PREPAYMENT_FIELDS = [
   'enteredPrice',
   'priceOverride',
   'railAnswers',
-  'billsHolderInterim',
   'rvgGroupId',
   'baseUnitsSelected',
   'baseUnitsCaptured',
@@ -115,8 +131,9 @@ function prepaidSampleContract(state: Pick<AppState, 'masters' | 'schedule'>, bo
   return fallback !== undefined ? { contractId: fallback.id, enteredPrice: PREPAYMENT_SAMPLE_AMOUNT } : undefined
 }
 
+/** Deep equality whatever the key order (a seeded and a typed payer build their keys differently). */
 function sameValue(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b)
+  return sameData(a, b)
 }
 
 function firstProcedure(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure | undefined {
@@ -268,8 +285,230 @@ const baseUnitsSample: WarningSample = {
   },
 }
 
+// ---------------------------------------------------------------------------
+// A child as the payer on the Booking (catch-up Phase 21; US-11.2.4)
+// ---------------------------------------------------------------------------
+
+/** The Contract fields the child sample may move on the first Procedure (when every Contract bills its holder). */
+const CHILD_CONTRACT_FIELDS = ['governingContractId', 'enteredPrice', 'priceOverride', 'railAnswers', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured', 'modifierClaims', 'removedModifierIds'] as const satisfies readonly (keyof Procedure)[]
+const NO_CONTRACT_RVG = 'CT-NO-CONTRACT'
+
+/** True when the Booking's patient is under 18 on its List's date. */
+function patientIsChild(state: SampleState, bookingId: string): boolean {
+  const booking = state.schedule.bookings[bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
+  if (list === undefined || patient === undefined) return false
+  const age = ageInCompletedYears(patient.dobISO, list.dateISO)
+  return age !== undefined && age < ADULT_AGE
+}
+
+function childRaisedOn(state: SampleState, bookingId: string): boolean {
+  const booking = state.schedule.bookings[bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (booking === undefined || list === undefined) return false
+  return childPayerOn(booking, state.masters.patients[booking.patientId], proceduresForBooking(state, bookingId), state.masters.contracts, list.dateISO)
+}
+
+const childPayerSample: WarningSample = {
+  ruleId: 'childPayer',
+  fields: CHILD_CONTRACT_FIELDS,
+  bookingFields: ['payer'],
+  targetFor(state, bookingId) {
+    if (patientIsChild(state, bookingId)) return bookingId
+    return SEED_MARKERS.guardianMinorBooking?.entityId
+  },
+  isStaged(state, bookingId) {
+    const booking = state.schedule.bookings[bookingId]
+    const seed = buildSeed().schedule.bookings[bookingId]
+    if (booking === undefined || seed === undefined || !childRaisedOn(state, bookingId)) return false
+    const first = firstProcedure(state, bookingId)
+    const seedFirst = first !== undefined ? seedProcedure(first.id) : undefined
+    const payerMoved = !sameValue(booking.payer, seed.payer)
+    const contractMoved = first !== undefined && seedFirst !== undefined && first.governingContractId !== seedFirst.governingContractId
+    if (!payerMoved && !contractMoved) return false
+    return lastChangedByDemo(state, bookingId) || (first !== undefined && lastChangedByDemo(state, first.id))
+  },
+  seedRaises(bookingId) {
+    return childRaisedOn(buildSeed(), bookingId)
+  },
+  stageRefusal(state, bookingId) {
+    const booking = state.schedule.bookings[bookingId]
+    const seed = buildSeed().schedule.bookings[bookingId]
+    if (booking === undefined || seed === undefined) return null
+    // Never stage over someone's real payer change: Clear would undo it.
+    if (!sameValue(booking.payer, seed.payer)) return "This Booking's payer was changed: use Reset"
+    return null
+  },
+  stage(api, actor, bookingId) {
+    const state = api.getState()
+    const booking = state.schedule.bookings[bookingId]
+    if (booking === undefined) return refuse('notFound', 'Booking not found.')
+    if (booking.payer.kind !== 'patient') {
+      const res = setBookingPayer(api, actor, bookingId, { kind: 'patient' })
+      if (!res.ok) return res
+    }
+    // A child billed only through holders raises nothing: move the first Procedure onto No contract · RVG.
+    const procs = proceduresForBooking(api.getState(), bookingId)
+    const contracts = api.getState().masters.contracts
+    if (!procs.some((p) => isPayerBilled(p.governingContractId !== undefined ? contracts[p.governingContractId] : undefined)) && procs[0] !== undefined) {
+      const res = setProcedureContract(api, actor, procs[0].id, NO_CONTRACT_RVG)
+      if (!res.ok) return res
+    }
+    return ok(undefined)
+  },
+  restore(state, bookingId) {
+    if (!this.isStaged(state, bookingId)) return undefined
+    const booking = state.schedule.bookings[bookingId]
+    const seed = buildSeed().schedule.bookings[bookingId]
+    if (booking === undefined || seed === undefined) return undefined
+    const patch: Partial<Pick<AppState['schedule'], 'procedures' | 'bookings'>> = {
+      bookings: { ...state.schedule.bookings, [bookingId]: { ...booking, payer: seed.payer } },
+    }
+    const first = firstProcedure(state, bookingId)
+    const seedFirst = first !== undefined ? seedProcedure(first.id) : undefined
+    if (first !== undefined && seedFirst !== undefined && first.governingContractId !== seedFirst.governingContractId) {
+      const restored: Procedure = { ...first }
+      for (const f of CHILD_CONTRACT_FIELDS) {
+        if (seedFirst[f] === undefined) delete restored[f]
+        else (restored as unknown as Record<string, unknown>)[f] = seedFirst[f]
+      }
+      patch.procedures = { ...state.schedule.procedures, [first.id]: restored }
+    }
+    return patch
+  },
+  restoredEntityIds(state, bookingId) {
+    if (!this.isStaged(state, bookingId)) return []
+    const first = firstProcedure(state, bookingId)
+    const seedFirst = first !== undefined ? seedProcedure(first.id) : undefined
+    return first !== undefined && seedFirst !== undefined && first.governingContractId !== seedFirst.governingContractId ? [first.id] : []
+  },
+}
+
+// ---------------------------------------------------------------------------
+// A missing approval number on an insured Booking (catch-up Phase 21; US-11.4.3)
+// ---------------------------------------------------------------------------
+
+/** True when the Booking names an insurer (not a funder). */
+function namesInsurer(state: Pick<AppState, 'schedule' | 'masters'>, bookingId: string): boolean {
+  const funder = state.schedule.bookings[bookingId]?.funderPartyId
+  return funder !== undefined && state.masters.parties[funder]?.kind === 'insurer'
+}
+
+/**
+ * The approval sample's default target: the first seeded Booking that names
+ * an insurer and holds a number, on an ACTIVE List no scenario marker uses
+ * (computed once from the pristine seed).
+ */
+let approvalDefaultTarget: string | null | undefined
+function defaultApprovalTarget(): string | undefined {
+  if (approvalDefaultTarget === undefined) {
+    const seed = buildSeed()
+    const markers = new Set(Object.values(SEED_MARKERS).map((m) => m.entityId))
+    const hit = Object.values(seed.schedule.bookings)
+      .filter((b) => namesInsurer(seed, b.id) && hasApprovalNumber(b) && b.cancellation === undefined)
+      .filter((b) => seed.schedule.lists[b.listId]?.state === 'ACTIVE' && !markers.has(b.id) && !markers.has(b.listId))
+      .sort((a, b) => a.id.localeCompare(b.id))[0]
+    approvalDefaultTarget = hit?.id ?? null
+  }
+  return approvalDefaultTarget ?? undefined
+}
+
+const approvalSample: WarningSample = {
+  ruleId: 'approvalNumberMissing',
+  fields: [],
+  bookingFields: ['insuranceApprovalNumber'],
+  // The seed's funder decides, so an office edit on the Booking on screen never redirects the sample onto it.
+  targetFor(_state, bookingId) {
+    return namesInsurer(buildSeed(), bookingId) ? bookingId : defaultApprovalTarget()
+  },
+  isStaged(state, bookingId) {
+    const booking = state.schedule.bookings[bookingId]
+    const seed = buildSeed().schedule.bookings[bookingId]
+    if (booking === undefined || seed === undefined || !hasApprovalNumber(seed)) return false
+    return booking.funderPartyId === seed.funderPartyId && !hasApprovalNumber(booking) && lastChangedByDemo(state, bookingId)
+  },
+  seedRaises(bookingId) {
+    const seed = buildSeed()
+    const booking = seed.schedule.bookings[bookingId]
+    return booking !== undefined && approvalNumberMissing(booking, seed.masters.parties)
+  },
+  stageRefusal(state, bookingId) {
+    const booking = state.schedule.bookings[bookingId]
+    const seed = buildSeed().schedule.bookings[bookingId]
+    if (booking === undefined || seed === undefined) return null
+    // Never stage over someone's real change: Clear would undo it.
+    if (booking.funderPartyId !== seed.funderPartyId || booking.insuranceApprovalNumber !== seed.insuranceApprovalNumber) {
+      return "This Booking's insurer or approval number was changed: use Reset"
+    }
+    return null
+  },
+  stage(api, actor, bookingId) {
+    const booking = api.getState().schedule.bookings[bookingId]
+    if (booking === undefined) return refuse('notFound', 'Booking not found.')
+    return setBookingInsurance(api, actor, bookingId, booking.funderPartyId !== undefined ? { funderPartyId: booking.funderPartyId } : {})
+  },
+  restore(state, bookingId) {
+    if (!this.isStaged(state, bookingId)) return undefined
+    const booking = state.schedule.bookings[bookingId]
+    const seed = buildSeed().schedule.bookings[bookingId]
+    if (booking === undefined || seed === undefined) return undefined
+    const restored = { ...booking }
+    if (seed.insuranceApprovalNumber === undefined) delete restored.insuranceApprovalNumber
+    else restored.insuranceApprovalNumber = seed.insuranceApprovalNumber
+    return { bookings: { ...state.schedule.bookings, [bookingId]: restored } }
+  },
+  restoredEntityIds() {
+    return []
+  },
+}
+
 /** One sample per registered rule, in `WARNING_RULES` order. */
-export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample]
+export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample, childPayerSample, approvalSample]
+
+/** Where a sample stages when raised from this Booking (itself, unless the sample redirects). */
+export function sampleTarget(sample: WarningSample, state: SampleState, bookingId: string): string | undefined {
+  return sample.targetFor !== undefined ? sample.targetFor(state, bookingId) : bookingId
+}
+
+/** Why a redirected target cannot take its sample, or null (catch-up Phase 21: it is skipped, the others still stage). */
+function redirectSkipReason(sample: WarningSample, state: SampleState, bookingId: string): string | null {
+  const booking = state.schedule.bookings[bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (booking === undefined || list === undefined || buildSeed().schedule.bookings[bookingId] === undefined) return 'is not a seeded Booking'
+  if (booking.cancellation !== undefined) return 'is cancelled'
+  if (list.state === 'AUTHORISED') return 'is authorised'
+  if (sample.isStaged(state, bookingId) || sample.seedRaises(bookingId)) return null
+  return sample.stageRefusal?.(state, bookingId) !== null && sample.stageRefusal !== undefined ? 'was changed by hand' : null
+}
+
+/** True when the target can take its sample. */
+function targetEditable(sample: WarningSample, state: SampleState, bookingId: string): boolean {
+  return redirectSkipReason(sample, state, bookingId) === null
+}
+
+/**
+ * Why a redirected sample cannot stage on its target, for the trigger's
+ * message (catch-up Phase 21): an AUTHORISED target is skipped and the others
+ * still stage.
+ */
+export function skippedSampleNotes(state: SampleState, bookingId: string): string[] {
+  const notes: string[] = []
+  for (const sample of WARNING_SAMPLES) {
+    const target = sampleTarget(sample, state, bookingId)
+    if (target === undefined || target === bookingId) continue
+    const reason = redirectSkipReason(sample, state, target)
+    if (reason !== null) notes.push(`The ${SAMPLE_NAMES[sample.ruleId]} sample's Booking ${reason}. Reset to raise it again.`)
+  }
+  return notes
+}
+
+const SAMPLE_NAMES: Record<WarningRuleId, string> = {
+  prepaymentUnpaid: 'prepayment',
+  baseUnitsOutsideGuide: 'base units',
+  childPayer: 'child',
+  approvalNumberMissing: 'approval number',
+}
 
 /** The registered rule count, for the triggers' honest message. */
 export const WARNING_RULE_COUNT = WARNING_RULES.length
@@ -302,11 +541,18 @@ export function sampleRaiseRefusal(state: SampleState & Pick<AppState, 'masters'
   const list = state.schedule.lists[booking.listId]
   if (list === undefined) return 'Nothing to stage on this Booking'
   if (list.state === 'AUTHORISED') return "This Booking's List is authorised"
-  if (WARNING_SAMPLES.every((s) => s.seedRaises(bookingId))) return 'This Booking already carries these warnings'
-  if (WARNING_SAMPLES.every((s) => s.seedRaises(bookingId) || s.isStaged(state, bookingId))) return 'Samples already raised'
-  for (const sample of WARNING_SAMPLES) {
-    if (sample.seedRaises(bookingId) || sample.isStaged(state, bookingId)) continue
-    const reason = sample.stageRefusal?.(state, bookingId) ?? null
+  // Each sample on its own target (catch-up Phase 21: the child sample redirects to a minor's Booking).
+  const targeted = WARNING_SAMPLES.flatMap((s) => {
+    const target = sampleTarget(s, state, bookingId)
+    if (target === undefined) return []
+    if (target !== bookingId && !targetEditable(s, state, target)) return [] // skipped, the others still stage
+    return [{ s, target }]
+  })
+  if (targeted.every(({ s, target }) => s.seedRaises(target))) return 'This Booking already carries these warnings'
+  if (targeted.every(({ s, target }) => s.seedRaises(target) || s.isStaged(state, target))) return 'Samples already raised'
+  for (const { s, target } of targeted) {
+    if (s.seedRaises(target) || s.isStaged(state, target)) continue
+    const reason = s.stageRefusal?.(state, target) ?? null
     if (reason !== null) return reason
   }
   return null
@@ -320,9 +566,23 @@ export function daySampleRaiseRefusal(state: SampleState & Pick<AppState, 'maste
   return reasons.find((r) => r !== 'Samples already raised') ?? 'Samples already raised'
 }
 
-/** Why samples cannot be cleared from one Booking, or null. */
+/** The Bookings a raise from this Booking may have staged on: itself and any redirected target. */
+export function sampleBookingsFor(state: SampleState, bookingId: string): string[] {
+  const ids = new Set<string>([bookingId])
+  for (const s of WARNING_SAMPLES) {
+    const target = sampleTarget(s, state, bookingId)
+    if (target !== undefined && s.isStaged(state, target)) ids.add(target)
+  }
+  return [...ids]
+}
+
+/** Why samples cannot be cleared from one Booking (and its redirected targets), or null. */
 export function sampleClearRefusal(state: SampleState & Pick<AppState, 'billing'>, bookingId: string): string | null {
-  if (!hasStagedSample(state, bookingId)) return 'Nothing staged'
+  // Nothing on this Booking itself: clearable when a redirected target holds one (catch-up Phase 21).
+  if (!hasStagedSample(state, bookingId)) {
+    const others = sampleBookingsFor(state, bookingId).filter((id) => id !== bookingId)
+    return others.some((id) => sampleClearRefusal(state, id) === null) ? null : 'Nothing staged'
+  }
   const booking = state.schedule.bookings[bookingId]
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   if (list?.state === 'AUTHORISED') return "This Booking's List is authorised"
@@ -353,12 +613,28 @@ export function raiseSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
   let staged = 0
   for (const sample of WARNING_SAMPLES) {
     const state = api.getState()
-    if (sample.seedRaises(bookingId) || sample.isStaged(state, bookingId)) continue
-    const res = sample.stage(api, actor, bookingId)
+    const target = sampleTarget(sample, state, bookingId)
+    if (target === undefined || (target !== bookingId && !targetEditable(sample, state, target))) continue
+    if (sample.seedRaises(target) || sample.isStaged(state, target)) continue
+    const res = sample.stage(api, actor, target)
     if (!res.ok) return refuse(res.code, res.message)
     staged += 1
   }
   return ok(staged)
+}
+
+/** Clear the samples a raise from this Booking staged: on it, and on any redirected target (catch-up Phase 21). */
+export function clearSamplesFor(api: AppStoreApi, bookingId: string, actor: Actor = DEMO_TRIGGER_ACTOR): Outcome<number> {
+  const reason = sampleClearRefusal(api.getState(), bookingId)
+  if (reason !== null) return refuse('sampleRefused', reason)
+  let cleared = 0
+  for (const id of sampleBookingsFor(api.getState(), bookingId)) {
+    if (!hasStagedSample(api.getState(), id)) continue
+    const res = clearSamplesOn(api, id, actor)
+    if (!res.ok) return res
+    cleared += res.value
+  }
+  return ok(cleared)
 }
 
 /**
@@ -407,6 +683,32 @@ export function clearSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
         after: { ruleId: [...ruleIds].join(', ') },
         stampBookingId: restoreStamp ? null : undefined,
       },
+      // A staged payer goes back to the seed's (catch-up Phase 21).
+      ...(staged.some((s) => s.bookingFields?.includes('payer')) && seedBooking !== undefined && !sameValue(booking.payer, seedBooking.payer)
+        ? [
+            {
+              entityType: 'booking',
+              entityId: bookingId,
+              action: 'booking.payer',
+              before: { payer: payerAuditText(state, booking.payer, booking.patientId) },
+              after: { payer: payerAuditText(state, seedBooking.payer, booking.patientId) },
+              stampBookingId: restoreStamp ? null : undefined,
+            },
+          ]
+        : []),
+      // A cleared approval number goes back to the seed's (catch-up Phase 21).
+      ...(staged.some((s) => s.bookingFields?.includes('insuranceApprovalNumber')) && seedBooking !== undefined
+        ? [
+            {
+              entityType: 'booking',
+              entityId: bookingId,
+              action: 'booking.insurance',
+              before: { insuranceApprovalNumber: booking.insuranceApprovalNumber ?? null },
+              after: { insuranceApprovalNumber: seedBooking.insuranceApprovalNumber ?? null },
+              stampBookingId: restoreStamp ? null : undefined,
+            },
+          ]
+        : []),
       ...[...fieldsByProcedure.entries()].map(([id, fields]) => ({
         entityType: 'procedure',
         entityId: id,

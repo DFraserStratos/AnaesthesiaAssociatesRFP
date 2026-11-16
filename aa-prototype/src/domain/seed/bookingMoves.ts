@@ -33,6 +33,7 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     patientId: ACCEPTANCE_BEAT_PATIENT_ID,
     scheduledTime: '08:30',
     completed: false,
+    payer: { kind: 'patient' },
     // Christchurch Eye Surgery Lists arrive as the surgeon's PDF (the seed's source rule).
     source: 'surgeonPdf',
     lastModifiedBy: 'Kirsty W.',

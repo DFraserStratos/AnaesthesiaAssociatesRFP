@@ -108,10 +108,10 @@ export function editParty(api: AppStoreApi, actor: Actor, partyId: string, field
   }
 
   const keys = new Set<keyof Party>([...(Object.keys(prev) as (keyof Party)[]), ...(Object.keys(next) as (keyof Party)[])])
-  const changed = [...keys].filter((k) => k !== 'legacyCounterparty' && prev[k] !== next[k])
+  const changed = [...keys].filter((k) => k !== 'billingIdentity' && prev[k] !== next[k])
   if (changed.length === 0) return ok(undefined)
   // The interim counterparty is the system's, never the office's: carried over unchanged.
-  const stored: Party = prev.legacyCounterparty !== undefined ? { ...next, legacyCounterparty: prev.legacyCounterparty } : next
+  const stored: Party = prev.billingIdentity !== undefined ? { ...next, billingIdentity: prev.billingIdentity } : next
   mutate(
     api,
     actor,

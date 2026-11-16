@@ -45,7 +45,10 @@ describe('the seed', () => {
 
   it('every open warning on the pristine seed is a known scenario', () => {
     const rows = openWarnings(freshAppState())
-    expect(rows.map((r) => r.bookingId)).toEqual([RILEY])
+    // Riley's prepayment and, catch-up Phase 21, the payer review List's child payer (Ella Moana) and missing approval number (NIB).
+    expect(rows.map((r) => r.bookingId).sort()).toEqual([RILEY, SEED_MARKERS['childPayer']!.entityId, SEED_MARKERS['approvalMissing']!.entityId].sort())
+    expect(rows.filter((r) => r.warning.ruleId === 'approvalNumberMissing').map((r) => r.bookingId)).toEqual([SEED_MARKERS['approvalMissing']!.entityId])
+    expect(rows.filter((r) => r.warning.ruleId === 'childPayer').map((r) => r.bookingId)).toEqual([SEED_MARKERS['childPayer']!.entityId])
   })
 })
 

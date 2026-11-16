@@ -21,7 +21,7 @@ import { setBillingLineAllocation } from './billingLineActions'
 import { advanceClockMinutes } from './clockActions'
 import { clockISO, type Actor } from './mutate'
 import { accpayInvoicesFor, invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
-import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, SURG, CONTRACT } from '../domain/seed'
+import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, CONTRACT } from '../domain/seed'
 import { roundToCents } from '../domain/billing/money'
 import type { Invoice, InvoiceLine } from '../domain/types'
 
@@ -200,24 +200,23 @@ describe('charge bases and holders', () => {
     }
   })
 
-  it("the surgeon-held bariatric fixed price bills its holder's interim counterparty; the hernia is on No contract · RVG (catch-up Phase 19a, RV-07)", () => {
+  it("the surgeon's fixed price bills the payer on the Booking, one invoice with the hernia (catch-up Phase 21, US-11.2.1; 19a, RV-07)", () => {
     const api = store()
     const bookingId = marker('bariatricType3Booking')
     stageAndBill(api, listOf(api, bookingId))
     const invoices = invoicesForBooking(api, bookingId)
-    expect(invoices).toHaveLength(2)
-    const doyle = invoices.find((i) => i.counterparty.kind === 'surgeon')!
-    expect(doyle.counterparty).toEqual({ kind: 'surgeon', id: SURG.doyle })
-    expect(doyle.layout).toBe('contractHolder')
-    // The gastric bypass at the range in force on Tue 14 Jul; GST at the foot.
-    expect(linesOf(api, doyle.id).map((l) => l.amount)).toEqual([2800])
-    expect(doyle.subtotal).toBe(2800)
-    expect(doyle.gst).toBe(420)
-    expect(doyle.total).toBe(3220)
-    // No Contract prices a second procedure: the hernia bills at RVG, time units only, to the patient.
-    const patient = invoices.find((i) => i.counterparty.kind === 'patient')!
-    expect(patient.subtotal).toBe(61)
-    expect(linesOf(api, patient.id)[0]!.description).toContain('time units only')
+    // Doyle's price list bills the payer: both Procedures go to the patient, Gareth Mills, on one invoice.
+    expect(invoices).toHaveLength(1)
+    const inv = invoices[0]!
+    expect(inv.counterparty).toEqual({ kind: 'patient', id: 'PT0015' })
+    expect(inv.layout).toBe('patient')
+    // The gastric bypass at the range in force on Tue 14 Jul, then the hernia at RVG time units only.
+    expect(linesOf(api, inv.id).map((l) => l.amount)).toEqual([2800, 61])
+    expect(inv.subtotal).toBe(2861)
+    expect(inv.total).toBe(3290.15)
+    expect(linesOf(api, inv.id)[1]!.description).toContain('time units only')
+    // The payer's details are snapshotted with the debt.
+    expect(inv.billedTo?.name).toBe('Gareth Mills')
   })
 
   it('the rate x time booking bills hours x the agreed rate under the billableParty-held contract', () => {

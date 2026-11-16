@@ -4,6 +4,7 @@ import { CataloguePage, CatalogueRow, LibraryGroup } from './CatalogueKit'
 import { useWebFixtures } from './web/fixtures'
 import * as D from './web/demos'
 import { ProcedureStackExample } from './procedureStackExample'
+import { FunderDetailsExample, PayerDetailsExample, PayerFieldsExample } from './payerExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -202,6 +203,15 @@ export function WebCatalogue() {
           <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={ALL} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
             <ProcedureStackExample />
           </CatalogueRow>
+            <CatalogueRow name="PayerDetailsView" source="shared/booking/PayerDetailsView.tsx" usedIn={ALL} what="The payer on the Booking (catch-up Phase 21): the name with Patient or the relationship, the email and the NZ Post postal address, and the warning-tint Email or postal address needed and Under 18 chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
+              <PayerDetailsExample />
+            </CatalogueRow>
+            <CatalogueRow name="PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)" source="shared/flows/PayerFields.tsx, PostalAddressFields.tsx" usedIn={ALL} what="The payer form's parts, in PayerSheet and the add forms: the Different payer tick, then the other payer's name, relationship chips, email, NZ Post postal address and phone." replaceWith="shadcn Checkbox card, ToggleGroup and Input" note="Local state only; nothing writes to the demo data.">
+              <PayerFieldsExample />
+            </CatalogueRow>
+            <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={ALL} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None, the patient pays; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
+              <FunderDetailsExample />
+            </CatalogueRow>
           <CatalogueRow name="Cell (AvailabilityGrid)" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there." replaceWith="Custom cell on a grid + shadcn Tooltip" note="Recreated: local to AvailabilityGrid.tsx. Non-actionable cells are disabled buttons, unreachable by keyboard.">
             <D.AvailabilityCellDemo f={f} />
           </CatalogueRow>

@@ -512,6 +512,14 @@ already seeded.
   this moment the List stayed on Dr Morrison's main view, less prominent, and she could still change
   it; if she had, Review would show **Changed since submitted** with the count. Now it leaves her main
   view and her search finds it.
+- **Optional aside (the payer review List):** open **Review queue → Dr Alistair Chen, Fri 17 Jul
+  (Christchurch Eye Surgery)**. Point at the warning triangles: Ella Moana, 15, is the payer (a mild
+  child payer warning) and Janet Ormsby's insurer, NIB, has no approval number (the only insurance
+  warning). Kevin Doherty's row carries **Email or postal address needed**; the Whitcombe Family Trust
+  pays by post with no flag; Peter Tawhiri is funded by Health NZ, a funder, so nothing warns. Clear one
+  warning from the Day view's To-do card, then authorise the List anyway: nothing blocks. On Admin Day,
+  **Demo actions → Raise sample warnings** brings a child payer warning back on Grace Park's Booking
+  (Fri 24), and **Clear sample warnings** puts Hana Park back as her payer.
 
 **Discovery points:** settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
 before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase
@@ -568,9 +576,10 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
     - **AA-2026-0005 · Alan Prentice · nib · $152.38** and
       **AA-2026-0006 · Alan Prentice · St George's · $91.43** are the two invoices from the same
       Booking at 14:00.
-- **Say:** "The Billing Engine, not Xero, produces the invoice. It reads the one Contract on each
-  Procedure, bills its holder or the patient as the Contract says, and groups by who is billed. Xero
-  follows as the receivables and banking service."
+- **Say:** "The Billing Engine, not Xero, produces the invoice. Each Procedure's Contract decides who
+  is billed: its holder when the Contract bills its holder, otherwise the payer named on the Booking.
+  The run groups each Booking's Procedures by that party. Xero follows as the receivables and banking
+  service."
 - **Expected:** invoice rows appear for both Lists, derived from the same captured data; one invoice
   for the split-billing Booking, two for the two-funder Booking. Dr Souter's Mon 20 Jul Lists leave
   her main view (phone and web) as soon as the office authorises them, and their invoices show in her

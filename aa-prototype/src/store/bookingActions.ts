@@ -27,6 +27,7 @@ import {
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
+import { payerFromInput, payerInputRefusal, type PayerInput } from './payerActions'
 import { isBlankText, procedureTextOf, refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
@@ -66,8 +67,12 @@ export interface CreateBookingInput {
   enteredPrice?: number
   /** The step rail's answers so far, when no Contract was picked. */
   railAnswers?: RailAnswers
-  /** INTERIM payer override until Phase 21 (a guardian or named payer). */
-  billablePartyId?: string
+  /**
+   * The payer on the Booking (catch-up Phase 21, US-11.2.2): the patient
+   * unless a form ticks "Different payer". Every creation path without one
+   * names the patient.
+   */
+  payer?: PayerInput
   billingReference?: string
   notes?: string
   /**
@@ -118,6 +123,10 @@ export function createBooking(
   if (actor.role === 'anaesthetist' && input.railAnswers?.destination === 'patient' && input.railAnswers.narrow === 'prepaid') {
     return refuse('prepaidOfficeOnly', PREPAID_OFFICE_ONLY_MESSAGE)
   }
+  if (input.payer !== undefined) {
+    const payerRefused = payerInputRefusal(input.payer)
+    if (payerRefused !== null) return payerRefused
+  }
   if (input.governingContractId !== undefined) {
     const contractRefused = contractPickRefusal(state, actor, list, undefined, input.governingContractId, {
       ...(input.enteredPrice !== undefined ? { enteredPrice: input.enteredPrice } : {}),
@@ -142,12 +151,15 @@ export function createBooking(
     counters = procAlloc.counters
     const procedureId = procAlloc.id
     const atISO = clockISO(s.clock)
+    const payerAlloc = payerFromInput(input.payer ?? { kind: 'patient' }, counters)
+    counters = payerAlloc.counters
 
     const booking: Booking = {
       id: bookingId,
       listId,
       patientId,
       completed: false,
+      payer: payerAlloc.payer,
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
@@ -177,7 +189,6 @@ export function createBooking(
     } else if (input.railAnswers !== undefined) {
       procedure.railAnswers = input.railAnswers
     }
-    if (input.billablePartyId !== undefined) procedure.billablePartyId = input.billablePartyId
     if (input.billingReference !== undefined && input.billingReference.trim() !== '') {
       procedure.billingReference = input.billingReference.trim()
     }
@@ -302,6 +313,8 @@ export function addPostOpAddendum(
       completed: false,
       bookingType: 'postOpAddendum',
       addendumOfBookingId: originalBookingId,
+      // The same episode's payer (catch-up Phase 21).
+      payer: original.payer,
       // Interim until Phase 39 replaces the addendum: the source follows the actor.
       source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
       lastModifiedBy: actor.who,
@@ -318,12 +331,11 @@ export function addPostOpAddendum(
       removedModifierIds: [],
     }
     // The same episode's Contract (INTERIM until Phase 38b's additional
-    // invoice): an RVG-kind Contract is copied, with the payer override; a
+    // invoice): an RVG-kind Contract is copied (the payer is the Booking's); a
     // fixed, open or prepaid one is not (it is the whole price of the item it
     // was chosen for, and a post-op event is never prepaid), so the addendum
     // then needs an invoice destination. The post-op event bills its own
     // B/T/M (not time-only: it is a distinct billable item).
-    if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
     // Only a Contract the step rail allows on the addendum's List (US-04.3.2).
     if (first?.governingContractId !== undefined && contractAllowedOn(railMastersOf(s), railContextForList(s, placed.list), first.governingContractId)) {
       inheritContract(procedure, first.governingContractId, s.masters)
@@ -392,8 +404,7 @@ function inheritContract(procedure: Procedure, contractId: string, masters: AppS
  * procedure"). Additional from the first (RFP split-billing rule): it bills
  * time units only; base and modifier units stay on the first procedure. The
  * skeleton is an empty additional Procedure: no procedure text,
- * `isAdditional: true`, the first Procedure's payer override copied
- * (INTERIM until Phase 21). It picks its own Contract (US-03.2.3, catch-up
+ * `isAdditional: true` (the payer is the Booking's, catch-up Phase 21). It picks its own Contract (US-03.2.3, catch-up
  * Phase 20): the one given, checked as on the step rail, else none ("Needs an
  * invoice destination"); never one stored silently. Audited `procedure.create`.
  */
@@ -417,7 +428,6 @@ export function addProcedure(
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
-  const first = proceduresForBooking(state, bookingId)[0]
   if (pick.governingContractId !== undefined) {
     const contractRefused = contractPickRefusal(state, actor, list, undefined, pick.governingContractId, {
       ...(pick.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {}),
@@ -440,9 +450,7 @@ export function addProcedure(
       modifierClaims: [],
       removedModifierIds: [],
     }
-    // The same episode's payer override (INTERIM until Phase 21); never the
-    // base, modifier or time specifics.
-    if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
+    // Never the base, modifier or time specifics (the payer is the Booking's).
     if (pick.governingContractId !== undefined) {
       procedure.governingContractId = pick.governingContractId
       if (pick.enteredPrice !== undefined) procedure.enteredPrice = pick.enteredPrice

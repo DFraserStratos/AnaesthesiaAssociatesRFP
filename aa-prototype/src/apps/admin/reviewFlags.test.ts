@@ -31,6 +31,8 @@ const M = {
   parties: Object.fromEntries(
     [mkParty(), mkParty({ id: 'party-ins', kind: 'insurer', name: 'Insurer', codePrefix: 'INS', hospitalId: undefined }), mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined })].map((p) => [p.id, p]),
   ),
+  /** The patient, reachable by email, so the payer-contact flag stays out of the other cases. */
+  patient: { name: 'Test Patient', email: 'test.patient@example.net' },
 }
 
 const ZERO_BTM: BtmBreakdown = {
@@ -52,7 +54,7 @@ function proc(over: Partial<Procedure> = {}): Procedure {
 }
 
 function booking(over: Partial<Booking> = {}): Booking {
-  return { id: 'BK1', completed: true, ...over } as unknown as Booking
+  return { id: 'BK1', completed: true, payer: { kind: 'patient' }, ...over } as unknown as Booking
 }
 
 describe('reviewFlags (pure)', () => {
@@ -97,6 +99,18 @@ describe('reviewFlags (pure)', () => {
     const proc0 = proc({ governingContractId: 'con-pre', prepaymentDetail: { type: 'full' } })
     const flags = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, booking: booking(), procedures: [{ procedure: proc0, fee: stubFee(ZERO_BTM) }] })
     expect(flags.some((f) => /pre-?payment/i.test(f.text))).toBe(false)
+  })
+
+  it('(f) flags a billed payer with neither an email nor a postal address, and only then (US-11.2.3, catch-up Phase 21)', () => {
+    const onPayer = [{ procedure: proc({ governingContractId: 'con-ncr' }), fee: stubFee() }]
+    const flagged = reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, patient: { name: 'No Contact' }, booking: booking(), procedures: onPayer })
+    expect(flagged).toContainEqual({ tone: 'neutral', text: 'Email or postal address needed', bookingId: booking().id, shot: 'review-payer-contact' })
+    // A postal address alone clears it (D70's default).
+    const posted = { name: 'Trust', postalAddress: { line1: 'PO Box 13245', city: 'Christchurch', postcode: '8141' } }
+    expect(reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, patient: posted, booking: booking(), procedures: onPayer }).some((f) => f.shot === 'review-payer-contact')).toBe(false)
+    // A holder-billed Procedure asks for none.
+    const held = [{ procedure: proc({ governingContractId: 'con-hosp', billingReference: 'R' }), fee: stubFee() }]
+    expect(reviewFlagsForBooking({ timeRule: DEFAULT_RVG_TIME_RULE, modifierInputs: NO_MODS, ...M, patient: { name: 'No Contact' }, booking: booking(), procedures: held }).some((f) => f.shot === 'review-payer-contact')).toBe(false)
   })
 
   it('yields no flags for a cancelled booking', () => {

@@ -1,7 +1,7 @@
 /**
  * Phase 06 store guard tests — the four office actions and the day-notes slice:
  * editList (field edits through the edit-rights matrix), setBillingLineAllocation
- * (office-only + conservation), createBillableParty, addDayNote, plus the seeded
+ * (office-only + conservation), addDayNote, plus the seeded
  * Tue-21 notes and the Wed-22 conflicts (real facts since catch-up Phase 30). Isolated non-persisted
  * stores seeded from buildSeed().
  */
@@ -10,7 +10,6 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, editList } from './lifecycle'
 import { setBillingLineAllocation, setProcedureFunderAllocation } from './billingLineActions'
-import { createBillableParty } from './billablePartyActions'
 import { addDayNote, initialsFor } from './dayNoteActions'
 import {
   auditForEntity,
@@ -196,37 +195,6 @@ describe('setProcedureFunderAllocation (atomic batch)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// createBillableParty
-// ---------------------------------------------------------------------------
-
-describe('createBillableParty', () => {
-  it('allocates a BP id, writes the master row and audits the create', () => {
-    const api = store()
-    const before = Object.keys(api.getState().masters.billableParties).length
-    const r = createBillableParty(api, OFFICE, {
-      name: 'Jane Prentice',
-      relationshipToPatient: 'Mother',
-      phone: '021 555 0101',
-    })
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    const id = r.value.billablePartyId
-    expect(id).toMatch(/^BP\d{4}$/)
-    const party = api.getState().masters.billableParties[id]
-    expect(party?.name).toBe('Jane Prentice')
-    expect(party?.relationshipToPatient).toBe('Mother')
-    expect(Object.keys(api.getState().masters.billableParties).length).toBe(before + 1)
-    expect(auditForEntity(api.getState(), id).some((a) => a.action === 'billableParty.create')).toBe(true)
-  })
-
-  it('requires a name and a relationship', () => {
-    const api = store()
-    expect(createBillableParty(api, OFFICE, { name: '', relationshipToPatient: 'Mother' }).ok).toBe(false)
-    expect(createBillableParty(api, OFFICE, { name: 'X', relationshipToPatient: '' }).ok).toBe(false)
-  })
-})
-
-// ---------------------------------------------------------------------------
 // addDayNote + day-notes seed
 // ---------------------------------------------------------------------------
 
@@ -293,8 +261,9 @@ describe('submitted-list selectors', () => {
   it('counts the seeded SUBMITTED lists (the derived review badge)', () => {
     const api = store()
     // Morrison + Whitaker (Phase 02) + the Phase-09 billing-failure exemplar +
-    // the Phase-11 locked-target list (Delaney Fri 17) + S3's two Souter Lists.
-    expect(submittedListCount(api.getState())).toBe(6)
+    // the Phase-11 locked-target list (Delaney Fri 17) + S3's two Souter Lists
+    // + catch-up Phase 21's payer review List (Chen Fri 17).
+    expect(submittedListCount(api.getState())).toBe(7)
     expect(submittedLists(api.getState()).every((l) => l.state === 'SUBMITTED')).toBe(true)
   })
 })
