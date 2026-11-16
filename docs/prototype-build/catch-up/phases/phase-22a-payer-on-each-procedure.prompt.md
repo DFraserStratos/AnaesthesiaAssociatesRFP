@@ -1,0 +1,13 @@
+Please run requirements catch-up Phase 22a (A payer on each Procedure) of the Anaesthesia Associates (AA) prototype.
+
+Load the run-build-phase skill and follow it for this phase (two sessions with the cut line in the doc's Estimated line, track: Billing). The phase doc's Before you start, Reference, Work items, Demo triggers, Manual test checklist, Demo guide updates, Catalogue screenshots, Adversarial review (after build) and PROGRESS.md updates sections hold the phase's reads, drift-check stops, rules and finish items; below is only what the doc does not already say.
+
+Hold to these above all:
+- One place each: who is billed in whoIsBilled.ts, payer identity, the offer set and the copy rule in the new domain/billing/procedurePayer.ts, and setProcedurePayer the only writer. OQ-140 is labelled provisional once (on the offer) with one comment beside setProcedurePayer, nowhere else.
+- Identity, never matching: a copied payer keeps its BP id; a payer typed separately is a new id even with the same name and email; invoices group by the existing counterparty key. Hana Park stays BP0001 and Xero's billableParty:BP0001 contact holds.
+- Figures pinned first: the phase-22a parity fixture is written from the untouched code and never run with -u; no declared difference; S3 stays $365.70, $152.38 to nib and $91.43 to Alan Prentice.
+- Prepayment: change only today's raise (one invoice per payer) and the lock (per payer); 27 owns the lifecycle; 22's prepaidSplit refusals stay.
+- No Booking-level payer survives (the doc's grep gate, item 13), and the insurer or funder stays on the Booking, never in Paid by.
+- Build on the shared components; leave PayerFields, PostalAddressFields and the split fields' look to U4, which runs after this phase.
+
+Phase goal: each Procedure holds its own payer (provisional on OQ-140), filled in from the patient, shown and changed in the Procedure's "Paid by" line only where its Contract bills the payer ("Payer: not billed yet" before a Contract), with the same change offered, ticked, on the Booking's other Procedures holding that payer, and a Procedure added later copying a shared payer, else the patient; Booking.payer moves onto every Procedure with BP ids kept; invoices and today's prepayment invoices go one per payer, a separately typed payer invoiced on their own, each payer locked once their own prepayment invoice is raised; a split share can name another person; the contact rule and the child warning run per Procedure with one to-do per Booking; one Paid by sheet (who pays, the offer, then the split) on phone, web and Admin replaces the Booking-level Payer card, the Insurer or funder card kept; and the S3 figures do not move.

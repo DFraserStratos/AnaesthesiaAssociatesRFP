@@ -42,7 +42,7 @@ the 2026-10-01 meeting note ([2026-10-01-aa-meeting-with-greg.md](../../../../re
 entries, and the per-anaesthetist position). The dependency on 28 is dropped: it existed only for the
 billed-Lists work, now 38a's. By the roadmap order 14 to 36 have run before this phase, including 16
 (payable equals receivable, the monthly AA fee invoice and the AA fees tab), 20a and 21 (who is
-invoiced: the billable Party on the Booking's Contract or the payer on the Booking), 22 (prices held ex GST,
+invoiced: the billable Party on the Booking's Contract or a Party), 22a (the payer is each Procedure's, D85: a Procedure's payer is an invoice's billable party; there is no Booking-level payer), 22 (prices held ex GST,
 GST at the invoice foot and the Contract's GST treatment, which changes only how an invoice presents
 GST, never its stored amounts), 26 (which removes the GST period from the profile) and 27
 (the prepayment pair, generated at setup and sent on approval). 37 may run before or after this
@@ -98,13 +98,13 @@ so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (fbdd555):
+1. Run the drift check against the plan's catalogue snapshot (c9b65ad):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
    ```
 
-   (It diffs the plan's baseline, fbdd555, to the working tree; the tool is rename-aware, so never
+   (It diffs the plan's baseline, c9b65ad, to the working tree; the tool is rename-aware, so never
    use a plain `git diff` of the catalogue folder.) Read the diff for US-12.2.3, FT-12.2,
    US-12.2.1, US-12.2.2, the context items US-08.3.5, US-08.3.1, US-10.1.2, US-05.2.7,
    US-07.4.1, US-10.2.7, US-11.3.2, and OQ-31, OQ-29, OQ-59 and OQ-60. If an item changed, re-read it and
@@ -112,7 +112,7 @@ so `PERSIST_VERSION` is bumped.
    the PROGRESS entry. At plan time (7cd7802) US-12.2.1 and US-05.2.7 were **Confirmed**, US-12.2.2
    (the monthly GST report, its release slot unconfirmed) and US-12.1.2 is **Retired**
    (it is in the diff list only to confirm it stayed so); OQ-59, OQ-33 and OQ-31 were answered and
-   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. FT-12.2's wording changed at fbdd555 (owed by payers and the Parties AA bills; no change of substance). Anything later than fbdd555 is the drift to absorb.
+   OQ-29 and OQ-60 open. The 2026-10-16 update made US-12.2.2 a monthly report of payments (download, email or print; no GST period); the 2026-10-28 update is the "Changed at 7cd7802" note above. OQ-111 (answered 4 November, D53) changes how the payout is narrated: see item 6 below. FT-12.2's wording changed at c9b65ad (owed by payers and the Parties AA bills; no change of substance). Since c9b65ad, 22a (D85) moved the payer from the Booking to each Procedure (no Booking-level payer label), and this doc's readings were re-pointed; none of the covered items changed in substance. Anything later than c9b65ad is the drift to absorb.
 2. **Owner decisions** (the ROADMAP decisions table):
    - **D8 (ageing and an "Overdue" view): answered** at the 2026-10-01 meeting (OQ-59, "let's go with
      your recommendation for now"). Build the flat list, oldest first, no buckets, no age chips, no
@@ -158,7 +158,7 @@ so `PERSIST_VERSION` is bumped.
      Contract's GST treatment is presentation and delivery only, so the report reads the stored foot
      GST and never recomputes it;
    - from **20a** and **21**: the one "who is invoiced" selector and the label the money rows use for
-     the party an invoice went to (the Contract's billable Party, or the payer on the Booking);
+     the party an invoice went to (the invoice's billable party: a Procedure's payer, per 22a, or a Party);
      the rows read the invoice's own stored party, never re-derive it;
    - from **27**: the prepayment pair's states (generated at setup with its ledger pair and draft Xero
      pair, sent on the admin's approval), so a held (not yet sent) or withdrawn prepayment pair is
@@ -330,8 +330,8 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      prepayment pair generated at setup but held until the admin approves and sends it (27), or
      withdrawn, is never a row, or Owed to you
      and the Outstanding total would differ.
-   - The party column reads the invoice's stored billable party through 21's label (the Contract
-     holder's billable party, or the payer on the Booking), never a re-derivation.
+   - The party column reads the invoice's stored billable party through 21's label (the invoice's
+     billable party: a Procedure's payer or a Party), never a re-derivation.
    - Rows keep the next-day rule (an invoice shows from the day after it is raised), sort oldest
      first by invoice date, then invoice number, and use `raisedAtISO` labelled **Invoice date**
      (note point 33: Greg asked that "first notice" read "invoice date").
@@ -498,8 +498,9 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
     `amounts received`, `No rollup (per the RFP)` and `payer` in the anaesthetist money views; every
     user-visible string is reworded to the new vocabulary ("GST report", "Outstanding", "billable
     party"), and stale comments are fixed. "Payer" as a money-view column heading becomes "Billable
-    party"; the catalogue's "payer on the Booking" (US-11.2.2, Phase 21's field and label) is a real
-    term and stays wherever 21 put it. Comments about Lists vanishing on billing (`billingRun.ts`,
+    party". Since 22a (D85) the payer is each Procedure's and "payer on the Booking" is no longer a
+    catalogue term or a screen label; the money views name the invoice's billable party, and 22a
+    owns the Procedure's "Paid by" wording. Comments about Lists vanishing on billing (`billingRun.ts`,
     `billedAtISO`, `isListBilled`) are 38a's and stay. The admin Billing monitor's "Prior balance"
     tooltip keeps its own wording (Phase 40's). Do not use "timesheet" anywhere. No en or em dashes in
     any string added or changed.
@@ -769,7 +770,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   two fresh seeds deep-equal.
 - **Design and copy.** The dashboard keeps the Web Dashboard mockup's panel anatomy and rhythm; stat
   tiles in mono; teal-only actions; no crimson in panels or the report's actions; "billable party" not
-  "payer" (the party comes from the invoice, through 21's label); no en or em dashes.
+  "payer" (the party comes from the invoice's stored billable party, through 21's label; no Booking-level payer label); no en or em dashes.
 - **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md`
   section 8), or a copy this phase was to migrate and left, is a finding.
 
@@ -779,7 +780,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
-  - the drift-check result against fbdd555 (items changed or not; D8 built as answered; OQ-29's and
+  - the drift-check result against c9b65ad (items changed or not; D8 built as answered; OQ-29's and
     OQ-60's status, with the fee-never-nets rule relied on; US-12.1.2 Retired and 26's removal of
     `gstPeriod` confirmed; D9 and US-07.2.1 confirmed as 38a's, nothing List-side built here);
   - what was built, with the name map for later phases: `receivablesAgingFor`, `overdueAccountsFor`,

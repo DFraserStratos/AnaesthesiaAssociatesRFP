@@ -52,7 +52,7 @@ and selectors and the procedure text through 20a's types.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `c9b65ad` (rename-aware;
    Node 22.18 or newer):
 
    ```
@@ -102,7 +102,7 @@ and selectors and the procedure text through 20a's types.
    - **Phase 17a:** the surgeon's rooms (the PDF's sending room).
 8. Note `PERSIST_VERSION` (`src/store/appStore.ts`): this phase bumps it once, for the seeded
    SurgeonPdfList records.
-9. Record the drift-check result (against `fbdd555`) in the PROGRESS entry.
+9. Record the drift-check result (against `c9b65ad`) in the PROGRESS entry.
 
 ## Reference
 
@@ -369,7 +369,7 @@ S1's handset side is the stand-in above.
   (US-02.2.3) and accepting inbound changes automatically (US-02.5.4): Future Work or not asked.
 - Extending the HL7/FHIR simulator, message model, retry engine or feed mapping; FT-14.6's feeds,
   sheets and auto-match; hospital-supplied or default Contracts (US-04.3.6, OQ-78).
-- 20's rail, 20a's wording model, 21's payer, 33's matching rules and 33a's stubs: reused, not changed,
+- 20's rail, 20a's wording model, 22a's payer on each Procedure, 33's matching rules and 33a's stubs: reused, not changed,
   except the `'sync'` channel, the rooms' rows and the route move.
 - 35 (explicit save, update email), 40 (the waiting-rows view, NHI mandatory on every form, the balance
   warning), 40a (the as-typed NHI marking), 43 (the restricted raw-row view), the web app, and 44's full
@@ -525,7 +525,7 @@ confirmed ones with tests, re-green, record it. Do not re-raise settled Decision
   whether the Intake home landed in full or as a plain grouping; the AR-35 wording on the deliveries and
   samples (AI-made, row 14 reused on the sync).
 - **Status row** and entry `### Catch-up Phase 34 · Hospital sync, the rooms' PDF lists and the S1
-  rebuild (date)`: the drift check against `fbdd555`; the real 33, 33a, 20 and 20a names used; what was
+  rebuild (date)`: the drift check against `c9b65ad`; the real 33, 33a, 20 and 20a names used; what was
   built, moved or badged; `PERSIST_VERSION` from and to; the pinned deliveries and PDF targets; tests and
   the review pass; where the session cut fell; the S1 consistency read; the screenshot result (REPORT.md
   counts before and after).

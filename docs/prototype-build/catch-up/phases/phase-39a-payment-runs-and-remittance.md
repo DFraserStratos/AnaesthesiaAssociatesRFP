@@ -159,8 +159,8 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot, commit fbdd555 (the tool diffs from
-   the baseline in plan.json to the working tree, so it shows only what changed after fbdd555):
+1. Run the drift check against the plan's catalogue snapshot, commit c9b65ad (the tool diffs from
+   the baseline in plan.json to the working tree, so it shows only what changed after c9b65ad):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3

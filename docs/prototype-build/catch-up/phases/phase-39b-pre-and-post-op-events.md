@@ -2,7 +2,7 @@
 
 **Requirements covered:**
 [FT-03.7](../../../../requirements-board/requirements/stories/FT-03.7.md) Events on a Procedure (**Verify** since 4 November; the former other billing lines merged into it, an event may be added at any time, each event has its own billable party, events live with the Booking and appear on no List or schedule, even when dated on another day, and (OQ-121 answered, D69) an event marked for invoicing is billed in the next billing run, never held for the Procedure's invoice; this phase builds its pre-op, post-op and billing kinds, the admin entry, the invoice tick and the "same as" billable party) ·
-[US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure (Agreed; **new criterion 28 October**: an event dated on another day is not on that day's List; the billable party defaults to the Procedure's, our reading, Greg doubtful; the ACC codes parked) ·
+[US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure (Agreed; **new criterion 28 October**: an event dated on another day is not on that day's List; the billable party defaults to the Procedure's, our reading, Greg doubtful; since 17 November (22a, D85) the Procedure's own payer where its Contract bills the payer; the ACC codes parked) ·
 [US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event (**Verify**: a billing event is a free-form way to invoice on a Procedure and its Contract, a charge with a free-text description or a credit, its own line; **three new criteria 4 November** (OQ-121 answered, D69): next run, bundled where possible, on its own; the billing rule is 38b's one rule) ·
 [US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes (**Agreed** 28 October: the ACC pre-op follows the generic event and pricing rules, no fixed-fee Contract line, ACC being a funding tag on a holder's Contract (18a); some ACC pre-op events may be preconfigured, otherwise free text; OQ-12 part 2 answered, whether CS250, CS260 and CS70 are the right codes is still OQ-12 part 1; billed in the next run like every event, OQ-121) ·
 [DM-46](../analysis/domain-model-delta.md#dm-46) The BillingLine entity removed (**joined from Phase 24 at d4db277**: about 25 non-test files, `chargeBasis`, the add-line sheet and billing-lines card, the seeded lines re-expressed as billing events; Phase 24 removed only the rate x time line and its gate).
@@ -77,7 +77,7 @@ ERD [AR-61](../../../../requirements-board/requirements/artifacts/AR-61.md). The
 phase's one addition to the Contract, the **Contract event fee** (work item 1), sits beside the Contract in the
 same module, so a model change stays a contained edit.
 
-**Depends on:** 24 (the one pricing function over the five pricing kinds, each kind's rate and discount,
+**Depends on:** 22a (each Procedure's own payer, D85: an event's "same as" party reads it through `billablePartyForProcedure`, and the party picker offers "another person"), 24 (the one pricing function over the five pricing kinds, each kind's rate and discount,
 `PriceSource`; 24 removed the rate x time line and its gate and left the BillingLine entity, fixed amount only,
 which this phase removes), 38a (the main view, the date lookup and the search that reach a past
 Procedure on mobile and web, since an invoiced List leaves the main view; its handoff names the
@@ -99,8 +99,8 @@ the parity fixture), 18a (funding tags: ACC is a tag on a holder's Contract, not
 starting values, `timeUnitsFromMinutes(minutes, rule)` and `masters.rvgTimeRule`), 19b (modifiers as
 itemised records: none on an event), 20 (one Contract per Procedure, the holder-fit rule and the picker's
 candidate list), 20a (the three-part stack: an event is not in it), 21 (`billablePartyForProcedure` in
-`whoIsBilled.ts`, the payer on the Booking, holder references (`claimReference` on St George's ACC) and
-completion), 22 (`materialiseInvoices`, `deliveryPlanFor`, `lineage`, `procedureIds`, Contract-driven layout
+`whoIsBilled.ts`, holder references (`claimReference` on St George's ACC) and
+completion (the payer is on the Procedure since 22a, not the Booking), 22 (`materialiseInvoices`, `deliveryPlanFor`, `lineage`, `procedureIds`, Contract-driven layout
 and GST, the Split button), 23 (exactly one primary Procedure, `isPrimary`), 25 (the `BookingLock` pricing
 snapshot, whose `billingLines` copy goes with the entity, the locked billable party and payee,
 `regenerateInvoiceFromLock`), 26 (the anaesthetist's unit value in the profile), 28 (Slots and Lists), 32 and 32a (a moved Booking sits on the doer's
@@ -130,7 +130,7 @@ October billing lines merged into events. This phase adds the **pre-op, post-op 
   through Phase 38a's main view, date lookup or search, on mobile and web, the anaesthetist adds an event with its
   own date and start time, recording **either a time** (minutes) **or a fixed fee**. An event takes no
   modifiers and no base units. It has an **invoice tick** (cleared means recorded but never
-  invoiced) and a **billable party** set by a **"same as" tick** (the Procedure's billable party, our
+  invoiced) and a **billable party** set by a **"same as" tick** (the Procedure's billable party, its own payer where its Contract bills the payer (22a), our
   reading of Greg's courier comparison, labelled) or, with the tick cleared, entered in the sheet.
   An **admin can add one too** from the Admin Booking detail, for example when someone rings the
   office. The event is never a Procedure; it lists in the Procedure's events (38b) beside additional
@@ -175,7 +175,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (catalogue commit fbdd555):
+1. Run the drift check against the plan's catalogue snapshot (catalogue commit c9b65ad):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.5,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-121,OQ-48,OQ-50,OQ-75,OQ-29,OQ-60,US-03.7.4,OQ-138
@@ -193,6 +193,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
 2. **Owner decisions and questions** (each answer built as stated; each open one kept in one place):
    - **D13 (OQ-63, answered; extended 16 October; its before-approval branch superseded by OQ-121).** Build the answer: its own element on the Procedure (38b's record), a line item, "event" as the one name (38b's label), the invoice tick, the "same as" party tick, one standard review step and no separate approval queue, billed in the next run (next bullet). The "same as" default is the Procedure's party, the one reading the catalogue calls ours (US-03.7.1 note): it lives in 38b's pure event module (`EVENT_RULES.sameAsDefault` with `resolveEventParty`), commented there, with the "same as" caption in the copy (work item 8). This phase adds its kinds to `EVENT_KINDS` (work item 2). The 16 October extension (other billing lines merge into events, a billing event is a free-form charge or credit, events at any time) is one more kind, `'billing'`, on the same element and the same path: no second route for "lines". A refund shown as an event (US-03.7.3: web only, a record made outside the system) is not built here.
    - **OQ-121 (how and when an event is billed), answered 4 November, D69** (Donald for the build, not yet seen by Vanessa). Build it as answered, with no provisional label: every event marked for invoicing, the ACC pre-op included, goes through 38b's review step and is billed in the next run, never held for the Procedure's invoice, bundled with the same billable party's invoice where it can be, otherwise its own, traceable to the Procedure. 38b builds the one rule (`eventInvoicing`, `runEventInvoicing`). This phase adds `'preOp'`, `'postOp'` and `'billing'` with `mayBundle: true` and wires nothing into the List run: the old "travels with the Procedure" branch and any List-review of events are gone. Confirm from 38b's handoff how its run decides what "in that run" covers (the List's authorise run, or a combined run) and use it as shipped.
+   - **D85 (OQ-140, a payer on each Procedure; 22a builds it).** An event's "same as" party is its Procedure's billable party: the Procedure's own payer where its Contract bills the payer, else the holder Party. Read it only through `billablePartyForProcedure` (and 38b's `resolveEventParty`), never from the Booking; on a Procedure split by 22 or one that 22a's offer changed, each event follows its own Procedure's payer. A payer entered in the sheet goes through 22a's party picker (including "another person"); a copied payer is the same payer by identity. Nothing here edits a Procedure's payer.
    - **OQ-12 (the ACC pre-op), part 2 answered 28 October; the codes still open.** The ACC pre-op is a
      pre-op event under the generic rules (the RVG guide gives codes and no prices): build no fixed-fee
      Contract. Build **preconfigured events** for CS250, CS260 and CS70 as `ACC_PREOP_PRESETS` (code and
@@ -253,8 +254,8 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
      the parity fixture `store/__parity__/phase-18-baseline.json`;
    - from **19**: `ProcedureType` and the ACL reconstruction procedure's id; from **20**: the holder-fit
      rule and the picker's candidate list (event fees never change it);
-     from **21**: `billablePartyForProcedure`, the payer on the Booking, holder references and the
-     party picker; from **22**: `materialiseInvoices`, `deliveryPlanFor`, the `lineage` roles,
+     from **21** and **22a**: `billablePartyForProcedure` (now the Procedure's own payer where its Contract bills the payer), `Procedure.payer` and the copy rule, holder references and the
+     party picker (with its "another person" option); from **22**: `materialiseInvoices`, `deliveryPlanFor`, the `lineage` roles,
      `procedureIds`, `gstTreatment`, the Split button's records and how a split Procedure's invoices
      are told apart; from **25**: `BookingLock` (and its `billingLines` member), the locked billable party and payee,
      `regenerateInvoiceFromLock`; from **36**: `newBookingPair`, `handoffPair`; from **16**:
@@ -377,7 +378,7 @@ names from the drift check):
      'hduReview' | 'painConsult' | 'accPreOpAssessment' | 'otherPreOp' | 'otherPostOp'`.
    - Reuse 38b's record as it stands: `occurredOnISO` is the event's date, `startTime` its start time,
      `billable` the invoice tick, `party: EventParty` (`{ sameAs: true }` or a named party; a person
-     entered by name and email goes through 21's payer and party path), `review` (38b's states,
+     entered by name and email goes through 22a's payer and party path), `review` (38b's states,
      `approveProcedureEvent` and `declineProcedureEvent`), `invoiceId` (the event's own invoice) and
      `addedBy`. Add only what 38b lacks, as the new members of 38b's `detail` union: `{ kind: 'preOp' |
      'postOp'; type: PrePostOpEventType; recording: EventRecording }` and `{ kind: 'billing'; direction:
@@ -416,7 +417,7 @@ names from the drift check):
    `src/domain/billing/procedureEvent.ts`, extended there; the type table, validation and pricing go in
    `src/domain/billing/prePostOpEvent.ts`, re-exported from the billing index, Vitest-covered
    (convention 9). Nowhere else is a pre-op or post-op event validated, priced or routed.
-   - **38b's module, extended** (one rule, no second constant): `EVENT_KINDS` gains `preOp`, `postOp` and `billing` (`addedBy: ['anaesthetist', 'office']`, `anaesthetistOwnOnly: true`, `tick: 'shown'`, `reviewed: true`, `mayBundle: true`, `needsInvoicedProcedure: false`); `validateEventBase`'s date rule becomes per kind (a pre-op event may be dated before the List date: item below). `eventInvoicing` and `runEventInvoicing` are not changed (OQ-121 answered, D69: 38b built next run, bundled where it can be). The "same as" default stays commented beside `EVENT_RULES` as our reading: `sameAsDefault` resolves through `resolveEventParty` to the Procedure's billable party (21's `billablePartyForProcedure`; #24). "Own" is 38b's `procedureOwner` (the locked payee once invoiced, else the List's anaesthetist).
+   - **38b's module, extended** (one rule, no second constant): `EVENT_KINDS` gains `preOp`, `postOp` and `billing` (`addedBy: ['anaesthetist', 'office']`, `anaesthetistOwnOnly: true`, `tick: 'shown'`, `reviewed: true`, `mayBundle: true`, `needsInvoicedProcedure: false`); `validateEventBase`'s date rule becomes per kind (a pre-op event may be dated before the List date: item below). `eventInvoicing` and `runEventInvoicing` are not changed (OQ-121 answered, D69: 38b built next run, bundled where it can be). The "same as" default stays commented beside `EVENT_RULES` as our reading: `sameAsDefault` resolves through `resolveEventParty` to the Procedure's billable party (`billablePartyForProcedure`, the Procedure's own payer where its Contract bills the payer, 22a; #24). "Own" is 38b's `procedureOwner` (the locked payee once invoiced, else the List's anaesthetist).
    - `EVENT_TYPES`: per type, its kind (pre-op or post-op), whether it takes a time, a fixed fee or
      both. `ACC_PREOP_PRESETS` (US-05.5.2): CS250, CS260 and CS70, each a code and a label, no
      price, the one home of the codes (OQ-12 part 1, provisional). Labels live in the copy (work item 8).
@@ -657,8 +658,8 @@ names from the drift check):
     - `stage-post-op`, re-pointed to Dr Souter as well. A store helper `stagePostOpForSouter(api)`
       builds, with the ordinary store actions and actors (never a direct state write), a past Procedure
       awaiting review: on Dr Souter's Thu 16 Jul AM session (drift check step 5) a List at St George's
-      with Mr Hale, one Booking for Coral Bennett (the payer on the Booking prefilled as the patient,
-      21), one primary Procedure on the ACL reconstruction procedure (19's list) under St George's ACC
+      with Mr Hale, one Booking for Coral Bennett (each Procedure's payer prefilled from the patient,
+      22a), one primary Procedure on the ACL reconstruction procedure (19's list) under St George's ACC
       (`CT-STG-ACC`), times 08:05 to 09:40, no optional modifier claimed (so none needs an explanation;
       any locked age modifier 19b applies stays), St George's ACC's holder reference filled (21 made it
       need `claimReference`; use a demo claim number such as "ACC-DEMO-0716", or completion refuses),
@@ -723,7 +724,7 @@ next run for every event. What the registry gains or changes:
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Stage post-op scenario (re-pointed, `stage-post-op`) | 38b's Admin routes, plus Mobile · Lists and Booking and Web · Lists and Booking | bar and pwa (pwa on the mobile patterns) | Builds Dr Souter's submitted ACL reconstruction for Coral Bennett on Thu 16 Jul AM under St George's ACC (`CT-STG-ACC`, with its new event fee), through ordinary actions (with the patient as payer and St George's ACC's claim reference), left awaiting review; keeps 38b's Dr Sharma step; each half skips itself once staged. Disabled, once both are staged, "Already staged: search Bennett and open Thursday's Booking" |
+| Stage post-op scenario (re-pointed, `stage-post-op`) | 38b's Admin routes, plus Mobile · Lists and Booking and Web · Lists and Booking | bar and pwa (pwa on the mobile patterns) | Builds Dr Souter's submitted ACL reconstruction for Coral Bennett on Thu 16 Jul AM under St George's ACC (`CT-STG-ACC`, with its new event fee), through ordinary actions (with the patient as the Procedure's payer and St George's ACC's claim reference), left awaiting review; keeps 38b's Dr Sharma step; each half skips itself once staged. Disabled, once both are staged, "Already staged: search Bennett and open Thursday's Booking" |
 | Office reviews this event (38b's `office-reviews-additional-invoice`, widened and relabelled) | Mobile · Booking (`/mobile/lists/:listId/bookings/:bookingId`) | pwa, office stand-in badge | Approves the oldest event awaiting 38b's review step on the URL's Booking (any kind, any List state; else takes the oldest approved one awaiting the run) as `OFFICE_SIMULATION_ACTOR` and runs `runEventInvoicing` for it; the event's invoice appears. Disabled "No event awaiting review or the next run on this Booking" or "Needs a price from the office: review it in Admin" |
 
 PWA parity: an event has a mobile side that waits on the office: "Office reviews this event" reviews it and makes the run; 14's "Office authorises this List" is unchanged. In the framed build the presenter plays the office in Admin Review (the Events tab) and runs the next billing run. 15a's "Raise sample warnings" is unchanged: this phase adds no warning rule. Phase 44's audit records the stand-ins.

@@ -102,7 +102,7 @@ Contract becomes RVG at the Contract's rate ($26.50). Other billing lines stay u
 
 ## Before you start: drift check
 
-1. **Diff the catalogue** against the plan's baseline, catalogue commit `fbdd555` (rename-aware):
+1. **Diff the catalogue** against the plan's baseline, catalogue commit `c9b65ad` (rename-aware):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.2.2,FT-05.2,US-05.2.8,US-05.2.5,US-05.2.6,US-05.4.3,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-03.3.10,US-05.2.1,US-05.2.7,US-04.3.9,US-04.2.15,OQ-96,OQ-117,OQ-133,OQ-136
@@ -113,7 +113,7 @@ Contract becomes RVG at the Contract's rate ($26.50). Other billing lines stay u
    only, no units or holder references); US-05.2.6 and US-05.4.3 retitled (undated, never edited on a
    Procedure); US-05.2.5 (range in force, open price, "Needs a price"); FT-05.2, FT-05.4, FT-03.5,
    US-03.5.1, US-03.5.2, US-05.4.1 and US-05.4.2 rewritten (typed price only; prepaid read-only once
-   raised). Diff anything after `efe123c` the same way; drop anything now Retired or Future and say so
+   raised). Diff anything after `c9b65ad` the same way; drop anything now Retired or Future and say so
    in the PROGRESS entry.
 2. **Questions.** OQ-96, OQ-107 and OQ-117 are answered (D30 as narrowed, D50, D65): build them with no
    provisional label. OQ-133 (D79) and OQ-136 (D82) are open: build their defaults (no list of re-priced
@@ -575,7 +575,7 @@ Do not re-raise what the Decisions log settles. **Steer them at:**
     references (D82's default, OQ-136 open);
   - each seeded Contract's override setting, the demo discount Contract and the trigger's range figure;
   - Fitzgerald's new Aria figure.
-- **Status row and phase entry:** the drift check against `fbdd555`; `PERSIST_VERSION` from and to;
+- **Status row and phase entry:** the drift check against `c9b65ad`; `PERSIST_VERSION` from and to;
   the real names (`priceFor`, `anaesthetistMayTypePrice`, `officeMayChangePrice`, `setProcedurePrice`,
   `PriceCard`, `PricingSheet`, `BookingTotalStrip`); the Aria figures before and after; the parity
   result; tests added; the review pass; `REPORT.md` counts before and after.

@@ -99,7 +99,7 @@ and included rules), Phase 29 (the availability status master, nav "Availability
 `conflictFactsFor`, `describeConflict`, `HolidaySheet`, `addHospitalHoliday`,
 `editHospitalHoliday`, `deleteHospitalHoliday`, the hospital month calendar, and recurring bookings
 with their projection). Also relies on 14 (the demo-trigger registry, `useDemoTriggerContext`,
-`store/demoActors.ts`), 20 (the step rail, which hides Disabled Contracts), 21 (the payer on the Booking and the Booking's insurer or funder Party), 22 (the layout and delivery read from the Party), 23, 26 and 28 (`addAnaesthetist` with
+`store/demoActors.ts`), 20 (the step rail, which hides Disabled Contracts), 21 (the Booking's insurer or funder Party), 22a (the payer on each Procedure), 22 (the layout and delivery read from the Party), 23, 26 and 28 (`addAnaesthetist` with
 its start date, HPI CPN and profile fields, and 28's one generation path), 31 (the Draft List holiday
 warning, the recurring clash that becomes a Draft List, and **AA rooms as a location row in the
 hospitals master**, `Hospital.locationType: 'hospital' | 'aaRooms'` with `HOSP.aaRooms`, never a
@@ -206,7 +206,7 @@ here is mobile, so there is no PWA stand-in.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `fbdd555` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `c9b65ad` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
@@ -222,7 +222,7 @@ here is mobile, so there is no PWA stand-in.
    retitled and US-05.1.6 Retired (2026-10-20); US-13.4.3 rewritten as a one-off developer seed, then by hand
    (2026-10-07). Never read the real `Christchurch_Specialists.xlsx`: the fictional copy
    in `docs/discovery-reference/Other docs/` (behind `seed/specialistDirectory.ts`) is the only
-   fixture source. Diff only for anything after `efe123c`. If a covered item is now Retired or Future, drop it from this phase and
+   fixture source. Diff only for anything after `c9b65ad`. If a covered item is now Retired or Future, drop it from this phase and
    say so in the PROGRESS entry. Watch in particular for:
    - **OQ-100 (D34), answered.** If a later answer brings the Contract upload into the first release, it is
      still not this phase's: record it for the owner and Phase 44 (it needs its own phase: format, delta or
@@ -1454,7 +1454,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   route and persona (Kirsty: Master data, Parties, Contracts with their price ranges, Public holidays,
   Seed load, Go-live load).
 - **Status row** for catch-up Phase 42, and a phase entry with:
-  - the drift-check result (items changed since `fbdd555` or not; OQ-100, OQ-114, OQ-101 and
+  - the drift-check result (items changed since `c9b65ad` or not; OQ-100, OQ-114, OQ-101 and
     OQ-129 as found; the calendar-schedule question; whether Vanessa's files landed; and the 17 to
     34 names used);
   - what was built, per work item;

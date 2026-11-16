@@ -30,7 +30,7 @@ Also touches, without closing:
 [OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) (D74, new 2026-11-04: practice manager and PA contacts by room or by surgeon, US-13.6.5 Open; its part 5, a surgeon at more than one room, is new with OQ-128). Default, read only through 17a's one helper: a room's contact email is optional, so the update email's To for a Booking change is the **main room's** contact email and **may be empty** (the composer says so and the link opens with an empty To). For a surgeon at more than one room the helper also returns the other rooms, which the composer **offers** for the office to switch to; the room's practice manager and PA contacts are shown as context and **never used as the To**; no surgeon email field. One-line label "working default, not agreed with AA" in the composer's To note and on the owner's review list.
 [OQ-124](../../../../requirements-board/requirements/questions/OQ-124.md) (D71, new 2026-10-28: Ben would stop emailing Lists and make the app the anaesthetist's source of truth; Vanessa did not respond). Default: build as written. Emailed Lists and the on-demand update email stay (US-02.3.3, manual), the change history is as above, and nothing is removed or replaced until AA answers. Log it on the "For the owner's review" list. No caption or screen says the app replaces emailed Lists.
 US-02.3.3 stays **Verify** (ROADMAP.md "Confirm before building": Ben to confirm the office's cover-change email from a List move); build it as written.
-**Depends on:** Phase 17a (the one helper that resolves a surgeon's room email: the main room's, optional, with the surgeon's other rooms offered and the rooms' practice manager and PA contacts, D74 and D75; the update email's To reads it and may get nothing back), Phase 17 (hospital and surgeons' room contact emails, a surgeon's rooms (a list since 17a, never read directly here), and the office-private pairing preferences and tiers that must never reach an email), Phase 25 (the per-Procedure pricing snapshot written at authorise, which makes AUTHORISED Bookings read-only and which the as-at view reads; 18's Contract audit gives a Contract's settings before then), Phase 32 (the anaesthetist's own List moves and the shared notification pool, FT-13.8 and DM-41, whose List-move notifications carry the cover-change email; no prepayment re-check on a move, D20), Phase 33 (hospital rows land on the matching screen for an office decision, no automated decisions, each row's wording kept as received, so every inbound write goes through the guarded paths). Through them: 14 (trigger registry, context hook, shared actors), 15 (Booking vocabulary, `BookingDetailBody`, Booking source), 15a (the warning routine; warnings are derived, and clearing one is a command), 15b (Copy a Booking is gone, so it is not in the write inventory, and an assigned List is ACTIVE), 18 (the flat Contract model: contract holders, one Contract per set of settings, each change audited, no versions or lines, one stored No contract (RVG); D1 to D11, AR-58 and AR-61), 19 (RVG groups as the one master list and the optional RVG code type-ahead, `pickRvgGroup`; no procedure list), 19a (the Contract's own invoice description as the top default; no lines), 19b (itemised modifiers, each with an explanation; age and the included P1 pre-applied and removable, never locked), 20 (one Contract per Procedure, `contractCandidatesFor`, the Contract step rail, the Contract step rail the office's add uses, the "Needs a Contract" list, completion needing a Contract and not a procedure, D33; the anaesthetist's Contract change until AUTHORISED, D63), 20a (`Procedure.sourceTexts`, append-only, `addSourceText`, the shared form's **Procedure description** field with its Told by choice, the "Add a description" sheet, the invoice description with `setInvoiceDescription` (office only, until AUTHORISED, D63; an admin's edit always wins, D73) and `ProcedureStack`), 21 (the payer on the Booking through `setBookingPayer`, the insurance indication), 22 (the Split on a Procedure's Contract, `setProcedureSplit`), 23 (the primary Procedure), 24 (the one price precedence, the anaesthetist's typed price and discount, the office override, and the engine's rejections), 27 (prepayment derived from the prepaid set, the invoice generated at setup with its ledger pair and draft Xero pair, approve and send, and the re-check on a change of Procedures, Contract or payer, never on a move), 28 (`reassignList` over `moveListToSlot`, with 17's not-preferred warning and tier ordering), 29 and 30, and 31 (Draft Lists in state DRAFT, which hold Bookings, and the office's Draft List assignment), 32b (notices that resolve, D58) and 38a (the anaesthetist's edits until AUTHORISED, D63, which land in the same history). **Not guaranteed before 35** (not in its dependency chain): 32a (the single-Booking move; normally done first by Schedule track order), 34 (the S1 rebuild; normally done first by Intake track order), 36 and later, and 38b and 39. Every work item that mentions them applies only if that phase is DONE; the drift check records which.
+**Depends on:** Phase 17a (the one helper that resolves a surgeon's room email: the main room's, optional, with the surgeon's other rooms offered and the rooms' practice manager and PA contacts, D74 and D75; the update email's To reads it and may get nothing back), Phase 22a (a payer on each Procedure: `Procedure.payer`, `setProcedurePayer` with its offer to the Booking's other Procedures, the copy rule and creation path that give an added Procedure its payer, D85; the as-at view and the draft read and write the payer per Procedure), Phase 17 (hospital and surgeons' room contact emails, a surgeon's rooms (a list since 17a, never read directly here), and the office-private pairing preferences and tiers that must never reach an email), Phase 25 (the per-Procedure pricing snapshot written at authorise, which makes AUTHORISED Bookings read-only and which the as-at view reads; 18's Contract audit gives a Contract's settings before then), Phase 32 (the anaesthetist's own List moves and the shared notification pool, FT-13.8 and DM-41, whose List-move notifications carry the cover-change email; no prepayment re-check on a move, D20), Phase 33 (hospital rows land on the matching screen for an office decision, no automated decisions, each row's wording kept as received, so every inbound write goes through the guarded paths). Through them: 14 (trigger registry, context hook, shared actors), 15 (Booking vocabulary, `BookingDetailBody`, Booking source), 15a (the warning routine; warnings are derived, and clearing one is a command), 15b (Copy a Booking is gone, so it is not in the write inventory, and an assigned List is ACTIVE), 18 (the flat Contract model: contract holders, one Contract per set of settings, each change audited, no versions or lines, one stored No contract (RVG); D1 to D11, AR-58 and AR-61), 19 (RVG groups as the one master list and the optional RVG code type-ahead, `pickRvgGroup`; no procedure list), 19a (the Contract's own invoice description as the top default; no lines), 19b (itemised modifiers, each with an explanation; age and the included P1 pre-applied and removable, never locked), 20 (one Contract per Procedure, `contractCandidatesFor`, the Contract step rail, the Contract step rail the office's add uses, the "Needs a Contract" list, completion needing a Contract and not a procedure, D33; the anaesthetist's Contract change until AUTHORISED, D63), 20a (`Procedure.sourceTexts`, append-only, `addSourceText`, the shared form's **Procedure description** field with its Told by choice, the "Add a description" sheet, the invoice description with `setInvoiceDescription` (office only, until AUTHORISED, D63; an admin's edit always wins, D73) and `ProcedureStack`), 21 (the insurance indication, and the payer before 22a moved it off the Booking), 22 (the Split on a Procedure's Contract, `setProcedureSplit`), 22a (the payer on each Procedure, replacing 21's `Booking.payer` and `setBookingPayer`), 23 (the primary Procedure), 24 (the one price precedence, the anaesthetist's typed price and discount, the office override, and the engine's rejections), 27 (prepayment derived from the prepaid set, the invoice generated at setup with its ledger pair and draft Xero pair, approve and send, and the re-check on a change of Procedures, Contract or payer, never on a move), 28 (`reassignList` over `moveListToSlot`, with 17's not-preferred warning and tier ordering), 29 and 30, and 31 (Draft Lists in state DRAFT, which hold Bookings, and the office's Draft List assignment), 32b (notices that resolve, D58) and 38a (the anaesthetist's edits until AUTHORISED, D63, which land in the same history). **Not guaranteed before 35** (not in its dependency chain): 32a (the single-Booking move; normally done first by Schedule track order), 34 (the S1 rebuild; normally done first by Intake track order), 36 and later, and 38b and 39. Every work item that mentions them applies only if that phase is DONE; the drift check records which.
 **Estimated:** 2 sessions. Session 1 is the save boundary (work items 1 to 10: model, pure change-set maths, the as-at reconstruction, the save action, the draft store and its refactor, the Admin save bar with fuller editing, the unsaved-changes guard, grouped history with the as-at view, the change history screen with named office users). Stop green there. Session 2 is the update email (templates, the pure builder, the change picker and compose panel, the notification pool and List drawer entry points) and adding a Booking to a booked List (items 11 to 19). **Spill point:** if session 1 runs long, the as-at view (work item 4 and the "View as at" part of item 10) moves to the start of session 2; nothing else depends on it. If session 2 then runs long, ship the template list edit-only (the four seeded templates, no Add or Retire) and drop the picker's "In an earlier draft" chip, and log both in the handoff for 44, rather than squeezing the demo-guide patch or the adversarial pass, which both stay in session 2.
 
 ## Goal
@@ -87,7 +87,7 @@ admin's own changes onto the real Booking as it is at Save time.
 
 ## Before you start: drift check
 
-1. Diff the catalogue for this phase's items against the plan's snapshot (`efe123c`). The tool is rename-aware (the catalogue moved to
+1. Diff the catalogue for this phase's items against the plan's snapshot (`c9b65ad`). The tool is rename-aware (the catalogue moved to
    `requirements-board/requirements/` after earlier baselines), so never use a plain git diff of the
    folder:
 
@@ -95,7 +95,7 @@ admin's own changes onto the real Booking as it is at Save time.
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.3,US-02.3.1,US-02.3.2,US-02.3.3,US-02.3.4,US-02.3.5,US-02.5.5,US-02.5.6,US-02.5.7,US-02.5.8,US-01.4.1,US-01.4.3,US-13.8.1,US-13.8.2,US-13.5.2,US-01.4.7,US-07.3.2,OQ-43,OQ-46,OQ-49,OQ-65,OQ-69,OQ-79,OQ-82,OQ-85,OQ-99,OQ-124,OQ-127,OQ-128,OQ-130,OQ-07
    ```
 
-   What the move to `efe123c` changed: US-02.5.8 is new (the history screen, named office users, the replaced procedure text); OQ-130 is answered (D73: an admin's edit always wins); the Contract model is flat (D1 to D11: no versions, lines or staged changes, AR-58 and AR-61). What the move to `a68f09b` changed: US-02.3.3's note records that a surgeon can belong to more than one room (OQ-128 answered) and that the room whose email applies is OQ-127 part 5; D75 is answered, so the To goes through 17a's helper and no code reads a single `Surgeon.roomId`. What the move to `d4db277` changed, and this plan already reflects: US-02.3.1 now says every field
+   What the move to `c9b65ad` changed: none of this phase's items changed in substance; D85 (OQ-140, 17 November) puts the payer on each Procedure (22a), so the drafted payer write is `setProcedurePayer` with its offer to the Booking's other Procedures, the as-at view shows each Procedure's payer, and an added Booking's Procedures take their payer from 22a's creation path. What the earlier move to `efe123c` changed: US-02.5.8 is new (the history screen, named office users, the replaced procedure text); OQ-130 is answered (D73: an admin's edit always wins); the Contract model is flat (D1 to D11: no versions, lines or staged changes, AR-58 and AR-61). What the move to `a68f09b` changed: US-02.3.3's note records that a surgeon can belong to more than one room (OQ-128 answered) and that the room whose email applies is OQ-127 part 5; D75 is answered, so the To goes through 17a's helper and no code reads a single `Surgeon.roomId`. What the move to `d4db277` changed, and this plan already reflects: US-02.3.1 now says every field
    is editable until the List is authorised (US-07.3.2); its "as given" text is 20a's hand-entered
    Procedure description, kept as source text (US-02.5.7); the NHI is mandatory with no blank and no
    pending state (OQ-49, D11); OQ-85, OQ-79 and OQ-99 are answered (D61, D58, D33); the procedure
@@ -142,13 +142,13 @@ admin's own changes onto the real Booking as it is at Save time.
      `editModifierExplanation` (19b; age and the included P1 are pre-applied and removable, none locked), `setProcedureContract` (20,
      choosing among `contractCandidatesFor`'s candidates), `addSourceText` (20a, append-only; the
      text as received is excluded from `ProcedurePatch` and `editProcedure` refuses it),
-     `setInvoiceDescription` (20a: office only, until AUTHORISED, D63; the one helper for the invoice description, which keeps an admin's edit against any later default, D37 and D73 answered), `setBookingPayer` and
+     `setInvoiceDescription` (20a: office only, until AUTHORISED, D63; the one helper for the invoice description, which keeps an admin's edit against any later default, D37 and D73 answered), `setProcedurePayer` (22a: the payer on each Procedure, with its offer to the Booking's other Procedures; never `setBookingPayer`, which 22a removed) and
      `setInsuranceIndication` (21), `setProcedureSplit` (22, on a Procedure's Contract),
      `setPrimaryProcedure` (23), and `setAnaesthetistAdjustment` (the typed price or discount, on
      adjustable Contracts only) and `setOfficeOverride` (24). 21's `approveContractSelection` and
      `confirmScheduleMiss` are review decisions (confirm they still exist). Confirm the real names.
      There is no billing route, payment category or Procedure insurer (20), no `funderOverride` (22),
-     no guardian override (21: the payer on the Booking replaced it) and no protected default
+     no guardian override (21 replaced it with a payer, and 22a holds that payer on each Procedure, never on the Booking) and no protected default
      Contract (18: one stored No contract (RVG)).
    - **18 and 25:** the Contract's audit (18: every change to a Contract's settings is an audited write, no versions) and
      25's per-Procedure pricing snapshot written at authorise; AUTHORISED Bookings are read-only.
@@ -218,7 +218,8 @@ admin's own changes onto the real Booking as it is at Save time.
    | `editPatient` (`EditPatientSheet`, which gains NHI) | immediate sheet save | drafted; the sheet button reads "Apply" |
    | `editProcedure` (Times, Units, base units, notes, the other Procedure fields 19 to 24 left on it), `pickRvgGroup` (19), `setInvoiceDescription` (20a), the modifier records and `editModifierExplanation` (19b), `setProcedureContract` (20), `setPrimaryProcedure` (23), `setAnaesthetistAdjustment` and `setOfficeOverride` (24) | immediate | drafted |
    | `addSourceText` (20a, "Add a description") | immediate | drafted as an **append**: the save applies only the texts added in the draft, through `addSourceText`'s own rules, never as a replacement of the list |
-   | `setBookingPayer` and `setInsuranceIndication` (21) | immediate | drafted while they write only the Booking; creating a new billable party in the master (21's `createBillableParty`) is a command |
+   | `setProcedurePayer` (22a) | immediate | drafted per Procedure: the payer and, when the office accepts the offer, the same payer on the Booking's other Procedures are all in the one draft and land in the one change set; creating a new billable party in the master (21's `createBillableParty`) is a command |
+   | `setInsuranceIndication` (21) | immediate | drafted while it writes only the Booking |
    | `setProcedureSplit` (22) | immediate | drafted |
    | `addProcedure`, `removeProcedure` | immediate | drafted |
    | `addBillingLine`, `removeBillingLine` | immediate | drafted |
@@ -303,7 +304,7 @@ rows), `2026-10-07-list-lifecycle-states.md` and `2026-10-08-procedure-picker-an
 - [epics/EP-02.md](../epics/EP-02.md): FT-02.3, US-02.3.1, US-02.3.2, US-02.3.3, US-02.3.4;
   [epics/EP-01.md](../epics/EP-01.md): US-01.4.1, US-01.4.3; [epics/EP-13.md](../epics/EP-13.md):
   US-13.8.2.
-- `gaps.json` (current at `efe123c`): the entries for FT-02.3, US-02.3.1 to US-02.3.4 and the
+- `gaps.json` (current at `c9b65ad`): the entries for FT-02.3, US-02.3.1 to US-02.3.4 and the
   `DM-35` delta (US-02.3.5 sits in `excluded` as Future).
 - [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-35 (and DM-32 for the
   contact emails, DM-05 for the anaesthetist's own move, DM-41 for the pool, DM-31 for derived
@@ -344,7 +345,7 @@ have moved them):
   (as 19 and 20a left it: the RVG code type-ahead and the Contract, no free-text description), `EditBillingSetupSheet.tsx`,
   `PriceOverrideSheet.tsx`, `RemoveProcedureSheet.tsx`, `CancelBookingSheet.tsx`, and the sheets 19
   to 24 added (the RVG code type-ahead (`CodePickerSheet`) and the Contract picker, 19b's modifier sheet with its
-  explanation, 20a's `AddDescriptionSheet.tsx`, `EditInvoiceDescriptionSheet` and `ProcedureStack`, 21's payer sheet, 22's
+  explanation, 20a's `AddDescriptionSheet.tsx`, `EditInvoiceDescriptionSheet` and `ProcedureStack`, 22a's one Paid by sheet, 22's
   `SplitFeeSheet.tsx`, 24's adjustment sheet) and 27's `PrepaymentPanel` (`FunderAllocationSheet.tsx`
   is deleted by 22); `shared/flows/ManualBookingForm.tsx` (20a's Procedure description field, reused by
   the office's add flow); `shared/capture/*` (`BtmCaptureBlock.tsx` L119 for the
@@ -398,8 +399,7 @@ have moved them):
 3. **Pure change-set maths** (`src/domain/changeSets.ts`, no React, no store imports):
    - `BookingSnapshot { booking; procedures; billingLines; patient? }` and
      `snapshotBooking(source, bookingId)`, where `source` is a narrow structural type (the schedule and
-     the patient master), so the helper stays pure. The related-id set is the Booking (with the payer
-     and insurance indication 21 holds on it), its Procedures (each with its source texts, itemised
+     the patient master), so the helper stays pure. The related-id set is the Booking (with the insurance indication 21 holds on it), its Procedures (each with its payer (22a), source texts, itemised
      modifiers, split and invoice description), their billing lines and the Booking's patient. Nothing
      from `officePrivate` (17).
    - `FieldChange { entityType; entityId; field; before; after; kind: 'update' | 'create' | 'remove' |
@@ -622,7 +622,7 @@ have moved them):
       Kirsty W.'s save", then patient name, List (date, session, hospital, surgeon), time, each
       Procedure as its stack at that point (the descriptions as received by then, the invoice description, the RVG
       code, base units, the Contract's name and holder and its settings as at that time, from its audit
-      (18) or 25's snapshot), the payer on the Booking, and notes. No money, and nothing from `officePrivate`. If `incompleteAt` is set: "History before this point is incomplete
+      (18) or 25's snapshot), each Procedure's payer (22a; "Payer: not billed yet" before a Contract), and notes. No money, and nothing from `officePrivate`. If `incompleteAt` is set: "History before this point is incomplete
       (Procedure removed)", in mist.
     - **The Booking's change history screen (US-02.5.8).** The History button already on every Booking
       (all three apps; the existing sheet stays for the anaesthetist, whether they see it is not settled:
@@ -834,7 +834,7 @@ have moved them):
       Contract, then the price; the rail is 20's working direction and carries 20's one-line label,
       nothing added here); the office may leave the Contract unset, and the Booking then waits on 20's
       "Needs a Contract" list. There is no hospital default and no "No contract (RVG) first" list. Booking source `admin`
-      (15); the payer on the Booking prefills from the patient (21); `createBooking` carries
+      (15); each added Procedure takes its payer from 22a's creation path, filled from the patient for a new Booking (not a 'payer on the Booking' field: there is none); `createBooking` carries
       `changeSet: 'create'` from both drawers, so the creation is a pickable row for the rooms email;
       27's prepayment derivation runs as it does for any created Booking.
     - **Book (phone advice)** stays for a free session without a List, and the `isScriptedS2Booking`
@@ -1091,7 +1091,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
     and the Procedure description): add one line that the office can also **Add Booking** on a List
     that already has Bookings, with the description it was told kept verbatim. Update Expected.
   - **Any beat that edits on the Admin Booking detail** (whatever 19 to 27 scripted there, for
-    example an RVG code correction, a Contract pick, the payer on the Booking (S3 Beat 1), a Split
+    example an RVG code correction, a Contract pick, a Procedure's payer through 22a's Paid by sheet and its offer to the others (S3 Beat 1), a Split
     (S3), the typed price or office override, the invoice description, or the office's prepayment check in S4 Beat 1): add
     "then **Save changes**". There is no estimate edit to script any more (27).
   - Direct URLs: the Email templates view in Master data, if it has its own route.
@@ -1152,7 +1152,7 @@ Shell).
 - Recipes that edit on the Admin Booking detail and expect the sheet to save (as 19 to 27 left them, for
   example `US-04.3.2` `contract-picker`, `US-04.3.3`, `US-04.3.4` `billing-setup`, `US-07.2.2`
   `correct-contract`, `US-05.4.2` and `US-07.2.3` `price-override`, `US-03.3.4`, the `US-11.2.x` payer
-  shots, the Split shots and `US-11.1.1` `edit-patient`): most only open sheets; any that needs the
+  shots (22a re-pointed them to `booking-payer-row`: check only), the Split shots and `US-11.1.1` `edit-patient`): most only open sheets; any that needs the
   **Apply** wording or a **Save changes** step is updated.
 
 **ATLAS.md.** Routes (the data-router migration changes no URL; note the Booking route name as built and
@@ -1223,6 +1223,7 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   re-check once on the real store (one prepayment invoice with its ledger pair and draft Xero pair,
   never two); in the draft store it is a no-op, so a draft never touches `billing` or emits an app
   event. The change-set option added to the moves adds no re-check (D20).
+- **The payer is per Procedure (22a, D85).** A drafted payer change and its accepted offer to the Booking's other Procedures land in one change set with each Procedure's before and after; the as-at view shows each Procedure's payer; no code reads or writes `Booking.payer` or `setBookingPayer`; an added Procedure takes its payer from 22a's creation path.
 - **The unsaved guard** blocks every in-app route change and the browser back, prompts on reload, never
   blocks a clean draft, never fires on the `mailto:` click, and the router migration changed no URL or
   Playwright entry point.
@@ -1257,7 +1258,7 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   left read-only, with why).
 - Status table: Phase 35 row DONE with the date.
 - Phase entry "Phase 35 · Explicit save and the update email (date)":
-  - the drift-check result against `fbdd555`; OQ-69, OQ-82, OQ-65 and OQ-46 built as answered;
+  - the drift-check result against `c9b65ad`; OQ-69, OQ-82, OQ-65 and OQ-46 built as answered;
     US-02.3.5 left as Future;
   - what 31, 32 (and 32a if DONE) delivered that this phase hooks into (the owner-change action codes,
     the Draft List assignment, the pool's notification record and row);

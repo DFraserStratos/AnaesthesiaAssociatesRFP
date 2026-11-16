@@ -22,13 +22,13 @@ The office resolves it on Matching: **Add NHI** creates the Booking through 33's
 
 ## Before you start
 
-1. **Drift check** against the plan baseline `fbdd555`:
+1. **Drift check** against the plan baseline `c9b65ad`:
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.6,US-02.6.1,US-02.6.2,US-02.6.3,US-02.1.4,US-11.1.4,US-11.1.5,US-13.7.3,US-02.1.2,OQ-118,OQ-49
    ```
 
-   Re-read anything changed after `efe123c`. If a covered item is Retired or Future, drop it and record it; if OQ-118 is reopened or a stub is redefined as a Booking, stop and tell the user.
+   Re-read anything changed after `c9b65ad`. If a covered item is Retired or Future, drop it and record it; if OQ-118 is reopened or a stub is redefined as a Booking, stop and tell the user.
 2. **Confirm 33 is DONE** and read its PROGRESS entry: the slice and row names, how `suggestDecision` exposes the List a no-NHI row would land on (if it does not, add a pure `landingListFor(view, row)` beside `findMatch`, the same List-key rule), where `stageImportRows` commits, and the row panel's waiting state. Note `PERSIST_VERSION`.
 3. **Our readings, built and labelled once** (one `STUB_READINGS` block in `domain/intake/stubs.ts`, one mist caption in the stub sheet, "How a stub reads is our reading, to confirm with AA", and the owner's review list): the Booking takes the stub's place (US-02.6.3); what a stub shows (US-02.6.2: patient name, procedure wording and time as received, the reason, the source); how a List holding one reads (US-02.6.1: the triangle and "1 waiting at intake", no prompt or block); no stub when the row has no List to land on or its List is AUTHORISED; a stub follows its List on a reassign or move; removing or re-dating a Draft List takes its stub off and the row keeps waiting; a row the office decides onto another List resolves the stub and the Booking appears there. OQ-118 part 1 (how often) is unknown; nothing hangs on it.
 
@@ -133,5 +133,5 @@ Standard pass (convention 18), steered at:
 ## PROGRESS.md updates
 
 - **For the owner's review:** the readings in Before you start item 3 (labelled, one place each); Add NHI creates the Booking with no Contract, waiting on "Needs an invoice destination"; the seeded stub's List and row.
-- Status row and phase entry: drift check against `fbdd555`, OQ-118 and OQ-49 as built, names 33 shipped, tests added, `PERSIST_VERSION` old to new, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 34 (stubs placed through `stageImportRows`), 40 (`resolveStub` for its waiting view), 40a (Add NHI's field), 43 (stubs through the same module), 44 (the beat and cheat-sheet line).
+- Status row and phase entry: drift check against `c9b65ad`, OQ-118 and OQ-49 as built, names 33 shipped, tests added, `PERSIST_VERSION` old to new, review pass, catalogue screenshot result (REPORT.md counts before and after). Handoffs: 34 (stubs placed through `stageImportRows`), 40 (`resolveStub` for its waiting view), 40a (Add NHI's field), 43 (stubs through the same module), 44 (the beat and cheat-sheet line).
 - Decisions log: D66 built (a stub, not a Booking, on its own record); the readings; superseded: 33's "no stub on the List" default.

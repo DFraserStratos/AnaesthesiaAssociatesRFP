@@ -78,7 +78,7 @@ payout is a credit note plus a negative invoice netted in the next run: Phases 3
 entries here accept a signed amount),
 [OQ-70](../../../../requirements-board/requirements/questions/OQ-70.md) and [OQ-80](../../../../requirements-board/requirements/questions/OQ-80.md) (D38, answered 2026-10-19 and extended 2026-10-28, OQ-80
 superseding OQ-70's payable repoint: the prepayment's pair is created when an admin approves the prepayment
-invoice, or at once when AA has switched the approval step off (Phase 27), a receivable from the payer and
+invoice, or at once when AA has switched the approval step off (Phase 27), a receivable from the invoice's payer and
 a payable to the AA Holding account, a creditor in the payables sub-ledger kept like an anaesthetist's
 account (Phase 27a); a move of the List or Booking changes nothing in the ledger, and no payee is ever
 repointed; at authorisation a transfer pays whoever did the List (27a), held as two payable legs,
@@ -88,7 +88,7 @@ and no held or awaiting-approval pair),
 invoice with no later payment to net against is settled with the anaesthetist outside the system,
 US-10.2.5: nothing is built for it, here or in Phase 39a) and
 [OQ-73](../../../../requirements-board/requirements/questions/OQ-73.md) (D23: a
-prepayment is raised only where the payer on the Booking is a person paying for the patient, the
+prepayment is raised only where the invoice's payer (the Procedure's payer, 22a) is a person paying for the patient, the
 patient or for example a guardian, as Phase 27 built it, so every prepayment receivable's
 counterparty is a person).
 **Still open, built as noted:**
@@ -114,6 +114,7 @@ held for anaesthetists).
   which this phase folds into the ledger; and the one BCTI count, `bctisFor` over `bctiRecords(state)`
   (`BctiRecord` with `receivablePaidAtISO`, and `BCTI_COUNT_RULE = { paidOnly: true }`: a BCTI counts
   in the month its receivable is paid in full), which this phase re-feeds from the payable legs.
+- **Phase 22a** (a payer on each Procedure, D85): the payer is each Procedure's, a Booking raises one invoice, and one prepayment invoice, per payer (grouped by payer identity), and a split can name another person. Every receivable's counterparty is its own invoice's payer, which the ledger reads; no ledger rule changes. Read 22a's PROGRESS entry for the shipped names.
 - **Phase 22:** `Invoice.procedureIds`, `split`, `lineage`, `supplier` and `delivery`, which the legs
   link to, and the invoice numbering and presentation (the former DM-27, now DM-22). The split is a
   Booking action (the Split button on a Procedure's Contract line, D18, RV-37; no Contract setting):
@@ -124,7 +125,7 @@ held for anaesthetists).
 - **Phase 27** (rebuilt for D38, 2026-10-19): the office starts a prepayment by picking a Contract
   flagged prepaid; the invoice is generated when an admin approves it ("Approve and send"), or at once when
   AA has switched the approval step off (`appSettings.prepayment.approvalRequired`, US-06.3.1), which
-  **creates its pair** (a receivable from the payer on the Booking and a payable to the AA Holding account)
+  **creates its pair** (a receivable from the invoice's payer and a payable to the AA Holding account; one prepayment invoice, so one pair, per payer, 22a)
   **and its draft Xero pair** (ACCREC and DRAFT ACCPAY, US-09.1.3) in one `mutate` and sends it
   (`approvePrepaymentInvoice`, with its OQ-80 comment; use the generation function 27 shipped). Before
   generation there is only a pending prepayment: no invoice and no pair. Also: the engine routine and its
@@ -142,7 +143,7 @@ held for anaesthetists).
 - Through them: 14's trigger registry and actors, 15's Booking vocabulary (`casesForBooking`,
   `handoffCasesForBooking` and the other Card names are already renamed), 15a's warning routine (27's
   prepayment warning reads the status re-pointed here), 21's who is billed (the holder Party of the
-  Contract when the holder pays, otherwise the payer on the Booking: the receivable's counterparty;
+  Contract when the holder pays, otherwise the Procedure's payer (22a): the receivable's counterparty;
   flat Contract model, D1 to D11, no Contract lines, versions or staged changes), 23's per-Procedure units on invoice lines, 24's one price precedence with its recorded
   price source, and 26's disbursement destination and `missingBank` flag (display only: 26 holds no
   payment back).
@@ -169,7 +170,7 @@ number, and the same number with `-P`), its own amount, its dated money entries 
 disbursements out) and its Xero mirror id. The pair links to the Booking, the List, the patient's
 hidden id and the Procedures it bills, and names the **payee anaesthetist stamped at authorise**
 (Phase 25's lock; for a prepayment, the AA Holding account). The patient link is set whoever
-is billed (the patient, the payer on the Booking such as a guardian, an insurer, a hospital or another
+is billed (the patient, the invoice's payer such as a guardian, an insurer, a hospital or another
 Contract holder), so the receivable always reaches its patient. A payment moves both legs together,
 and a payable can never be disbursed beyond what its receivable has received. A prepayment's pair (27,
 created when an admin approves the invoice, or at once when AA has switched the approval step off, with
@@ -231,7 +232,7 @@ read the same after the change, and a parity test proves it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the items it leans on against the plan's
-   baseline, catalogue commit `fbdd555` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `c9b65ad` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -250,13 +251,13 @@ read the same after the change, and a parity test proves it.
    it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
    that in the PROGRESS entry.
 
-   Already folded into this plan (the `3d3a18c` to `fbdd555` changes, so not drift):
+   Already folded into this plan (the `3d3a18c` to `c9b65ad` changes, so not drift):
    - the six covered items changed only in artifact links (AR-19, AR-25) and link markup, as did
      US-08.3.1, US-09.1.1, US-09.1.4, US-09.2.1, US-10.1.2, FT-06.3 and FT-10.2;
    - the prepayment rewrite: US-06.2.3 (an estimate) and US-06.4.2 (no automatic credit) Retired;
      US-06.4.1 now "No automatic invoice or credit after a prepaid procedure" (Confirmed); US-08.2.2 (since
      rewritten at `7cd7802`: prepaid Procedures left off, D57); US-06.3.1's amount is the fixed price on
-     the anaesthetist's own first-party Contract, for the payer on the Booking; OQ-61 and OQ-76
+     the anaesthetist's own first-party Contract, for the invoice's payer; OQ-61 and OQ-76
      answered and OQ-03's refund point superseded (nothing automatic, by hand only); OQ-38 answered (no
      contingency units). So no excess, no balance invoice and no re-estimate reach the ledger;
    - US-06.5.4, OQ-70 and OQ-80's 2026-10-07 updates: an honour system with no move detection; OQ-80
@@ -271,7 +272,7 @@ read the same after the change, and a parity test proves it.
      prototype), US-13.2.2's patient-centric balance, DM-23's two ledger scopes, US-10.2.5 with OQ-71
      (outside the system), Greg's view on OQ-60 (16 built it) and US-13.5.2's audit scope (DM-45,
      Phase 39).
-   Folded in at `fbdd555` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
+   Folded in at `c9b65ad` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
    final invoice with nothing deducted, D57; a prepayment's payable is to the AA Holding account, a creditor
    in the payables sub-ledger, and its release at authorisation is a transfer, never a receivable);
    FT-06.5, US-06.5.1 and US-06.4.1 (the account, the transfer, system-only payouts); US-06.3.1 (the approval
@@ -279,10 +280,11 @@ read the same after the change, and a parity test proves it.
    extended 2026-10-28 (D38: the pair is created at generation, a move changes nothing, no payee repoint),
    OQ-116 (D57), OQ-125 (D72, the transfer's trigger, open) and OQ-115 (a cancellation refund is paid from
    the system, Phase 41's).
-   Folded in at `fbdd555` (so not drift): none of the covered items changed; the 5 November contract
+   Folded in at `c9b65ad` (so not drift): none of the covered items changed; the 5 November contract
    model decisions (D1 to D11, the flat model) reach this phase only through who is billed (the holder
    Party or the payer) and the snapshot (AR-58 2.8; AR-28, AR-29 and AR-30 are Retired, the flat ERD is AR-61).
-   Folded in at `fbdd555` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
+   Folded in at `c9b65ad` (so not drift): none of the covered items changed; D85 (17 November) moved the payer from the Booking to each Procedure (22a), so earlier "payer on the Booking" readings are the invoice's payer, and each prepayment invoice and its pair is per payer (27); no ledger rule changes.
+   Folded in at `c9b65ad` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
    anaesthetists are made in Xero's payables run and recorded here when detected (Phase 37 builds the
    detection); the ledger side of a disbursement is unchanged. The refund on a cancelled prepayment is
    raised by the system (Phase 41) and paid in Xero.
@@ -299,7 +301,7 @@ read the same after the change, and a parity test proves it.
      or at once with the approval step off) with the AA Holding account as payee, a transfer pays
      whoever did the List, a move changes nothing; build no payee repoint and no held pair),
      OQ-71 (D21: nothing is built for a negative with no later payment) and OQ-73 (D23: prepayment
-     pairs exist only where the payer on the Booking is a person paying for the patient).
+     pairs exist only where the invoice's payer is a person paying for the patient).
    - **Still open:** OQ-29 (one payable leg per receivable invoice; the payable leg carries no
      tax-invoice wording of its own, 22's wording stays on the Xero ACCPAY), OQ-47 (Proposed: the
      weekly ISO-week cycle, US-10.2.7, is Phase 39a's; here the payables run stays an on-demand
@@ -534,7 +536,7 @@ read the same after the change, and a parity test proves it.
      authorised.
    - **16's fee run:** "Seed a month of BCTIs" then "Run monthly fee invoices" for July 2026: Dr
      Rutherford's fee invoice is $700.00 at seed settings, then "Record fee payment".
-   - **27's re-check on a prepayment:** change the prepaid Booking's Procedures, its Contract or its payer
+   - **27's re-check on a prepayment:** change the prepaid Booking's Procedures, its Contract or a Procedure's payer
      to an organisation, before and after approval: pin the invoice numbers, amounts and states after each
      outcome (an unapproved one withdrawn with no pair; an approved one warns only), and that a List or
      Booking move changes nothing (D38, D20), so item 4 can prove no move touches a pair.
@@ -574,13 +576,13 @@ read the same after the change, and a parity test proves it.
        - `anaesthetistId` is the payee anaesthetist, the same id as `payable.payee.anaesthetistId` (one
          field to read in filters; the seed test asserts they agree). It is **absent on a `prePayment`
          pair**, whose payee is the AA Holding account: that pair is in no anaesthetist's scope until its transfer exists.
-       - `prePayment`: a receivable from the payer on the Booking and a payable to the AA Holding account
+       - `prePayment`: a receivable from the invoice's payer (one per payer, 22a) and a payable to the AA Holding account
          (27, at the admin's approval or at once with the approval step off, with its draft Xero pair). Its payable is released on receipt by
          16's rule, but `payablesDue` and the run skip a holding payee, so it sits in the AA Holding account
          until the transfer.
        - `patientId` is the hidden internal id, so patient history is ledger data, not a join through
          the Booking (FT-08.3, US-08.3.3). It is set on every Booking pair **whoever the receivable's
-         counterparty is** (the patient, the payer on the Booking such as a guardian, an insurer, a
+         counterparty is** (the patient, the invoice's payer such as a guardian, an insurer, a
          hospital or another Contract holder), so the receivable reaches its patient and Phase 40's
          balance can be patient-centric (US-13.2.2, Greg: "a patient-centric view", and the same for an
          insurance claim; DM-23). `procedureIds` come from 22's `Invoice.procedureIds`.
@@ -1590,7 +1592,7 @@ explicitly supersedes.
   - the screens: `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId` (office), web
     Accounts and mobile Balances (Dr Souter).
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result against `fbdd555`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
+  - the drift-check result against `c9b65ad`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
     OQ-61, OQ-70, OQ-71, OQ-73, OQ-76, OQ-80) and how the open questions were handled (OQ-29, OQ-47
     Proposed, OQ-60);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item

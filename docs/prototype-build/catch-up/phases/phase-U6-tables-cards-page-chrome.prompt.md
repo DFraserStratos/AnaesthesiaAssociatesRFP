@@ -1,6 +1,6 @@
-Please run Phase U6 (UI unification: Tables, cards and page chrome) of the Anaesthesia Associates prototype.
+Please run requirements catch-up Phase U6 (UI unification: tables, cards and page chrome) of the Anaesthesia Associates (AA) prototype.
 
-Load the run-build-phase skill and follow it for this phase (track: UI unification, two sessions). The phase doc holds the reads, drift-check stops, work items, checklist, screenshots, demo guide and progress updates; below is only what the doc does not already say.
+Load the run-build-phase skill and follow it for this phase (two sessions, track: UI unification). The phase doc's Before you start, Reference, Work items, Demo triggers, Manual test checklist, Demo guide updates, Catalogue screenshots, Adversarial review (after build) and PROGRESS.md updates sections hold the phase's reads, drift-check stops, rules and finish items; below is only what the doc does not already say.
 
 Also read: docs/ui-unification/README.md sections 1, 4 and 7 and the section 3 entries U09, U10, U14, U22, U23, U31 and U35; docs/ui-unification/PLAN.md in full (section 2 "U6", the section 1 "must land before" table, section 3, the section 4 done criteria); the PROGRESS.md entries of Phases 21 to 25 (the names they shipped).
 
@@ -8,6 +8,7 @@ Hold to these above all:
 - No redesign: a visible change cites question 19, 20 or 23, or the bug or README canonical look on the doc's step 5 list; anything else that moves against the pre-U6 retake or the 12 November baseline is fixed. Default props keep today's look; never re-open the 27 answers (README section 6) or the intended differences (section 5).
 - No hook lost: the shell test ids review-queue-table-shell, review-detail-table-shell and invoice-list-table-shell; data-list-id, data-slot-id, data-booking-id, data-draft-list-row, data-quiet, data-contract and the row shot names; the rail and profile card shots.
 - Pinned checks: ClickableTableRows.test.tsx (the class and verticalAlign middle), the columnheader queries in ListsScreen.test.tsx and AccountsScreen.test.tsx, DemoXero.test.tsx, and the catalogue row "Lists table (Th · Td · GroupRow)" asserted by WebCatalogue.test.tsx (keep the name, or edit the test with the row); the invoice workspace geometry and the rail's warning section (admin-phase08.spec.ts), the "B · T · M" nowrap header (admin-phase07.spec.ts), the SlotDrawer action-button boxes (admin-phase06.spec.ts), the admin rail's alignment with the List drawer, useResolveWithTick's focus return, and DayGrid's conflict and attention outlines, kept on purpose.
+- 22a removed the Booking-level Payer row and PayerSheet: migrate the Paid by line in each Procedure's Billing card and the Paid by sheet onto DefRow, never the old rows.
 - U35: build a small repeat only when every one of its members can move in this phase; the rest go to U7.
 - The kit lives in src/shared/table/, the card, eyebrow, header, tile and rows in src/shared/ui/; tableChrome.ts stays a thin re-export and the masters Table keeps its signature. Leave the masters (42), CaptureSection and the BookingDetailBody sections (35), the Billing monitor (37), Accounts (38), Integrations (34), DemoXero and DemoData. PERSIST_VERSION does not change. Never edit a caption or status.
 

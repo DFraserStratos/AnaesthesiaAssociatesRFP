@@ -3,10 +3,10 @@
 **Requirements covered:**
 [FT-14.4](../../../../requirements-board/requirements/stories/FT-14.4.md) NZ identity standards (Proposed, Partial; the NHI and HPI CPN parts, with "HPI number" now **HPI CPN**; unchanged by the 2026-10-08 update) ·
 [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed, Partial; the HPI CPN wording, and the note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day; unchanged by the 2026-10-08 update).
-**Re-planned for catalogue `d4db277`.** Neither covered item changed. The add-booking form it works
+**Re-planned for catalogue `c9b65ad`.** Neither covered item changed (earlier re-plan: `d4db277`); the payer moved from the Booking to the Procedure (22a, D85). The add-booking form it works
 in did: an assigned List is ACTIVE, the sheet opens on the manual form, the RVG code is picked by
 **type-ahead** (19), hand-entered procedure text is kept as **source text** (20a, no "As given"
-field), 21's payer on the Booking is prefilled from the patient, and the **NHI is required** (D11
+field), the add form's payer block (22a, on the Procedure) is prefilled from the patient, and the **NHI is required** (D11
 answered: no Booking without one, no provisional patient, no "NHI pending", 40). Treated here without
 closing it: [DM-30](../analysis/domain-model-delta.md#dm-30) (its sentence "The NHI can be refreshed
 from the central register" only; the rest is Phase 40's).
@@ -16,7 +16,7 @@ Read alongside (not closed here):
 [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) (intake rows waiting for an NHI: Phase 40's view; a typed or looked-up NHI is how a row gets one),
 [US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) (the anaesthetist's HPI CPN, Phase 26),
 [US-13.6.2](../../../../requirements-board/requirements/stories/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17; its pairing-preferences change is 17's and does not touch the HPI CPN),
-[US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on the Booking, prefilled from the patient and editable to a parent or guardian: Phase 21's; the lookup fills the patient the payer is prefilled from),
+[US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on each Procedure, prefilled from the patient and editable to a parent or guardian: Phase 22a's; the lookup fills the patient the payer is prefilled from),
 [US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) (Add a Booking manually, with hand-entered procedure text kept as source text: 20a's form, which this phase extends),
 [FT-07.1](../../../../requirements-board/requirements/stories/FT-07.1.md) (the List states DRAFT, ACTIVE, SUBMITTED, AUTHORISED: an assigned List is ACTIVE, 15b; a Draft List has no anaesthetist, 31),
 [OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (Answered 2026-10-01: one identifier, called the HPI CPN),
@@ -26,7 +26,7 @@ and points 23 and 26 of
 [the 2026-10-01 meeting note](../../../../requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md)
 (the register refresh and the twice-daily hospital cadence; the HPI CPN naming).
 No open question is linked to either covered item.
-**Depends on:** 26 (the anaesthetist profile: `hpiId` labelled "HPI CPN", office-edited with 17's
+**Depends on:** 22a (`Procedure.payer`, `setProcedurePayer`, the Paid by sheet and the add form's payer block: **D85**, whose OQ-140 reading is 22a's to carry), 26 (the anaesthetist profile: `hpiId` labelled "HPI CPN", office-edited with 17's
 checks, shown on the mobile and web Profile) and 40 (the patient record at `/admin/patients/:patientId`,
 `detailDifferences` in `src/domain/patients/patientDetails.ts`, `store/patientActions.ts`,
 `buildNhiIndex`, `store/patientSelectors.ts`, the NHI required on every form with no provisional
@@ -39,9 +39,7 @@ badged Future-scope demo; an assigned List's state renamed DRAFT to **ACTIVE**),
 (the optional RVG code picked by type-ahead in the form, reworked `CodePickerSheet`), 20a (the form's
 **"Procedure description"** field, `data-shot="procedure-description"`: hand-entered text kept as
 source text, verbatim),
-21 (`Booking.payer`, a `BookingPayer` prefilled from the chosen patient with "Someone else"
-inline in `ManualBookingForm` and `PhoneAdviceBooking`, `PayerSheet`, `setBookingPayer`; the old
-billing route select and billable-party fields are gone), 33 (rows without an NHI wait in the
+22a (replaces 21's `Booking.payer`, `BookingPayer`, `PayerSheet` and `setBookingPayer`: `Procedure.payer`, `setProcedurePayer` and the Paid by sheet; the add forms' payer block, inline in `ManualBookingForm` and `PhoneAdviceBooking`, is prefilled from the chosen patient with "Someone else" and sets the payer each new Procedure takes; the old billing route select and billable-party fields are gone), 33 (rows without an NHI wait in the
 unmatched queue), 28 (seeded List ids keep the
 `L-<reg>-<date>-<AM|PM>` form through `projectedListId`, so the routes below hold; it adds no "Open"
 label), 31 (Draft Lists, state DRAFT, which have no anaesthetist), 34 (the Future-scope HL7/FHIR
@@ -92,7 +90,7 @@ This phase:
 **The form it works in** is the `d4db277` one, already built by earlier phases: Add a booking on an
 **ACTIVE** List (15b; no "Open" label, no DRAFT state on an assigned List) opens straight on the
 manual form; the RVG code is an optional **type-ahead** (19), beside 20a's **Procedure description**
-(typed text kept as source text); 21's **payer on the Booking** sits in the same form, prefilled from
+(typed text kept as source text); 22a's **payer block** (the payer each new Procedure takes) sits in the same form, prefilled from
 the patient; and the **NHI is required** (D11, 40): Save is refused without a valid one. The lookup
 fills the patient (and the NHI field itself in S2's empty-NHI prefill), so the payer follows it while
 the payer is "The patient", and a payer already changed to someone else (a guardian) is never
@@ -106,19 +104,19 @@ external system, so it is built from the seed by a pure function and never persi
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `efe123c`;
+1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `c9b65ad`;
    the tool is rename-aware, so never a plain git diff of the catalogue folder):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-14.4,US-14.4.1,US-11.1.2,US-11.1.1,US-11.1.5,US-12.1.4,US-13.6.2,US-11.2.2,US-02.4.1,FT-07.1,OQ-52,OQ-30,OQ-49
    ```
 
-   Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on the
-   Booking and the HPI CPN glossary row. (This doc is current at `efe123c`: neither covered item
+   Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on each
+   Procedure (DM-11) and the HPI CPN glossary row. (This doc is current at `c9b65ad`: neither covered item
    changed and both are still **Proposed** with no OQ linked; the 28 October changes to the read-alongside
    items (US-11.1.1, US-11.1.5, US-11.2.2, US-12.1.4, OQ-49) are 40's, 21's and 26's; OQ-49 is answered, so D11 is built, not
    a default; the add-booking form is as the Goal describes.)
-2. If an item changed after `efe123c`, re-read it in full and adjust the work items. Specifically:
+2. If an item changed after `c9b65ad`, re-read it in full and adjust the work items. Specifically:
    - **NHI rule.** If the NHI stops being mandatory, or a blank or pending NHI becomes allowed again,
      stop and tell the owner: the form's validation and Save gate follow 40's required NHI.
    - **Refresh cadence.** If US-14.4.1 now asks for an automatic refresh on a schedule (the
@@ -149,8 +147,8 @@ external system, so it is built from the seed by a pure function and never persi
    - **15b, 19, 20a, 21:** how `AddBookingFlow` opens now (no chooser, no "Enter manually"; the
      `initialMode` prop and whether the Future-scope photo demo survived), the RVG type-ahead row, the
      "Procedure description" field and its `data-shot`, and the payer block in `ManualBookingForm` and
-     `PhoneAdviceBooking` (`Booking.payer`, `BookingPayer`, the "The patient" / "Someone else" choice,
-     `setBookingPayer`, and how the form keeps the payer in step with the chosen patient). Note the
+     `PhoneAdviceBooking` (`Procedure.payer`, the "The patient" / "Someone else" choice,
+     `setProcedurePayer`, the Paid by sheet and the copy rule from 22a, and how the form keeps the payer in step with the chosen patient). Note the
      form's section order now, so the lookup's status line and purpose note stay in the patient
      section's caption slot;
    - **28, 31:** that Dr Souter's Tue 21 Jul PM List (`L-34821-2026-07-21-PM`) is ACTIVE after reset,
@@ -178,7 +176,7 @@ external system, so it is built from the seed by a pure function and never persi
      field on 33's matching screen (item 9);
    - **38a:** the search field components on mobile and web and `parseBookingQuery`;
    - the current `PERSIST_VERSION`.
-6. Record the result (changed items against `efe123c`, the provisional reading, the real names) in
+6. Record the result (changed items against `c9b65ad`, the provisional reading, the real names) in
    the PROGRESS entry.
 
 ## Reference
@@ -228,7 +226,7 @@ them, so use the real ones from their PROGRESS entries):
   lookup · Digital Services Hub" :155, and `save` (`createBooking` :111, which still refuses an invalid
   NHI through `upsertPatient`, `store/intake.ts:52`, the `validateNhi` refusal at :61). At the plan
   update the form still has the billing route select and `billablePartyId` (:44, :69, :124, :235);
-  21 replaces them with the payer block, 19 the "Procedure code" select with the type-ahead, 20a
+  22a's payer block replaces them, 19 the "Procedure code" select with the type-ahead, 20a
   adds the source-text Procedure description and 40 requires the NHI, so read the form as those
   phases left it.
 - Its hosts: `shared/flows/AddBookingFlow.tsx` (the chooser at :105 goes in 15b);
@@ -420,7 +418,7 @@ them, so use the real ones from their PROGRESS entries):
 8. **The add-booking flow** (`ManualBookingForm`, shared by mobile and web Add a booking, Admin phone
    advice and, if 15b kept it, the Future-scope photo demo's review; 34's PDF row correction is item 9's). The form is the `d4db277` one: Add a booking opens straight on it
    (15b), on an ACTIVE List or, for the office, a Draft List (31), with 19's RVG type-ahead, 20a's
-   Procedure description (source text), 21's payer block and 40's required NHI. This item changes only
+   Procedure description (source text), 22a's payer block and 40's required NHI. This item changes only
    the patient section.
    - The NHI field gets `mono`, `autoCapitalize="characters"`, `spellCheck={false}` and
      `autoComplete="off"`. Its caption slot shows the shape hint, `nhiEntryFeedback`'s reason (error
@@ -435,12 +433,13 @@ them, so use the real ones from their PROGRESS entries):
    - **Found** fills name, DOB, phone if present, and ethnicity, as today, then the S2 prefill branch
      unchanged. Phase 40's "matched existing record" and "details differ" lines and its balance warning
      for the patient paying still appear where 40 put them.
-   - **The payer follows the patient, never the other way.** 21's payer block is prefilled from the
+   - **One payer path.** The form's payer block is 22a's: it holds the payer each new Procedure takes, and `createBooking` gives every Procedure it creates that payer through 22a's builder. The lookup adds no payer-writing code of its own; it only updates the block's "The patient" prefill, and any change to a saved Procedure's payer is `setProcedurePayer` through the Paid by sheet.
+   - **The payer follows the patient, never the other way.** 22a's payer block (the payer each new Procedure takes, set through `setProcedurePayer` and the Paid by sheet) is prefilled from the
      patient. While it is "The patient", a found person becomes the payer's name, with the email from
      the matched AA record if there is one (the register holds no email), through the form's existing
      prefill, not a second path. If the user has already chosen "Someone else" (a guardian), a lookup,
-     a second lookup or a Retry never changes it. A found patient under 18 on the List date shows 21's
-     mild "Under 18" note on the payer choice, as 21 built it; nothing new is added. The lookup never
+     a second lookup or a Retry never changes it. A found patient under 18 on the List date shows 22a's
+     mild "Under 18" note on the payer choice, as 22a built it; nothing new is added. The lookup never
      writes the RVG code, the Procedure description or the Contract.
    - **Not found, unavailable, cancelled:** every field stays editable and Save works on the typed
      details, provided the NHI typed is valid (it is required, D11: Save without one, or with an
@@ -544,7 +543,7 @@ them, so use the real ones from their PROGRESS entries):
       the Hub's visible wait, by waiting on values and `data-shot` selectors, never a fixed sleep; re-point
       only what this phase changed (earlier phases own their "Enter manually" and field changes).
     - Playwright: a new `visual/nhi-lookup.spec.ts`, on Dr Souter's ACTIVE Tue 21 Jul PM List. On web
-      Add a booking: `ZAA0068` reason, `ZBR4417` found with the payer reading Mereana Tipene, then
+      Add a booking: `ZAA0068` reason, `ZBR4417` found with the payer block reading Mereana Tipene, then
       "Someone else" typed as a guardian and a second lookup leaving it, Unavailable through Demo
       actions with Retry, then Available. On the Admin patient record:
       Fiona Gray refresh, Use register for the name, Apply, Last refreshed. Plus a mobile shot of the
@@ -587,7 +586,7 @@ is expected.
   own records.
 - A full-scale register and timings (Phase 43).
 - The rest of the add-booking form: the RVG type-ahead (19), the Procedure description (20a), the payer block and its
-  under-18 note (21), and the required NHI itself (D11, Phase 40's guard and waiting-for-NHI view).
+  under-18 note (22a), and the required NHI itself (D11, Phase 40's guard and waiting-for-NHI view).
 
 ## Manual test checklist
 
@@ -598,7 +597,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       header shows ACTIVE, never "Open" or "DRAFT"), then Add a booking: it opens straight on the
       manual form. Under the NHI field: the shape hint, the Hub badge, and "Looked up on behalf of Dr
       Melanie Souter (HPI CPN 10SOUM), only to identify this patient. Health Information Privacy Code
-      2020." The form's other sections (19's RVG type-ahead, 20a's Procedure description, 21's payer) are as
+      2020." The form's other sections (19's RVG type-ahead, 20a's Procedure description, 22a's payer block) are as
       those phases left them.
 - [ ] Type `ABI`: "The letters I and O are never used in an NHI." shows at once. Type `ZAA0068`:
       "The check digit does not match." shows on the seventh character, and Look up stays disabled.
@@ -611,7 +610,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       Procedure description, then change the payer to "Someone else" and type a guardian. Look up
       `ZBT2253`: Lucas Brennan fills the patient, and the guardian payer, the RVG code and the typed
       description are unchanged. Save: the Booking has Lucas Brennan as patient and the guardian as
-      payer. With the NHI cleared, Save is refused (the NHI is required).
+      the payer on its Procedure (the Paid by row reads the guardian once a Contract bills the payer; before that "Payer: not billed yet"). With the NHI cleared, Save is refused (the NHI is required).
 - [ ] With Add booking closed, Demo actions has no Hub entry. With it open: "Hub: Available / Slow /
       Unavailable". Choose Unavailable, then Look up: the warning line with Retry, and the amber "Hub
       simulated as Unavailable" badge. Type the details with a valid NHI and Save: the Booking is created. Choose Slow:
@@ -624,7 +623,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Admin, a Draft List (31; state DRAFT, no anaesthetist), add a Booking: the lookup works the same
       and the purpose note reads "Looked up on behalf of the AA office".
 - [ ] Mobile, Dr Souter's ACTIVE Tue 21 Jul PM List, Add a booking: the same validation, states,
-      payer prefill and purpose note in the bottom sheet. Nothing opens as a centred modal.
+      payer prefill (the Paid by sheet from the form) and purpose note in the bottom sheet. Nothing opens as a centred modal.
 - [ ] Admin, Patients, Fiona Gray (`/admin/patients/PT0018`): "Not refreshed yet" with the Provisional
       pill. Refresh from NHI register: Name differs (Fiona Gray, Fiona Tamihana) and Address "Will be
       added". Choose Use register, then Apply. The record and her Bookings read Fiona Tamihana, the row
@@ -653,14 +652,14 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 ## Demo guide updates
 
 Patch these in the same session, and the same sections of `master-demo-guide.html`. The beats are
-read as 15b, 19, 20a, 21, 28 and 40 left them: Add a booking opens straight on the manual form (no
+read as 15b, 19, 20a, 22a, 28 and 40 left them: Add a booking opens straight on the manual form (no
 "Enter manually"), the List is ACTIVE (never "Open" or "DRAFT"), and the form already has the RVG
-type-ahead, the Procedure description, the payer on the Booking and the required NHI. This phase adds only the lookup lines below; it does
+type-ahead, the Procedure description, the payer on each Procedure and the required NHI. This phase adds only the lookup lines below; it does
 not re-narrate the payer or the type-ahead.
 
 - `03-demo-script.md`:
   - **S2 Beat 2** (phone advice, as earlier phases left it): the **Expected** line adds that the lookup
-    answers from the NHI register, the payer is prefilled from the patient it finds (21's line, kept),
+    answers from the NHI register, the payer is prefilled from the patient it finds (22a's line, kept),
     and the purpose note names Dr Sharma's HPI CPN. Add an optional
     step: "Demo actions, Hub: Unavailable, then Look up: the office can still book by hand. Set it back
     to Available." One **Say** line: "The NHI is checked as it is typed and looked up through the
@@ -703,12 +702,13 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · `nhi-lookup` web and mobile (Add a booking, Enter manually, CQY9304, Look up; fixed 400 ms wait; stale caption and reason) | `captured` as a simulation (keep the real-Hub gap in the story, not the recipe). Re-take `nhi-lookup` on web and mobile on Dr Souter's ACTIVE Tue 21 Jul PM List with no "Enter manually" click, showing the `d4db277` form (RVG type-ahead, Procedure description, payer block, the NHI as a required field). States: `invalid` (ZAA0068: reason shown, Look up disabled), `found` (ZBR4417, highlight `[data-shot=nhi-lookup-status]` and the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM)...", payer prefilled), `not-on-register` (ZBW6638), `hub-unavailable` (`nhi-hub-mode` trigger, warning line with Retry, amber badge). After Look up, wait on `[data-shot=nhi-lookup-status]` showing the answer, not 400 ms. Add admin shot `register-refresh` on `/admin/patients/PT0018` (Name differs, Address "Will be added", then "Last refreshed 21 Jul 2026, 08:00"). Captions in the catalogue's words ("HPI CPN", "NHI register"); drop the "small set of demo records" partial reason |
+| [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · `nhi-lookup` web and mobile (Add a booking, Enter manually, CQY9304, Look up; fixed 400 ms wait; stale caption and reason) | `captured` as a simulation (keep the real-Hub gap in the story, not the recipe). Re-take `nhi-lookup` on web and mobile on Dr Souter's ACTIVE Tue 21 Jul PM List with no "Enter manually" click, showing the `d4db277` form (RVG type-ahead, Procedure description, payer block (22a), the NHI as a required field). States: `invalid` (ZAA0068: reason shown, Look up disabled), `found` (ZBR4417, highlight `[data-shot=nhi-lookup-status]` and the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM)...", payer prefilled), `not-on-register` (ZBW6638), `hub-unavailable` (`nhi-hub-mode` trigger, warning line with Retry, amber badge). After Look up, wait on `[data-shot=nhi-lookup-status]` showing the answer, not 400 ms. Add admin shot `register-refresh` on `/admin/patients/PT0018` (Name differs, Address "Will be added", then "Last refreshed 21 Jul 2026, 08:00"). Captions in the catalogue's words ("HPI CPN", "NHI register"); drop the "small set of demo records" partial reason |
 
 **Recipes this phase breaks.**
 
 - `US-11.1.3.json` (`dedupe-nhi`, web and mobile, four states) fills the NHI placeholder `ABC1234` and clicks "Look up" with CQY9304 (Sarah Mitchell); the register mirrors every seeded patient, so the answer should still be found, but Look up is now disabled until the NHI is valid and the dialog gains the status line and purpose note. Earlier phases (15b, 19, 20a) re-point its "Enter manually" click and procedure fill; check it still runs on an ACTIVE List. Its fixed `{ "wait": 400 }` after Look up is shorter than the Hub's 600 ms answer: replace it with a selector wait on `[data-shot=nhi-lookup-status]`, so the `lookup` state shows the found patient, not "Checking the NHI register". Re-run with `--dry` and re-check its highlights.
 - `US-02.4.1.json` (Add a Booking manually, re-taken by 15b, 19 and 20a on the `d4db277` form) opens Add a booking; confirm its selectors still resolve with the status line and purpose note under the NHI field. (`US-02.4.2` is Retired; its recipe is 15b's, not this phase's.)
+- `US-11.2.2.json`, `US-11.2.3.json` and `US-11.2.4.json` (`booking-payer-row`): re-pointed by Phase 22a, no change here (22a owns them); confirm they still run after the lookup's status line is added.
 - `US-12.1.4.json` (`anaesthetist-record`, `/admin/masters`) shows the HPI field, now labelled "HPI CPN" everywhere: check its highlight.
 - Work item 14 already lists the Playwright specs; the `--dry` run is the check for the rest.
 
@@ -744,7 +744,7 @@ re-raise anything settled in the Decisions log.
 - **The `d4db277` form.** The lookup changes only the patient section of `ManualBookingForm`. The
   payer follows a found patient only while it is "The patient"; a "Someone else" payer is never
   overwritten by a lookup, a second lookup or a Retry, and there is no second payer-writing path
-  beside 21's. The RVG type-ahead, the Procedure description (source text) and the Contract are untouched, and the NHI stays required: no path saves without a valid one, whatever the Hub does. Tests, shots and the
+  beside 22a's `setProcedurePayer`. The RVG type-ahead, the Procedure description (source text) and the Contract are untouched, and the NHI stays required: no path saves without a valid one, whatever the Hub does. Tests, shots and the
   checklist run on an ACTIVE List; no "Open" label, no "DRAFT" for an assigned List and no "Enter
   manually" step appear anywhere this phase adds or changes.
 - **Purpose and privacy.** The purpose note is on every lookup surface and names the right
@@ -767,8 +767,8 @@ re-raise anything settled in the Decisions log.
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
-  - the drift-check result against `fbdd555` (items changed or not; the refresh cadence, HPI CPN and
-    NHI-rule checks; the provisional reading built; the real form names from 15b, 19, 20a, 21 and 40);
+  - the drift-check result against `c9b65ad` (items changed or not; the refresh cadence, HPI CPN and
+    NHI-rule checks; the provisional reading built; the real form names from 15b, 19, 20a, 22a and 40);
   - what was built, with the name map for later phases: `nhiEntryFeedback`; `src/domain/nhiRegister/`
     (`NhiRegisterPerson`, `buildNhiRegister`, `lookupOnRegister`, `registerDifferences`);
     `src/domain/seed/nhiRegister.ts` (`nhiRegister()`, `NHI_REGISTER_UPDATES`, the register-only people,

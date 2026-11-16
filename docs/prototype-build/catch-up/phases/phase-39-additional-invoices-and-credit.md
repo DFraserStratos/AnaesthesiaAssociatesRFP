@@ -43,7 +43,7 @@ Read alongside (not closed here):
 [OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (Open: what the AA fee's per-BCTI charge counts), and the
 "What changed since the RFP" rows, the Booking section and the "Internal ledger" section of
 [domain-model.md](../../../../requirements-board/requirements/domain-model.md).
-**Depends on:** 38b (the event element on a Procedure, its one standard review step and next-run
+**Depends on:** 22a and 38b (the event element on a Procedure, its one standard review step and next-run
 invoicing, the Procedure's events list in all three apps, and the free-form additional invoice with
 its lines editor, party field and sheet, raised by the office and by the anaesthetist on their own
 Procedure; a credit is a new event kind on that element, and every rebill or split component is a 38b
@@ -54,8 +54,7 @@ the roadmap order 14 (the demo-trigger registry, the payment entries, the shared
 (Booking vocabulary and routes), 16 (`invoiceNumber` and `reference` on both Xero records, the `-P`
 rule, the BCTI count: `bctiRecords` and `bctisFor`), 19a (the flat Contract model, and Merivale's seeded
 combination Contracts: a combination is a fixed-price Contract of its own, with no parent procedures and no combination
-marker), 21 (who is billed from the Contract's holder or the payer on the Booking, `whoIsBilled.ts`,
-`invoiceEmailFor`, and the holder references with `referenceValuesFor`), 22 (`procedureIds`,
+marker), 21 (who is billed, `whoIsBilled.ts`, `invoiceEmailFor`, and the holder references with `referenceValuesFor`), 22a (the payer is each Procedure's, D85: `Procedure.payer`, `setProcedurePayer`, the party picker that can name another person, the Procedure's "Paid by", invoices grouped by payer identity), 22 (`procedureIds`,
 `lineage`, `delivery`, `materialiseInvoices`, the Split button's typed shares), 25 (the `BookingLock`
 with its per-Procedure pricing snapshot, the payee, "Regenerate from locked data") and 27 (the
 prepayment invoice generated at setup with its pair; prepaid Procedures are left off the final invoice,
@@ -68,7 +67,7 @@ credit notes.
 rebill, with the ledger and Xero reversal and the negative invoice, ending at a green stop point
 (work items 1 to 8). Session 2 is the rebill draft from a copy of the original's lines, the combined
 split with its equal-total check, the anaesthetist's credit note on mobile and web with its PWA
-stand-in, the ledger and simulator views, the staged triggers, tests and docs (work items 9 to 16).
+stand-in, the ledger and simulator views, the staged triggers, tests and docs (work items 9 to 17).
 
 ## Goal
 
@@ -80,7 +79,9 @@ unlocking the Booking (FT-08.6, US-07.3.2). OQ-72 is answered (D22), OQ-63 makes
 
 - **The credit note option** (US-08.6.5). From the Procedure's additional-invoice area (38b) and the
   Admin invoice document, **Credit note** credits the original invoice in full to the party the user
-  picks, the original billable party included, with a reason. In the same sheet the user adds any new
+  picks, the original billable party included, with a reason. Who is billed is each Procedure's payer
+  (22a, D85), so the picker is 22a's and can name another person, for the credit note and for every
+  rebill or replacement; nothing here reads a Booking-level payer. In the same sheet the user adds any new
   additional invoices that replace it (zero or more, each 38b's free-form lines and party). It is
   available to **the office on any Procedure** and, since 2026-10-07, to **the anaesthetist on their
   own invoiced Procedure** in the Anaesthetist App, mobile and web, reached through 38a's
@@ -138,9 +139,9 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's baseline, catalogue commit `fbdd555` (plan.json
+1. Run the drift check against the plan's baseline, catalogue commit `c9b65ad` (plan.json
    `commit`; with no `--to` the tool diffs that baseline against the working tree, so it shows only
-   what changed after `efe123c`):
+   what changed after it):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-07.4.1,US-07.4.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-10.2.7,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-61,OQ-63,OQ-71,OQ-72,OQ-76,OQ-77,OQ-97
@@ -279,7 +280,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
    - from **19a**: Merivale's seeded combinations as fixed-price Contracts of their own under the flat model
      (AR-58, AR-61; "Face lift" $3,565, "Facelift plus 1 add on (eg bleph)" $3,910, "Facelift plus 2
      add ons (eg bleph & fat grafting)" $4,255, each with default RVG code H3; use the names 19a
-     built), held by a rooms holder that is not billed, so the payer on the Booking is billed; no
+     built), held by a rooms holder that is not billed, so the Procedure's payer is billed; no
      seeded Booking uses it; a Procedure keeps the Contract it was priced from in its lock;
    - from **25**: `BookingLock` and its per-Procedure pricing snapshot (`ProcedureSnapshot`), the
      locked payee, `regenerateInvoiceFromLock` and the `regenerate-invoice` trigger (38b extended it to
@@ -288,8 +289,12 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      `resendInvoice`, the `lineage` roles, `procedureIds`, `supplier` / `agent`, `gstTreatment`, the
      Split button's shares (a split Procedure gives one invoice per party, each creditable on its own),
      and the `invoicePresentation.ts` helpers;
+   - from **22a** (D85): the payer lives on each Procedure (`Procedure.payer`, BP ids kept), the
+     party picker that sets it and can name another person (the one the credit sheet and every
+     replacement card reuse, never a copy), `setProcedurePayer`, and the grouping of invoices by
+     payer identity (a copied payer is the same payer; never matched on name or email);
    - from **21**: who is billed (`whoIsBilled.ts`: the Contract's holder's billable party when the
-     holder is billed, otherwise the payer on the Booking), the party picker it uses, `invoiceEmailFor`,
+     holder is billed, otherwise the Procedure's payer as 22a moved it), `invoiceEmailFor`,
      the snapshot `Invoice.invoiceEmail` and `Invoice.billedTo`, and the holder references
      (`Contract.holderReferences`, `referenceValuesFor`, and where each value lives: the Booking's
      `insurerMemberNumber` and `purchaseOrder`, the Procedure's `billingReference` relabelled "Claim or
@@ -633,7 +638,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      as the shared `CreditForm` in `src/shared/booking/` so work item 11's anaesthetist wrappers reuse
      it, as 38b built `AdditionalInvoiceForm`), opened by **Credit note** and by **Credit in full and
      rebill**. Step 1 **Credit**: the original's number, party and total; the
-     party the credit goes to (21's party picker, default the original's, with the invoice email from
+     party the credit goes to (22a's party picker, which can name another person, default the original's, with the invoice email from
      `invoiceEmailFor`); the reason (required; quick chips "Wrong reference or purchase order", "Wrong
      billable party", "Wrong amount", "Less work than expected", "Split requested", "Paid twice", plus
      free text); the money state from `reversalPlan` on the current legs in plain words ("Unpaid:
@@ -842,8 +847,8 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
 14. **Session 2 triggers.**
     - **Stage combined procedure** (new, `stage-combined-procedure`, Admin · Invoices, bar; body in
       `src/store`): on the List picked at the drift check, creates one Booking for a fixed patient
-      with an explicit id (never from the generated pool), its payer on the Booking prefilled from the
-      patient (21), and one Procedure priced from 19a's Merivale combination Contract "Facelift plus 2 add ons (eg
+      with an explicit id (never from the generated pool), its Procedure's payer filled in from the
+      patient through 22a's builder, and one Procedure priced from 19a's Merivale combination Contract "Facelift plus 2 add ons (eg
       bleph & fat grafting)" ($4,255), post-paid (not prepaid; the rooms holder is not billed, so the
       patient is), then authorises and bills it through the real actions (`authoriseList`, the run,
       `handoffPair`) as `OFFICE_SIMULATION_ACTOR`. Result "Staged: a billed Merivale combination. Open
@@ -880,7 +885,17 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
       filtered to `creditNote`), and mobile and web shots of the anaesthetist's **Credit note** entry,
       its sheet and the credit event in 38b's events list. Update any spec that shot the rail or the
       Invoices table by position.
-16. **Tests and docs close-out.** 14's `demoTriggers.test.ts` covers the new entries and the
+16. **Build on the shared components; migrate these copies (UI unification).**
+    - UI in this phase is built from the shared components in `src/shared/ui`, `surface`, `table` and
+      `calendar`: `OverlayHeader` and `SheetActions` (U2) for `CreditSheet`, `SplitCombinedSheet` and
+      the anaesthetist's `CreditForm` wrappers; `Pill` and `Notice` (U3) for the standing pills, the
+      pending and credited banners and the "A credit note is not a refund" caption; `TextField` with
+      the number and amount types and `Checkbox` (U4) for the split components and the party fields
+      (22a's picker, never a copy); `Card` and the table kit (U6) for the rail card, the negative
+      invoice card and the Invoices Kind column; `formatMoney` (U1). A component that cannot do the
+      job gets a variant or prop that defaults to today's look. Keep their `data-shot` and `data-*`
+      hooks; update the catalogue rows (`/demo/catalogue/...`) in the same session.
+17. **Tests and docs close-out.** 14's `demoTriggers.test.ts` covers the new entries and the
     re-pointed ones (routes, surfaces, disabled states, `pwaPurity`); `demoScenarios.test.ts` covers
     the new S4 beat end to end at store level (stage, 38b's additional invoice, credit in full and
     rebill from a copy through review and the next run, the paid-out variant with its negative
@@ -1037,6 +1052,10 @@ Session 2 (after **Reset** and the same staging):
       from the bottom sheet, then **Demo actions → Office reviews this credit**: the handset shows the
       credit issued in the events list. A second press is disabled "No credit on this Booking is
       awaiting review"; the entry never appears in the framed build's bar.
+- [ ] A credit and a rebill go to another person: in the credit sheet pick a person through 22a's
+      party picker (not the Procedure's payer); the credit note and the replacement are addressed to
+      them, and the Procedure's own payer is unchanged. On a Booking whose Procedures have different
+      payers, crediting one Procedure's invoice leaves the other payer's invoice live.
 - [ ] The per-anaesthetist ledger trail for Dr Sharma reads debit, credit, contra, new debit.
 - [ ] Web Accounts (Dr Souter, after crediting one of her S3 invoices): the credited invoice leaves
       Outstanding and the replacement joins it; no amounts moved elsewhere.
@@ -1134,7 +1153,7 @@ matches what was built:
 | [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue | absent | captured. Admin `/admin/invoices/<id>`, shot `credit-rebill`: `rail` state highlights `[data-shot=credit-rebill-button]`; `sheet` state fills `[data-shot=credit-sheet]` (reason chip, copied lines and holder references, payable-reversal line, trail preview); `credit-note` state (after Approve for billing and `run-next-billing-run`) opens the credit note highlighting `[data-shot=negative-invoice-card]`; `credited` state highlights `[data-shot=invoice-credited-banner]`. Paid-out variant via `stage-refund-after-payout`. Simulator `/demo/xero/invoices/<accRecId>` shot `xero-credit-note`. Captions: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist". Nothing may suggest an automatic credit |
 | [US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md) Create an additional invoice on a Procedure | absent · stub (38b captures it) | No change here (Phase 38b owns it). Check only that its shots pass with the Credit note option added, in Admin and the anaesthetist apps |
 | [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Run `stage-combined-procedure` (Merivale's combination Contract) on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards adding up to the credited invoice and `[data-shot=split-left-to-allocate]` at $0.00; `result` state (after review and the run) shows a component invoice linking to the original and the Procedure. Captions in the catalogue's words: "A split after invoicing credits the original, then raises one additional invoice per component", "The components must add up to the credited amount; each amount is entered freely", "The credit reverses the linked payable". Before sending the split is a normal admin edit: no shot or caption for it. The prepaid-combination split is a PROGRESS note handed to 41 |
-| [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe, office and anaesthetist. Admin Booking detail for Sarah Mitchell (after `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another party and the payable-reversal line; `event` state highlights `[data-shot=procedure-credit-event]`. Shot `anaesthetist-credit-note` on web (Dr Souter, David Chen's Mon 22 Jun Booking, reached by 38a's search "Chen"; ids from ATLAS.md): `option` highlights `[data-shot=anaesthetist-credit-note-button]`, `sheet` fills `[data-shot=credit-form]` with "Less work than expected"; the same on mobile in the bottom sheet. Captions in the catalogue's words (credit to the party picked; includes the payable reversal; recorded as an event; none exists until someone creates one by hand). The prepaid half of "After a fixed price" is Phase 41's |
+| [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe, office and anaesthetist. Admin Booking detail for Sarah Mitchell (after `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another person chosen through 22a's party picker and the payable-reversal line; `event` state highlights `[data-shot=procedure-credit-event]`. Shot `anaesthetist-credit-note` on web (Dr Souter, David Chen's Mon 22 Jun Booking, reached by 38a's search "Chen"; ids from ATLAS.md): `option` highlights `[data-shot=anaesthetist-credit-note-button]`, `sheet` fills `[data-shot=credit-form]` with "Less work than expected"; the same on mobile in the bottom sheet. Captions in the catalogue's words (credit to the party picked; includes the payable reversal; recorded as an event; none exists until someone creates one by hand). The prepaid half of "After a fixed price" is Phase 41's |
 | [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | captured. New recipe. Admin `/admin/invoices/<id>` for Sarah Mitchell's original: shot `rebill-from-copy` presses `[data-shot=credit-rebill-button]` and highlights the prefilled card in `[data-shot=credit-sheet]` holding the original's lines. Caption "After a credit note, the rebill starts from a copy of the original's lines" |
 | [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of changes (retitled) | captured · admin-audit-viewer, admin-sign-in-attempts | captured. Keep both shots passing, and re-check `admin-audit-viewer` shows no payment, receipt or disbursement row (the carve-out). Add shot `credit-note-audit`: the steps make one credit first (`stage-post-op`, Credit in full and rebill, Approve for billing, `run-next-billing-run`), then `/admin/audit` with entity filter `creditNote`, credit note rows highlighted. Caption "Credit notes are audited, every step with who, role, source and what changed"; add "Payments, receipts and disbursements are not audited here: they are recorded in Xero" |
 
@@ -1195,6 +1214,8 @@ review-and-fix pass (PROGRESS convention 18)**:
   answered); there is no flag or branch that leaves the payable standing.
 - **BCTI count.** Every replacement adds exactly one record to 16's `bctiRecords`; a credit note and a
   negative invoice add none; nothing else counts BCTIs.
+- **Payer and shared components.** Hunt for any read of a Booking-level payer, a second party picker,
+  and any copy of a shared UI component (work item 16): a new private copy of a shared component is a finding.
 - **Both sides together.** The Xero reversal and every new pair land in one commit or none does; 38b's
   own additional-invoice handoff never runs a second time for a replacement; the fault path leaves a
   retryable, visible state; the retry is idempotent; no NHI reaches a credit note.
@@ -1226,6 +1247,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **Determinism and persistence.** No `Date.now()`, `new Date()` or `Math.random()`; dates from the
   demo clock; `PERSIST_VERSION` bumped and the migrate test discards a stale payload; two fresh seeds
   deep-equal; S3's scripted figures unchanged.
+- **Payer on the Procedure (D85).** No code, copy or seed reads a Booking-level payer: who is billed
+  comes from `whoIsBilled.ts` over the Procedure's payer, the credit and rebill party comes from 22a's
+  one picker, and a replacement keeps its own payer's identity.
 - **Design and copy.** The sheets and rails follow the admin patterns and tokens and reuse 38b's lines
   editor; the anaesthetist's sheet is a bottom sheet on mobile; teal is the only action colour; the
   credit note and negative invoice are neutral, never red or crimson; "negative invoice", never "BCTI
@@ -1248,7 +1272,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   note, a credited original, the split sheet with Left to allocate, the review row, the
   anaesthetist's credit sheet on web and mobile, the Audit viewer filtered to credit notes).
 - **Status row** for catch-up Phase 39, and a phase entry with:
-  - the drift-check result (items changed or not since `fbdd555`; FT-08.6, US-08.6.2, US-08.6.4,
+  - the drift-check result (items changed or not since `c9b65ad`; FT-08.6, US-08.6.2, US-08.6.4,
     US-13.5.2 and the other covered items; OQ-60 and OQ-97 status; the
     List the combined-procedure trigger uses; the prepaid-combination split left refused, as a known
     gap against US-08.6.4 handed to 41; the prepaid half of US-08.6.5's "After a fixed price" handed

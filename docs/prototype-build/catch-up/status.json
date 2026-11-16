@@ -2,23 +2,23 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "U4"
+      "22a"
     ],
-    "note": "22 is built (2026-11-17): invoices in the anaesthetist's name with AA as agent (provisional, OQ-29), laid out from the Contract with GST at the foot, sent by the run (emailed, To post or no address); a Split button divides a Procedure's fee in $ or % between parties, each invoiced on its own; the ACCPAY carries provisional buyer-created wording. Committed (21a too). Run U4 next, then U5, then 23; U6 after 25; U7 before 44."
+    "note": "Re-planned 2026-11-17: the payer moves from the Booking to each Procedure (Donald's decision; OQ-140 for AA). Run 22a next (two sessions), then U4, U5 and 23; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start U4 now. 22 is done: invoices are sent by the run and a fee can be split on the Booking.",
-    "headline_sub": "22 built the invoice in the anaesthetist's name with AA as agent, layout from the Contract, the run's sending (emailed, To post, no address) through one materialiser, the Split button with typed $ or % shares (funderOverride gone) and the buyer-created ACCPAY wording. It is done and committed, with 21a. Then U4, then U5, then 23.",
-    "parallel": "None now: U4 runs alone (a U phase never runs beside a catch-up phase, and U5 follows U4).",
-    "safe": {
-      "U4": "Every dependency is done and committed (U2, U3, 21a and 22) and it is next in run order. U4 edits the same shared fields 22 used (the Split sheet's share field and the invoice rail's email field are TextFields now)."
-    },
+    "headline": "22a, a payer on each Procedure, is next (re-planned 17 November), then U4, U5 and 23.",
+    "headline_sub": "The 17 November requirements change moves the payer from the Booking to each Procedure (OQ-140 asks AA to confirm; built as decided). 22a reworks 21's Booking payer and 22's Paid by into one Paid by line and sheet per Procedure; U4 and 23 now wait for it.",
+    "parallel": "None now: 22a runs alone, then U4 (a U phase never runs beside a catch-up phase).",
+    "safe": {},
     "wait": {
+      "22a": "Every dependency is done (21a and 22) and it is next in run order, now that U4 depends on it; awaiting the owner's go-ahead after the 17 November re-plan.",
+      "U4": "Now depends on 22a (22a turns 21's PayerSheet into the one Paid by sheet that U4 migrates); runs straight after it.",
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
       "U5": "Needs U4 (its only dependency) and runs straight after it.",
-      "23": "Needs U5 (and 22, now done); runs after U4 and U5."
+      "23": "Needs 22a and U5 (and 22, now done); runs after 22a, U4 and U5."
     }
   }
 }

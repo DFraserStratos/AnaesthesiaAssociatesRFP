@@ -19,7 +19,11 @@ an all-or-one-anaesthetist filter, "Neither is settled; both come with the proto
 (reconciliation status at a glance; new at `fbdd555f`, **Proposed**, graded Missing: one status on the
 admin dashboard saying whether every account that should balance does, with each unresolved item's
 amount and age. Which accounts it checks waits on Greg and Sam's process maps, so this phase builds the
-shape over the checks the prototype has; work item 12a).
+shape over the checks the prototype has; work item 12a),
+[DM-67](../analysis/domain-model-delta.md#dm-67)
+(the data-model delta behind US-13.2.4: the status is derived from the ledger and the Xero mirror and never
+stored; an unresolved-item record for an unplaced receipt, its age from the demo clock; the checked accounts
+in one data table; Proposed, M. Same work as work item 12a, no new scope).
 Context only, must stay green:
 [FT-09.2](../../../../requirements-board/requirements/stories/FT-09.2.md),
 [US-09.2.1](../../../../requirements-board/requirements/stories/US-09.2.1.md),
@@ -43,7 +47,7 @@ detection and queue rows stay; no copy claims the audit trail is required to cov
 One review finding is owned here: [RV-40](../analysis/reverse-check.md) (new 5 November; the office's
 in-app "Run payables" button makes the payment, where Xero pays and the system only tracks it). It
 names the same in-app payout as FT-10.2, so work item 8 closes both and the PROGRESS entry names both.
-No DM item is owned. The phase builds on
+[DM-67](../analysis/domain-model-delta.md#dm-67) is the one DM item owned. The phase builds on
 [DM-18](../analysis/domain-model-delta.md#dm-18) (the ledger pair, Phase 36); no other
 [reverse-check](../analysis/reverse-check.md) finding covers Xero resilience. The FT-13.3 placement
 caveat is part of RV-17 (Phase 44's sweep); this phase removes it from the monitor because it rewrites
@@ -134,7 +138,8 @@ record.
   (pairs not yet in Xero, voids and amendments flagged by the poll) and this phase's unmatched Xero
   bank lines. The clearing account in Greg's proposal and the rest of the posting design are not
   modelled: they wait on Greg and Sam's process maps (2026-11-10), so the checks live in one pure list
-  that a later update extends.
+  that a later update extends. The status is derived, never stored, and an unresolved item (an unplaced
+  receipt, with its age from the demo clock) is one record type (DM-67).
 
 ## Before you start: drift check
 
@@ -144,7 +149,9 @@ record.
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-09,FT-10.2,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,US-13.2.4,OQ-47,OQ-111,US-09.1.1,US-09.3.1
    ```
 
-   (It diffs the plan baseline, catalogue commit `fbdd555`, to the working tree.)
+   (It diffs the plan baseline, catalogue commit `c9b65ad`, to the working tree.)
+   Read the DM-67, DM-22 and DM-23 sections of `analysis/domain-model-delta.md` too (the reconciliation
+   status needs DM-22's ledger and DM-23's derived positions, which Phase 36 builds).
    Read the hunks for EP-09, FT-10.2, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
    US-10.2.1, US-10.2.3, US-10.2.4, US-08.3.2, FT-13.3, US-13.3.1, US-13.3.2, US-13.5.2, OQ-47 and the
    domain-model lines on Xero, the payables run and bank reconciliation. At `7cd7802` the Xero items
@@ -680,6 +687,12 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
       billing" button on the monitor; expand and collapse; above the threshold (the constant mocked
       low) non-problem Lists start collapsed; `?list=` opens its List.
 12a. **Reconciliation status on the Admin Day dashboard** (US-13.2.4; session 2):
+    - DM-67's shape, in the words below: the status is a pure derivation over the ledger and the Xero
+      mirror and is **never stored** (no status field in any slice, nothing persisted, so no
+      `PERSIST_VERSION` bump for it); `UnresolvedItem` (`{ id, label, amount, sinceISO, source }`) is the one
+      record type, built from an unplaced receipt, an unmatched bank line or an open divergence, with
+      `ageDays` computed from the demo clock; the checked accounts are one data table
+      (`reconciliationChecks`), so a posting-design change adds a row, not code.
     - Pure `reconciliationStatus(input)` in `src/domain/billing/reconciliation.ts`, with Vitest tests.
       It takes a list of checks, each `{ id, label, difference, items[] }`, and returns `square`
       (every difference 0 to the cent and no items) or `outOfBalance` with the failing checks. Items are
@@ -1047,7 +1060,7 @@ matches what was built:
 | [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent | no change here (Phase 39a owns it) |
 | [US-10.2.7](../../../../requirements-board/requirements/stories/US-10.2.7.md) Weekly payment cycle | absent | no change here (Phase 39a owns it) |
 | [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent | captured (simulator). New recipe shots: `bank-reconciliation` (`/demo/xero/bank`, `xero-bank-reconciliation` with the scope callout "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do...") with states `remittance` (after the `xero-bulk-remittance` trigger, run in `setup` after a `goto` to `/demo/xero/invoices`: the two matched St George's lines, learned by webhook) and `unmatched` (the unmatched $980.00 line "for office staff, handled in Xero", highlight the unmatched list). Remove the absent reason |
-| [US-13.2.4](../../../../requirements-board/requirements/stories/US-13.2.4.md) Reconciliation status at a glance | absent (new at `fbdd555f`) | create, captured (admin). Shots on `/admin`, highlight `[data-shot=dashboard-reconciliation]`: `square` (from reset) and `out-of-balance` (setup: `goto /admin/ledger`, `trigger` the inject entry with "Names Dr Souter", then `goto /admin`: the Ledger check and one item with its age). Caption in the catalogue's words: one status says whether the books are square; unresolved items with amount and age |
+| [US-13.2.4](../../../../requirements-board/requirements/stories/US-13.2.4.md) Reconciliation status at a glance | absent (new at `fbdd555f`) | create, captured (admin). Also the evidence for DM-67 (derived status, unresolved item with its age, checks as a table), no extra shots. Shots on `/admin`, highlight `[data-shot=dashboard-reconciliation]`: `square` (from reset) and `out-of-balance` (setup: `goto /admin/ledger`, `trigger` the inject entry with "Names Dr Souter", then `goto /admin`: the Ledger check and one item with its age). Caption in the catalogue's words: one status says whether the books are square; unresolved items with amount and age |
 | [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md) Processing monitor | captured · admin-billing-monitor | captured, re-shot on the restyle. Joined this phase at `60e2d1e`. `billing-monitor`: keep the shot `name` and setup (two Authorise clicks on `L-25490-2026-07-20-AM`), start at `/admin/billing?list=L-25490-2026-07-20-AM`, highlight `[data-shot=billing-pipeline-L-25490-2026-07-20-AM]` (the expanded List inside its anaesthetist's group: stage strip, invoiced, sent, Xero). Add `grouped` (from reset with one List authorised: the anaesthetist groups with their "Awaiting approval" rows and **Open in Review**, highlight one `[data-shot=billing-awaiting-<listId>]` and the summary tiles; caption: grouped by anaesthetist, Lists awaiting approval open in Review), `filtered` (`?anaesthetist=<the authorised List's anaesthetist id>`: highlight `[data-shot=billing-monitor-filters]` and the one group) and `problems-only` (staged in `setup` with the `billing-failure` trigger on `/admin/billing`, then `?problems=1`: only Ropata's List, expanded, with Losa Tuilagi's reason; highlight the filter bar and the List). Captions in the catalogue's words: why anything failed; standard sorting and filtering; grouped by anaesthetist |
 
 **Recipes this phase breaks.** Found at plan time:
@@ -1118,7 +1131,8 @@ amends (listed below).
   filter and sort state lives only in the URL (no store slice, no persisted field); every recipe and
   spec that highlights `billing-pipeline-<listId>` still resolves; Phase 22's, 25's, 36's (and 40's)
   monitor cells all survived the restyle.
-- Reconciliation honesty (US-13.2.4): "Books square" only when every check is zero to the cent and no
+- Reconciliation honesty (US-13.2.4, DM-67): the status is derived and never stored (grep: no persisted
+  reconciliation field), the checks are one data table, "Books square" only when every check is zero to the cent and no
   item is open; every number on the card is computed from the same selectors the Ledger, the Billing
   monitor and Bank reconciliation show, so they never disagree; ages come from the demo clock; no check
   pretends to model a clearing account or control account.
@@ -1152,7 +1166,7 @@ amends (listed below).
   - **The reconciliation status's checks** (Admin Day `/admin`, office persona; US-13.2.4, Proposed):
     the three checks built (ledger, ledger against Xero, Xero bank lines) are our reading; the clearing
     account, the sub-ledger against control account checks and the bank feed wait on Greg and Sam's
-    process maps (2026-11-10). Also which items count as unresolved and the five-item limit.
+    process maps (2026-11-10). Also which items count as unresolved and the five-item limit. DM-67 is closed by the same work (derived status, `UnresolvedItem`, the checks table).
 - A catch-up status row for Phase 37 and an entry `### Catch-up Phase 37 · Xero mirror resilience and
   the processing monitor (date)`: the drift-check result, the Phase 36 names used, whether 39 had landed, the checklist item by
   item, test counts, the Catalogue screenshots result (recipes created or changed, the REPORT.md
