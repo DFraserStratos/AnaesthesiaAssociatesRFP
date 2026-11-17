@@ -21,21 +21,15 @@
  * here from `contractRail.ts` so the rule has one home.
  */
 
-import type { BillingLine, Procedure } from '../types'
+import type { Procedure } from '../types'
 import { isRvgKind, type Contract } from './contracts'
 
 /**
  * True on the three RVG kinds (No contract · RVG included); false on a fixed
- * or open price, a Disabled Contract asking by its kind. A Procedure priced by
- * its own rate x time line (Method 3, the hourly arrangements) is priced from
- * the line's hours, so it asks for no RVG detail (our reading, as Phase 20's
- * RVG code rule already read it): pass its billing lines.
+ * or open price, a Disabled Contract asking by its kind. (The rate x time
+ * line that once exempted a Procedure is gone, catch-up Phase 24, RV-03.)
  */
-export function asksRvgDetail(
-  contract: Pick<Contract, 'pricing'> | undefined,
-  lines: readonly Pick<BillingLine, 'chargeBasis'>[] = [],
-): boolean {
-  if (lines.some((l) => l.chargeBasis === 'rateTime')) return false
+export function asksRvgDetail(contract: Pick<Contract, 'pricing'> | undefined): boolean {
   return contract !== undefined && isRvgKind(contract.pricing.kind)
 }
 
@@ -48,27 +42,22 @@ export interface RvgDetailSpec {
   modifiers: 'required' | 'hidden' | 'shown'
 }
 
-/** The form spec for a Procedure on this Contract (undefined: no Contract yet), with its billing lines. */
-export function rvgDetailFor(
-  contract: Pick<Contract, 'pricing'> | undefined,
-  lines: readonly Pick<BillingLine, 'chargeBasis'>[] = [],
-): RvgDetailSpec {
+/** The form spec for a Procedure on this Contract (undefined: no Contract yet). */
+export function rvgDetailFor(contract: Pick<Contract, 'pricing'> | undefined): RvgDetailSpec {
   if (contract === undefined) return { rvgCode: 'optional', times: 'shown', modifiers: 'shown' }
-  if (asksRvgDetail(contract, lines)) return { rvgCode: 'required', times: 'required', modifiers: 'required' }
+  if (asksRvgDetail(contract)) return { rvgCode: 'required', times: 'required', modifiers: 'required' }
   return { rvgCode: 'reference', times: 'hidden', modifiers: 'hidden' }
 }
 
 /**
  * Derived, never stored (US-03.3.1, US-04.3.4): the Procedure is on a Contract
  * priced from RVG units and has no RVG code, so the anaesthetist is asked for
- * it. A Procedure priced by its own rate x time line (Method 3, the hourly
- * arrangements) needs none.
+ * it.
  */
 export function rvgCodeToFill(
   masters: { contracts: Readonly<Record<string, Contract>> },
   procedure: Pick<Procedure, 'governingContractId' | 'rvgGroupId'>,
-  lines: readonly Pick<BillingLine, 'chargeBasis'>[] = [],
 ): boolean {
   if (procedure.governingContractId === undefined || procedure.rvgGroupId !== undefined) return false
-  return asksRvgDetail(masters.contracts[procedure.governingContractId], lines)
+  return asksRvgDetail(masters.contracts[procedure.governingContractId])
 }

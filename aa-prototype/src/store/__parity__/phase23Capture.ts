@@ -109,7 +109,8 @@ function buildRow(result: ReturnType<typeof buildInvoicesForBooking>): BuildRow2
   }
 }
 
-export function capturePhase23(state: AppState): Phase23Baseline {
+/** `held`: read the price ladder's held amounts (catch-up Phase 24's own capture); off, the pre-24 form the Phase 23 fixture holds. */
+export function capturePhase23(state: AppState, opts: { held?: boolean } = {}): Phase23Baseline {
   const fees: FeeRow23[] = []
   const bookings: BookingRow23[] = []
   const census: CensusRow23[] = []
@@ -154,7 +155,7 @@ export function capturePhase23(state: AppState): Phase23Baseline {
           }),
         })
       }
-      const ctx = billingContextForBooking(state, booking)
+      const ctx = billingContextForBooking(opts.held === true ? state : { masters: state.masters, schedule: state.schedule }, booking)
       if (ctx === undefined) continue
       const prePaid = prePaidByProcedure(state, booking.id)
       const buildCtx: InvoiceBuildContext = {

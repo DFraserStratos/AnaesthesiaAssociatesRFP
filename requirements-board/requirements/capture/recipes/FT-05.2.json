@@ -1,0 +1,51 @@
+{
+  "id": "FT-05.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "booking-total-lines",
+      "app": "admin",
+      "caption": "Each Procedure priced by its Contract's kind",
+      "start": "/admin/day/2026-07-27/bookings/BK0185",
+      "states": [
+        {
+          "state": "discount",
+          "caption": "RVG less the Contract's discount: the fee, then Discount 10%",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-total-lines]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-total-lines]"
+          ]
+        },
+        {
+          "state": "fixed-price",
+          "caption": "A fixed price: the range in force, no units charged",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-08-10/bookings/BK0176"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-testid=booking-calculation]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=booking-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

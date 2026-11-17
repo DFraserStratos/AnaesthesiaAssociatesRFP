@@ -40,9 +40,9 @@ export interface BookingTotalLine {
 }
 
 /**
- * The Booking calculation: units, fee and breakdown. Office Bookings only; the
- * anaesthetist Booking shows none, so only the desktop surface renders it (the
- * phone's `BookingTotal` renders nothing).
+ * The Booking calculation: units, fee and breakdown, on every Booking (catch-up
+ * Phase 24, US-03.3.10: the anaesthetist sees what the price comes to). The
+ * desktop renders `BookingTotalPanel`, the phone the dock `BookingTotalStrip`.
  *
  * `action` is the complete / amend bar. The web layout passes null and renders
  * the control as a separate, matching-width sibling below the total.
@@ -58,7 +58,7 @@ export interface BookingTotalProps {
   lines: readonly BookingTotalLine[]
   /** The applied rate, e.g. "FEE @ $26.50/UNIT", or null when procedures disagree. */
   rateLabel: string | null
-  /** Price-override note, or null. */
+  /** The typed-price note ("Price typed · computed $360.00"), or null (catch-up Phase 24; the name is the old override note's). */
   overrideNote: string | null
   /**
    * Plain neutral captions under the rows of a multi-procedure Booking (catch-up

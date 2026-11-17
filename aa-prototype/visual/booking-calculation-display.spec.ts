@@ -1,9 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * The anaesthetist Booking carries no calculation: only Mark complete is pinned,
- * and the completion moment shows no units or fee. The office Booking keeps the
- * full fee panel.
+ * Every Booking shows what the price comes to (catch-up Phase 24; US-03.3.10,
+ * RV-29): the phone pins the dock strip (restored from `d1562b4c`, fee only:
+ * no Off / Units / Fee setting) above Mark complete, the web rail puts the
+ * total panel above Mark complete, widths matched, and the completion moment
+ * names the units and price. The office Booking keeps the full fee panel.
  */
 
 async function openMobileEllison(page: Page): Promise<void> {
@@ -41,36 +43,62 @@ async function advanceClockTo1715(page: Page): Promise<void> {
   await page.getByRole('button', { name: '+15 min', exact: true }).click()
 }
 
-test('mobile anaesthetist Booking pins Mark complete alone and completes without a calculation', async ({ page }) => {
+test('mobile anaesthetist Booking pins the price strip above Mark complete, and the price ticks up as a modifier is claimed', async ({ page }) => {
   await advanceClockTo1715(page)
   await openMobileEllison(page)
 
-  await expect(page.getByRole('group', { name: 'Anaesthetist Booking calculation' })).toHaveCount(0)
-  await expect(page.getByTestId('booking-calculation')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Mark complete' })).toBeVisible()
+  const strip = page.locator('[data-shot=booking-total-strip]')
+  await expect(strip).toBeVisible()
+  await expect(strip).toContainText('UNITS')
+  await expect(strip).toContainText('$')
+  const complete = page.getByRole('button', { name: 'Mark complete' })
+  const stripBox = await strip.boundingBox()
+  const completeBox = await complete.boundingBox()
+  expect(stripBox).not.toBeNull()
+  expect(completeBox).not.toBeNull()
+  // The strip sits above the bar in the dock, never a sheet, toast or confirm.
+  expect(stripBox!.y + stripBox!.height).toBeLessThanOrEqual(completeBox!.y)
+  const card = page.locator('[data-shot=price-card]').first()
+  await expect(card).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/booking-calculation-mobile-fee.png', fullPage: true })
+
+  // Claim a modifier: the price line and the strip both rise, with no prompt (US-03.3.10 "Updates as entered").
+  const priceBefore = await card.locator('[data-shot=price-card-price]').innerText()
+  const stripBefore = await strip.innerText()
+  await page.locator('[data-shot="capture-modifiers"]').first().locator('[data-shot="modifier-add"]').click()
+  await page.locator('[data-shot="modifier-picker"] [data-modifier-code="AS3"]').click()
+  await page.getByPlaceholder('A short reason, as an insurer would ask').fill('ASA III on pre-op review')
+  await page.getByRole('button', { name: 'Claim', exact: true }).click()
+  await page.waitForTimeout(1200)
+  await expect(card.locator('[data-shot=price-card-price]')).not.toHaveText(priceBefore)
+  expect(await strip.innerText()).not.toBe(stripBefore)
+  await expect(page.locator('[role=alertdialog]')).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Finish now' }).click()
-  // The modifiers step on an RVG price (catch-up Phase 21a): "None apply" is a valid answer.
-  await page.locator('[data-shot="capture-modifiers-none"]').click()
-  await page.getByRole('button', { name: 'Mark complete' }).click()
+  await complete.click()
   const overlay = page.getByTestId('completion-overlay')
   await expect(overlay.getByText('Booking complete', { exact: true })).toBeVisible()
-  await expect(overlay.getByText(/units/)).toHaveCount(0)
-  await expect(overlay.getByText(/\$/)).toHaveCount(0)
+  await expect(overlay.getByText(/units · \$/)).toBeVisible()
 })
 
-test('web anaesthetist Booking rail carries Mark complete alone, level with the first capture card and sticky', async ({ page }) => {
+test('web anaesthetist rail: the total panel above Mark complete, widths matched, sticky', async ({ page }) => {
   await openWebEllison(page)
 
-  await expect(page.getByTestId('booking-calculation')).toHaveCount(0)
+  const calculation = page.getByTestId('booking-calculation')
+  await expect(calculation).toContainText('BOOKING TOTAL')
   const complete = page.getByRole('button', { name: 'Mark complete' })
-  // The Procedure card leads the capture column since catch-up Phase 20a.
-  const asa = await page.locator('[data-shot=procedure-stack]').first().boundingBox()
+  const totalBox = await calculation.boundingBox()
   const completeBox = await complete.boundingBox()
-  expect(asa).not.toBeNull()
+  expect(totalBox).not.toBeNull()
   expect(completeBox).not.toBeNull()
-  expect(Math.abs(asa!.y - completeBox!.y)).toBeLessThan(1)
+  expect(completeBox!.y - (totalBox!.y + totalBox!.height)).toBeCloseTo(8, 0)
+  expect(Math.abs(completeBox!.width - totalBox!.width)).toBeLessThan(1)
+  // The panel starts level with the first capture card (the Procedure card since catch-up Phase 20a).
+  const first = await page.locator('[data-shot=procedure-stack]').first().boundingBox()
+  expect(first).not.toBeNull()
+  expect(Math.abs(first!.y - totalBox!.y)).toBeLessThan(1)
   await expect(page.getByTestId('web-booking-commit')).toHaveCSS('position', 'sticky')
+  await page.screenshot({ path: 'visual/shots/booking-calculation-web-fee.png', fullPage: true })
 })
 
 test('Admin Booking keeps the full fee panel', async ({ page }) => {

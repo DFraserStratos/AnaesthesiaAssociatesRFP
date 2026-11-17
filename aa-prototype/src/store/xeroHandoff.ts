@@ -251,6 +251,39 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
     const payer = resolveContactInto(payerSpec, contacts, cache, counters)
     counters = payer.counters
     metas.push(contactResolvedMeta(payer.contactId, payerSpec, payer))
+
+    // A no-charge invoice (catch-up Phase 24): a $0.00 receivable, nothing owed so marked paid, and no
+    // payable leg, so no BCTI (16's count unchanged). A reading, logged.
+    if (invoice.noCharge === true) {
+      const xr0 = allocateId(counters, 'xeroAccRec')
+      counters = xr0.counters
+      const at = clockISO(s.clock)
+      accRecs[xr0.id] = {
+        id: xr0.id,
+        kind: 'procedure',
+        invoiceId: invoice.id,
+        contactId: payer.contactId,
+        invoiceNumber: invoice.invoiceNumber,
+        reference: invoice.caseReference,
+        issuedAtISO: at,
+        amountDue: 0,
+        amountReceived: 0,
+        paidAtISO: at,
+        status: 'paid',
+      }
+      // Nothing is owed, so the case reads paid (stamped) and nothing is disbursed.
+      cases[caseId] = { ...existing, accRecId: xr0.id, status: 'paid' as const, paidInAtISO: at }
+      delete cases[caseId]!.handoffFailure
+      out = { accRecId: xr0.id }
+      metas.push({
+        entityType: 'billingCase',
+        entityId: caseId,
+        action: 'xero.pairCreated',
+        after: { accRecId: xr0.id, invoiceNumber: invoice.invoiceNumber, payerContactId: payer.contactId, amountDue: 0, noCharge: true },
+      })
+      return { xero: { ...s.xero, contacts, accRecs }, billing: { ...s.billing, cases, contactIdCache: cache }, counters }
+    }
+
     const payee = resolveContactInto(payeeSpec, contacts, cache, counters)
     counters = payee.counters
     metas.push(contactResolvedMeta(payee.contactId, payeeSpec, payee))

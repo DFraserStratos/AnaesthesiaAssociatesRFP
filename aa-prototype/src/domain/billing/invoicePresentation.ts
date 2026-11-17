@@ -200,12 +200,6 @@ export interface LineViewOptions {
   procedureId: ProcedureId
   /** The Procedure's invoice description (20a's, read, never re-derived); null falls back to the fee's own text. */
   wording: string | null
-  /**
-   * A Contract percentage discount folded into the unit rate (`rvgDiscount`):
-   * printed as its own negative line from the anaesthetist's own unit value,
-   * figures unchanged.
-   */
-  discount?: { percent: number; unitValue: number }
 }
 
 /**
@@ -246,41 +240,24 @@ export function btmBreakdownText(btm: InvoiceLineBtm): string {
 
 /**
  * What one Procedure's fee prints, by layout: a fee line worded by the invoice
- * description (the first; captured extra lines keep their own text), a
- * discount as its own negative line, today's price-override adjustment, and
- * on the holder's layout the BTM breakdown on the RVG fee line. The lines
- * always total `fee.total`.
+ * description (the first; captured extra lines keep their own text), the
+ * Contract's discount as its own negative line (catch-up Phase 24, US-05.4.3),
+ * and on the holder's layout the BTM breakdown on the RVG fee line. A typed or
+ * held price is one fee line at the price. The lines always total `fee.total`.
  */
 export function invoiceLineViews(layout: InvoiceLayout, fee: FeeResult, options: LineViewOptions): InvoiceLineView[] {
   const views: InvoiceLineView[] = []
   fee.lines.forEach((line, index) => {
-    const description = index === 0 && options.wording !== null && options.wording.trim() !== '' ? options.wording : line.description
-    let amount = line.amount
-    let unitValue = line.rate
-    let discountLine: InvoiceLineView | undefined
-    if (line.chargeBasis === 'rvg' && options.discount !== undefined && line.units !== undefined) {
-      const gross = roundToCents(line.units * options.discount.unitValue)
-      const less = roundToCents(line.amount - gross)
-      if (less < 0) {
-        amount = gross
-        unitValue = options.discount.unitValue
-        discountLine = { procedureId: options.procedureId, kind: 'discount', description: `Contract discount, ${options.discount.percent}% off the unit rate`, amount: less }
-      }
+    if (line.role === 'discount') {
+      views.push({ procedureId: options.procedureId, kind: 'discount', description: line.description, amount: line.amount })
+      return
     }
-    const view: InvoiceLineView = { procedureId: options.procedureId, kind: 'fee', description, amount }
+    const description = index === 0 && options.wording !== null && options.wording.trim() !== '' ? options.wording : line.description
+    const view: InvoiceLineView = { procedureId: options.procedureId, kind: 'fee', description, amount: line.amount }
     if (line.units !== undefined) view.units = line.units
-    if (layout === 'contractHolder' && line.chargeBasis === 'rvg' && unitValue !== undefined) view.btm = btmOf(fee, unitValue)
+    if (layout === 'contractHolder' && line.chargeBasis === 'rvg' && line.rate !== undefined) view.btm = btmOf(fee, line.rate)
     views.push(view)
-    if (discountLine !== undefined) views.push(discountLine)
   })
-  if (fee.override !== null) {
-    views.push({
-      procedureId: options.procedureId,
-      kind: 'adjustment',
-      description: `Price override, ${fee.override.override.reason}`,
-      amount: roundToCents(fee.override.after - fee.override.before),
-    })
-  }
   return views
 }
 

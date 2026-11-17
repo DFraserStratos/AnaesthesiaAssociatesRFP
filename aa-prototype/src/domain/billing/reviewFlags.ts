@@ -133,14 +133,14 @@ const needsPrice: Rule = perProcedure('needsPrice', ({ procedure }, input) =>
 )
 
 /**
- * A typed price on a Contract that is not open price, whoever typed it (an
- * `enteredPrice`, or the office's fixed fee), beside the computed price. A
- * typed price on an open price is the price itself: no flag.
+ * A typed price (`enteredPrice`) on a Contract that is not open price, whoever
+ * typed it, beside the computed price (A49). A typed price on an open price is
+ * the price itself: no flag.
  */
 const typedPrice: Rule = perProcedure('typedPrice', ({ procedure, computedPrice }, input) => {
   const contract = contractOf(procedure, input)
   if (contract === undefined || contract.pricing.kind === 'open') return null
-  const typed = procedure.enteredPrice ?? (procedure.priceOverride?.kind === 'fixedFee' ? procedure.priceOverride.amount : undefined)
+  const typed = procedure.enteredPrice
   if (typed === undefined) return null
   const computed = computedPrice !== undefined ? ` (computed ${formatMoney(computedPrice)})` : ''
   return { tone: 'neutral', text: `Price typed: ${formatMoney(typed)}${computed}`, shot: 'review-flag' }

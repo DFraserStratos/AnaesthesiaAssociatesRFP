@@ -95,6 +95,9 @@ import {
   nextOpenSouterList,
   feedChangesPrimary,
   feedChangesPrimaryRefusal,
+  BACKDATED_RANGE_CONTRACT_ID,
+  addBackdatedRangeDemo,
+  backdatedRangeAdded,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
@@ -1158,6 +1161,27 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return { ok: true, message: `Added a ${DRAFT_LIST} for ${shortDay(dateISO)} ${sessionText(c.session)}: ${pairingOf(api.getState(), c.hospitalId, c.surgeonId)}. It shows in the band and the rail card.` }
     },
     indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+  },
+  // ── Admin · Master data, Contracts: a backdated range on Merivale's Face lift (catch-up Phase 24, US-05.2.8) ──
+  {
+    id: 'demo-backdated-range',
+    label: 'Demo: add a backdated price range',
+    description:
+      "Adds a range from 1 Jul 2026 at $3,300.00 (a demo figure) to Merivale's Face lift, as the office. The unedited Face lift Bookings re-price; the one with a typed price and the AUTHORISED, invoiced one stay put.",
+    screen: 'Admin · Master data, Contracts',
+    routes: [ADMIN_MASTERS],
+    surfaces: ['bar'],
+    // On the Contracts view (the Contract detail panel is modal, so the bar is reached from the list) or with the Face lift open;
+    // once the range is added it stays listed, disabled, so its result line can be read.
+    when: (_state, ctx) => ctx.published['adminMasters.view'] === 'contracts' || ctx.published['adminContracts.openContractId'] === BACKDATED_RANGE_CONTRACT_ID,
+    disabledReason: (state) => (backdatedRangeAdded(state) ? 'Already added' : null),
+    run: (api) => {
+      const res = addBackdatedRangeDemo(api)
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: 'Added a range from 1 Jul 2026 at $3,300.00 to the Face lift. Unedited Face lift Bookings now price at $3,300.00; the typed and the invoiced ones are held.' }
+    },
+    indexPath: () => '/admin/masters?view=contracts',
+    indexHint: "Then open Merivale's Face lift (search \"Face lift\", then Edit) to see its ranges.",
   },
   // ── Admin · Master data, Recurring bookings: the nightly roll meets a blocked-out day (catch-up Phase 31) ──
   {

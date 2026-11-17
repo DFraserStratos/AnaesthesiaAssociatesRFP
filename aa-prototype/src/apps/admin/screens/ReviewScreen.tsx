@@ -17,6 +17,7 @@ import {
   logListNote,
   pendingContractChangesOnList,
   resolveNotification,
+  heldPricesForBooking,
   reviewInputFor,
   useAppStore,
   useListTimes,
@@ -24,6 +25,8 @@ import {
 } from '../../../store'
 import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
 import { bookingFee } from '../../../shared/capture'
+import { isNoChargeBooking } from '../../../domain/billing/procedurePrice'
+import { roundToCents } from '../../../domain/billing/money'
 import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
@@ -111,9 +114,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
           .filter((p) => p.bookingId === booking.id)
           .sort((a, b) => a.id.localeCompare(b.id)),
       )
-      const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId })
       // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
       const state = useAppStore.getState()
+      const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
       const input = reviewInputFor(state, booking)
       const flags = input !== undefined ? reviewFlagsForBooking(input) : []
       const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
@@ -122,7 +125,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       const primaryAllocation = primary !== undefined ? totals.views[primary.id]?.allocation : undefined
       // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
       // Procedures column and for who is billed ("Mixed" when Procedures differ; `billablePartyForProcedure`, catch-up Phase 21).
-      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord, billingLines: billingLinesRecord } }, p.id, 'office')!)
+      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord, billingLines: billingLinesRecord }, billing: state.billing }, p.id, 'office')!)
       const billed = new Set(stackViews.map((v) => v.contract?.invoiced?.name).filter((n): n is string => n !== undefined))
       const anyMissing = stackViews.some((v) => v.contract === null)
       // A split fee bills several parties (catch-up Phase 22): "Split" (its parties show in the Procedures cell), or "Mixed".
@@ -154,7 +157,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       return { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
     })
     // The audit feeds the change records; the notifications feed the alerts.
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications, invoicesRecord])
   const warningsByBooking = useListWarnings(listId)
   // The anaesthetist's changes since submit (catch-up Phase 38a): null once authorised.
   const changed = useChangedSinceSubmitted(listId)
@@ -407,7 +410,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                     )}
                   </td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
-                  <td className={totals.needsPrice ? undefined : 'mono'} style={{ ...numCell, fontWeight: 600 }}>{totals.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(totals.total)}</td>
+                  <td data-shot="review-fee" style={{ ...numCell, fontWeight: 600 }}>
+                    <ReviewFeeCell totals={totals} />
+                  </td>
                   <td style={{ ...cellStyle, minWidth: 150 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                       {flags.filter((f) => f.procedureId === undefined).map((f, i) => (
@@ -682,6 +687,38 @@ function OpenWarnings({ warnings, patientName, disabled, onClear }: { warnings: 
           <ClearWarningButton warning={w} compact onClear={() => onClear(w)} label={`${w.strength === 'mild' ? 'Clear (optional)' : 'Clear'} warning for ${patientName}`} />
         </div>
       ))}
+    </div>
+  )
+}
+
+/**
+ * Review's Fee cell (catch-up Phase 24; US-05.4.1, US-05.4.2): the Booking's
+ * price; under a typed price "Computed $360.00" in mist, beside 21a's
+ * `typedPrice` flag; a $0.00 price a neutral "No charge" pill. Read from the
+ * one assembler's price answers, never re-derived.
+ */
+function ReviewFeeCell({ totals }: { totals: ReturnType<typeof bookingFee> }) {
+  if (totals.needsPrice) return <>{NEEDS_PRICE_LABEL}</>
+  const prices = Object.values(totals.views).map((v) => v.fee.price)
+  const typed = prices.filter((p) => p.status === 'priced' && p.heldBy === 'typed')
+  // The computed figure for the whole Booking: each typed Procedure's computed price in place of its typed one;
+  // none where a typed Procedure has no computed price of its own (an open price).
+  const computable = typed.every((p) => p.status === 'priced' && p.computedTotal !== undefined)
+  const computedTotal =
+    typed.length === 0 || !computable ? undefined : roundToCents(prices.reduce((sum, p) => sum + (p.status !== 'priced' ? 0 : p.heldBy === 'typed' ? (p.computedTotal ?? 0) : p.price), 0))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+      <span className="mono">{formatCurrency(totals.total)}</span>
+      {computedTotal !== undefined && (
+        <span className="mono" data-shot="review-fee-computed" style={{ fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>
+          Computed {formatCurrency(computedTotal)}
+        </span>
+      )}
+      {isNoChargeBooking(prices) && (
+        <Pill tone="neutral" size="sm" shot="review-no-charge">
+          No charge
+        </Pill>
+      )}
     </div>
   )
 }

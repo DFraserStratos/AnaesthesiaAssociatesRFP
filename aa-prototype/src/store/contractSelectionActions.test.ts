@@ -6,7 +6,8 @@
 import { completeAnswered } from '../test/completeAnswered'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { setEnteredPrice, setProcedureContract, setRailAnswers } from './contractSelectionActions'
+import { setProcedureContract, setRailAnswers } from './contractSelectionActions'
+import { setProcedurePrice } from './pricingActions'
 import { authoriseList, completeBooking, editList, editProcedure, submitList } from './lifecycle'
 import { addProcedure, createBooking } from './bookingActions'
 import { bookingsForList, needsInvoiceDestinationBookings, prepaymentStatusFor, proceduresForBooking, rvgCodeToFillFor } from './selectors'
@@ -116,7 +117,7 @@ describe('setProcedureContract', () => {
   })
 })
 
-describe('setRailAnswers and setEnteredPrice', () => {
+describe('setRailAnswers and the typed amount (setProcedurePrice since catch-up Phase 24)', () => {
   it('keeps the answers so far on a Procedure with no Contract; never Prepaid for the anaesthetist', () => {
     const api = store()
     const p = firstProcOf(api, marker('needsInvoiceDestinationBooking'))
@@ -144,14 +145,14 @@ describe('setRailAnswers and setEnteredPrice', () => {
     const api = store()
     const p = firstProcOf(api, pickUp())
     setProcedureContract(api, OFFICE, p.id, 'CT-FIX-PATIENT-STANDARD')
-    expect(setEnteredPrice(api, SOUTER, p.id, 2000)).toMatchObject({ ok: true })
+    expect(setProcedurePrice(api, SOUTER, p.id, 2000)).toMatchObject({ ok: true })
     expect(proc(api, p.id).enteredPrice).toBe(2000)
     const sx = Object.values(api.getState().schedule.procedures).find((x) => x.governingContractId === 'CT-SXAP' && api.getState().schedule.lists[listOf(api, x.bookingId)]?.state === 'ACTIVE')!
     const sxList = api.getState().schedule.lists[listOf(api, sx.bookingId)]!
     const owner: Actor = { who: 'Owner', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: sxList.anaesthetistId! }
     expect(setProcedureContract(api, owner, sx.id, 'CT-FIX-HOSPITAL-PY-SX-TAG-SXAP')).toMatchObject({ ok: true })
-    expect(setEnteredPrice(api, owner, sx.id, 300)).toMatchObject({ ok: false, code: 'officeTypesAmount', message: 'The office types this amount.' })
-    expect(setEnteredPrice(api, OFFICE, sx.id, 300)).toMatchObject({ ok: true })
+    expect(setProcedurePrice(api, owner, sx.id, 300)).toMatchObject({ ok: false, code: 'officeTypesAmount', message: 'The office types this amount.' })
+    expect(setProcedurePrice(api, OFFICE, sx.id, 300)).toMatchObject({ ok: true })
   })
 })
 

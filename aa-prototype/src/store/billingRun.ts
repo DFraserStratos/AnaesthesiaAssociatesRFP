@@ -123,7 +123,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       const result = buildInvoicesForBooking(booking, procedures, buildCtx)
       if (result.kind === 'exception') return { bookingId: booking.id, result }
       // The run's pre-flight (catch-up Phase 21a): the checks completion no longer
-      // makes (the Method 3 gate, the override reason and sign, a split that no longer fits) send
+      // makes ("Needs a price", a split that no longer fits) send
       // the Booking to the monitor instead of building invoices from it.
       const preflight = validateBookingForBilling(booking, procedures, bookingCtx)[0]
       if (preflight !== undefined) {
@@ -306,8 +306,8 @@ export function chooseContractForFailedBooking(
       entityType: 'procedure',
       entityId: procedureId,
       action: 'procedure.contract',
-      before: { governingContractId: procedure.governingContractId, enteredPrice: procedure.enteredPrice, priceOverride: procedure.priceOverride, rvgGroupId: procedure.rvgGroupId, invoiceDescription: procedure.invoiceDescription?.text ?? null },
-      after: { governingContractId: next.governingContractId, enteredPrice: next.enteredPrice, priceOverride: next.priceOverride, rvgGroupId: next.rvgGroupId, invoiceDescription: next.invoiceDescription?.text ?? null },
+      before: { governingContractId: procedure.governingContractId, enteredPrice: procedure.enteredPrice, rvgGroupId: procedure.rvgGroupId, invoiceDescription: procedure.invoiceDescription?.text ?? null },
+      after: { governingContractId: next.governingContractId, enteredPrice: next.enteredPrice, rvgGroupId: next.rvgGroupId, invoiceDescription: next.invoiceDescription?.text ?? null },
     },
     (s) => ({
       schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } },

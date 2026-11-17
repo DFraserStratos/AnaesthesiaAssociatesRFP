@@ -11,6 +11,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
 import { createAppStore, freshAppState } from './appStore'
@@ -23,6 +24,10 @@ const baseline = baselineJson as unknown as Phase23Baseline
 const now = capturePhase23(freshAppState())
 const added = new Set([MULTI_PROCEDURE_IDS.booking])
 const addedProcedures = new Set(MULTI_PROCEDURE_IDS.procedures)
+// Catch-up Phase 24's declared difference (procedurePriceParity.test.ts pins it): the typed $1,200 on
+// BK0179 prints as one fee line at the price, its total unchanged. Set aside here.
+const TYPED_24_BOOKING = SEED_MARKERS['typedPriceBooking']!.entityId
+const typed24Procedures = new Set(Object.values(freshAppState().schedule.procedures).filter((p) => p.bookingId === TYPED_24_BOOKING).map((p) => p.id))
 
 /** The declared difference: an additional RVG-priced Procedure's recorded B and M, as they were. */
 const RECORDED_BEFORE: Record<string, { b: number; m: number }> = {
@@ -39,7 +44,8 @@ function asBefore(row: FeeRow23): FeeRow23 {
 
 describe('Phase 23 multi-procedure parity', () => {
   it('every seeded fee is as before, bar the declared recorded B and M on additional Procedures', () => {
-    expect(now.fees.filter((r) => !addedProcedures.has(r.procedureId)).map(asBefore)).toEqual(baseline.fees)
+    const kept = (id: string) => !typed24Procedures.has(id) && !PHASE_24_ARIA_PROCEDURES.has(id)
+    expect(now.fees.filter((r) => !addedProcedures.has(r.procedureId) && kept(r.procedureId)).map(asBefore)).toEqual(baseline.fees.filter((r) => kept(r.procedureId)))
   })
 
   it('declares its difference exactly: the four additional Procedures record base 0 and M 0, their charged units and money unmoved', () => {
@@ -51,7 +57,8 @@ describe('Phase 23 multi-procedure parity', () => {
   })
 
   it('every seeded invoice and prepayment build is as before: grouping, totals, line amounts, units and wording', () => {
-    expect(now.bookings.filter((r) => !added.has(r.bookingId))).toEqual(baseline.bookings)
+    const keptBooking = (id: string) => id !== TYPED_24_BOOKING && !PHASE_24_ARIA_BOOKINGS.has(id)
+    expect(now.bookings.filter((r) => !added.has(r.bookingId) && keptBooking(r.bookingId))).toEqual(baseline.bookings.filter((r) => keptBooking(r.bookingId)))
   })
 
   it("the BCTI count per anaesthetist and month (16's bctisFor) is unchanged", () => {

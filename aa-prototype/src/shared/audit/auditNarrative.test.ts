@@ -114,14 +114,23 @@ describe('auditFieldChanges', () => {
   })
 })
 
+describe('a typed price change (catch-up Phase 24)', () => {
+  const entry = (before: number | null, after: number | null): AuditEntry =>
+    ({ id: 'A1', entityType: 'procedure', entityId: 'P1', action: 'procedure.price', who: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00', before: { enteredPrice: before }, after: { enteredPrice: after } }) as AuditEntry
+  it('reads "Price changed", Price $450.00, and a clear as computed again', () => {
+    expect(actionLabel('procedure.price')).toBe('Price changed')
+    expect(auditFieldChanges(entry(null, 450))).toEqual([{ key: 'enteredPrice', label: 'Price', before: 'not set', after: '$450.00' }])
+    expect(auditFieldChanges(entry(450, null))).toEqual([{ key: 'enteredPrice', label: 'Price', before: '$450.00', after: 'cleared, computed again' }])
+  })
+})
+
 describe('formatAuditValue', () => {
   it('never stringifies JSON for the shapes the store stores', () => {
     expect(formatAuditValue('baseUnitsCaptured', { units: 3, source: 'overridden' })).toBe('3')
     expect(formatAuditValue('removedModifierIds', ['OB3', 'P1', 'AI1'])).toBe('OB3, P1, AI1')
     expect(formatAuditValue('removedModifierIds', [])).toBe('none')
-    expect(formatAuditValue('priceOverride', { kind: 'fixedFee', amount: 850, reason: 'Agreed by phone' })).toBe(
-      'Fixed fee $850.00 · Agreed by phone',
-    )
+    // The one typed price (catch-up Phase 24): money, no reason.
+    expect(formatAuditValue('enteredPrice', 450)).toBe('$450.00')
     expect(formatAuditValue('prepaymentDetail', { type: 'split', depositAmount: 200 })).toBe('Split · deposit $200.00')
     expect(formatAuditValue('counterparty', { kind: 'hospital', id: 'HH001' })).toBe('Hospital HH001')
     expect(formatAuditValue('completed', true)).toBe('yes')

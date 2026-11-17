@@ -54,9 +54,13 @@ const SEEDED_FALLBACK_KEYS = new Set([
   'baseUnitsSelected',
 ])
 
+/** A typed price cleared (catch-up Phase 24): the price is worked out from the Contract again. */
+export const PRICE_CLEARED = 'cleared, computed again'
+
 /** Keys whose numeric values are money. */
 const MONEY_KEYS = new Set([
   'amount',
+  'enteredPrice',
   'amountDue',
   'authorisedCumulative',
   'cumulative',
@@ -134,16 +138,6 @@ function formatShape(value: Record<string, unknown>): string | null {
   if (typeof value.units === 'number' && typeof value.source === 'string' && Object.keys(value).length === 2) {
     return String(value.units)
   }
-  // PriceOverride
-  if (value.kind === 'fixedFee' && typeof value.amount === 'number') {
-    return withReason(`Fixed fee ${formatCurrency(value.amount)}`, value.reason)
-  }
-  if (value.kind === 'dollarAdjustment' && typeof value.amount === 'number') {
-    return withReason(`Adjusted by ${formatCurrency(value.amount)}`, value.reason)
-  }
-  if (value.kind === 'percentAdjustment' && typeof value.percent === 'number') {
-    return withReason(`Adjusted by ${value.percent}%`, value.reason)
-  }
   // PrepaymentDetail
   if (value.type === 'full') return 'Full amount up front'
   if (value.type === 'split') {
@@ -166,9 +160,6 @@ function formatShape(value: Record<string, unknown>): string | null {
   return null
 }
 
-function withReason(head: string, reason: unknown): string {
-  return typeof reason === 'string' && reason.trim() !== '' ? `${head} · ${reason}` : head
-}
 
 /** `list.ownerMove`'s route and cause values (catch-up Phase 32). A conflict's `cause` is a fact key, never one of these. */
 const OWN_MOVE_WAY_LABELS = { office: 'The office', colleague: 'A colleague' } as const
@@ -334,7 +325,9 @@ export function auditFieldChanges(entry: AuditEntry, names?: AuditNames): AuditF
       change.after =
         afterValue === undefined && beforeValue !== undefined && SEEDED_FALLBACK_KEYS.has(key)
           ? CLEARED_TO_SEED
-          : formatAuditValue(key, afterValue, names)
+          : (afterValue === undefined || afterValue === null) && beforeValue !== undefined && beforeValue !== null && key === 'enteredPrice'
+            ? PRICE_CLEARED
+            : formatAuditValue(key, afterValue, names)
     }
     changes.push(change)
   }

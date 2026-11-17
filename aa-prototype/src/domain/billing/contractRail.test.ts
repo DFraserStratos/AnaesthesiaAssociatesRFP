@@ -256,9 +256,9 @@ describe('railAnswersFor', () => {
 
 describe('applyContractChange (US-03.4.1)', () => {
   it('clears a typed price and the answers so far, keeps recorded RVG detail, fills the default RVG code only when empty', () => {
-    const procedure = { rvgGroupId: 'RG046', priceOverride: { kind: 'fixedFee' as const, amount: 900, reason: 'x' }, enteredPrice: 650 }
+    const procedure = { rvgGroupId: 'RG046', enteredPrice: 650 }
     const kept = applyContractChange(masters, procedure, 'CT-SOUTER-RHINO')
-    expect(kept).toMatchObject({ governingContractId: 'CT-SOUTER-RHINO', priceOverride: undefined, enteredPrice: undefined, railAnswers: undefined })
+    expect(kept).toMatchObject({ governingContractId: 'CT-SOUTER-RHINO', enteredPrice: undefined, railAnswers: undefined })
     expect('rvgGroupId' in kept).toBe(false)
     const filled = applyContractChange(masters, {}, 'CT-SOUTER-RHINO')
     expect(filled.rvgGroupId).toBe(masters.contracts['CT-SOUTER-RHINO']!.defaultRvgGroupId)

@@ -94,7 +94,6 @@ export function mkContract(overrides: Partial<Contract> = {}): Contract {
     invoiceDescription: null,
     defaultRvgGroupId: null,
     status: 'active',
-    permitsRateTime: false,
     specialtyIds: [],
     ...overrides,
   }

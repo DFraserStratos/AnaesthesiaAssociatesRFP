@@ -546,7 +546,12 @@
   <p style="font-size:14px;color:var(--slate)">Phases 00 to 13 are built and clickable, with the catch-up
   phases listed above. Demo-only surfaces (Xero
   sim, integration sim, control panel) carry a <span class="chip demo">demo simulation</span> badge; the
-  billing monitor is proposed product UI, so only its simulation triggers are badged.</p>
+  billing monitor is proposed product UI, so only its simulation triggers are badged. The anaesthetist
+  Booking shows what the price comes to as she records, on every Contract: a quiet <strong>Price</strong>
+  card and the Booking total above <strong>Mark complete</strong>. She types a price only where an RVG
+  Contract allows it, or the amount on No contract · Fixed price, with no reason asked; elsewhere the
+  figures are read-only. Aria Skin and Laser Clinic is RVG at the Contract's rate, $26.50 a unit. Admin
+  Booking details keep the full billing view.</p>
   <div class="callout"><strong>Demo actions, Future scope and the office stand-in (catch-up Phase 14).</strong>
   Simulated events live on their screen: open <strong>Demo actions</strong> in the top bar beside the app
   switcher (it appears only where a screen has one; each entry is badged Demo trigger). On a handset the amber
@@ -643,8 +648,9 @@
       <h3>Kirsty W. · billing review and authorisation</h3>
       <p style="font-size:14px;color:var(--slate)">May be the same staff member. Reviews all Bookings of a
       submitted List as a set, corrects office-owned data without returning the List, approves or corrects each Contract the
-      anaesthetist changed and checks any typed price against the computed one, authorises a clean
-      List, may split a fee on a Booking, monitors later billing, Xero and integration exceptions, resends an invoice the run already sent (the run sends every invoice, so the office never emails one itself) and fixes a missing invoice address, and maintains AA fee settings and runs
+      anaesthetist changed and checks any typed price against the computed one (the Price typed flag, with
+      Computed $x under the price; a $0.00 price shows a No charge pill), authorises a clean
+      List (a $0.00 Booking raises a $0.00 "No charge" invoice: no payable, no BCTI), may split a fee on a Booking, monitors later billing, Xero and integration exceptions, resends an invoice the run already sent (the run sends every invoice, so the office never emails one itself) and fixes a missing invoice address, and maintains AA fee settings and runs
       the monthly fee invoices (AA's own fee to each anaesthetist, never deducted from a payment to them).</p>
       <p style="font-size:13px"><strong>Critical rule:</strong> there is no RETURNED state. The office phones
       for clarification and corrects it; the anaesthetist does not reopen the Booking.</p>
@@ -798,7 +804,13 @@
   <details><summary>4 · Capture BTM and complete a Booking</summary><div class="details-body">
     <p>What a Procedure asks for follows its Contract's pricing kind: on an RVG price the RVG code, start and finish times and the modifiers step are required (<strong>None apply</strong> answers the step); on a fixed or open price, no times, units or modifiers, and the RVG code is optional, for reference. Mark complete checks exactly three things: a Contract, the RVG detail on an RVG price, and a price (not Needs a price); what only the office can fix goes to it with Alert the office. Per Procedure on an RVG price: pick an RVG code by typing (on a ranged group the starting figure can be changed; a value outside the guide raises an office warning, never a block), record start and finish, and the system computes tiered
     Time units (1/15 min for the first two hours, then 1/10 min), plus the modifiers, at the
-    anaesthetist's own value per unit. The age modifier, and P1 on Neurosurgery and Spine codes (included in
+    anaesthetist's own value per unit. She sees what the price comes to as she records: a quiet Price card in
+    the capture ("4 units x $26.50 = $106.00") and the Booking total above Mark complete (the phone's dock
+    strip, the web rail panel), rising as she claims a modifier or adds time, with no prompt. She may add a
+    fixed billing line, and type a price where the Contract allows it, no reason needed; elsewhere the
+    figures are read-only ("Set by {Contract}. To use a different price, change the Contract or alert the
+    office."). The office can change any price until AUTHORISED, shown at review beside the computed price.
+    The age modifier, and P1 on Neurosurgery and Spine codes (included in
     their base units, at 0), are pre-applied and removable; any other modifier, ASA included, is claimed with
     a short reason, with no stacking limit; the same modifier is never added twice. One Procedure is the primary, listed first with a Primary pill; Make primary (a bottom sheet on the phone, a dialog on desktop) moves it, for anyone with edit rights. Under the multi-procedure rule base units sit on the primary only, every Procedure bills its own time, and modifiers are recorded once on the primary, split equally across the RVG-priced Procedures above 4 units (remainder to the primary; 7 over 3 = 3 / 2 / 2). When every active Booking is complete, the List is submittable.
     <span class="chip ready">Ready</span></p>
@@ -807,9 +819,10 @@
   <details><summary>5 · Submit the whole List and office review</summary><div class="details-body">
     <p>The anaesthetist marks the List complete and submits; it becomes SUBMITTED, stays on her main view
     less prominent, and she can still change it until the office authorises it (Review shows "Changed
-    since submitted"; a reopened Booking must be completed before authorise). The office reviews the full set (each Procedure's text, Contract with who is invoiced and RVG code, the payer, the insurer or funder and approval number, alerts, edits since submit, BTM, and flags that never block: a Contract change, a typed price beside the computed one, a Contract not offered on this List, Needs a price, Needs an invoice destination, Not marked completed), approves or corrects each Contract change (authorising approves any still waiting), corrects
+    since submitted"; a reopened Booking must be completed before authorise). The office reviews the full set (each Procedure's text, Contract with who is invoiced and RVG code, the payer, the insurer or funder and approval number, alerts, edits since submit, BTM, and flags that never block: a Contract change, a typed price beside the computed one, a No charge pill on a $0.00 price, a Contract not offered on this List, Needs a price, Needs an invoice destination, Not marked completed), approves or corrects each Contract change (authorising approves any still waiting), corrects
     office-owned data, optionally logs a phone note, and authorises. One list-authorised event hands the
-    whole List to the Billing Engine. Review is a human sanity check, not an automatic gate.
+    whole List to the Billing Engine; a $0.00 Booking raises a $0.00 "No charge" invoice, with no payable
+    and no BCTI. Review is a human sanity check, not an automatic gate.
     <span class="chip ready">Ready</span></p>
   </div></details>
 
@@ -987,11 +1000,12 @@
     <div class="beat">
       <h4>Beat 3 · capture on mobile</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Tue 28 St George's List &#8594; Sarah Mitchell.</li><li>She reads the procedure text first, "lap appy ?conv to open", what the hospital wrote. Her Booking arrives with no RVG code: tap the <strong>Billing</strong> card to open its sheet, type <strong>appendicectomy</strong> in the RVG code field and pick <strong>A3 · Appendicectomy, laparoscopic · B 5</strong> &#8594; Done &#8594; Start now.</li><li>Without leaving Sarah: live clock &#8594; +1 hour &#8594; close the popup (Escape, or a click outside it) &#8594; Finish now.</li><li>In the modifiers step, tap the teal <strong>None apply</strong> (it then reads No modifiers claimed · Change).</li><li>Mark complete.</li><li>Optional, to show the completion gate: Mark list completed · 3 to finish.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"She sees what the hospital wrote, picks the RVG code, and the Billing card shows the Contract; the running fee stays hidden. She captures the billing inputs, not just a dollar figure: Base plus tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every Booking is complete, so one of four submits nothing yet. That gate is why the List is the unit of approval."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The RVG code in the Billing card reads A3 Appendicectomy, laparoscopic · Base 5 units · from the RVG group, and B reads 5. Sarah changes the List from 0 of 4 complete to 1 of 4. The List action reads <strong>Mark list completed · 3 to finish</strong>; tapping it opens the Bookings still to finish sheet, naming each remaining Booking with what it needs. The List stays ACTIVE. S2 Beat 4 carries the submitted-to-authorised handoff from the seeded Review queue.</span></div>
-      <div class="row"><span class="k">Point at</span><span>Only <strong>Mark complete</strong> is pinned to the bottom of the phone; the anaesthetist captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll once and the masthead folds to make room. If Mark complete finds missing data, the Booking moves directly to the first incomplete control and focuses it. Optionally type <strong>H1</strong> (every H1 row with its description and base units) or <strong>T2</strong> (three rows share the code) in the type-ahead. Modifiers: no ASA step; only the age modifier and a modifier the base units include are pre-applied, and either can be removed; anything else, ASA included, asks for a short reason when claimed (open Margaret Ellison on Dr Souter's Tue 21 Jul PM List for the pre-applied A1). For an included modifier, Callum Graham on her Mon 27 Jul PM List (S3a) shows P1 selected at 0; S2 Beat 3c moves that List, so show it first or after a Reset.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"She sees what the hospital wrote, picks the RVG code, and the Billing card shows the Contract; a quiet Price card shows what it comes to as she records. She captures the billing inputs, not just a dollar figure: Base plus tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every Booking is complete, so one of four submits nothing yet. That gate is why the List is the unit of approval."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The RVG code in the Billing card reads A3 Appendicectomy, laparoscopic · Base 5 units · from the RVG group, and B reads 5. The <strong>Price</strong> card reads <strong>5 units x $26.50 = $132.50</strong> once A3 is picked and rises as the time units come in at Finish now; the dock strip above Mark complete shows the same total. Sarah changes the List from 0 of 4 complete to 1 of 4. The List action reads <strong>Mark list completed · 3 to finish</strong>; tapping it opens the Bookings still to finish sheet, naming each remaining Booking with what it needs. The List stays ACTIVE. S2 Beat 4 carries the submitted-to-authorised handoff from the seeded Review queue.</span></div>
+      <div class="row"><span class="k">Point at</span><span>The price ticks up as she claims a modifier or adds time, with no prompt: claim a modifier instead of <strong>None apply</strong> and the Price card and the Booking total above <strong>Mark complete</strong> rise by its units. On No contract · RVG she may type a different price (no reason asked; the RVG detail stays recorded); the office sees the full billing view on the Admin Booking in S2. Scroll once and the masthead folds to make room. If Mark complete finds missing data, the Booking moves directly to the first incomplete control and focuses it. Optionally type <strong>H1</strong> (every H1 row with its description and base units) or <strong>T2</strong> (three rows share the code) in the type-ahead. Modifiers: no ASA step; only the age modifier and a modifier the base units include are pre-applied, and either can be removed; anything else, ASA included, asks for a short reason when claimed (open Margaret Ellison on Dr Souter's Tue 21 Jul PM List for the pre-applied A1). For an included modifier, Callum Graham on her Mon 27 Jul PM List (S3a) shows P1 selected at 0; S2 Beat 3c moves that List, so show it first or after a Reset.</span></div>
       <div class="row"><span class="k">Point at</span><span>The form follows the Contract's pricing kind. On an RVG price (No contract · RVG and the RVG rate and discount kinds) the RVG code, start and finish times and the modifiers step are required, each with a <strong>Required</strong> caption; <strong>None apply</strong> or a claimed modifier answers the step. On a fixed or open price: no times, units or modifiers, and the RVG code is optional, "for reference". Mark complete checks exactly three things: a Contract, the RVG detail on an RVG price, and a price (not <strong>Needs a price</strong>). Not checked: the RVG code on a fixed price, the payer's contact, the approval number, out-of-range base units. Something only the office can fix points to <strong>Alert the office</strong>; submit still needs every Booking complete.</span></div>
       <div class="row"><span class="k">Aside</span><span>Optional, fixed price with no times: Dr Souter's Mon 10 Aug PM List (<code>/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176</code>). Miriam Holloway's Merivale "Facelift plus 1 add on" asks for no times or modifiers and completes as she is; Graham Pulley (No contract · Fixed price) shows <strong>Needs a price</strong> and refuses Mark complete until an amount is typed.</span></div>
+      <div class="row"><span class="k">Aside</span><span>Optional, who may type a price: Dr Souter's Mon 27 Jul AM List at Forte (<code>/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186</code>). Tama Rewiri (No contract · RVG) reads <strong>4 units x $26.50 = $106.00</strong> with a <strong>Price $</strong> field: she may type a price, no reason asked, and at $0.00 the card says "The RVG detail stays recorded. This gives a no-charge invoice." Natalie Brennan (Forte Health RVG less 10%) reads <strong>6 units x $26.50 = $159.00</strong>, <strong>Discount 10% · minus $15.90</strong>, Price <strong>$143.10</strong>, read-only: "Set by Forte Health RVG less 10%. To use a different price, change the Contract or alert the office." Heather Sinclair (Aria Skin and Laser Clinic, RVG at the Contract's rate, $26.50 a unit) is read-only the same way. Her own prepaid price list (Annette Riley, Fri 24 Jul AM) is read-only too.</span></div>
     </div>
     <div class="callout">Discovery, settled: a part time interval always rounds up under the RVG tiers (confirmed with AA, OQ-75); the tiers are held as data, shown read only under Admin &#8594; Master data &#8594; RVG groups, and the T row reads "From start and finish stamps · RVG time tiers".</div>
   </div></details>
@@ -1186,6 +1200,7 @@
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 21 Jul &#8594; Dr Souter PM.</li><li>David Chen &#8594; History.</li><li>Pause on the audit trail.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every change, including automated ones, writes an append-only entry with who, role, source and before/after. The captured inputs stay reproducible, not just the total."</span></div>
       <div class="row"><span class="k">Expect</span><span>A multi-entry trail from booking and Procedure setup through capture and completion, followed by the staged edits (an ASA III modifier claimed with its explanation, the office note, then the claim removed). Every row shows who, role, source and before/after, and the time-unit adjustment retains overridden provenance. Any other Booking can also demonstrate seeded history without staging first.</span></div>
+      <div class="row"><span class="k">Point at</span><span>A price change reads <strong>Price changed</strong>, with the price before and after and no reason, because none is ever asked. Paula Westerman's Face lift on Dr Souter's Mon 10 Aug PM List (<code>/admin/day/2026-08-10/bookings/BK0187</code>) shows Price changed · Kirsty W. · office · Price not set &#8594; $2,950.00; clearing a typed price reads <strong>cleared, computed again</strong>.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · NHI dual-format validator</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Integrations &#8594; Demo actions &#8594; Fire hospital message &#8594; MSG-STG-1002 (new-format NHI) &#8594; Run.</li><li>Optional: add a Booking manually and try both NHI formats.</li></ul></div>
@@ -1235,8 +1250,25 @@
   <h2>Fee calculation</h2>
   <pre class="tree">Fee = (Base + Time + Modifier units) &#215; anaesthetist's own dollar value per unit</pre>
   <ul class="tight">
-    <li>The anaesthetist Booking shows no units or fee, only Mark complete; Admin Bookings keep the full
-      billing view.</li>
+    <li>The anaesthetist Booking shows what the price comes to as she records, on every Contract: a quiet
+      <strong>Price</strong> card in the capture ("4 units x $26.50 = $106.00") and the Booking total above
+      Mark complete (the phone's dock strip, the web rail panel), rising as she claims a modifier or adds time,
+      with no prompt. She types a price only where an RVG Contract allows it (No contract · RVG, Forte Health
+      RVG), or the amount on No contract · Fixed price; no reason is asked. Elsewhere the figures are
+      read-only: "Set by {Contract}. To use a different price, change the Contract or alert the office."
+      Admin Bookings keep the full billing view.</li>
+    <li>Aria Skin and Laser Clinic is RVG at the Contract's rate, $26.50 a unit, which the anaesthetist
+      cannot change: Dr Fitzgerald's Wed 15 Jul Aria Booking is 22 units x $26.50 = $583.00 (A5 base 8 +
+      time 14, 08:30 to 11:30). An added billing line is a fixed amount only.</li>
+    <li>A price typed at $0.00 keeps the RVG detail recorded ("This gives a no-charge invoice."). Review
+      shows a <strong>No charge</strong> pill, and authorising raises a $0.00 "No charge" invoice: no
+      payable, no BCTI.</li>
+    <li>Each Contract has one of five pricing kinds (RVG at the anaesthetist's rate, RVG at the Contract's
+      rate, RVG less the Contract's discount, a fixed price from its range in force, or an open price typed on
+      the Procedure). A Procedure's price follows its Contract (the range in force, the rate or discount as they
+      stand) until a typed price, a prepayment invoice or AUTHORISED holds it; else "Needs a price". The office
+      can type any price until AUTHORISED, a prepaid one only until its invoice is raised; no reason. Admin
+      &#8594; Booking &#8594; <strong>Change price</strong> shows the computed price beside the field.</li>
     <li><strong>Reset &#8594; Confirm reset</strong> in the shared top bar restores the pristine data and
       clock from any app while keeping the current app.</li>
     <li>Closing things: <strong>Escape</strong> closes only the top layer (a sheet over a drawer closes first,

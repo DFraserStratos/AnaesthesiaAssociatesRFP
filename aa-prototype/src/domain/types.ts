@@ -909,12 +909,6 @@ export interface ContractApproval {
   how: 'explicit' | 'authorise'
 }
 
-/** Typed price override — mandatory reason whenever present (7th review A6/B5). */
-export type PriceOverride =
-  | { kind: 'fixedFee'; amount: number; reason: string }
-  | { kind: 'dollarAdjustment'; amount: number; reason: string }
-  | { kind: 'percentAdjustment'; percent: number; reason: string }
-
 /**
  * Where a Procedure's text came from (catch-up Phase 20a; US-02.5.7, DM-51):
  * the surgeon's rooms (a PDF list or an email), the hospital (its download or
@@ -1001,10 +995,12 @@ export interface Procedure {
   /** The step rail's answers so far while no Contract is set (US-04.3.8); cleared when one is. */
   railAnswers?: RailAnswers
   /**
-   * INTERIM (Phase 20): the amount typed on an open-price fallback (US-04.3.9),
-   * ex GST, in dollars like every other figure; read only while the Procedure's
-   * Contract is an open price, cleared by a Contract change. Phase 24
-   * generalises it.
+   * The one typed price (catch-up Phase 24; DM-14, US-05.2.8): ex GST, in
+   * dollars like every other figure, 0 allowed. The anaesthetist's override on
+   * an RVG Contract that allows it, the amount on an open-price fallback, or
+   * the office's change on any Contract (`setProcedurePrice`); it holds the
+   * price ahead of the computed one (`priceFor`) and a Contract change clears
+   * it. Never a rate or a discount: those are the Contract's.
    */
   enteredPrice?: number
 
@@ -1069,8 +1065,6 @@ export interface Procedure {
   anaestheticStartISO?: IsoDateTime
   handoverISO?: IsoDateTime
 
-  priceOverride?: PriceOverride
-
   /**
    * The split of this Procedure's fee between billable parties (catch-up
    * Phase 22; US-08.2.3, DM-28): typed by the office or the anaesthetist with
@@ -1109,11 +1103,11 @@ export interface FeeSplit {
   shares: SplitShare[]
 }
 
-/** How a billing line's amount arises (RFP methods; 'rateTime' = Method 3 hours x rate). */
-export type ChargeBasis = 'rvg' | 'fixed' | 'rateTime'
+/** How a billing line's amount arises: units at a rate, or a fixed amount (the rate x time basis is gone, catch-up Phase 24, RV-03). */
+export type ChargeBasis = 'rvg' | 'fixed'
 
 /**
- * A captured billing line (fixed or rate x time inputs; an RVG line is never
+ * A captured billing line (a fixed amount; an RVG line is never
  * an input). Who pays is the Procedure's Contract, or its split (catch-up
  * Phase 22), never the line.
  */
@@ -1122,10 +1116,8 @@ export interface BillingLine {
   procedureId: ProcedureId
   chargeBasis: ChargeBasis
   units?: number
-  /** $ per unit ('rvg') or $ per hour ('rateTime'). */
+  /** $ per unit ('rvg'). */
   rate?: number
-  /** 'rateTime' only. */
-  hours?: number
   amount: number
   description: string
 }
@@ -1413,6 +1405,12 @@ export interface Invoice {
   crossMatch?: InvoiceCrossMatch
   /** The other shares of the same split. */
   lineage?: InvoiceLineage[]
+  /**
+   * A $0.00 invoice for a Procedure priced at $0 (catch-up Phase 24; US-03.5.1):
+   * headed "No charge", delivered like any other, its Xero receivable $0.00 and
+   * no payable leg or BCTI. A reading.
+   */
+  noCharge?: true
   /** How it was sent (US-08.4.2); stamped by the run. */
   delivery?: InvoiceDelivery
 }
@@ -1437,7 +1435,7 @@ export interface InvoiceLine {
   id: string
   invoiceId: InvoiceId
   procedureId?: ProcedureId
-  /** A fee, a discount (its own negative line) or an adjustment (a price override, a prepayment deduction). */
+  /** A fee, a discount (its own negative line) or an adjustment (a prepayment deduction; a typed price prints as the fee line since catch-up Phase 24). */
   kind?: 'fee' | 'discount' | 'adjustment'
   description: string
   units?: number

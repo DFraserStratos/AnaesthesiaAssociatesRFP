@@ -18,6 +18,7 @@ import type { Contract, Procedure, ProcedureId } from '../types'
 import { feeFor, modifierInputsOf, resolveBtm, type FeeContext, type FeeResult } from './fee'
 import { allocateBooking, inDisplayOrder, primaryOf, type ProcedureAllocation } from './multiProcedure'
 import { roundToCents } from './money'
+import { isRvgKind } from './contracts'
 
 /** One Procedure's fee context before the rule places it: what `ctxFor` returns. */
 export type ProcedureFeeContext = Omit<FeeContext, 'allocation' | 'bookingProcedureCount'>
@@ -26,11 +27,11 @@ export type ProcedureFeeContext = Omit<FeeContext, 'allocation' | 'bookingProced
  * Priced from RVG units: No contract · RVG, or a Contract with a rate or a
  * discount (and a Procedure with no Contract yet, which the fee path prices at
  * the anaesthetist's unit value until the office sets one). A fixed or open
- * price is not, whatever a typed price or an override says.
+ * price is not, whatever a typed price says.
  */
 export function isRvgPricedContract(contract: Pick<Contract, 'pricing'> | undefined): boolean {
   const kind = contract?.pricing.kind
-  return kind !== 'fixed' && kind !== 'open'
+  return kind === undefined || isRvgKind(kind)
 }
 
 export type BookingFeeResult =

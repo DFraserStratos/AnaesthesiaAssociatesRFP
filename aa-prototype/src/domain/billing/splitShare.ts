@@ -17,7 +17,7 @@
  *  - the wording of the split line and the note on each share's invoice.
  *
  * The split divides the Procedure's final fee ex GST as the engine computed it
- * (after any office price override); it never re-prices.
+ * (a typed price included, catch-up Phase 24); it never re-prices.
  */
 
 import type { CounterpartyRef, SplitShare, SplitShareBasis } from '../types'

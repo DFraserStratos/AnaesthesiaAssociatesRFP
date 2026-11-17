@@ -1,6 +1,6 @@
 /**
- * Phase 04 store guard tests — addBillingLine / removeBillingLine (incl. the
- * Method 3 individual-arrangement gate; who pays is the Contract or the
+ * Phase 04 store guard tests — addBillingLine / removeBillingLine (a fixed
+ * amount only since catch-up Phase 24; who pays is the Contract or the
  * Procedure's split, never a line, so no line is office-only),
  * addProcedure / removeProcedure, uncompleteBooking and completionBlockersFor.
  * Every test uses an isolated, non-persisted store seeded from buildSeed().
@@ -20,7 +20,6 @@ import {
 } from './lifecycle'
 import { auditForEntity, bookingsForList, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
-import { INDIVIDUAL_ARRANGEMENT_MESSAGE } from '../domain/billing/validateBookingForBilling'
 import { ANAE, INS, SEED_MARKERS } from '../domain/seed'
 import type { BillingValidationFailure } from '../domain/billing/validateBookingForBilling'
 
@@ -54,7 +53,7 @@ const SOUTER_PM = marker('designDayPmList')
 const MORRISON_LIST = marker('submittedListMorrison')
 const WHITAKER_LIST = marker('submittedListWhitaker')
 const ELLISON_BOOKING = marker('pendingCaptureBooking')
-const RATE_TIME_BOOKING = marker('rateTimeBooking')
+const CONTRACT_RATE_BOOKING = marker('contractRateBooking')
 const FEE_SPLIT_BOOKING = marker('feeSplitBooking')
 const SPLIT_BOOKING = marker('splitBillingBooking')
 const CANCELLED_BOOKING = marker('cancelledBooking')
@@ -102,64 +101,19 @@ describe('addBillingLine', () => {
     expect(booking?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
-  it('permits rate x time under the individual-arrangement contract, amount = roundToCents(hours x rate)', () => {
+  it('the rate x time basis is gone (catch-up Phase 24, RV-03): only a fixed amount is a billing line', () => {
     const api = store()
-    const procedureId = firstProcedureId(api, RATE_TIME_BOOKING)
-    const outcome = addBillingLine(api, FITZGERALD, procedureId, {
-      chargeBasis: 'rateTime',
-      description: 'Second theatre session, hourly',
-      hours: 1.5,
-      rate: 481.13,
-    })
-    expect(outcome.ok).toBe(true)
-    if (!outcome.ok) return
-    const line = api.getState().schedule.billingLines[outcome.value.billingLineId]
-    expect(line?.hours).toBe(1.5)
-    expect(line?.rate).toBe(481.13)
-    expect(line?.amount).toBe(721.7) // 1.5 x 481.13 = 721.695 → cents
+    const auditBefore = api.getState().audit.length
+    const procedureId = firstProcedureId(api, CONTRACT_RATE_BOOKING)
+    const input = { chargeBasis: 'rateTime', description: 'Hourly attempt', amount: 100 } as unknown as Parameters<typeof addBillingLine>[3]
+    expect(addBillingLine(api, FITZGERALD, procedureId, input)).toMatchObject({ ok: false, code: 'fixedOnly' })
+    expect(api.getState().audit.length).toBe(auditBefore)
   })
 
-  it('refuses rate x time when the governing contract does not permit it (SXAP), with no state change', () => {
-    const api = store()
-    const before = api.getState()
-    const auditBefore = before.audit.length
-    const linesBefore = Object.keys(before.schedule.billingLines).length
-    const procedureId = firstProcedureId(api, ELLISON_BOOKING)
-
-    const outcome = addBillingLine(api, SOUTER, procedureId, {
-      chargeBasis: 'rateTime',
-      description: 'Hourly attempt',
-      hours: 2,
-      rate: 400,
-    })
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) {
-      expect(outcome.code).toBe('individualArrangementNotPermitted')
-      expect(outcome.message).toBe(INDIVIDUAL_ARRANGEMENT_MESSAGE)
-    }
-    const state = api.getState()
-    expect(state.audit.length).toBe(auditBefore)
-    expect(Object.keys(state.schedule.billingLines).length).toBe(linesBefore)
-  })
-
-  it('refuses rate x time when the procedure has no governing contract at all', () => {
-    const api = store()
-    const procedureId = firstProcedureId(api, marker('guardianMinorBooking'))
-    const outcome = addBillingLine(api, OFFICE, procedureId, {
-      chargeBasis: 'rateTime',
-      description: 'Hourly attempt',
-      hours: 1,
-      rate: 300,
-    })
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('individualArrangementNotPermitted')
-  })
-
-  it('refuses bad input: empty description, non-positive amount / hours / rate', () => {
+  it('refuses bad input: empty description, non-positive amount', () => {
     const api = store()
     const auditBefore = api.getState().audit.length
     const ellisonProc = firstProcedureId(api, ELLISON_BOOKING)
-    const rateTimeProc = firstProcedureId(api, RATE_TIME_BOOKING)
 
     const noDescription = addBillingLine(api, SOUTER, ellisonProc, {
       chargeBasis: 'fixed',
@@ -176,24 +130,6 @@ describe('addBillingLine', () => {
     })
     expect(zeroAmount.ok).toBe(false)
     if (!zeroAmount.ok) expect(zeroAmount.code).toBe('amountRequired')
-
-    const zeroHours = addBillingLine(api, FITZGERALD, rateTimeProc, {
-      chargeBasis: 'rateTime',
-      description: 'Zero hours',
-      hours: 0,
-      rate: 400,
-    })
-    expect(zeroHours.ok).toBe(false)
-    if (!zeroHours.ok) expect(zeroHours.code).toBe('hoursRequired')
-
-    const zeroRate = addBillingLine(api, FITZGERALD, rateTimeProc, {
-      chargeBasis: 'rateTime',
-      description: 'Zero rate',
-      hours: 2,
-      rate: 0,
-    })
-    expect(zeroRate.ok).toBe(false)
-    if (!zeroRate.ok) expect(zeroRate.code).toBe('rateRequired')
 
     expect(api.getState().audit.length).toBe(auditBefore)
   })
@@ -216,7 +152,7 @@ describe('addBillingLine', () => {
     })
     expect(office.ok).toBe(true)
 
-    const notOwn = addBillingLine(api, SOUTER, firstProcedureId(api, RATE_TIME_BOOKING), {
+    const notOwn = addBillingLine(api, SOUTER, firstProcedureId(api, CONTRACT_RATE_BOOKING), {
       chargeBasis: 'fixed',
       description: 'Not my list',
       amount: 40,

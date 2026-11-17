@@ -42,17 +42,19 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-04-booking.png', fullPage: true })
 
-  // A % price override with a reason.
-  await page.getByRole('button', { name: 'Price override', exact: true }).first().click()
+  // Change price (catch-up Phase 24): one Price $ field beside the computed price, no reason.
+  await page.getByRole('button', { name: 'Change price', exact: true }).first().click()
   await page.waitForTimeout(200)
-  await page.getByRole('button', { name: '% adjust', exact: true }).click()
-  await page.getByPlaceholder('-10').fill('-10')
-  await page.getByPlaceholder('Why the price differs').fill('Goodwill discount, long-standing patient.')
+  await expect(page.locator('[data-shot=pricing-sheet-computed]')).toBeVisible()
+  await page.locator('[data-shot=pricing-sheet-price]').fill('450.00')
+  // No reason field: the only mention is the hint that none is needed.
+  await expect(page.locator('[data-shot=pricing-sheet] input')).toHaveCount(1)
+  await expect(page.locator('[data-shot=pricing-sheet]')).toContainText('No reason needed')
   await page.screenshot({ path: 'visual/shots/a-05-override.png', fullPage: true })
-  await page.getByRole('button', { name: 'Save override', exact: true }).click()
+  await page.getByRole('button', { name: 'Save price', exact: true }).click()
   await page.waitForTimeout(300)
-  // The billing-setup summary reflects the saved % override.
-  await expect(page.getByText(/Adjustment .*10%/).first()).toBeVisible()
+  // The billing-setup summary reflects the typed price.
+  await expect(page.locator('[data-shot=office-billing-price]').first()).toHaveText('Typed $450.00')
 
   // Back to the day, navigate to Wed 22 for its conflicts (catch-up Phase 30: real facts).
   await page.getByRole('button', { name: 'Day view', exact: true }).first().click()

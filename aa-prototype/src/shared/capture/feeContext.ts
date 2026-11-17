@@ -17,6 +17,7 @@
 
 import type { AssignedList, BillingLine, Contract, Procedure, ProcedureId, RvgGroup } from '../../domain/types'
 import type { FeeResult } from '../../domain/billing/fee'
+import type { HeldPrices } from '../../domain/billing/procedurePrice'
 import { bookingFeeFor, type ProcedureFeeContext } from '../../domain/billing/bookingFee'
 import type { ProcedureAllocation } from '../../domain/billing/multiProcedure'
 import { groupOf } from '../../domain/billing/rvgGroups'
@@ -31,6 +32,12 @@ export interface BookingFeeArgs {
   billingLines: Record<string, BillingLine>
   /** The Booking's patient: the age modifier reads their date of birth (catch-up Phase 19b). */
   patientId: string | undefined
+  /**
+   * The price ladder's held amounts per Procedure (catch-up Phase 24): the
+   * store's `heldPricesForBooking`, as `billingContextForBooking` reads them
+   * for the run. Absent: nothing holds a price.
+   */
+  held?: Readonly<Record<ProcedureId, HeldPrices>>
 }
 
 export interface ProcedureFeeView {
@@ -64,7 +71,7 @@ export interface BookingFeeTotals {
  * Booking total, Review and the list rows read its views; none prices a
  * Procedure alone.
  */
-export function bookingFee({ procedures, list, masters, billingLines, patientId }: BookingFeeArgs): BookingFeeTotals {
+export function bookingFee({ procedures, list, masters, billingLines, patientId, held }: BookingFeeArgs): BookingFeeTotals {
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) {
     throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
@@ -86,6 +93,8 @@ export function bookingFee({ procedures, list, masters, billingLines, patientId 
     }
     if (contract !== undefined) ctx.contract = contract
     if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
+    const heldHere = held?.[procedure.id]
+    if (heldHere !== undefined) ctx.held = heldHere
     return ctx
   })
   if (result.kind === 'structural') {

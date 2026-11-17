@@ -14,6 +14,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import phase18Fixture from './__parity__/phase-18-baseline.json'
 import phase19Fixture from './__parity__/phase-19-baseline.json'
 import phase19aFixture from './__parity__/phase-19a-baseline.json'
@@ -60,6 +61,8 @@ const invoices: InvoiceRow[] = []
 
 for (const list of assignedLists) {
   for (const booking of bookingsForList(state, list.id)) {
+    // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`; pinned in procedurePriceParity.test.ts).
+    if (PHASE_24_ARIA_BOOKINGS.has(booking.id)) continue
     const procedures = proceduresForBooking(state, booking.id)
     procedures.forEach((procedure) => {
       const { fee } = procedureFee({
@@ -80,7 +83,9 @@ for (const list of assignedLists) {
       unitRows.push({ ...row, b: fee.btm.base.units, t: fee.btm.time.units, m: fee.btm.modifiers.units })
     })
 
-    const bookingCtx = billingContextForBooking(state, booking)
+    // Catch-up Phase 24: without the billing slice, so the price ladder's AUTHORISED and prepaid rungs are not read here (procedurePriceParity.test.ts pins them).
+
+    const bookingCtx = billingContextForBooking({ masters: state.masters, schedule: state.schedule }, booking)
     if (bookingCtx === undefined) continue
     const prePaid = prePaidByProcedure(state, booking.id)
     const buildCtx: InvoiceBuildContext = {
@@ -372,10 +377,10 @@ function addedProcedureIds(): Set<string> {
 function withDeltas<F extends { procedureId: string }>(fixture: { fees: F[]; invoices: InvoiceRow[] }): { fees: F[]; invoices: InvoiceRow[] } {
   return {
     fees: fixture.fees
-      .filter((f) => !MOVED_19B.has(f.procedureId) && f.procedureId !== FOSTER_PROCEDURE_20A)
+      .filter((f) => !MOVED_19B.has(f.procedureId) && f.procedureId !== FOSTER_PROCEDURE_20A && !PHASE_24_ARIA_PROCEDURES.has(f.procedureId))
       .map((f) => (f.procedureId === HERNIA_FEE.procedureId ? { ...f, ...HERNIA_FEE } : f)),
     invoices: fixture.invoices
-      .filter((i) => !MOVED_BOOKINGS_19B.has(i.bookingId) && i.bookingId !== FOSTER_BOOKING_20A)
+      .filter((i) => !MOVED_BOOKINGS_19B.has(i.bookingId) && i.bookingId !== FOSTER_BOOKING_20A && !PHASE_24_ARIA_BOOKINGS.has(i.bookingId))
       .map((i) => (i.bookingId === 'BK0028' ? { ...i, result: HERNIA_INVOICES } : i)),
   }
 }
@@ -416,8 +421,8 @@ describe('Phase 18 fee and counterparty parity', () => {
     expect(feeOf('P0029')).toMatchObject({ total: 2800, lines: [{ basis: 'fixed', amount: 2800 }] })
     const bariatric = invoicesOf('BK0028')
     expect(bariatric?.kind === 'invoices' && bariatric.invoices[0]?.counterparty).toBe('surgeon:S-DOYLE')
-    // Aria rate x time: 3.0 h x $480 = $1,440.
-    expect(feeOf('P0031')?.lines).toContainEqual({ basis: 'rateTime', amount: 1440 })
+    // Fitzgerald's Aria Booking (P0031) left the rate x time line in catch-up Phase 24: pinned in procedurePriceParity.test.ts.
+    expect(feeOf('P0031')).toBeUndefined()
     // nib on the Insurer route.
     expect(invoicesOf('BK0007')).toMatchObject({ kind: 'invoices', invoices: [{ counterparty: 'insurer:I-NIB' }] })
   })
@@ -476,6 +481,7 @@ describe('Phase 19a price range parity', () => {
     scripted.delete(FOSTER_BOOKING_20A) // Phase 20a's one recorded exception (uncaptured, forward)
     for (const id of ADDED_BOOKINGS_20A) scripted.delete(id) // Phase 20a's named additions (the "RTK" marker)
     for (const id of MOVED_BOOKINGS_19B) scripted.delete(id) // Phase 19b's moves, proved in its own case
+    for (const id of PHASE_24_ARIA_BOOKINGS) scripted.delete(id) // catch-up Phase 24's Aria move, pinned in procedurePriceParity
     expect(scripted.size).toBeGreaterThan(10)
     for (const bookingId of scripted) {
       expect(invoicesOf(bookingId), bookingId).toEqual(fixtureInvoices(bookingId))

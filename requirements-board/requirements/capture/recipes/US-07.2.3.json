@@ -6,71 +6,60 @@
     {
       "name": "price-override",
       "app": "admin",
-      "caption": "Office corrects a submitted Booking directly",
+      "caption": "Change price on a submitted Booking, no reason asked",
       "start": "/admin/day/2026-07-20/bookings/BK0010",
       "states": [
         {
           "state": "override",
-          "caption": "Price override on a submitted Booking: a dollar adjustment with its reason",
+          "caption": "Change price on a submitted Booking, no reason asked",
           "steps": [
             {
-              "click": "role=button[name=\"Price override\"]"
+              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
             },
             {
-              "wait": 600
+              "wait": "[data-shot=pricing-sheet]"
             },
             {
-              "click": "[role=dialog] >> text=\"$ adjust\""
+              "fill": "[data-shot=pricing-sheet-price]",
+              "value": "450.00"
             },
             {
               "wait": 300
-            },
-            {
-              "fill": "[role=dialog] input[placeholder=\"-25.00\"]",
-              "value": "-40"
-            },
-            {
-              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed by phone with the rooms"
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=pricing-sheet]"
           ]
         },
         {
           "state": "saved",
-          "caption": "Correction saved straight onto the Booking, no return to the anaesthetist",
+          "caption": "The price saved straight onto the Booking, no return to the anaesthetist",
           "steps": [
             {
-              "click": "role=button[name=\"Price override\"]"
+              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
             },
             {
-              "wait": 600
+              "wait": "[data-shot=pricing-sheet]"
             },
             {
-              "click": "[role=dialog] >> text=\"$ adjust\""
+              "fill": "[data-shot=pricing-sheet-price]",
+              "value": "450.00"
             },
             {
-              "wait": 300
-            },
-            {
-              "fill": "[role=dialog] input[placeholder=\"-25.00\"]",
-              "value": "-40"
-            },
-            {
-              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed by phone with the rooms"
-            },
-            {
-              "click": "[role=dialog] >> role=button[name=\"Save override\"]"
+              "click": "[data-shot=pricing-sheet-save]"
             },
             {
               "wait": 700
+            },
+            {
+              "scroll": "[data-shot=office-billing-setup-1]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "text=/Office billing setup/ >> xpath=ancestor::div[.//button[normalize-space()='Edit billing setup']][1]"
+            "[data-shot=office-billing-setup-1]"
           ]
         }
       ]

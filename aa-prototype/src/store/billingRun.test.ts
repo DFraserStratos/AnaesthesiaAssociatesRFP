@@ -17,6 +17,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { handoffListCases, resendInvoice, retryBillingCase, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
 import { authoriseList, editProcedure, reassignBooking, submitList } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
+import { setProcedurePrice } from './pricingActions'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { addPriceRange, disableContract, editContract } from './contractActions'
 import { needsPriceMessage } from '../domain/billing/priceRanges'
@@ -255,21 +256,21 @@ describe('charge bases and holders', () => {
     expect(inv.billedTo?.name).toBe('Gareth Mills')
   })
 
-  it("the rate x time booking bills hours x the agreed rate under the billableParty-held contract, on the holder's layout", () => {
+  it("Fitzgerald's Aria Booking bills RVG at the Contract's rate on the holder's layout: 22 units at $26.50, $583.00 (catch-up Phase 24, was 3.0 hours at $480)", () => {
     const api = store()
-    const bookingId = marker('rateTimeBooking')
+    const bookingId = marker('contractRateBooking')
     stageAndBill(api, listOf(api, bookingId))
     const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
     expect(invoice!.counterparty).toEqual({ kind: 'billableParty', id: BP.ariaClinic })
-    // Catch-up Phase 22: the layout comes from the Contract, which bills its holder (it was the patient's by counterparty kind).
     expect(invoice!.layout).toBe('contractHolder')
     const lines = linesOf(api, invoice!.id)
     expect(lines).toHaveLength(1)
-    // 3 hours at the agreed $480 an hour; the line prints the invoice description, and no BTM (not an RVG fee).
-    expect(lines[0]!.amount).toBe(1440)
-    expect(lines[0]!.description).toBe(wordingOf(api, lines[0]!.procedureId))
-    expect(lines[0]!.btm).toBeUndefined()
+    // A5 base 8, 08:30 to 11:30 (T 14), no modifiers: 22 units at Aria's $26.50 (Fitzgerald's own $30.50 ignored).
+    expect(lines[0]!.amount).toBe(583)
+    expect(lines[0]!.units).toBe(22)
+    expect(lines[0]!.btm).toMatchObject({ base: 8, time: 14, modifiers: 0, units: 22, unitValue: 26.5 })
+    expect(invoice!.subtotal).toBe(583)
   })
 
   it('the AIA claim booking is on No contract · RVG and bills the PATIENT at her anaesthetist rate (not the insurer)', () => {
@@ -431,20 +432,16 @@ describe('contract lifecycle at billing time', () => {
     expect(isListBilled(state.schedule.lists[listOf(api, bookingId)]!)).toBe(true)
   })
 
-  it('a discretionary override is snapshotted onto the invoice with its reason', () => {
+  it('a typed price is snapshotted onto the invoice as its fee line, with no reason and no adjustment line (catch-up Phase 24)', () => {
     const api = store()
     const bookingId = marker('accRelatedBooking')
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
-    const edited = editProcedure(api, OFFICE, proc.id, {
-      priceOverride: { kind: 'dollarAdjustment', amount: -50, reason: 'Quoted package discount' },
-    })
-    expect(edited.ok).toBe(true)
+    expect(setProcedurePrice(api, OFFICE, proc.id, 300).ok).toBe(true)
     stageAndBill(api, MORRISON_LIST)
     const invoice = invoicesForBooking(api, bookingId)[0]!
-    const overrideLine = linesOf(api, invoice.id).find((l) => l.description.startsWith('Price override'))
-    expect(overrideLine).toBeDefined()
-    expect(overrideLine!.description).toBe('Price override, Quoted package discount')
-    expect(overrideLine!.amount).toBe(-50)
+    const lines = linesOf(api, invoice.id).filter((l) => l.procedureId === proc.id)
+    expect(lines.map((l) => [l.kind, l.amount])).toEqual([['fee', 300]])
+    expect(lines.some((l) => l.description.startsWith('Price override'))).toBe(false)
   })
 
   it('snapshot immunity: editing a Contract in place, adding a backdated range, or disabling it after billing leaves the invoice unchanged', () => {
@@ -691,20 +688,10 @@ describe('review-pass hardening (8th review)', () => {
     expect(api.getState().masters.contracts[CONTRACT.doyleBariatric]?.status).toBe('disabled')
   })
 
-  it('a negative override total fails the booking as an exception, never a negative invoice', () => {
+  it('a typed price below $0 is refused, so no price drives an invoice negative (catch-up Phase 24)', () => {
     const api = store()
-    const bookingId = marker('accRelatedBooking')
-    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
-    expect(
-      editProcedure(api, OFFICE, proc.id, {
-        priceOverride: { kind: 'dollarAdjustment', amount: -10000, reason: 'Stress test' },
-      }).ok,
-    ).toBe(true)
-    const result = stageAndBill(api, MORRISON_LIST)
-    expect(result.exceptions.find((e) => e.bookingId === bookingId)).toMatchObject({ code: 'negativeTotal' })
-    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
-    // The other five bookings billed normally; per-booking isolation holds.
-    expect(invoicesForList(api.getState(), MORRISON_LIST)).toHaveLength(5)
+    const proc = proceduresForBooking(api.getState(), marker('accRelatedBooking'))[0]!
+    expect(setProcedurePrice(api, OFFICE, proc.id, -10)).toMatchObject({ ok: false, code: 'priceInvalid' })
   })
 
   it('resend checks the invoice before the role: an unknown invoice is notFound for anyone', () => {

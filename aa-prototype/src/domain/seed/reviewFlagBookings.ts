@@ -61,7 +61,8 @@ interface Spec {
   start?: string
   finish?: string
   completed: boolean
-  priceOverride?: Procedure['priceOverride']
+  /** A price typed by the office (catch-up Phase 24: the one typed price; it was a fixed-fee override with a reason). */
+  enteredPrice?: number
 }
 
 const SPECS: readonly Spec[] = [
@@ -77,7 +78,7 @@ const SPECS: readonly Spec[] = [
     start: '09:05',
     finish: '10:05',
     completed: true,
-    priceOverride: { kind: 'fixedFee', amount: 1200, reason: 'Fee agreed with the patient before surgery' },
+    enteredPrice: 1200,
   },
   { key: 'reviewNeedsPrice', listId: REVIEW_FLAGS_LIST_ID, patientId: PAT_21A_REVIEW.needsPrice, time: '10:15', text: 'Pterygium excision, right', contractId: seedFallbackId('patient-standard'), completed: false },
   { key: 'otherSurgeonContract', listId: REVIEW_FLAGS_LIST_ID, patientId: PAT_21A_REVIEW.otherSurgeon, time: '11:00', text: 'Upper blepharoplasty, both', contractId: PRICED_ITEM.merFaceLift1, completed: true },
@@ -131,7 +132,7 @@ export function seedReviewFlagBookings(next: { booking: number; procedure: numbe
       procedure.anaestheticStartISO = `${DAY}T${spec.start}:00`
       procedure.handoverISO = `${DAY}T${spec.finish}:00`
     }
-    if (spec.priceOverride !== undefined) procedure.priceOverride = spec.priceOverride
+    if (spec.enteredPrice !== undefined) procedure.enteredPrice = spec.enteredPrice
     // Christchurch Eye Surgery's own Contract carries its reference, as every other seeded hospital-billed Procedure does.
     if (spec.contractId === CES_RVG) procedure.billingReference = 'CES-2026-0714-01'
     procedures.push(procedure)

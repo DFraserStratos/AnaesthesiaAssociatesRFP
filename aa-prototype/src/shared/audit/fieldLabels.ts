@@ -46,7 +46,7 @@ export const FIELD_LABELS: Record<string, string> = {
   procedureText: 'Procedure text',
   governingContractId: 'Contract',
   railAnswers: 'Invoice destination so far',
-  enteredPrice: 'Typed price',
+  enteredPrice: 'Price',
   payer: 'Payer',
   payerContact: 'Payer contact',
   insurerOrFunder: 'Insurer or funder',
@@ -77,7 +77,6 @@ export const FIELD_LABELS: Record<string, string> = {
   contractApproval: 'Contract change approved',
   contractApproved: 'Contract change approved',
   how: 'How approved',
-  priceOverride: 'Price override',
   intNotes: 'Int notes',
   opNotes: 'Op notes',
 
@@ -154,7 +153,6 @@ export const FIELD_LABELS: Record<string, string> = {
   anaesthetistMayOverridePrice: 'Anaesthetist may override the price',
   pricing: 'Pricing',
   systemRole: 'System Contract',
-  permitsRateTime: 'Allows rate and time lines',
   price: 'Price',
   // Catch-up Phase 19a (US-04.2.15, US-04.2.18).
   invoiceDescription: 'Invoice description',

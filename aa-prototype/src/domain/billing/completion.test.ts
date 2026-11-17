@@ -13,7 +13,7 @@ import {
   contractChangeAsksRvgDetail,
   type CompletionContext,
 } from './completion'
-import type { BillingLine, Procedure } from '../types'
+import type { Procedure } from '../types'
 
 const PLAIN_RVG = mkContract({ id: 'con-plain', name: 'Test hospital RVG' })
 const AGREED_RATE = mkContract({ id: 'con-rate', name: 'Agreed rate', pricing: { kind: 'rvgContractRate', unitRate: 32 } })
@@ -94,11 +94,6 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
     expect(codes([rvgDone({ isPrimary: false, modifiersConfirmed: undefined })])).toEqual([])
   })
 
-  it('a Procedure priced by its own rate x time line asks for no RVG detail (Method 3)', () => {
-    const lines: Pick<BillingLine, 'procedureId' | 'chargeBasis'>[] = [{ procedureId: 'proc-1', chargeBasis: 'rateTime' }]
-    expect(codes([mkProcedure({ governingContractId: AGREED_RATE.id })], ctx({ billingLines: lines }))).toEqual([])
-  })
-
   it('a fixed price with no times, no modifiers and no RVG code passes (US-03.3.9 Collapsed)', () => {
     expect(codes([mkProcedure({ governingContractId: FIXED.id })])).toEqual([])
   })
@@ -117,7 +112,7 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
   })
 
   it('Ben\'s two routes both complete: RVG detail with a price override, or No contract · Fixed price with a typed amount and a reference code', () => {
-    expect(codes([rvgDone({ governingContractId: NO_CONTRACT.id, priceOverride: { kind: 'fixedFee', amount: 900, reason: 'My price' } })])).toEqual([])
+    expect(codes([rvgDone({ governingContractId: NO_CONTRACT.id, enteredPrice: 900 })])).toEqual([])
     expect(codes([mkProcedure({ governingContractId: OPEN.id, enteredPrice: 900, rvgGroupId: 'RG-T-GA10' })])).toEqual([])
   })
 

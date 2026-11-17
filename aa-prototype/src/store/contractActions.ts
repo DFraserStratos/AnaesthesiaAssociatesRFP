@@ -140,8 +140,6 @@ export interface ContractInput {
   invoiceDescription?: string | null
   /** The RVG group that fills a Procedure's empty RVG code (Phase 19a). */
   defaultRvgGroupId?: string | null
-  /** INTERIM until Phase 24: the Method 3 (rate x time) gate. */
-  permitsRateTime?: boolean
   /** The specialties it is offered for; none (the default) means every specialty. */
   specialtyIds?: string[]
   /** At most one funding tag from AA's list. */
@@ -170,7 +168,6 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
     ...(reference !== '' ? { holderReference: reference } : {}),
     invoiceDescription: blankToNull(input.invoiceDescription),
     defaultRvgGroupId: blankToNull(input.defaultRvgGroupId),
-    permitsRateTime: input.permitsRateTime ?? false,
     specialtyIds: [...new Set(input.specialtyIds ?? [])],
     ...(input.fundingTagId !== undefined && input.fundingTagId !== '' ? { fundingTagId: input.fundingTagId } : {}),
   }

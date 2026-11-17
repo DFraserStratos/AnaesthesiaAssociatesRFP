@@ -1,64 +1,68 @@
 {
   "id": "US-05.4.1",
-  "status": "partial",
-  "absentReason": "The anaesthetist can apply a dollar adjustment or a fixed charge with a reason, and the office view of the Booking shows the fee before the override. It is not gated by the contract, and percentage discounts are office only. The anaesthetist sees no total on the Booking (2026-09-28 decision), so the applied adjustment shows as the saved adjustment block; the fee effect is on the office view.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "adjustment",
       "app": "web",
-      "caption": "Anaesthetist adjustment",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "A typed price where allowed; the computed price kept and seen at review",
+      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186",
       "states": [
         {
           "state": "entry",
-          "caption": "Adjustment with a reason",
+          "caption": "Typing a price where the Contract allows it",
           "steps": [
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "fill": "[data-shot=price-card-input]",
+              "value": "450.00"
             },
             {
               "wait": 200
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
-              "value": "-40"
+              "scroll": "[data-shot=price-card]"
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed discount with patient"
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
+            "[data-shot=price-card]"
           ]
         },
         {
           "state": "applied",
-          "caption": "Adjustment applied, the Booking total shows the fee before it",
+          "caption": "Price typed, $450.00, with Computed $106.00 kept beside it",
           "steps": [
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "fill": "[data-shot=price-card-input]",
+              "value": "450.00"
             },
             {
               "wait": 200
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
-              "value": "-40"
+              "click": "[data-shot=price-card-save]"
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed discount with patient"
+              "wait": 600
             },
             {
-              "click": "role=button[name=\"Save override\"]"
+              "scroll": "[data-shot=price-card]"
             },
             {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
+            "[data-shot=price-card]"
           ]
         }
       ]
@@ -66,66 +70,93 @@
     {
       "name": "adjustment",
       "app": "mobile",
-      "caption": "Anaesthetist adjustment",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "A typed price where allowed; the computed price kept and seen at review",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
       "states": [
         {
           "state": "entry",
-          "caption": "Adjustment with a reason",
+          "caption": "Typing a price where the Contract allows it",
           "steps": [
             {
-              "click": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "fill": "[data-testid=slide-booking] [data-shot=price-card-input]",
+              "value": "450.00"
             },
             {
               "wait": 200
             },
             {
-              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
-              "value": "-40"
-            },
-            {
-              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed discount with patient"
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
             },
             {
               "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 250
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Price typed, $450.00, with Computed $106.00 kept beside it",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "fill": "[data-testid=slide-booking] [data-shot=price-card-input]",
+              "value": "450.00"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=price-card-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "review",
+      "app": "admin",
+      "caption": "At review a typed price shows the computed price beside the Price typed flag",
+      "start": "/admin/review/L-45178-2026-07-14-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=review-fee-computed]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge]"
-          ]
-        },
-        {
-          "state": "applied",
-          "caption": "Adjustment applied, the Booking total shows the fee before it",
-          "steps": [
-            {
-              "click": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
-            },
-            {
-              "wait": 200
-            },
-            {
-              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
-              "value": "-40"
-            },
-            {
-              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed discount with patient"
-            },
-            {
-              "click": "[data-testid=slide-booking] >> role=button[name=\"Save override\"]"
-            },
-            {
-              "wait": 500
-            }
-          ],
-          "highlight": [
-            "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge]"
+            "[data-shot=review-fee]:has([data-shot=review-fee-computed])",
+            "[data-shot=review-flag][data-rule=typedPrice]"
           ]
         }
       ]

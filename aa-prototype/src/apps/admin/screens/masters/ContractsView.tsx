@@ -30,6 +30,7 @@ import { BILLS_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../..
 import { neutral, radius } from '../../../../theme/tokens'
 import { ContractPanel } from '../../flows/ContractEditSheet'
 import { Pill } from '../../components/MasterPills'
+import { isRvgKind } from '../../../../domain/billing/contracts'
 import { isInteractiveRowTarget } from '../../tableChrome'
 import { EditCell, Header, Table, TextAction } from './chrome'
 import { rowCellStyle } from './tableStyles'
@@ -189,7 +190,10 @@ export function ContractsView({ actor }: { actor: Actor }) {
                       {c.systemRole !== undefined && <Pill shot="contract-system-pill">System</Pill>}
                       {c.fundingTagId !== undefined && <Pill><span className="mono">{fundingTags[c.fundingTagId]?.code ?? c.fundingTagId}</span></Pill>}
                       {c.prepaid && <Pill>Prepaid</Pill>}
-                      {c.anaesthetistMayOverridePrice && <Pill>Override</Pill>}
+                      {/* Who may change the price (catch-up Phase 24; US-04.2.2): on RVG kinds only, from 18's setting. */}
+                      {isRvgKind(c.pricing.kind) && (
+                        <Pill shot="contract-override-pill">{c.anaesthetistMayOverridePrice ? 'Anaesthetist can override the price' : 'Price fixed for the anaesthetist'}</Pill>
+                      )}
                     </span>
                   </td>
                   <td style={rowCellStyle}>

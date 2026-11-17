@@ -7,8 +7,8 @@ import { useSurface } from '../surface'
 import type { ProcedureFeeView } from './feeContext'
 import { TimesCard } from './TimesCard'
 import { UnitsCard } from './UnitsCard'
-import { OverrideCard } from './OverrideCard'
 import { BillingLinesCard } from './BillingLinesCard'
+import { PriceCard } from './PriceCard'
 import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
 import { BILLING_FAILURE_FIELDS, BillingCard } from '../booking/BillingCard'
@@ -50,7 +50,7 @@ interface BtmCaptureBlockProps {
 /**
  * One procedure's Outcome/BTM capture block (mockup screen 3 = the skin; the
  * Phase 01 calculator = the maths). Composition: procedure stack → Billing
- * card (Contract and price, the RVG code inside it) → times → B/T/M and the itemised modifiers → override → billing lines →
+ * card (Contract and price, the RVG code inside it) → times → B/T/M and the itemised modifiers → the price line (catch-up Phase 24, session 2) → billing lines →
  * notes. The ASA grade is one optional modifier, claimed in the modifiers
  * ledger with its explanation.
  *
@@ -66,7 +66,7 @@ interface BtmCaptureBlockProps {
  * commit-on-blur/Save for all free text. Never debounced.
  *
  * The order above is the capture order and never varies. What varies is the
- * grouping: the two short money cards (override, billing lines) go through
+ * grouping: the short money cards (the price line, billing lines) go through
  * `useSurface().Pair`,
  * so a desktop sets each pair side by side while the phone keeps them stacked.
  * Times and units stay full width on both — the stamps, the B/T/M rows and the
@@ -96,7 +96,7 @@ export function BtmCaptureBlock({
   // What this Procedure asks for follows its Contract's pricing kind (catch-up Phase 21a, US-03.3.9):
   // the one predicate (`rvgDetail.ts`). On a fixed or open price the times, units and modifiers are
   // not rendered; anything recorded stays on the Procedure and shows again on an RVG kind.
-  const detail = rvgDetailFor(contract, nonRvgLines)
+  const detail = rvgDetailFor(contract)
   const priceStatus = priceStatusFor(procedure, contract, list.dateISO)
 
   const shown = showValidation ? failures : []
@@ -110,7 +110,7 @@ export function BtmCaptureBlock({
     'anaestheticStartISO',
     'handoverISO',
     'billingLines',
-    'priceOverride',
+    'enteredPrice',
     'modifierClaims',
   ])
   const unanchored = shown.filter((f) => !anchored.has(f.field))
@@ -128,10 +128,13 @@ export function BtmCaptureBlock({
   const procedures = useAppStore((s) => s.schedule.procedures)
   const bookings = useAppStore((s) => s.schedule.bookings)
   const lists = useAppStore((s) => s.schedule.lists)
+  // The invoices too: a held price is what a split divides (catch-up Phase 24).
+  const invoices = useAppStore((s) => s.billing.invoices)
+  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines } }, procedure.id, stackSurface),
-    [masters, procedures, bookings, lists, billingLines, procedure.id, stackSurface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, procedure.id, stackSurface],
   )
 
   return (
@@ -194,7 +197,7 @@ export function BtmCaptureBlock({
       )}
 
 
-      {/* "Needs a price" is a state, never a figure (no money on mobile). */}
+      {/* "Needs a price" is a state, never a figure. */}
       {priceStatus?.status === 'needsPrice' && contract !== undefined && (
         <Notice tone="warning" icon={false} shot="capture-price-status">
           {needsPriceMessage(contract, list.dateISO)}
@@ -248,18 +251,21 @@ export function BtmCaptureBlock({
       )}
 
       <Pair>
-        <OverrideCard
+        {/* What the price comes to (catch-up Phase 24, US-03.3.10): the reasoned Adjustment and charge card is gone (RV-04). */}
+        <PriceCard
           procedure={procedure}
           actor={actor}
+          fee={fee}
+          contract={contract}
           canCapture={canCapture}
-          failures={forFields(['priceOverride'])}
+          // The "Needs a price" sentence shows once, in the price status notice (the card shows its pill).
+          failures={forFields(['enteredPrice']).filter((f) => f.code !== 'needsPrice')}
           onError={onError}
         />
 
         <BillingLinesCard
           procedure={procedure}
           nonRvgLines={nonRvgLines}
-          contract={contract}
           actor={actor}
           canCapture={canCapture}
           failures={forFields(['billingLines'])}

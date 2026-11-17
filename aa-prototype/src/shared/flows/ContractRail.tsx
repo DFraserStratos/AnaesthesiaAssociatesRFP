@@ -137,7 +137,7 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
   // Other price asks for the amount (US-04.3.9) wherever this person may type it.
   // Any open-priced Contract asks for its amount where this person may type it (as the Billing card does).
   const openPriced = finalContract?.pricing.kind === 'open'
-  const mayTypeHere = openPriced && finalContract !== undefined && mayTypeEnteredPrice(actor, finalContract, masters.parties)
+  const mayTypeHere = openPriced && finalContract !== undefined && mayTypeEnteredPrice(actor, finalContract)
   const asksAmount = mayTypeHere
   const typedAmount = asksAmount ? parseAmount(amount) : undefined
   const amountMissing = asksAmount && typedAmount === undefined

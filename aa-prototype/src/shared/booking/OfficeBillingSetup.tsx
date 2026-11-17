@@ -5,7 +5,7 @@ import { billingReferenceMissing, procedureRequiresPrepayment } from '../../doma
 import { useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
 import { formatCurrency } from '../format'
-import { EditBillingSetupSheet, PriceOverrideSheet } from '../flows'
+import { EditBillingSetupSheet, PricingSheet } from '../flows'
 
 interface OfficeBillingSetupProps {
   procedure: Procedure
@@ -16,11 +16,11 @@ interface OfficeBillingSetupProps {
   canEdit: boolean
 }
 
-type Sheet = 'none' | 'setup' | 'override'
+type Sheet = 'none' | 'setup' | 'price'
 
 /**
  * The office billing-setup section (Phase 06; catch-up Phase 20), rendered per
- * procedure in `BookingDetailBody` only for an `office` actor: the reference, the price override
+ * procedure in `BookingDetailBody` only for an `office` actor: the reference, the typed price (Change price, catch-up Phase 24)
  * and whether a prepayment is required (from a prepaid Contract; INTERIM until
  * Phase 27). The Contract, its holder, who is invoiced and the Split are the
  * procedure stack's (catch-up Phases 20a and 22), so they are not repeated
@@ -41,13 +41,7 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
       ? `Required · ${formatCurrency(procedure.prepaymentDetail.depositAmount)} seeded`
       : 'Required · prepaid Contract'
 
-  const overrideLabel = (() => {
-    const o = procedure.priceOverride
-    if (o === undefined) return 'None'
-    if (o.kind === 'fixedFee') return `Fixed fee ${formatCurrency(o.amount)}`
-    if (o.kind === 'dollarAdjustment') return `Adjustment ${o.amount >= 0 ? '+' : ''}${formatCurrency(o.amount)}`
-    return `Adjustment ${o.percent >= 0 ? '+' : ''}${o.percent}%`
-  })()
+  const typedLabel = procedure.enteredPrice !== undefined ? `Typed ${formatCurrency(procedure.enteredPrice)}` : 'From the Contract'
 
   return (
     <div data-shot={`office-billing-setup-${displayNumber}`} style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -59,18 +53,18 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
 
       {/* The Contract, its holder and who is invoiced show in the procedure stack above (catch-up Phase 20a). */}
       <Row label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</Row>
-      <Row label="Override">{overrideLabel}</Row>
+      <Row label="Price"><span data-shot="office-billing-price">{typedLabel}</span></Row>
       <Row label="Prepayment">{prepaymentText}</Row>
 
       {canEdit && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
           <Button variant="secondary" onClick={() => setSheet('setup')}>Edit billing setup</Button>
-          <Button variant="secondary" onClick={() => setSheet('override')}>Price override</Button>
+          <Button variant="secondary" onClick={() => setSheet('price')} shot="change-price">Change price</Button>
         </div>
       )}
 
       <EditBillingSetupSheet open={sheet === 'setup'} procedure={procedure} actor={actor} onClose={() => setSheet('none')} />
-      <PriceOverrideSheet open={sheet === 'override'} procedure={procedure} actor={actor} onClose={() => setSheet('none')} />
+      <PricingSheet open={sheet === 'price'} procedureId={procedure.id} actor={actor} onClose={() => setSheet('none')} />
     </div>
   )
 }

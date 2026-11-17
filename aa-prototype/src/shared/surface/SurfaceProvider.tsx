@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { neutral, radius, surface, zIndex } from '../../theme/tokens'
-import { BookingTotalPanel } from '../capture'
+import { BookingTotalPanel, BookingTotalStrip } from '../capture'
 import { DockSpacer } from '../ui/DockSpacer'
 import { BottomSheet } from './BottomSheet'
 import { Dialog } from './Dialog'
@@ -10,8 +10,8 @@ import { SurfaceCtx, type BookingLayoutSlots, type Surface, type SurfaceVariant 
  * `SurfaceProvider` supplies the platform surface (convention 16). Mobile's
  * `Overlay` is the existing `BottomSheet` verbatim; web's is the centred
  * `Dialog`. `BookingLayout` arranges the booking-detail slots per platform, `BookingTotal`
- * is the money object (web only: the phone only ever shows anaesthetist Bookings,
- * which carry no calculation), and `Pair` is the one density
+ * is the money object (the web panel, or the phone's dock strip since catch-up
+ * Phase 24), and `Pair` is the one density
  * primitive a shared capture block needs. `variant` is exposed for the few
  * remaining density tweaks (touch 44/48px targets vs desktop).
  */
@@ -317,7 +317,7 @@ const MOBILE_SURFACE: Surface = {
   variant: 'mobile',
   Overlay: BottomSheet,
   BookingLayout: MobileBookingLayout,
-  BookingTotal: () => null,
+  BookingTotal: BookingTotalStrip,
   Pair: MobilePair,
 }
 

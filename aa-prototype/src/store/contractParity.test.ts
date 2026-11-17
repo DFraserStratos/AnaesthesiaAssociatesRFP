@@ -30,6 +30,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import baseline from './__parity__/phase-20-baseline.json'
 import { captureBaseline, type Phase20Baseline, type ProcedureParityRow } from './__parity__/phase20Capture'
 import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
@@ -82,13 +83,15 @@ function asBefore(row: ProcedureParityRow): ProcedureParityRow {
 
 describe('Phase 20 contract parity', () => {
   it('holds every seeded Procedure: billed party, starting values and fixed fee, bar the declared Contract moves', () => {
-    expect(now.procedures.length).toBe(beforeRows.length)
-    expect(now.procedures.map(asBefore)).toEqual(beforeRows)
+    // Catch-up Phase 24's declared Aria move and its additions set aside (`__parity__/phase24Declared.ts`).
+    const kept = (r: { procedureId: string }) => !PHASE_24_ARIA_PROCEDURES.has(r.procedureId)
+    expect(now.procedures.filter(kept).length).toBe(beforeRows.filter(kept).length)
+    expect(now.procedures.map(asBefore).filter(kept)).toEqual(beforeRows.filter(kept))
     expect(captured.procedures.filter((r) => ADDED_20A.has(r.bookingId))).toHaveLength(ADDED_20A.size)
   })
 
   it('every billed party is identical, the declared exception rename aside', () => {
-    for (const row of now.procedures) {
+    for (const row of now.procedures.filter((r) => !PHASE_24_ARIA_PROCEDURES.has(r.procedureId))) {
       const was = before.procedures.find((r) => r.procedureId === row.procedureId)!
       const billedTo = row.billedTo === 'exception:noContract' ? 'exception:noBillingRoute' : billedBefore21(row)
       expect(billedTo, row.procedureId).toBe(was.billedTo)

@@ -106,8 +106,12 @@ Demo-only surfaces stay honestly labelled. The Xero simulator, integration simul
 panel carry a "demo simulation" badge: they simulate external systems and are not proposed end-user
 product screens. The billing monitor is proposed product UI; only its simulation triggers are badged.
 
-The anaesthetist Booking (Mobile and Anaesthetist Web) shows no units or fee: only **Mark complete** is
-pinned, and the Booking-complete animation shows the tick alone. Admin Booking details keep the full
+The anaesthetist Booking (Mobile and Anaesthetist Web) shows what the price comes to as she records,
+on every Contract: a quiet **Price** card in the capture and the Booking total above **Mark complete**
+(the phone's dock strip, the web rail panel), rising as she claims a modifier or adds time. She types a
+price only where an RVG Contract allows it, or the amount on No contract · Fixed price, with no reason
+asked; elsewhere the figures are read-only. Aria Skin and Laser Clinic is RVG at the Contract's rate,
+$26.50 a unit. The Booking-complete animation shows the tick alone. Admin Booking details keep the full
 billing view. The top bar's **Reset → Confirm reset** control restores the pristine data and clock
 from any app while preserving the current app.
 

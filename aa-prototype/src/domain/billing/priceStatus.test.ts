@@ -36,7 +36,7 @@ describe('the price status, one selector (catch-up Phase 21a; US-05.2.8, AR-58 5
   it('an open price needs a price until one is typed; the office\'s fixed fee is a typed price', () => {
     expect(priceStatusFor(mkProcedure(), OPEN, '2026-07-21')).toEqual({ status: 'needsPrice', reason: 'openPrice' })
     expect(priceStatusFor(mkProcedure({ enteredPrice: 900 }), OPEN, '2026-07-21')).toEqual({ status: 'priced' })
-    expect(priceStatusFor(mkProcedure({ priceOverride: { kind: 'fixedFee', amount: 2000, reason: 'Office' } }), LATER, '2026-07-21')).toEqual({ status: 'priced' })
+    expect(priceStatusFor(mkProcedure({ enteredPrice: 2000 }), LATER, '2026-07-21')).toEqual({ status: 'priced' })
   })
 
   it('no Contract has no price status (the Contract condition reports it)', () => {
@@ -54,7 +54,7 @@ describe('computedPriceFor: the price with nothing typed, for the review flag', 
   it("the fee engine's own figure on an RVG kind, ignoring a typed override", () => {
     const p = mkProcedure({ rvgGroupId: BASE_SINGLE_10.id, anaestheticStartISO: START_0800, handoverISO: HANDOVER_1030 })
     const engine = feeFor(p, { ...feeCtx, contract: RVG }).total
-    expect(computedPriceFor({ ...p, priceOverride: { kind: 'fixedFee', amount: 1, reason: 'Mine' } }, RVG, feeCtx)).toBe(engine)
+    expect(computedPriceFor({ ...p, enteredPrice: 1 }, RVG, feeCtx)).toBe(engine)
   })
 
   it('none on an open price or with no Contract', () => {

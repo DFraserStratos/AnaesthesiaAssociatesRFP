@@ -55,6 +55,7 @@ import type {
 } from '../domain/types'
 import { bookingFeesFor, type BookingBillingContext } from '../domain/billing/validateBookingForBilling'
 import { feeIn } from '../domain/billing/bookingFee'
+import { authorisedPriceFor, holdsPrepaidPrice, prepaidHeldPriceFor, type HeldPrices } from '../domain/billing/procedurePrice'
 import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
@@ -654,6 +655,48 @@ export function prepaymentPayerAwaiting(state: Pick<AppState, 'schedule' | 'mast
     const contract = p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined
     return procedureRequiresPrepayment(contract) && !raised.has(refKey(payerCounterparty(p, booking.patientId)))
   })
+}
+
+/**
+ * The price ladder's held amounts for each Procedure of a Booking (catch-up
+ * Phase 24, `procedurePrice.ts`): the AUTHORISED rung from the List's
+ * standard invoices once it is AUTHORISED, the prepaid rung from a raised
+ * prepayment invoice. Both INTERIM reads (25's snapshot and 27's
+ * `prepaidAmountFor` replace them). Procedures with neither are absent.
+ */
+export function heldPricesForBooking(
+  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>; schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'> },
+  bookingId: string,
+): Record<ProcedureId, HeldPrices> {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) return {}
+  const invoices = Object.values(state.billing.invoices).filter((i) => i.bookingId === bookingId)
+  if (invoices.length === 0) return {}
+  const kindOf = new Map(invoices.map((i) => [i.id, i.kind]))
+  const standard: InvoiceLine[] = []
+  const prepayment: InvoiceLine[] = []
+  for (const line of Object.values(state.billing.invoiceLines)) {
+    const kind = kindOf.get(line.invoiceId)
+    if (kind === 'standard') standard.push(line)
+    else if (kind === 'prePayment') prepayment.push(line)
+  }
+  const listState = state.schedule.lists[booking.listId]?.state
+  const out: Record<ProcedureId, HeldPrices> = {}
+  for (const p of Object.values(state.schedule.procedures)) {
+    if (p.bookingId !== bookingId) continue
+    const authorised = listState === undefined || listState === 'DRAFT' ? undefined : authorisedPriceFor(p.id, listState, standard)
+    const prepaid = prepaidHeldPriceFor(p.id, prepayment)
+    if (authorised === undefined && prepaid === undefined) continue
+    out[p.id] = { ...(authorised !== undefined ? { authorised } : {}), ...(prepaid !== undefined ? { prepaid } : {}) }
+  }
+  return out
+}
+
+/** Whether a prepayment invoice for this Procedure is raised: the office's price is then read-only (A16). */
+export function prepaymentRaisedFor(state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> }, procedureId: string): boolean {
+  const prepaymentIds = new Set(Object.values(state.billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id))
+  if (prepaymentIds.size === 0) return false
+  return Object.values(state.billing.invoiceLines).some((l) => l.procedureId === procedureId && prepaymentIds.has(l.invoiceId) && holdsPrepaidPrice(l))
 }
 
 /** The `prePayment`-kind invoices raised for a Booking, in id order. */
@@ -1295,7 +1338,11 @@ export function completionContextFor(
 }
 
 export function billingContextForBooking(
-  state: { masters: AppState['masters']; schedule: Pick<AppState['schedule'], 'lists' | 'billingLines'> },
+  state: {
+    masters: AppState['masters']
+    schedule: Pick<AppState['schedule'], 'lists' | 'billingLines'> & Partial<Pick<AppState['schedule'], 'bookings' | 'procedures'>>
+    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>
+  },
   booking: Booking,
 ): BookingBillingContext | undefined {
   const list = state.schedule.lists[booking.listId]
@@ -1318,6 +1365,12 @@ export function billingContextForBooking(
   if (patient !== undefined) ctx.patient = patient
   const hospital = listHospitalFor(list, state.masters.hospitals)
   if (hospital.listHospitalId !== undefined) ctx.listHospitalId = hospital.listHospitalId
+  // The price ladder's held amounts (catch-up Phase 24), wherever the caller has the billing slice.
+  const { bookings, procedures } = state.schedule
+  if (state.billing !== undefined && bookings !== undefined && procedures !== undefined) {
+    const held = heldPricesForBooking({ billing: state.billing, schedule: { lists: state.schedule.lists, bookings, procedures } }, booking.id)
+    if (Object.keys(held).length > 0) ctx.held = held
+  }
   return ctx
 }
 
@@ -2037,8 +2090,7 @@ export function railStartFor(state: Pick<AppState, 'masters' | 'schedule'>, proc
 /** Derived, never stored (US-03.3.1, US-04.3.4): the RVG code is the anaesthetist's to fill in. */
 export function rvgCodeToFillFor(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): boolean {
   const procedure = state.schedule.procedures[procedureId]
-  const lines = Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId)
-  return procedure !== undefined && rvgCodeToFill(state.masters, procedure, lines)
+  return procedure !== undefined && rvgCodeToFill(state.masters, procedure)
 }
 
 /** Who a Procedure bills, by id: the store's wrapper of the one rule, `billablePartyForProcedure` (catch-up Phase 21). */
@@ -2116,7 +2168,10 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
  * `ProcedureStack` component renders what this returns and derives nothing.
  */
 export function procedureStackViewFor(
-  state: Pick<AppState, 'masters'> & { schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>> },
+  state: Pick<AppState, 'masters'> & {
+    schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>>
+    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>
+  },
   procedureId: string,
   surface: StackSurface,
 ): ProcedureStackView | undefined {
@@ -2128,7 +2183,9 @@ export function procedureStackViewFor(
   // A split's summary needs the fee as the run computes it (catch-up Phase 22).
   let splitFeeExGst: number | null | undefined
   if (procedure.split !== undefined) {
-    const ctx = billingContextForBooking({ masters: state.masters, schedule: { lists: state.schedule.lists, billingLines: state.schedule.billingLines ?? {} } }, booking)
+    // The held amounts too, where the caller has the billing slice (catch-up Phase 24), as the run reads them.
+    const schedule = { lists: state.schedule.lists, billingLines: state.schedule.billingLines ?? {}, bookings: state.schedule.bookings, procedures: state.schedule.procedures }
+    const ctx = billingContextForBooking({ masters: state.masters, schedule, ...(state.billing !== undefined ? { billing: state.billing } : {}) }, booking)
     const fee = ctx !== undefined && procedure.governingContractId !== undefined ? feeIn(bookingFeesFor(proceduresForBooking(state, booking.id), ctx), procedure.id) : undefined
     splitFeeExGst = fee === undefined || fee.needsPrice ? null : fee.total
   }

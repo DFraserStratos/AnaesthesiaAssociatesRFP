@@ -1,0 +1,191 @@
+{
+  "id": "US-05.2.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "follows",
+      "app": "admin",
+      "caption": "An unedited price follows its Contract; a typed price, a prepayment or AUTHORISED holds it",
+      "start": "/admin/day/2026-08-10/bookings/BK0163",
+      "states": [
+        {
+          "state": "before",
+          "caption": "Merivale's unedited Face lift at the range in force, $3,100.00",
+          "steps": [
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]"
+          ]
+        },
+        {
+          "state": "after",
+          "caption": "A range from 1 Jul 2026 added to the Contract: the same Booking now prices at $3,300.00",
+          "steps": [
+            {
+              "goto": "/admin/masters?view=contracts"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "trigger": "demo-backdated-range"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-08-10/bookings/BK0163"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "held",
+      "app": "admin",
+      "caption": "An unedited price follows its Contract; a typed price, a prepayment or AUTHORISED holds it",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "state": "typed",
+          "caption": "After the new range, the office's typed $2,950.00 is held",
+          "steps": [
+            {
+              "goto": "/admin/masters?view=contracts"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "trigger": "demo-backdated-range"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-08-10/bookings/BK0187"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card] [data-shot=price-card-figures]"
+          ]
+        },
+        {
+          "state": "authorised",
+          "caption": "After the new range, the AUTHORISED Booking stays at its invoiced $3,100.00",
+          "steps": [
+            {
+              "goto": "/admin/masters?view=contracts"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "trigger": "demo-backdated-range"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-16/bookings/BK0188"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card] [data-shot=price-card-figures]"
+          ]
+        },
+        {
+          "state": "prepaid",
+          "caption": "After the new range, a prepaid price stays at the amount prepaid",
+          "steps": [
+            {
+              "goto": "/admin/masters?view=contracts"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "trigger": "demo-backdated-range"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=price-card]:has-text(\"Prepaid\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]:has-text(\"Prepaid\") [data-shot=price-card-figures]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "needs-price",
+      "app": "web",
+      "caption": "An open price with no amount reads Needs a price until one is typed",
+      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0177",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]"
+          ]
+        }
+      ]
+    }
+  ]
+}

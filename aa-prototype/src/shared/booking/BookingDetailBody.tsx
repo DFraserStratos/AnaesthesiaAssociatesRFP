@@ -13,6 +13,7 @@ import {
   completionContextFor,
   editBooking,
   editRefusal,
+  heldPricesForBooking,
   isBackdropList,
   prepaymentStatusFor,
   railActorOf,
@@ -146,12 +147,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
+  // The price ladder's held amounts (catch-up Phase 24) read the invoices.
+  const invoices = useAppStore((s) => s.billing.invoices)
+  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const masters = useAppStore((s) => s.masters)
   const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId))
   const warnings = useBookingWarnings(bookingId)
   const audit = useAppStore((s) => s.audit)
-  // The anaesthetist Booking carries no calculation; only the office sees the fee.
-  const showBookingTotal = actor.role !== 'anaesthetist'
   const todayISO = useToday()
 
   const list = booking !== undefined ? listsRecord[booking.listId] : undefined
@@ -217,8 +219,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) {
       return { units: 0, total: 0, needsPrice: false, order: inDisplayOrder(procedures).map((p) => p.id), primaryId: undefined, views: {} }
     }
-    return bookingFee({ procedures, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId })
-  }, [list, procedures, masters, billingLinesRecord, booking?.patientId])
+    const held = booking !== undefined ? heldPricesForBooking({ billing: { invoices, invoiceLines }, schedule: { lists: listsRecord, bookings: { [booking.id]: booking }, procedures: proceduresRecord } }, booking.id) : {}
+    return bookingFee({ procedures, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId, held })
+  }, [list, procedures, masters, billingLinesRecord, booking, invoices, invoiceLines, listsRecord, proceduresRecord])
   // The primary first, then the rest in Booking order (US-03.2.2): every list on this screen.
   const ordered: Procedure[] = useMemo(() => inDisplayOrder(procedures), [procedures])
 
@@ -263,9 +266,15 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
 
     const views = ordered.map((procedure) => bookingTotals.views[procedure.id]!)
 
-    const rateLabels = views.map(({ fee }) =>
-      fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ ${formatCurrency(fee.unitRate)}/UNIT`,
-    )
+    // What the price is, from the one price function (catch-up Phase 24): a typed, invoiced or prepaid
+    // price says so, never "fixed contract price" on an RVG Contract.
+    const rateLabels = views.map(({ fee }) => {
+      const held = fee.price.status === 'priced' ? fee.price.heldBy : null
+      if (held === 'typed') return 'PRICE TYPED'
+      if (held === 'authorised') return 'INVOICED PRICE'
+      if (held === 'prepaid') return 'PREPAID PRICE'
+      return fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ ${formatCurrency(fee.unitRate)}/UNIT`
+    })
     const rateLabel = rateLabels.every((l) => l === rateLabels[0]) ? (rateLabels[0] ?? null) : null
 
     let lines: BookingTotalLine[]
@@ -290,15 +299,18 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       lines = only.lines.length > 1 ? only.lines.map((l) => ({ label: l.description, amount: l.amount })) : []
     }
 
-    // One procedure states what it was before the override; several would need a
-    // per-row note, so the summary just says an override is in play.
-    const overridden = views.filter((v) => v.fee.override !== null)
+    // A typed price (catch-up Phase 24): one procedure states the computed price beside it;
+    // several would need a per-row note, so the summary says how many are typed.
+    const typed = views.filter((v) => v.fee.price.status === 'priced' && v.fee.price.heldBy === 'typed')
+    const only = typed[0]?.fee.price
     const overrideNote =
-      overridden.length === 0
+      typed.length === 0
         ? null
-        : overridden.length === 1 && procedures.length === 1
-          ? `Override applied · was ${formatCurrency(overridden[0]!.fee.override!.before)}`
-          : `Override applied on ${overridden.length} of ${procedures.length} procedures`
+        : typed.length === 1 && procedures.length === 1
+          ? only?.status === 'priced' && only.computedTotal !== undefined
+            ? `Price typed · computed ${formatCurrency(only.computedTotal)}`
+            : 'Price typed'
+          : `Price typed on ${typed.length} of ${procedures.length} procedures`
 
     return { lines, rateLabel, overrideNote, notes }
   }, [list, procedures, ordered, bookingTotals, masters.rvgGroups])
@@ -817,7 +829,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         actions={actions}
         summary={
           // A Booking on a Draft List has no anaesthetist to price or complete it yet (catch-up Phase 31).
-          cancelled || procedures.length === 0 || !showBookingTotal || list?.state === 'DRAFT'
+          // Every Booking shows what the price comes to (catch-up Phase 24, US-03.3.10, RV-29): the phone's dock strip, the web rail's panel.
+          cancelled || procedures.length === 0 || list?.state === 'DRAFT'
             ? null
             : (action) => (
                 <BookingTotal
@@ -848,7 +861,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
             <CompletionOverlay
               units={bookingTotals.units}
               fee={bookingTotals.total}
-              showCalculation={showBookingTotal}
+              showCalculation
               onDismiss={dismissOverlay}
             />
           ) : null

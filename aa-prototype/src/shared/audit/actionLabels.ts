@@ -39,7 +39,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.contract': 'Contract changed',
   'procedure.split': 'Fee split',
   'procedure.railAnswers': 'Invoice destination so far',
-  'procedure.enteredPrice': 'Typed price changed',
+  'procedure.price': 'Price changed',
   'procedure.remove': 'Procedure removed',
   // Catch-up Phase 23 (US-03.2.2).
   'procedure.setPrimary': 'Primary procedure changed',

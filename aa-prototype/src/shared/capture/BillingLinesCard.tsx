@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { neutral, semantic } from '../../theme/tokens'
-import type { BillingLine, Contract, Procedure } from '../../domain/types'
+import { semantic } from '../../theme/tokens'
+import type { BillingLine, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { removeBillingLine, useAppStore, type Actor } from '../../store'
 import { AddBillingLineSheet } from './AddBillingLineSheet'
 import { CaptureSection, Caption, FailureNotes } from './ui'
+import { formatMoney } from '../format'
 import { Button } from '../ui/Button'
 import { TextAction } from '../ui/TextAction'
 
@@ -13,10 +14,9 @@ interface BillingLinesCardProps {
   procedure: Procedure
   /** The procedure's stored NON-RVG lines (rvg-basis lines are never fee inputs). */
   nonRvgLines: BillingLine[]
-  contract?: Contract | undefined
   actor: Actor
   canCapture: boolean
-  /** billingLines failures: the Method 3 gate (verbatim). */
+  /** billingLines failures, shown verbatim. */
   failures: BillingValidationFailure[]
 }
 
@@ -28,7 +28,6 @@ interface BillingLinesCardProps {
 export function BillingLinesCard({
   procedure,
   nonRvgLines,
-  contract,
   actor,
   canCapture,
   failures,
@@ -77,14 +76,9 @@ export function BillingLinesCard({
           <div key={line.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{line.description}</span>
-              {line.chargeBasis === 'rateTime' && line.hours !== undefined && line.rate !== undefined && (
-                <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>
-                  {line.hours.toFixed(1)} h × ${line.rate.toFixed(2)}
-                </span>
-              )}
             </span>
             <span className="mono" style={{ fontSize: 15, fontWeight: 700, flex: 'none' }}>
-              ${line.amount.toFixed(2)}
+              {formatMoney(line.amount)}
             </span>
             {canCapture && (
               <TextAction flush onClick={() => remove(line.id)} style={{ fontSize: 13, flex: 'none' }}>
@@ -104,7 +98,6 @@ export function BillingLinesCard({
       <AddBillingLineSheet
         open={sheetOpen}
         procedure={procedure}
-        contract={contract}
         actor={actor}
         onClose={() => setSheetOpen(false)}
       />

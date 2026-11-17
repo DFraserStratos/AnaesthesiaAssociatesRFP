@@ -2,21 +2,20 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "24"
+      "25"
     ],
-    "note": "23 and 17a done (17 November), joined on branch cu/23-17a, not yet in master. 23: one primary Procedure per Booking, listed first, Make primary on every surface and the feed; the RVG default multi-procedure rule (base on the primary, time on each, modifiers split 3 · 2 · 2 above four across RVG-priced Procedures, OQ-132's default provisional) in one pure module under bookingFeeFor for every fee caller; two demo triggers; the three-procedure Booking seeded. 17a: rooms without an email, surgeons at more than one room, practice manager and PA contacts. Take cu/23-17a into master, then run 24 (the pricing function, around feeFor's one rate and discount read, after the allocation); then 25; U6 after 25; U7 before 44."
+    "note": "24 done (17 November), not yet committed: one price function (priceFor in domain/billing/procedurePrice.ts) over the five pricing kinds and the ladder (AUTHORISED, prepaid raised, typed, computed, \"Needs a price\"), one typed price (enteredPrice) behind setProcedurePrice and its gates; the anaesthetist's price line (PriceCard) and the phone's dock strip restored from d1562b4c; the office's Change price and Review Fee cell; the discount as its own line and the $0 no-charge invoice; the rate x time line and Method 3 gate gone, Aria at $26.50 (Fitzgerald's Booking $583.00); the backdated range trigger. PERSIST_VERSION 49. Reviewed, captured and green. Run 25 next (it replaces 24's interim authorisedPriceFor with the snapshot); U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start 24 once cu/23-17a is in master. 23 and 17a are done and joined: the primary Procedure with the one multi-procedure rule, and surgeons at more than one room with their practice contacts.",
-    "headline_sub": "23 built isPrimary with Make primary everywhere and the RVG default multi-procedure rule under one engine (no money figure moved); 17a built optional room emails, surgeons at more than one room and room contacts. Both are reviewed, captured and green on branch cu/23-17a, not yet in master. Next in run order: 24, then 25, then U6.",
-    "parallel": "None now: 24 and 25 run in order on the Contracts track, then U6.",
+    "headline": "Start 25 now. 24 built one price function over the five pricing kinds, who may change the price, and the anaesthetist's view of it.",
+    "headline_sub": "24 built priceFor and the price ladder, enteredPrice behind setProcedurePrice, the anaesthetist's price line and dock strip, the office's Change price, the no-charge invoice and the discount line, and removed the rate x time line; it is reviewed, captured and green, not yet committed. Next in run order: 25, then U6.",
+    "parallel": "None now: 25 runs alone on the Contracts track, then U6.",
     "safe": {
-      "24": "Its dependencies (21a, 23) are done; it is next in run order. Take branch cu/23-17a into master first: 24 builds the price precedence around 23's allocation in feeFor."
+      "25": "Its dependencies (19a, 22, 22a, 23, 24) are done and it is next in run order. Commit 24 first: 25 snapshots 24's price source (priceFor) and replaces its interim authorisedPriceFor."
     },
     "wait": {
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
-      "25": "Its dependencies are done but 24 (it locks 24's price source in the snapshot); runs after 24.",
       "U6": "Runs after 25 (DefRow, Card), before 26."
     }
   }

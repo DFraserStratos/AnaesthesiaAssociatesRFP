@@ -190,17 +190,21 @@ working List rather than an empty one.
   - Optional, to show the completion gate: back on the List, select
     **Mark list completed · 3 to finish**.
 - **Say:** "She sees what the hospital wrote, picks the RVG code, and the Billing card shows the
-  Contract; the running fee stays hidden. The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
+  Contract; a quiet Price card shows what it comes to as she records. The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
   tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
   active Booking is complete, so one captured Booking out of four submits nothing yet. That gate is the
   reason the List is the unit of approval, not the Booking."
 - **Expected:** the RVG code in the Billing card reads **A3 Appendicectomy, laparoscopic · Base 5 units · from the RVG
-  group**, and B reads 5. Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
+  group**, and B reads 5. The **Price** card reads **5 units x $26.50 = $132.50** once A3 is picked and
+  rises as the time units come in at Finish now; the dock strip above Mark complete shows the same
+  total. Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
   **Bookings still to finish** sheet, which names each remaining Booking by time and patient with what it
   needs. The List stays `ACTIVE`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
   the seeded Review queue.
-- **Worth pointing at:** only **Mark complete** is pinned to the bottom of the phone; the anaesthetist
-  captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll down
+- **Worth pointing at:** the price ticks up as she claims a modifier or adds time, with no prompt: claim
+  a modifier instead of **None apply** and the Price card and the Booking total above **Mark complete**
+  rise by its units. On No contract · RVG she may type a different price (no reason asked; the RVG detail
+  stays recorded); the office sees the full billing view on the Admin Booking in S2. Scroll down
   once and the masthead folds to a nav row to make room. If Mark complete finds missing data, the Booking
   moves directly to the first incomplete control and focuses it. Optionally, in the type-ahead type
   **H1** (every H1 row, each with its description and base units) or **T2** (three rows share the code,
@@ -224,6 +228,15 @@ working List rather than an empty one.
   (`/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176`), Miriam Holloway's Merivale "Facelift plus 1
   add on" asks for no times or modifiers and completes as she is. Graham Pulley on the same List
   (No contract · Fixed price) shows **Needs a price** and refuses Mark complete until an amount is typed.
+- **Optional aside (who may type a price):** Dr Souter's Mon 27 Jul AM List at Forte
+  (`/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186`). Tama Rewiri (No contract · RVG) reads
+  **4 units x $26.50 = $106.00** with a **Price $** field: she may type a price, no reason asked, and at
+  $0.00 the card says "The RVG detail stays recorded. This gives a no-charge invoice." Natalie Brennan
+  (Forte Health RVG less 10%) reads **6 units x $26.50 = $159.00**, **Discount 10% · minus $15.90**,
+  Price **$143.10**, read-only: "Set by Forte Health RVG less 10%. To use a different price, change the
+  Contract or alert the office." Heather Sinclair (Aria Skin and Laser Clinic, RVG at the Contract's
+  rate, $26.50 a unit) is read-only the same way. Her own prepaid price list (Annette Riley, Fri 24 Jul
+  AM) is read-only too.
 
 **Discovery point:** settled: a part time interval always rounds up under the RVG tiers (confirmed with
 AA, OQ-75); the tiers are held as data, shown read only under **Admin → Master data → RVG groups**, and
@@ -892,6 +905,10 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   the office note, then the claim removed, so Chen's fee ends where it started. Every row shows who, role,
   source and before/after, and the manual time-unit adjustment retains overridden provenance. Any other Booking
   can also be opened to demonstrate its seeded history without staging first.
+- **Worth pointing at:** a price change reads **Price changed**, with the price before and after and no
+  reason, because none is ever asked. Paula Westerman's Face lift on Dr Souter's Mon 10 Aug PM List
+  (`/admin/day/2026-08-10/bookings/BK0187`) shows **Price changed · Kirsty W. · office · Price not set
+  → $2,950.00**; clearing a typed price reads **cleared, computed again**.
 
 ### Beat 2: NHI dual-format validator
 

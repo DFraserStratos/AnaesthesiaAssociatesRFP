@@ -126,6 +126,9 @@ export function WebCatalogue() {
           <CatalogueRow name="UnitsCard" source="shared/capture/UnitsCard.tsx" usedIn={ALL} what="The base, time and modifier unit rows with steppers (NumberStepper since catch-up Phase 23), each showing where its value came from. On an additional procedure B and M show their figure and caption with no stepper, and one caption row stands in for the Modifiers section (the multi-procedure rule)." replaceWith="shadcn Card + Button Group (labelled steppers)" note="Each stepper is labelled with its row and direction (catch-up Phase 21a); it takes the procedure's allocation in its Booking (catch-up Phase 23). The modifier and ASA controls were being reworked (ModifiersSection) when this page was built, so they are not shown as separate rows.">
             <D.UnitsCardDemo f={f} />
           </CatalogueRow>
+          <CatalogueRow name="PriceCard" source="shared/capture/PriceCard.tsx" usedIn={ALL} what="What the price comes to (catch-up Phase 24): the units at the rate, the Contract's discount as applied, a fixed price or Needs a price, in quiet mono; a Price $ field, Save price and Use the computed price where the anaesthetist may change it (an RVG Contract that allows it, or the amount on No contract · Fixed price), else the same figures read-only with the reason. No reason is ever asked." replaceWith="shadcn Card + Base UI NumberField" note="Live on a seeded Booking still to capture; Save writes to the demo data. Replaced OverrideCard (the reasoned adjustment and charge).">
+            <D.PriceCardDemo f={f} />
+          </CatalogueRow>
         </LibraryGroup>
 
         <LibraryGroup id="sonner">
@@ -162,9 +165,6 @@ export function WebCatalogue() {
           <CatalogueRow name="AlertOfficeEntry" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} what="Alert the office about this List: opens a short message sheet (OverlayHeader and SheetActions), then a DoneStep for the sent step, then shows the open alert's status." replaceWith="shadcn Dialog + Field + React Hook Form" note="Sending an alert writes to the demo data.">
             <D.AlertOfficeDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="OverrideCard" source="shared/capture/OverrideCard.tsx" usedIn={ALL} what="A Procedure's price adjustment or fixed charge with its mandatory reason, saved on Save." replaceWith="Base UI NumberField + shadcn Field + React Hook Form" note="Live on a seeded Booking; saving writes to the demo data.">
-            <D.OverrideCardDemo f={f} />
-          </CatalogueRow>
         </LibraryGroup>
 
         <LibraryGroup id="daypicker">
@@ -188,6 +188,9 @@ export function WebCatalogue() {
         <LibraryGroup id="numberflow">
           <CatalogueRow name="BookingTotalPanel · useTickingValue" source="shared/capture/BookingTotalPanel.tsx" usedIn={WA} what="The ink Booking total: breakdown lines, units and fee, rate and override note. Units and fee tick to new values with a green flash. On a multi-procedure Booking its rows say each Procedure's place in the rule (Primary · B + T + M 3 of 7) and plain captions follow (Modifiers 7, split 3 · 2 · 2), all under booking-total-split (catch-up Phase 23)." replaceWith="NumberFlow (optional swap for useTickingValue)" note="Fed local figures here. Keep the flash and the reduced-motion jump; animate nothing that is static today.">
             <D.BookingTotalDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="BookingTotalStrip" source="shared/capture/BookingTotalStrip.tsx" usedIn="Mobile" what="The phone's ink dock above Mark complete (catch-up Phase 24, restored from the July widget, fee only): units and the price, ticking with the green flash, procedure chips on a multi-procedure Booking." replaceWith="NumberFlow (optional swap for useTickingValue)" note="Fed local figures here. No Off, Units or Fee setting: the price always shows, quietly.">
+            <D.BookingTotalStripDemo f={f} />
           </CatalogueRow>
         </LibraryGroup>
 

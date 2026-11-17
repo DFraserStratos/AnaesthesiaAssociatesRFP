@@ -15,7 +15,7 @@
  */
 
 import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/types'
-import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
+import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
@@ -270,7 +270,7 @@ export function resetDomainState(api: AppStoreApi): void {
   const seed = buildSeed()
   // Restore the seeded PAID pre-payment slice through the same seam as
   // freshAppState (Phase 09), with the counters it bumped.
-  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID)
+  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID, SEED_AUTHORISED_INVOICED_BOOKING_IDS)
   api.setState({
     clock: INITIAL_CLOCK,
     masters: seed.masters,

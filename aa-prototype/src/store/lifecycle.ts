@@ -507,7 +507,10 @@ export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, r
 }
 
 /** The fields only the step rail writes (catch-up Phase 20). */
-const CONTRACT_FIELDS = ['governingContractId', 'railAnswers', 'enteredPrice'] as const
+const CONTRACT_FIELDS = ['governingContractId', 'railAnswers'] as const
+
+/** The typed price changes only through `setProcedurePrice` and its gates (catch-up Phase 24), or with a Contract on the rail. */
+const PRICE_FIELDS = ['enteredPrice'] as const
 
 /**
  * The procedure text and the invoice description (catch-up Phase 20a): the
@@ -522,7 +525,7 @@ const TEXT_FIELDS = ['procedureText', 'invoiceDescription'] as const
  * Procedure is primary (`setPrimaryProcedure`, catch-up Phase 23).
  */
 export type ProcedurePatch = Partial<
-  Omit<Procedure, 'id' | 'bookingId' | 'isPrimary' | (typeof CONTRACT_FIELDS)[number] | (typeof TEXT_FIELDS)[number]>
+  Omit<Procedure, 'id' | 'bookingId' | 'isPrimary' | (typeof CONTRACT_FIELDS)[number] | (typeof PRICE_FIELDS)[number] | (typeof TEXT_FIELDS)[number]>
 >
 
 /** The primary changes only through Make primary (catch-up Phase 23). */
@@ -540,6 +543,8 @@ export const MODIFIERS_THROUGH_ACTIONS_MESSAGE =
 
 
 export const CONTRACT_THROUGH_RAIL_MESSAGE = 'Choose the Contract on the step rail.'
+/** `editProcedure` never writes the typed price (catch-up Phase 24). */
+export const PRICE_THROUGH_SET_PRICE_MESSAGE = 'Change the price with Change price, so who may change it is checked.'
 
 /**
  * The RVG row-change rule a patch carries (catch-up Phases 19 and 19b), shared
@@ -611,6 +616,8 @@ export function editProcedure(
   // The Contract and what rides with it change only on the step rail
   // (`setProcedureContract`, catch-up Phase 20), so no edit bypasses its guard.
   if (CONTRACT_FIELDS.some((k) => k in (patch as Partial<Procedure>))) return refuse('contractThroughRail', CONTRACT_THROUGH_RAIL_MESSAGE)
+  // The typed price has its own action and gates (catch-up Phase 24).
+  if (PRICE_FIELDS.some((k) => k in (patch as Partial<Procedure>))) return refuse('priceThroughSetPrice', PRICE_THROUGH_SET_PRICE_MESSAGE)
   // Nobody edits the procedure text (US-02.5.7); the invoice description has its own office actions (US-08.4.6).
   if (TEXT_FIELDS.some((k) => k in (patch as Partial<Procedure>))) return refuse('procedureTextNotEditable', PROCEDURE_TEXT_NOT_EDITABLE_MESSAGE)
   const row = withRvgRowChange(state, procedure, patch)

@@ -114,9 +114,9 @@ describe('resolveContractForProcedure', () => {
     expect(resolveContractForProcedure(primary, ctx)).toEqual(needs)
     // An additional Procedure is no exception: a fixed price is the whole price on any Procedure.
     expect(resolveContractForProcedure({ ...primary, isPrimary: false }, ctx)).toEqual(needs)
-    // On or after the first start it resolves; an office fixed fee is a typed price.
+    // On or after the first start it resolves; a typed price is a price (catch-up Phase 24).
     expect(resolveContractForProcedure(primary, { ...ctx, listDateISO: '2026-08-01' }).kind).toBe('resolved')
-    const typed = { ...primary, priceOverride: { kind: 'fixedFee' as const, amount: 900, reason: 'Office price' } }
+    const typed = { ...primary, enteredPrice: 900 }
     expect(resolveContractForProcedure(typed, ctx).kind).toBe('resolved')
   })
 
@@ -255,17 +255,12 @@ describe('buildInvoicesForBooking', () => {
     expect(invoice.crossMatch).toEqual({ procedureDateISO: LIST_DATE, surgeon: 'Mr Test Surgeon', hospitalRef: 'SG-4471' })
   })
 
-  it('a price override lands as an adjustment line carrying its reason, so lines sum to the fee', () => {
-    const overridden = {
-      ...primary,
-      priceOverride: { kind: 'dollarAdjustment' as const, amount: -50, reason: 'Family discount' },
-    }
-    const result = buildInvoicesForBooking(mkBooking(), [overridden], mkCtx())
+  it('a typed price prints as one fee line at the price: no adjustment line, no reason (catch-up Phase 24)', () => {
+    const typed = { ...primary, enteredPrice: 580 }
+    const result = buildInvoicesForBooking(mkBooking(), [typed], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
-    expect(invoice.lines).toHaveLength(2)
-    expect(invoice.lines[1]!.description).toBe('Price override, Family discount')
-    expect(invoice.lines[1]!.amount).toBe(-50)
+    expect(invoice.lines.map((l) => [l.kind, l.amount])).toEqual([['fee', 580]])
     expect(invoice.subtotal).toBe(580)
   })
 
@@ -356,11 +351,11 @@ describe('buildInvoicesForBooking', () => {
     const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-disc' }], ctx)
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const [fee, discount] = result.invoices[0]!.lines
-    // 27.50 less 7% = 25.575 → rounds to $25.58 BEFORE charging: 21 x 25.58 = $537.18.
-    // The invoice prints the gross at her own $27.50 (21 x 27.50 = $577.50) and the discount as its own line.
+    // Each figure rounded once (catch-up Phase 24, W11): the gross 21 x $27.50 = $577.50, the
+    // discount 7% of it = $40.425, rounded to $40.42, its own line; $537.08, reconciling to the cent.
     expect(fee).toMatchObject({ kind: 'fee', amount: 577.5, units: 21, btm: { unitValue: 27.5 } })
-    expect(discount).toMatchObject({ kind: 'discount', description: 'Contract discount, 7% off the unit rate', amount: -40.32 })
-    expect(result.invoices[0]!.subtotal).toBe(537.18)
+    expect(discount).toMatchObject({ kind: 'discount', description: 'Discount 7%', amount: -40.42 })
+    expect(result.invoices[0]!.subtotal).toBe(537.08)
   })
 
   it('a fixed price is the whole price on an additional Procedure too; no Contract prices a second procedure (RV-07)', () => {
@@ -405,11 +400,11 @@ describe('buildInvoicesForBooking', () => {
   })
 
   it('a negative counterparty total is an exception, never a negative invoice (8th review)', () => {
-    const gouged = {
-      ...primary,
-      priceOverride: { kind: 'dollarAdjustment' as const, amount: -1000, reason: 'Stress test' },
-    }
-    const result = buildInvoicesForBooking(mkBooking(), [gouged], mkCtx())
+    // A price is never below $0 (catch-up Phase 24), so only an over-deducted prepayment can drive a total negative.
+    const first = buildInvoicesForBooking(mkBooking(), [primary], mkCtx())
+    if (first.kind !== 'invoices') throw new Error('expected invoices')
+    const counterparty = first.invoices[0]!.counterparty
+    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ prePaidByProcedure: { [primary.id]: { amount: 5000, counterparty } } }))
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.code).toBe('negativeTotal')
   })

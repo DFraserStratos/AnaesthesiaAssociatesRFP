@@ -57,7 +57,8 @@ export function captureProcedures(state: AppState): ProcedureParityRow[] {
   for (const procedure of Object.values(state.schedule.procedures)) {
     const booking = state.schedule.bookings[procedure.bookingId]
     if (booking === undefined || booking.cancellation !== undefined) continue
-    const ctx = billingContextForBooking(state, booking)
+    // Catch-up Phase 24: without the billing slice, so the price ladder's AUTHORISED and prepaid rungs are not read here (procedurePriceParity.test.ts pins them).
+    const ctx = billingContextForBooking({ masters: state.masters, schedule: state.schedule }, booking)
     let billedTo = 'none'
     let contract = 'none'
     if (ctx !== undefined) {
@@ -78,7 +79,8 @@ export function captureProcedures(state: AppState): ProcedureParityRow[] {
       contract,
       rvgGroupId: procedure.rvgGroupId ?? null,
       baseUnitsSelected: procedure.baseUnitsSelected ?? null,
-      fixedFee: procedure.priceOverride?.kind === 'fixedFee' ? procedure.priceOverride.amount : null,
+      // The office's fixed fee became the one typed price in catch-up Phase 24.
+      fixedFee: procedure.enteredPrice ?? null,
     })
   }
   return rows.sort((a, b) => a.procedureId.localeCompare(b.procedureId))

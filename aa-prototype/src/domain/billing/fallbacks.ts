@@ -169,7 +169,6 @@ export function openPriceFallback(
     defaultRvgGroupId: null,
     status: 'active',
     systemRole: 'openPriceFallback',
-    permitsRateTime: false,
     specialtyIds: [],
     ...(d.kind === 'hospital' ? { fundingTagId: d.fundingTagId } : {}),
   }

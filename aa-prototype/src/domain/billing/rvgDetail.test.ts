@@ -32,10 +32,6 @@ describe('the pricing-kind predicate, one place (catch-up Phase 21a; US-03.3.9, 
     expect(asksRvgDetail(undefined)).toBe(false)
   })
 
-  it('a Procedure priced by its own rate x time line asks for none (Method 3)', () => {
-    expect(rvgDetailFor(mkContract(), [{ chargeBasis: 'rateTime' }])).toEqual(COLLAPSED)
-  })
-
   it('rvgCodeToFill reads the same predicate: an RVG kind with no code only', () => {
     const contracts = { rvg: mkContract({ id: 'rvg' }), fix: mkContract({ id: 'fix', pricing: { kind: 'fixed', ranges: [] } }) }
     expect(rvgCodeToFill({ contracts }, { governingContractId: 'rvg' })).toBe(true)

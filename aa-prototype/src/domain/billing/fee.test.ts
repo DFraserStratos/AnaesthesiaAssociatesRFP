@@ -155,11 +155,13 @@ describe('feeFor — contract types', () => {
     expect(fee.total).toBe(23 * 25)
   })
 
-  it('RVG less a discount: units x the discounted unit value', () => {
+  it("RVG less a discount: units x the anaesthetist's unit value, less the discount as its own line (catch-up Phase 24, US-05.4.3)", () => {
     const contract = mkContract({ pricing: { kind: 'rvgDiscount', discountPct: 10 } })
     const fee = feeFor(spotCheckProcedure, { ...ON, anaesthetist, contract, rvgGroup: BASE_SINGLE_10 })
-    expect(fee.unitRate).toBe(27)
-    expect(fee.total).toBe(23 * 27)
+    expect(fee.unitRate).toBe(30)
+    expect(fee.lines.map((l) => [l.amount, l.role ?? 'fee'])).toEqual([[690, 'fee'], [-69, 'discount']])
+    expect(fee.lines[1]!.description).toBe('Discount 10%')
+    expect(fee.total).toBe(621)
   })
 
 })
@@ -200,12 +202,11 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
     expect(fee.unitRate).toBeNull()
   })
 
-  it("an office fixed fee is a typed price and clears needs-a-price; an adjustment of nothing does not", () => {
-    const typed = mkProcedure({ ...spotCheckProcedure, priceOverride: { kind: 'fixedFee', amount: 600, reason: 'Agreed' } })
+  it('a typed price clears needs-a-price (catch-up Phase 24: the one typed price)', () => {
+    const typed = mkProcedure({ ...spotCheckProcedure, enteredPrice: 600 })
     const fee = feeFor(typed, { ...ON, dateISO: '2026-03-31', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 })
     expect(fee).toMatchObject({ needsPrice: false, total: 600 })
-    const nudged = mkProcedure({ ...spotCheckProcedure, priceOverride: { kind: 'dollarAdjustment', amount: 50, reason: 'x' } })
-    expect(feeFor(nudged, { ...ON, dateISO: '2026-03-31', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 }).needsPrice).toBe(true)
+    expect(fee.price).toMatchObject({ status: 'priced', heldBy: 'typed' })
   })
 
   it('a backdated range re-prices an unedited Procedure; an office override holds its own figure', () => {
@@ -216,7 +217,7 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
     const ctx = { ...ON, dateISO: '2026-06-15', anaesthetist, rvgGroup: BASE_SINGLE_10 }
     expect(feeFor(spotCheckProcedure, { ...ctx, contract: fixedPrice }).total).toBe(650)
     expect(feeFor(spotCheckProcedure, { ...ctx, contract: backdated }).total).toBe(680)
-    const edited = mkProcedure({ ...spotCheckProcedure, priceOverride: { kind: 'fixedFee', amount: 640, reason: 'Office price' } })
+    const edited = mkProcedure({ ...spotCheckProcedure, enteredPrice: 640 })
     expect(feeFor(edited, { ...ctx, contract: backdated }).total).toBe(640)
   })
 
@@ -240,23 +241,6 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
 })
 
 describe('feeFor — non-RVG billing lines', () => {
-  it('a rate x time line computes hours x rate', () => {
-    const line: BillingLine = {
-      id: 'bl-1',
-      procedureId: 'proc-1',
-      chargeBasis: 'rateTime',
-      hours: 2.5,
-      rate: 400,
-      amount: 0,
-      description: 'Individually arranged hourly rate',
-    }
-    const p = mkProcedure({ rvgGroupId: undefined })
-    const fee = feeFor(p, { ...ON, anaesthetist, nonRvgLines: [line] })
-    expect(fee.chargeBasis).toBe('rateTime')
-    expect(fee.lines).toHaveLength(1)
-    expect(fee.total).toBe(1000)
-  })
-
   it('a fixed ancillary line adds to the RVG subtotal (mixed basis)', () => {
     const line: BillingLine = {
       id: 'bl-2',
@@ -277,40 +261,21 @@ describe('feeFor — non-RVG billing lines', () => {
   })
 })
 
-describe('feeFor — typed price overrides', () => {
-  it('fixedFee replaces the subtotal', () => {
-    const p = mkProcedure({
-      ...spotCheckProcedure,
-      priceOverride: { kind: 'fixedFee', amount: 650, reason: 'Agreed with patient' },
-    })
+describe('feeFor: a typed price (catch-up Phase 24; the reasoned override is gone)', () => {
+  it('a typed price is the price, one line at the price, the computed price kept beside it', () => {
+    const p = mkProcedure({ ...spotCheckProcedure, enteredPrice: 650 })
     const fee = feeFor(p, { ...ON, anaesthetist, rvgGroup: BASE_SINGLE_10 })
-    expect(fee.subtotal).toBe(690)
-    expect(fee.override).toMatchObject({ before: 690, after: 650 })
     expect(fee.total).toBe(650)
+    // Still the RVG line with its units, for reference (US-03.5.2), but no rate: the price is typed.
+    expect(fee.lines).toEqual([{ chargeBasis: 'rvg', description: 'Anaesthesia (B + T + M units)', amount: 650, units: 23 }])
+    expect(fee.unitRate).toBeNull()
+    expect(fee.price).toMatchObject({ status: 'priced', price: 650, heldBy: 'typed', computed: { total: 690 } })
+    // BTM stays recorded in full (US-03.5.2).
+    expect(fee.btm.totalUnits).toBe(23)
   })
 
-  it('dollarAdjustment shifts the subtotal', () => {
-    const p = mkProcedure({
-      ...spotCheckProcedure,
-      priceOverride: { kind: 'dollarAdjustment', amount: -120, reason: 'Goodwill discount' },
-    })
-    expect(feeFor(p, { ...ON, anaesthetist, rvgGroup: BASE_SINGLE_10 }).total).toBe(570)
-  })
-
-  it('percentAdjustment scales the subtotal', () => {
-    const p = mkProcedure({
-      ...spotCheckProcedure,
-      priceOverride: { kind: 'percentAdjustment', percent: -25, reason: 'Hardship' },
-    })
-    expect(feeFor(p, { ...ON, anaesthetist, rvgGroup: BASE_SINGLE_10 }).total).toBe(517.5)
-  })
-
-  it('amounts round to cents', () => {
-    const p = mkProcedure({
-      ...spotCheckProcedure,
-      priceOverride: { kind: 'percentAdjustment', percent: -33.333, reason: 'Test' },
-    })
-    const fee = feeFor(p, { ...ON, anaesthetist, rvgGroup: BASE_SINGLE_10 })
-    expect(fee.total).toBe(460)
+  it('a typed $0 is a price: no charge, the units untouched', () => {
+    const fee = feeFor(mkProcedure({ ...spotCheckProcedure, enteredPrice: 0 }), { ...ON, anaesthetist, rvgGroup: BASE_SINGLE_10 })
+    expect(fee).toMatchObject({ total: 0, needsPrice: false, billableUnits: 23 })
   })
 })

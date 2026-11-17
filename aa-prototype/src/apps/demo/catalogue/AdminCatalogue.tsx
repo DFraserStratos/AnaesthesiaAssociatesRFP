@@ -65,6 +65,7 @@ import {
   DraftListPartsLive,
   FocusFiltersExample,
   HistorySheetExample,
+  PricingSheetExample,
   InvoiceDocumentExample,
   NotificationsCardExample,
   NotPreferredWarningExample,
@@ -157,6 +158,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="ClearConflictSheet" source="apps/admin/components/conflicts/ClearConflictSheet.tsx" usedIn={A} what="Confirms clearing a hospital-closure conflict on a List, with an optional note. A ConfirmSheet: focus opens on the safe button and a double click clears once." replaceWith="shadcn AlertDialog" note="Confirming clears the conflict in the demo store.">
           <ClearConflictExample />
+        </CatalogueRow>
+        <CatalogueRow name="PricingSheet" source="shared/flows/PricingSheet.tsx" usedIn={A} what="Change price (catch-up Phase 24): one Price $ field beside the computed price, Save price and Use the computed price, no reason; read-only with the sentence on a raised prepaid price. Replaced PriceOverrideSheet's fixed fee, $ and % modes with their reason." replaceWith="shadcn Dialog + Base UI NumberField" note="Saving writes the typed price to the demo data.">
+          <PricingSheetExample />
         </CatalogueRow>
         <CatalogueRow name="HistorySheet" source="shared/booking/HistorySheet.tsx" usedIn={AWM} what="The audit history of a record in an Overlay, titled by an OverlayHeader, with expandable steps (HistoryTimeline)." replaceWith="shadcn Dialog + Accordion">
           <HistorySheetExample />

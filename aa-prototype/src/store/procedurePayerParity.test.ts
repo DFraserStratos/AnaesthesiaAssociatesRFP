@@ -16,6 +16,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
 import baseline from './__parity__/phase-22a-baseline.json'
 import { captureBaseline22a, type Phase22aBaseline } from './__parity__/phase22aCapture'
 import { payerContactSpec } from './xeroHandoff'
@@ -30,11 +31,14 @@ const now = captureBaseline22a(PROCEDURE_PAYER_ADDITIONS)
 
 describe('Phase 22a payer-per-Procedure parity (no declared difference)', () => {
   it('holds every seeded Booking: grouping, totals, printed name, billedTo, Xero contact and prepayment build', () => {
-    expect(now.bookings).toEqual(before.bookings)
+    // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`).
+    const kept = (r: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(r.bookingId)
+    expect(now.bookings.filter(kept)).toEqual(before.bookings.filter(kept))
   })
 
   it('holds every issued invoice: addressee, billedTo, Procedures, delivery and Xero contact', () => {
-    expect(now.issued).toEqual(before.issued)
+    // Catch-up Phase 24's seeded invoice for its AUTHORISED Face lift is an addition.
+    expect(now.issued.filter((i) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId))).toEqual(before.issued)
   })
 
   it("keeps Hana Park as BP0001 on Xero's billableParty:BP0001 contact", () => {

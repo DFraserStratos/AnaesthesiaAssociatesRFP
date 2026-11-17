@@ -30,7 +30,7 @@ import type {
   XeroAccRec,
   XeroContact,
 } from '../types'
-import { buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
+import { buildInvoicesForBooking, buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
 import { xeroIndividualContactName } from '../xeroContact'
 import { billingHospitalId } from '../listPairing'
 import { buildHistory } from './history'
@@ -123,7 +123,7 @@ const SEED_PREPAYMENT_KEY = 'SEED-PREPAY-BC0001'
  * it reads consistently in the Xero sim and the GST report. Returns just the
  * history when the booking has no patient-funded pre-payment procedure.
  */
-export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string): SeedBillingSlice {
+export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string, authorisedBookingIds: readonly string[] = []): SeedBillingSlice {
   const history = buildHistory({
     anaesthetists: seed.masters.anaesthetists,
     hospitals: seed.masters.hospitals,
@@ -144,7 +144,77 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
   const disbursements: Record<string, Disbursement> = { ...history.disbursements }
   const contactIdCache: Record<string, string> = { ...history.contactIdCache }
 
-  const finishAndReturn = (bumps: Record<string, number> = {}): SeedBillingSlice => {
+  const n = { invoice: 0, invoiceLine: 0, billingCase: 0, invoiceNumber: 0 }
+  const next = (kind: keyof typeof n): string => {
+    n[kind] += 1
+    const f = FORMATS[kind]!
+    return `${f.prefix}${String(n[kind]).padStart(f.pad, '0')}`
+  }
+
+  /**
+   * Catch-up Phase 24's range beat: each seeded Booking on an AUTHORISED List
+   * gets its standard invoice as the run would build it (lines, BTM and
+   * delivery), a case `invoiced`, no Xero pair yet (so no BCTI). Numbered in
+   * its own seed series (`INV-S24-01`, `AA-2026-S2401`), as the history is,
+   * so the runtime run's numbers (S3's AA-2026-0002 on) never move.
+   */
+  let s24 = 0
+  const s24Id = (prefix: string) => `${prefix}-S24-${String(s24).padStart(2, '0')}`
+  let s24Line = 0
+  const invoiceAuthorised = (): void => {
+    for (const bookingId of authorisedBookingIds) {
+      const booking = seed.schedule.bookings[bookingId]
+      const ctx = contextFor(seed, bookingId)
+      const list = booking !== undefined ? seed.schedule.lists[booking.listId] : undefined
+      if (booking === undefined || ctx === undefined || list === undefined) continue
+      const raisedISO = list.billedAtISO ?? `${list.dateISO}T17:00:00`
+      const built = buildInvoicesForBooking(booking, proceduresOf(seed, bookingId), ctx)
+      if (built.kind !== 'invoices') continue
+      const anaesthetist = list.anaesthetistId !== undefined ? seed.masters.anaesthetists[list.anaesthetistId] : undefined
+      const supplier = anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined
+      const patient = seed.masters.patients[booking.patientId]
+      for (const draft of built.invoices) {
+        s24 += 1
+        const caseId = s24Id('BC')
+        const invoiceId = s24Id('INV')
+        const invoiceNumber = `AA-2026-S24${String(s24).padStart(2, '0')}`
+        invoices[invoiceId] = {
+          id: invoiceId,
+          invoiceNumber,
+          caseReference: caseId,
+          bookingId,
+          counterparty: draft.counterparty,
+          ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
+          layout: draft.layout,
+          kind: 'standard',
+          subtotal: draft.subtotal,
+          gst: draft.gst,
+          total: draft.total,
+          raisedAtISO: raisedISO,
+          procedureIds: [...draft.procedureIds],
+          ...(supplier !== undefined ? { supplier } : {}),
+          agent: AA_AGENT,
+          ...(draft.holderReference !== undefined ? { holderReference: draft.holderReference } : {}),
+          ...(draft.crossMatch !== undefined ? { crossMatch: draft.crossMatch } : {}),
+          delivery: deliveryStampFor(invoiceDeliveryFor(draft.counterparty, proceduresOf(seed, bookingId).filter((p) => draft.procedureIds.includes(p.id)), booking.patientId, patient, seed.masters.parties), raisedISO, BILLING_RUN_SENDER_NAME),
+        }
+        for (const line of draft.lines) {
+          s24Line += 1
+          const lineId = `IL-S24-${String(s24Line).padStart(2, '0')}`
+          const stored: InvoiceLine = { id: lineId, invoiceId, kind: line.kind, description: line.description, amount: line.amount }
+          if (line.procedureId !== undefined) stored.procedureId = line.procedureId
+          if (line.units !== undefined) stored.units = line.units
+          if (line.btm !== undefined) stored.btm = line.btm
+          invoiceLines[lineId] = stored
+        }
+        cases[caseId] = { id: caseId, bookingId, invoiceId, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 }
+      }
+    }
+  }
+
+  const finishAndReturn = (): SeedBillingSlice => {
+    invoiceAuthorised()
+    const bumps: Record<string, number> = n.invoice > 0 ? { billingCase: n.billingCase + 1, invoice: n.invoice + 1, invoiceLine: n.invoiceLine + 1, invoiceNumber: n.invoiceNumber + 1 } : {}
     // AA's fee history last: it counts every seeded BCTI, the pre-payment pair's included.
     const fees = buildSeedAaFeeHistory({ accRecs, accPays }, contactIdCache, seed.appSettings.aaFee)
     return {
@@ -178,13 +248,6 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
   const individual = (kind: string): 'billableParty' | 'patient' => (kind === 'billableParty' || kind === 'payer' ? 'billableParty' : 'patient')
   const cpName = (cp: { kind: string; id: string }): string => xeroIndividualContactName(individual(cp.kind), cp.id)
   const cpType = (kind: string): XeroContact['type'] => individual(kind)
-
-  const n = { invoice: 0, invoiceLine: 0, billingCase: 0, invoiceNumber: 0 }
-  const next = (kind: keyof typeof n): string => {
-    n[kind] += 1
-    const f = FORMATS[kind]!
-    return `${f.prefix}${String(n[kind]).padStart(f.pad, '0')}`
-  }
 
   const anaesthetist = anaesthetistId !== undefined ? seed.masters.anaesthetists[anaesthetistId] : undefined
   const supplier = anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined
@@ -296,10 +359,5 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
     }
   })
 
-  return finishAndReturn({
-    billingCase: n.billingCase + 1,
-    invoice: n.invoice + 1,
-    invoiceLine: n.invoiceLine + 1,
-    invoiceNumber: n.invoiceNumber + 1,
-  })
+  return finishAndReturn()
 }

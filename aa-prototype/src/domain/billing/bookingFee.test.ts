@@ -133,7 +133,7 @@ describe('bookingFeeFor · the seeded three-procedure example', () => {
   })
 
   it('a typed office price on B replaces its price but leaves the split as it was (participation reads the pricing kind alone)', () => {
-    const r = priced([A, { ...B, priceOverride: { kind: 'fixedFee', amount: 1000, reason: 'Agreed' } }, C])
+    const r = priced([A, { ...B, enteredPrice: 1000 }, C])
     expect(r.allocations['P-B']!.modifierShare).toBe(2)
     expect(r.fees['P-B']!.total).toBe(1000)
     expect(r.fees['P-A']!.total).toBe(570)

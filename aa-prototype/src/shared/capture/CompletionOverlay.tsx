@@ -6,7 +6,7 @@ interface CompletionOverlayProps {
   /** BOOKING totals (all procedures summed), not a single procedure's. */
   units: number
   fee: number
-  /** Show the `N units · $X` line. Office Bookings only; the anaesthetist sees none. */
+  /** Show the `N units · $X` line (every Booking since catch-up Phase 24; false keeps the bare tick). */
   showCalculation: boolean
   /** Runs the owner's dismissal on a tap. See `SuccessOverlay`. */
   onDismiss?: () => void
@@ -15,7 +15,7 @@ interface CompletionOverlayProps {
 /**
  * The completion moment (mockup screen 3): white blur flood, the success
  * circle pops (`aa-circle-pop`) and the tick draws (dasharray 34). The
- * units-and-fee line shows only on office Bookings. The screen owns the ~1050 ms
+ * units-and-fee line shows on every Booking (catch-up Phase 24). The screen owns the ~1050 ms
  * auto-dismiss.
  *
  * `onDismiss` is the standalone-PWA safety valve: the same handler that timer

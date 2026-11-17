@@ -36,7 +36,7 @@ import type {
 import type { Contract } from './contracts'
 import { isRvgKind } from './contracts'
 import type { Party, PartyId } from './parties'
-import { rangeInForce } from './priceRanges'
+import { computedPriceOf } from './procedurePrice'
 import type { RvgGroup, RvgGroupId } from './rvgGroups'
 import { billablePartyForProcedure } from './whoIsBilled'
 import { resolveSplit, splitDoesNotFitMessage, splitSummaryText } from './splitShare'
@@ -55,12 +55,16 @@ export interface InvoicedParty {
  * The Contract's pricing basis with its figure, one member per pricing kind
  * (18's names). The basis, never the computed fee.
  */
-export type PricingBasis =
+export type PricingBasis = (
   | { kind: 'rvgAnaesthetistRate' }
   | { kind: 'rvgContractRate'; perUnit: number }
   | { kind: 'rvgDiscount'; percent: number }
   | { kind: 'fixed'; amount: number | null }
   | { kind: 'open'; amount: number | null }
+) & {
+  /** A typed price holding the price on a kind that is not open price (catch-up Phase 24): "Price typed". */
+  typed?: number
+}
 
 /** The surface a view is drawn for: the office's or the anaesthetist's. */
 export type StackSurface = 'office' | 'anaesthetist'
@@ -267,10 +271,11 @@ export function whoIsInvoicedFor(
 
 /**
  * The Contract's pricing basis with its figure: the pricing kind (18), the
- * price range in force on the procedure date for a fixed price (19a), the
- * amount typed on an open price (20's `enteredPrice`); No contract · RVG is
- * RVG at the anaesthetist's rate. INTERIM: Phase 24 re-points it to the one
- * price precedence. The basis, never the computed fee.
+ * price range in force on the procedure date for a fixed price (19a, through
+ * the one price function, `computedPriceOf`), the amount typed on an open
+ * price; No contract · RVG is RVG at the anaesthetist's rate; and, since
+ * catch-up Phase 24, a typed price holding it on any other kind. The basis,
+ * never the computed fee.
  */
 export function pricingBasisFor(
   procedure: Pick<Procedure, 'enteredPrice'>,
@@ -278,15 +283,16 @@ export function pricingBasisFor(
   dateISO: string,
 ): PricingBasis {
   const pricing = contract.pricing
+  const typed = procedure.enteredPrice !== undefined && pricing.kind !== 'open' ? { typed: procedure.enteredPrice } : {}
   switch (pricing.kind) {
     case 'rvgAnaesthetistRate':
-      return { kind: 'rvgAnaesthetistRate' }
+      return { kind: 'rvgAnaesthetistRate', ...typed }
     case 'rvgContractRate':
-      return { kind: 'rvgContractRate', perUnit: pricing.unitRate }
+      return { kind: 'rvgContractRate', perUnit: pricing.unitRate, ...typed }
     case 'rvgDiscount':
-      return { kind: 'rvgDiscount', percent: pricing.discountPct }
+      return { kind: 'rvgDiscount', percent: pricing.discountPct, ...typed }
     case 'fixed':
-      return { kind: 'fixed', amount: rangeInForce(contract, dateISO)?.price ?? null }
+      return { kind: 'fixed', amount: computedPriceOf({ contract, dateISO, units: 0, unitValue: 0 })?.total ?? null, ...typed }
     case 'open':
       return { kind: 'open', amount: procedure.enteredPrice ?? null }
   }

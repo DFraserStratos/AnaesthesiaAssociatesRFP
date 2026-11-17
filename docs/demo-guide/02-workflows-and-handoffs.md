@@ -325,9 +325,15 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
    modifiers claimed · Change**); a pre-applied modifier alone does not answer the step.
 7. An included modifier shows at 0 units and cannot be added twice.
 8. Modifiers stack with no limit, each with its own reason; the same modifier is never added twice.
-9. Her Booking shows no units or fee; only Mark complete is pinned. The office sees the full billing
-   total on the Admin Booking.
-10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
+9. Her Booking shows what the price comes to: a quiet **Price** card in the capture ("4 units x $26.50
+   = $106.00") and the Booking total above Mark complete (the phone's dock strip, the web rail panel),
+   rising as she claims a modifier or adds time, with no prompt. The office sees the full billing total
+   on the Admin Booking.
+10. She may add a fixed billing line, and type a price where the Contract allows it, no reason needed
+    (an RVG Contract that allows it, or the amount on No contract · Fixed price). Elsewhere the figures
+    are read-only: "Set by {Contract}. To use a different price, change the Contract or alert the
+    office." The office can change any price until AUTHORISED, shown at review beside the computed
+    price.
 11. She selects Mark complete. It checks exactly three things: every Procedure has a Contract; on an
     RVG price, the RVG detail (code, start and finish, the modifiers step answered); and a price, not
     **Needs a price**. It does not check the RVG code on a fixed price, the payer's contact, the approval

@@ -263,10 +263,10 @@ export function MobileCatalogue() {
       </LibraryGroup>
 
       <LibraryGroup id="numberflow">
-        <CatalogueRow name="useTickingValue" source="shared/capture/useTickingValue.ts" usedIn="Admin · Web" stage="mobile" height={220}
+        <CatalogueRow name="useTickingValue" source="shared/capture/useTickingValue.ts" usedIn="Admin · Web · Mobile" stage="mobile" height={220}
           what="A hook that rolls a figure to its new value over 320ms with a green flash, and jumps under reduced motion."
           replaceWith="NumberFlow"
-          note="Not mounted on Mobile: the mobile surface's BookingTotal renders nothing, so this demo drives the hook directly. Keep the flash tint.">
+          note="On the phone it drives the dock strip (BookingTotalStrip, catch-up Phase 24); this demo drives the hook directly. Keep the flash tint.">
           <Ex.TickingValueExample />
         </CatalogueRow>
       </LibraryGroup>

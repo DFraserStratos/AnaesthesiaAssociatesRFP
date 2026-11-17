@@ -633,7 +633,7 @@ describe('the primary Procedure (catch-up Phase 23)', () => {
 
   it('discards a v45 store whose Procedures carry isAdditional and reseeds exactly one primary per Booking', () => {
     // 47 since the join with 17a (one past both branches' 46).
-    expect(PERSIST_VERSION).toBe(47)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(47)
     const fresh = freshAppState()
     // The v45 shape: isAdditional on every Procedure, no isPrimary.
     const procedures = Object.fromEntries(
@@ -675,5 +675,29 @@ describe("surgeons at more than one room and optional room emails (catch-up Phas
     expect(Object.values(s.masters.surgeons).some((x) => 'roomId' in x)).toBe(false)
     expect(s.masters.surgeonRooms['RM-GENERALSUR']?.contactEmail).toBeUndefined()
     expect(s.masters.surgeons['S-WINSLOW']?.roomIds).toEqual(['RM-RICHMONDFE', 'RM-LINWOODWOM'])
+  })
+})
+
+describe('one typed price (catch-up Phase 24 session 1)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v47 store whose Procedure carries a reasoned priceOverride and reseeds the typed price as enteredPrice', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(48)
+    const fresh = freshAppState()
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        if (p.enteredPrice === undefined) return [id, p]
+        const { enteredPrice, ...rest } = p
+        return [id, { ...rest, priceOverride: { kind: 'fixedFee', amount: enteredPrice, reason: 'Fee agreed with the patient before surgery' } }]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, procedures } }, version: 47 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).some((p) => 'priceOverride' in p)).toBe(false)
+    expect(Object.values(s.schedule.procedures).filter((p) => p.enteredPrice === 1200)).toHaveLength(1)
   })
 })

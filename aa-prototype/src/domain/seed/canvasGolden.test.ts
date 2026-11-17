@@ -64,6 +64,12 @@
  * `seedListIds` entry by hand, nothing else: the three-procedure Booking
  * (BK0184) on Dr Souter's Mon 13 Jul AM, now SUBMITTED
  * (`SEED_LIST_IDS.multiProcedure`, `seed/multiProcedureDemo.ts`), appended after BK0183.
+ *
+ * Catch-up Phase 24 added five rows to `bookings` and one window row's state by
+ * hand, nothing else (`seed/pricingBookings.ts`): BK0185 and BK0186 on Dr
+ * Souter's Mon 27 Jul AM, BK0187 on her Mon 10 Aug PM, BK0188 on her Thu 16
+ * Jul PM (now AUTHORISED and invoiced, the range beat) and BK0189 on her Mon 13
+ * Jul AM, appended after BK0184.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -115,6 +121,8 @@ const DELIBERATE: Record<string, Partial<GoldenRow>> = {
   '45178|2026-07-14|AM': { state: 'SUBMITTED' },
   // Catch-up Phase 23: Dr Souter's Mon 13 Jul AM List holds the three-procedure Booking and waits in the Review queue.
   '34821|2026-07-13|AM': { state: 'SUBMITTED' },
+  // Catch-up Phase 24: Dr Souter's Thu 16 Jul PM List holds the range beat's invoiced Face lift, AUTHORISED.
+  '34821|2026-07-16|PM': { state: 'AUTHORISED' },
 }
 
 const seed = buildSeed()

@@ -95,7 +95,7 @@ function procedureSetup(procedure: Procedure): Record<string, unknown> {
     isPrimary: procedure.isPrimary,
     rvgGroupId: procedure.rvgGroupId,
     baseUnitsSelected: procedure.baseUnitsSelected,
-    priceOverride: procedure.priceOverride,
+    enteredPrice: procedure.enteredPrice,
   }
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
 }
@@ -129,7 +129,6 @@ function billingLineSnapshot(line: BillingLine): Record<string, unknown> {
     chargeBasis: line.chargeBasis,
     units: line.units,
     rate: line.rate,
-    hours: line.hours,
     amount: line.amount,
     description: line.description,
   }

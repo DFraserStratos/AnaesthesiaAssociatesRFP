@@ -40,7 +40,7 @@ const ZERO_BTM: BtmBreakdown = {
   modifierItems: [],
   totalUnits: 0,
 }
-const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, allocation: soleAllocation(true, btm.modifiers.units), chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, override: null, total: 0, needsPrice: false })
+const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, allocation: soleAllocation(true, btm.modifiers.units), chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, price: { status: 'priced', price: 0, heldBy: null }, total: 0, needsPrice: false })
 const proc = (over: Partial<Procedure> = {}): Procedure => mkProcedure({ id: 'P1', bookingId: 'BK1', governingContractId: RVG.id, ...over })
 const booking = (over: Partial<Booking> = {}): Booking => ({ id: 'BK1', completed: true, ...over }) as unknown as Booking
 
@@ -72,13 +72,10 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
   })
 
   it('typedPrice: a typed price on a Contract that is not open price, beside the computed price; none on an open price', () => {
-    const office = input([{ procedure: proc({ governingContractId: NO_CONTRACT_RVG.id, priceOverride: { kind: 'fixedFee', amount: 1200, reason: 'Agreed with patient' } }), fee: fee(), computedPrice: 396.18 }])
+    const office = input([{ procedure: proc({ governingContractId: NO_CONTRACT_RVG.id, enteredPrice: 1200 }), fee: fee(), computedPrice: 396.18 }])
     expect(reviewFlagsForBooking(office)).toContainEqual(expect.objectContaining({ rule: 'typedPrice', tone: 'neutral', text: 'Price typed: $1,200.00 (computed $396.18)' }))
     const open = input([{ procedure: proc({ governingContractId: OPEN.id, enteredPrice: 650 }), fee: fee() }])
     expect(rules(open)).not.toContain('typedPrice')
-    // A percentage adjustment is not a typed price.
-    const pct = input([{ procedure: proc({ priceOverride: { kind: 'percentAdjustment', percent: 10, reason: 'Long case' } }), fee: fee() }])
-    expect(rules(pct)).not.toContain('typedPrice')
   })
 
   it('contractNoLongerFits: a Contract linked to another surgeon is flagged; it clears on the original List (derived)', () => {

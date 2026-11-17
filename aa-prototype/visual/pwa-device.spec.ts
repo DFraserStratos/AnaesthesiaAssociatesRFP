@@ -427,8 +427,8 @@ test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed c
   await expect(load.getByRole('status')).toContainText('3 procedures, 7 modifier units, split 3 · 2 · 2')
   await page.keyboard.press('Escape')
 
-  // The staged Booking takes the next Booking id after the seed's last (BK0184).
-  await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0185')
+  // The staged Booking takes the next Booking id after the seed's last (BK0189 since catch-up Phase 24).
+  await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0190')
   await page.waitForLoadState('networkidle')
   await settleSlide(page)
   await expect(page.locator('[data-testid="procedure-header"]').first().locator('[data-shot="procedure-primary-pill"]')).toHaveText('Primary')

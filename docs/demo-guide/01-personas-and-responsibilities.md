@@ -257,14 +257,15 @@ allowing billing to proceed.
 1. Open the Review queue of `SUBMITTED` Lists.
 2. Review every active Booking and its calculated fee.
 3. Inspect flags under each Procedure's stack (procedure text, Contract with who is invoiced, RVG
-   code): a Contract change (**Approve** or **Correct**), a typed price beside the computed one, a
+   code): a Contract change (**Approve** or **Correct**), a typed price (the **Price typed** flag, and
+   **Computed $x** under the price in the Fee cell), a $0.00 price (a **No charge** pill), a
    Contract not offered on this List, anything needing a price or an invoice destination, a Booking
    not marked completed, and manual BTM overrides. Resolve the anaesthetist's alerts and check the
    **Changed** marker for edits since submit.
 4. Correct billing setup in the office when required; authorising approves any Contract change still
    waiting.
 5. Log a phone note if clarification was needed.
-6. Authorise the List.
+6. Authorise the List. A $0.00 Booking raises a $0.00 "No charge" invoice: no payable, no BCTI.
 7. Confirm that the Bookings lock and the List hands to billing.
 8. Later, monitor invoice and integration failures and retry after correction.
 9. Split a Procedure's fee on a Booking when more than one party pays (**Split** in its Billing card's Paid by), before authorising.

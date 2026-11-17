@@ -55,7 +55,10 @@ export const CONTRACT = {
   stgAcc: 'CT-STG-ACC',
   doyleBariatric: 'CT-DOYLE-BAR',
   cosAcc: 'CT-COS-ACC',
-  ariaHourly: 'CT-ARIA-HOURLY',
+  // The id is kept from the hourly-rate days (catch-up Phase 24); the Contract is RVG at its own rate.
+  ariaContractRate: 'CT-ARIA-HOURLY',
+  // Catch-up Phase 24: Forte Health RVG less 10% (a demo Contract), the seed's one discount Contract.
+  forteDiscount: 'CT-FORTE-DISC',
   unisports: 'CT-UNISPORTS',
   cosFixed: 'CT-COS-FIXED',
 } as const
@@ -89,7 +92,6 @@ interface SeedContract {
   prepaid?: boolean
   linkedSurgeonIds?: string[]
   anaesthetistMayOverridePrice?: boolean
-  permitsRateTime?: boolean
   systemRole?: 'noContractRvg'
   aaCode?: string
   fundingTagId?: string
@@ -105,7 +107,8 @@ const SEED: readonly SeedContract[] = [
   // The holder reference codes on St George's and nib's billed Contracts are SYNTHETIC (catch-up Phase 22): printed on their invoices (US-04.2.18).
   { id: CONTRACT.stgRvg, name: "St George's RVG", holderId: PARTY.stg, billsTo: 'holder', pricing: RVG, holderReference: 'SGANAES01' },
   { id: CONTRACT.sxRvg, name: 'Southern Cross RVG', holderId: PARTY.sx, billsTo: 'holder', pricing: RVG },
-  { id: CONTRACT.forteRvg, name: 'Forte Health RVG', holderId: PARTY.forte, billsTo: 'holder', pricing: RVG },
+  // The anaesthetist may override its price (catch-up Phase 24: the one hospital RVG Contract seeded with the setting on).
+  { id: CONTRACT.forteRvg, name: 'Forte Health RVG', holderId: PARTY.forte, billsTo: 'holder', pricing: RVG, anaesthetistMayOverridePrice: true },
   { id: CONTRACT.cesRvg, name: 'Christchurch Eye Surgery RVG', holderId: PARTY.ces, billsTo: 'holder', pricing: RVG },
   { id: CONTRACT.cphRvg, name: 'Christchurch Public RVG', holderId: PARTY.cph, billsTo: 'holder', pricing: RVG },
   { id: CONTRACT.nibRvg, name: 'nib RVG', holderId: PARTY.nib, billsTo: 'holder', pricing: RVG, holderReference: 'NIBAN2026' },
@@ -117,9 +120,9 @@ const SEED: readonly SeedContract[] = [
   // Procedure's payer (catch-up Phases 21 and 22a). His sleeve gastrectomy is in pricedItems.ts.
   { id: CONTRACT.doyleBariatric, name: 'Gastric bypass', invoiceDescription: 'Gastric bypass, laparoscopic', holderId: PARTY.doyle, billsTo: 'payer', pricing: fixed(['2025-01-01', 2800], ['2026-07-28', 2950]), defaultRvgGroupId: RVG_GROUP.aaGastricBypass, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
   { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
-  // The Method 3 gate (`permitsRateTime`, INTERIM until Phase 24), linked to
-  // the surgeons on its seeded Bookings (Ms G. Lim, Mr C. Okafor; logged).
-  { id: CONTRACT.ariaHourly, name: 'Aria Skin and Laser Clinic hourly rate', holderId: PARTY.aria, billsTo: 'holder', pricing: rate(26.5), permitsRateTime: true, linkedSurgeonIds: [SURG.lim, SURG.okafor] },
+  // RVG at the Contract's rate, $26.50 (catch-up Phase 24, RV-03: the hourly rate x time line and its gate
+  // are gone), the override off; linked to the surgeons on its seeded Bookings (Ms G. Lim, Mr C. Okafor; logged).
+  { id: CONTRACT.ariaContractRate, name: 'Aria Skin and Laser Clinic', holderId: PARTY.aria, billsTo: 'holder', pricing: rate(26.5), linkedSurgeonIds: [SURG.lim, SURG.okafor] },
   // AR-58 8.3: undated rvgContractRate 93.47; linked to an orthopaedic surgeon
   // (Mr T. Hale; logged). No Procedure is on it: S5 Beat 4 edits its rate in place.
   { id: CONTRACT.unisports, name: 'Unisports Ortho', holderId: PARTY.unisports, billsTo: 'holder', pricing: rate(93.47), linkedSurgeonIds: [SURG.hale] },
@@ -128,6 +131,8 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: fixed(['2026-08-01', 1250]), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // Catch-up Phase 19a: the priced items (one fixed-price Contract per item).
   ...PRICED_ITEMS,
+  // Catch-up Phase 24 (demo values): Forte Health at standard RVG less 10%, the override off; last, so no AA code moves.
+  { id: CONTRACT.forteDiscount, name: 'Forte Health RVG less 10%', holderId: PARTY.forte, billsTo: 'holder', pricing: { kind: 'rvgDiscount', discountPct: 10 } },
 ]
 
 function buildContracts(): Contract[] {
@@ -154,7 +159,6 @@ function buildContracts(): Contract[] {
       pricing: c.pricing,
       status: 'active',
       ...(c.systemRole !== undefined ? { systemRole: c.systemRole } : {}),
-      permitsRateTime: c.permitsRateTime ?? false,
       specialtyIds: c.specialtyIds ?? [],
       ...(c.fundingTagId !== undefined ? { fundingTagId: c.fundingTagId } : {}),
     }

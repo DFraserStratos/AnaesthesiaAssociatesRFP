@@ -91,6 +91,7 @@ import { seedProcedurePayerBookings } from './procedurePayerBookings'
 import { MULTI_PROCEDURE_LIST_DATE, seedMultiProcedureBooking } from './multiProcedureDemo'
 import { seedCompletionBookings, type CompletionBookingKey } from './completionBookings'
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
+import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 
 export {
   canvasAnaesthetists,
@@ -402,6 +403,8 @@ interface SeedBuild {
   procedurePayer: ReturnType<typeof seedProcedurePayerBookings>['ids']
   /** Catch-up Phase 23's three-procedure Booking and its Procedures (primary first). */
   multiProcedure: ReturnType<typeof seedMultiProcedureBooking>['ids']
+  /** Catch-up Phase 24's price beats (`seed/pricingBookings.ts`). */
+  pricing: Record<PricingBookingKey, string>
   /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
   clashes: RecurringClash[]
 }
@@ -534,6 +537,13 @@ function buildSeedInternal(): SeedBuild {
   const multiProcedureBooking = seedMultiProcedureBooking(procedurePayerBookings.next, SEED_LIST_IDS.multiProcedure)
   for (const b of multiProcedureBooking.bookings) bookingsRec[b.id] = b
   for (const p of multiProcedureBooking.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 24: the price beats (the Mon 27 Jul price line Bookings, the range beat, the no-charge Booking), after every other id.
+  const pricingBookings = seedPricingBookings(multiProcedureBooking.next, SEED_LIST_IDS.multiProcedure)
+  for (const b of pricingBookings.bookings) bookingsRec[b.id] = b
+  for (const p of pricingBookings.procedures) proceduresRec[p.id] = p
+  // Its Thu 16 Jul PM List is AUTHORISED and billed (the seed's billing slice raises the Face lift's invoice).
+  const rangeList = lists[RANGE_AUTHORISED_LIST_ID]
+  if (rangeList !== undefined && rangeList.state !== 'DRAFT') lists[RANGE_AUTHORISED_LIST_ID] = { ...rangeList, state: 'AUTHORISED', billedAtISO: RANGE_AUTHORISED_BILLED_ISO }
   // Catch-up Phase 21a: every completed Booking's modifiers step is answered (US-03.6.1): a seeded
   // Booking completed before the step existed carries the marker, so it still passes completion.
   for (const p of Object.values(proceduresRec)) {
@@ -566,6 +576,8 @@ function buildSeedInternal(): SeedBuild {
       ...reviewFlagBookings.audit,
       // Catch-up Phase 23: Dr Souter submitted the three-procedure Booking's List.
       ...multiProcedureBooking.audit,
+      // Catch-up Phase 24: the typed prices on the range beat's Face lift (the office) and the no-charge Booking (Dr Souter).
+      ...pricingBookings.audit,
       ...seedDraftListAudit(seededDraftLists),
       {
         id: 'seed-sickness-return',
@@ -644,8 +656,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: multiProcedureBooking.next.booking,
-      procedure: multiProcedureBooking.next.procedure,
+      booking: pricingBookings.next.booking,
+      procedure: pricingBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
@@ -659,7 +671,7 @@ function buildSeedInternal(): SeedBuild {
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, multiProcedure: multiProcedureBooking.ids, clashes }
+  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, multiProcedure: multiProcedureBooking.ids, pricing: pricingBookings.ids, clashes }
 }
 
 /** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
@@ -862,7 +874,7 @@ export const REVIEW_FLAG_BOOKING_IDS: readonly string[] = Object.values(SEED_BUI
  * Face lift. The parity suites name them as additions.
  */
 export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
-  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking && id !== SEED_BUILD.multiProcedure.booking)
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking && id !== SEED_BUILD.multiProcedure.booking && !Object.values(SEED_BUILD.pricing).includes(id))
   .sort()
 
 /** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
@@ -1003,17 +1015,17 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: scenario.feeSplit,
       detail: 'Split on the Booking: nib $132.50 and Alan Prentice the rest, an invoice each.',
     },
-    rateTimeBooking: {
-      label: 'Rate x time booking (Method 3)',
+    contractRateBooking: {
+      label: "Contract rate booking (Aria, Fitzgerald Wed 15 Jul)",
       entityType: 'booking',
-      entityId: scenario.rateTime,
-      detail: 'Hourly rate line under the billable-party-held individual arrangement contract.',
+      entityId: scenario.contractRate,
+      detail: "RVG at Aria's own rate: 22 units at $26.50, $583.00.",
     },
-    rateTimeCaptureBooking: {
-      label: 'Rate x time capture booking (Souter, Mon 27)',
+    contractRateCaptureBooking: {
+      label: 'Contract rate capture booking (Souter, Mon 27)',
       entityType: 'booking',
-      entityId: scenario.rateTimeCapture,
-      detail: 'Not yet captured; the hours x rate line is added live in the mobile app under the Aria contract.',
+      entityId: scenario.contractRateCapture,
+      detail: "Not yet captured; her price line reads the units at Aria's $26.50, read-only.",
     },
     bariatricType3Booking: {
       label: 'Fixed price booking (bariatric)',
@@ -1111,11 +1123,11 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: SEED_LIST_IDS.rutherfordAm21,
       detail: 'AM and PM Lists share Forte Health / Mr Okafor; no special entity.',
     },
-    individualArrangementContract: {
-      label: 'Individual arrangement contract',
+    contractRateContract: {
+      label: "Contract rate contract (Aria)",
       entityType: 'contract',
-      entityId: CONTRACT.ariaHourly,
-      detail: 'Held by the Aria clinic; it allows hourly rate and time billing lines.',
+      entityId: CONTRACT.ariaContractRate,
+      detail: "Held by the Aria clinic: RVG at its own rate, $26.50 a unit; the anaesthetist cannot override it.",
     },
     integrationS13Time: {
       label: 'Integration booking · S13 reschedule target (same list)',
@@ -1268,4 +1280,64 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityId: SEED_BUILD.reviewFlags.movableFixedBooking,
     detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 17:00. Merivale's Face lift: Move it on Admin Day to her Mon 10 Aug AM List (Mr Okafor); it keeps its Contract and Review flags it there.",
   },
+  // Catch-up Phase 24 (seed/pricingBookings.ts): the price beats.
+  discountContract: {
+    label: 'Discount Contract (Forte, RVG less 10%)',
+    entityType: 'contract',
+    entityId: CONTRACT.forteDiscount,
+    detail: "Forte Health at standard RVG less 10%, the discount its own invoice line; the anaesthetist cannot override it.",
+  },
+  discountBooking: {
+    label: 'Discount Booking (Souter Mon 27 Jul AM)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.pricing.discountBooking,
+    detail: 'Uncaptured, on Forte RVG less 10%: her price line shows the discount applied, read-only.',
+  },
+  ownListFixedBooking: {
+    label: 'Her own price list, a fixed price (Souter Fri 24 Jul AM)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.scenario.prepayment,
+    detail: "Riley's Rhinoplasty on her own prepaid price list (Fri 24 Jul AM): a fixed price, read-only, never overridden.",
+  },
+  priceCaptureBooking: {
+    label: 'Price capture Booking (Souter Mon 27 Jul AM)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.pricing.priceCaptureBooking,
+    detail: 'No contract · RVG, uncaptured: the price rises as she records, and she may type a price.',
+  },
+  openPriceBooking: {
+    label: 'Open price Booking (Souter Mon 10 Aug PM)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.completion.needsPriceBooking,
+    detail: '21a\'s No contract · Fixed price with no amount (Souter Mon 10 Aug PM): "Needs a price" until she types it.',
+  },
+  rangeTypedBooking: {
+    label: 'Face lift with a typed price (range beat)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.pricing.rangeTypedBooking,
+    detail: "Souter Mon 10 Aug PM, 17:45. The office typed $2,950.00: a new range does not move it.",
+  },
+  rangeAuthorisedBooking: {
+    label: 'Face lift on an AUTHORISED List (range beat)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.pricing.rangeAuthorisedBooking,
+    detail: "Souter Thu 16 Jul PM at AA's rooms, AUTHORISED and invoiced at $3,100.00: a new range does not move it.",
+  },
+  rangePrepaidBooking: {
+    label: 'Prepaid Booking with its prepayment invoice raised (range beat)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.scenario.prepaymentPaid,
+    detail: 'The seeded paid prepayment: its price is held at the prepaid amount and read-only for the office.',
+  },
+  noChargeBooking: {
+    label: 'No-charge Booking (Souter Mon 13 Jul AM)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.pricing.noChargeBooking,
+    detail: 'Completed with a typed $0.00 on a SUBMITTED List: authorising it raises a "No charge" invoice, with no payable.',
+  },
 }
+
+/** Catch-up Phase 24's price beat Bookings, in id order (seed/pricingBookings.ts). */
+export const PRICING_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.pricing).sort()
+/** The seeded AUTHORISED Booking the billing slice invoices (catch-up Phase 24's range beat). */
+export const SEED_AUTHORISED_INVOICED_BOOKING_IDS: readonly string[] = [SEED_BUILD.pricing.rangeAuthorisedBooking]

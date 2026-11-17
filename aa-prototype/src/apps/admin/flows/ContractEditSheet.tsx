@@ -52,6 +52,7 @@ import {
   STATUS_LABEL,
 } from '../../../shared/contracts'
 import { compareBySurname } from '../../../domain/surgeons'
+import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { neutral, radius } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
 import { TextAction } from '../screens/masters/chrome'
@@ -76,6 +77,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   const masters = useAppStore((s) => s.masters)
   const editing = contract !== undefined
   const system = contract?.systemRole !== undefined
+  // The Contract open in its detail, for the demo triggers that act on it (catch-up Phase 24).
+  useDemoTriggerContextWhile('adminContracts.openContractId', contract?.id ?? '', open && editing)
 
   // The panel mounts afresh for each Contract it opens, so its fields start from it.
   const [aaCode, setAaCode] = useState(contract?.aaCode ?? '')
@@ -403,7 +406,6 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
             disabled={system}
           />
         )}
-        {editing && contract.permitsRateTime && <FieldHint>Allows hourly rate and time billing lines on its Procedures.</FieldHint>}
         {kind === 'fixed' && !editing && (
           <PanelGrid>
             <TextField label="First price from" type="date" value={firstStart} onChange={setFirstStart} mono hint="May be in the past." />

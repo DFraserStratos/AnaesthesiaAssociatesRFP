@@ -67,7 +67,8 @@ export function captureBookings22a(state: AppState): BookingRow22a[] {
   const lists = Object.values(state.schedule.lists).filter((l): l is AssignedList => l.anaesthetistId !== undefined)
   for (const list of lists) {
     for (const booking of bookingsForList(state, list.id)) {
-      const ctx = billingContextForBooking(state, booking)
+      // Catch-up Phase 24: without the billing slice, so the price ladder's AUTHORISED and prepaid rungs are not read here (procedurePriceParity.test.ts pins them).
+      const ctx = billingContextForBooking({ masters: state.masters, schedule: state.schedule }, booking)
       if (ctx === undefined) continue
       const procedures = proceduresForBooking(state, booking.id)
       const prePaid = prePaidByProcedure(state, booking.id)

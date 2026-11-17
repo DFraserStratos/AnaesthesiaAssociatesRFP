@@ -1,18 +1,104 @@
 {
   "id": "US-05.2.5",
   "status": "partial",
-  "absentReason": "The fixed price is the range in force on the procedure date and BTM is still recorded for reference; 'Needs a price' as a price state and a typed price are Phase 24's, and the form collapse on a fixed price is 21a's.",
+  "absentReason": "An additional invoice or credit note by hand is Phases 38b and 39.",
   "shots": [
     {
       "name": "fixed-price",
       "app": "admin",
-      "caption": "Gastric bypass at its fixed price as the primary procedure; the additional hernia repair bills its time units",
+      "caption": "The range in force is the price: Gastric bypass at Fixed price $2,800.00, no times asked",
       "start": "/admin/day/2026-07-14/bookings/BK0028",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "scroll": "[data-shot=price-card] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-testid=booking-calculation]"
+            "[data-shot=price-card] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fixed-price",
+      "app": "mobile",
+      "caption": "Her own price list's fixed price, read-only: Fixed price $1,200.00",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "open-price",
+      "app": "web",
+      "caption": "The range in force is the price; an open price is typed",
+      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0177",
+      "states": [
+        {
+          "state": "needs-price",
+          "caption": "No contract · Fixed price with no amount: Needs a price",
+          "steps": [
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]"
+          ]
+        },
+        {
+          "state": "typed",
+          "caption": "The anaesthetist types the open price, $650.00",
+          "steps": [
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "fill": "[data-shot=price-card-input]",
+              "value": "650.00"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[data-shot=price-card-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]"
           ]
         }
       ]

@@ -109,57 +109,10 @@ describe('validateBookingForBilling — happy paths', () => {
   })
 })
 
-describe('validateBookingForBilling — rate x time gate (Method 3)', () => {
-  const rateTimeLine: BillingLine = {
-    id: 'bl-rt',
-    procedureId: 'proc-1',
-    chargeBasis: 'rateTime',
-    hours: 2,
-    rate: 400,
-    amount: 800,
-    description: 'Agreed hourly rate',
-  }
-
-  it('passes under a contract that permits an individual arrangement', () => {
-    const permitting = mkContract({ id: 'con-ia', permitsRateTime: true })
-    // An RVG kind carrying the arrangement still records its RVG code (catch-up Phase 20, US-03.3.1).
-    const p = validProcedure({ governingContractId: 'con-ia', modifierClaims: [] })
-    const ctx = mkCtx({ contracts: { 'con-ia': permitting }, billingLines: [rateTimeLine] })
-    expect(validateBookingForBilling(booking, [p], ctx)).toEqual([])
-  })
-
-  it('fails under a non-permitting contract, and with no contract at all', () => {
-    const nonPermitting = mkContract({ id: 'con-std' })
-    const p = mkProcedure({ governingContractId: 'con-std' })
-    const ctx = mkCtx({ contracts: { 'con-std': nonPermitting }, billingLines: [rateTimeLine] })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], ctx))).toContain('billingLines')
-
-    const orphan = mkProcedure({ governingContractId: 'con-gone' })
-    const ctx2 = mkCtx({ billingLines: [rateTimeLine] })
-    expect(fieldsOf(validateBookingForBilling(booking, [orphan], ctx2))).toContain('billingLines')
-  })
-})
-
-describe('validateBookingForBilling — price override reason', () => {
-  it('an override with an empty reason fails', () => {
-    const p = validProcedure({ priceOverride: { kind: 'fixedFee', amount: 500, reason: '  ' } })
-    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('priceOverride')
-  })
-
-  it('an override with a reason passes', () => {
-    const p = validProcedure({
-      priceOverride: { kind: 'dollarAdjustment', amount: -50, reason: 'Agreed discount' },
-    })
-    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
-  })
-
-  it('an override that drives the fee negative fails (8th review: no negative invoices)', () => {
-    const p = validProcedure({
-      priceOverride: { kind: 'dollarAdjustment', amount: -10000, reason: 'Stress test' },
-    })
-    const failures = validateBookingForBilling(booking, [p], mkCtx())
-    expect(fieldsOf(failures)).toContain('priceOverride')
-    expect(failures.some((f) => f.message.includes('negative'))).toBe(true)
+describe('validateBookingForBilling: a typed price needs no reason (catch-up Phase 24, RV-04)', () => {
+  it('a typed price passes the pre-flight, $0 included', () => {
+    expect(validateBookingForBilling(booking, [validProcedure({ enteredPrice: 500 })], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [validProcedure({ enteredPrice: 0 })], mkCtx())).toEqual([])
   })
 })
 
@@ -241,7 +194,7 @@ describe('"Needs a price" on a fixed price with no range in force (catch-up Phas
   it('an additional Procedure needs a price too, and an office fixed fee is a typed price', () => {
     const add = validProcedure({ governingContractId: 'con-fx', isPrimary: false })
     expect(fieldsOf(validateBookingForBilling(booking, [add], ctxOn('2026-07-21')))).toContain('governingContractId')
-    const typed = validProcedure({ governingContractId: 'con-fx', priceOverride: { kind: 'fixedFee', amount: 3000, reason: 'Office price' } })
+    const typed = validProcedure({ governingContractId: 'con-fx', enteredPrice: 3000 })
     expect(fieldsOf(validateBookingForBilling(booking, [typed], ctxOn('2026-07-21')))).not.toContain('governingContractId')
   })
 

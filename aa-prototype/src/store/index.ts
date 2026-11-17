@@ -401,7 +401,9 @@ export { reviewFlagsFor, reviewFlagsOnList, reviewInputFor } from './reviewSelec
 export * from './lookback'
 
 // The step rail's writes and reads (catch-up Phase 20).
-export { contractPickRefusal, railActorOf, setEnteredPrice, setProcedureContract, setRailAnswers } from './contractSelectionActions'
+export { contractPickRefusal, railActorOf, setProcedureContract, setRailAnswers } from './contractSelectionActions'
+export { BACKDATED_RANGE, BACKDATED_RANGE_CONTRACT_ID, addBackdatedRangeDemo, backdatedRangeAdded } from './demoBackdatedRange'
+export { anaesthetistPriceRightFor, priceChangeRefusal, setProcedurePrice } from './pricingActions'
 export { CHOOSE_INSURER_OR_FUNDER, setBookingInsurance, type InsuranceInput } from './insuranceActions'
 export { PAYER_LOCKED_BY_PREPAYMENT, PAYER_NAME_REQUIRED, payerAuditText, payerFromInput, payerInputRefusal, sameName, setProcedurePayer, type PayerInput } from './payerActions'
 export {

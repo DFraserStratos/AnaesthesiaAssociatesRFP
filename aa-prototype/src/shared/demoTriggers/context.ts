@@ -25,6 +25,8 @@ export interface DemoContextValues {
   'adminMasters.view': string
   /** Admin · the List an open Assign or Reassign picker is placing (catch-up Phase 32b's colleague stand-in). */
   'adminPicker.listId': string
+  /** Admin · Master data: the Contract open in its detail (catch-up Phase 24's backdated range trigger). */
+  'adminContracts.openContractId': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

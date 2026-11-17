@@ -33,9 +33,10 @@ import { ResultLine } from '../../../../shared/ui/ResultLine'
 import { HistoryTimeline } from '../../../../shared/booking'
 import { sortAuditNewestFirst } from '../../../../shared/audit'
 import { BookingTotalPanel } from '../../../../shared/capture/BookingTotalPanel'
+import { BookingTotalStrip } from '../../../../shared/capture/BookingTotalStrip'
+import { PriceCard } from '../../../../shared/capture/PriceCard'
 import { CompleteBar } from '../../../../shared/capture/CompleteBar'
 import { TimesCard } from '../../../../shared/capture/TimesCard'
-import { OverrideCard } from '../../../../shared/capture/OverrideCard'
 import { RvgCodeField } from '../../../../shared/capture/ProcedureCodeCard'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import { UnitsCard } from '../../../../shared/capture/UnitsCard'
@@ -964,10 +965,6 @@ export function TimesCardDemo({ f }: F) {
   return <CaptureHost f={f}>{({ procedure, canCapture, onError }) => <TimesCard procedure={procedure} actor={f.actor} canCapture={canCapture} failures={[]} onError={onError} />}</CaptureHost>
 }
 
-export function OverrideCardDemo({ f }: F) {
-  return <CaptureHost f={f}>{({ procedure, canCapture, onError }) => <OverrideCard procedure={procedure} actor={f.actor} canCapture={canCapture} failures={[]} onError={onError} />}</CaptureHost>
-}
-
 export function RvgCodeFieldDemo({ f }: F) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   return (
@@ -1025,4 +1022,40 @@ function UnitsCardBody({ f, procedure, canCapture, onError }: F & { procedure: P
 
 export function UnitsCardDemo({ f }: F) {
   return <CaptureHost f={f}>{(ctx) => <UnitsCardBody f={f} {...ctx} />}</CaptureHost>
+}
+
+function PriceCardBody({ f, procedure, canCapture, onError }: F & { procedure: Procedure; canCapture: boolean; onError: (m: string) => void }) {
+  const list = useAppStore((s) => (f.capture !== undefined ? s.schedule.lists[f.capture.listId] : undefined))
+  const masters = useAppStore((s) => s.masters)
+  const billingLines = useAppStore((s) => s.schedule.billingLines)
+  const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
+  const proceduresRecord = useAppStore((s) => s.schedule.procedures)
+  if (list === undefined || !isAssignedList(list)) return null
+  const procedures = Object.values(proceduresRecord).filter((p) => p.bookingId === procedure.bookingId).sort((a, b) => a.id.localeCompare(b.id))
+  const view = bookingFee({ procedures, list, masters, billingLines, patientId }).views[procedure.id]
+  if (view === undefined) return null
+  return <PriceCard procedure={procedure} actor={f.actor} fee={view.fee} contract={view.contract} canCapture={canCapture} failures={[]} onError={onError} />
+}
+
+/** Catch-up Phase 24: the price line on a seeded Booking still to capture (live; Save writes to the demo data). */
+export function PriceCardDemo({ f }: F) {
+  return <CaptureHost f={f}>{(ctx) => <PriceCardBody f={f} {...ctx} />}</CaptureHost>
+}
+
+/** Catch-up Phase 24: the phone's dock strip, fed local figures. */
+export function BookingTotalStripDemo({ f }: F) {
+  const rate = useAppStore((s) => s.masters.anaesthetists[f.anaesthetistId]?.unitValue ?? 26.5)
+  const [units, setUnits] = useState(12)
+  return (
+    <>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <KnobButton onClick={() => setUnits((u) => Math.max(0, u - 1))}>One unit less</KnobButton>
+        <KnobButton onClick={() => setUnits((u) => u + 1)}>One unit more</KnobButton>
+      </div>
+      <div style={{ maxWidth: 340 }}>
+        <BookingTotalStrip units={units} fee={units * rate} lines={[]} rateLabel={`FEE @ ${formatCurrency(rate)}/UNIT`} overrideNote={null} />
+      </div>
+      <StageHint>Change the units: both figures tick with the green flash, as a modifier claimed on the phone does.</StageHint>
+    </>
+  )
 }

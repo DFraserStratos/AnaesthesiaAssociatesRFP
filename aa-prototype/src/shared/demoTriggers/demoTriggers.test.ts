@@ -71,6 +71,8 @@ describe('registry shape', () => {
       if (view !== null) published['adminMasters.view'] = view
       // The colleague stand-in shows while an Assign or Reassign picker is open (catch-up Phase 32b).
       if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-07-22-AM'
+      // The backdated range shows while Merivale's Face lift is open in its detail (catch-up Phase 24; the index hint says so).
+      if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
       expect(ids(api, path.split('?')[0]!, 'bar', published), `${t.id} at ${path}`).toContain(t.id)
     }
   })
@@ -84,6 +86,20 @@ describe('registry shape', () => {
         expect(ids(api, path)).not.toContain(t.id)
       }
     }
+  })
+})
+
+describe("the backdated range trigger (catch-up Phase 24)", () => {
+  it("shows on the Contracts view and on Merivale's Face lift detail; disabled once the range is added", () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'parties' })).not.toContain('demo-backdated-range')
+    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'contracts' })).toContain('demo-backdated-range')
+    expect(ids(api, '/admin/masters', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT-1' })).not.toContain('demo-backdated-range')
+    expect(ids(api, '/admin/masters', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT' })).toContain('demo-backdated-range')
+    const trigger = DEMO_TRIGGERS.find((t) => t.id === 'demo-backdated-range')!
+    const result = trigger.run(api, { pathname: '/admin/masters', params: {}, published: { 'adminContracts.openContractId': 'CT-MER-FACELIFT' } })
+    expect(result.ok).toBe(true)
+    expect(trigger.disabledReason(api.getState(), { pathname: '/admin/masters', params: {}, published: {} })).toBe('Already added')
   })
 })
 

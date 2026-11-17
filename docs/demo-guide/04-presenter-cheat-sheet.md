@@ -78,8 +78,24 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 ```
 
-- The anaesthetist Booking shows no units or fee, only Mark complete; Admin Bookings retain the full
-  billing view.
+- The anaesthetist Booking shows what the price comes to as she records, on every Contract: a quiet
+  **Price** card in the capture ("4 units x $26.50 = $106.00") and the Booking total above Mark complete
+  (the phone's dock strip, the web rail panel), rising as she claims a modifier or adds time, with no
+  prompt. She types a price only where an RVG Contract allows it (No contract · RVG, Forte Health RVG),
+  or the amount on No contract · Fixed price; no reason is asked. Elsewhere the figures are read-only:
+  "Set by {Contract}. To use a different price, change the Contract or alert the office." Admin
+  Bookings retain the full billing view.
+- Aria Skin and Laser Clinic is RVG at the Contract's rate, $26.50 a unit, which the anaesthetist
+  cannot change: Dr Fitzgerald's Wed 15 Jul Aria Booking is 22 units x $26.50 = $583.00 (A5 base 8 +
+  time 14, 08:30 to 11:30). An added billing line is a fixed amount only.
+- A price typed at $0.00 keeps the RVG detail recorded ("This gives a no-charge invoice."). Review
+  shows a **No charge** pill, and authorising raises a $0.00 "No charge" invoice: no payable, no BCTI.
+- Each Contract has one of five pricing kinds (RVG at the anaesthetist's rate, RVG at the Contract's
+  rate, RVG less the Contract's discount, a fixed price from its range in force, or an open price typed
+  on the Procedure). A Procedure's price follows its Contract (the range in force, the rate or discount
+  as they stand) until a typed price, a prepayment invoice or AUTHORISED holds it; else "Needs a price".
+  The office can type any price until AUTHORISED, a prepaid one only until its invoice is raised; no
+  reason. Admin → Booking → **Change price** shows the computed price beside the field.
 - **Reset → Confirm reset** in the shared top bar restores the pristine data and clock from any app
   while keeping the current app.
 - Closing things: **Escape** closes only the top layer (a sheet over a drawer closes first, then the
@@ -180,8 +196,8 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   surgeon's rooms' when it arrives (no switching between them), and the original stays in the Booking's
   history; a hand-entered Booking keeps what was typed or told. Nobody edits it.
 - **On every Booking screen:** a small Procedure card with that text, when and where it came from. The
-  Contract is in the Billing card and the RVG code in its own card below it. The running fee stays
-  hidden from the anaesthetist.
+  Contract is in the Billing card and the RVG code in its own card below it. The anaesthetist sees what
+  the price comes to in a quiet Price card.
 - **Invoice description:** shows on the invoice only: the procedure text, or a filled-in Contract
   invoice description on top; never the RVG code. The office's own wording always wins.
 - No attachments on Bookings or Lists. The demo's procedure wording is illustrative (AI-made), not AA's.

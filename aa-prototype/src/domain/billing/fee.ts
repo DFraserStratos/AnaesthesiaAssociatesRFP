@@ -1,7 +1,8 @@
 /**
- * The fee calculator: the BTM path, contract pricing (by pricing kind), non-RVG
- * billing lines (fixed + rate x time) and typed price overrides, composed into
- * a structured `FeeResult` the UI only formats (PROGRESS convention 9).
+ * The fee calculator: the BTM path, the price from the one price function
+ * (`procedurePrice.ts`, catch-up Phase 24) and the non-RVG billing lines
+ * (fixed amounts), composed into a structured `FeeResult` the UI only
+ * formats (PROGRESS convention 9).
  *
  * Since catch-up Phase 23 every Procedure is priced from its place in its
  * Booking (`FeeContext.allocation`, from `multiProcedure.ts`): `bookingFeeFor`
@@ -14,12 +15,12 @@ import type {
   BillingLine,
   ChargeBasis,
   Contract,
-  PriceOverride,
   Procedure,
   UnitProvenance,
 } from '../types'
 import { roundToCents } from './money'
-import { rangeInForce } from './priceRanges'
+import { isRvgKind } from './contracts'
+import { priceFor, type HeldPrices, type PriceResult } from './procedurePrice'
 import { procedureModifiers, type Modifier, type ModifierId, type ProcedureModifier } from './modifiers'
 import { baseUnitsFor, resolveStartingUnits, type BaseUnitsSource, type GuideValue, type RvgGroup } from './rvgGroups'
 import { timeUnitsFromMinutes, type RvgTimeRule } from './timeUnits'
@@ -205,11 +206,17 @@ export interface FeeContext {
   /** How many Procedures the Booking has: the line descriptions name the role only with two or more. */
   bookingProcedureCount?: number
   /**
-   * The procedure's captured NON-RVG billing lines (fixed / rate x time).
+   * The procedure's captured NON-RVG billing lines (fixed amounts, until 39b).
    * RVG-basis lines are never inputs — the calculator produces the RVG amount
    * itself from the captured BTM data.
    */
   nonRvgLines?: readonly BillingLine[]
+  /**
+   * The held amounts the price ladder reads ahead of a typed price (catch-up
+   * Phase 24, `procedurePrice.ts`): the AUTHORISED and prepaid rungs, from the
+   * store's `heldPricesFor`. Absent: nothing holds the price.
+   */
+  held?: HeldPrices
 }
 
 export interface FeeLine {
@@ -217,17 +224,14 @@ export interface FeeLine {
   description: string
   amount: number
   units?: number
-  /** $ per unit ('rvg') or $ per hour ('rateTime'). */
+  /** $ per unit ('rvg'). */
   rate?: number
-  hours?: number
-}
-
-export interface AppliedOverride {
-  override: PriceOverride
-  /** Subtotal before the override. */
-  before: number
-  /** Total after the override. */
-  after: number
+  /**
+   * `discount`: the Contract's discount on RVG less the Contract's discount,
+   * its own negative line after the fee line at the gross (catch-up Phase 24,
+   * US-05.4.3). Absent on every other line.
+   */
+  role?: 'discount'
 }
 
 export interface FeeResult {
@@ -242,19 +246,23 @@ export interface FeeResult {
   allocation: ProcedureAllocation
   /** Basis of the primary component; 'mixed' when lines span bases. */
   chargeBasis: ChargeBasis | 'mixed'
-  /** $ per unit applied on the RVG path (null when a fixed price applied). */
+  /** $ per unit the computed price charges on an RVG kind (the gross rate on a discount Contract); null otherwise. */
   unitRate: number | null
   lines: FeeLine[]
-  /** Sum of all lines, before any price override. */
+  /** Sum of all lines: the price. */
   subtotal: number
-  override: AppliedOverride | null
+  /**
+   * The price ladder's answer (catch-up Phase 24, `priceFor`): what the price
+   * is, what holds it, and the computed figure beside it.
+   */
+  price: PriceResult
   total: number
   /**
-   * True when the Procedure has no price: a fixed-price Contract with no range
-   * in force on the procedure date (catch-up Phase 19a). There is then no
-   * price line and no amount to show: every money surface reads "Needs a
-   * price" instead of the figure, and the validator and billing resolver
-   * refuse it. An office fixed-fee override is a typed price and clears it.
+   * True when the Procedure has no price (`price.status === 'needsPrice'`): an
+   * open price with no amount typed, or a fixed price with no range in force
+   * on the procedure date. There is then no price line: every money surface
+   * reads "Needs a price" instead of the figure, and completion, the
+   * validator and the billing resolver refuse it.
    */
   needsPrice: boolean
 }
@@ -269,18 +277,17 @@ export function modifierInputsOf(ctx: Pick<FeeContext, 'patientDobISO' | 'dateIS
 }
 
 /**
- * Compute a procedure's fee.
+ * Compute a procedure's fee: its price from the one price function
+ * (`priceFor`, catch-up Phase 24) and the lines an invoice prints for it.
  *
- * Contract pricing by pricing kind (catch-up Phase 18; AR-58 2.3): RVG at the
- * anaesthetist's rate charges units x their own unit value; RVG at the
- * Contract's rate charges units x its rate; RVG less a discount charges units
- * x the anaesthetist's unit value less the discount. A fixed price (catch-up
- * Phase 19a) is the price of the range in force on the procedure date, the
- * whole price on any Procedure, primary or additional (BTM still computed for
- * reference); with no range in force the result `needsPrice`, with no amount
- * and never a fallback to RVG. An open price is the amount typed on the
- * Procedure (`enteredPrice`, catch-up Phase 20); with none it `needsPrice`
- * (its RVG figure is working only). The resolver and validator own the refusal.
+ * The units are the multi-procedure rule's (catch-up Phase 23). On an RVG kind
+ * the computed price is units x the rate (the Contract's, else the
+ * anaesthetist's unit value), less the Contract's discount as its own line; a
+ * fixed price is the range in force on the procedure date (BTM computed for
+ * reference); an open price has none of its own. A held or typed price prints
+ * as one line at the price. With no price, `needsPrice` and no price line.
+ * Captured fixed billing lines (until 39b) are part of the computed price; a
+ * typed or held price is the whole price.
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const { allocation } = ctx
@@ -290,91 +297,61 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule, modifierInputsOf(ctx), allocation.rvgPriced ? allocation : undefined)
   const billableUnits = allocation.rvgPriced || allocation.role === 'primary' ? unitsUnderRule(btm, allocation) : btm.totalUnits
   const several = (ctx.bookingProcedureCount ?? 1) > 1
-  const lines: FeeLine[] = []
-
-  // --- the RVG / fixed-price component ---
   const contract = ctx.contract
-  let unitRate: number | null = ctx.anaesthetist.unitValue
-  const pricing = contract?.pricing
-  if (pricing?.kind === 'rvgContractRate') {
-    unitRate = pricing.unitRate
-  } else if (pricing?.kind === 'rvgDiscount') {
-    // A per-unit dollar rate is money: the derived discount rate rounds to
-    // cents HERE so the charged amount and any displayed/snapshotted "$x.xx
-    // per unit" can never disagree (8th review; reproducibility principle 10).
-    unitRate = roundToCents(ctx.anaesthetist.unitValue * (1 - pricing.discountPct / 100))
-  }
+  const kind = contract?.pricing.kind ?? 'rvgAnaesthetistRate'
+  const rvgKind = isRvgKind(kind)
 
-  const isFixed = contract !== undefined && pricing?.kind === 'fixed'
-  const range = isFixed ? rangeInForce(contract, ctx.dateISO) : null
-  // An open price has no price of its own: the amount typed on the Procedure
-  // is its price (catch-up Phase 20, US-04.3.9, US-05.2.5; INTERIM
-  // `enteredPrice` until Phase 24). With none typed, the RVG figure below is
-  // working only, never shown as its price (catch-up Phase 19a).
-  const typedOpenPrice = pricing?.kind === 'open' ? procedure.enteredPrice : undefined
-  let needsPrice = (isFixed && range === null) || (pricing?.kind === 'open' && typedOpenPrice === undefined)
-
-  if (typedOpenPrice !== undefined) {
-    unitRate = null
-    lines.push({ chargeBasis: 'fixed', description: 'Typed price', amount: roundToCents(typedOpenPrice) })
-  } else if (isFixed) {
-    unitRate = null
-    if (range !== null) {
-      lines.push({
-        chargeBasis: 'fixed',
-        description: several ? `Contract price, ${allocation.role} procedure` : 'Contract price',
-        amount: roundToCents(range.price),
-      })
-    }
-  } else if (procedure.rvgGroupId !== undefined) {
-    lines.push({
-      chargeBasis: 'rvg',
-      description: several ? rvgLineDescription(btm, allocation) : 'Anaesthesia (B + T + M units)',
-      amount: roundToCents(billableUnits * (unitRate ?? 0)),
-      units: billableUnits,
-      rate: unitRate ?? undefined,
-    })
-  }
-
-  // --- captured non-RVG lines (fixed / rate x time) ---
+  // --- captured fixed billing lines, until 39b ---
+  const addOnLines: FeeLine[] = []
   for (const line of ctx.nonRvgLines ?? []) {
     if (line.chargeBasis === 'rvg') continue
-    const amount =
-      line.chargeBasis === 'rateTime' && line.hours !== undefined && line.rate !== undefined
-        ? roundToCents(line.hours * line.rate)
-        : roundToCents(line.amount)
-    const fee: FeeLine = { chargeBasis: line.chargeBasis, description: line.description, amount }
-    if (line.chargeBasis === 'rateTime') {
-      fee.hours = line.hours
-      fee.rate = line.rate
+    addOnLines.push({ chargeBasis: line.chargeBasis, description: line.description, amount: roundToCents(line.amount) })
+  }
+  const addOns = roundToCents(addOnLines.reduce((sum, l) => sum + l.amount, 0))
+
+  // An RVG kind charges units only once an RVG code is recorded (no code: no RVG line, as before).
+  const units = rvgKind && procedure.rvgGroupId !== undefined ? billableUnits : 0
+  const price = priceFor({
+    contract,
+    dateISO: ctx.dateISO,
+    enteredPrice: procedure.enteredPrice,
+    units,
+    unitValue: ctx.anaesthetist.unitValue,
+    ...(ctx.held !== undefined ? { held: ctx.held } : {}),
+    addOns,
+  })
+
+  const fixedDescription = several ? `Contract price, ${allocation.role} procedure` : 'Contract price'
+  const rvgDescription = several ? rvgLineDescription(btm, allocation) : 'Anaesthesia (B + T + M units)'
+  const lines: FeeLine[] = []
+  let unitRate: number | null = null
+  if (price.status === 'priced' && price.heldBy !== null) {
+    // A held or typed amount is the whole price (billing lines included): one line at the price. On an
+    // RVG kind it stays the RVG line with its units, for reference (US-03.5.2), with no rate to multiply.
+    const description = kind === 'open' ? 'Typed price' : rvgKind ? rvgDescription : fixedDescription
+    lines.push({ chargeBasis: rvgKind ? 'rvg' : 'fixed', description, amount: price.price, ...(rvgKind ? { units: billableUnits } : {}) })
+  } else if (price.status === 'priced') {
+    const computed = price.computed!
+    if (computed.kind === 'fixed') {
+      lines.push({ chargeBasis: 'fixed', description: fixedDescription, amount: computed.gross })
+    } else if (procedure.rvgGroupId !== undefined) {
+      lines.push({ chargeBasis: 'rvg', description: rvgDescription, amount: computed.gross, units: billableUnits, ...(computed.rate !== undefined ? { rate: computed.rate } : {}) })
+      if (computed.discountAmount !== 0) {
+        lines.push({ chargeBasis: 'rvg', role: 'discount', description: `Discount ${computed.discountPercent}%`, amount: -computed.discountAmount })
+      }
     }
-    lines.push(fee)
+    if (rvgKind) unitRate = computed.rate ?? null
+    lines.push(...addOnLines)
+  } else {
+    lines.push(...addOnLines)
   }
 
   const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
+  const total = price.status === 'priced' ? price.price : subtotal
+  const bases = new Set(lines.filter((l) => l.role === undefined).map((l) => l.chargeBasis))
+  const chargeBasis: ChargeBasis | 'mixed' = bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (rvgKind ? 'rvg' : 'fixed'))
 
-  // --- typed price override: fixed replaces, $ adjusts, % scales ---
-  let total = subtotal
-  let applied: AppliedOverride | null = null
-  const override = procedure.priceOverride
-  if (override !== undefined) {
-    if (override.kind === 'fixedFee') {
-      total = roundToCents(override.amount)
-    } else if (override.kind === 'dollarAdjustment') {
-      total = roundToCents(subtotal + override.amount)
-    } else {
-      total = roundToCents(subtotal * (1 + override.percent / 100))
-    }
-    applied = { override, before: subtotal, after: total }
-    // A typed fixed fee is a price a person set; an adjustment of nothing is not.
-    if (override.kind === 'fixedFee') needsPrice = false
-  }
-
-  const bases = new Set(lines.map((l) => l.chargeBasis))
-  const chargeBasis: ChargeBasis | 'mixed' =
-    bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (isFixed || typedOpenPrice !== undefined ? 'fixed' : 'rvg'))
-
-  return { btm, billableUnits, allocation, chargeBasis, unitRate, lines, subtotal, override: applied, total, needsPrice }
+  return { btm, billableUnits, allocation, chargeBasis, unitRate, lines, subtotal, price, total, needsPrice: price.status === 'needsPrice' }
 }
 
 /**

@@ -22,12 +22,12 @@
  * - A18: the override setting is seeded on No contract · RVG only.
  */
 
-import type { AnaesthetistId, ContractId, HospitalId, Procedure, SurgeonId } from '../types'
+import type { AnaesthetistId, ContractId, HospitalId, SurgeonId } from '../types'
 import type { Party, PartyId, PartyKind } from './parties'
 import { billingDetailsRefusal } from './parties'
 import type { SpecialtyId } from '../specialties'
 import type { FundingTagId } from './fundingTags'
-import { rangeInForce, validatePriceRanges, type PriceRange, type PriceRangeRefusalCode } from './priceRanges'
+import { validatePriceRanges, type PriceRange, type PriceRangeRefusalCode } from './priceRanges'
 import { rvgGroupPickRefusal, type RvgGroup, type RvgGroupId } from './rvgGroups'
 
 // ---------------------------------------------------------------------------
@@ -132,11 +132,6 @@ export interface Contract {
    * With `billsTo` it decides where the Contract sits (`destinationOf`).
    */
   fundingTagId?: FundingTagId
-  /**
-   * Ours, INTERIM until Phase 24: today's Method 3 gate (rate x time capture is
-   * offered only under a Contract carrying it, 5th review #1). Phase 24 removes it.
-   */
-  permitsRateTime: boolean
 }
 
 /** The kinds priced from RVG units, the only ones that can carry the anaesthetist's override. */
@@ -465,32 +460,4 @@ export function linkFits(
     (at.surgeonId !== undefined && contract.linkedSurgeonIds.includes(at.surgeonId)) ||
     (at.anaesthetistId !== undefined && contract.linkedAnaesthetistId === at.anaesthetistId)
   )
-}
-
-/**
- * True when a Procedure on this Contract has no price on its procedure date
- * (the List's): a fixed price with no range in force (Phase 19a; before its
- * first start), or any open-price Contract (no price of its own: the amount is
- * typed on the Procedure, catch-up Phase 20). The validator and the billing
- * resolver both ask it, with `needsPriceMessage`; never a fallback to RVG.
- */
-export function noPriceInForce(contract: Contract, dateISO: string): boolean {
-  if (contract.pricing.kind === 'open') return true
-  return contract.pricing.kind === 'fixed' && rangeInForce(contract, dateISO) === null
-}
-
-/**
- * True when this Procedure cannot be priced on its procedure date: the one
- * predicate the validator and the billing resolver share. A fixed price with
- * no range in force needs a price unless the office typed a fixed fee (a
- * price a person set; `feeFor` agrees); an open price does until its amount
- * is typed (`enteredPrice`, INTERIM until Phase 24).
- */
-export function procedureNeedsPrice(
-  contract: Contract,
-  dateISO: string,
-  procedure: Pick<Procedure, 'priceOverride' | 'enteredPrice'>,
-): boolean {
-  if (contract.pricing.kind === 'open') return procedure.enteredPrice === undefined && procedure.priceOverride?.kind !== 'fixedFee'
-  return noPriceInForce(contract, dateISO) && procedure.priceOverride?.kind !== 'fixedFee'
 }

@@ -137,8 +137,10 @@ describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
     let checked = 0
     // Catch-up Phase 21a's review-flags List carries one misfit on purpose: "Contract not offered on this List".
     const misfit = SEED_MARKERS.otherSurgeonContract!.entityId
+    // Catch-up Phase 24's range beat: an invoiced Face lift on an AUTHORISED List at AA's rooms, never chosen there.
+    const invoicedBeat = SEED_MARKERS.rangeAuthorisedBooking!.entityId
     for (const p of Object.values(schedule.procedures)) {
-      if (p.governingContractId === undefined || p.bookingId === misfit) continue
+      if (p.governingContractId === undefined || p.bookingId === misfit || p.bookingId === invoicedBeat) continue
       const list = schedule.lists[schedule.bookings[p.bookingId]!.listId]!
       const contract = masters.contracts[p.governingContractId]!
       expect(contractFitsSpecialties(contract.specialtyIds, masters.surgeons[list.surgeonId]!.specialtyIds), p.id).toBe(true)

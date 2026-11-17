@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeBooking, completionBlockersFor } from './lifecycle'
 import { claimModifier, confirmNoModifiers, removeModifier } from './modifierActions'
-import { setEnteredPrice, setProcedureContract } from './contractSelectionActions'
+import { setProcedureContract } from './contractSelectionActions'
+import { setProcedurePrice } from './pricingActions'
 import { runBillingForList } from './billingRun'
 import { proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
@@ -87,7 +88,7 @@ describe('completion in the store reads only the rule (catch-up Phase 21a)', () 
     const outcome = completeBooking(api, SOUTER, NEEDS_PRICE_BOOKING)
     expect(outcome).toMatchObject({ ok: false, code: 'validationFailed' })
     expect(JSON.stringify(outcome)).toContain('Needs a price')
-    expect(setEnteredPrice(api, SOUTER, procOf(api, NEEDS_PRICE_BOOKING).id, 650).ok).toBe(true)
+    expect(setProcedurePrice(api, SOUTER, procOf(api, NEEDS_PRICE_BOOKING).id, 650).ok).toBe(true)
     expect(completeBooking(api, SOUTER, NEEDS_PRICE_BOOKING).ok).toBe(true)
   })
 })
@@ -113,17 +114,18 @@ describe('a Contract change that newly asks for RVG detail re-opens a completed 
 })
 
 describe('the billing run keeps its pre-flight (catch-up Phase 21a)', () => {
-  it('a blank override reason, which completion no longer checks, sends the Booking to the monitor', () => {
+  it('a Booking that needs a price, which slipped past completion, goes to the monitor in the same words (catch-up Phase 24)', () => {
     const api = createAppStore()
     const listId = SEED_LIST_IDS.morrisonMon20
     const s = api.getState()
     const booking = Object.values(s.schedule.bookings).find((b) => b.listId === listId && b.completed && b.cancellation === undefined)!
     const p = proceduresForBooking(s, booking.id)[0]!
-    api.setState({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [p.id]: { ...p, priceOverride: { kind: 'dollarAdjustment', amount: 10, reason: ' ' } } } } })
+    api.setState({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [p.id]: { ...p, governingContractId: seedFallbackId('patient-standard') } } } })
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     const run = runBillingForList(api, listId)
     expect(run.ok).toBe(true)
     if (!run.ok) return
-    expect(run.value.exceptions).toContainEqual(expect.objectContaining({ bookingId: booking.id, code: 'preflight', message: 'Give a reason for the price override.' }))
+    const exception = run.value.exceptions.find((e) => e.bookingId === booking.id)
+    expect(exception?.message).toContain('Needs a price')
   })
 })

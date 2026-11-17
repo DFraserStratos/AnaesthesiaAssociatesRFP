@@ -1,0 +1,75 @@
+{
+  "id": "US-05.4.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "discount",
+      "app": "web",
+      "caption": "The Contract's discount, applied and read-only",
+      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0185",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "discount",
+      "app": "mobile",
+      "caption": "The Contract's discount, applied and read-only",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0185",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "discount-invoice-line",
+      "app": "admin",
+      "caption": "The Contract's discount, its own invoice line",
+      "start": "/admin/day/2026-07-27/bookings/BK0185",
+      "states": [
+        {
+          "caption": "The fee line, then Discount 10% as its own line, then the total",
+          "steps": [
+            {
+              "scroll": "[data-shot=booking-total-lines]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-total-lines]"
+          ]
+        }
+      ]
+    }
+  ]
+}

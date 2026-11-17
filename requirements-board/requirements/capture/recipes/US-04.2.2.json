@@ -6,12 +6,12 @@
     {
       "name": "pricing-basis",
       "app": "admin",
-      "caption": "Contract pricing kind",
+      "caption": "Each Contract has one of five pricing kinds; the override only on RVG kinds",
       "start": "/admin/masters?view=contracts",
       "states": [
         {
-          "state": "type-1",
-          "caption": "RVG at the anaesthetist's rate: units times the anaesthetist's unit value",
+          "state": "anaesthetist-rate",
+          "caption": "RVG at the anaesthetist's rate: the units at her own unit value; this one lets her override the price",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",
@@ -21,42 +21,81 @@
               "wait": 300
             },
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"St George's RVG\") >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-STG-D1\"] >> button:text-is(\"Edit\")"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=contract-detail]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-settings]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings] label:has-text(\"Pricing kind\")"
+            "[data-shot=contract-settings]"
           ]
         },
         {
-          "state": "type-2",
-          "caption": "RVG at the Contract's rate: units times the Contract's rate per unit",
+          "state": "contract-rate",
+          "caption": "RVG at the Contract's rate: Aria's units at $26.50 a unit, the price fixed for the anaesthetist",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",
-              "value": "Southern Cross Affiliated Provider"
+              "value": "Aria Skin and Laser Clinic"
             },
             {
               "wait": 300
             },
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Southern Cross Affiliated Provider\") >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-ARIA-HOURLY\"] >> button:text-is(\"Edit\")"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=contract-detail]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-settings]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings] label:has-text(\"Pricing kind\")",
-            "[data-shot=contract-settings] label:has-text(\"Rate\")"
+            "[data-shot=contract-settings]"
           ]
         },
         {
-          "state": "type-3",
-          "caption": "Fixed price: the price of the range in force on the procedure date",
+          "state": "discount",
+          "caption": "RVG less the Contract's discount: Forte Health at standard RVG less 10%",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Forte Health RVG less 10%"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-DISC\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": "[data-shot=contract-detail]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-settings]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-settings]"
+          ]
+        },
+        {
+          "state": "fixed-price",
+          "caption": "Fixed price: the price of the range in force on the procedure date, no override setting",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",
@@ -69,37 +108,62 @@
               "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-DOYLE-BAR\"] >> button:text-is(\"Edit\")"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=contract-detail]"
+            },
+            {
+              "wait": 400
             },
             {
               "scroll": "[data-shot=contract-price-ranges]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings] label:has-text(\"Pricing kind\")",
+            "[data-shot=contract-settings]",
             "[data-shot=contract-price-ranges]"
           ]
         },
         {
-          "state": "rate-time",
-          "caption": "A Contract that allows an hourly rate and time billing line",
+          "state": "open-price",
+          "caption": "Open price: no figure on the Contract, the price typed on the Procedure",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",
-              "value": "Aria Skin and Laser Clinic"
+              "value": "No contract · Fixed price"
             },
             {
               "wait": 300
             },
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Aria Skin and Laser Clinic\") >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-system=openPriceFallback]:has-text(\"No contract\") >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": "[data-shot=contract-detail]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-settings]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-settings]"
+          ]
+        },
+        {
+          "state": "override",
+          "caption": "The Contracts list shows on each RVG Contract whether the anaesthetist can override the price; none on a fixed or open price",
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Forte"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings] div:text-is(\"Allows hourly rate and time billing lines on its Procedures.\")"
+            "[data-shot=contract-catalogue] [data-shot=contract-override-pill]"
           ]
         }
       ]

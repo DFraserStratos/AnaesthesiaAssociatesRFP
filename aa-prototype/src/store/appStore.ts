@@ -20,7 +20,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import { resilientLocalStorage } from './persistStorage'
 import { bindCrossTabSync } from './crossTabSync'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
+import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
 import { INTEGRATION_FEEDS } from '../domain/integrations'
 import type {
   AaFeeInvoice,
@@ -110,7 +110,15 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v47: catch-up Phases 23 and 17a joined (one past both branches' 46). Phase 23, the primary Procedure and the
+/** v49: catch-up Phase 24 session 2, the price beats and the rate x time removal (RV-03, US-03.3.10): Aria
+ *  (`CT-ARIA-HOURLY`, id kept) is RVG at its own rate with no `permitsRateTime`; Fitzgerald's Aria Booking loses its
+ *  rate x time line (the seed's only billing line) for A5 and times; the Forte RVG less 10% Contract; Forte Health RVG
+ *  allows the override; seven Bookings (Souter Mon 27 Jul AM, the range beat, the no-charge Booking); Souter's Thu 16
+ *  Jul PM List AUTHORISED with its Face lift invoice. Reseeds on load.
+ *  v48: catch-up Phase 24 session 1, one price function (US-05.2.8, DM-14, RV-04): `Procedure.priceOverride` and its
+ *  reason gone; the one typed price is `enteredPrice` on any Contract (the seeded $1,200 fixed fee on BK0179 now an
+ *  `enteredPrice` at the same figure). Reseeds on load.
+ *  v47: catch-up Phases 23 and 17a joined (one past both branches' 46). Phase 23, the primary Procedure and the
  *  multi-procedure rule (US-03.2.2, US-05.3.1, DM-15): `Procedure.isPrimary` replaces `isAdditional` (exactly one
  *  per Booking; Nair's prepaid second Procedure additional), modifier claims on an additional Procedure moved to its
  *  primary, and the three-procedure Booking on Souter Mon 13 Jul AM (SUBMITTED) with its fixed patient. Reseeds on load.
@@ -275,7 +283,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 47
+export const PERSIST_VERSION = 49
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
@@ -300,7 +308,7 @@ export function freshAppState(): AppState {
   // The pristine seed ships one PAID pre-payment slice (Phase 09), with the
   // counters bumped past the ids it consumed so the first runtime billing run
   // continues the sequence cleanly.
-  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID)
+  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID, SEED_AUTHORISED_INVOICED_BOOKING_IDS)
   return {
     ...seed,
     counters: seedBilling.counters,

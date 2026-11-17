@@ -16,7 +16,8 @@ import {
   contractChangeFor,
 } from './contractApprovalActions'
 import { reviewFlagsFor, reviewFlagsOnList, reviewInputFor } from './reviewSelectors'
-import { setEnteredPrice, setProcedureContract } from './contractSelectionActions'
+import { setProcedureContract } from './contractSelectionActions'
+import { setProcedurePrice } from './pricingActions'
 import { moveBookingToAnaesthetist, pushListToSlot } from './listMoveActions'
 import { moveListToSlot, reassignList } from './slotActions'
 import { assignDraftList } from './draftListActions'
@@ -135,7 +136,7 @@ describe('approving a Contract change (US-07.2.2, US-03.4.1, DM-10)', () => {
     const api = createAppStore()
     // The office types the missing price and completes the open-price Booking (completion still gates authorise).
     const needs = procOf(api, NEEDS)
-    expect(setEnteredPrice(api, OFFICE, needs.id, 480).ok).toBe(true)
+    expect(setProcedurePrice(api, OFFICE, needs.id, 480).ok).toBe(true)
     expect(completeBooking(api, OFFICE, NEEDS).ok).toBe(true)
     const before = api.getState().audit.length
     expect(authoriseList(api, OFFICE, REVIEW).ok).toBe(true)
@@ -164,7 +165,6 @@ function contractFields(api: BoundAppStore): Record<string, unknown> {
   const pick = (p: Procedure) => ({
     governingContractId: p.governingContractId,
     enteredPrice: p.enteredPrice,
-    priceOverride: p.priceOverride,
     prepaymentDetail: p.prepaymentDetail,
     railAnswers: p.railAnswers,
     rvgGroupId: p.rvgGroupId,
@@ -204,7 +204,7 @@ describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A4
     const needs = SEED_MARKERS.needsPriceBooking!.entityId
     const p = procOf(api, needs)
     expect(p.governingContractId).toBe(seedFallbackId('patient-standard'))
-    expect(setEnteredPrice(api, OFFICE, p.id, 650).ok).toBe(true)
+    expect(setProcedurePrice(api, OFFICE, p.id, 650).ok).toBe(true)
     expect(reassignBooking(api, OFFICE, needs, 'L-34821-2026-08-10-AM').ok).toBe(true)
     expect(procOf(api, needs)).toMatchObject({ governingContractId: seedFallbackId('patient-standard'), enteredPrice: 650 })
   })

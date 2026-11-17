@@ -6,29 +6,56 @@
     {
       "name": "price-override",
       "app": "admin",
-      "caption": "Office price override",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "caption": "Any price, no reason, until AUTHORISED; a raised prepaid price is read-only",
+      "start": "/admin/day/2026-08-10/bookings/BK0176",
       "states": [
         {
           "state": "entry",
-          "caption": "Price override: fixed fee, dollar or percentage adjustment, with a reason",
+          "caption": "Change price on a fixed price: any price, no reason, the computed price beside it",
           "steps": [
             {
-              "click": "role=button[name=\"Price override\"]"
+              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=pricing-sheet]"
             },
             {
-              "click": "[role=dialog] >> role=button[name=\"% adjust\"]"
+              "fill": "[data-shot=pricing-sheet-price]",
+              "value": "3200.00"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"-10\"]",
-              "value": "-10"
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=pricing-sheet]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Saved straight onto the Booking; its history names the office",
+          "steps": [
+            {
+              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
-              "value": "Hardship discount approved"
+              "wait": "[data-shot=pricing-sheet]"
+            },
+            {
+              "fill": "[data-shot=pricing-sheet-price]",
+              "value": "3200.00"
+            },
+            {
+              "click": "[data-shot=pricing-sheet-save]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
             }
           ],
           "highlight": [
@@ -36,35 +63,27 @@
           ]
         },
         {
-          "state": "applied",
-          "caption": "Override applied, shown in the office billing setup",
+          "state": "prepaid-refused",
+          "caption": "A prepaid price on a raised prepayment invoice is read-only, with the credit or additional invoice sentence",
           "steps": [
             {
-              "click": "role=button[name=\"Price override\"]"
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
             },
             {
-              "wait": 500
+              "wait": 900
             },
             {
-              "click": "[role=dialog] >> role=button[name=\"% adjust\"]"
+              "click": "[data-shot=office-billing-setup-2] >> role=button[name=\"Change price\"]"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"-10\"]",
-              "value": "-10"
+              "wait": "[data-shot=pricing-sheet]"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
-              "value": "Hardship discount approved"
-            },
-            {
-              "click": "[role=dialog] >> role=button[name=\"Save override\"]"
-            },
-            {
-              "wait": 600
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=office-billing-setup-1]"
+            "[data-shot=pricing-sheet]"
           ]
         }
       ]

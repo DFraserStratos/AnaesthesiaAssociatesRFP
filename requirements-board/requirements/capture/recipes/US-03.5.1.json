@@ -1,83 +1,133 @@
 {
   "id": "US-03.5.1",
-  "status": "partial",
-  "absentReason": "The dollar adjustment and fixed charge fields are always offered, not only when the Contract allows adjustment, and a percentage discount is set by the office rather than the anaesthetist.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "adjustment",
       "app": "web",
-      "caption": "Adjustment and charge on the procedure",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "Where an RVG Contract allows it, the anaesthetist types the price",
+      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186",
       "states": [
         {
-          "state": "none",
-          "steps": [],
-          "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "Adjustment and charge, none applied"
-        },
-        {
-          "state": "adjustment",
+          "state": "override",
+          "caption": "No contract · RVG allows it: she types $450.00, the RVG detail and the computed price stay, no reason asked",
           "steps": [
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+              "scroll": "[data-shot=price-card]"
             },
             {
-              "wait": 300
+              "fill": "[data-shot=price-card-input]",
+              "value": "450.00"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[data-shot=price-card-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
+            "[data-shot=price-card]"
+          ]
+        },
+        {
+          "state": "read-only",
+          "caption": "Aria's Contract does not: the same figures read-only, with how to get a different price",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0037"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "caption": "Dollar adjustment field"
+          "highlight": [
+            "[data-shot=price-card] >> text=/^Set by /"
+          ]
         }
       ]
     },
     {
       "name": "adjustment",
       "app": "mobile",
-      "caption": "Adjustment and charge on the procedure",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "Where an RVG Contract allows it, the anaesthetist types the price",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
       "states": [
         {
-          "state": "none",
+          "state": "override",
+          "caption": "No contract · RVG allows it: she types $450.00, the RVG detail and the computed price stay, no reason asked",
           "steps": [
             {
-              "scroll": "[data-shot=capture-adjustment-and-charge]"
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "fill": "[data-testid=slide-booking] [data-shot=price-card-input]",
+              "value": "450.00"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=price-card-save]"
             },
             {
               "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "Adjustment and charge, none applied"
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
         },
         {
-          "state": "adjustment",
+          "state": "read-only",
+          "caption": "Aria's Contract does not: the same figures read-only, with how to get a different price",
           "steps": [
             {
-              "scroll": "[data-shot=capture-adjustment-and-charge]"
+              "goto": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0037"
             },
             {
-              "wait": 600
+              "wait": 900
             },
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
             },
             {
-              "wait": 300
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
             },
             {
-              "wait": 600
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "Dollar adjustment field"
+            "[data-testid=slide-booking] [data-shot=price-card] >> text=/^Set by /"
+          ]
         }
       ]
     }

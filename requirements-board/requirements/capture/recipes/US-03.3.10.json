@@ -1,0 +1,232 @@
+{
+  "id": "US-03.3.10",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "total-strip",
+      "app": "mobile",
+      "caption": "The price, quietly, as the anaesthetist records",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "states": [
+        {
+          "state": "before",
+          "caption": "Before: the units and the price as recorded so far",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-total-strip]"
+          ]
+        },
+        {
+          "state": "after",
+          "caption": "After claiming a modifier the figure rises",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on pre-op review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-total-strip]"
+          ]
+        },
+        {
+          "state": "fixed",
+          "caption": "On a fixed price the strip shows the fixed price",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-total-strip]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "price-card",
+      "app": "mobile",
+      "caption": "The price, quietly, as the anaesthetist records",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "states": [
+        {
+          "state": "before",
+          "caption": "The price line: 4 units x $26.50 = $106.00",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        },
+        {
+          "state": "after",
+          "caption": "After claiming a modifier the units and the price rise",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on pre-op review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        },
+        {
+          "state": "fixed",
+          "caption": "On a fixed price: Fixed price $1,200.00",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+            },
+            {
+              "wait": 900
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-total",
+      "app": "web",
+      "caption": "The price, quietly, as the anaesthetist records",
+      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "states": [
+        {
+          "state": "before",
+          "caption": "The rail panel: the units and the price so far",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=booking-calculation]"
+          ]
+        },
+        {
+          "state": "after",
+          "caption": "After claiming a modifier the figure rises",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=capture-modifiers] [data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on pre-op review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[data-testid=booking-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

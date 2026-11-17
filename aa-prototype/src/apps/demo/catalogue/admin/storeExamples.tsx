@@ -4,6 +4,8 @@ import { neutral } from '../../../../theme/tokens'
 import { Button, FormError } from '../../../../shared'
 import { SelectField } from '../../../../shared/ui'
 import { HistorySheet } from '../../../../shared/booking'
+import { PricingSheet } from '../../../../shared/flows'
+import { SEED_MARKERS } from '../../../../domain/seed'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import { ContractSelect } from '../../../../shared/contracts'
 import type { DayNote } from '../../../../domain/types'
@@ -212,6 +214,19 @@ export function HistorySheetExample() {
     <div>
       <Button variant="secondary" onClick={() => setOpen(true)}>List history</Button>
       <HistorySheet open={open} entityIds={slotId !== undefined ? [submittedListId, slotId] : [submittedListId]} title="List history" onClose={() => setOpen(false)} />
+    </div>
+  )
+}
+
+/** Catch-up Phase 24: the office's Change price on the seeded typed price (BK0179, $1,200.00 beside the computed $265.50). */
+export function PricingSheetExample() {
+  const procedureId = useAppStore((s) => Object.values(s.schedule.procedures).find((p) => p.bookingId === SEED_MARKERS['typedPriceBooking']?.entityId)?.id)
+  const [open, setOpen] = useState(false)
+  if (procedureId === undefined) return <Missing what="the typed price Booking" />
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Change price</Button>
+      <PricingSheet open={open} procedureId={procedureId} actor={OFFICE_ACTOR} onClose={() => setOpen(false)} />
     </div>
   )
 }

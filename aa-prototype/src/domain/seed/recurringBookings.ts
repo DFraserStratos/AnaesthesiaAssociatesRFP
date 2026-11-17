@@ -133,7 +133,7 @@ export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
   rb(ANAE.strand, 4, 'AM', 'private', HOSP.ces, SURG.reid),
 
   // --- Fitzgerald: her design days (Tue 21 AM, Thu 23 AM/PM) plus the
-  // weekdays the scenario bookings land on (Tue 14 bariatric, Wed 15 rate x time,
+  // weekdays the scenario bookings land on (Tue 14 bariatric, Wed 15 Aria,
   // Wed 29 prepayment). Tue PM is deliberately left off — Tue 21 PM (St
   // George's, surgeon TBC) is a one-off pinned by the index.ts fixup, not a
   // weekly pattern. ---

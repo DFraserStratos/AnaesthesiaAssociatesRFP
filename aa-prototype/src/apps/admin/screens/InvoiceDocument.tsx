@@ -132,6 +132,12 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: fontFamily.serif, fontSize: 21, letterSpacing: '0.12em', color: neutral.ink }}>TAX INVOICE</div>
             <div className="mono" style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>{invoice.invoiceNumber}</div>
+            {/* A Procedure priced at $0 (catch-up Phase 24): raised and delivered like any other, headed so. */}
+            {invoice.noCharge === true && (
+              <div data-shot="invoice-no-charge" style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
+                <Pill tone="neutral">No charge</Pill>
+              </div>
+            )}
           </div>
         </div>
 
@@ -205,7 +211,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 
         {/* The patient note (patient layout only): prepayment wording when a
             Procedure is on a prepaid Contract, else payment on receipt. */}
-        {isPatientLayout && (
+        {isPatientLayout && invoice.noCharge !== true && (
           <PatientInvoiceNote
             {...patientInvoiceNote(prepaymentProc !== undefined, invoice.kind, prepaymentProc?.prepaymentDetail?.type, prepaymentProc?.prepaymentDetail?.depositAmount)}
           />
@@ -256,7 +262,12 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 
         {/* Two-state money (RFP): paid into the AA account, then disbursed to the
             anaesthetist. Two independent, separately-tracked states. */}
-        {theCase !== undefined && theCase.accRecId !== undefined && (
+        {invoice.noCharge === true && theCase?.accRecId !== undefined && (
+          <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
+            <MoneyStatePill on label="No charge: nothing to pay or disburse" />
+          </div>
+        )}
+        {theCase !== undefined && theCase.accRecId !== undefined && invoice.noCharge !== true && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <MoneyStatePill
               on={theCase.paidInAtISO !== undefined}
@@ -353,7 +364,7 @@ function InvoiceInfoRail({
         >
           <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
           <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
-            {handoffFailed ? 'Xero handoff failed' : handoffComplete ? 'ACCREC and ACCPAY created' : 'Xero handoff pending'}
+            {handoffFailed ? 'Xero handoff failed' : handoffComplete ? (invoice.noCharge === true ? 'ACCREC created at $0.00, no ACCPAY' : 'ACCREC and ACCPAY created') : 'Xero handoff pending'}
           </span>
         </div>
 

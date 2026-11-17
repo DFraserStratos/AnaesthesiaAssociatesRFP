@@ -97,7 +97,7 @@ const PINNED: readonly Patient[] = [
   { hiddenInternalId: PAT.foster, nhi: 'ZAK8873', name: 'Diane Foster', dobISO: '1958-09-19', phone: '03 555 4459', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.riley, nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-01-06', phone: '021 555 4561', ethnicityCode: '52111' },
   { hiddenInternalId: PAT.gray, nhi: 'ZAM1098', name: 'Fiona Gray', dobISO: '1963-06-13', phone: '03 555 4678', ethnicityCode: '11111' },
-  // The Phase 04 rate x time CAPTURE booking's patient (Souter, Mon 27 Jul).
+  // The Aria capture Booking's patient (Phase 04; Souter, Mon 27 Jul).
   { hiddenInternalId: PAT.sinclair, nhi: 'ZAN2219', name: 'Heather Sinclair', dobISO: '1968-02-21', phone: '021 555 4785', ethnicityCode: '11111' },
 ] as const
 
@@ -162,7 +162,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -205,6 +205,23 @@ export const PAT_22A = {
 export const PAT_23 = {
   multiProcedure: `PT${String(19 + 132 + 15).padStart(4, '0')}`,
 } as const
+
+/** Catch-up Phase 24's dedicated patients (`seed/pricingBookings.ts`), after 23's. */
+export const PAT_24 = {
+  discount: `PT${String(19 + 132 + 16).padStart(4, '0')}`,
+  priceCapture: `PT${String(19 + 132 + 17).padStart(4, '0')}`,
+  rangeTyped: `PT${String(19 + 132 + 18).padStart(4, '0')}`,
+  rangeAuthorised: `PT${String(19 + 132 + 19).padStart(4, '0')}`,
+  noCharge: `PT${String(19 + 132 + 20).padStart(4, '0')}`,
+} as const
+
+const PRICING_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_24.discount, nhi: 'ZBE1019', name: 'Natalie Brennan', dobISO: '1979-05-14', phone: '021 555 6656', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_24.priceCapture, nhi: 'ZBG1001', name: 'Tama Rewiri', dobISO: '1975-02-26', phone: '021 555 6878', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_24.rangeTyped, nhi: 'ZBJ1002', name: 'Paula Westerman', dobISO: '1966-12-08', phone: '021 555 7090', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_24.rangeAuthorised, nhi: 'ZBK1008', name: 'Judith Calloway', dobISO: '1959-04-22', phone: '021 555 7101', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_24.noCharge, nhi: 'ZBL1003', name: 'Ihaia Paewai', dobISO: '1984-09-11', phone: '021 555 7212', ethnicityCode: '21111' },
+]
 
 const MULTI_PROCEDURE_PATIENTS: readonly Patient[] = [
   { hiddenInternalId: PAT_23.multiProcedure, nhi: 'ZBD1005', name: 'Graeme Tullett', dobISO: '1951-09-02', phone: '03 555 6545', ethnicityCode: '11111' },

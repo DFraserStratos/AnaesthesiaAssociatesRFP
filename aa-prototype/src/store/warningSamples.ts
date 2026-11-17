@@ -110,7 +110,6 @@ function lastChangedByDemo(state: SampleState, entityId: string): boolean {
 const PREPAYMENT_FIELDS = [
   'governingContractId',
   'enteredPrice',
-  'priceOverride',
   'railAnswers',
   'rvgGroupId',
   'baseUnitsSelected',
@@ -298,7 +297,7 @@ const baseUnitsSample: WarningSample = {
 // ---------------------------------------------------------------------------
 
 /** The Contract fields the child sample may move on the first Procedure (when every Contract bills its holder). */
-const CHILD_CONTRACT_FIELDS = ['governingContractId', 'enteredPrice', 'priceOverride', 'railAnswers', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured', 'modifierClaims', 'removedModifierIds'] as const satisfies readonly (keyof Procedure)[]
+const CHILD_CONTRACT_FIELDS = ['governingContractId', 'enteredPrice', 'railAnswers', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured', 'modifierClaims', 'removedModifierIds'] as const satisfies readonly (keyof Procedure)[]
 const NO_CONTRACT_RVG = 'CT-NO-CONTRACT'
 
 /** True when the Booking's patient is under 18 on its List's date. */

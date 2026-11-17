@@ -54,44 +54,6 @@
           "highlight": [
             "[data-shot=capture-procedure-code][data-rvg-role=reference]"
           ]
-        },
-        {
-          "state": "override-kept",
-          "caption": "A price override keeps the RVG detail on screen",
-          "steps": [
-            {
-              "scroll": "[data-shot=capture-adjustment-and-charge]"
-            },
-            {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Charge $\""
-            },
-            {
-              "wait": 300
-            },
-            {
-              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"450.00\"]",
-              "value": "450.00"
-            },
-            {
-              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
-              "value": "Agreed with the patient before surgery"
-            },
-            {
-              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
-            },
-            {
-              "wait": 600
-            },
-            {
-              "scroll": "[data-shot=capture-rvg-detail]"
-            },
-            {
-              "wait": 300
-            }
-          ],
-          "highlight": [
-            "[data-shot=capture-rvg-detail]"
-          ]
         }
       ]
     },

@@ -37,7 +37,7 @@ import { formatMoney, roundToCents, toCents } from './money'
 import { btmOf, crossMatchFor, gstOn, invoiceLayoutFor, invoiceLineViews, type InvoiceLayout, type InvoiceLineView } from './invoicePresentation'
 import { PARTY_GONE_REASON, resolveSplit, shareLabel, splitDoesNotFitMessage, splitLineText } from './splitShare'
 import { splitPartiesOn } from './partyOptions'
-import { procedureNeedsPrice } from './contracts'
+import { PREPAYMENT_DEDUCTION_DESCRIPTION, PREPAYMENT_DEPOSIT_DESCRIPTION, procedureNeedsPrice } from './procedurePrice'
 import { needsPriceMessage } from './priceRanges'
 import type { Party } from './parties'
 import { billablePartyForProcedure, billedToFor, HOLDER_MISSING_MESSAGE } from './whoIsBilled'
@@ -93,8 +93,8 @@ export function resolveContractForProcedure(procedure: Procedure, ctx: InvoiceBu
   }
   // "Needs a price" (catch-up Phase 19a): a fixed price with no range in force
   // on the List's date, or an open price with no amount typed, cannot be
-  // invoiced, unless the office typed a fixed fee.
-  if (procedureNeedsPrice(stored, ctx.listDateISO, procedure)) {
+  // invoiced, unless a price is typed (`procedurePrice.ts`).
+  if (procedureNeedsPrice(stored, ctx.listDateISO, procedure, ctx.held?.[procedure.id])) {
     return { kind: 'exception', code: 'contractIneffective', message: needsPriceMessage(stored, ctx.listDateISO, { named: true }) }
   }
   return { kind: 'resolved', contract: stored }
@@ -138,6 +138,8 @@ export interface DraftInvoice {
   holderReference?: string
   /** The holder layout's cross-match fields (US-08.4.1). */
   crossMatch?: InvoiceCrossMatch
+  /** A group whose price is $0.00 (a typed $0, catch-up Phase 24): raised and delivered, headed "No charge", with no payable leg. */
+  noCharge?: true
 }
 
 export type BookingBuildResult =
@@ -225,13 +227,11 @@ export function buildInvoicesForBooking(
     }
 
     const wording = procedure.invoiceDescription?.text ?? null
-    const discount =
-      contract?.pricing.kind === 'rvgDiscount' ? { percent: contract.pricing.discountPct, unitValue: ctx.anaesthetist.unitValue } : undefined
-    // Full views (BTM included); the patient layout drops the BTM at grouping.
-    const views = invoiceLineViews('contractHolder', fee, { procedureId: procedure.id, wording, ...(discount !== undefined ? { discount } : {}) })
+    // Full views (BTM included; the Contract's discount its own line); the patient layout drops the BTM at grouping.
+    const views = invoiceLineViews('contractHolder', fee, { procedureId: procedure.id, wording })
 
     if (procedure.split !== undefined) {
-      // US-08.2.3: divide the final fee (after any office override) between
+      // US-08.2.3: divide the final price (a typed price included) between
       // the split's parties. A split that no longer fits fails review; it
       // never bills a guess.
       // A share whose party has left the Booking (a renamed or replaced payer) never bills that party.
@@ -242,7 +242,7 @@ export function buildInvoicesForBooking(
       if (!resolved.ok) {
         return { kind: 'exception', procedureId: procedure.id, code: 'splitDoesNotFit', message: splitDoesNotFitMessage(fee.total, resolved.reason) }
       }
-      // The share line carries the whole Procedure's breakdown at the rate charged (a discount folded in), for cross-matching.
+      // The share line carries the whole Procedure's breakdown at the rate charged, for cross-matching.
       const rvgLine = fee.lines.find((l) => l.chargeBasis === 'rvg' && l.rate !== undefined)
       const btm = rvgLine?.rate !== undefined ? btmOf(fee, rvgLine.rate) : undefined
       const lineWording = wording !== null && wording.trim() !== '' ? wording : (fee.lines[0]?.description ?? 'Anaesthesia')
@@ -275,7 +275,7 @@ export function buildInvoicesForBooking(
         counterparty: procedureCounterparty,
         isContractParty: true,
         contract,
-        line: { procedureId: procedure.id, kind: 'adjustment', description: 'Less pre-payment deposit already invoiced', amount: -roundToCents(prePaid.amount) },
+        line: { procedureId: procedure.id, kind: 'adjustment', description: PREPAYMENT_DEDUCTION_DESCRIPTION, amount: -roundToCents(prePaid.amount) },
       })
     }
   }
@@ -319,11 +319,14 @@ export function buildInvoicesForBooking(
         kind: 'exception',
         procedureId: group.lines[0]?.procedureId ?? '',
         code: 'negativeTotal',
-        message: `The lines billed to one counterparty add up to a negative amount (${formatMoney(subtotal)}). Review the pre-payment or price override before rebilling; an overpaid pre-payment needs a manual credit.`,
+        message: `The lines billed to one counterparty add up to a negative amount (${formatMoney(subtotal)}). Review the pre-payment or the price before rebilling; an overpaid pre-payment needs a manual credit.`,
       }
     }
-    // A group that nets to $0 raises no invoice (the full-pre-payment case).
-    if (toCents(subtotal) === 0) continue
+    // A group of prepaid Procedures netted to $0 raises none (left off the final invoice, D57); any
+    // other $0 group is a no-charge invoice (catch-up Phase 24, a reading: a typed $0 still bills).
+    const netted = group.lines.some((l) => l.kind === 'adjustment' && l.description === PREPAYMENT_DEDUCTION_DESCRIPTION)
+    if (toCents(subtotal) === 0 && netted) continue
+    const noCharge = toCents(subtotal) === 0
     const gst = gstOn(subtotal)
     const layout = invoiceLayoutFor(contract, counterparty, isContractParty)
     const lines = layout === 'contractHolder' ? group.lines : group.lines.map(withoutBtm)
@@ -346,6 +349,7 @@ export function buildInvoicesForBooking(
       ...(group.split !== undefined ? { split: group.split } : {}),
       ...(holderReference !== undefined && holderReference.trim() !== '' ? { holderReference } : {}),
       ...(layout === 'contractHolder' ? { crossMatch: crossMatchFor(ctx.listDateISO, ctx.surgeonName, firstProcedure?.billingReference) } : {}),
+      ...(noCharge ? { noCharge: true as const } : {}),
     }
     kept.push({ key, group, draft })
   }
@@ -436,7 +440,7 @@ export function buildPrePaymentInvoiceForBooking(
       tagged.push({
         counterparty,
         contractId: contract.id,
-        line: { procedureId: procedure.id, kind: 'fee', description: 'Pre-payment deposit', amount },
+        line: { procedureId: procedure.id, kind: 'fee', description: PREPAYMENT_DEPOSIT_DESCRIPTION, amount },
       })
     } else {
       // Full prepayment: the full fee on the prepaid Contract, via the same

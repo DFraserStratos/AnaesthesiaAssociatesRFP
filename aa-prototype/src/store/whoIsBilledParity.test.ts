@@ -24,6 +24,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
 import baseline from './__parity__/phase-21-baseline.json'
 import { captureBaseline21, type BookingInvoicesRow, type Phase21Baseline } from './__parity__/phase21Capture'
 
@@ -59,11 +60,12 @@ function asBefore<T extends { ref: string }>(face: T): T {
 
 describe('Phase 21 who-is-billed parity', () => {
   it('holds every seeded Booking: grouping, totals, printed name and Xero contact, bar the declared Doyle move', () => {
-    const beforeRows = before.bookings.filter((r) => r.bookingId !== DOYLE)
+    // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`).
+    const beforeRows = before.bookings.filter((r) => r.bookingId !== DOYLE && !PHASE_24_ARIA_BOOKINGS.has(r.bookingId))
     const nowRows = now.bookings
       // The payer review List's Bookings are this phase's named additions.
       .filter((r) => before.bookings.some((b) => b.bookingId === r.bookingId))
-      .filter((r) => r.bookingId !== DOYLE)
+      .filter((r) => r.bookingId !== DOYLE && !PHASE_24_ARIA_BOOKINGS.has(r.bookingId))
       .map((r) => (r.result.kind === 'invoices' ? { ...r, result: { ...r.result, invoices: r.result.invoices.map(asBefore) } } : r))
       .map(prenticeAsBefore)
     expect(nowRows).toEqual(beforeRows)
@@ -91,7 +93,8 @@ describe('Phase 21 who-is-billed parity', () => {
   })
 
   it('keeps every issued invoice on its counterparty and Xero contact (Hana Park and the Aria clinic included)', () => {
-    expect(now.issued.map(asBefore)).toEqual(before.issued)
+    // Catch-up Phase 24's seeded invoice for its AUTHORISED Face lift is an addition.
+    expect(now.issued.filter((i) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId)).map(asBefore)).toEqual(before.issued)
     const hana = now.issued.find((i) => i.ref === 'payer:BP0001')
     expect(hana).toMatchObject({ name: 'Hana Park', contactNumber: 'BP0001', contactName: 'Billable party BP0001' })
   })

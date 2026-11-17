@@ -144,10 +144,12 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
   const bookings = useAppStore((s) => s.schedule.bookings)
   const lists = useAppStore((s) => s.schedule.lists)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
+  const invoices = useAppStore((s) => s.billing.invoices)
+  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const surface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const view = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines } }, procedure.id, surface),
-    [masters, procedures, bookings, lists, billingLines, procedure.id, surface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines } }, procedure.id, surface),
+    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, procedure.id, surface],
   )
   if (view === undefined) return null
   const booking = bookings[procedure.bookingId]
@@ -637,11 +639,8 @@ function PriceBlock({
   onAmount: (amount: number | undefined) => void
 }) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const billingLines = useAppStore((s) => s.schedule.billingLines)
   const [referenceOpen, setReferenceOpen] = useState(false)
   const mobile = look === 'sheet'
-  // Priced by its own rate x time line (Method 3): no RVG code is asked.
-  const rateTime = Object.values(billingLines).some((l) => l.procedureId === procedure.id && l.chargeBasis === 'rateTime')
   const coded = procedure.rvgGroupId !== undefined
   const field = (role: 'required' | 'reference' | undefined, emptyHint?: string) => (
     <RvgCodeField
@@ -696,7 +695,7 @@ function PriceBlock({
             </TextAction>
           </span>
         ) : null)}
-      {mode === 'rvg' && !rateTime && field(coded ? undefined : 'required')}
+      {mode === 'rvg' && field(coded ? undefined : 'required')}
       {mode === 'none' && field(undefined, 'Its price follows the Contract, once one is chosen.')}
       {mode === 'fixed' &&
         (coded || referenceOpen ? (

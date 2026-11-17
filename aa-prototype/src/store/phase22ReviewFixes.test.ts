@@ -10,7 +10,8 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { handoffListCases, runBillingForList, type BillingRunResult } from './billingRun'
-import { authoriseList, editProcedure, submitList } from './lifecycle'
+import { authoriseList, submitList } from './lifecycle'
+import { setProcedurePrice } from './pricingActions'
 import { setProcedurePayer } from './payerActions'
 import { contractPartyFor, setProcedureSplit } from './splitActions'
 import { raisePreProcedureInvoice } from './prepaymentActions'
@@ -195,14 +196,14 @@ describe('the BTM breakdown on a split share of an additional procedure', () => 
   })
 })
 
-describe('a split on an office price-overridden fee', () => {
-  it('divides the overridden fee and conserves it to the cent', () => {
+describe('a split on an office-typed price', () => {
+  it('divides the typed price and conserves it to the cent', () => {
     const api = store()
     const procedureId = procOf(api, FEE_SPLIT_BOOKING)
-    expect(editProcedure(api, OFFICE, procedureId, { priceOverride: { kind: 'dollarAdjustment', amount: -12, reason: 'Agreed with nib' } }).ok).toBe(true)
+    expect(setProcedurePrice(api, OFFICE, procedureId, 200).ok).toBe(true)
     stageAndBill(api, PRENTICE_PM)
     const invoices = invoicesForBooking(api, FEE_SPLIT_BOOKING)
-    // $212 less $12 = $200: nib keeps its typed $132.50, Alan the rest $67.50.
+    // The office types $200: nib keeps its typed $132.50, Alan the rest $67.50.
     expect(invoices.map((i) => [i.counterparty.kind, i.subtotal])).toEqual([
       ['insurer', 132.5],
       ['patient', 67.5],

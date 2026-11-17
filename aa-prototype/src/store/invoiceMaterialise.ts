@@ -117,6 +117,7 @@ export function materialiseInvoices(
       ...(draft.holderReference !== undefined ? { holderReference: draft.holderReference } : {}),
       ...(draft.crossMatch !== undefined ? { crossMatch: draft.crossMatch } : {}),
       ...(lineage.length > 0 ? { lineage } : {}),
+      ...(draft.noCharge === true ? { noCharge: true as const } : {}),
     }
     if (args.send && booking !== undefined) {
       invoice.delivery = deliveryStampFor(invoiceDeliveryFor(draft.counterparty, draft.procedureIds.flatMap((id) => (s.schedule.procedures[id] !== undefined ? [s.schedule.procedures[id]] : [])), booking.patientId, patient, s.masters.parties), args.atISO, BILLING_RUN_SENDER)

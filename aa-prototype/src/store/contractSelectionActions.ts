@@ -11,19 +11,18 @@
 import type { Booking, ContractId, List, Procedure, RailAnswers } from '../domain/types'
 import {
   NOT_A_CANDIDATE_MESSAGE,
-  OFFICE_TYPES_AMOUNT_MESSAGE,
   PREPAID_OFFICE_ONLY_MESSAGE,
   applyContractChange,
   contractAllowedOn,
   contractChangeRefusal,
-  mayTypeEnteredPrice,
   type RailActor,
 } from '../domain/billing/contractRail'
+import { INTEGRATION_PRICE_MESSAGE, officeMayChangePrice, typedPriceProblem } from '../domain/billing/procedurePrice'
 import { mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import { REOPENED_FOR_RVG_DETAIL_MESSAGE, contractChangeAsksRvgDetail } from '../domain/billing/completion'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking, withRvgRowChange } from './lifecycle'
-import { railContextForList, railMastersOf } from './selectors'
+import { prepaymentRaisedFor, railContextForList, railMastersOf } from './selectors'
 import { claimsAuditView } from '../domain/billing/modifiers'
 import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 
@@ -32,13 +31,10 @@ export function railActorOf(actor: Actor): RailActor {
   return actor.role === 'anaesthetist' ? 'anaesthetist' : 'office'
 }
 
-/** A typed amount is dollars to the cent, 0 or more. */
+/** A typed amount is dollars to the cent, 0 or more (the one check, `typedPriceProblem`). */
 function enteredPriceRefusal(amount: number | undefined): Outcome<never> | null {
-  if (amount === undefined) return null
-  if (!Number.isFinite(amount) || amount < 0 || Math.abs(Math.round(amount * 100) - amount * 100) > 1e-6) {
-    return refuse('enteredPriceInvalid', 'Type the price in dollars and cents, 0 or more.')
-  }
-  return null
+  const problem = typedPriceProblem(amount)
+  return problem === null ? null : refuse('enteredPriceInvalid', problem)
 }
 
 /**
@@ -72,11 +68,11 @@ export function contractPickRefusal(
   return null
 }
 
-type ProcedureAt =
+export type ProcedureAt =
   | { found: false; refusal: Outcome<never> }
   | { found: true; procedure: Procedure; booking: Booking; list: List }
 
-function procedureOn(state: AppState, procedureId: string): ProcedureAt {
+export function procedureOn(state: AppState, procedureId: string): ProcedureAt {
   const procedure = state.schedule.procedures[procedureId]
   if (procedure === undefined) return { found: false, refusal: refuse('notFound', 'Procedure not found.') }
   const at = getBooking(state, procedure.bookingId)
@@ -118,6 +114,12 @@ export function setProcedureContract(
     const refused = contractPickRefusal(state, actor, list, procedure, contractId, opts)
     if (refused !== null) return refused
   }
+  // A typed amount here is the one typed price (catch-up Phase 24): the same gates as Change price.
+  if (opts.enteredPrice !== undefined) {
+    if (actor.source === 'integration') return refuse('integrationPrice', INTEGRATION_PRICE_MESSAGE)
+    const office = officeMayChangePrice({ prepaymentRaised: prepaymentRaisedFor(state, procedureId) })
+    if (!office.may) return refuse('prepaidPriceRaised', office.message)
+  }
   // The same Contract with no new amount is no change: never clears an amount someone typed.
   if (procedure.governingContractId === contractId && (opts.enteredPrice === undefined || opts.enteredPrice === procedure.enteredPrice)) return ok(undefined)
 
@@ -139,7 +141,6 @@ export function setProcedureContract(
     governingContractId: p.governingContractId,
     rvgGroupId: p.rvgGroupId,
     enteredPrice: p.enteredPrice,
-    priceOverride: p.priceOverride,
     railAnswers: p.railAnswers,
     invoiceDescription: p.invoiceDescription?.text ?? null,
   })
@@ -151,7 +152,6 @@ export function setProcedureContract(
     contractChangeAsksRvgDetail(
       procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined,
       state.masters.contracts[contractId],
-      Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId),
     )
   const metas: MutationMeta[] = [
     {
@@ -245,40 +245,6 @@ export function setRailAnswers(
     api,
     actor,
     { entityType: 'procedure', entityId: procedureId, action: 'procedure.railAnswers', before: { railAnswers: procedure.railAnswers }, after: { railAnswers: answers } },
-    (s) => ({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
-  )
-  return ok(undefined)
-}
-
-/**
- * The amount typed on a Procedure's open-price fallback (US-04.3.9): the
- * office on any, the anaesthetist only on No contract · Fixed price. INTERIM
- * `enteredPrice` until Phase 24. Audited `procedure.enteredPrice`.
- */
-export function setEnteredPrice(api: AppStoreApi, actor: Actor, procedureId: string, amount: number | undefined): Outcome {
-  const state = api.getState()
-  const at = procedureOn(state, procedureId)
-  if (!at.found) return at.refusal
-  const { procedure, list } = at
-  const rights = editRefusal(actor, list)
-  if (rights !== null) return rights
-  const contract = procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined
-  if (contract === undefined || contract.pricing.kind !== 'open') {
-    return refuse('notOpenPrice', 'Only an Other price takes a typed amount.')
-  }
-  if (!mayTypeEnteredPrice(railActorOf(actor), contract, state.masters.parties)) {
-    return refuse('officeTypesAmount', OFFICE_TYPES_AMOUNT_MESSAGE)
-  }
-  const typed = enteredPriceRefusal(amount)
-  if (typed !== null) return typed
-  if (amount === procedure.enteredPrice) return ok(undefined)
-  const next: Procedure = { ...procedure }
-  if (amount === undefined) delete next.enteredPrice
-  else next.enteredPrice = amount
-  mutate(
-    api,
-    actor,
-    { entityType: 'procedure', entityId: procedureId, action: 'procedure.enteredPrice', before: { enteredPrice: procedure.enteredPrice }, after: { enteredPrice: amount } },
     (s) => ({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
   )
   return ok(undefined)

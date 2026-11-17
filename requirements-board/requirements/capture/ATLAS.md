@@ -283,6 +283,12 @@ BK0179, `reviewNeedsPrice` BK0180, `otherSurgeonContract` BK0181, `movableFixedB
 procedure's fee split between nib and the patient"; it replaces `twoFunderBooking`). Catch-up Phase 23:
 `multiProcedureBooking` BK0184 ("Three procedures, 7 modifier units, split 3 · 2 · 2"; see
 [The primary Procedure and the multi-procedure rule](#the-primary-procedure-and-the-multi-procedure-rule-catch-up-phase-23)).
+Catch-up Phase 24 (see [Change price and the price line](#change-price-and-the-price-line-catch-up-phase-24)):
+`contractRateBooking` BK0029, `contractRateCaptureBooking` BK0037, `contractRateContract` `CT-ARIA-HOURLY`,
+`discountContract` `CT-FORTE-DISC`, `discountBooking` BK0185, `priceCaptureBooking` BK0186, `ownListFixedBooking` BK0034,
+`openPriceBooking` BK0177 (the same Booking as `needsPriceBooking`), `rangeTypedBooking` BK0187, `rangeAuthorisedBooking`
+BK0188, `rangePrepaidBooking` BK0038, `noChargeBooking` BK0189. GONE: `rateTimeBooking`, `rateTimeCaptureBooking` and
+`individualArrangementContract` (renamed to the `contractRate*` markers).
 
 ## Routes
 
@@ -375,8 +381,9 @@ badge carries `data-shot=nav-badge-<section>`.
   `CES-001`; `CPH-001`, `CPH-002` Health NZ agreed rate ($23); `NIB-001`; `DOYLE-001` Gastric bypass
   (`CT-DOYLE-BAR`, fixed: $2,800 from 1 Jan 2025, $2,950 from 28 Jul 2026, bills the payer);
   `COS-001` ACC orthopaedic services ($24), `COS-002` COS ACC fixed fees (fixed, one range from
-  1 Aug 2026, so S4's failure still "Needs a price"); `ARIA-001` (rate and time); `UNI-001` Unisports
-  Ortho ($93.47). All Active.
+  1 Aug 2026, so S4's failure still "Needs a price"); `ARIA-001` Aria Skin and Laser Clinic (`CT-ARIA-HOURLY`, RVG at the Contract's rate, $26.50, price fixed for the
+  anaesthetist; catch-up Phase 24, was rate and time); `UNI-001` Unisports
+  Ortho ($93.47); and, seeded last, Forte Health RVG less 10% (`CT-FORTE-DISC`, catch-up Phase 24). All Active.
 - Priced items (catch-up Phase 19a, `seed/pricedItems.ts`; every fixed price a Contract with price
   ranges): `DOYLE-002` Sleeve gastrectomy ($2,400); CES `CES-002` Cataract IOL (LA by Anaesthetist,
   holder code 8268, SXAP), `CES-003` Blepharoplasty (AP0126, SXAP), `CES-004` Ant Vitrectmy addn to
@@ -824,6 +831,72 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - Two-procedure Bookings also in the seed (primary first): `BK0033` Grace Park, `BK0038` Priya Nair, `BK0183` Joyce
   Halvorsen.
 
+### Change price and the price line (catch-up Phase 24)
+
+- **Pricing kinds.** Five: RVG at the anaesthetist's rate, RVG at the Contract's rate, RVG less the Contract's
+  discount, fixed price, open price. The Contract panel's Pricing section (`contract-settings`) holds the kind, the
+  "Rate ($ per unit)" or "Discount (%)" field, and on RVG kinds the "Anaesthetist may override the price" Yes/No. The
+  Contracts list shows `contract-override-pill` on RVG kinds only: "Anaesthetist can override the price" (No contract ·
+  RVG `CT-NO-CONTRACT`, Forte Health RVG `CT-FORTE-D1`) or "Price fixed for the anaesthetist" (Aria `CT-ARIA-HOURLY`,
+  `CT-FORTE-DISC`, every other RVG Contract); none on a fixed or open price. Rate x time is gone everywhere: no
+  "Rate × time" option in Add billing line (fixed amount only), no Method 3 setting.
+- **Aria at the Contract's rate:** `CT-ARIA-HOURLY` "Aria Skin and Laser Clinic" (id kept), RVG at $26.50, override
+  off. Fitzgerald's Booking BK0029 (`contractRateBooking`, Wed 15 Jul AM `L-43015-2026-07-15-AM`, Forte, Ms Lim,
+  completed but the List is ACTIVE, so it cannot be authorised in the UI) is the abdominoplasty A5, 08:30 to 11:30,
+  no modifiers: 22 units x $26.50 = $583.00 (was 3.0 hours at $480, $1,440). `/admin/day/2026-07-15/bookings/BK0029`.
+  Dr Souter's uncaptured Aria Booking BK0037 (`contractRateCaptureBooking`, Mon 27 Jul AM) reads 0 units x $26.50,
+  read-only.
+- **The discount Contract** (`discountContract`): `CT-FORTE-DISC` "Forte Health RVG less 10%", holder Forte, bills the
+  holder, override off, seeded last so no AA code moved.
+- **Dr Souter's Mon 27 Jul AM List** `L-34821-2026-07-27-AM` (Forte, ACTIVE) holds one Booking per price-line state:
+  BK0185 (`discountBooking`, breast reduction on `CT-FORTE-DISC`: 6 units x $26.50 = $159.00, Discount 10% · minus
+  $15.90, $143.10, read-only), BK0186 (`priceCaptureBooking`, skin flap repair on No contract · RVG: 4 units x $26.50
+  = $106.00, state `override`) and BK0037 (Aria, read-only). Routes `/mobile/lists/L-34821-2026-07-27-AM/bookings/<id>`,
+  `/web/lists/L-34821-2026-07-27-AM/bookings/<id>`, `/admin/day/2026-07-27/bookings/<id>`.
+- **Her own price list** (`ownListFixedBooking`): BK0034 Riley, Fri 24 Jul AM `L-34821-2026-07-24-AM`, Rhinoplasty on
+  her prepaid price list: "Fixed price $1,200.00", read-only ("... alert the office.").
+- **Open price** (`openPriceBooking`, the same Booking as `needsPriceBooking`): BK0177, Mon 10 Aug PM
+  `L-34821-2026-08-10-PM`, No contract · Fixed price, state `amount`, "Needs a price" until a price is typed.
+- **The range beat** (Merivale's Face lift `CT-MER-FACELIFT`, one range $3,100 from 1 Jun 2026): BK0163 (19a's unedited
+  Face lift, Mon 10 Aug PM, $3,100), BK0182 (the movable one, also unedited), BK0187 (`rangeTypedBooking`, Mon 10 Aug PM
+  17:45, the office typed $2,950.00), BK0188 (`rangeAuthorisedBooking`, Dr Souter's Thu 16 Jul PM List
+  `L-34821-2026-07-16-PM` at AA's rooms, seeded AUTHORISED and invoiced at $3,100.00) and BK0038
+  (`rangePrepaidBooking`, the paid prepayment; its prepaid Procedure is the additional one, `office-billing-setup-2`).
+  Run `demo-backdated-range` (see Demo actions) and only BK0163 and BK0182 move, to $3,300.00.
+- **No charge** (`noChargeBooking`): BK0189 Ihaia Paewai, scar revision on No contract · RVG, completed with a typed
+  $0.00 by Dr Souter, on the SUBMITTED Mon 13 Jul AM List `L-34821-2026-07-13-AM` (beside BK0184). Review
+  `/admin/review/L-34821-2026-07-13-AM` shows `review-no-charge` ("No charge") in its Fee cell. Authorise ("Authorise
+  for billing", click `>> nth=0` then `>> nth=-1`): BK0184 raises AA-2026-0002 and BK0189 AA-2026-0003, whose page
+  shows `invoice-no-charge` ("No charge").
+- **The typed-price Booking** (`typedPriceBooking`): BK0179 Owen Prendergast on Dr Chen's SUBMITTED Tue 14 Jul AM
+  review-flags List `L-45178-2026-07-14-AM`, an office-typed $1,200.00 (computed $265.50), no reason.
+  `/admin/day/2026-07-14/bookings/BK0179` shows `office-billing-price` "Typed $1,200.00" and the Booking total "Price
+  typed · computed $265.50". Review's Fee cell `review-fee` holds `review-fee-computed` ("Computed $265.50") beside the
+  `review-flag` with `data-rule=typedPrice`.
+- **The price line** on every Booking's capture (mobile, web and Admin), after the RVG detail: `[data-shot=price-card]`
+  with `data-state` = `override` | `amount` | `read-only` | `needs-price` | `no-charge` | `locked`. Inside:
+  `price-card-figures` (mono lines "4 units x $26.50 = $106.00", "Discount 10% · minus $15.90", "Fixed price $1,200.00"),
+  `price-card-price` (the price), `price-card-needs-price` (in place of the price), the input `price-card-input` (label
+  "Price $"), `price-card-save` ("Save price") and `price-card-clear` ("Use the computed price", once a price is typed on
+  an override Contract). Type a price with `fill` on `[data-shot=price-card-input]` then `click`
+  `[data-shot=price-card-save]`: the card shows a "Price typed" pill and "Computed $106.00". At $0.00 the caption reads
+  "The RVG detail stays recorded. This gives a no-charge invoice." and `data-state=no-charge`. Read-only cards read
+  "Set by {Contract}. To use a different price, change the Contract or alert the office." (her prepaid price list:
+  "... alert the office."). The office (Admin) sees the card read-only, with no reason line; it changes the price with
+  Change price. On mobile scope it `[data-testid=slide-booking] [data-shot=price-card]` and scroll
+  `[data-testid=mobile-booking-scroll]` by 200 after scrolling to it, so the dock does not cover it.
+- **What the price comes to:** the phone's dock strip `[data-shot=booking-total-strip]` (also
+  `data-testid=booking-calculation`), always above Mark complete, units and the price ticking as modifiers are claimed;
+  the web and Admin rail panel `[data-testid=booking-calculation]`, which holds `[data-shot=booking-total-lines]` when a
+  single Procedure has more than one fee line (the discount: the gross fee, then "Discount 10%").
+- **The office's Change price** replaces Price override on the Admin Booking (see "Admin booking" under Overlays):
+  any price, no reason, the computed price beside it, until the List is AUTHORISED. Shoot it on an ACTIVE or SUBMITTED
+  List, for example `/admin/day/2026-08-10/bookings/BK0176` (fixed price), `/admin/day/2026-07-21/bookings/BK0009`
+  or `/admin/day/2026-07-20/bookings/BK0010`. On BK0038 (`/admin/day/2026-07-24/bookings/BK0038`,
+  `office-billing-setup-2`) the sheet shows the price read-only with `pricing-sheet-refusal`.
+- **GONE:** the anaesthetist's "Adjustment and charge" card (`capture-adjustment-and-charge`, its "Adjustment $" /
+  "Charge $" control, reason field and "Save override").
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -1003,7 +1076,14 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `[data-testid=list-reassignment-overlay]` appears.
 - **Admin booking:** "Edit billing setup" (opens "Contract and reference": the Contract row and the
   Billing reference, "Save reference"; the payer moved to the Booking's Payer row in catch-up Phase 21),
-  and "Price override" (placeholders `-10` and "Why the price differs"). "Funder allocation" is gone (catch-up Phase 22):
+  and "Change price" (`[data-shot=office-billing-setup-<n>] >> role=button[name="Change price"]`, hook `change-price`;
+  catch-up Phase 24, was "Price override"). It opens `[data-shot=pricing-sheet]` ("Change price"): the row
+  `pricing-sheet-computed` ("Computed from the Contract" and the figure), one input `pricing-sheet-price` (label "Price $",
+  hint "No reason needed. The office sees every change in History."), the teal `pricing-sheet-save` ("Save price") and,
+  once a price is typed, `pricing-sheet-clear` ("Use the computed price"). No reason field, no fixed, $ or % modes. A
+  prepaid price whose prepayment invoice is raised shows the price read-only with the warning `pricing-sheet-refusal`.
+  After saving, the setup's Price row `office-billing-price` reads "Typed $450.00" (or "From the Contract"), and the
+  Booking total `[data-testid=booking-calculation]` shows "Price typed · computed $X". "Funder allocation" is gone (catch-up Phase 22):
   a fee is split with the Split button on the Procedure instead.
 - **Admin Day's Move (one Booking to another List):** in the List drawer, the Booking row's "Move" (scope it
   to the row: `[data-testid=admin-list-drawer] >> text="<patient>" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name="Move"]`)
@@ -1133,6 +1213,22 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase 24 (`data-shot`): `change-price` (the office's "Change price" button in `office-billing-setup-<n>`,
+  was "Price override"), `pricing-sheet` (the Change price dialog), `pricing-sheet-computed` ("Computed from the
+  Contract" and the figure), `pricing-sheet-price` (the "Price $" input itself), `pricing-sheet-save` ("Save price"),
+  `pricing-sheet-clear` ("Use the computed price", only once a price is typed), `pricing-sheet-refusal` (warning notice
+  on a prepaid price whose prepayment invoice is raised: "This price is on a raised prepayment invoice. Use a credit or
+  an additional invoice."), `office-billing-price` (the Price row's value in Office billing setup: "Typed $450.00" or
+  "From the Contract"). The price line on every Booking's capture: `price-card` (`data-state` `override` | `amount` |
+  `read-only` | `needs-price` | `no-charge` | `locked`), inside it `price-card-figures`, `price-card-price`,
+  `price-card-needs-price`, `price-card-input` (the "Price $" input itself), `price-card-save` ("Save price"),
+  `price-card-clear` ("Use the computed price"). `booking-total-strip` (the phone's dock above Mark complete, also test id
+  `booking-calculation`), `booking-total-lines` (inside the rail's `booking-calculation` when one Procedure has more than
+  one fee line). Review: `review-fee` (the Fee cell), `review-fee-computed` ("Computed $265.50" under a typed price),
+  `review-no-charge` (a $0.00 Booking's "No charge" pill). Invoice: `invoice-no-charge` (the "No charge" pill under the
+  number). Contracts list: `contract-override-pill` (RVG kinds only). Demo action `demo-action-demo-backdated-range`.
+  See [Change price and the price line](#change-price-and-the-price-line-catch-up-phase-24). GONE:
+  `capture-adjustment-and-charge` (the anaesthetist's "Adjustment and charge" card).
 - Catch-up Phase 23 (`data-shot`): `procedure-primary-pill` (the "Primary" pill in the primary's
   `procedure-header`, only with two or more Procedures), `make-primary` (the teal text action on an additional
   Procedure's heading row), `make-primary-sheet` and `make-primary-confirm`, `procedure-additional-note` (new wording),
@@ -1347,8 +1443,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `capture-times` and the Units card with `capture-modifiers`; present only on an RVG pricing kind),
   `capture-required` (the "Required" caption on times and the modifiers step), `capture-modifiers-none` (the
   teal "None apply"), `capture-modifiers-none-done` ("No modifiers claimed · Change"), `capture-price-status`
-  (warning notice "Needs a price" on a price with no amount), `capture-adjustment-and-charge` (the override
-  card), `completion-alert-office` (neutral notice pointing to Alert the office for an office-fixable
+  (warning notice "Needs a price" on a price with no amount), `completion-alert-office` (neutral notice pointing to Alert the office for an office-fixable
   failure). `capture-procedure-code` carries `data-rvg-role` = `required` (an RVG kind with no code yet) |
   `reference` (a fixed or open price), absent otherwise (a chosen RVG-kind code, no Contract); on a fixed price its caption `rvg-code-optional` reads "RVG code
   (for reference). Optional: ...", shown after `rvg-code-add-reference` when no code is set.
@@ -1489,8 +1584,9 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-approves-contract-change` | Catch-up Phase 21a, badged Office stand-in, PWA only ("Office approves this Contract change"). Approves the Contract the anaesthetist changed on the Booking, as Approve on Review would, so `contract-approval-status` turns from "Awaiting office approval" to "Approved by the office <time>". Disabled when the Booking has no pending change (true of every Souter Booking at reset: change a Contract on the Billing sheet first). In the framed build use Approve on Admin Review. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
-| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0185`, not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0185` or `/admin/day/2026-07-22/bookings/BK0185` |
-| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0185 after `load-multi-procedure-booking` |
+| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0190` (catch-up Phase 24's five seeded Bookings took BK0185 to BK0189; BK0185 is now the seeded `discountBooking`), not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0190` or `/admin/day/2026-07-22/bookings/BK0190` |
+| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0190 after `load-multi-procedure-booking` |
+| `/admin/masters?view=contracts` (or with Merivale's Face lift open in its detail) | `demo-backdated-range` | Catch-up Phase 24, "Demo: add a backdated price range" (`[data-shot=demo-action-demo-backdated-range]`). Shown on the Contracts view, disabled "Already added" once run; run it from the list (the Contract detail panel is modal, so the bar cannot be clicked while it is open). Adds a range from 1 Jul 2026 at $3,300.00 as the office: the unedited Face lift BK0163 then prices at $3,300.00; BK0187 (typed $2,950.00), BK0188 (AUTHORISED, $3,100.00) stays; the prepaid BK0038 is on another Contract and so never moves. Disabled "Already added" on a second run. Stage it with the `trigger` step, then `goto` the Booking (US-05.2.8 shows the pattern) |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a

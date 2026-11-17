@@ -5,6 +5,7 @@ import { IconButton } from '../ui/IconButton'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingValidationFailure } from '../../domain/billing'
+import type { DataAttributes } from '../ui/Field'
 
 /**
  * A white capture card with the micro-caps section label.
@@ -24,8 +25,18 @@ export function CaptureSection({
   validationTarget,
   shot,
   required,
+  dataShot,
+  data,
 }: {
   label: string
+  /**
+   * The whole `data-shot` value, replacing `capture-<shot>`, for a card whose
+   * hook is named apart from its label (catch-up Phase 24: `price-card`).
+   * Absent: today's `capture-` hook.
+   */
+  dataShot?: string
+  /** Extra `data-*` hooks on the card (catch-up Phase 24: `data-state`). */
+  data?: DataAttributes
   /**
    * A "Required" caption beside the label (catch-up Phase 21a: the RVG detail
    * on an RVG kind): neutral until Mark complete's validation latch is on
@@ -49,7 +60,8 @@ export function CaptureSection({
   return (
     <div
       tabIndex={validationTarget === undefined ? undefined : -1}
-      data-shot={`capture-${shot ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+      {...data}
+      data-shot={dataShot ?? `capture-${shot ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       data-validation-procedure-id={validationTarget?.procedureId}
       data-validation-fields={validationTarget?.fields.join(' ')}
       style={{

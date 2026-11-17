@@ -6,129 +6,136 @@
     {
       "name": "adjustment-reason",
       "app": "web",
-      "caption": "Reason recorded with an adjustment",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "A typed price needs no reason",
+      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186",
       "states": [
         {
           "state": "required",
+          "caption": "No reason is asked: one Price field and Save price",
           "steps": [
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+              "scroll": "[data-shot=price-card]"
             },
             {
-              "wait": 300
+              "fill": "[data-shot=price-card-input]",
+              "value": "450.00"
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
-              "value": "-25.00"
+              "wait": 200
+            },
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "A reason is required before the adjustment can be saved"
+            "[data-shot=price-card]"
+          ]
         },
         {
           "state": "saved",
+          "caption": "The typed price saved with no reason, the computed price kept beside it",
           "steps": [
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+              "scroll": "[data-shot=price-card]"
             },
             {
-              "wait": 300
+              "fill": "[data-shot=price-card-input]",
+              "value": "450.00"
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
-              "value": "-25.00"
+              "wait": 200
             },
             {
-              "fill": "input[placeholder=\"Why the price differs\"]",
-              "value": "Long-standing patient, agreed discount"
+              "click": "[data-shot=price-card-save]"
             },
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
+              "wait": 600
             },
             {
-              "wait": 500
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "Adjustment saved with its reason"
+            "[data-shot=price-card]"
+          ]
         }
       ]
     },
     {
       "name": "adjustment-reason",
       "app": "mobile",
-      "caption": "Reason recorded with an adjustment",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "A typed price needs no reason",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
       "states": [
         {
           "state": "required",
+          "caption": "No reason is asked: one Price field and Save price",
           "steps": [
             {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "fill": "[data-testid=slide-booking] [data-shot=price-card-input]",
+              "value": "450.00"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
               "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 1900
+              "by": 200
             },
             {
-              "wait": 600
-            },
-            {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
-            },
-            {
-              "wait": 300
-            },
-            {
-              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
-              "value": "-25.00"
-            },
-            {
-              "wait": 900
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "A reason is required before the adjustment can be saved"
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
         },
         {
           "state": "saved",
+          "caption": "The typed price saved with no reason, the computed price kept beside it",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-booking-scroll]",
-              "by": 1900
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
+            },
+            {
+              "fill": "[data-testid=slide-booking] [data-shot=price-card-input]",
+              "value": "450.00"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=price-card-save]"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+              "scroll": "[data-testid=slide-booking] [data-shot=price-card]"
             },
             {
-              "wait": 300
+              "scroll": "[data-testid=mobile-booking-scroll]",
+              "by": 200
             },
             {
-              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
-              "value": "-25.00"
-            },
-            {
-              "fill": "input[placeholder=\"Why the price differs\"]",
-              "value": "Long-standing patient, agreed discount"
-            },
-            {
-              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
-            },
-            {
-              "wait": 900
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=capture-adjustment-and-charge]"
-          ],
-          "caption": "Adjustment saved with its reason"
+            "[data-testid=slide-booking] [data-shot=price-card]"
+          ]
         }
       ]
     }

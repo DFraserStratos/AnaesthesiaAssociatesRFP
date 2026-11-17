@@ -70,6 +70,12 @@ export function contractLabel(contract: Pick<Contract, 'aaCode' | 'name' | 'stat
  * The RVG kinds share pricingLabel's words; the basis, never the computed fee.
  */
 export function formatPricingBasis(basis: PricingBasis, surface: StackSurface): string {
+  const kind = formatKindBasis(basis, surface)
+  // A typed price holding the price on a kind that is not open price (catch-up Phase 24).
+  return basis.typed !== undefined ? `${kind} · Price typed ${formatMoney(basis.typed)}` : kind
+}
+
+function formatKindBasis(basis: PricingBasis, surface: StackSurface): string {
   switch (basis.kind) {
     case 'rvgAnaesthetistRate':
       return surface === 'anaesthetist' ? 'RVG at your rate' : PRICING_KIND_LABEL.rvgAnaesthetistRate

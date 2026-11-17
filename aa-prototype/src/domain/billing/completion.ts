@@ -53,7 +53,7 @@ export interface CompletionContext {
   parties: Readonly<Record<string, Party>>
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
   modifiers: Readonly<Record<ModifierId, Modifier>>
-  /** ALL stored billing lines; a rate x time line prices a Procedure without an RVG code. */
+  /** ALL stored billing lines (fixed amounts until 39b). */
   billingLines: readonly Pick<BillingLine, 'procedureId' | 'chargeBasis'>[]
   /** The List's date: the procedure date for the range in force and the age modifier. */
   listDateISO: string
@@ -97,9 +97,8 @@ export function completionFailuresFor(
     }
 
     // 2. On an RVG kind, the RVG detail.
-    const lines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
-    if (asksRvgDetail(contract, lines)) {
-      if (rvgCodeToFill({ contracts: ctx.contracts }, procedure, lines)) {
+    if (asksRvgDetail(contract)) {
+      if (rvgCodeToFill({ contracts: ctx.contracts }, procedure)) {
         fail('rvgCode', 'rvgGroupId', ADD_RVG_CODE_MESSAGE, 'anaesthetist')
       } else if (procedure.rvgGroupId !== undefined && groupOf(ctx.rvgGroups, procedure.rvgGroupId) === undefined) {
         fail('rvgCode', 'rvgGroupId', RVG_CODE_GONE_MESSAGE, 'anaesthetist')
@@ -137,7 +136,7 @@ export function completionFailuresFor(
         'needsPrice',
         price.reason === 'openPrice' ? 'enteredPrice' : 'governingContractId',
         needsPriceMessage(contract, ctx.listDateISO),
-        price.reason === 'openPrice' && mayTypeEnteredPrice('anaesthetist', contract, ctx.parties) ? 'anaesthetist' : 'office',
+        price.reason === 'openPrice' && mayTypeEnteredPrice('anaesthetist', contract) ? 'anaesthetist' : 'office',
       )
     }
   }
@@ -149,8 +148,8 @@ export function completionFailuresFor(
  * reading): moving a completed Procedure from a fixed or open price to an RVG
  * kind re-opens its Booking; the reverse never does.
  */
-export function contractChangeAsksRvgDetail(before: Contract | undefined, after: Contract | undefined, lines?: readonly BillingLine[]): boolean {
-  return !asksRvgDetail(before, lines) && before !== undefined && asksRvgDetail(after, lines)
+export function contractChangeAsksRvgDetail(before: Contract | undefined, after: Contract | undefined): boolean {
+  return !asksRvgDetail(before) && before !== undefined && asksRvgDetail(after)
 }
 
 export const REOPENED_FOR_RVG_DETAIL_MESSAGE = 'Add the RVG detail for the new Contract.'

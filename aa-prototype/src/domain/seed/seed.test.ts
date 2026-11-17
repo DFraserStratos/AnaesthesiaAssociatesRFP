@@ -394,7 +394,8 @@ describe('patients & NHIs', () => {
 
   it('seeds ~150 patients, all ethnicity-coded from the demo subset', () => {
     expect(patients.length).toBeGreaterThanOrEqual(145)
-    expect(patients.length).toBeLessThanOrEqual(166)
+    // 173 since catch-up Phase 24's seven pinned patients.
+    expect(patients.length).toBeLessThanOrEqual(173)
     for (const p of patients) {
       expect(p.ethnicityCode, `${p.hiddenInternalId} has ethnicity`).toBeDefined()
     }
@@ -507,11 +508,12 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     expect(feeForBooking(marker.entityId).totals).toEqual([2800, 61])
   })
 
-  it('rate x time: 3 hours at $480 = $1,440', () => {
-    const marker = SEED_MARKERS['rateTimeBooking']
+  it("Aria at the Contract's rate: (A5 base 8 + T 14 + M 0) x $26.50 = $583.00 (catch-up Phase 24; was 3.0 hours at $480)", () => {
+    const marker = SEED_MARKERS['contractRateBooking']
     expect(marker).toBeDefined()
     if (marker === undefined) return
-    expect(feeForBooking(marker.entityId).totals).toEqual([1440])
+    expect(feeForBooking(marker.entityId).totals).toEqual([583])
+    expect(feeForBooking(marker.entityId).unitSums).toEqual([22])
   })
 
   it('spot table entries hold', () => {
@@ -874,6 +876,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-SOUTER-BREAST': 'SOUTER-003',
       // Catch-up Phase 20: Nair's prepaid item, on Dr Souter's price list.
       'CT-SOUTER-RHINO-COS': 'SOUTER-004',
+      // Catch-up Phase 24: Forte Health RVG less 10%, the seed's discount Contract, appended last.
+      'CT-FORTE-DISC': 'FORTE-002',
     })
     expect(Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole === 'rvgFallback').map((c) => [c.id, c.aaCode]))).toEqual(RVG_BACKSTOPS)
     const codes = Object.values(contracts).map((c) => c.aaCode)
@@ -887,7 +891,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     }
     expect(noContractRvg(contracts)).toMatchObject({ id: 'CT-NO-CONTRACT', holderId: 'PY-AA', billsTo: 'payer', anaesthetistMayOverridePrice: true })
     // The override is seeded on No contract · RVG (A18) and the system's RVG backstops only; every Contract is Active.
-    expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id).sort()).toEqual(['CT-NO-CONTRACT', ...Object.keys(RVG_BACKSTOPS)].sort())
+    // Catch-up Phase 24 (work item 11): one hospital RVG Contract, Forte Health RVG, allows the override too.
+    expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id).sort()).toEqual(['CT-FORTE-D1', 'CT-NO-CONTRACT', ...Object.keys(RVG_BACKSTOPS)].sort())
     // Prepaid: Dr Souter's price list (catch-up Phase 19a) and the system's Prepaid · Fixed price (Phase 18a).
     expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
       ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
@@ -910,7 +915,9 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(contracts['CT-DOYLE-SLEEVE']).toMatchObject({ pricing: { kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2400 }] } })
     // COS ACC fixed fees starts after the billing-failure demo's Thu 16 Jul List.
     expect(contracts['CT-COS-FIXED']?.pricing).toEqual({ kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 1250 }] })
-    expect(Object.values(contracts).filter((c) => c.permitsRateTime).map((c) => c.id)).toEqual(['CT-ARIA-HOURLY'])
+    // Aria keeps its id and is RVG at its own rate, $26.50, the override off (catch-up Phase 24, RV-03).
+    expect(contracts['CT-ARIA-HOURLY']).toMatchObject({ name: 'Aria Skin and Laser Clinic', pricing: { kind: 'rvgContractRate', unitRate: 26.5 }, anaesthetistMayOverridePrice: false })
+    expect(Object.values(contracts).some((c) => 'permitsRateTime' in c)).toBe(false)
   })
 })
 
@@ -1114,7 +1121,8 @@ describe('the primary Procedure and the multi-procedure rule (catch-up Phase 23)
     const list = seed.schedule.lists[booking.listId]!
     expect(list.id).toBe(SEED_LIST_IDS.multiProcedure)
     expect(list.state).toBe('SUBMITTED')
-    expect(Object.values(seed.schedule.bookings).filter((b) => b.listId === list.id)).toHaveLength(1)
+    // Catch-up Phase 24's no-charge Booking shares the List (it is after every other id).
+    expect(Object.values(seed.schedule.bookings).filter((b) => b.listId === list.id).map((b) => b.id)).toEqual([MULTI_PROCEDURE_IDS.booking, SEED_MARKERS['noChargeBooking']!.entityId])
     const patient = seed.masters.patients[booking.patientId]!
     expect(ageModifierCodeFor(ageInCompletedYears(patient.dobISO, list.dateISO)!)).toBe('A1')
     const [primary, ...rest] = MULTI_PROCEDURE_IDS.procedures.map((id) => seed.schedule.procedures[id]!)

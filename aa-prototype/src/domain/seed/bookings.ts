@@ -48,8 +48,8 @@ export interface BookingScenarioIds {
   splitBilling: string
   feeSplit: string
   cancelled: string
-  rateTime: string
-  rateTimeCapture: string
+  contractRate: string
+  contractRateCapture: string
   bariatric: string
   cosAcc: string
   accRelated: string
@@ -169,12 +169,13 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   const bookings: Booking[] = []
   const procedures: Procedure[] = []
+  // No seeded billing line since catch-up Phase 24 (Fitzgerald's rate x time line was the only one).
   const billingLines: BillingLine[] = []
   const audit: AuditEntry[] = []
 
   let bookingN = 0
   let procN = 0
-  let lineN = 0
+  const lineN = 0
   let auditN = 0
 
   const pool = genericPatientIds()
@@ -337,13 +338,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     if (spec.split !== undefined) procedure.split = spec.split
     procedures.push(procedure)
     return procedure
-  }
-
-  function addLine(procedure: Procedure, spec: Omit<BillingLine, 'id' | 'procedureId'>): BillingLine {
-    lineN += 1
-    const line: BillingLine = { ...spec, id: `BL${String(lineN).padStart(4, '0')}`, procedureId: procedure.id }
-    billingLines.push(line)
-    return line
   }
 
   function addListAudit(listId: string, action: string, who: string, atISO: string): void {
@@ -753,27 +747,25 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     isPrimary: false,
   })
 
-  // Rate x time under the billable-party-held individual-arrangement contract
-  // (Fitzgerald, Wed 15 Jul, Forte / Ms Lim).
+  // RVG at the Contract's rate on Aria's Contract (Fitzgerald, Wed 15 Jul,
+  // Forte / Ms Lim). Until catch-up Phase 24 a rate x time line (3.0 hours at
+  // $480, $1,440); now the abdominoplasty's A5 base 8, 08:30 to 11:30 (T 14),
+  // no modifiers, at Aria's $26.50: 22 units, $583.00.
   const fitzWed15 = projectedListId(ANAE.fitzgerald, WED15, 'AM')
-  const rateTimeBooking = addBooking({
+  const contractRateBooking = addBooking({
     listId: fitzWed15,
     patientId: PAT.bennett,
     scheduledTime: '08:30',
     completedAtISO: iso(WED15, '11:45'),
     auditComplete: true,
   })
-  const rateTimeProc = addProcedure(rateTimeBooking, {
-    procedureText: 'Abdominoplasty, individually arranged hourly rate (Aria Skin and Laser Clinic)',
-    governingContractId: CONTRACT.ariaHourly,
+  const contractRateProc = addProcedure(contractRateBooking, {
+    procedureText: 'Abdominoplasty (Aria Skin and Laser Clinic)',
+    governingContractId: CONTRACT.ariaContractRate,
+    startISO: iso(WED15, '08:30'),
+    handoverISO: iso(WED15, '11:30'),
   })
-  addLine(rateTimeProc, {
-    chargeBasis: 'rateTime',
-    hours: 3,
-    rate: 480,
-    amount: 1440,
-    description: 'Anaesthesia, 3.0 hours at $480 per hour',
-  })
+  contractRateProc.rvgGroupId = RVG_GROUP['a5']
 
   // An AIA claim: the patient pays on No contract · RVG and claims back from AIA
   // Health; AIA is named only in the description (catch-up Phase 20).
@@ -894,19 +886,17 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     billingReference: 'FH-2026-2140',
   })
 
-  // Rate x time CAPTURE booking (Phase 04): not yet captured, on Souter's own
-  // pinned Mon 27 list so the mobile app can reach it — the presenter adds the
-  // hours x rate billing line live under the Aria individual-arrangement
-  // contract. Fitzgerald's completed booking above stays Phase 08's billing
-  // exemplar (Decisions log 2026-07-23).
-  const rateTimeCaptureBooking = addBooking({
+  // Aria at the Contract's rate, uncaptured (Phase 04; catch-up Phase 24): on
+  // Souter's own pinned Mon 27 List so the phone reaches it; her price line
+  // reads the units at Aria's $26.50, read-only (the override is off).
+  const contractRateCaptureBooking = addBooking({
     listId: souterMon27,
     patientId: PAT.sinclair,
     scheduledTime: '10:45',
   })
-  addProcedure(rateTimeCaptureBooking, {
-    procedureText: 'Laser skin resurfacing, individually arranged hourly rate (Aria Skin and Laser Clinic)',
-    governingContractId: CONTRACT.ariaHourly,
+  addProcedure(contractRateCaptureBooking, {
+    procedureText: 'Laser skin resurfacing (Aria Skin and Laser Clinic)',
+    governingContractId: CONTRACT.ariaContractRate,
   })
 
   // MIXED + FULL pre-payment booking, designated for the seeded PAID pre-invoice
@@ -1288,8 +1278,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       splitBilling: splitBooking.id,
       feeSplit: feeSplitBooking.id,
       cancelled: cancelledBooking.id,
-      rateTime: rateTimeBooking.id,
-      rateTimeCapture: rateTimeCaptureBooking.id,
+      contractRate: contractRateBooking.id,
+      contractRateCapture: contractRateCaptureBooking.id,
       bariatric: bariatricBooking.id,
       cosAcc: cosAccBooking.id,
       accRelated: accRelatedBookingId,

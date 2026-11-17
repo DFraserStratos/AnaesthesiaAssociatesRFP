@@ -29,17 +29,15 @@ function cardByLabel(page: Page, label: string) {
   return page.getByText(label, { exact: true }).locator('..')
 }
 
-async function expectSameHeight(page: Page, left: string, right: string): Promise<void> {
-  const a = await cardByLabel(page, left).boundingBox()
-  const b = await cardByLabel(page, right).boundingBox()
-  expect(a).not.toBeNull()
-  expect(b).not.toBeNull()
-  expect(Math.abs(a!.height - b!.height)).toBeLessThan(1)
-}
-
 test('paired capture cards match heights on the desktop', async ({ page }) => {
   await openEllison(page)
-  await expectSameHeight(page, 'Adjustment and charge', 'Billing lines')
+  // The price line pairs with Billing lines (catch-up Phase 24; the reasoned Adjustment and charge card is gone).
+  const price = await page.locator('[data-shot=price-card]').first().boundingBox()
+  const lines = await cardByLabel(page, 'Billing lines').first().boundingBox()
+  expect(price).not.toBeNull()
+  expect(lines).not.toBeNull()
+  expect(Math.abs(price!.height - lines!.height)).toBeLessThan(1)
+  await expect(page.getByText('Adjustment and charge', { exact: true })).toHaveCount(0)
 })
 
 test('desktop Booking total starts level with the first capture card', async ({ page }) => {

@@ -12,8 +12,8 @@ import { formatCurrency } from '../format'
  *
  * It is the only money summary on the desktop, so it carries the applied rate,
  * line breakdown and override note. A per-procedure panel here would duplicate
- * the common one-procedure total. Office Bookings only: the anaesthetist Booking
- * shows no calculation.
+ * the common one-procedure total. On every Booking (catch-up Phase 24: the
+ * anaesthetist sees what the price comes to; the phone has `BookingTotalStrip`).
  *
  * The rail has room to stack a row per line, so it uses `lines` whichever kind
  * they are; the label carries the meaning either way.
@@ -39,7 +39,7 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
       }}
     >
       {lines.length > 0 && (
-        <div data-shot={multiProcedure ? 'booking-total-split' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div data-shot={multiProcedure ? 'booking-total-split' : 'booking-total-lines'} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {lines.map((line, i) => (
             <div
               key={i}

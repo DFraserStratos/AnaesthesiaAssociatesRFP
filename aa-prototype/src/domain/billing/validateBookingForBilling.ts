@@ -9,9 +9,9 @@
  * branches completion superseded are gone (the RVG code and times checks, the
  * modifier explanation check, the split prepayment deposit, the Contract
  * checks). What stays is the run's own: a Contract's holder must exist, no
- * price can be worked out (Phase 24's), the Method 3 gate and the billing
- * lines (Phase 39b's), the override reason and sign (Phase 39's) and
- * a split that no longer fits (Phase 22's).
+ * price can be worked out (Phase 24's) and a split that no longer fits
+ * (Phase 22's). The rate x time line and its gate are gone (Phase 24, RV-03). A typed
+ * price needs no reason and is never below $0 (catch-up Phase 24).
  */
 
 import type {
@@ -24,15 +24,15 @@ import type {
   Party,
   Patient,
   Procedure,
+  ProcedureId,
   RvgGroup,
   RvgGroupId,
 } from '../types'
 import { bookingFeeFor, NO_PRIMARY_MESSAGE, type BookingFeeResult, type ProcedureFeeContext } from './bookingFee'
 import { groupOf } from './rvgGroups'
-import { formatMoney } from './money'
 import { PARTY_GONE_REASON, resolveSplit, splitDoesNotFitMessage } from './splitShare'
 import { splitPartiesOn } from './partyOptions'
-import { procedureNeedsPrice } from './contracts'
+import { procedureNeedsPrice, type HeldPrices } from './procedurePrice'
 import { HOLDER_MISSING_MESSAGE, holderBilledFor } from './whoIsBilled'
 import { needsPriceMessage } from './priceRanges'
 import type { RvgTimeRule } from './timeUnits'
@@ -45,14 +45,6 @@ export interface BillingValidationFailure {
   /** Rendered verbatim in the UI. */
   message: string
 }
-
-/**
- * The Method 3 gate sentence, single-sourced (5th review #1): the validator,
- * the store's addBillingLine guard and the mobile capture UI's disabled
- * rate x time option all show these exact words.
- */
-export const INDIVIDUAL_ARRANGEMENT_MESSAGE =
-  'A rate and time billing line needs a governing contract that permits an individually arranged fee structure.'
 
 
 /** Who gives a contract reference when billed: a hospital, a surgeon or a surgeons' organisation (by billing identity). */
@@ -114,6 +106,11 @@ export interface BookingBillingContext {
    * the Booking holds. Never read by a fee or a validation rule.
    */
   patient?: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'>
+  /**
+   * The price ladder's held amounts per Procedure (catch-up Phase 24): the
+   * store's `heldPricesForBooking`. Absent: nothing holds a price.
+   */
+  held?: Readonly<Record<ProcedureId, HeldPrices>>
 }
 
 /**
@@ -141,6 +138,8 @@ export function feeContextFor(
   }
   if (contract !== undefined) feeCtx.contract = contract
   if (rvgGroup !== undefined) feeCtx.rvgGroup = rvgGroup
+  const held = ctx.held?.[procedure.id]
+  if (held !== undefined) feeCtx.held = held
   return feeCtx
 }
 
@@ -190,17 +189,8 @@ export function validateBookingForBilling(
 
   procedures.forEach((procedure) => {
     const id = procedure.id
-    const storedLines = ctx.billingLines.filter((l) => l.procedureId === id)
     const contract =
       procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-
-    // Method 3 gate (5th review #1): a rate x time line needs a governing
-    // Contract that permits it (`permitsRateTime`, INTERIM until Phase 24).
-    if (storedLines.some((l) => l.chargeBasis === 'rateTime')) {
-      if (contract === undefined || !contract.permitsRateTime) {
-        fail(id, 'billingLines', INDIVIDUAL_ARRANGEMENT_MESSAGE)
-      }
-    }
 
     // A Contract that bills its holder needs that Party to exist (the run's
     // own sentence); one that bills the payer always has the payer on the
@@ -209,23 +199,11 @@ export function validateBookingForBilling(
       fail(id, 'governingContractId', HOLDER_MISSING_MESSAGE)
     }
 
-    // No price can be worked out (Phase 24 owns it): a fixed price with no
-    // range in force on the List's date, or an open price with no amount typed.
-    if (contract !== undefined && procedureNeedsPrice(contract, ctx.listDateISO, procedure)) {
+    // "Needs a price" (catch-up Phase 24, `procedurePrice.ts`): a fixed price with
+    // no range in force on the List's date, or an open price with no amount
+    // typed. The run's per-Booking pre-flight failure, completion's sentence.
+    if (contract !== undefined && procedureNeedsPrice(contract, ctx.listDateISO, procedure, ctx.held?.[procedure.id])) {
       fail(id, contract.pricing.kind === 'open' ? 'enteredPrice' : 'governingContractId', needsPriceMessage(contract, ctx.listDateISO))
-    }
-
-    // Price override always carries a reason (7th review A6/B5), and may not
-    // drive the fee negative (8th review): a negative invoice is a credit
-    // note, which this system never raises.
-    if (procedure.priceOverride !== undefined) {
-      if (procedure.priceOverride.reason.trim() === '') {
-        fail(id, 'priceOverride', 'Give a reason for the price override.')
-      }
-      const fee = feeOf(procedure)
-      if (fee !== undefined && fee.total < 0) {
-        fail(id, 'priceOverride', `The price override makes the fee negative (${formatMoney(fee.total)}). Adjust the override.`)
-      }
     }
 
     // A split that no longer fits the fee (catch-up Phase 22; US-08.2.3):

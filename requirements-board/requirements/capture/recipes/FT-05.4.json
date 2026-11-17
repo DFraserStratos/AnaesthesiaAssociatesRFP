@@ -1,0 +1,45 @@
+{
+  "id": "FT-05.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "price-history",
+      "app": "admin",
+      "caption": "Every change audited; the last change stands",
+      "start": "/admin/day/2026-07-14/bookings/BK0179",
+      "states": [
+        {
+          "caption": "The office changes the typed price again: History holds both entries, no reason",
+          "steps": [
+            {
+              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
+            },
+            {
+              "wait": "[data-shot=pricing-sheet]"
+            },
+            {
+              "fill": "[data-shot=pricing-sheet-price]",
+              "value": "1150.00"
+            },
+            {
+              "click": "[data-shot=pricing-sheet-save]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

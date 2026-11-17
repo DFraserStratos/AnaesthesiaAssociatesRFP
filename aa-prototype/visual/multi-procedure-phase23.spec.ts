@@ -39,7 +39,8 @@ test('mobile: add a procedure, Make primary moves it to the top with the pill, B
   // The additional Procedure's B row: 0, on the primary; the Modifiers caption row instead of the section.
   await expect(page.locator('[data-shot="units-row-b"]').filter({ hasText: 'Base units are on the primary procedure' })).toHaveCount(1)
   await expect(page.locator('[data-shot="modifiers-on-primary"]')).toHaveCount(1)
-  await expect(page.getByText(/\$\d/)).toHaveCount(0) // units only on the phone
+  // The phone shows what the price comes to since catch-up Phase 24 (US-03.3.10): a price line per Procedure.
+  await expect(page.locator('[data-shot=price-card]')).toHaveCount(2)
 
   // Before: Ellison's hip is first, with its own base; the added Procedure second.
   const blocks = page.locator('[data-shot="procedure-block"]')
@@ -120,8 +121,8 @@ test('demo actions: load the 3-procedure Booking, then the hospital feed changes
   await expect(page.locator('[data-shot="demo-action-load-multi-procedure-booking"]')).toContainText('Already loaded')
   await page.keyboard.press('Escape')
 
-  // The staged Booking (the next id after the seed's BK0184) on Dr Souter's Wed 22 Jul AM List.
-  await page.goto('/web/lists/L-34821-2026-07-22-AM/bookings/BK0185')
+  // The staged Booking (the next id after the seed's last, BK0189 since catch-up Phase 24) on Dr Souter's Wed 22 Jul AM List.
+  await page.goto('/web/lists/L-34821-2026-07-22-AM/bookings/BK0190')
   await settle(page)
   const first = page.locator('[data-shot="procedure-stack"]').first()
   await expect(first).toContainText('Laparoscopic cholecystectomy')

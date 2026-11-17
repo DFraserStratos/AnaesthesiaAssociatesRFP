@@ -43,6 +43,7 @@ import { fundingTagForFunder, fundingTagsInOrder, type FundingTag, type FundingT
 import type { Party, PartyId } from './parties'
 import { rangeInForce } from './priceRanges'
 import { fillFromContract } from './startingValues'
+import { anaesthetistMayTypePrice } from './procedurePrice'
 import type { RvgGroup, RvgGroupId } from './rvgGroups'
 
 export { destinationOf, destinationKey, type InvoiceDestination }
@@ -164,11 +165,12 @@ export function openPriceFallbackFor(masters: RailMasters, destination: InvoiceD
  * the anaesthetist only on No contract · Fixed price, so a hospital or insurer
  * is never billed a figure the anaesthetist typed.
  */
-export function mayTypeEnteredPrice(actor: RailActor, contract: Contract, parties: RailMasters['parties']): boolean {
+export function mayTypeEnteredPrice(actor: RailActor, contract: Contract): boolean {
   if (contract.pricing.kind !== 'open') return false
   if (actor === 'office') return true
-  const d = destinationOf(contract, parties)
-  return d.kind === 'patient' && !d.prepaid
+  // The one rule for the anaesthetist (catch-up Phase 24): `amount` on No contract · Fixed price only.
+  const right = anaesthetistMayTypePrice(contract)
+  return right.may && right.mode === 'amount'
 }
 
 // ---------------------------------------------------------------------------
@@ -409,7 +411,7 @@ export function contractRailFor(
   const fallback = fallbackDest !== undefined ? openPriceFallbackFor(masters, fallbackDest) : undefined
   const contractStep: ContractStep = { rows, shown: rows.slice(0, RAIL_ROW_LIMIT) }
   if (fallback !== undefined) {
-    contractStep.otherPrice = { contract: fallback, mayTypeAmount: mayTypeEnteredPrice(opts.actor, fallback, masters.parties) }
+    contractStep.otherPrice = { contract: fallback, mayTypeAmount: mayTypeEnteredPrice(opts.actor, fallback) }
   }
   const rvgBackstop = fallbackDest !== undefined ? findRvgFallback(masters.contracts, fallbackDest, masters.parties) : undefined
   if (rvgBackstop !== undefined && rvgBackstop.status === 'active') contractStep.rvgBackstop = rvgBackstop
@@ -463,8 +465,7 @@ export function railAnswersText(
 
 /**
  * The Procedure fields a Contract change writes (US-03.4.1, A15): the new
- * Contract; a typed price cleared (the fallback amount and today's price
- * override), unless an amount is given with an open-price fallback; the
+ * Contract; the typed price cleared (A15), unless an amount is given with an open-price fallback; the
  * answers so far and the interim holder billing cleared; the RVG code filled
  * from the new Contract's default only when empty. Recorded RVG code, units,
  * times and modifiers are kept: the store's row-change rule (19, 19b) applies
@@ -480,7 +481,6 @@ export function applyContractChange(
   const patch: Partial<Procedure> = {
     governingContractId: nextContractId,
     railAnswers: undefined,
-    priceOverride: undefined,
     enteredPrice: next?.pricing.kind === 'open' ? opts.enteredPrice : undefined,
   }
   const fill = fillFromContract(procedure, next, masters.rvgGroups)
@@ -510,7 +510,7 @@ export function contractChangeRefusal(
   const was = current !== undefined ? masters.contracts[current] : undefined
   const will = masters.contracts[next]
   if (was?.prepaid === true || will?.prepaid === true) return { code: 'prepaidOfficeOnly', message: PREPAID_OFFICE_ONLY_MESSAGE }
-  if (opts.enteredPrice !== undefined && will !== undefined && !mayTypeEnteredPrice(actor, will, masters.parties)) {
+  if (opts.enteredPrice !== undefined && will !== undefined && !mayTypeEnteredPrice(actor, will)) {
     return { code: 'officeTypesAmount', message: OFFICE_TYPES_AMOUNT_MESSAGE }
   }
   return null
