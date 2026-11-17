@@ -6,12 +6,12 @@
     {
       "name": "todo-child-warning",
       "app": "admin",
-      "caption": "A child as the payer is a mild warning on the to-do list, never a block",
+      "caption": "A child as the payer is a mild warning on the to-do list, one row per Booking, never a block",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
           "state": "raised",
-          "caption": "A child as the payer is a mild warning on the to-do list, never a block",
+          "caption": "A child as the payer is a mild warning on the to-do list, one row per Booking, never a block",
           "steps": [
             {
               "wait": 300
@@ -41,7 +41,7 @@
     {
       "name": "booking-child-warning",
       "app": "admin",
-      "caption": "Ella Moana, 15, is the payer: the warning shows first on the Booking, with \"Under 18\" on the Payer row",
+      "caption": "Ella Moana, 15, is the payer: the warning shows first on the Booking, with \"Under 18\" on the Paid by line",
       "start": "/admin/day/2026-07-17/bookings/BK0170",
       "states": [
         {
@@ -51,7 +51,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=booking-child-warning]"
+            "[data-shot=booking-child-warning]",
+            "[data-shot=payer-under-18]"
           ]
         }
       ]
@@ -124,20 +125,79 @@
     {
       "name": "guardian-payer-no-warning",
       "app": "admin",
-      "caption": "No warning when a parent is the payer, or when a Contract bills its holder",
+      "caption": "No warning when a parent is the payer: Hana Park pays both of Grace Park's Procedures",
       "start": "/admin/day/2026-07-24/bookings/BK0033",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]"
+            "[data-shot=procedure-split-row]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "child-two-procedures",
+      "app": "admin",
+      "caption": "A child as the payer on both of Grace Park's Procedures: \"Under 18\" on each Paid by line, one warning for the Booking",
+      "start": "/admin/day/2026-07-24/bookings/BK0033",
+      "states": [
+        {
+          "state": "paid-by",
+          "caption": "Raise sample warnings puts \"Under 18\" on both Paid by lines",
+          "steps": [
+            {
+              "trigger": "raise-sample-warnings"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payer-under-18]"
+          ]
+        },
+        {
+          "state": "todo",
+          "caption": "One to-do row for Grace Park, for both Procedures' child warnings",
+          "steps": [
+            {
+              "trigger": "raise-sample-warnings"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-warnings-todo] >> role=button[name=/Show all/]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "scroll": "[data-shot=todo-child-warning]:has-text(\"Grace Park\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=todo-child-warning]:has-text(\"Grace Park\")"
           ]
         }
       ]

@@ -111,22 +111,30 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 
 The office sets it at booking setup; the anaesthetist sees the same rail and can finish or change it
 until the List is authorised, never onto or off a prepaid Contract. A Contract bills its holder or the
-payer on the Booking as it says. A patient with insurance who pays AA is on No contract · RVG (or a
+Procedure's payer as it says. A patient with insurance who pays AA is on No contract · RVG (or a
 price list) and claims back themselves; nib is billed only through nib's own Contract.
 
 ### The payer and the insurer or funder (catch-up Phase 21)
 
 - **Who is billed** is each Contract's own setting: its holder Party when it bills its holder, otherwise
-  the **payer named on the Booking**. No contract · RVG, No contract · Fixed price, a surgeon's fixed
+  the **Procedure's payer**. No contract · RVG, No contract · Fixed price, a surgeon's fixed
   price (Mr Doyle's bariatric list), an anaesthetist's own price list and every prepaid Contract bill
-  the payer. One invoice per billable party per Booking (a Split on the Booking gives one per share).
-- **The payer** is the patient by default, read from the patient record. Tick **Different payer** to
-  name anyone else who pays: a parent, a guardian, a benefactor or a family trust. The office and the
-  anaesthetist change it until the List is authorised (a sheet on the phone, a dialog on web).
+  the payer. One invoice per billable party per Booking: Procedures sharing a payer share one invoice, and a Split
+  gives one per share.
+- **The payer is on each Procedure**, on its **Paid by** line, filled from the patient (the patient
+  record). **Change** opens the Paid by sheet to name anyone else who pays: a parent, a guardian, a
+  benefactor or a family trust. The office and the anaesthetist change it until the List is authorised
+  (a bottom sheet on the phone, a dialog on web). Changing one Procedure's payer offers the change to
+  the Booking's other Procedures with the same payer, each ticked (untick to keep; labelled
+  "Provisional, OQ-140" in the sheet): Grace Park's two Procedures do this. A Procedure added later
+  copies the payer the others share, else the patient. With no Contract the line reads "Payer: not
+  billed yet". There is no Booking-level Payer card any more. Two payers typed separately (two ids,
+  same name and email) are never merged: "payers are never matched on name or email". Provisional on
+  OQ-140.
 - A billed payer needs an **email or an NZ Post postal address**; a postal address alone is enough
   (that invoice is marked **To post**). Missing both shows **Email or postal address needed** on the
-  Payer row and at Review; it never blocks.
-- **Insurer or funder:** the Booking names one (a Party: NIB and Southern Cross Health Society are
+  Paid by line and at Review; it never blocks.
+- **Insurer or funder:** stays on the Booking (empty state "None"); it names one (a Party: NIB and Southern Cross Health Society are
   insurers; ACC and Health NZ are funders) and holds the **approval number**. The office records them;
   the anaesthetist sees the number and may change it on the day. A missing number on an insurer is the
   only insurance warning, shown to the office and the anaesthetist. The funder never decides who is
@@ -151,7 +159,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 ### Review flags (never block)
 
 - Review shows, per row, each Procedure's stack (procedure text, Contract with who is invoiced, RVG code)
-  with its flags under it; the payer and insurer or funder with approval number (**Change** opens the
+  with its flags under it; each Procedure's payer ("Patient pays", "Paid by nib") and the insurer or funder with approval number (**Change** opens the
   Admin Booking); an open alert with a Resolve tick; open warnings with Clear; **Changed** for edits since
   submit.
 - Flags: **Changed by Dr X: was** the old Contract (**Approve** or **Correct**, then **Approved** with
@@ -183,9 +191,10 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - A second/additional Procedure in the same episode (**Add another procedure**) is time-only; Brian Holt
   on Dr Souter's Mon 20 AM List (the S3 split Booking) shows it.
 - Base and Modifiers cannot be charged again.
-- **Split** is in the Billing card's Paid by line (on the phone, its fourth row) on each Procedure of a Booking, for the office or the
+- **Split** is pressed in the Billing card's Paid by line (**Change** opens the one Paid by sheet: who pays, then the split) on each Procedure of a Booking, for the office or the
   anaesthetist (on her own Booking, phone and web, until the List is authorised). Each party's share is
-  typed in $ or %, one party can take the rest, and each party gets its own invoice. No split setting
+  typed in $ or %, one party can take the rest, a share can go to **Another person** (name and an
+  email or postal address), and each party gets its own invoice. No split setting
   on the Contract.
 - Alan Prentice (Dr Souter's Mon 20 PM List, the S3 fee-split Booking): Paid by "nib $132.50, Alan Prentice $79.50 (the rest)" of a $212.00 fee; 62.5% for nib is the same split.
 - One invoice per billable party per Booking; a Split gives one invoice per share.
@@ -218,7 +227,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - Every Contract is one priced item held by a **Party**: a hospital, insurer, funder, surgeon or
   surgeon group, an anaesthetist, or AA. Parties live in Master data, Parties, with their billing
   name and how their invoices are delivered (email or post).
-- It bills its holder or the payer on the Booking (a prepaid Contract always the payer).
+- It bills its holder or the Procedure's payer (a prepaid Contract always the payer).
 - It has a pricing kind (RVG at the anaesthetist's rate, RVG at the Contract's rate, RVG less a
   discount, or a fixed price), an optional override on RVG kinds, prepaid or not, and is Active or
   Disabled.
@@ -527,8 +536,8 @@ Say:
 - Warnings: one routine; a To-do card in Admin; a small triangle on Bookings in all three apps; the
   warning at the top of the Booking when it opens. Never a block, and no confirm step at submit.
 - Catch-up Phase 21 adds two mild before-procedure rules: a **child as the payer** (under 18 on the
-  List date, the patient paying for a Procedure billed to the payer; none when another payer is ticked
-  or the Contract bills its holder) and an **insurer with no approval number** (NIB or Southern Cross
+  List date, the patient paying for a Procedure billed to the payer; none when another payer is named
+  or the Contract bills its holder; it shows on each Procedure, with one to-do row per Booking) and an **insurer with no approval number** (NIB or Southern Cross
   Health Society only; never ACC or Health NZ). Both clear from the To-do card.
 
 ### 9. Concurrency

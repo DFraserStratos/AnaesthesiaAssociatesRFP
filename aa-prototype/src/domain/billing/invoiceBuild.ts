@@ -372,7 +372,7 @@ function withoutBtm(line: DraftInvoiceLine): DraftInvoiceLine {
 /**
  * INTERIM until Phase 27 (catch-up Phase 20; D23, US-04.3.4): a Procedure
  * requires prepayment when its Contract is prepaid, which always bills the
- * payer on the Booking (OQ-73 at Confirm, D23), never a holder.
+ * Procedure's payer (OQ-73 at Confirm, D23), never a holder.
  */
 export function procedureRequiresPrepayment(contract: Pick<Contract, 'prepaid' | 'billsTo'> | undefined): boolean {
   return contract?.prepaid === true && contract.billsTo === 'payer'

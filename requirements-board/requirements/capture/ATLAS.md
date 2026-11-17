@@ -560,7 +560,8 @@ Authorising Morrison raises 6 invoices.
 
 - A cancelled booking on Morrison's list.
 - A parent paying for a minor: Grace Park (BK0033, Chen Fri 24 AM), Hana Park (Mother) the payer on
-  the Booking (`BP0001`, Different payer ticked), no child warning.
+  each of her two Procedures (catch-up Phase 22a: P0035 and P0186, both `BP0001`, Different payer ticked), no
+  child warning.
 - An insured-reimbursement booking: Rutherford, Thu 16 AM (BK0030, Marcus Webb): No contract · RVG,
   invoiced to the patient, AIA Health named as insurer with number `AIA-2026-30418`, no warning.
 - A provisional patient with no NHI.
@@ -657,6 +658,22 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Other price is Southern Cross · SXAP · Fixed price); BK0034 (Ms Lim: Merivale's items under
   Patient › Standard, Souter's list under Prepaid for the office); BK0023 (Mon 20 AM, SUBMITTED).
 
+### A payer on each Procedure (catch-up Phase 22a)
+
+- **No Booking-level Payer card** in any app: the payer is on each Procedure, in its Billing card's Paid by line
+  (`procedure-split-row`, the payer's name `paid-by-payer` with `data-procedure-id`). Contract bills its holder: the
+  button reads "Split"; the Contract bills the payer, or the fee is split: "Change"; no Contract: no button and
+  `payer-not-billed` ("Payer: not billed yet"). Both open the one Paid by sheet.
+- **Grace Park (BK0033, `/admin/day/2026-07-24/bookings/BK0033`)** now has two Procedures, P0035 and P0186, both paid by
+  Hana Park (Mother, `BP0001`). "Raise sample warnings" puts "Under 18" on both Paid by lines (`payer-under-18`, one per
+  Procedure) with one to-do row (`todo-child-warning`) on the Admin dashboard.
+- **The two-payer Booking** (`SEED_MARKERS.twoPayerBooking`): BK0183 Joyce Halvorsen on the payer review List
+  `L-45178-2026-07-17-AM` (`/admin/day/2026-07-17/bookings/BK0183`), Procedures P0187 and P0188 both paid by Erik
+  Halvorsen (Son) typed twice, so two payers, `BP0004` and `BP0005`, same name and email. Authorising that List raises two
+  invoices for BK0183 (payers are never matched on name or email). BK0171 Kevin Doherty (contact missing) is on the same List.
+- **Other routes:** a No-Contract Procedure with no payer yet: P0037 on BK0035 (`/admin/day/2026-07-27/bookings/BK0035`);
+  a nib holder-billed unsplit Procedure: BK0007; the split Booking BK0025 (nib $132.50, Alan Prentice the rest).
+
 ### RVG detail, completion and review flags (catch-up Phase 21a)
 
 - **What the form asks follows the pricing kind.** On an RVG Contract the capture form shows
@@ -713,7 +730,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   patient's when it bills the payer. `INV0001` (the paid prepayment) is the seeded patient-layout invoice.
 - **Delivery:** every hospital, nib, COS and Aria Party delivers by email; Unisports (`PY-UNI`) by post. A payer's
   invoice goes to the payer's email, else their postal address. On the payer review List (`L-45178-2026-07-17-AM`),
-  authorising raises "5 invoices raised. 3 emailed, 1 to post. 1 needs an invoice address.": BK0172 Robert Whitcombe
+  authorising raised "5 invoices raised. 3 emailed, 1 to post. 1 needs an invoice address." before 22a; BK0183 adds two
+  invoices to Erik Halvorsen (7 raised, 5 emailed by that arithmetic; confirm at capture): BK0172 Robert Whitcombe
   (payer the Whitcombe Family Trust, PO Box, no email) is "To post" with "Simulated posting" and "Provisional (OQ-122)";
   BK0171 Kevin Doherty's reads "No invoice address" with an email field and Send, and the Billing monitor shows
   `monitor-no-address`.
@@ -901,16 +919,22 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `[data-shot=review-contract-correct]` opens the Admin Booking. The action bar's
   `[data-shot=review-contract-approve-all]` approves every pending change on the List. Only on a List not
   yet authorised.
-- **The payer and the insurer or funder (catch-up Phase 21), every app:** the Booking's Payer section
-  `booking-payer-row` with "Change" (aria "Change the payer") opening `payer-sheet` (a Dialog on web and
-  Admin, a bottom sheet on the phone): `payer-different-tick` (its `input` checkbox), `payer-patient-details`,
+- **The Paid by sheet and the insurer or funder (catch-up Phase 22a, every app):** the Booking-level Payer card,
+  `booking-payer-row`, `payer-sheet` and the "Change the payer" button are GONE. Each Procedure's Paid by line
+  (`procedure-split-row` on web and Admin; the phone's `[data-testid=slide-booking] [data-shot=procedure-split-button]`)
+  has `procedure-split-button` ("Change" or "Split"; none with no Contract) opening the one `paid-by-sheet` (a Dialog on
+  web and Admin, a bottom sheet on the phone), whose single Save is `paid-by-save` ("Save"; "Save payer" and "Save split"
+  are gone). Its "Who pays" section keeps the payer hooks: `payer-different-tick` (its `input` checkbox), `payer-patient-details`,
   `payer-child-hint`, `payer-other-fields` (Name, relationship chips, "Other relationship", Email,
   `payer-postal-address` with Address, "Unit, building or RD (optional)", "Suburb (optional)", "Town or
-  city", Postcode, "Phone (optional)"), `payer-contact-ask`, "Save payer". The Insurer or funder section
+  city", Postcode, "Phone (optional)"), `payer-contact-ask`. When the payer changes to another person (fill "Name" with a different name) the offer
+  `payer-offer` appears with rows `payer-offer-row` (`data-procedure-id`) and the neutral pill `payer-offer-provisional`
+  ("Provisional, OQ-140"), then the split section `split-sheet` (see Split below). The Insurer or funder section
   `booking-funder-row` with "Add" (aria "Add insurer or funder") or "Change" (aria "Change the insurer or
-  funder") opening `funder-sheet`: chips `funder-none` ("None, the patient pays"), one per insurer and
+  funder") opening `funder-sheet`: chips `funder-none` ("None"), one per insurer and
   funder by name (for example "nib"), "Approval number", "Save". Row hooks `funder-approval-number`,
-  `funder-approval-missing`, `payer-contact-missing`, `payer-under-18`.
+  `funder-approval-missing`. On the Paid by line: `paid-by-payer`, `payer-contact-missing`, `payer-under-18` (each with
+  `data-procedure-id`) and `payer-not-billed`.
 - **The step rail (catch-up Phase 20), Admin and web:** inline on the Booking, the "Billing" card
   `[data-shot=capture-billing]` (one per Procedure; `>> nth=0` for the first), no click to open, no
   "Needs an invoice destination" bar (that shows on List rows and Admin Day's card only). Steps
@@ -951,7 +975,11 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `[data-testid=invoice-send-history]`) and "Print"; when To post, the address, "Simulated posting", "Provisional (OQ-122)",
   an "Or email it to" field (`[data-testid=invoice-send-email]`) with "Send" and "Print"; with no invoice address, the
   warning "No invoice address", an "Email address" field and "Send".
-- **Split sheet** (catch-up Phase 22; a dialog on web and Admin, a bottom sheet on mobile, titled "Split the fee"): on a
+- **Split section of the Paid by sheet** (catch-up Phase 22, moved into the Paid by sheet by 22a: there is no separate
+  split sheet, so use `paid-by-sheet` as the overlay root and `split-sheet` for the section; the "Split the fee" dialog and
+  "Save split" are gone, `paid-by-save` saves; `split-start`, "Split" or "Keep split", shows the section when no split is
+  showing; the party picker's open list ends with `split-another-person` ("Another person"), which turns that row into
+  `split-person` fields; the former `split-save` is gone): on a
   Booking, scroll to `[data-shot=procedure-split-row]` (the Paid by line at the foot of the Billing card on web and Admin)
   and click `[data-shot=procedure-split-button]` ("Split", or "Change" once split). On mobile Paid by is the Billing
   summary's fourth row, itself `[data-testid=slide-booking] [data-shot=procedure-split-button]` (its own tap target; the
@@ -961,8 +989,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   (party picker `[data-testid=party-picker-toggle]`, options `[data-shot=party-option]`, search `party-picker-search`),
   `[data-shot=split-share-input] >> input` ($ or %, a TextField; for example `>> nth=0 >> input` filled "62.5%"), the switch
   `[data-shot=split-rest-toggle]` ("Takes the rest"), the amount `split-amount`, "Add a party" (`split-add-party`), the
-  total `split-total` ("$212.00 of $212.00"), then "Save split" (`split-save`) and, on a split Procedure, "Remove split"
-  (`split-remove`). On BK0025 row 0 is nib ($132.50) and row 1 Alan Prentice (the rest). A share that no longer fits
+  total `split-total` ("$212.00 of $212.00"), then, on a split Procedure, "Remove split" (`split-remove`). On BK0025 row 0 is nib ($132.50) and row 1 Alan Prentice (the rest). A share that no longer fits
   raises the `splitDoesNotFit` warning. The office and the anaesthetist on her own Booking can split until the List is
   AUTHORISED; Dr Souter's ACTIVE `/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0002` (and the web route) shows it.
 - **GST number** (Master data, Anaesthetists, catch-up Phase 22): a row's Edit
@@ -987,6 +1014,12 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase 22a: `paid-by-sheet` (the one Paid by sheet), `paid-by-save`, `paid-by-payer` (the payer's name on a
+  Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`, `payer-offer-provisional`,
+  `split-start`, `split-another-person`, `split-person`; Review: `review-payer` (per Procedure under its stack, `data-procedure-id`),
+  `review-payer-contact` per Procedure, `review-insurance` (Billed to column). `payer-contact-missing` and `payer-under-18`
+  now sit on each Paid by line. GONE: `booking-payer-row`, `payer-sheet`, the "Change the payer" button, `split-save`,
+  "Save payer", "Save split".
 - Catch-up Phase 22 (`data-shot` unless marked): the invoice document's `invoice-supplier` (the anaesthetist's name and
   GST number), `invoice-holder-reference` ("Your reference", holder layout only), `invoice-agent-block` (AA's logo, the
   sentence "Issued by Anaesthesia Associates Limited as agent for <supplier>" and the "Provisional (OQ-29)" pill;
@@ -1004,7 +1037,7 @@ the exception: use the `trigger` step)
   and Admin line, `data-split` none | fits | doesNotFit), `procedure-split-summary` (the value), `procedure-split-button`
   (web Split or Change; the whole Paid by row on mobile, `data-split`), the compact stack line `procedure-split`, `split-sheet`,
   `split-fee`, `split-row` (`data-row`), `split-share-input`, `split-rest-toggle`, `split-amount`, `split-total`,
-  `split-add-party`, `split-save`, `split-remove`, `party-picker`, `party-option`, `party-picker-search`, test id
+  `split-add-party`, `split-remove`, `party-picker`, `party-option`, `party-picker-search`, test id
   `party-picker-toggle`.
 - Catch-up Phase U3: `aa-fee-run-result` and `aa-fee-settings-result` (AA fees screen: the run result line and the settings save line, both the shared `ResultLine`; refusals there are `FormError`, `role=alert`).
 - Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,

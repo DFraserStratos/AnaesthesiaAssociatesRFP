@@ -92,7 +92,7 @@ export interface Contract {
   /** AR-58 `holderId`: the Party that holds it; fixed after creation. */
   holderId: PartyId
   /**
-   * AR-58 `billsTo`: its holder, or the payer on the Booking (D2, US-04.2.1).
+   * AR-58 `billsTo`: its holder, or the Procedure's payer (D2, US-04.2.1).
    * Decides where the Contract sits on the step rail (`destinationOf`) and,
    * who a Procedure on it bills (`billablePartyForProcedure`, catch-up Phase 21).
    */

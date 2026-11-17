@@ -169,7 +169,7 @@
     {
       "name": "split-button",
       "app": "admin",
-      "caption": "A Split button on the Procedure: each share typed in $ or %, no setting on the Contract",
+      "caption": "Pressing Split on the Paid by line opens the sheet's split section: each share typed in $ or %, no setting on the Contract",
       "start": "/admin/day/2026-07-20/bookings/BK0025",
       "states": [
         {
@@ -186,7 +186,7 @@
         },
         {
           "state": "amount",
-          "caption": "The Split sheet: nib's share typed as $132.50, Alan Prentice takes the rest",
+          "caption": "The Paid by sheet's split section: nib's share typed as $132.50, Alan Prentice takes the rest",
           "steps": [
             {
               "scroll": "[data-shot=procedure-split-row]"
@@ -249,7 +249,7 @@
         },
         {
           "state": "open",
-          "caption": "The Split sheet: each party's share typed in $ or %, one taking the rest",
+          "caption": "The Paid by sheet's split section: each party's share typed in $ or %, one taking the rest",
           "steps": [
             {
               "scroll": "[data-shot=procedure-split-row]"
@@ -259,6 +259,9 @@
             },
             {
               "wait": 600
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
@@ -287,7 +290,7 @@
         },
         {
           "state": "open",
-          "caption": "The Split sheet: each party's share typed in $ or %, one taking the rest",
+          "caption": "The Paid by sheet's split section: each party's share typed in $ or %, one taking the rest",
           "steps": [
             {
               "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
@@ -297,10 +300,89 @@
             },
             {
               "wait": 600
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
             "[data-aa-mobile-product] [data-shot=split-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "another-person",
+      "app": "admin",
+      "caption": "A share of the fee can go to another person, typed in the split section",
+      "start": "/admin/day/2026-07-20/bookings/BK0025",
+      "states": [
+        {
+          "state": "picker",
+          "caption": "The party picker's last row, \"Another person\"",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            },
+            {
+              "click": "[data-shot=procedure-split-button]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=split-row][data-row=\"1\"] >> [data-testid=party-picker-toggle]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-another-person]"
+          ]
+        },
+        {
+          "state": "person",
+          "caption": "Another person on a share: their name, relationship and an email or NZ Post address, kept with their own payer id",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row]"
+            },
+            {
+              "click": "[data-shot=procedure-split-button]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=split-row][data-row=\"1\"] >> [data-testid=party-picker-toggle]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=split-another-person]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=split-person] >> role=textbox[name=\"Name\"]",
+              "value": "Ruth Prentice"
+            },
+            {
+              "click": "[data-shot=split-person] >> role=button[name=\"Mother\"]"
+            },
+            {
+              "fill": "[data-shot=split-person] >> role=textbox[name=\"Email\"]",
+              "value": "ruth.prentice@example.net"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-person]"
           ]
         }
       ]

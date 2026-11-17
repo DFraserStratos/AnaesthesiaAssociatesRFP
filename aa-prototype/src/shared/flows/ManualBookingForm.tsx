@@ -325,7 +325,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
               {name.trim() !== '' ? name.trim() : 'The patient'}
               <span style={{ color: neutral.slate }}> · Patient</span>
             </span>
-            {/* The record's own contact when the NHI matches one; a new patient's is added on the Booking's Payer row. */}
+            {/* The record's own contact when the NHI matches one; a new patient's is added in each procedure's Paid by. */}
             {knownPatient?.email !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{knownPatient.email}</span>}
             {knownPatient?.postalAddress !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{formatPostalAddress(knownPatient.postalAddress)}</span>}
             {knownPatient?.email === undefined && knownPatient?.postalAddress === undefined && (

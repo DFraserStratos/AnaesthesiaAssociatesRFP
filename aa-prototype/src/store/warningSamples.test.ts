@@ -268,7 +268,7 @@ describe('the base-units sample never half-stages or overwrites a real edit (rev
 
 const gracePayers = (api: BoundAppStore) => proceduresForBooking(api.getState(), GRACE).map((p) => p.payer)
 /** The office changes Grace Park's payer on both Procedures (the offer ticked). */
-function setBookingPayer(api: BoundAppStore, actor: typeof OFFICE_ACTOR, bookingId: string, input: Parameters<typeof setProcedurePayer>[3]) {
+function setFirstProcedurePayer(api: BoundAppStore, actor: typeof OFFICE_ACTOR, bookingId: string, input: Parameters<typeof setProcedurePayer>[3]) {
   const [first, ...rest] = proceduresForBooking(api.getState(), bookingId)
   return setProcedurePayer(api, actor, first!.id, input, rest.map((p) => p.id))
 }
@@ -316,7 +316,7 @@ describe('the child payer sample (catch-up Phase 21; per Procedure since 22a; US
     expect(childWarnings(api, GRACE)[0]!.clearance).toBeDefined()
     editProcedure(api, OFFICE_ACTOR, proceduresForBooking(api.getState(), GRACE)[0]!.id, { billingReference: 'X' })
     expect(childWarnings(api, GRACE)[0]!.clearance).toBeDefined()
-    expect(setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', name: 'Hana Park', relationship: 'Mother', email: 'hana.park@example.net' }).ok).toBe(true)
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', name: 'Hana Park', relationship: 'Mother', email: 'hana.park@example.net' }).ok).toBe(true)
     expect(childWarnings(api, GRACE)).toEqual([])
   })
 
@@ -370,7 +370,7 @@ describe('review fixes (convention 18): samples', () => {
   it('a real edit on a redirected target skips that sample and still stages the others', () => {
     const api = createAppStore()
     // The office updates Hana Park's email on Grace Park's Booking (a real payer edit).
-    setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'Hana Park', relationship: 'Mother', email: 'hana.work@example.net' })
+    setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'Hana Park', relationship: 'Mother', email: 'hana.work@example.net' })
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBeNull()
     expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
     expect(gracePayers(api).every((p) => p.kind === 'other')).toBe(true)

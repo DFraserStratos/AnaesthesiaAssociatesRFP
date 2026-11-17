@@ -24,7 +24,7 @@ const contracts = seed.masters.contracts
 const contract = (id: string): Contract => contracts[id]!
 const PT = 'PT0001'
 const patientBooking: Pick<Procedure, 'payer'> = { payer: { kind: 'patient' } }
-const guardianBooking: Pick<Procedure, 'payer'> = {
+const guardianProcedure: Pick<Procedure, 'payer'> = {
   payer: { kind: 'other', id: 'BP0009', name: 'Jane Doe', relationship: 'Guardian', email: 'jane@example.net' },
 }
 const trust = { line1: 'PO Box 13245', city: 'Christchurch', postcode: '8141' }
@@ -38,12 +38,12 @@ describe('billablePartyForProcedure', () => {
     expect(billablePartyForProcedure(contract('CT-STG-D1'), patientBooking, PT, parties)).toEqual({ kind: 'hospital', id: 'H-STG' })
     expect(billablePartyForProcedure(contract('CT-NIB-D1'), patientBooking, PT, parties)).toEqual({ kind: 'insurer', id: 'I-NIB' })
     // Aria's record folded from the retired master into its Party: its Xero contact never moves.
-    expect(billablePartyForProcedure(contract('CT-ARIA-HOURLY'), guardianBooking, PT, parties)).toEqual({ kind: 'billableParty', id: 'BP0002' })
+    expect(billablePartyForProcedure(contract('CT-ARIA-HOURLY'), guardianProcedure, PT, parties)).toEqual({ kind: 'billableParty', id: 'BP0002' })
   })
 
-  it('bills the payer on the Booking under No contract · RVG: the patient unless another payer is ticked (US-11.2.2 AC2)', () => {
+  it("bills the Procedure's payer under No contract · RVG: the patient unless another payer is ticked (US-11.2.2 AC2)", () => {
     expect(billablePartyForProcedure(contract('CT-NO-CONTRACT'), patientBooking, PT, parties)).toEqual({ kind: 'patient', id: 'PT0001' })
-    expect(billablePartyForProcedure(contract('CT-NO-CONTRACT'), guardianBooking, PT, parties)).toEqual({ kind: 'payer', id: 'BP0009' })
+    expect(billablePartyForProcedure(contract('CT-NO-CONTRACT'), guardianProcedure, PT, parties)).toEqual({ kind: 'payer', id: 'BP0009' })
   })
 
   it("bills the payer for a surgeon's fixed price, No contract · Fixed price, an anaesthetist's own Contract and every prepaid Contract (US-11.2.1; OQ-73, D23)", () => {
@@ -51,7 +51,7 @@ describe('billablePartyForProcedure', () => {
     expect(billablePartyForProcedure(aaFixed, patientBooking, PT, parties)).toEqual({ kind: 'patient', id: 'PT0001' })
     expect(billablePartyForProcedure(contract('CT-SOUTER-RHINO'), patientBooking, PT, parties)).toEqual({ kind: 'patient', id: 'PT0001' })
     expect(prepaid.length).toBeGreaterThan(0)
-    for (const c of prepaid) expect(billablePartyForProcedure(c, guardianBooking, PT, parties)).toEqual({ kind: 'payer', id: 'BP0009' })
+    for (const c of prepaid) expect(billablePartyForProcedure(c, guardianProcedure, PT, parties)).toEqual({ kind: 'payer', id: 'BP0009' })
   })
 
   it('never reads a price or the funder: the same Contract with a different price bills the same party', () => {
@@ -90,7 +90,7 @@ describe('the payer helpers', () => {
     expect(payerDetails({ kind: 'patient' }, patient)).toMatchObject({ isPatient: true, name: 'Wiremu Tane', email: 'w@example.net' })
     expect(payerDetails({ kind: 'patient', email: 'typed@example.net' }, patient).email).toBe('w@example.net')
     expect(payerDetails({ kind: 'patient', email: 'typed@example.net' }, noContact).email).toBe('typed@example.net')
-    expect(payerDetails(guardianBooking.payer, patient)).toMatchObject({ isPatient: false, name: 'Jane Doe', relationship: 'Guardian' })
+    expect(payerDetails(guardianProcedure.payer, patient)).toMatchObject({ isPatient: false, name: 'Jane Doe', relationship: 'Guardian' })
   })
 
   it('payerContactMissing: a billed payer with neither an email nor a postal address (US-11.2.3)', () => {
@@ -115,7 +115,7 @@ describe('the payer helpers', () => {
     const child = { dobISO: '2008-07-22' }
     expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(true) // 17 years, 364 days
     expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-07-22')).toBe(false) // the 18th birthday
-    expect(childPayerOn(guardianBooking, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(false)
+    expect(childPayerOn(guardianProcedure, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(false)
     expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-STG-D1'), '2026-07-21')).toBe(false)
   })
 

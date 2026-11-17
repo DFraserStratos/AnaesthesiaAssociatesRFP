@@ -65,8 +65,8 @@ Bookings and capture the data AA needs for billing.
    as typed).
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
-11. Name another payer on a Booking (**Payer → Change → Different payer**: a parent, a guardian, a
-    benefactor or a family trust), and enter the insurer's approval number on the day when she learns
+11. Name another payer on a Procedure (**Paid by → Change**, a bottom sheet: a parent, a guardian, a
+    benefactor or a family trust; offered to the Booking's other Procedures with the same payer), and enter the insurer's approval number on the day when she learns
     it (**Insurer or funder**); she sees the number the Booking holds.
 12. Split a Procedure's fee on her own Booking (**Split** in its Billing card's Paid by: each party's share in
     $ or %, one party taking the rest, each party invoiced separately), before she submits and until
@@ -263,6 +263,7 @@ allowing billing to proceed.
 7. Confirm that the Bookings lock and the List hands to billing.
 8. Later, monitor invoice and integration failures and retry after correction.
 9. Split a Procedure's fee on a Booking when more than one party pays (**Split** in its Billing card's Paid by), before authorising.
+   Change a Procedure's payer there too (a dialog on web) until the List is authorised; each payer gets one invoice.
 10. After the run: the Billing Engine emails each invoice or marks it **To post**; the office does not
     email invoices itself. It uses **Resend** on the invoice rail, and on **No invoice address** types
     an address and selects **Send**.
@@ -341,7 +342,7 @@ anaesthetist's name with AA as agent, and a fee can be split on the Booking.
 |---|---|
 | Surgeon or surgeon-room coordinator | Requests a Free List, phones changes and emails PDF Lists/Bookings |
 | Hospital/PAS | Sends new, changed, rescheduled and cancelled appointments |
-| Patient or another payer | The payer named on the Booking (the patient, or a parent, guardian, benefactor or family trust); receives the invoice when the Contract does not bill its holder |
+| Patient or another payer | The payer named on each Procedure (the patient, or a parent, guardian, benefactor or family trust); receives the invoice when the Contract does not bill its holder |
 | Hospital or other Party | May receive and pay the invoice where a Contract bills it |
 | Insurer | A Party; invoiced only where a Contract bills it |
 | Patient's reimbursement insurer | Named on the Booking with its approval number; reimburses the patient, who is invoiced under No contract · RVG like any patient (the AIA Booking) |

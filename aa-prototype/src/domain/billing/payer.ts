@@ -1,8 +1,8 @@
 /**
  * The postal address and contact rules for the payer on a Booking (catch-up
  * Phase 21; US-11.2.2, US-11.2.3; Greg, 28 October: "using the NZ Post
- * standard... address format"). Pure: the payer sheet, the patient sheet,
- * `setBookingPayer` and the invoice all read these, never their own copy.
+ * standard... address format"). Pure: the Paid by sheet, the patient sheet,
+ * `setProcedurePayer` and the invoice all read these, never their own copy.
  */
 
 import type { PostalAddress } from '../types'

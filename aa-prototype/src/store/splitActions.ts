@@ -7,13 +7,14 @@
  * the Contract.
  */
 
-import type { CounterpartyRef, FeeSplit } from '../domain/types'
+import type { CounterpartyRef, FeeSplit, OtherPayer, SplitShare, SplitShareBasis } from '../domain/types'
 import { feeContextFor } from '../domain/billing/validateBookingForBilling'
 import { feeFor, type FeeResult } from '../domain/billing/fee'
 import { NO_FEE_TO_SPLIT_MESSAGE, resolveSplit } from '../domain/billing/splitShare'
 import { billablePartyForProcedure } from '../domain/billing/whoIsBilled'
-import { isBillablePartyOn, partyOptionsFor, type PartyOption } from '../domain/billing/partyOptions'
+import { isShareBillableOn, partyOptionsFor, type PartyOption } from '../domain/billing/partyOptions'
 import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
+import { payerFromInput, payerInputRefusal, sameData, sameName, type PayerInput } from './payerActions'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
 import { billingContextForBooking, bookingRequiresPrepayment, counterpartyName } from './selectors'
@@ -52,17 +53,69 @@ export function partyOptionsForProcedure(state: AppState, procedureId: string): 
   return partyOptionsFor(procedure, booking.patientId, contractPartyFor(state, procedureId), state.masters.parties, (ref) => counterpartyName(state, ref, booking.id))
 }
 
+/** "Another person" as a form hands it in (catch-up Phase 22a): no id for a new person, the share's id when editing them. */
+export type SplitPersonInput = Extract<PayerInput, { kind: 'other' }>
+
+/** A share as the Split sheet hands it in: a party from the picker, or another person as typed. */
+export type SplitShareInput = SplitShare | { person: SplitPersonInput; basis: SplitShareBasis }
+
+export interface FeeSplitInput {
+  shares: SplitShareInput[]
+}
+
+/**
+ * The stored shares for the input: each "another person" through
+ * `payerFromInput` (21's contact checks; a new person gets the next `BP####`;
+ * the same person on this split, by id and name, keeps theirs, a renamed one
+ * is a new person). A stored share naming a person must be one this split
+ * already holds (the sheet re-sends shares it did not touch).
+ */
+function resolveShares(
+  input: FeeSplitInput,
+  current: readonly SplitShare[],
+  counters: Record<string, number>,
+): { ok: true; shares: SplitShare[]; counters: Record<string, number> } | { ok: false; outcome: Outcome } {
+  const held = new Map<string, OtherPayer>()
+  for (const share of current) if (share.person !== undefined) held.set(share.person.id, share.person)
+  let next = counters
+  const shares: SplitShare[] = []
+  for (const share of input.shares) {
+    if ('party' in share) {
+      // A stored person is re-sent as this split holds them, never with details changed here (an edit comes as typed input).
+      const person = share.person !== undefined ? held.get(share.person.id) : undefined
+      if (share.person !== undefined && person === undefined) return { ok: false, outcome: refuse('partyUnknown', 'Choose each party from the list.') }
+      shares.push({ party: { ...share.party }, basis: { ...share.basis }, ...(person !== undefined ? { person } : {}) })
+      continue
+    }
+    const refused = payerInputRefusal(share.person)
+    if (refused !== null) return { ok: false, outcome: refused }
+    // One person, one share: the same held id typed twice is refused (two sets of details for one id).
+    if (share.person.id !== undefined && input.shares.filter((s) => !('party' in s) && s.person.id === share.person.id).length > 1) {
+      return { ok: false, outcome: refuse('partyUnknown', 'Each person can take one share only.') }
+    }
+    const before = share.person.id !== undefined ? held.get(share.person.id) : undefined
+    const keepsId = before !== undefined && sameName(before.name, share.person.name)
+    const resolved = payerFromInput(keepsId ? share.person : { ...share.person, id: undefined }, next)
+    next = resolved.counters
+    const person = resolved.payer as OtherPayer
+    shares.push({ party: { kind: 'payer', id: person.id }, basis: { ...share.basis }, person })
+  }
+  return { ok: true, shares, counters: next }
+}
+
 /**
  * Set (or with `null` remove) the split of one Procedure's fee. Refuses an
  * unresolvable split with `resolveSplit`'s reason, a prepaid Procedure, and a
- * Procedure with no fee yet. Audited `procedure.split`.
+ * Procedure with no fee yet. A share may name "another person" (catch-up
+ * Phase 22a; US-08.2.3, DM-28), kept on the share with their own `BP####` id.
+ * Audited `procedure.split`.
  */
 export function setProcedureSplit(
   api: AppStoreApi,
   actor: Actor,
   bookingId: string,
   procedureId: string,
-  split: FeeSplit | null,
+  input: FeeSplitInput | FeeSplit | null,
 ): Outcome {
   const state = api.getState()
   const found = getBooking(state, bookingId)
@@ -73,22 +126,31 @@ export function setProcedureSplit(
   if (rights !== null) return rights
   if (found.booking.cancellation !== undefined) return refuse('bookingCancelled', 'This Booking is cancelled.')
 
-  if (split === null) {
+  let split: FeeSplit | null = null
+  let counters = state.counters
+  if (input === null) {
     if (procedure.split === undefined) return ok(undefined)
   } else {
     if (bookingRequiresPrepayment(state, bookingId)) return refuse('prepaidProcedure', PREPAID_PROCEDURE_MESSAGE)
     const fee = procedureFeeNow(state, procedureId)
     if (fee === undefined || fee.total <= 0) return refuse('noFee', NO_FEE_TO_SPLIT_MESSAGE)
-    if (split.shares.some((share) => !isBillablePartyOn(procedure, found.booking.patientId, share.party, state.masters.parties))) {
+    const shares = resolveShares(input, procedure.split?.shares ?? [], state.counters)
+    if (!shares.ok) return shares.outcome
+    if (shares.shares.some((share) => !isShareBillableOn(procedure, found.booking.patientId, share, state.masters.parties))) {
       return refuse('partyUnknown', 'Choose each party from the list.')
     }
-    const resolved = resolveSplit(fee.total, split.shares)
+    const resolved = resolveSplit(fee.total, shares.shares)
     if (!resolved.ok) return refuse('splitInvalid', resolved.reason)
+    split = { shares: shares.shares }
+    counters = shares.counters
   }
+
+  // The same split re-saved writes nothing (no audit, no stamp).
+  if (split !== null && procedure.split !== undefined && sameData(split, procedure.split)) return ok(undefined)
 
   const next = { ...procedure }
   if (split === null) delete next.split
-  else next.split = { shares: split.shares.map((s) => ({ party: { ...s.party }, basis: { ...s.basis } })) }
+  else next.split = split
 
   mutate(
     api,
@@ -100,7 +162,7 @@ export function setProcedureSplit(
       before: { split: procedure.split ?? null },
       after: { split: next.split ?? null },
     },
-    (s) => ({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
+    (s) => ({ counters, schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
   )
   return ok(undefined)
 }

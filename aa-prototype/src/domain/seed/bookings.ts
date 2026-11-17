@@ -644,7 +644,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   const souterMon20Pm = projectedListId(ANAE.souter, MON20, 'PM')
 
   // Fee: B4 + T4 (60 min) + M0 (AS1) = 8 units x $26.50 = $212.00, on No
-  // contract · RVG, which bills the payer on the Booking (Alan Prentice).
+  // contract · RVG, which bills the Procedure's payer (Alan Prentice).
   // The office split the fee on the Booking (catch-up Phase 22; US-08.2.3):
   // nib pays $132.50 and Alan the rest, each invoiced on its own invoice.
   const feeSplitBooking = addBooking({
@@ -716,7 +716,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // second procedure, so the old ordinal row went and the concurrent hernia
   // repair is on No contract · RVG, priced at RVG under today's
   // additional-procedure rule (time units only) until Phase 23. No contract ·
-  // RVG is AA's and bills the payer on the Booking (AA, its holder, is never
+  // RVG is AA's and bills the Procedure's payer (AA, its holder, is never
   // billed); since catch-up Phase 21 the bypass bills the payer too.
   const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
   const bariatricBooking = addBooking({
@@ -734,7 +734,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(TUE14, '10:15'),
     asaClass: 'AS3',
     governingContractId: CONTRACT.doyleBariatric,
-    // Doyle's price list bills the payer on the Booking (catch-up Phase 21,
+    // Doyle's price list bills the Procedure's payer (catch-up Phase 21,
     // US-11.2.1): until then the retired contract-holder route billed Mr Doyle.
     billingReference: 'BAR-2026-014',
   })

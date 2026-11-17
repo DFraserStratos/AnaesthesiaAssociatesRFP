@@ -55,6 +55,10 @@ describe('payerForNewProcedure: the one copy rule (US-11.2.2 "Procedure added la
     expect(payerForNewProcedure([proc('P1', hana, 'CT-STG-D1')], contracts, PT)).toEqual({ kind: 'patient' })
     expect(payerForNewProcedure([], contracts, PT)).toEqual({ kind: 'patient' })
   })
+  it('the patient it takes keeps the details typed for them on this Booking (one record per payer; review fix)', () => {
+    const typedPatient: ProcedurePayer = { kind: 'patient', email: 'typed@example.net' }
+    expect(payerForNewProcedure([proc('P1', typedPatient, 'CT-NO-CONTRACT'), proc('P2', hana, 'CT-NO-CONTRACT')], contracts, PT)).toBe(typedPatient)
+  })
 })
 
 describe('the contact rule and the child warning per Procedure (US-11.2.3, US-11.2.4, US-13.7.1)', () => {

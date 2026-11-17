@@ -559,9 +559,16 @@ already seeded.
   warning from the Day view's To-do card, then authorise the List anyway: nothing blocks. Its invoices
   show the two other delivery cases: the Whitcombe Family Trust's is **To post** (a **Simulated
   posting** badge and a **Provisional (OQ-122)** pill), and Kevin Doherty's raises **No invoice
-  address**, where the office types an address on the Delivery card and selects **Send**. On Admin Day,
+  address**, where the office types an address on the Delivery card and selects **Send**. The payer
+  now sits on each Procedure, on its **Paid by** line (Review's rows show it too: "Patient pays",
+  "Payer: Whitcombe Family Trust (Family trust)", "Paid by nib"). Joyce Halvorsen's 13:30 Booking has
+  two Procedures with Erik Halvorsen (Son) typed in separately on each, so authorising raises two
+  invoices, one per payer: "payers are never matched on name or email". The child warning ("Under 18")
+  shows on each of her Procedures, with one to-do row per Booking. Kevin Doherty's **Email or postal
+  address needed** clears once a postal address is typed on his Paid by. On Admin Day,
   **Demo actions → Raise sample warnings** brings a child payer warning back on Grace Park's Booking
-  (Fri 24), and **Clear sample warnings** puts Hana Park back as her payer.
+  (Fri 24: two Procedures, both paid by Hana Park, Mother), and **Clear sample warnings** puts Hana
+  Park back as the payer.
 
 **Discovery points:** settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
 before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase
@@ -633,7 +640,8 @@ until you authorise the Lists live; the run then sends them.
     patient's layout, the same lines without the BTM breakdown or the strip.
 - **Say:** "The Billing Engine, not Xero, produces and sends every invoice as part of the run, in Dr
   Souter's name with her GST number and AA as agent. Each Procedure's Contract decides who is billed:
-  its holder when the Contract bills its holder, otherwise the payer named on the Booking. The layout
+  its holder when the Contract bills its holder, otherwise the Procedure's payer, and Procedures that
+  share a payer share one invoice. The layout
   follows the Contract (the holder's when it bills its holder) and GST is always added at the foot;
   the Party decides whether its invoice goes by email or post, and a payer with only a postal address
   gets 'To post'. Alan's knee arthroscopy was split on the Booking: nib pays $132.50 and Alan the rest,
@@ -647,11 +655,13 @@ until you authorise the Lists live; the run then sends them.
   soon as the office authorises them, and their invoices show in her Balances at once, with no Next
   morning needed.
 - **Optional aside (before authorising the PM List):** open Alan's Booking (**Admin → Day → Mon 20
-  Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Change** (on the phone, tap the Paid by row). The "Split the fee" sheet shows the fee, $212.00, and each party
+  Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Change** (on the phone, tap the Paid by row): the one Paid by sheet asks who pays, then the
+  split. The split section shows the fee, $212.00, and each party
   with a $ or % share or **Takes the rest**, every amount live, and "$212.00 of $212.00". Type nib's
   share as **62.5%** instead of $132.50: the same split. Any user can split, including the anaesthetist
   on her own Booking (phone and web) until the List is authorised, and there is no split setting on
-  the Contract. (Saving nib at 60% instead gives $127.20 and $84.80, $146.28 and $97.52 after GST, so
+  the Contract. A share can also go to **Another person** (a name and an email or postal address).
+  (Saving nib at 60% instead gives $127.20 and $84.80, $146.28 and $97.52 after GST, so
   the fixed figures above change; **Remove split** is on the same sheet.)
 - **Optional aside:** the GST number is a field on the Admin anaesthetist record (**Master data →
   Anaesthetists**, the GST number column; Dr Oliver Strand reads "Not held"), not on the anaesthetist's

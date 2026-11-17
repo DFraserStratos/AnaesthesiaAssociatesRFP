@@ -41,7 +41,7 @@ const DOYLE_NOW: BookingInvoicesRow = {
   },
 }
 
-/** Prentice's fee-split Booking (catch-up Phase 22): nib's share unchanged, the rest now to the patient, the payer on the Booking. */
+/** Prentice's fee-split Booking (catch-up Phase 22): nib's share unchanged, the rest now to the patient, the Procedure's payer. */
 const PRENTICE = 'BK0025'
 const PRENTICE_REST_NOW = { ref: 'patient:PT0011', name: 'Alan Prentice', contactNumber: 'PT0011', contactName: 'Patient PT0011', subtotal: 79.5, total: 91.43, procedures: ['P0026'] }
 const PRENTICE_REST_BEFORE = { ref: 'hospital:H-STG', name: "St George's", contactNumber: 'H-STG', contactName: "St George's", subtotal: 79.5, total: 91.43, procedures: ['P0026'] }
@@ -84,7 +84,7 @@ describe('Phase 21 who-is-billed parity', () => {
     expect(before.issued.some((i) => i.bookingId === PRENTICE)).toBe(false)
   })
 
-  it("bills Doyle's bariatric Booking to the payer on the Booking, at his price list (US-11.2.1)", () => {
+  it("bills Doyle's bariatric Booking to the Procedure's payer, at his price list (US-11.2.1)", () => {
     expect(now.bookings.find((r) => r.bookingId === DOYLE)).toEqual(DOYLE_NOW)
     // No issued invoice was Doyle's, so none moves.
     expect(before.issued.some((i) => i.bookingId === DOYLE)).toBe(false)

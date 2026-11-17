@@ -18,8 +18,8 @@ interface EditBillingSetupSheetProps {
 /**
  * "Contract and reference" (catch-up Phase 20; 3rd review #1 re-based): the
  * Procedure's one Contract (read-only here; chosen on the step rail) and the
- * holder's billing reference. The payer lives on the Booking since catch-up
- * Phase 21 (the Payer section, `setBookingPayer`): no guardian select and no
+ * holder's billing reference. The payer lives on each Procedure since catch-up
+ * Phase 22a (its Paid by line, `setProcedurePayer`): no guardian select and no
  * "New guardian" here. The Contract decides where the invoice goes.
  */
 export function EditBillingSetupSheet({ open, procedure, actor, onClose }: EditBillingSetupSheetProps) {

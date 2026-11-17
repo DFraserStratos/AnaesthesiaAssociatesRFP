@@ -201,7 +201,11 @@ export {
   partyOptionsForProcedure,
   procedureFeeNow,
   setProcedureSplit,
+  type FeeSplitInput,
+  type SplitPersonInput,
+  type SplitShareInput,
 } from './splitActions'
+export { savePaidBy, type PaidByChange } from './paidByActions'
 export { addDayNote, initialsFor } from './dayNoteActions'
 export {
   createHospital,
@@ -386,7 +390,7 @@ export * from './lookback'
 // The step rail's writes and reads (catch-up Phase 20).
 export { contractPickRefusal, railActorOf, setEnteredPrice, setProcedureContract, setRailAnswers } from './contractSelectionActions'
 export { CHOOSE_INSURER_OR_FUNDER, setBookingInsurance, type InsuranceInput } from './insuranceActions'
-export { PAYER_LOCKED_BY_PREPAYMENT, PAYER_NAME_REQUIRED, payerAuditText, payerFromInput, payerInputRefusal, setProcedurePayer, type PayerInput } from './payerActions'
+export { PAYER_LOCKED_BY_PREPAYMENT, PAYER_NAME_REQUIRED, payerAuditText, payerFromInput, payerInputRefusal, sameName, setProcedurePayer, type PayerInput } from './payerActions'
 export {
   billablePartyForProcedureId,
   contractRailForNewBooking,

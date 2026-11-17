@@ -6,7 +6,7 @@
     {
       "name": "invoices-by-party",
       "app": "admin",
-      "caption": "One invoice per billable party: Alan Prentice's Booking raises one to nib and one to Alan Prentice",
+      "caption": "One invoice per payer or holder: Alan Prentice's Booking raises one to nib and one to Alan Prentice",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -104,6 +104,61 @@
           ],
           "highlight": [
             "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two-payers",
+      "app": "admin",
+      "caption": "Joyce Halvorsen's two Procedures each name Erik Halvorsen as payer, typed twice, so they are two payers",
+      "start": "/admin/day/2026-07-17/bookings/BK0183",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=paid-by-payer]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two-payer-invoices",
+      "app": "admin",
+      "caption": "Procedures sharing a payer share an invoice; a payer typed separately gets their own: Erik Halvorsen has two invoices",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-45178-2026-07-17-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=invoice-list-table-shell] tr:has-text(\"Erik Halvorsen\")"
           ]
         }
       ]

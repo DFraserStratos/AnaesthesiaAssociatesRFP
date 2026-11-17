@@ -8,11 +8,8 @@
  * same payer; a payer typed in separately is a new id even with the same name
  * and email. Names and emails are never compared here.
  *
- * PROVISIONAL (OQ-140, D85): a payer on each Procedure, with a change offered
- * to the Booking's other Procedures holding the same payer, each ticked by
- * default and never forced. This module and `setProcedurePayer` are where a
- * different answer lands: going back to one payer per Booking is the offer
- * always applying to every Procedure.
+ * Why the offer exists and what changes if AA answers OQ-140 otherwise: the
+ * comment beside `setProcedurePayer` (store/payerActions.ts).
  */
 
 import type { Contract, CounterpartyRef, Procedure, ProcedurePayer } from '../types'
@@ -65,7 +62,8 @@ export function payerOfferFor<P extends Pick<Procedure, 'id' | 'payer' | 'govern
  * The payer a Procedure added later takes (US-11.2.2 "Procedure added later";
  * the one copy rule): the payer of the Booking's Procedures that bill the
  * payer when they all share one identity, copied with its id and details;
- * otherwise the patient. A Procedure with no Contract yet counts with those
+ * otherwise the patient, with any details typed for them on this Booking
+ * (one record per payer). A Procedure with no Contract yet counts with those
  * that bill the payer (our reading, as the offer); holder-billed ones never
  * count.
  */
@@ -74,10 +72,12 @@ export function payerForNewProcedure(
   contracts: ContractsById,
   patientId: string,
 ): ProcedurePayer {
+  // The patient as this Booking already holds them (one record per payer on a Booking), else bare.
+  const patient = (): ProcedurePayer => procedures.find((p) => p.payer.kind === 'patient')?.payer ?? { kind: 'patient' }
   const billed = procedures.filter((p) => !billsItsHolder(p, contracts))
   const first = billed[0]
-  if (first === undefined) return { kind: 'patient' }
+  if (first === undefined) return patient()
   const key = payerKey(first.payer, patientId)
-  if (!billed.every((p) => payerKey(p.payer, patientId) === key)) return { kind: 'patient' }
+  if (!billed.every((p) => payerKey(p.payer, patientId) === key)) return patient()
   return first.payer
 }

@@ -270,6 +270,9 @@ export type ProcedurePayer =
       phone?: string
     }
 
+/** A payer who is not the patient: a Procedure's other payer, or a split share's "another person". */
+export type OtherPayer = Extract<ProcedurePayer, { kind: 'other' }>
+
 /** Who an invoice was addressed to when it was raised (catch-up Phase 21): the payer's details stay with the debt. Phase 22 sends from it. */
 export interface InvoiceBilledTo {
   name: string
@@ -1050,6 +1053,13 @@ export interface SplitShare {
   /** Who pays this share: the same reference the invoice build bills (`billablePartyForProcedure`). */
   party: CounterpartyRef
   basis: SplitShareBasis
+  /**
+   * "Another person" (catch-up Phase 22a; US-08.2.3, DM-28): a person named on
+   * this share alone, with their own `BP####` id and contact; `party` is then
+   * `{ kind: 'payer', id: person.id }`. Never the Procedure's payer, never
+   * matched on name or email.
+   */
+  person?: OtherPayer
 }
 
 /** A Procedure's fee split (US-08.2.3): the maths lives only in `domain/billing/splitShare.ts`. */

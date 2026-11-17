@@ -1,8 +1,9 @@
 /**
- * Choose who an invoice goes to (catch-up Phase 22; the Split sheet's party
- * field, and the "party search" Phases 38b, 39 and 39b reuse): the payer on
- * the Booking and the Contract's party first, then every Party, searchable by
- * name. Pure props: the options come from one pure selector
+ * Choose who an invoice goes to (catch-up Phase 22; the split's party field,
+ * and the "party search" Phases 38b, 39 and 39b reuse): the Procedure's payer
+ * and the Contract's party first, then every Party, searchable by name; with
+ * `onAnotherPerson`, a last row "Another person" (catch-up Phase 22a,
+ * US-08.2.3) for someone who is no Party, typed by the caller. Pure props: the options come from one pure selector
  * (`partyOptionsFor`, through the store's `partyOptionsForProcedure`); it
  * creates no party record. PWA-safe (no admin import).
  */
@@ -23,12 +24,14 @@ export interface PartyPickerProps {
   /** Parties to leave out (already chosen elsewhere). */
   exclude?: readonly CounterpartyRef[]
   shot?: string
+  /** Offer "Another person" as the last row (the caller then asks for their details). Omitted: no such row. */
+  onAnotherPerson?: () => void
 }
 
 const same = (a: CounterpartyRef | null | undefined, b: CounterpartyRef | null | undefined): boolean =>
   a != null && b != null && a.kind === b.kind && a.id === b.id
 
-export function PartyPicker({ options, value, onChange, label, exclude = [], shot = 'party-picker' }: PartyPickerProps) {
+export function PartyPicker({ options, value, onChange, label, exclude = [], shot = 'party-picker', onAnotherPerson }: PartyPickerProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const listId = useId()
@@ -38,7 +41,7 @@ export function PartyPicker({ options, value, onChange, label, exclude = [], sho
     query,
   )
   const groups: { title: string; rows: PartyOption[] }[] = [
-    { title: 'On this Booking', rows: shown.filter((o) => o.group === 'booking') },
+    { title: 'On this procedure', rows: shown.filter((o) => o.group === 'booking') },
     { title: 'Parties', rows: shown.filter((o) => o.group === 'parties') },
   ]
 
@@ -138,6 +141,35 @@ export function PartyPicker({ options, value, onChange, label, exclude = [], sho
             )}
             {shown.length === 0 && <div style={{ fontSize: 13, color: neutral.slate, padding: 8 }}>No party matches that name.</div>}
           </div>
+          {onAnotherPerson !== undefined && (
+            <button
+              type="button"
+              data-shot="split-another-person"
+              onClick={() => {
+                onAnotherPerson()
+                setOpen(false)
+                setQuery('')
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: 2,
+                minHeight: 44,
+                padding: '6px 8px',
+                border: 'none',
+                borderTop: `1px solid ${neutral.line}`,
+                borderRadius: 0,
+                background: 'transparent',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: accent.base }}>Another person</span>
+              <span style={{ fontSize: 11.5, color: neutral.slate }}>Someone who is not listed: type their name and contact</span>
+            </button>
+          )}
         </div>
       )}
     </div>

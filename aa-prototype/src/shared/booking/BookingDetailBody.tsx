@@ -3,13 +3,7 @@ import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, Users, XCircle
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
-import {
-  childPayerOn,
-  approvalNumberMissing,
-  onlyHoldersBilled,
-  payerContactMissing,
-  payerDetails,
-} from '../../domain/billing'
+import { approvalNumberMissing } from '../../domain/billing'
 import { completionFailuresFor, type CompletionFailure } from '../../domain/billing/completion'
 import {
   addPostOpAddendum,
@@ -41,7 +35,6 @@ import {
   CancelBookingSheet,
   EditPatientSheet,
   MoveBookingToColleagueSheet,
-  PayerSheet,
   FunderSheet,
   AlertOfficeEntry,
   OfficeAlertLine,
@@ -51,7 +44,6 @@ import {
 } from '../flows'
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
-import { PayerDetailsView } from './PayerDetailsView'
 import { FunderDetailsView } from './FunderDetailsView'
 import { contractAllowedOn, contractChangeRefusal, railAnswersFor } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
@@ -75,7 +67,6 @@ type SheetState =
   | 'none'
   | 'cancel'
   | 'patient'
-  | 'payer'
   | 'funder'
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
 
@@ -617,25 +608,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           )}
         </div>
       </Section>
-      {/* The payer on the Booking (catch-up Phase 21; US-11.2.2 to US-11.2.4):
-          who is invoiced when a Contract does not bill its holder. The office
-          and the anaesthetist change it until AUTHORISED. No money. */}
-      <Section
-        label="Payer"
-        shot="booking-payer-row"
-        action={canEdit ? <EditLink label="Change" ariaLabel="Change the payer" onClick={() => setSheet('payer')} /> : undefined}
-      >
-        {/* INTERIM until catch-up Phase 22a session 2 moves the payer into each Procedure's Paid by: the first Procedure's payer. */}
-        {procedures[0] !== undefined && (
-          <PayerDetailsView
-            details={payerDetails(procedures[0].payer, patient)}
-            // The office alone is told a holder pays (US-15.0.1: no holder billing setting on anaesthetist screens).
-            holdersOnly={isOffice && onlyHoldersBilled(procedures, masters.contracts)}
-            contactMissing={procedures.some((p) => payerContactMissing(p, patient, contractOfProcedure(p, masters.contracts)))}
-            child={procedures.some((p) => childPayerOn(p, patient, contractOfProcedure(p, masters.contracts), list.dateISO))}
-          />
-        )}
-      </Section>
+      {/* The payer is on each Procedure, in its Billing card's Paid by line (catch-up Phase 22a; US-11.2.2):
+          the Booking holds only the insurer or funder and its approval number (US-11.4.3, D28). */}
       {/* The insurer or funder and the approval number (catch-up Phase 21;
           US-11.4.3): the office and, on the day, the anaesthetist record
           them; the anaesthetist sees the number. Never who is invoiced. */}
@@ -862,9 +836,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         <EditPatientSheet open={sheet === 'patient'} patient={patient} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
       )}
       {!cancelled && (
-        <PayerSheet open={sheet === 'payer'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
-      )}
-      {!cancelled && (
         <FunderSheet open={sheet === 'funder'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
       )}
       {typeof sheet === 'object' && sheet.kind === 'removeProcedure' && proceduresRecord[sheet.procedureId] !== undefined && (
@@ -908,9 +879,4 @@ function Stepper({ label, icon, onClick }: { label: string; icon: React.ReactNod
       {icon}
     </button>
   )
-}
-
-/** A Procedure's Contract, if chosen (INTERIM helper for the Booking's Payer section until catch-up Phase 22a session 2). */
-function contractOfProcedure<C>(p: { governingContractId?: string }, contracts: Readonly<Record<string, C>>): C | undefined {
-  return p.governingContractId !== undefined ? contracts[p.governingContractId] : undefined
 }

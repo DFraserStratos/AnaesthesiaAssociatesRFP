@@ -152,7 +152,9 @@ export function createBooking(
     counters = procAlloc.counters
     const procedureId = procAlloc.id
     const atISO = clockISO(s.clock)
-    const payerAlloc = payerFromInput(input.payer ?? { kind: 'patient' }, counters)
+    // A new Booking's other payer is always a new person: a passed id is never reused (no other Booking's Xero contact).
+    const formPayer = input.payer ?? { kind: 'patient' as const }
+    const payerAlloc = payerFromInput(formPayer.kind === 'other' ? { ...formPayer, id: undefined } : formPayer, counters)
     counters = payerAlloc.counters
 
     const booking: Booking = {

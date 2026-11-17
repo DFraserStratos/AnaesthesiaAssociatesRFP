@@ -1,9 +1,9 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * Catch-up Phase 22: the Split button (US-08.2.3) on a Procedure's Contract
- * part, the office's on the Admin Booking detail and the anaesthetist's on the
- * phone, and the Master data Contracts table's derived Layout and Delivery
+ * Catch-up Phase 22: the Split (US-08.2.3), the split section of the Paid by
+ * sheet since catch-up Phase 22a, the office's on the Admin Booking detail and
+ * the anaesthetist's on the phone, and the Master data Contracts table's derived Layout and Delivery
  * columns (US-04.2.8). Prentice's Booking (BK0025, Souter Mon 20 PM) is seeded
  * split: nib $132.50, Alan Prentice the rest of $212.00.
  */
@@ -23,7 +23,8 @@ test('the office splits a fee on the Admin Booking detail', async ({ page }) => 
   await expect(page.getByText(/^Funders$/)).toHaveCount(0)
 
   await page.locator('[data-shot="procedure-split-button"]').click()
-  const sheet = page.locator('[data-shot="split-sheet"]')
+  const paidBy = page.locator('[data-shot="paid-by-sheet"]')
+  const sheet = paidBy.locator('[data-shot="split-sheet"]')
   await expect(sheet).toBeVisible()
   await expect(sheet.locator('[data-shot="split-fee"]')).toHaveText('$212.00')
   await expect(sheet.locator('[data-shot="split-amount"]')).toHaveText(['$132.50', '$79.50'])
@@ -51,14 +52,16 @@ test('the office splits a fee on the Admin Booking detail', async ({ page }) => 
 
   // nib 60% and save.
   await expect(sheet.locator('[data-shot="split-amount"]')).toHaveText(['$127.20', '$84.80'])
-  await sheet.getByRole('button', { name: 'Save split' }).click()
-  await expect(sheet).toHaveCount(0)
+  await paidBy.locator('[data-shot="paid-by-save"]').click()
+  await expect(paidBy).toHaveCount(0)
   await expect(summary).toHaveText('nib $127.20, Alan Prentice $84.80 (the rest)')
 
-  // Remove split: invoiced in full to the payer.
+  // Remove split, then Save: invoiced in full to the Procedure's payer.
   await page.locator('[data-shot="procedure-split-button"]').click()
-  await page.locator('[data-shot="split-sheet"]').getByRole('button', { name: 'Remove split' }).click()
-  await expect(summary).toHaveText('Alan Prentice')
+  await page.locator('[data-shot="split-sheet"]').getByRole('button', { name: 'Remove the split' }).click()
+  await page.locator('[data-shot="paid-by-save"]').click()
+  await expect(summary).toContainText('Alan Prentice')
+  await expect(summary).toContainText('Patient')
 })
 
 test('Master data Contracts: Layout and Delivery are derived, read-only columns', async ({ page }) => {
@@ -83,12 +86,13 @@ test('the anaesthetist splits a fee on the phone, before the List is authorised'
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(800)
 
-  // Paid by is the Billing summary's fourth row on the phone (owner review, idea 6).
+  // Paid by is the Billing summary's last row on the phone (owner review, idea 6).
   const summary = page.locator('[data-shot="procedure-split-summary"]').first()
   await expect(summary).toContainText("St George's")
   await expect(summary).toContainText('Tap to split the fee')
   await page.locator('[data-shot="procedure-split-button"]').first().click()
-  const sheet = page.locator('[data-shot="split-sheet"]')
+  const paidBy = page.locator('[data-shot="paid-by-sheet"]')
+  const sheet = paidBy.locator('[data-shot="split-sheet"]')
   await expect(sheet).toBeVisible()
 
   // The second row: an insurer at 40%; the first (the Contract's party) takes the rest.
@@ -99,8 +103,8 @@ test('the anaesthetist splits a fee on the phone, before the List is authorised'
   await expect(sheet.locator('[data-shot="split-amount"]').nth(1)).not.toHaveText('·')
   await page.waitForTimeout(500)
   await page.screenshot({ path: 'visual/shots/s22-04-mobile-split-sheet.png' })
-  await sheet.getByRole('button', { name: 'Save split' }).click()
-  await expect(sheet).toHaveCount(0)
+  await paidBy.locator('[data-shot="paid-by-save"]').click()
+  await expect(paidBy).toHaveCount(0)
   await expect(summary).toContainText('nib $')
   await expect(summary).toContainText('Split 2 ways')
 })

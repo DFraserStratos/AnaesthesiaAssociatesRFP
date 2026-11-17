@@ -439,8 +439,9 @@ The List reaches `AUTHORISED`.
 2. It reads each Procedure's one Contract; a Procedure with none fails as "Needs an invoice
    destination".
 3. Each Procedure's Contract says who is billed: its holder Party when the Contract bills its holder
-   (a hospital, an insurer, a surgeon group), otherwise the payer named on the Booking: the patient,
-   or whoever the **Different payer** tick names (a parent, a guardian, a benefactor, a family trust).
+   (a hospital, an insurer, a surgeon group), otherwise the Procedure's payer: the patient,
+   or whoever the Paid by sheet names (a parent, a guardian, a benefactor, a family trust). Procedures
+   sharing a payer share one invoice; payers are never matched on name or email.
    A surgeon's fixed price, No contract · RVG, No contract · Fixed price, an anaesthetist's own price
    list and every prepaid Contract bill the payer. The Booking's insurer or funder never decides it.
 4. It calculates the fee from the captured snapshot.
@@ -593,14 +594,16 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   rules add a prepaid procedure with no price and a paying patient with a balance. There is no warning
   for an insurer named without an insurer Contract.
 
-#### Booking setup: the payer and the insurer or funder (catch-up Phase 21)
+#### Booking setup: the payer and the insurer or funder (catch-up Phases 21 and 22a)
 
-- Every new Booking names a payer: the patient, prefilled from the patient record, with no step
-  taken. The add form (manual entry, phone advice, the anaesthetist's ad hoc Booking) and the Booking's
-  **Payer** row offer the **Different payer** tick for someone else who pays.
-- A billed payer needs an email or an NZ Post postal address. The payer sheet asks; Review flags
+- Every Procedure names a payer: the patient, prefilled from the patient record, with no step
+  taken. The office and the anaesthetist change it in **Paid by** (a bottom sheet on the phone, a
+  dialog on web) until the List is AUTHORISED; the change is offered to the Booking's other
+  Procedures with the same payer, and a Procedure added later copies the payer the others share.
+  One invoice and one prepayment invoice per payer.
+- A billed payer needs an email or an NZ Post postal address. The Paid by sheet asks; Review flags
   **Email or postal address needed**; nothing blocks.
-- The Booking's **Insurer or funder** row holds the insurer or funder (a Party) and the approval number,
+- The Booking's **Insurer or funder** row (empty state "None") holds the insurer or funder (a Party) and the approval number,
   from the source data where an intake path carries them (the hospital matching screen, Phase 33) or
   recorded by the office; the anaesthetist sees the number and can enter it on the day. The funder
   marks one path **Suggested** on the step rail and never narrows it.

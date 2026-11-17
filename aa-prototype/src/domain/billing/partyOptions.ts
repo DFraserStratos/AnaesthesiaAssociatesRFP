@@ -14,7 +14,7 @@ import { holderCounterparty, partyForCounterparty, payerCounterparty } from './w
 export interface PartyOption {
   ref: CounterpartyRef
   name: string
-  /** "Payer", "Contract's party", or the Party's kind. */
+  /** "Payer", "Contract's party", or the Party's kind ("Another person" is the picker's own last row, not an option). */
   hint: string
   /** The group a picker shows it under. */
   group: 'booking' | 'parties'
@@ -88,6 +88,21 @@ export function isBillablePartyOn(
   return party !== undefined && !NOT_BILLABLE.has(party.kind)
 }
 
+/**
+ * True when this share can be billed on the Procedure: its party passes
+ * `isBillablePartyOn`, or it names its own "another person" (catch-up Phase
+ * 22a; US-08.2.3) and bills them by that person's id.
+ */
+export function isShareBillableOn(
+  procedure: Pick<Procedure, 'payer'>,
+  patientId: string,
+  share: SplitShare,
+  parties: Readonly<Record<string, Party>>,
+): boolean {
+  if (share.person !== undefined) return share.party.kind === 'payer' && share.party.id === share.person.id
+  return isBillablePartyOn(procedure, patientId, share.party, parties)
+}
+
 /** True when every share's party can still be billed on the Procedure. */
 export function splitPartiesOn(
   procedure: Pick<Procedure, 'payer'>,
@@ -95,5 +110,5 @@ export function splitPartiesOn(
   shares: readonly SplitShare[],
   parties: Readonly<Record<string, Party>>,
 ): boolean {
-  return shares.every((share) => isBillablePartyOn(procedure, patientId, share.party, parties))
+  return shares.every((share) => isShareBillableOn(procedure, patientId, share, parties))
 }

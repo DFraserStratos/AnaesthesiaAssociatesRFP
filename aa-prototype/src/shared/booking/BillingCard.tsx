@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius, semantic, zIndex } from '../../theme/tokens'
 import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
-import type { BillingValidationFailure } from '../../domain/billing'
+import { childPayerOn, payerContactMissing, payerDetails, type BillingValidationFailure } from '../../domain/billing'
 import { NEEDS_PRICE_LABEL, rangeInForce } from '../../domain/billing/priceRanges'
 import { RvgCodeField } from '../capture/ProcedureCodeCard'
 import { TextAction } from '../ui/TextAction'
@@ -134,8 +134,10 @@ function InlineBillingCard(props: BillingCardProps) {
 }
 
 /**
- * "Paid by" (catch-up Phase 22, idea 6): who the fee is invoiced to, or its
- * split, from the stack view; null until the Procedure has a Contract.
+ * "Paid by" (catch-up Phase 22, idea 6; the payer per Procedure since 22a):
+ * who the fee is invoiced to, the payer's name and pills where the Contract
+ * bills the payer, or its split, from the stack view and `whoIsBilled.ts`;
+ * "Payer: not billed yet" until the Procedure has a Contract.
  */
 function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidByRowProps, 'variant'> | null {
   const masters = useAppStore((s) => s.masters)
@@ -148,9 +150,23 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
     () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines } }, procedure.id, surface),
     [masters, procedures, bookings, lists, billingLines, procedure.id, surface],
   )
-  if (view?.contract == null) return null
-  const cancelled = bookings[procedure.bookingId]?.cancellation !== undefined
-  return { contract: view.contract, bookingId: procedure.bookingId, procedureId: procedure.id, actor, canEdit: canEdit && !cancelled }
+  if (view === undefined) return null
+  const booking = bookings[procedure.bookingId]
+  const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
+  const dateISO = booking !== undefined ? lists[booking.listId]?.dateISO : undefined
+  const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
+  const cancelled = booking?.cancellation !== undefined
+  const invoicedKind = view.contract?.invoiced?.kind
+  const details = invoicedKind === 'patient' || invoicedKind === 'payer' ? payerDetails(procedure.payer, patient) : undefined
+  return {
+    contract: view.contract,
+    procedureId: procedure.id,
+    actor,
+    canEdit: canEdit && !cancelled,
+    ...(details !== undefined ? { payer: { name: details.name, ...(details.relationship !== undefined ? { relationship: details.relationship } : {}) } } : {}),
+    contactMissing: payerContactMissing(procedure, patient, contract),
+    child: dateISO !== undefined && childPayerOn(procedure, patient, contract, dateISO),
+  }
 }
 
 /**

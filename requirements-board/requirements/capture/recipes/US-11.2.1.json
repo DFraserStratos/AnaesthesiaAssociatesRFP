@@ -6,21 +6,21 @@
     {
       "name": "default-payer",
       "app": "admin",
-      "caption": "Under No contract · RVG the payer on the Booking is billed: the patient, as the Billing card says",
+      "caption": "Under No contract · RVG the Procedure's payer is billed: the patient, as its Paid by line and Billing card say",
       "start": "/admin/day/2026-07-21/bookings/BK0008",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]",
-            "[data-shot=capture-billing]"
+            "[data-shot=procedure-split-row] >> nth=0",
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]

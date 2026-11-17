@@ -31,12 +31,12 @@ import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChro
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { reviewFlagsForBooking, type ContractChangeRecord, type ReviewFlag } from '../../../domain/billing/reviewFlags'
 import { approvalNumberMissing } from '../../../domain/billing/insurance'
-import { payerDetails } from '../../../domain/billing/whoIsBilled'
+import { PAYER_NOT_BILLED_YET, isPayerBilled, payerDetails } from '../../../domain/billing/whoIsBilled'
 import { formatPostalAddress } from '../../../domain/billing/payer'
 import { isOpen, type Warning } from '../../../domain/warnings'
 import { stampText } from '../../../domain/dateText'
 import type { Notification } from '../../../domain/types'
-import { proceduresForBooking, procedureStackViewFor } from '../../../store/selectors'
+import { procedureStackViewFor } from '../../../store/selectors'
 import { ProcedureStack } from '../../../shared/booking/ProcedureStack'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
@@ -146,7 +146,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         entityLabels = labels
       }
       const alert: Notification | undefined = activeAlertFor(state, { listId, bookingId: booking.id })
-      return { booking, primary, primaryView, totals, flags, changes, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
+      return { booking, primary, primaryView, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
     })
     // The audit feeds the change records; the notifications feed the alerts.
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications])
@@ -326,7 +326,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, totals, flags, changes, procIds, billedText, entityIds, entityLabels, stackViews, alert }) => {
+            {rows.map(({ booking, primary, primaryView, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert }) => {
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -360,7 +360,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                   </td>
                   <td style={{ ...cellStyle, maxWidth: 150 }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{billedText}</div>
-                    <PayerAndInsurer booking={booking} onChange={onOpenBooking !== undefined && !authorised ? () => onOpenBooking(list.dateISO, booking.id) : undefined} />
+                    <InsurerLine booking={booking} />
                   </td>
                   {/* Every Procedure's stack, compact (catch-up Phase 20a; US-07.2.2, US-03.1.9). */}
                   <td data-shot="review-procedures" style={{ ...cellStyle, minWidth: 240, maxWidth: 300 }}>
@@ -371,6 +371,13 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                         return (
                           <div key={i} data-shot="review-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             <ProcedureStack view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
+                            <ReviewPaidBy
+                              procedure={procs[i]!}
+                              child={(warningsByBooking.get(booking.id) ?? []).some((w) => w.ruleId === 'childPayer' && w.procedureId === procedureId && isOpen(w))}
+                              patientId={booking.patientId}
+                              invoicedName={view.contract?.invoiced?.name}
+                              onChange={onOpenBooking !== undefined && !authorised ? () => onOpenBooking(list.dateISO, booking.id) : undefined}
+                            />
                             <ProcedureFlags
                               flags={flags.filter((f) => f.procedureId === procedureId)}
                               change={change}
@@ -565,37 +572,76 @@ function ProcedureFlags({
   )
 }
 
-/** The payer and the insurer or funder (21's), compact for the table, with Change opening the Admin Booking's payer sheet. */
-function PayerAndInsurer({ booking, onChange }: { booking: Booking; onChange?: () => void }) {
+/**
+ * One Procedure's Paid by, compact for the table (catch-up Phase 22a;
+ * US-07.2.2): where its Contract bills the payer, the payer and how they are
+ * invoiced (21's delivery rule: email where there is one, else post), with
+ * Change opening the Admin Booking, and "Under 18" while its child warning is
+ * open; where it bills its holder, the holder; a
+ * split's parties show in its stack; "Payer: not billed yet" with no
+ * Contract. Its "Email or postal address needed" flag sits with the
+ * Procedure's other flags.
+ */
+function ReviewPaidBy({ procedure, patientId, invoicedName, child, onChange }: { procedure: Procedure; patientId: string; invoicedName: string | undefined; child: boolean; onChange?: () => void }) {
   const masters = useAppStore((s) => s.masters)
-  // INTERIM until catch-up Phase 22a session 2 shows each Procedure's payer in its row: the first Procedure's.
-  const firstPayer = useAppStore((s) => proceduresForBooking(s, booking.id)[0]?.payer) ?? { kind: 'patient' as const }
-  const payer = payerDetails(firstPayer, masters.patients[booking.patientId])
-  const funder = booking.funderPartyId !== undefined ? masters.parties[booking.funderPartyId] : undefined
-  const missing = approvalNumberMissing(booking, masters.parties)
-  const number = booking.insuranceApprovalNumber?.trim()
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6, fontSize: 12, color: neutral.slate }}>
-      <div data-shot="review-payer" style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span>{firstPayer.kind === 'patient' ? 'Patient pays' : `Payer: ${payer.name}${payer.relationship !== undefined ? ` (${payer.relationship})` : ''}`}</span>
-        {onChange !== undefined && <TextAction small onClick={onChange} label="Change the payer on the Booking">Change</TextAction>}
+  const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
+  if (procedure.split !== undefined) return null
+  const lineStyle = { display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', fontSize: 12, color: neutral.slate } as const
+  if (contract === undefined) {
+    return (
+      <div data-shot="review-payer" data-procedure-id={procedure.id} style={lineStyle}>
+        {PAYER_NOT_BILLED_YET}
       </div>
-      {/* How the payer is invoiced (21's delivery rule: email where there is one, else post). */}
+    )
+  }
+  if (!isPayerBilled(contract)) {
+    return (
+      <div data-shot="review-payer" data-procedure-id={procedure.id} style={lineStyle}>
+        Paid by {invoicedName ?? 'its holder'}
+      </div>
+    )
+  }
+  const payer = payerDetails(procedure.payer, masters.patients[patientId])
+  return (
+    <div data-shot="review-payer" data-procedure-id={procedure.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 12, color: neutral.slate }}>
+      <div style={lineStyle}>
+        <span>{procedure.payer.kind === 'patient' ? 'Patient pays' : `Payer: ${payer.name}${payer.relationship !== undefined ? ` (${payer.relationship})` : ''}`}</span>
+        {/* US-13.7.1 / US-07.2.2: the open child warning on this Procedure's own row. */}
+        {child && (
+          <Pill tone="warning" size="sm" shot="review-payer-under-18" data-procedure-id={procedure.id}>
+            Under 18
+          </Pill>
+        )}
+        {onChange !== undefined && (
+          <TextAction small onClick={onChange} label="Change this procedure's payer">
+            Change
+          </TextAction>
+        )}
+      </div>
       {payer.email !== undefined && payer.email.trim() !== '' ? (
         <span data-shot="review-payer-delivery" style={{ overflowWrap: 'anywhere' }}>Email: {payer.email}</span>
       ) : payer.postalAddress !== undefined ? (
         <span data-shot="review-payer-delivery">Post: {formatPostalAddress(payer.postalAddress)}</span>
       ) : null}
-      {funder !== undefined && (
-        <div data-shot="review-insurance" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span>{funder.kind === 'insurer' ? 'Insurer' : 'Funder'}: {funder.name}</span>
-          {number !== undefined && number !== '' ? (
-            <span className="mono">{number}</span>
-          ) : missing ? (
-            <Pill tone="warning" size="sm">No approval number</Pill>
-          ) : null}
-        </div>
-      )}
+    </div>
+  )
+}
+
+/** The Booking's insurer or funder and its approval number (21's; US-11.4.3): on the Booking, never who is invoiced. */
+function InsurerLine({ booking }: { booking: Booking }) {
+  const masters = useAppStore((s) => s.masters)
+  const funder = booking.funderPartyId !== undefined ? masters.parties[booking.funderPartyId] : undefined
+  if (funder === undefined) return null
+  const missing = approvalNumberMissing(booking, masters.parties)
+  const number = booking.insuranceApprovalNumber?.trim()
+  return (
+    <div data-shot="review-insurance" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 6, fontSize: 12, color: neutral.slate }}>
+      <span>{funder.kind === 'insurer' ? 'Insurer' : 'Funder'}: {funder.name}</span>
+      {number !== undefined && number !== '' ? (
+        <span className="mono">{number}</span>
+      ) : missing ? (
+        <Pill tone="warning" size="sm">No approval number</Pill>
+      ) : null}
     </div>
   )
 }

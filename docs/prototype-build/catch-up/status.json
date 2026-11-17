@@ -1,27 +1,24 @@
 {
-  "in_progress": [
-    "22a"
-  ],
+  "in_progress": [],
   "next": {
     "phases": [
-      "22a"
+      "U4"
     ],
-    "note": "22a session 1 built (17 November): the payer on each Procedure, one writer with the offer, the copy rule, invoices and prepayment invoices per payer, the child warning per Procedure, the seed additions; S3 and parity unchanged. Run 22a session 2 next (the Paid by line and sheet in all three apps, Another person, Review, the Booking Payer card removed, then review, capture and the demo guide), then U4, U5 and 23; U6 after 25; U7 before 44."
+    "note": "22a done (17 November): a payer on each Procedure, the one Paid by sheet (who pays, the offer, the split with Another person) in all three apps, Review per Procedure, the Booking Payer card gone; S3 and parity unchanged. Run U4 next (fields and search: it migrates PayerFields, PostalAddressFields and the split fields inside PaidBySheet), then U5 and 23; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start 22a session 2 now. Session 1 moved the payer onto each Procedure (one writer with the offer, one invoice and one prepayment invoice per payer).",
-    "headline_sub": "22a session 1 built the model, the one writer setProcedurePayer with its offer, the copy rule, per-payer invoices, prepayment and lock, and the child warning per Procedure, green and not yet committed; session 2 builds the Paid by line and sheet in all three apps and closes the phase, then U4, U5 and 23.",
-    "parallel": "None now: 22a session 2 runs alone, then U4 (a U phase never runs beside a catch-up phase).",
+    "headline": "Start U4 now. 22a is done: each Procedure holds its payer, changed in its Paid by line through one sheet.",
+    "headline_sub": "22a session 2 built the Paid by line and sheet in all three apps, Another person on a split, Review per Procedure and removed the Booking Payer card; reviewed, captured and green, not committed. U4 migrates the fields inside the new sheet, then U5 and 23.",
+    "parallel": "None now: U4 runs alone (a U phase never runs beside a catch-up phase), then U5.",
     "safe": {
-      "22a": "Session 2 of 22a: session 1 is built and green (commit it first); its dependencies 21a and 22 are done and it is next in run order."
+      "U4": "Its dependency 22a is done (the Paid by sheet holds PayerFields, PostalAddressFields and the split fields it migrates) and it is next in run order. Commit 22a session 2 first: HEAD (80cfe3ed) does not build without it."
     },
     "wait": {
-      "U4": "Needs 22a done (session 2 turns the payer and split sheets into the one Paid by sheet that U4 migrates); runs straight after it.",
-      "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
-      "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
       "U5": "Needs U4 (its only dependency) and runs straight after it.",
-      "23": "Needs 22a (session 2 still to run) and U5; runs after 22a, U4 and U5."
+      "23": "Needs U5; runs after U4 and U5 (its seed uses 22a's addProcedure(booking, { payer })).",
+      "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
+      "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6."
     }
   }
 }

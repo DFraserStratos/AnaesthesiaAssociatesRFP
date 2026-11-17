@@ -118,8 +118,8 @@ export function sameData(a: unknown, b: unknown): boolean {
   return JSON.stringify(stable(a)) === JSON.stringify(stable(b))
 }
 
-/** Names compared as a person would: case and spacing aside. */
-function sameName(a: string, b: string): boolean {
+/** Names compared as a person would: case and spacing aside (21's rule: a renamed payer is a new person). */
+export function sameName(a: string, b: string): boolean {
   return a.trim().replace(/\s+/g, ' ').toLowerCase() === b.trim().replace(/\s+/g, ' ').toLowerCase()
 }
 

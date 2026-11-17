@@ -18,12 +18,12 @@
  *    invoiced) is its one recorded exception, re-seeded on No contract · RVG
  *    with its RVG code cleared.
  *  - catch-up Phase 21 (US-11.2.1, US-11.2.2): Doyle's bariatric primary
- *    (P0029) bills the payer on the Booking, the patient Gareth Mills, as his
+ *    (P0029) bills the Procedure's payer, the patient Gareth Mills, as his
  *    price list says; Hana Park (BP0001) is the payer on Grace Park's Booking
  *    under the counterparty kind `payer` (was `billableParty`), same id.
  *  - catch-up Phase 22 (US-08.2.3): Alan Prentice's fee-split Procedure
  *    (P0026, the `feeSplitBooking` marker) is on No contract · RVG (was
- *    St George's CT-STG-D1), so its Contract bills the payer on the Booking,
+ *    St George's CT-STG-D1), so its Contract bills the Procedure's payer,
  *    Alan Prentice; nib's share is a split on the Booking, not a billing line.
  * Every other billed party, starting value, prepayment build, ledger line and
  * Xero pair holds as written.
@@ -107,13 +107,13 @@ describe('Phase 20 contract parity', () => {
     expect(now.prepayments).toEqual(before.prepayments)
   })
 
-  it("bills Doyle's bariatric primary to the payer on the Booking, at his price list (catch-up Phase 21, US-11.2.1)", () => {
+  it("bills Doyle's bariatric primary to the Procedure's payer, at his price list (catch-up Phase 21, US-11.2.1)", () => {
     expect(now.procedures.find((r) => r.procedureId === 'P0029')).toMatchObject({ billedTo: 'patient:PT0015', contract: 'CT-DOYLE-BAR' })
   })
 })
 
 describe('Phase 22 fee split (catch-up Phase 22, US-08.2.3)', () => {
-  it("moves Prentice's fee-split Procedure to No contract · RVG, billing Alan Prentice, the payer on the Booking", () => {
+  it("moves Prentice's fee-split Procedure to No contract · RVG, billing Alan Prentice, the Procedure's payer", () => {
     expect(before.procedures.find((r) => r.procedureId === PRENTICE_22.procedureId)).toMatchObject(PRENTICE_BEFORE_22)
     const row = now.procedures.find((r) => r.procedureId === PRENTICE_22.procedureId)
     expect(row).toMatchObject(PRENTICE_22)

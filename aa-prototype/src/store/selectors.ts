@@ -20,7 +20,7 @@ import {
   type RailContext,
   type RailMasters,
 } from '../domain/billing/contractRail'
-import { billablePartyForProcedure, partyForCounterparty, payerCounterparty, payerDetails, type PayerDetails } from '../domain/billing/whoIsBilled'
+import { billablePartyForProcedure, otherPayerHeld, partyForCounterparty, payerCounterparty, payerDetails, type PayerDetails } from '../domain/billing/whoIsBilled'
 import { refKey } from '../domain/billing/procedurePayer'
 import type {
   AssignedList,
@@ -1191,7 +1191,8 @@ export type CounterpartyNameState = Pick<AppState, 'masters'> & {
 /**
  * Another payer (catch-up Phase 21; on each Procedure since 22a), by its
  * `BP####` id: the one selector that resolves a `payer` counterparty. It reads
- * the given Booking's Procedures first, then any Procedure holding that id,
+ * the given Booking's Procedures first (their payers, then their split shares'
+ * "another person"), then any Procedure holding that id,
  * then an invoice's `billedTo` snapshot (the payer's details stay with the
  * debt). Never a master, never a name match.
  */
@@ -1200,11 +1201,11 @@ export function payerRecordFor(
   payerId: string,
   bookingId?: string,
 ): { name: string; email?: string; relationship?: string } | undefined {
-  const procedures = Object.values(state.schedule?.procedures ?? {})
-  const holds = (p: Procedure): boolean => p.payer?.kind === 'other' && p.payer.id === payerId
-  const own = bookingId !== undefined ? procedures.find((p) => p.bookingId === bookingId && holds(p)) : undefined
-  const held = (own ?? procedures.find(holds))?.payer
-  if (held?.kind === 'other') return held
+  const procedures = Object.values(state.schedule?.procedures ?? {}).filter((p) => p.payer !== undefined)
+  // A Procedure's payer or a split share's "another person" (catch-up Phase 22a), by id: the Booking's own first.
+  const own = bookingId !== undefined ? otherPayerHeld(procedures.filter((p) => p.bookingId === bookingId), payerId) : undefined
+  const held = own ?? otherPayerHeld(procedures, payerId)
+  if (held !== undefined) return held
   for (const inv of Object.values(state.billing?.invoices ?? {})) {
     if (inv.counterparty.kind === 'payer' && inv.counterparty.id === payerId && inv.billedTo !== undefined) return inv.billedTo
   }

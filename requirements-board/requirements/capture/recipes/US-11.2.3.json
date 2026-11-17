@@ -11,17 +11,17 @@
       "states": [
         {
           "state": "flagged",
-          "caption": "A billed payer with neither an email nor a postal address: \"Email or postal address needed\"",
+          "caption": "A billed payer with neither an email nor a postal address: the Paid by line shows \"Email or postal address needed\"",
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]"
+            "[data-shot=payer-contact-missing]"
           ]
         },
         {
@@ -29,46 +29,46 @@
           "caption": "A postal address alone is enough: the request is gone",
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "click": "[data-shot=procedure-split-button] >> nth=0"
             },
             {
               "wait": 400
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Address\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Address\"]",
               "value": "4 Beach Road"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Town or city\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Town or city\"]",
               "value": "Christchurch"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Postcode\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Postcode\"]",
               "value": "8081"
             },
             {
-              "click": "[data-shot=payer-sheet] >> role=button[name=\"Save payer\"]"
+              "click": "[data-shot=paid-by-save]"
             },
             {
               "wait": 400
             },
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]"
+            "[data-shot=procedure-split-row] >> nth=0"
           ]
         },
         {
           "state": "ask",
-          "caption": "The payer sheet asks for one, and saves without it",
+          "caption": "The Paid by sheet asks for one, and saves without it",
           "steps": [
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "click": "[data-shot=procedure-split-button] >> nth=0"
             },
             {
               "wait": 500
@@ -83,7 +83,7 @@
     {
       "name": "review-payer-contact",
       "app": "admin",
-      "caption": "Office review flags a billed payer with neither, never a block",
+      "caption": "Office review flags a billed payer with neither, on that Procedure's row, never a block",
       "start": "/admin/review/L-45178-2026-07-17-AM",
       "states": [
         {
@@ -109,10 +109,10 @@
           "caption": "Another payer named with no email or postal address: \"Email or postal address needed\"",
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             },
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             },
             {
               "wait": 400
@@ -121,21 +121,21 @@
               "click": "[data-shot=payer-different-tick] input"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Name\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Name\"]",
               "value": "Mere Chen"
             },
             {
-              "click": "[data-shot=payer-sheet] >> role=button[name=\"Save payer\"]"
+              "click": "[data-shot=paid-by-save]"
             },
             {
               "wait": 400
             },
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]"
+            "[data-testid=slide-booking] [data-shot=procedure-split-button]"
           ]
         },
         {
@@ -143,10 +143,10 @@
           "caption": "A postal address alone is enough: the request is gone",
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             },
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             },
             {
               "wait": 400
@@ -155,33 +155,33 @@
               "click": "[data-shot=payer-different-tick] input"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Name\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Name\"]",
               "value": "Mere Chen"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Address\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Address\"]",
               "value": "PO Box 4410"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Town or city\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Town or city\"]",
               "value": "Christchurch"
             },
             {
-              "fill": "[data-shot=payer-sheet] >> role=textbox[name=\"Postcode\"]",
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Postcode\"]",
               "value": "8140"
             },
             {
-              "click": "[data-shot=payer-sheet] >> role=button[name=\"Save payer\"]"
+              "click": "[data-shot=paid-by-save]"
             },
             {
               "wait": 400
             },
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]"
+            "[data-testid=slide-booking] [data-shot=procedure-split-button]"
           ]
         }
       ]

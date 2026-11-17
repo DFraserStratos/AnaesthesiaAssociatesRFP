@@ -1,15 +1,20 @@
 /**
- * The Split's parts in the component catalogue (catch-up Phase 22; US-08.2.3):
- * the real `PartyPicker` over fixed options on local state, and the real
- * `PaidByRow` (the Billing card's Paid by, owner review 2026-11-17) over fixed
- * stack views (unsplit, split, and a split that no longer fits), read-only so
- * no Split sheet opens on a made-up Procedure.
- * The `SplitFeeSheet` composes the picker, a $ or % field per party and "Takes
- * the rest". Nothing here writes to the demo data.
+ * Paid by's parts in the component catalogue (catch-up Phases 22 and 22a;
+ * US-08.2.3, US-11.2.2): the real `PartyPicker` over fixed options on local
+ * state (with "Another person"), the real `PaidByRow` over fixed stack views
+ * (a payer with both pills, a holder, a split, a split that no longer fits,
+ * and no Contract yet), read-only so no sheet opens on a made-up Procedure,
+ * and the real `PaidBySheet` on Grace Park's first seeded Procedure (who
+ * pays, the offer, the split section). Only the sheet's Save writes to the
+ * demo data.
  */
 
 import { useState } from 'react'
 import type { CounterpartyRef } from '../../../domain/types'
+import { PaidBySheet } from '../../../shared/flows/PaidBySheet'
+import { Button } from '../../../shared/ui'
+import { SEED_MARKERS } from '../../../domain/seed'
+import { proceduresForBooking, useAppStore } from '../../../store'
 import type { PartyOption } from '../../../domain/billing/partyOptions'
 import type { ProcedureStackView } from '../../../domain/billing/procedureStack'
 import { PartyPicker } from '../../../shared/booking/PartyPicker'
@@ -27,7 +32,7 @@ export function PartyPickerExample() {
   const [value, setValue] = useState<CounterpartyRef | null>(OPTIONS[1]!.ref)
   return (
     <div style={{ maxWidth: 360 }}>
-      <PartyPicker options={OPTIONS} value={value} onChange={setValue} label="Party" />
+      <PartyPicker options={OPTIONS} value={value} onChange={setValue} label="Party" onAnotherPerson={() => setValue(null)} />
     </div>
   )
 }
@@ -42,14 +47,33 @@ const CONTRACT: NonNullable<ProcedureStackView['contract']> = {
 const SPLIT = { ...CONTRACT, split: { text: 'Split: nib $132.50, Alan Prentice $79.50 (the rest)', fits: true, parties: 2 } }
 const MISFIT = { ...CONTRACT, split: { text: 'The split no longer fits the fee of $180.00: the typed shares come to $200.00, which leaves nothing for the rest of the fee of $180.00. Open Split to fix it.', fits: false, parties: 2 } }
 
-/** Paid by in the Billing card: the web and Admin line, then the phone's summary row. */
+const HOLDER: NonNullable<ProcedureStackView['contract']> = { ...CONTRACT, name: 'nib · RVG', holderName: 'nib', invoiced: { name: 'nib', kind: 'holder' } }
+
+/** Paid by in the Billing card: the web and Admin line, or the phone's summary row. */
 export function PaidByRowExample({ variant }: { variant: 'line' | 'summary' }) {
-  const ids = { bookingId: 'BK-EX', procedureId: 'P-EX', actor: OFFICE_ACTOR, canEdit: false, variant }
+  const ids = { procedureId: 'P-EX', actor: OFFICE_ACTOR, canEdit: false, variant }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560 }}>
-      <PaidByRow contract={CONTRACT} {...ids} />
+      <PaidByRow contract={CONTRACT} payer={{ name: 'Hana Park', relationship: 'Mother' }} contactMissing child {...ids} />
+      <PaidByRow contract={HOLDER} {...ids} />
       <PaidByRow contract={SPLIT} {...ids} />
       <PaidByRow contract={MISFIT} {...ids} />
+      <PaidByRow contract={null} {...ids} />
+    </div>
+  )
+}
+
+/** The one Paid by sheet, on Grace Park's first seeded Procedure (the offer lists her second). */
+export function PaidBySheetExample() {
+  const [open, setOpen] = useState(false)
+  const procedureId = useAppStore((s) => proceduresForBooking(s, SEED_MARKERS.guardianMinorBooking!.entityId)[0]?.id)
+  if (procedureId === undefined) return null
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        Open the Paid by sheet
+      </Button>
+      <PaidBySheet open={open} procedureId={procedureId} actor={OFFICE_ACTOR} onClose={() => setOpen(false)} />
     </div>
   )
 }

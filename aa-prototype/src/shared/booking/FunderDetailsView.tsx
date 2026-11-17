@@ -2,8 +2,8 @@
  * The Booking's insurer or funder as the Booking shows it (catch-up Phase 21;
  * US-11.4.3): the Party's name and kind, then the approval number itself
  * (shown to the anaesthetist too, OQ-93 part 4), or a warning-tint "No
- * approval number" chip when `approvalNumberMissing` says so. "None, the
- * patient pays" when blank. Shared by the Funder section in all three apps; it
+ * approval number" chip when `approvalNumberMissing` says so. "None" when
+ * blank (catch-up Phase 22a: who pays is each Procedure's Paid by). Shared by the Funder section in all three apps; it
  * derives nothing (the caller passes the `insurance.ts` result). No money.
  */
 
@@ -22,7 +22,7 @@ export function FunderDetailsView({
   approvalMissing: boolean
 }) {
   if (funder === undefined) {
-    return <span style={{ fontSize: 14, color: neutral.mist }}>None, the patient pays</span>
+    return <span style={{ fontSize: 14, color: neutral.mist }}>None</span>
   }
   const number = approvalNumber !== undefined && approvalNumber.trim() !== '' ? approvalNumber : undefined
   return (

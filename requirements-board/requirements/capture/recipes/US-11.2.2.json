@@ -6,37 +6,86 @@
     {
       "name": "guardian-payer",
       "app": "admin",
-      "caption": "Hana Park, Grace Park's mother, is the payer on the Booking, with her email and postal address",
+      "caption": "Hana Park, Grace Park's mother, is the payer on each of her two Procedures, on the Paid by line",
       "start": "/admin/day/2026-07-24/bookings/BK0033",
       "states": [
         {
           "state": "set",
-          "caption": "Hana Park, Grace Park's mother, is the payer on the Booking, with her email and postal address",
+          "caption": "Hana Park, Grace Park's mother, is the payer on each of her two Procedures, on the Paid by line",
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=booking-payer-row]"
+            "[data-shot=procedure-split-row]"
           ]
         },
         {
           "state": "edit",
-          "caption": "Different payer ticked: name, relationship, email and an NZ Post postal address",
+          "caption": "The Paid by sheet's Who pays section: Hana Park, her relationship, email and an NZ Post postal address",
           "steps": [
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
+            },
+            {
+              "click": "[data-shot=procedure-split-button] >> nth=0"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=payer-sheet]"
+            "[data-shot=paid-by-sheet]"
+          ]
+        },
+        {
+          "state": "offer",
+          "caption": "Naming another person offers the same payer to the other Procedure, marked Provisional (OQ-140)",
+          "steps": [
+            {
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
+            },
+            {
+              "click": "[data-shot=procedure-split-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=paid-by-sheet] >> role=textbox[name=\"Name\"]",
+              "value": "Mere Park"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=payer-offer]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "not-billed",
+      "app": "admin",
+      "caption": "With no Contract yet the Paid by line reads \"Payer: not billed yet\", with no Change button",
+      "start": "/admin/day/2026-07-27/bookings/BK0035",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=payer-not-billed] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=payer-not-billed]"
           ]
         }
       ]
@@ -44,13 +93,16 @@
     {
       "name": "booking-payer",
       "app": "web",
-      "caption": "The anaesthetist changes the payer in a dialog: the patient by default, or someone else who pays",
+      "caption": "The anaesthetist changes a Procedure's payer in the Paid by sheet: the patient by default, or someone else who pays",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0008",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "scroll": "[data-shot=procedure-split-row] >> nth=0"
+            },
+            {
+              "click": "[data-shot=procedure-split-button] >> nth=0"
             },
             {
               "wait": 400
@@ -63,7 +115,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=payer-sheet]"
+            "[data-shot=paid-by-sheet]"
           ]
         }
       ]
@@ -71,23 +123,23 @@
     {
       "name": "booking-payer",
       "app": "mobile",
-      "caption": "On the phone the payer opens in a bottom sheet, prefilled from the patient record",
+      "caption": "On the phone the Paid by line opens a bottom sheet, the payer prefilled from the patient record",
       "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-shot=booking-payer-row]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             },
             {
-              "click": "[data-shot=booking-payer-row] >> role=button[name=\"Change the payer\"]"
+              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=payer-sheet]"
+            "[data-aa-mobile-product] [data-shot=paid-by-sheet]"
           ]
         }
       ]

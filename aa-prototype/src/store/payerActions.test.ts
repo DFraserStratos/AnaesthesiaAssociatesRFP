@@ -33,7 +33,7 @@ type Api = ReturnType<typeof createAppStore>
 const firstProc = (api: Api, bookingId: string) => proceduresForBooking(api.getState(), bookingId)[0]!
 const payerOf = (api: Api, bookingId: string) => firstProc(api, bookingId).payer
 /** Change the first Procedure's payer with the offer ticked on every other Procedure holding it (the default). */
-function setBookingPayer(api: Api, actor: Actor, bookingId: string, input: PayerInput) {
+function setFirstProcedurePayer(api: Api, actor: Actor, bookingId: string, input: PayerInput) {
   const s = api.getState()
   const first = firstProc(api, bookingId)
   const offer = payerOfferFor(proceduresForBooking(s, bookingId), first.id, s.masters.contracts, s.schedule.bookings[bookingId]!.patientId)
@@ -45,7 +45,7 @@ describe('setProcedurePayer: the one writer', () => {
     const api = createAppStore()
     const p = proceduresForBooking(api.getState(), CHILD)[0]!
     expect(billablePartyForProcedureId(api.getState(), p.id)).toEqual({ kind: 'patient', id: PAT_REVIEW.childPayer })
-    const r = setBookingPayer(api, OFFICE_ACTOR, CHILD, { kind: 'other', name: 'Mere Moana', relationship: 'Mother', email: 'mere.moana@example.net' })
+    const r = setFirstProcedurePayer(api, OFFICE_ACTOR, CHILD, { kind: 'other', name: 'Mere Moana', relationship: 'Mother', email: 'mere.moana@example.net' })
     expect(r.ok).toBe(true)
     const payer = payerOf(api, CHILD)
     expect(payer).toMatchObject({ kind: 'other', name: 'Mere Moana', relationship: 'Mother' })
@@ -59,22 +59,22 @@ describe('setProcedurePayer: the one writer', () => {
 
   it('refuses a blank name, a malformed email and an incomplete address, and accepts a postal address alone', () => {
     const api = createAppStore()
-    expect(setBookingPayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'other', name: ' ' })).toMatchObject({ ok: false, message: "Enter the payer's name." })
-    expect(setBookingPayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', email: 'not an email' })).toMatchObject({ ok: false, message: 'Enter a valid email.' })
-    expect(setBookingPayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', postalAddress: { line1: '4 Beach Road', city: 'Christchurch', postcode: '81' } })).toMatchObject({ ok: false, message: 'Enter a four-digit postcode.' })
-    expect(setBookingPayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', postalAddress: { line1: '4 Beach Road', city: 'Christchurch', postcode: '8081' } }).ok).toBe(true)
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'other', name: ' ' })).toMatchObject({ ok: false, message: "Enter the payer's name." })
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', email: 'not an email' })).toMatchObject({ ok: false, message: 'Enter a valid email.' })
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', postalAddress: { line1: '4 Beach Road', city: 'Christchurch', postcode: '81' } })).toMatchObject({ ok: false, message: 'Enter a four-digit postcode.' })
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', postalAddress: { line1: '4 Beach Road', city: 'Christchurch', postcode: '8081' } }).ok).toBe(true)
   })
 
   it('lets the anaesthetist change it on their own List until AUTHORISED, and no one after', () => {
     const api = createAppStore()
     // Dr Souter's own ACTIVE List.
     const own = Object.values(api.getState().schedule.bookings).find((b) => b.listId === SEED_LIST_IDS.souterAm21)!
-    expect(setBookingPayer(api, SOUTER, own.id, { kind: 'other', name: 'Sam Lee', relationship: 'Guardian', email: 'sam@example.net' }).ok).toBe(true)
+    expect(setFirstProcedurePayer(api, SOUTER, own.id, { kind: 'other', name: 'Sam Lee', relationship: 'Guardian', email: 'sam@example.net' }).ok).toBe(true)
     // Not her List.
-    expect(setBookingPayer(api, SOUTER, CHILD, { kind: 'patient' }).ok).toBe(false)
+    expect(setFirstProcedurePayer(api, SOUTER, CHILD, { kind: 'patient' }).ok).toBe(false)
     // The office, then AUTHORISED: refused for everyone.
     expect(authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.payerReview).ok).toBe(true)
-    expect(setBookingPayer(api, OFFICE_ACTOR, CHILD, { kind: 'patient' })).toMatchObject({ ok: false })
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, CHILD, { kind: 'patient' })).toMatchObject({ ok: false })
   })
 
   it('every creation path names a payer: the patient, or a ticked payer from the form', () => {
@@ -154,10 +154,10 @@ describe('the billing run on the payer review List', () => {
 describe('review fixes (convention 18)', () => {
   it('editing the same other payer keeps the BP id; a different name is a new person with a new id', () => {
     const api = createAppStore()
-    expect(setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'hana  park', relationship: 'Mother', email: 'hana.new@example.net' }).ok).toBe(true)
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'hana  park', relationship: 'Mother', email: 'hana.new@example.net' }).ok).toBe(true)
     const kept = payerOf(api, GRACE)
     expect(kept.kind === 'other' && kept.id).toBe('BP0001')
-    expect(setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'John Park', relationship: 'Father' }).ok).toBe(true)
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'John Park', relationship: 'Father' }).ok).toBe(true)
     const renamed = payerOf(api, GRACE)
     expect(renamed.kind === 'other' && renamed.id).toBe('BP0006')
   })
@@ -167,13 +167,13 @@ describe('review fixes (convention 18)', () => {
     const before = api.getState().audit.length
     const hana = payerOf(api, GRACE)
     if (hana.kind !== 'other') throw new Error('expected Hana Park')
-    expect(setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: hana.id, name: hana.name, relationship: hana.relationship, email: hana.email, phone: hana.phone, postalAddress: hana.postalAddress }).ok).toBe(true)
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: hana.id, name: hana.name, relationship: hana.relationship, email: hana.email, phone: hana.phone, postalAddress: hana.postalAddress }).ok).toBe(true)
     expect(api.getState().audit.length).toBe(before)
   })
 
   it('History records the payer contact', () => {
     const api = createAppStore()
-    setBookingPayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', email: 'kevin@example.net' })
+    setFirstProcedurePayer(api, OFFICE_ACTOR, CONTACT_MISSING, { kind: 'patient', email: 'kevin@example.net' })
     expect(api.getState().audit.at(-1)).toMatchObject({ before: { payerContact: 'None' }, after: { payerContact: 'kevin@example.net' } })
   })
 
@@ -183,7 +183,7 @@ describe('review fixes (convention 18)', () => {
     const s = api.getState()
     const hasPrepay = Object.values(s.billing.invoices).some((i) => i.bookingId === riley && i.kind === 'prePayment')
     expect(hasPrepay).toBe(true)
-    expect(setBookingPayer(api, OFFICE_ACTOR, riley, { kind: 'other', name: 'Someone Else', email: 'x@example.net' })).toMatchObject({ ok: false, code: 'prepaymentRaised' })
+    expect(setFirstProcedurePayer(api, OFFICE_ACTOR, riley, { kind: 'other', name: 'Someone Else', email: 'x@example.net' })).toMatchObject({ ok: false, code: 'prepaymentRaised' })
   })
 })
 

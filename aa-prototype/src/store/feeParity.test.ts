@@ -631,7 +631,7 @@ describe('Phase 20 one Contract per Procedure parity', () => {
 })
 
 describe('Phase 21 who is billed (catch-up Phase 21, US-11.2.1, US-11.2.2)', () => {
-  it("bills Doyle's bariatric Booking to the payer on the Booking: one invoice to the patient at the Contract's price", () => {
+  it("bills Doyle's bariatric Booking to the Procedure's payer: one invoice to the patient at the Contract's price", () => {
     expect(phase21Raw.find((i) => i.bookingId === DOYLE_BOOKING_21)?.result).toEqual(DOYLE_INVOICES_21)
   })
 
@@ -643,7 +643,7 @@ describe('Phase 21 who is billed (catch-up Phase 21, US-11.2.1, US-11.2.2)', () 
 })
 
 describe('Phase 22 fee split (catch-up Phase 22, US-08.2.3)', () => {
-  it("bills the rest of Prentice's split fee to Alan Prentice, the payer on the Booking, not St George's: the same subtotals and totals", () => {
+  it("bills the rest of Prentice's split fee to Alan Prentice, the Procedure's payer, not St George's: the same subtotals and totals", () => {
     expect(phase22Raw.find((i) => i.bookingId === PRENTICE_BOOKING_22)?.result).toEqual(PRENTICE_INVOICES_22)
     for (const fixture of [phase18Fixture, phase19Fixture, phase19aFixture, phase19bFixture] as { invoices: InvoiceRow[] }[]) {
       expect(fixture.invoices.find((i) => i.bookingId === PRENTICE_BOOKING_22)?.result).toEqual(PRENTICE_INVOICES_BEFORE_22)

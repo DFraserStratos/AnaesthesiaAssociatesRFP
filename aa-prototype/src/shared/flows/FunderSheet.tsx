@@ -2,8 +2,8 @@
  * The insurer or funder sheet (catch-up Phase 21; US-11.4.3, D28): a bottom
  * sheet on the phone, a dialog on web and Admin. The office records the
  * Booking's insurer or funder (a Party) and the approval number; the
- * anaesthetist may change both on the day. Chips, not a dropdown: "None, the
- * patient pays", then the insurers and the funders. No money, no Contract and
+ * anaesthetist may change both on the day. Chips, not a dropdown: "None"
+ * (who pays is each Procedure's Paid by, catch-up Phase 22a), then the insurers and the funders. No money, no Contract and
  * no holder setting: the funder never decides who is billed.
  */
 
@@ -99,7 +99,7 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
 
         <div role="radiogroup" aria-label="Insurer or funder" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            <Chip label="None, the patient pays" on={funder === NONE} onClick={() => setFunder(NONE)} shot="funder-none" />
+            <Chip label="None" on={funder === NONE} onClick={() => setFunder(NONE)} shot="funder-none" />
           </div>
           {insurers.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

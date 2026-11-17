@@ -27,7 +27,7 @@
  * setting is each Contract's `billsTo` (Donald, D2).
  */
 
-import type { Contract, CounterpartyRef, InvoiceBilledTo, Patient, PostalAddress, Procedure, ProcedurePayer } from '../types'
+import type { Contract, CounterpartyRef, InvoiceBilledTo, OtherPayer, Patient, PostalAddress, Procedure, ProcedurePayer, SplitShare } from '../types'
 import type { Party } from './parties'
 import { ageInCompletedYears } from './modifiers'
 import { isEmailShaped, isValidPostalAddress, postalAddressLines } from './payer'
@@ -152,7 +152,7 @@ export function payerDetails(payer: ProcedurePayer, patient: Pick<Patient, 'name
  */
 export function personDetailsFor(
   ref: CounterpartyRef,
-  procedures: readonly Pick<Procedure, 'payer'>[],
+  procedures: readonly Pick<Procedure, 'payer' | 'split'>[],
   patientId: string,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
 ): PayerDetails | undefined {
@@ -162,8 +162,21 @@ export function personDetailsFor(
     return payerDetails(own ?? { kind: 'patient' }, patient)
   }
   if (ref.kind === 'payer') {
-    const held = procedures.find((p) => p.payer.kind === 'other' && p.payer.id === ref.id)?.payer
+    const held = otherPayerHeld(procedures, ref.id)
     return held !== undefined ? payerDetails(held, patient) : undefined
+  }
+  return undefined
+}
+
+/**
+ * The other payer these Procedures hold by this id: a Procedure's payer, or a
+ * split share's "another person" (catch-up Phase 22a). By id, never by name.
+ */
+export function otherPayerHeld(procedures: readonly Pick<Procedure, 'payer' | 'split'>[], payerId: string): OtherPayer | undefined {
+  for (const p of procedures) if (p.payer.kind === 'other' && p.payer.id === payerId) return p.payer
+  for (const p of procedures) {
+    const person = p.split?.shares.find((s) => s.person?.id === payerId)?.person
+    if (person !== undefined) return person
   }
   return undefined
 }
@@ -203,21 +216,50 @@ export function anyPayerBilled(
  * US-11.2.3, per Procedure (catch-up Phase 22a): the Procedure's Contract
  * bills its payer and that payer has neither an email nor a valid postal
  * address. False for a Procedure whose Contract bills its holder (its
- * delivery is on its Party) or that has no Contract yet. Our reading of where
- * it is enforced: the Paid by sheet asks and Review flags it; never a
+ * delivery is on its Party) or that has no Contract yet. A split Procedure
+ * (US-08.2.3) asks of every share billed to a person: the patient, the
+ * Procedure's payer, or another person named on the share. Our reading of
+ * where it is enforced: the Paid by sheet asks and Review flags it; never a
  * completion or authorisation check.
  */
 export function payerContactMissing(
-  procedure: Pick<Procedure, 'payer'>,
+  procedure: Pick<Procedure, 'payer' | 'split'>,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
   contract: Pick<Contract, 'billsTo'> | undefined,
 ): boolean {
+  if (contract === undefined) return false
+  if (procedure.split !== undefined) {
+    return procedure.split.shares.some((share) => {
+      const details = shareDetails(share, procedure, patient)
+      return details !== undefined && !payerHasContact(details)
+    })
+  }
   if (!isPayerBilled(contract)) return false
   return !payerHasContact(payerDetails(procedure.payer, patient))
 }
 
-/** The words for a billed payer with no contact (US-11.2.3): the Payer row's chip and Review's flag. */
+/**
+ * The person a split share bills, as invoiced: another person named on the
+ * share, the Procedure's payer by id, or the patient (with the fill-ins typed
+ * on the Procedure when the patient is its payer). Undefined for a holder
+ * Party, or a payer id the Procedure no longer holds.
+ */
+export function shareDetails(
+  share: SplitShare,
+  procedure: Pick<Procedure, 'payer'>,
+  patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
+): PayerDetails | undefined {
+  if (share.person !== undefined) return payerDetails(share.person, patient)
+  if (share.party.kind === 'patient') return payerDetails(procedure.payer.kind === 'patient' ? procedure.payer : { kind: 'patient' }, patient)
+  if (share.party.kind === 'payer' && procedure.payer.kind === 'other' && procedure.payer.id === share.party.id) return payerDetails(procedure.payer, patient)
+  return undefined
+}
+
+/** The words for a billed payer with no contact (US-11.2.3): the Paid by pill and Review's flag. */
 export const PAYER_CONTACT_NEEDED = 'Email or postal address needed'
+
+/** The Paid by line of a Procedure with no Contract yet (US-11.2.2 "Not billed yet"), on the Booking and in Review. */
+export const PAYER_NOT_BILLED_YET = 'Payer: not billed yet'
 
 /** The age at which a payer is no longer a child (US-11.2.4). */
 export const ADULT_AGE = 18
@@ -268,7 +310,7 @@ export type DeliveryPlan =
  */
 export function invoiceDeliveryFor(
   ref: CounterpartyRef,
-  procedures: readonly Pick<Procedure, 'payer'>[],
+  procedures: readonly Pick<Procedure, 'payer' | 'split'>[],
   patientId: string,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
   parties: Readonly<Record<string, Party>>,
@@ -297,7 +339,7 @@ export function invoiceDeliveryFor(
  */
 export function billedToFor(
   ref: CounterpartyRef,
-  procedures: readonly Pick<Procedure, 'payer'>[],
+  procedures: readonly Pick<Procedure, 'payer' | 'split'>[],
   patientId: string,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
 ): InvoiceBilledTo | undefined {

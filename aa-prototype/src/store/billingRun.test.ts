@@ -231,7 +231,7 @@ describe('charge bases and holders', () => {
     }
   })
 
-  it("the surgeon's fixed price bills the payer on the Booking, one invoice with the hernia (catch-up Phase 21, US-11.2.1; 19a, RV-07)", () => {
+  it("the surgeon's fixed price bills the Procedure's payer, one invoice with the hernia (catch-up Phase 21, US-11.2.1; 19a, RV-07)", () => {
     const api = store()
     const bookingId = marker('bariatricType3Booking')
     stageAndBill(api, listOf(api, bookingId))

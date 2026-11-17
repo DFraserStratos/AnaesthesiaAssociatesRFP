@@ -114,7 +114,7 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.healthNz, name: 'Health NZ agreed rate', holderId: PARTY.cph, billsTo: 'holder', pricing: rate(23), fundingTagId: TAG.hnz },
   { id: CONTRACT.stgAcc, name: "ACC elective services via St George's", holderId: PARTY.stg, billsTo: 'holder', pricing: rate(25), fundingTagId: TAG.acc },
   // Doyle's gastric bypass: his old $2,800 row and the upcoming $2,950 as ranges; bills the
-  // payer on the Booking (catch-up Phase 21). His sleeve gastrectomy is in pricedItems.ts.
+  // Procedure's payer (catch-up Phases 21 and 22a). His sleeve gastrectomy is in pricedItems.ts.
   { id: CONTRACT.doyleBariatric, name: 'Gastric bypass', invoiceDescription: 'Gastric bypass, laparoscopic', holderId: PARTY.doyle, billsTo: 'payer', pricing: fixed(['2025-01-01', 2800], ['2026-07-28', 2950]), defaultRvgGroupId: RVG_GROUP.aaGastricBypass, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
   { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // The Method 3 gate (`permitsRateTime`, INTERIM until Phase 24), linked to
