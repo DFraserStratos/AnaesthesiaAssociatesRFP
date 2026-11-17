@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
-import { accent, neutral, radius, semantic, zIndex } from '../../theme/tokens'
+import { accent, neutral, radius } from '../../theme/tokens'
 import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
 import { childPayerOn, payerContactMissing, payerCounterparty, payerDetails, type BillingValidationFailure } from '../../domain/billing'
 import { NEEDS_PRICE_LABEL, rangeInForce } from '../../domain/billing/priceRanges'
 import { RvgCodeField } from '../capture/ProcedureCodeCard'
 import { TextAction } from '../ui/TextAction'
-import { formatCurrency, parseAmount, plural } from '../format'
+import { formatCurrency, parseAmount } from '../format'
 import { SlidingSegmentedControl } from '../ui/SlidingSegmentedControl'
 import {
   OFFICE_TYPES_AMOUNT_MESSAGE,
   contractRailFor,
   railAnswersText,
-  type RailOption,
 } from '../../domain/billing/contractRail'
-import { isRvgKind } from '../../domain/billing/contracts'
+import { contractMatchesQuery, isRvgKind } from '../../domain/billing/contracts'
 import {
   procedureStackViewFor,
   railActorOf,
@@ -30,11 +29,11 @@ import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { CaptureSection, FailureNotes } from '../capture/ui'
 import { Button } from '../ui/Button'
-import { Pill } from '../ui/Pill'
 import { PopoverPanel } from '../ui/PopoverPanel'
 import { usePopover } from '../ui/usePopover'
 import { Notice } from '../ui/Notice'
-import { contractPriceText } from '../flows/ContractRail'
+import { BackstopAmountField, ContractGroupHeading, NoContractGroup, RailOptionGroup, StepRail, type RailStep } from '../contracts/railParts'
+import { backstopPriceText, contractPriceText, railBackstops, railContractLabel } from '../contracts/railText'
 import { FormError } from '../ui'
 import { PaidByRow, type PaidByRowProps } from './PaidByRow'
 
@@ -320,7 +319,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   } else if (step === 1) {
     body = (
       <StepFrame question="Where does the invoice go?" aside={<StartAgain onClick={restart} hidden={given === undefined} />}>
-        <ChoiceTiles options={view.destination.options} value={view.destination.answer} stacked={sheet} onPick={(v) => keep({ destination: v as RailAnswers['destination'] })} />
+        <RailOptionGroup layout="tiles" label="Where does the invoice go?" options={view.destination.options} value={view.destination.answer} stacked={sheet} onPick={(v) => keep({ destination: v as RailAnswers['destination'] })} />
       </StepFrame>
     )
   } else if (step === 2 && view.narrow !== undefined) {
@@ -328,7 +327,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     const q = dest === 'patient' ? 'Standard or prepaid?' : dest === 'hospital' ? `Under which of ${destLabel ?? 'the hospital'}'s funding tags?` : 'Which holder?'
     body = (
       <StepFrame question={q} aside={<StartAgain onClick={restart} hidden={false} />}>
-        <ChoiceTiles options={view.narrow.options} value={view.narrow.answer} stacked={sheet} onPick={(v) => keep({ destination: dest, narrow: v })} />
+        <RailOptionGroup layout="tiles" label={q} options={view.narrow.options} value={view.narrow.answer} stacked={sheet} onPick={(v) => keep({ destination: dest, narrow: v })} />
       </StepFrame>
     )
   } else {
@@ -338,7 +337,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     // destination's two backstops, No contract · RVG and No contract · Fixed price; there is no "Other price" switch.
     const pinned = c?.rows.find((r) => r.pinned)
     const loneStandard = pinned !== undefined && rows.length === 1
-    const backstops = [c?.rvgBackstop, fallback?.contract].filter((x): x is Contract => x !== undefined)
+    const backstops = railBackstops(c)
     const current = contract !== undefined && (onThisPath || onThisFallback || onBackstop || keptOffList) ? contract : undefined
     const suggested = loneStandard && current === undefined && c?.autoPick !== undefined && !c.autoPick.viaOtherPrice ? masters.contracts[c.autoPick.contractId] : undefined
     const amountMode = loneStandard ? otherOn || onThisFallback : current?.pricing.kind === 'open'
@@ -384,42 +383,30 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     )
   }
 
-  const railSlots = slots.map((s, i) => {
+  const railSteps: RailStep[] = slots.map((s) => {
     // A Contract set on this path finishes the rail: every step ticked, as the mock's finished path.
     const complete = s.n === 3 && s.value !== undefined && editing === null
-    const done = s.value !== undefined && (s.n !== step || complete)
-    const current = editable && s.n === step && !complete
-    return (
-      <li key={s.n} style={{ minWidth: 0 }}>
-        <RailSlot
-          n={s.n}
-          label={s.label}
-          value={s.value}
-          auto={s.auto && s.value !== undefined}
-          done={done}
-          current={current}
-          last={i === slots.length - 1}
-          across={sheet}
-          onJump={editable && reachable(s.n) && s.n !== step ? () => jump(s.n) : undefined}
-        />
-      </li>
-    )
+    return {
+      n: s.n,
+      label: s.label,
+      ...(s.value !== undefined ? { value: s.value } : {}),
+      auto: s.auto,
+      done: s.value !== undefined && (s.n !== step || complete),
+      current: editable && s.n === step && !complete,
+      ...(editable && reachable(s.n) && s.n !== step ? { onJump: () => jump(s.n) } : {}),
+    }
   })
 
   return (
     <div className="aa-rail-scope" data-shot="contract-picker" style={{ display: 'flex', flexDirection: 'column', gap: sheet ? 16 : 12 }}>
       {sheet ? (
         <>
-          <nav aria-label="Billing steps">
-            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>{railSlots}</ol>
-          </nav>
+          <StepRail steps={railSteps} orientation="compact" label="Billing steps" />
           <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>{body}</div>
         </>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'clamp(168px, 28%, 236px) minmax(0, 1fr)' }}>
-          <nav aria-label="Billing steps" style={{ borderRight: `1px solid ${neutral.line}`, paddingRight: 12 }}>
-            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>{railSlots}</ol>
-          </nav>
+          <StepRail steps={railSteps} orientation="vertical" label="Billing steps" />
           <div style={{ paddingLeft: 18, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>{body}</div>
         </div>
       )}
@@ -449,146 +436,11 @@ function StartAgain({ onClick, hidden }: { onClick: () => void; hidden: boolean 
       onClick={onClick}
       tabIndex={hidden ? -1 : 0}
       aria-hidden={hidden}
-      className="aa-rail-focus"
       style={{ visibility: hidden ? 'hidden' : 'visible', display: 'inline-flex', alignItems: 'center', gap: 5, border: 'none', background: 'transparent', color: neutral.slate, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', fontFamily: 'inherit' }}
     >
       <RotateCcw size={13} aria-hidden /> Start again
     </button>
   )
-}
-
-/** One step of the rail: its marker (with the line on to the next), its label and its answer. */
-function RailSlot({ n, label, value, auto, done, current, last, across, onJump }: { n: Step; label: string; value?: string; auto: boolean; done: boolean; current: boolean; last: boolean; across?: boolean; onJump?: () => void }) {
-  if (across === true) {
-    // The phone's sheet: three steps side by side, each its marker, label and answer.
-    return (
-      <button
-        type="button"
-        data-shot={`contract-rail-step-${n}`}
-        disabled={onJump === undefined}
-        onClick={onJump}
-        aria-current={current ? 'step' : undefined}
-        className="aa-rail-focus"
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, width: '100%', height: '100%', boxSizing: 'border-box', textAlign: 'left', border: `1px solid ${current ? accent.base : 'transparent'}`, background: current ? accent.tint : 'transparent', borderRadius: radius.ctl, padding: 8, cursor: onJump !== undefined ? 'pointer' : 'default', fontFamily: 'inherit', minWidth: 0 }}
-      >
-        <span className="mono" style={{ width: 22, height: 22, borderRadius: radius.pill, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: done ? accent.base : neutral.surface, color: done ? neutral.surface : current ? accent.base : neutral.mist, border: done ? 'none' : `1.5px solid ${current ? accent.base : neutral.lineStrong}` }}>
-          {done ? <Check size={13} strokeWidth={3} aria-hidden /> : n}
-        </span>
-        <span style={{ fontSize: 11.5, lineHeight: '15px', fontWeight: 600, color: current ? accent.base : neutral.slate }}>{label}</span>
-        <span style={{ width: '100%', fontSize: 13, lineHeight: '17px', fontWeight: 600, color: done && value !== undefined ? neutral.ink : neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{done && value !== undefined ? value : 'Not answered'}</span>
-        {auto && <span data-shot="contract-rail-only-option" style={{ fontSize: 11.5, color: neutral.slate }}>Only option</span>}
-      </button>
-    )
-  }
-  return (
-    <button
-      type="button"
-      data-shot={`contract-rail-step-${n}`}
-      disabled={onJump === undefined}
-      onClick={onJump}
-      title={onJump !== undefined ? 'Change this answer' : undefined}
-      aria-current={current ? 'step' : undefined}
-      className="aa-rail-focus"
-      style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: current ? accent.tint : 'transparent', borderRadius: radius.ctl, padding: '8px 10px', cursor: onJump !== undefined ? 'pointer' : 'default', position: 'relative', fontFamily: 'inherit' }}
-    >
-      <span style={{ position: 'relative', flex: 'none', width: 24, display: 'flex', justifyContent: 'center' }}>
-        <span
-          className="mono"
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: radius.pill,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            fontWeight: 600,
-            background: done ? accent.base : neutral.surface,
-            color: done ? neutral.surface : current ? accent.base : neutral.mist,
-            border: done ? 'none' : `1.5px solid ${current ? accent.base : neutral.lineStrong}`,
-            zIndex: zIndex.raised,
-          }}
-        >
-          {done ? <Check size={13} strokeWidth={3} aria-hidden /> : n}
-        </span>
-        {!last && <span aria-hidden style={{ position: 'absolute', top: 26, bottom: -22, width: 1.5, background: done ? accent.base : neutral.line }} />}
-      </span>
-      <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-        <span style={{ fontSize: done ? 12 : 14, lineHeight: done ? '16px' : '24px', fontWeight: 600, color: current ? accent.base : done ? neutral.slate : neutral.mist }}>{label}</span>
-        {done && value !== undefined && (
-          <span style={{ fontSize: 14, lineHeight: '20px', fontWeight: 600, color: neutral.ink, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{value}</span>
-        )}
-        {auto && <span data-shot="contract-rail-only-option" style={{ fontSize: 12, color: neutral.slate }}>Only option</span>}
-      </span>
-    </button>
-  )
-}
-
-/** The step's answers as tiles, each with its count; one with none is greyed (its fallback still fills in). */
-function ChoiceTiles({ options, value, stacked, onPick }: { options: readonly RailOption[]; value?: string; stacked?: boolean; onPick: (v: string) => void }) {
-  return (
-    <div role="radiogroup" style={{ display: 'grid', gridTemplateColumns: stacked === true ? 'minmax(0, 1fr)' : 'repeat(auto-fit, minmax(170px, 1fr))', gap: stacked === true ? 8 : 10 }}>
-      {options.map((o) => {
-        const on = o.value === value
-        const empty = o.count === 0
-        return (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            data-rail-option={o.value}
-            disabled={!o.selectable}
-            onClick={() => onPick(o.value)}
-            className="aa-rail-focus"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 4,
-              textAlign: 'left',
-              padding: '12px 14px',
-              borderRadius: radius.ctl,
-              border: `1px solid ${on ? accent.base : neutral.lineStrong}`,
-              boxShadow: on ? `inset 0 0 0 1px ${accent.base}` : 'none',
-              background: on ? accent.tint : empty ? neutral.bg : neutral.surface,
-              cursor: o.selectable ? 'pointer' : 'default',
-              opacity: o.selectable ? 1 : 0.55,
-              minWidth: 0,
-              fontFamily: 'inherit',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: on ? accent.base : neutral.ink }}>{o.label}</span>
-              {/* The Booking's funder marks one path (catch-up Phase 21, US-04.3.10): never a filter. */}
-              {o.suggested === true && (
-                <Pill size="sm" shot="rail-suggested">
-                  Suggested
-                </Pill>
-              )}
-            </span>
-            {o.hint !== undefined && <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>{o.hint}</span>}
-            <span style={{ marginTop: 'auto', paddingTop: 6, fontSize: 12, color: empty ? neutral.mist : neutral.slate }}>
-              {empty ? 'None for this List' : plural(o.count, 'Contract')}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-const NO_CONTRACT_HEADING = 'No contract'
-
-/** A Contract as the lists name it: the backstops as "No contract · RVG" and "No contract · Fixed price", whoever holds them. */
-export function contractLabel(c: Contract): string {
-  if (c.systemRole === 'noContractRvg' || c.systemRole === 'rvgFallback') return 'No contract · RVG'
-  if (c.systemRole === 'openPriceFallback') return c.prepaid ? 'Prepaid · Fixed price' : 'No contract · Fixed price'
-  return c.name
-}
-
-function backstopPriceText(c: Contract): string {
-  return c.pricing.kind === 'open' ? 'Type the amount' : 'RVG'
 }
 
 /** "Choose the Contract": a field that drops down the step's Contracts, searchable, grouped by holder. */
@@ -616,27 +468,48 @@ function ContractCombo({
   const { open, setOpen, rootRef, panelId, triggerProps } = usePopover()
   const [q, setQ] = useState('')
 
-  // The rail's own rows for this step (No contract · RVG pinned first, never searched away); the search
-  // narrows them with 18's matcher fields, shown here.
+  // The step's own Contracts, grouped by holder; the search narrows them through the one matcher
+  // (`contractMatchesQuery`, catch-up 18/19a). The backstops head the list and are never searched away.
   const groups = useMemo(() => {
-    const needle = q.replace(/\s+/g, '').toLowerCase()
-    const hit = (c: Contract) => {
-      if (needle === '') return true
-      const code = c.defaultRvgGroupId !== null ? (rvgGroups[c.defaultRvgGroupId]?.code ?? '') : ''
-      return [c.name, c.aaCode, c.holderReference ?? '', c.invoiceDescription ?? ''].some((f) => f.replace(/\s+/g, '').toLowerCase().includes(needle)) || code.toLowerCase() === needle
-    }
-    const out = new Map<string, { title: string; rows: { contract: Contract; pinned: boolean }[] }>()
-    if (backstops.length > 0) out.set(NO_CONTRACT_HEADING, { title: NO_CONTRACT_HEADING, rows: backstops.map((contract) => ({ contract, pinned: true })) })
+    const out = new Map<string, { title: string; rows: Contract[] }>()
     for (const r of rows) {
-      if (!r.pinned && !hit(r.contract)) continue
+      if (!r.pinned && !contractMatchesQuery(r.contract, q, rvgGroups)) continue
       const title = parties[r.contract.holderId]?.name ?? r.contract.holderId
       const g = out.get(title) ?? { title, rows: [] }
-      g.rows.push(r)
+      g.rows.push(r.contract)
       out.set(title, g)
     }
     return [...out.values()]
-  }, [rows, backstops, q, parties, rvgGroups])
-  const matched = groups.reduce((n, g) => n + g.rows.filter((r) => !r.pinned).length, 0)
+  }, [rows, q, parties, rvgGroups])
+  const matched = groups.reduce((n, g) => n + g.rows.length, 0)
+
+  const option = (contract: Contract, priceText: string) => {
+    const selected = value?.id === contract.id
+    return (
+      <button
+        key={contract.id}
+        type="button"
+        role="option"
+        aria-selected={selected}
+        data-contract-id={contract.id}
+        onClick={() => {
+          setOpen(false)
+          onPick(contract.id)
+        }}
+        style={{ display: 'grid', gridTemplateColumns: '18px minmax(0, 1fr) auto', alignItems: 'center', columnGap: 10, width: '100%', textAlign: 'left', border: 'none', background: selected ? accent.tint : 'transparent', padding: '9px 14px', fontFamily: 'inherit', cursor: 'pointer' }}
+      >
+        <span aria-hidden style={{ color: accent.base, display: 'flex' }}>{selected && <Check size={15} strokeWidth={3} />}</span>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: neutral.ink }}>{railContractLabel(contract)}</span>
+          <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: 11.5, color: neutral.slate }}>{contract.aaCode}</span>
+            {contract.holderReference !== undefined && <span className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{contract.holderReference}</span>}
+          </span>
+        </span>
+        <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap' }}>{priceText}</span>
+      </button>
+    )
+  }
 
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
@@ -645,7 +518,6 @@ function ContractCombo({
         type="button"
         data-shot="contract-combo"
         aria-haspopup="listbox"
-        className="aa-rail-focus"
         onClick={() => {
           setOpen(!open)
           setQ('')
@@ -654,7 +526,7 @@ function ContractCombo({
       >
         {value !== undefined ? (
           <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{contractLabel(value)}</span>
+            <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{railContractLabel(value)}</span>
             <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{value.aaCode}</span>
           </span>
         ) : (
@@ -672,42 +544,16 @@ function ContractCombo({
               onChange={(e) => setQ(e.target.value)}
               placeholder="Type a name or code"
               aria-label="Type a name or code"
-              className="aa-rail-focus"
-              style={{ flex: 1, border: 'none', fontSize: 14.5, fontFamily: 'inherit', color: neutral.ink, background: 'transparent' }}
+              className="aa-field"
+              style={{ flex: 1, border: 'none', borderRadius: radius.xs, fontSize: 14.5, fontFamily: 'inherit', color: neutral.ink, background: 'transparent' }}
             />
           </div>
           <div role="listbox" aria-label="Contracts" style={{ maxHeight: 340, overflow: 'auto', padding: '4px 0' }}>
+            <NoContractGroup backstops={backstops} renderRow={(c) => option(c, backstopPriceText(c))} />
             {groups.map((g) => (
               <div key={g.title}>
-                <div style={{ padding: '8px 14px 4px', fontSize: 11.5, fontWeight: 700, color: neutral.mist }}>{g.title}</div>
-                {g.rows.slice(0, 50).map(({ contract, pinned }) => {
-                  const selected = value?.id === contract.id
-                  return (
-                    <button
-                      key={contract.id}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      data-contract-id={contract.id}
-                      className="aa-rail-focus"
-                      onClick={() => {
-                        setOpen(false)
-                        onPick(contract.id)
-                      }}
-                      style={{ display: 'grid', gridTemplateColumns: '18px minmax(0, 1fr) auto', alignItems: 'center', columnGap: 10, width: '100%', textAlign: 'left', border: 'none', background: selected ? accent.tint : 'transparent', padding: '9px 14px', fontFamily: 'inherit', cursor: 'pointer' }}
-                    >
-                      <span aria-hidden style={{ color: accent.base, display: 'flex' }}>{selected && <Check size={15} strokeWidth={3} />}</span>
-                      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                        <span style={{ fontSize: 14, fontWeight: 500, color: neutral.ink }}>{contractLabel(contract)}</span>
-                        <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <span className="mono" style={{ fontSize: 11.5, color: neutral.slate }}>{contract.aaCode}</span>
-                          {contract.holderReference !== undefined && <span className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{contract.holderReference}</span>}
-                        </span>
-                      </span>
-                      <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap' }}>{pinned ? backstopPriceText(contract) : contractPriceText(contract, dateISO)}</span>
-                    </button>
-                  )
-                })}
+                <ContractGroupHeading>{g.title}</ContractGroupHeading>
+                {g.rows.slice(0, 50).map((c) => option(c, contractPriceText(c, dateISO)))}
               </div>
             ))}
             {q.trim() !== '' && matched === 0 && <div style={{ padding: '10px 14px', fontSize: 13.5, color: neutral.mist }}>No Contract matches "{q.trim()}".</div>}
@@ -893,30 +739,29 @@ function AmountEntry({
     if (typed !== undefined && typed !== saved) onAmount(typed)
   }
   const todo = saved === undefined && editable
+  const label = (
+    <span style={{ ...FIELD_LABEL, color: todo && mobile ? accent.base : neutral.slate }}>
+      Fixed price{todo && mobile ? ' · to do' : ''}
+    </span>
+  )
+  // The typed amount is the rail's one amount field (UI unification U4, README U24: 44px, a hint line, aria-invalid).
+  if (mayType) {
+    return (
+      <BackstopAmountField
+        label={label}
+        ariaLabel="Fixed price, ex GST"
+        value={text}
+        onChange={setText}
+        onCommit={commit}
+        invalid={text.trim() !== '' && typed === undefined}
+        block={mobile}
+      />
+    )
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ ...FIELD_LABEL, color: todo && mobile ? accent.base : neutral.slate }}>
-        Fixed price{todo && mobile ? ' · to do' : ''}
-      </span>
-      {mayType ? (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${text.trim() !== '' && typed === undefined ? semantic.error.solid : neutral.lineStrong}`, borderRadius: radius.ctl, padding: '0 12px', background: neutral.surface, maxWidth: mobile ? undefined : 220 }}>
-          <span className="mono" style={{ fontSize: mobile ? 17 : 15, color: neutral.slate }}>$</span>
-          <input
-            data-shot="contract-rail-amount"
-            inputMode="decimal"
-            aria-label="Fixed price, ex GST"
-            placeholder="0.00"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commit()
-            }}
-            className="mono"
-            style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent', flex: 1, minWidth: 0, padding: mobile ? '12px 0' : '9px 0', fontSize: mobile ? 18 : 15, fontWeight: 600, color: neutral.ink }}
-          />
-        </label>
-      ) : saved !== undefined ? (
+      {label}
+      {saved !== undefined ? (
         <span className="mono" style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{formatCurrency(saved)}</span>
       ) : (
         <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -938,7 +783,7 @@ function ReadOnlySummary({ contract, answersText, officeOnly }: { contract?: Con
       {contract !== undefined ? (
         <>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{contractLabel(contract)}</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{railContractLabel(contract)}</span>
             <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{contract.aaCode}</span>
           </span>
         </>
@@ -978,7 +823,7 @@ function MobileBillingCard(props: BillingCardProps) {
   const rows = (
     <>
       <SummaryRow label="Invoice to" value={answers} todo={answers === undefined ? 'Where the invoice goes' : undefined} />
-      <SummaryRow label="Contract" value={contract !== undefined ? contractLabel(contract) : undefined} todo={contract === undefined ? (answers === undefined ? 'After where the invoice goes' : 'Not chosen yet') : undefined} />
+      <SummaryRow label="Contract" value={contract !== undefined ? railContractLabel(contract) : undefined} todo={contract === undefined ? (answers === undefined ? 'After where the invoice goes' : 'Not chosen yet') : undefined} />
       <SummaryRow
         label="Price"
         value={priceLine}
@@ -1002,7 +847,6 @@ function MobileBillingCard(props: BillingCardProps) {
         tabIndex={editable ? 0 : -1}
         data-validation-procedure-id={procedure.id}
         data-validation-fields={['rvgGroupId', 'baseUnitsSelected', ...BILLING_FAILURE_FIELDS].join(' ')}
-        className="aa-rail-focus"
         style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: radius.ctl, padding: 0, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
       >
         <span style={{ display: 'flex', alignItems: 'baseline', width: '100%' }}>

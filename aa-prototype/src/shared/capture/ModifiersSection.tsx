@@ -163,7 +163,8 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
           {editable && (
             <>
               {' · '}
-              <TextAction small label="Change: add a modifier" onClick={() => setPicker({})}>
+              {/* The same `modifier-add` hook as "Add a modifier" (they never show together), so recipes open the picker either way. */}
+              <TextAction small label="Change: add a modifier" shot="modifier-add" onClick={() => setPicker({})}>
                 Change
               </TextAction>
             </>

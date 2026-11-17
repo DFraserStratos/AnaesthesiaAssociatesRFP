@@ -1,8 +1,8 @@
 /** Shared primitives for the BTM capture cards (mockup screen 3 anatomy). */
 import { Pill } from '../ui/Pill'
 
-import type { ReactNode } from 'react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingValidationFailure } from '../../domain/billing'
 
 /**
@@ -118,6 +118,139 @@ export function StepperButton({
       }}
     >
       {glyph}
+    </button>
+  )
+}
+
+/**
+ * The one whole-number stepper (UI unification U4, group U34): the mockup's
+ * 44px − and + (`StepperButton`) around the value. The buttons are named
+ * "Fewer {label}" and "More {label}" and disable at the bounds; the value is
+ * announced politely as it changes. `typeable` turns the value into a button
+ * that types a number in place (Enter saves, Escape cancels and stops there,
+ * so a sheet behind stays open; a blur saves), as the RVG range row has since
+ * Phase 19.
+ */
+export function NumberStepper({
+  value,
+  onChange,
+  min = 0,
+  max,
+  label,
+  typeable,
+}: {
+  value: number
+  onChange: (next: number) => void
+  min?: number
+  max?: number
+  /** The plural noun the buttons name ("units", "base units"). */
+  label: string
+  /** The typed edit: the value's name ("Base units") and which typed numbers are taken. */
+  typeable?: { name: string; accept?: (n: number) => boolean }
+}) {
+  const atMin = value <= min
+  const atMax = max !== undefined && value >= max
+  return (
+    <div role="group" aria-label={label} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 'none' }}>
+      <StepperButton glyph="−" label={`Fewer ${label}`} onClick={() => onChange(Math.max(min, value - 1))} disabled={atMin} />
+      {typeable !== undefined ? (
+        <TypedValue value={value} min={min} max={max} name={typeable.name} accept={typeable.accept} onChange={onChange} />
+      ) : (
+        <span className="mono" aria-live="polite" style={{ width: 32, textAlign: 'center', fontSize: 18, fontWeight: 700 }}>
+          {value}
+        </span>
+      )}
+      <StepperButton glyph="+" label={`More ${label}`} onClick={() => onChange(max !== undefined ? Math.min(max, value + 1) : value + 1)} disabled={atMax} />
+    </div>
+  )
+}
+
+function TypedValue({
+  value,
+  min,
+  max,
+  name,
+  accept,
+  onChange,
+}: {
+  value: number
+  min: number
+  max: number | undefined
+  name: string
+  accept: ((n: number) => boolean) | undefined
+  onChange: (next: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value))
+  const inputRef = useRef<HTMLInputElement>(null)
+  const valueRef = useRef<HTMLButtonElement>(null)
+  // Enter and Escape both unmount the input, which can fire its blur: the
+  // first of commit or cancel wins, so a draft is never saved twice or saved
+  // after Escape.
+  const settled = useRef(false)
+  const returnFocus = useRef(false)
+
+  useEffect(() => {
+    if (editing) {
+      settled.current = false
+      inputRef.current?.select()
+    } else if (returnFocus.current) {
+      returnFocus.current = false
+      valueRef.current?.focus()
+    }
+  }, [editing])
+
+  const takes = accept ?? ((n: number) => Number.isInteger(n) && n >= min && (max === undefined || n <= max))
+
+  function finish(save: boolean, refocus: boolean) {
+    if (settled.current) return
+    settled.current = true
+    returnFocus.current = refocus
+    setEditing(false)
+    const next = Number(draft.trim())
+    if (save && draft.trim() !== '' && takes(next) && next !== value) onChange(next)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        inputMode="numeric"
+        pattern="[0-9]*"
+        aria-label={name}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
+        onBlur={() => finish(true, false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            // Focus returns to the value button while Enter is still down: without this the same press reopens the edit.
+            e.preventDefault()
+            finish(true, true)
+          }
+          if (e.key === 'Escape') {
+            e.stopPropagation()
+            finish(false, true)
+          }
+        }}
+        className="aa-field mono"
+        style={{ width: 48, height: 40, textAlign: 'center', fontSize: 20, fontWeight: 700, border: `1px solid ${accent.base}`, borderRadius: radius.ctl, fontFamily: 'inherit', color: neutral.ink, background: neutral.surface }}
+      />
+    )
+  }
+  return (
+    <button
+      ref={valueRef}
+      type="button"
+      aria-label={`${name} ${value}. Type a value`}
+      aria-live="polite"
+      onClick={() => {
+        setDraft(String(value))
+        setEditing(true)
+      }}
+      className="mono"
+      style={{ width: 48, height: 40, border: `1px dashed ${neutral.lineStrong}`, borderRadius: radius.ctl, background: 'transparent', fontSize: 20, fontWeight: 700, color: neutral.ink, cursor: 'text', fontFamily: 'inherit' }}
+    >
+      {value}
     </button>
   )
 }

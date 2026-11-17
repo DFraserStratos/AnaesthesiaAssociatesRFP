@@ -1,8 +1,8 @@
-import { useRef, type KeyboardEvent } from 'react'
 import { vacatedChoices } from '../../domain/listMoves'
 import type { SlotStatusKey } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
+import { useRovingRadio } from '../ui/useRovingRadio'
 
 /**
  * What the session a List leaves becomes (catch-up Phase 32b; D60, OQ-84
@@ -66,36 +66,21 @@ export function StatusRadioGroup({
   labelOf?: 'label' | 'longLabel'
 }) {
   const statuses = useSlotStatusRecords()
-  const refs = useRef<(HTMLButtonElement | null)[]>([])
-
-  // Arrow keys move the choice, as a native radio group does.
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.key)) return
-    e.preventDefault()
-    const at = Math.max(0, choices.indexOf(value))
-    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1
-    const next = (at + step + choices.length) % choices.length
-    const key = choices[next]
-    if (key === undefined) return
-    onChange(key)
-    refs.current[next]?.focus()
-  }
+  // One Tab stop, arrows move and select, Home and End: the shared radio keyboard model (U4).
+  const radio = useRovingRadio({ values: choices, value, onChange })
 
   return (
     <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {showLabel && <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{label}</span>}
-      <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div {...radio.groupProps} aria-label={label} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {choices.map((k, i) => {
           const r = resolveDisplayStatus(k, statuses)
           const selected = value === k
           return (
             <button
               key={k}
-              ref={(el) => { refs.current[i] = el }}
+              {...radio.itemProps(i)}
               type="button"
-              role="radio"
-              aria-checked={selected}
-              tabIndex={selected || (!choices.includes(value) && i === 0) ? 0 : -1}
               data-shot={`${shot}-${k}`}
               data-status-choice={k}
               onClick={() => onChange(k)}

@@ -8,11 +8,11 @@
  * disabled, never hidden. Admin only.
  */
 
-import type { CSSProperties } from 'react'
 import { PAIRING_LABELS, groupSurgeonsForAnaesthetist } from '../../../../domain/pairingPreferences'
 import type { Surgeon } from '../../../../domain/types'
 import { titledSurname } from '../../../../shared/format'
 import { useAppStore } from '../../../../store'
+import { SelectField, type FieldFill, type FieldSize } from '../../../../shared/ui'
 import { usePairingEntries } from './useOfficePairings'
 
 interface SurgeonPickerProps {
@@ -27,11 +27,16 @@ interface SurgeonPickerProps {
   emptyLabel: string
   /** Each picker's own option text (default: the name). */
   optionLabel?: (surgeon: Surgeon) => string
-  style?: CSSProperties
-  ariaLabel?: string
+  /** The field's label ("Surgeon", "Usual surgeon"); with `hideLabel`, the select's literal aria-label. */
+  label: string
+  hideLabel?: boolean
+  /** SelectField's chrome (UI unification U4): 48px grey well in a sheet by default. */
+  size?: FieldSize
+  fill?: FieldFill
+  width?: number | string
 }
 
-export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, optionLabel, style, ariaLabel }: SurgeonPickerProps) {
+export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, optionLabel, label, hideLabel, size, fill, width }: SurgeonPickerProps) {
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const anaesthetistName = useAppStore((s) => (anaesthetistId !== undefined ? s.masters.anaesthetists[anaesthetistId]?.name : undefined))
   const entries = usePairingEntries()
@@ -44,7 +49,7 @@ export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, opt
     </option>
   ))
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} style={style} aria-label={ariaLabel} data-shot="surgeon-picker">
+    <SelectField label={label} hideLabel={hideLabel} size={size} fill={fill} width={width} value={value} onChange={onChange} shot="surgeon-picker">
       <option value="" disabled>{emptyLabel}</option>
       {notPreferred.length === 0 ? (
         clearOptions
@@ -61,6 +66,6 @@ export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, opt
           </optgroup>
         </>
       )}
-    </select>
+    </SelectField>
   )
 }

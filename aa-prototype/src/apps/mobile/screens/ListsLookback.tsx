@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { CalendarDays, ChevronRight, Search, X } from 'lucide-react'
+import { CalendarDays, ChevronRight, X } from 'lucide-react'
 import { accent, elevation, neutral, radius } from '../../../theme/tokens'
 import { LIST_PROGRESS_LABEL } from '../../../domain/listProgress'
 import { listDaysFor, listsOnDayFor, useAppStore, type BookingSearchRow, type LookbackList } from '../../../store'
@@ -21,6 +21,7 @@ import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../
 import { dayWithYear, longDay, nhiBadge, shortDay, plural } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
+import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
 
 // ---------------------------------------------------------------------------
 // The header row: search field and calendar button
@@ -39,41 +40,17 @@ export function LookbackSearchRow({
   const [text, setText] = useFieldText(query, onQueryChange)
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-        <Search size={16} aria-hidden color={neutral.mist} style={{ position: 'absolute', left: 14, top: 16 }} />
-        <input
-          type="search"
-          inputMode="search"
-          aria-label="Search your Bookings"
-          placeholder="Search patient name or NHI"
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* The shared search box, white on the phone canvas (UI unification U4, question 4), with the 44px clear. */}
+        <NameSearchBox
           value={text}
-          onChange={(e) => setText(e.target.value)}
-          data-testid="mobile-lists-search"
-          className="aa-search-field"
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            height: 48,
-            borderRadius: radius.ctl,
-            border: `1px solid ${neutral.line}`,
-            background: neutral.bg,
-            padding: text !== '' ? '0 44px 0 38px' : '0 14px 0 38px',
-            fontFamily: 'inherit',
-            fontSize: 15,
-            color: neutral.ink,
-            appearance: 'none',
-          }}
+          onChange={setText}
+          label="Search your Bookings"
+          placeholder="Search patient name or NHI"
+          fill="surface"
+          touch
+          testId="mobile-lists-search"
         />
-        {text !== '' && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => setText('')}
-            style={{ position: 'absolute', right: 2, top: 2, width: 44, height: 44, border: 'none', background: 'none', color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
-            <X size={18} aria-hidden />
-          </button>
-        )}
       </div>
       <button
         type="button"

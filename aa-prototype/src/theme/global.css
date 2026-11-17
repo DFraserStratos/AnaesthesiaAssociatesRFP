@@ -380,6 +380,34 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   box-shadow: var(--shadow-calendar-focus);
 }
 
+/* UI unification U4 (question 6): the one focus ring on every field. TextField,
+   TextArea, SelectField, NameSearchBox and Checkbox put `aa-field` on their
+   control. A teal border and the Design Language ring, never the browser blue.
+   The border colour beats the control's inline border with `!important`; no
+   font size is set here, so the PWA's 16px input rule below still holds. An
+   invalid field keeps its error border inside the teal ring. The admin
+   calendar's crimson ring above is separate and stays (README section 5). */
+.aa-field:focus-visible {
+  outline: none;
+  border-color: var(--color-accent) !important;
+  box-shadow: var(--focus-ring);
+}
+.aa-field[aria-invalid='true']:focus-visible {
+  border-color: var(--color-error) !important;
+}
+/* The Switch (U4) draws the same ring round its track, not the whole row. */
+.aa-switch:focus-visible {
+  outline: none;
+}
+.aa-switch:focus-visible .aa-switch-track {
+  box-shadow: var(--focus-ring);
+}
+.aa-field::-webkit-search-cancel-button,
+.aa-field::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .aa-filter-toggle:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
@@ -391,6 +419,16 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
 }
 
 [data-validation-focus='true']:focus {
+  outline: 3px solid var(--color-error);
+  outline-offset: 3px;
+}
+
+/* A field that is also a validation target (the RVG code type-ahead) keeps the one field ring on
+   keyboard focus (U4), and shows the error outline only when validation sends focus there. */
+.aa-field[data-validation-fields]:focus-visible {
+  outline: none;
+}
+.aa-field[data-validation-focus='true']:focus {
   outline: 3px solid var(--color-error);
   outline-offset: 3px;
 }
@@ -756,19 +794,6 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
   }
 }
 
-/* Catch-up Phase 38a: the Lists search field on both anaesthetist apps. The
-   app's teal focus outline (not the browser's own), and no native search
-   cancel glyph beside the field's own clear button. */
-.aa-search-field:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
-}
-.aa-search-field::-webkit-search-cancel-button,
-.aa-search-field::-webkit-search-decoration {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
 /*
  * Admin Day row controls revealed only when the pointer is near them, over the
  * row's right gutter, or on the control's own keyboard focus (catch-up Phase
@@ -806,10 +831,10 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
   }
 }
 
-/* Catch-up Phase 20: the step rail and the Billing card take the app's teal
-   focus ring, never the browser's blue. */
-.aa-rail-scope button:focus-visible,
-.aa-rail-scope input:focus-visible {
+/* Catch-up Phase 20: the step rail's and the Billing card's buttons take the
+   app's teal focus outline, never the browser's blue. Their inputs carry
+   `aa-field` since U4; buttons move onto the shared ring in U5. */
+.aa-rail-scope button:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }

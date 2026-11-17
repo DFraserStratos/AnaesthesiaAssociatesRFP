@@ -7,7 +7,7 @@
  * stays open, so both sides of one pair can be active.
  */
 
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import { PAIRING_LABELS, activeEntryOnSide, pairingSentence } from '../../../../domain/pairingPreferences'
 import { compareBySurname } from '../../../../domain/surgeons'
 import type { PairingKind, PairingSide } from '../../../../domain/types'
@@ -16,7 +16,7 @@ import { useAppStore, type Actor } from '../../../../store'
 import { addPairingPreference } from '../../../../store/officePrivate'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
-import { selectControlStyle } from '../../flows/fieldChrome'
+import { SelectField } from '../../../../shared/ui'
 import type { PairingPerspective } from './perspective'
 import { usePairingEntries } from './useOfficePairings'
 
@@ -39,7 +39,6 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
   const [counterpartId, setCounterpartId] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const takenHintId = useId()
 
   const subjectName = perspective === 'surgeon' ? (surgeons[subjectId]?.name ?? subjectId) : (anaesthetists[subjectId]?.name ?? subjectId)
   const pairOf = (otherId: string) =>
@@ -118,24 +117,20 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
           ]}
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>{perspective === 'surgeon' ? 'Anaesthetist' : 'Surgeon'}</FieldLabel>
-          <select data-shot="pairing-counterpart" aria-describedby={disabledCount > 0 ? takenHintId : undefined} value={counterpartId} onChange={(e) => { setCounterpartId(e.target.value); setError(null) }} style={selectControlStyle}>
-            <option value="">{perspective === 'surgeon' ? 'Choose an anaesthetist' : 'Choose a surgeon'}</option>
-            {counterparts.map((c) => (
-              <option key={c.id} value={c.id} disabled={c.taken !== undefined} data-taken={c.taken !== undefined ? c.taken.kind : undefined}>
-                {c.name}{c.taken !== undefined ? ` · ${PAIRING_LABELS.alreadyOnSide(c.taken.kind)}` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-          {disabledCount > 0 && (
-            <span id={takenHintId} style={{ fontSize: 12, color: neutral.mist }}>
-              Greyed names already have an entry on this side. End it first to change it, or record the other side.
-            </span>
-          )}
-        </div>
+        <SelectField
+          label={perspective === 'surgeon' ? 'Anaesthetist' : 'Surgeon'}
+          value={counterpartId}
+          onChange={(v) => { setCounterpartId(v); setError(null) }}
+          shot="pairing-counterpart"
+          hint={disabledCount > 0 ? 'Greyed names already have an entry on this side. End it first to change it, or record the other side.' : undefined}
+        >
+          <option value="">{perspective === 'surgeon' ? 'Choose an anaesthetist' : 'Choose a surgeon'}</option>
+          {counterparts.map((c) => (
+            <option key={c.id} value={c.id} disabled={c.taken !== undefined} data-taken={c.taken !== undefined ? c.taken.kind : undefined}>
+              {c.name}{c.taken !== undefined ? ` · ${PAIRING_LABELS.alreadyOnSide(c.taken.kind)}` : ''}
+            </option>
+          ))}
+        </SelectField>
 
         {preview !== null && (
           <div data-shot="pairing-preview" style={{ background: kind === 'NOT_PREFERRED' ? semantic.warning.tint : accent.tint, color: kind === 'NOT_PREFERRED' ? semantic.warning.onTint : accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>

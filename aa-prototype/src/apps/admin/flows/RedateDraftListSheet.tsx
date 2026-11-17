@@ -9,10 +9,9 @@ import { useEffect, useState } from 'react'
 import { neutral } from '../../../theme/tokens'
 import { bookingCountsByList, redateDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
 import type { Session } from '../../../domain/types'
-import { Button, FieldLabel, FormError, Segmented } from '../../../shared/ui'
+import { Button, FormError, Segmented, TextField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
-import { assignSelectStyle } from './AssignListFields'
 
 const SESSION_OPTIONS: { value: Session; label: string }[] = [
   { value: 'AM', label: 'AM' },
@@ -57,10 +56,9 @@ export function RedateDraftListSheet({ open, listId, actor, onClose, onDone }: {
       <div data-shot="admin-redate-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader title="Change date" />
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-            <FieldLabel>Day</FieldLabel>
-            <input type="date" value={dateISO} min={today} max={horizonEnd} onChange={(e) => { setDateISO(e.target.value); setError(null) }} style={assignSelectStyle} />
-          </label>
+          <div style={{ flex: 1 }}>
+            <TextField label="Day" type="date" value={dateISO} min={today} max={horizonEnd} onChange={(d) => { setDateISO(d); setError(null) }} />
+          </div>
           <Segmented label="Session" value={session} options={SESSION_OPTIONS} onChange={(s) => { setSession(s); setError(null) }} />
         </div>
         <div style={{ fontSize: 13, color: neutral.slate }}>

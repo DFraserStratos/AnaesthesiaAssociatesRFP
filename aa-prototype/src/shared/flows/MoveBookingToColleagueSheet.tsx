@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronRight } from 'lucide-react'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import {
   bookingRequiresPrepayment,
   moveBookingToAnaesthetist,
@@ -13,7 +13,7 @@ import {
 import { bookingMoveReceivers, freeColleagues, type BookingMoveInput, type BookingReceiver } from '../../domain/bookingMoves'
 import type { AssignedList, Booking } from '../../domain/types'
 import { drSurname, locationName } from '../format'
-import { Button, NameSearchBox, TextArea, FormError } from '../ui'
+import { Button, Checkbox, NameSearchBox, TextArea, FormError } from '../ui'
 import { DoneStep } from '../ui/DoneStep'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -163,7 +163,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
         {step === 'find' && (
           <>
             {header}
-            <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-booking-search" />
+            <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-booking-search" fill="well" />
             <div style={{ fontSize: 13, color: neutral.slate }}>
               {searching ? 'Matching colleagues, in name order' : `Free this session · ${day} ${sessionText(list.session)}`}
             </div>
@@ -232,21 +232,10 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
 
             <TextArea label="Add a message" value={message} onChange={setMessage} placeholder={`Optional note for ${receiverShort}`} />
 
-            <label
-              data-shot="move-booking-tell-office"
-              style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', borderRadius: radius.card, border: `1px solid ${tellOffice ? accent.base : neutral.line}`, background: tellOffice ? accent.tint : neutral.surface, cursor: 'pointer' }}
-            >
-              <input
-                type="checkbox"
-                checked={tellOffice}
-                onChange={(e) => setTellOffice(e.target.checked)}
-                style={{ width: 20, height: 20, margin: '1px 0 0', accentColor: accent.base, flex: 'none', cursor: 'pointer' }}
-              />
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>Tell the office</span>
-                <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>Optional. Adds a note to the office&apos;s notifications.</span>
-              </span>
-            </label>
+            {/* The tick card; tests and recipes read `[data-shot="move-booking-tell-office"] input`. */}
+            <Checkbox variant="card" labelShot="move-booking-tell-office" checked={tellOffice} onChange={setTellOffice} hint="Optional. Adds a note to the office's notifications.">
+              Tell the office
+            </Checkbox>
 
             <FormError message={error} />
             <SheetActions

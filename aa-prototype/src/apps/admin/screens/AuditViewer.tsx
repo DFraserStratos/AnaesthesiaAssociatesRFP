@@ -1,5 +1,5 @@
 import { contractLabel } from '../../../shared/contracts'
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { useAppStore } from '../../../store'
 import {
@@ -11,10 +11,10 @@ import {
   summariseAuditChanges,
 } from '../../../shared/audit'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
+import { FilterDateInput, SelectField } from '../../../shared/ui'
 
 const cellStyle = cellFactory(true)
 const headCellStyle = headFactory(true)
-const selectStyle: CSSProperties = { font: 'inherit', fontSize: 13, padding: '6px 8px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }
 
 const SOURCES = ['all', 'anaesthetist', 'office', 'integration', 'system', 'demo'] as const
 
@@ -95,27 +95,19 @@ export function AuditViewer() {
       </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <Filter label="Entity type">
-          <select value={entityType} onChange={(e) => setEntityType(e.target.value)} style={selectStyle}>
-            {entityTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </Filter>
-        <Filter label="Source">
-          <select value={source} onChange={(e) => setSource(e.target.value)} style={selectStyle}>
-            {SOURCES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </Filter>
-        <Filter label="From">
-          <input type="date" value={fromISO} onChange={(e) => setFromISO(e.target.value)} style={selectStyle} />
-        </Filter>
-        <Filter label="To">
-          <input type="date" value={toISO} onChange={(e) => setToISO(e.target.value)} style={selectStyle} />
-        </Filter>
-        <span style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 6 }}>{filtered.length} entries</span>
+        <SelectField label="Entity type" size="compact" fill="surface" value={entityType} onChange={setEntityType}>
+          {entityTypes.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </SelectField>
+        <SelectField label="Source" size="compact" fill="surface" value={source} onChange={setSource}>
+          {SOURCES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </SelectField>
+        <FilterDateInput label="From" value={fromISO} onChange={setFromISO} />
+        <FilterDateInput label="To" value={toISO} onChange={setToISO} />
+        <span style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{filtered.length} entries</span>
       </div>
 
       <div style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
@@ -159,14 +151,5 @@ export function AuditViewer() {
         <div style={{ fontSize: 12, color: neutral.mist }}>Showing the {CAP} most recent of {filtered.length} matching entries. Narrow the filters to see older ones.</div>
       )}
     </div>
-  )
-}
-
-function Filter({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>{label}</span>
-      {children}
-    </label>
   )
 }

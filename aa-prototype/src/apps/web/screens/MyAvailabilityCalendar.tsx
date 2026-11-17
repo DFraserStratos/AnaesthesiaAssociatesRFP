@@ -15,8 +15,8 @@ import {
   shiftMonth,
   useAvailabilityBounds,
   useAvailabilityMonth,
-  WEEKDAY_SHORT_NAMES,
 } from '../../../shared/availability'
+import { MonthHeaderRow } from '../../../shared/calendar'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { sessionText } from '../../../domain/outOfHours'
 
@@ -89,9 +89,7 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
           }
         >
           <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: -6 }}>Click a day to see its sessions. Shift-click another day to select the dates between.</div>
-          <div aria-hidden style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 6 }}>
-            {WEEKDAY_SHORT_NAMES.map((d) => <span key={d} style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', paddingLeft: 4 }}>{d}</span>)}
-          </div>
+          <MonthHeaderRow variant="short" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 6 }} cellStyle={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', paddingLeft: 4 }} />
           <div role="group" aria-label={`${format(parseISO(`${month}-01`), 'MMMM yyyy')}, your sessions`} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 6 }}>
             {cells.map((dateISO, i) => {
               if (dateISO === null) return <span key={`pad-${i}`} aria-hidden />

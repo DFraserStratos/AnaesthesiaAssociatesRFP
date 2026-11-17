@@ -2,6 +2,7 @@ import { DRAFT_LIST, DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { useMemo, useState } from 'react'
 import { neutral } from '../../../../theme/tokens'
 import { Button, FormError } from '../../../../shared'
+import { SelectField } from '../../../../shared/ui'
 import { HistorySheet } from '../../../../shared/booking'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import { ContractSelect } from '../../../../shared/contracts'
@@ -25,7 +26,6 @@ import { DraftListCandidates } from '../../../admin/components/pairing/DraftList
 import { ContractPanel } from '../../../admin/flows/ContractEditSheet'
 import { ContractPriceRanges } from '../../../admin/flows/ContractPriceRanges'
 import { SlotStatusSheet } from '../../../admin/flows/SlotStatusSheet'
-import { selectControlStyle } from '../../../admin/flows/fieldChrome'
 import { ReviewScreen } from '../../../admin/screens/ReviewScreen'
 import { InvoiceDocument } from '../../../admin/screens/InvoiceDocument'
 import { STAGE_TONE, useAdminDay, useSeedIds } from './adminData'
@@ -246,7 +246,7 @@ export function ContractSelectExample() {
   const [value, setValue] = useState('')
   return (
     <div>
-      <ContractSelect value={value} onChange={setValue} selectStyle={selectControlStyle} />
+      <ContractSelect value={value} onChange={setValue} />
       <Echo>Value: {value === '' ? '(none)' : value}</Echo>
     </div>
   )
@@ -269,12 +269,12 @@ export function SurgeonPickerExample() {
   const [surgeonId, setSurgeonId] = useState('')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <select aria-label="Anaesthetist" value={anaesthetistId} onChange={(e) => setAnaesthetistId(e.target.value)} style={{ ...selectControlStyle, minHeight: 36, fontSize: 13.5 }}>
+      <SelectField label="Anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
         {options.map((a) => (
           <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
         ))}
-      </select>
-      <SurgeonPicker anaesthetistId={anaesthetistId} value={surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" style={selectControlStyle} ariaLabel="Surgeon" />
+      </SelectField>
+      <SurgeonPicker anaesthetistId={anaesthetistId} value={surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" label="Surgeon" />
       <Echo>{surgeonId === '' ? 'No surgeon chosen.' : `Surgeon ${surgeonId}`}</Echo>
     </div>
   )
@@ -387,11 +387,11 @@ export function ConflictCalloutExample() {
   if (holiday === undefined) return <Missing what="hospital holidays" />
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <select aria-label={`Hospital on ${holiday.dateISO}`} value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} style={{ ...selectControlStyle, minHeight: 36, fontSize: 13.5 }}>
+      <SelectField label={`Hospital on ${holiday.dateISO}`} hideLabel size="compact" value={hospitalId} onChange={setHospitalId}>
         {Object.values(hospitals).map((h) => (
           <option key={h.id} value={h.id}>{h.name}</option>
         ))}
-      </select>
+      </SelectField>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>A List on {holiday.dateISO} at this hospital:</div>
       <ConflictCallout conflicts={conflicts} hospitalId={hospitalId} />
       {conflicts.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Open that day: no callout. Pick a closed hospital.</div>}

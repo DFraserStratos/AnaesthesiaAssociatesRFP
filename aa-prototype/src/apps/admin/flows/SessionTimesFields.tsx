@@ -3,15 +3,14 @@
  * default start and end times for AM and PM Slots, and each Slot can
  * override"). The fields show the effective times; a hint says whether they
  * are the default or the session's own, and "Use default" clears the override.
- * Shared by Edit list and the empty-session Edit times sheet.
+ * Shared by Edit list and the empty-session Edit times sheet. Built on the
+ * shared `TimeRangeFields` since UI unification U4 (48px, the one focus ring).
  */
 
-import type { CSSProperties } from 'react'
-import { accent, neutral } from '../../../theme/tokens'
+import { accent } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isWallTime } from '../../../domain/slots'
-import { FieldLabel } from '../../../shared/ui'
-import { assignSelectStyle } from './AssignListFields'
+import { TimeRangeFields } from '../../../shared/ui'
 import { sessionText } from '../../../domain/outOfHours'
 
 export interface TimesDraft {
@@ -39,30 +38,20 @@ export function SessionTimesFields({
   draft,
   defaults,
   onChange,
-  controlStyle = assignSelectStyle,
 }: {
   session: Session
   draft: TimesDraft
   defaults: TimesDraft
   onChange: (next: TimesDraft) => void
-  /** The sheet's own control style, so the time inputs match its other fields. */
-  controlStyle?: CSSProperties
 }) {
   const isDefault = draft.startTime === defaults.startTime && draft.endTime === defaults.endTime
   return (
-    <div data-shot="session-times" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Start</FieldLabel>
-          <input type="time" value={draft.startTime} onChange={(e) => onChange({ ...draft, startTime: e.target.value })} style={controlStyle} />
-        </label>
-        <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>End</FieldLabel>
-          <input type="time" value={draft.endTime} onChange={(e) => onChange({ ...draft, endTime: e.target.value })} style={controlStyle} />
-        </label>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, fontSize: 12, color: neutral.slate }}>
-        {isDefault ? (
+    <TimeRangeFields
+      shot="session-times"
+      value={{ start: draft.startTime, end: draft.endTime }}
+      onChange={(next) => onChange({ startTime: next.start, endTime: next.end })}
+      hint={
+        isDefault ? (
           <span>Default {sessionText(session)} times ({defaults.startTime} to {defaults.endTime})</span>
         ) : (
           <>
@@ -75,8 +64,8 @@ export function SessionTimesFields({
               Use default
             </button>
           </>
-        )}
-      </div>
-    </div>
+        )
+      }
+    />
   )
 }

@@ -2,15 +2,15 @@
  * A short multi-select for Master data (catch-up Phase 18a): a select to add
  * one, then a removable neutral chip per choice, in the order chosen. Used for
  * a surgeon's specialties (required, at least one) and a Contract's
- * specialties (none means every specialty). The same anatomy as the Contract
- * editor's linked surgeons; neutral chips only, never the teal action tint.
+ * specialties (none means every specialty), and the Contract editor's linked
+ * surgeons (UI unification U4). Neutral chips only, never the teal action
+ * tint. The select draws the one field chrome (`aa-field`), its hint tied.
  */
 
 import { useId, useRef } from 'react'
 import { X } from 'lucide-react'
 import { neutral, radius } from '../../../theme/tokens'
-import { FieldLabel } from '../../../shared'
-import { selectControlStyle } from '../flows/fieldChrome'
+import { FIELD_CLASS, FieldHint, FieldLabel, fieldControlStyle } from '../../../shared/ui'
 
 export interface ChipOption {
   id: string
@@ -84,14 +84,15 @@ export function ChipMultiSelect({
           if (e.target.value !== '' && !value.includes(e.target.value)) onChange([...value, e.target.value])
         }}
         disabled={remaining.length === 0}
-        style={selectControlStyle}
+        className={FIELD_CLASS}
+        style={fieldControlStyle({ select: true })}
       >
         <option value="">{addLabel}</option>
         {remaining.map((o) => (
           <option key={o.id} value={o.id}>{o.name}</option>
         ))}
       </select>
-      {hint !== undefined && <div id={hintId} style={{ fontSize: 12.5, color: neutral.mist }}>{hint}</div>}
+      {hint !== undefined && <FieldHint id={hintId}>{hint}</FieldHint>}
     </div>
   )
 }

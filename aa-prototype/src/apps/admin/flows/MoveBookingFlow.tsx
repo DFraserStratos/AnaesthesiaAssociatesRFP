@@ -5,7 +5,7 @@ import type { List } from '../../../domain/types'
 import { reassignBooking, useAppStore, type Actor } from '../../../store'
 import { LIST_STATE_LABELS, locationName } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
-import { Button, FormError } from '../../../shared/ui'
+import { Button, FormError, TextField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { surnameOf } from '../util'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
@@ -75,10 +75,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
         />
         <div style={{ fontSize: 13, color: neutral.slate }}>To move into a free session, assign a List to it first.</div>
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Target day</span>
-          <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 14 }} />
-        </label>
+        <TextField label="Target day" type="date" value={targetDate} onChange={setTargetDate} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflow: 'auto' }}>
           {candidates.length === 0 && <EmptyState>No candidate lists on {targetDate !== '' ? format(parseISO(targetDate), 'd MMM') : 'that day'}.</EmptyState>}

@@ -208,6 +208,15 @@ Hooks already added:
   visible match, so a bare `[role=dialog]` highlight taken while a drawer is open grows to cover the drawer too.
 - **"Close" is no longer unique.** `[data-testid=admin-list-drawer] >> role=button[name="Close"]` stays unique, but a bare
   `role=button[name="Close"]` can now also match a web dialog's corner X. Scope it.
+- **UI unification Phase U4 (fields):** selects stay native `<select>`s, so the `select` step (`selectOption`)
+  works as before, and positional `select >> nth=N` inside a sheet keeps its order. A field's `shot` sits on
+  the `<select>` itself (`[data-shot=assign-hospital]`, `select[data-shot=surgeon-picker]`); SelectField's
+  `labelShot` (`contract-holder-filter`, `contract-tag-filter`) sits on its wrapper `div` (it was a `label`),
+  so reach the control as `[data-shot=X] select`. Date and time inputs stay native, one input per date,
+  in the order they stand (From before To, Starts before Until), so `input[type=date] >> nth=N` holds.
+  Ticks are the shared Checkbox (a real `input type=checkbox` inside its own `<label>`); hooks such as
+  `admin-notifications-show-resolved`, `move-booking-tell-office`, `payer-different-tick` and
+  `payer-offer-row` sit on a wrapper `div` around it, so `[data-shot=X] input` still finds the box.
 
 ## Personas and IDs
 
@@ -277,7 +286,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | Route | Shows |
 |---|---|
 | `/web` | Dashboard: "Kia ora, Dr Souter", week strip, receivables aging, productivity, leave, "Offer cover". Add `?week=YYYY-MM-DD` (a Monday) to show another week. |
-| `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 20 Jul AM and PM), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]`, name "Search your Bookings") and "Go to date" (`[data-testid=web-lists-go-to-date]`). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
+| `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 20 Jul AM and PM), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`; its X is "Clear the search field") and "Go to date" (`[data-testid=web-lists-go-to-date]` on the date input, inside a `<label>` "Go to date"). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. A SUBMITTED List stays editable (catch-up Phase 38a). An AUTHORISED List shows "Invoiced · read only" (`list-authorised-status`), an Invoiced column in place of Units and Fee, and the Invoices panel (`list-invoices`). |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: RVG code, times, units and the itemised modifiers, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
 | `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
@@ -289,7 +298,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | Route | Shows |
 |---|---|
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
-| `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. |
+| `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
@@ -315,7 +324,7 @@ badge carries `data-shot=nav-badge-<section>`.
 
 | Route | Shows |
 |---|---|
-| `/mobile/lists` | The main view (catch-up Phase 38a): it opens scrolled so the Today heading (`mobile-lists-today`) sits at the top of `mobile-lists-scroll`; above it, "Earlier, not yet authorised" (`mobile-main-view-earlier-group`, Mon 20 Jul AM and PM, rows `[data-quiet=true]`, "Done · unbilled"), reached by scrolling up or the teal hint under Today (`mobile-main-view-earlier`, "2 earlier Lists not yet authorised"). Chips Week, Month, To-Do, Done (Done = submitted only; an authorised List is under no chip). In the fixed header: the search field (`[data-testid=mobile-lists-search]`, accessible name "Search your Bookings", placeholder "Search patient name or NHI") and the calendar button (`[aria-label="Go to a date"]`) that opens the date sheet (`mobile-lookback-calendar`, days `[data-date=YYYY-MM-DD]`, labelled "Friday 13 March 2026, 1 List"; the title button opens month chips, e.g. `role=button[name="March 2026"]`). `?day=YYYY-MM-DD` shows that date's Lists (`mobile-lookback-day`) under a teal day chip (`mobile-lists-day-chip`); `?q=` shows results (`mobile-lookback-search`, rows `button[data-booking-id]`, Upcoming then Past) with the count line (`mobile-lists-search-count`). Free rows read "Open for bookings". |
+| `/mobile/lists` | The main view (catch-up Phase 38a): it opens scrolled so the Today heading (`mobile-lists-today`) sits at the top of `mobile-lists-scroll`; above it, "Earlier, not yet authorised" (`mobile-main-view-earlier-group`, Mon 20 Jul AM and PM, rows `[data-quiet=true]`, "Done · unbilled"), reached by scrolling up or the teal hint under Today (`mobile-main-view-earlier`, "2 earlier Lists not yet authorised"). Chips Week, Month, To-Do, Done (Done = submitted only; an authorised List is under no chip). In the fixed header: the search field (`[data-testid=mobile-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`, placeholder "Search patient name or NHI") and the calendar button (`[aria-label="Go to a date"]`) that opens the date sheet (`mobile-lookback-calendar`, days `[data-date=YYYY-MM-DD]`, labelled "Friday 13 March 2026, 1 List"; the title button opens month chips, e.g. `role=button[name="March 2026"]`). `?day=YYYY-MM-DD` shows that date's Lists (`mobile-lookback-day`) under a teal day chip (`mobile-lists-day-chip`); `?q=` shows results (`mobile-lookback-search`, rows `button[data-booking-id]`, Upcoming then Past) with the count line (`mobile-lists-search-count`). Free rows read "Open for bookings". |
 | `/mobile/lists?day=2026-03-13` | The pinned history day (`SEED_LOOKBACK`): one invoiced List, `L-HIST-2026-03-13-AM`. Back from its List returns here. |
 | `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
 | `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. "Move to a colleague" (`move-booking-action`, scroll to it, above Cancel booking) opens the single-Booking move as a bottom sheet (catch-up Phase 32a). |
@@ -816,8 +825,9 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `[role=dialog]` (mobile `[data-aa-mobile-product] [role=dialog]`), search placeholder "Search RVG code
   or description" (focused on open). Rows are `button[data-rvg-code=<code>]` with
   `[data-shot=rvg-base-units]` inside, grouped under the same sticky anatomy headings. Type "H1", "T2" (three rows) or
-  "H4". A ranged row shows `[data-shot=rvg-range-units]` ("Guide 10 to 12 · starts at 10"); its value
-  button "Base units 10. Type a value" opens an input (`[data-shot=rvg-range-units] input`, Enter to
+  "H4". A ranged row shows `[data-shot=rvg-range-units]` ("Guide 10 to 12 · starts at 10"), its
+  stepper buttons "Fewer base units" and "More base units" (UI unification U4; were "One fewer base unit"
+  and "One more base unit"); its value button "Base units 10. Type a value" (`button[aria-label^="Base units"]`) opens an input (`[data-shot=rvg-range-units] input`, Enter to
   save); outside the guide `[data-shot=rvg-outside-guide]` appears. The manual add form's chooser is
   `[data-shot=manual-rvg-code]` ("Choose an RVG code").
 - **RVG group sheet** (Master data, catch-up Phase 19): "Add group" or a row's "Edit <code>
@@ -946,8 +956,10 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   tiles `[data-rail-option=patient|hospital|special|standard|prepaid|<tag id>|<holder Party id>]`, then
   the field `[data-shot=contract-combo]`, which drops down `[data-shot=contract-combo-list]` (its
   search input, rows `[data-contract-id=<id>]`, the first two always the "No contract" heading's
-  No contract · RVG and No contract · Fixed price backstops (`[role=option] >> nth=0|1`); choosing one
-  sets it at once). The combo shows on every path but Patient › Standard with No contract · RVG alone,
+  (`[data-shot=no-contract-group]`) No contract · RVG and No contract · Fixed price backstops
+  (`[role=option] >> nth=0|1`); choosing one sets it at once). Since UI unification U4 the steps, tiles,
+  "Suggested" pill, "Only option" line and amount input render from one set of parts (same hooks); the
+  tiles are a radio group (one Tab stop, arrows move focus, a click or Space picks). The combo shows on every path but Patient › Standard with No contract · RVG alone,
   which offers "Use it" (`contract-rail-only-contract`) on a Booking loaded with no Contract and then
   "RVG code | Fixed price" (`[data-shot=contract-rail-other-price] [data-sliding-segmented-control]`);
   there is no "Other price" switch. The price block under the Contract `[data-shot=contract-rail-outcome]`
@@ -963,7 +975,16 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   the rail across the top, "Price by", the RVG code field), saved as each answer is given, closed with "Done". "Add another procedure" adds the
   Procedure at once; its own Billing card picks its Contract.
 - **Creation forms:** the manual and phone-advice forms have a Contract row
-  `[data-shot=manual-contract]` ("Choose"); saving without one is allowed.
+  `[data-shot=manual-contract]` ("Choose"); saving without one is allowed. "Choose" opens the step
+  rail sheet `[data-shot=contract-picker]` ("Choose the Contract"): steps `contract-rail-step-1..3`
+  (the Billing card's markers), answers `[data-rail-option=<value>]` (a radio group), the search
+  `[data-shot=contract-rail-search] input`, then the Contract list (rows `[data-contract-id=<id>]`,
+  radios with one Tab stop) that starts with the "No contract" heading `[data-shot=no-contract-group]`
+  holding No contract · RVG and No contract · Fixed price. There is no "Other price" switch and no
+  "Always first" pill (`contract-rail-pinned` is retired); choosing No contract · Fixed price shows
+  "Amount, ex GST" (`[data-shot=contract-rail-amount]`, the input) under the list where the amount
+  may be typed there. Then `contract-rail-outcome` and, for the office on an RVG Contract,
+  `contract-rail-enter-rvg`.
 - **Review:**
   - "Log phone note" opens a textarea, then "Log note".
   - `role=button[name="Authorise for billing"] >> nth=0` opens the confirm.
@@ -971,7 +992,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Day notes:** "+ Add note", placeholder "Add an internal note for this day", then "Save note".
 - **Date navigation:**
   - Buttons ‹, ›, Today, -4w, -1w, +1w, +4w.
-  - `input[type=date]` accepts a fill.
+  - `input[type=date]` accepts a fill; since UI unification U4 it is named "Go to date"
+    (`[aria-label="Go to date"]`), and only a full date moves the day.
   - Mini calendar days are named like "Wednesday 22 July 2026".
 - **Invoice** (catch-up Phase 22): there is no "Email invoice" button; the billing run sends. The rail's Delivery card
   (`invoice-delivery`) holds, when emailed, "Emailed to <address> at <time>", the "Simulated send" badge, "Resend"
@@ -1046,8 +1068,10 @@ the exception: use the `trigger` step)
   `party-picker-toggle`.
 - Catch-up Phase U3: `aa-fee-run-result` and `aa-fee-settings-result` (AA fees screen: the run result line and the settings save line, both the shared `ResultLine`; refusals there are `FormError`, `role=alert`).
 - Catch-up Phase 20: `contract-picker`, `contract-rail-step-<n>`, `contract-rail-search`,
-  `contract-rail-other-price`, `contract-rail-amount`, `contract-rail-outcome`, `contract-rail-enter-rvg`,
-  `contract-rail-pinned`, `contract-rail-only-option`; the Contract row `procedure-contract-row` in the
+  `contract-rail-other-price` (the Billing card's "Price by" wrapper), `contract-rail-amount` (the
+  input), `contract-rail-outcome`, `contract-rail-enter-rvg`, `contract-rail-only-option`,
+  `no-contract-group` (the "No contract" heading and its two backstops, in the Billing card's combo and
+  the creation-form sheet; `contract-rail-pinned` is retired, UI unification U4); the Contract row `procedure-contract-row` in the
   sheets (`edit-procedure-contract`, `contract-and-reference-contract`); the mobile Billing rows
   `billing-contract-rows`,
   `needs-invoice-destination`, `contract-set-by-office`, `contract-price-cleared`; the RVG cues
@@ -1229,7 +1253,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - Parties and Contracts (catch-up Phase 18): `parties` (table), `party-panel` (the wide side panel,
   `role=dialog`; close with Escape or Cancel), `contract-catalogue` (the Contracts table, or its empty
   state), `contract-search` (search field and result count), `contract-result-count`,
-  `contract-status-filter` (Active, Disabled, All buttons), `contract-holder-filter` (select),
+  `contract-status-filter` (Active, Disabled, All buttons), `contract-holder-filter` (the Holder field's wrapper `div`; the select is `[data-shot=contract-holder-filter] select`),
   `contract-detail` (the Contract side panel), `contract-settings` (Pricing section: prepaid, pricing
   kind, rate or discount, override), `contract-links` (Holder and who it bills: holder, Bills, linked
   surgeons and anaesthetist), `contract-disable` (Disable, error treatment), `contract-codes` (Invoice and
@@ -1262,7 +1286,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `masters-funding-tags`, `specialty-sheet`, `funding-tag-sheet`, `surgeon-specialties` (the profile's
   Specialties card), `surgeon-specialties-field` (the surgeon sheet's field), `contract-specialties`,
   `contract-funding-tag`, `contract-placement`, `contract-tag-filter` (the Contracts view's funding tag
-  select), `contract-system-notice`, `contract-system-pill` (the "System" pill), and the row marker
+  field's wrapper `div`; its select is `[data-shot=contract-tag-filter] select`), `contract-system-notice`, `contract-system-pill` (the "System" pill), and the row marker
   `tr[data-system=openPriceFallback|noContractRvg]`.
 - Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
   `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-rooms`

@@ -1,6 +1,7 @@
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { shiftWeeks, longDay } from '../../../shared/format'
+import { DateJumpInput } from '../../../shared/ui'
 
 export type SortMode = 'roster' | 'az'
 
@@ -54,13 +55,7 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
         <SquareBtn onClick={() => step(1)}>›</SquareBtn>
         <TextBtn onClick={() => week(1)}>+1w</TextBtn>
         <TextBtn onClick={() => week(4)}>+4w</TextBtn>
-        <input
-          type="date"
-          value={selectedDateISO}
-          max={maxDateISO}
-          onChange={(e) => e.target.value !== '' && onNavigateDate(e.target.value)}
-          style={{ height: 36, width: 139, boxSizing: 'border-box', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, padding: '0 10px', fontFamily: 'inherit', fontSize: 13, color: neutral.ink }}
-        />
+        <DateJumpInput beyondMax label="Go to date" height={36} width={139} value={selectedDateISO} max={maxDateISO} onPick={(d) => d !== null && onNavigateDate(d)} />
       </div>
     </div>
   )

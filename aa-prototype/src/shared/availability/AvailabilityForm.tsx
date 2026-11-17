@@ -242,7 +242,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
 
       {repeating ? (
         <>
-          <DateField label="Starts" value={fromISO} min={todayISO} max={horizonEndISO} onChange={pickFrom} />
+          <TextField type="date" mono label="Starts" value={fromISO} min={todayISO} max={horizonEndISO} onChange={pickFrom} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <FieldLabel>On</FieldLabel>
             <div role="group" aria-label="Days of the week" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
@@ -264,7 +264,9 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
               <div style={{ flex: 1 }}>
-                <DateField
+                <TextField
+                  type="date"
+                  mono
                   label="Until"
                   value={untilISO ?? ''}
                   min={fromISO}
@@ -283,9 +285,10 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <DateField label="From" value={fromISO} min={todayISO} max={horizonEndISO} onChange={pickFrom} />
-            <DateField label="To" value={toISO} min={fromISO} max={horizonEndISO} onChange={(v) => { touched(); setToISO(v) }} />
+          {/* minmax(0, 1fr): the two dates share the row evenly at any width (as the old private DateField's minWidth 0). */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10 }}>
+            <TextField type="date" mono label="From" value={fromISO} min={todayISO} max={horizonEndISO} onChange={pickFrom} />
+            <TextField type="date" mono label="To" value={toISO} min={fromISO} max={horizonEndISO} onChange={(v) => { touched(); setToISO(v) }} />
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Chip selected={quickSpan === 'day'} onClick={() => quick('day')}>Just this day</Chip>
@@ -356,23 +359,5 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
     >
       {children}
     </button>
-  )
-}
-
-function DateField({ label, value, min, max, onChange, placeholder }: { label: string; value: string; min?: string; max?: string; onChange: (v: string) => void; placeholder?: string }) {
-  return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-      <FieldLabel>{label}</FieldLabel>
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="mono"
-        style={{ width: '100%', boxSizing: 'border-box', minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 14, color: neutral.ink }}
-      />
-    </label>
   )
 }

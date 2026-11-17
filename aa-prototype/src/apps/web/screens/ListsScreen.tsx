@@ -8,8 +8,10 @@ import { hasLeftMainView, listProgress, type ListProgress } from '../../../domai
 import { mainViewFor, timesForList, useAppStore, type SlotView } from '../../../store'
 import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, StatusLegend } from '../../../shared'
 import { Panel } from '../components'
-import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
-import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from './ListsLookback'
+import { searchCountLine, useBookingSearch, useFieldText } from '../../../shared/schedule'
+import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
+import { FilterDateInput } from '../../../shared/ui/DateFields'
+import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable } from './ListsLookback'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
@@ -37,17 +39,6 @@ interface Row {
   progress?: ListProgress
   description: string
 }
-
-const dateInputStyle = {
-  height: 38,
-  borderRadius: radius.ctl,
-  border: `1px solid ${neutral.line}`,
-  background: neutral.surface,
-  padding: '0 12px',
-  fontFamily: 'inherit',
-  fontSize: 14,
-  color: neutral.ink,
-} as const
 
 const COLUMNS = 7
 
@@ -87,6 +78,7 @@ export function ListsScreen({
 
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
   const results = useBookingSearch(anaesthetistId, query, todayISO)
+  const [searchText, setSearchText] = useFieldText(query, onQueryChange)
   const mode: 'main' | 'day' | 'search' =
     results.query.kind === 'nhi' || results.query.kind === 'name' ? 'search' : dayISO !== null ? 'day' : 'main'
   const shown = results.upcoming.length + results.past.length
@@ -200,13 +192,22 @@ export function ListsScreen({
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Your Lists from today, with any earlier ones not yet authorised. From/To are the actual session times.</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <WebSearchField query={query} onQueryChange={onQueryChange} />
+          {/* The shared search box on the page (UI unification U4): the 38px pill beside Go to date. */}
+          <NameSearchBox
+            value={searchText}
+            onChange={setSearchText}
+            label="Search your Bookings"
+            placeholder="Search patient name or NHI"
+            size="pill"
+            height={38}
+            width={280}
+            fill="surface"
+            testId="web-lists-search"
+            clearLabel="Clear the search field"
+          />
           <WebGoToDate anaesthetistId={anaesthetistId} dayISO={dayISO} onDayChange={onDayChange} />
           {mode === 'main' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate }}>
-              To
-              <input type="date" value={toISO} min={todayISO} onChange={(e) => setToISO(e.target.value)} style={dateInputStyle} />
-            </label>
+            <FilterDateInput label="To" labelPlacement="inline" height={38} value={toISO} min={todayISO} onChange={setToISO} />
           )}
         </div>
       </div>

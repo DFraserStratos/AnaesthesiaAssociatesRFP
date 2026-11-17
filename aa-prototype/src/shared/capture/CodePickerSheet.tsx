@@ -43,7 +43,7 @@ export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose }:
     <Overlay open={open} onClose={onClose}>
       <div data-shot="rvg-type-ahead">
         <OverlayHeader title="RVG code" style={{ marginBottom: 12 }} />
-        <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus />
+        <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus fill="well" />
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px 6px', minHeight: 18 }} aria-live="polite">
           {query.trim() === ''
             ? 'Type a code such as H1, or a word from the description.'

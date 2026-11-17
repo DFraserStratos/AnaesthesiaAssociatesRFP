@@ -15,15 +15,15 @@ import type { Contract, PriceRange } from '../../../domain/types'
 import { formatRangeDate, formatRangePrice, parsePriceText, rangeInForce, rangeSpanText, rangesOf } from '../../../domain/billing/priceRanges'
 import { addPriceRange, deletePriceRange, editPriceRange, useAppStore, useToday, type Actor } from '../../../store'
 import { Button, FieldLabel } from '../../../shared'
+import { TextField } from '../../../shared/ui'
 import { Pill } from '../components/MasterPills'
 import { cellStyle, headCellStyle } from '../screens/masters/tableStyles'
 import { TextAction } from '../screens/masters/chrome'
 import { neutral, radius } from '../../../theme/tokens'
-import { selectControlStyle } from './fieldChrome'
 
-const inputStyle = { ...selectControlStyle, minHeight: 36, fontSize: 13, padding: '0 8px' }
-/** The native date control, kept narrow so the table fits the 600px panel. */
-const dateInputStyle = { ...inputStyle, width: 132 }
+/** The native date control is kept narrow so the table fits the 600px panel. */
+const DATE_WIDTH = 132
+const PRICE_WIDTH = 96
 
 export function ContractPriceRanges({ contract, actor, onError }: { contract: Contract; actor: Actor; onError: (message: string | null) => void }) {
   const today = useToday()
@@ -119,25 +119,32 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                 return (
                   <tr key={r.startISO} data-shot="price-range-row" data-range-start={r.startISO} onKeyDown={(e) => editKeys(e, r.startISO)}>
                     <td style={rowStyle}>
-                      <input
+                      <TextField
                         type="date"
-                        aria-label={`Start of the range from ${formatRangeDate(r.startISO)}`}
+                        label={`Start of the range from ${formatRangeDate(r.startISO)}`}
+                        hideLabel
+                        size="compact"
+                        mono
+                        width={DATE_WIDTH}
                         value={draftStart}
-                        onChange={(e) => setDraftStart(e.target.value)}
-                        style={dateInputStyle}
-                        className="mono"
+                        onChange={setDraftStart}
                         autoFocus
                       />
                     </td>
                     <td style={{ ...rowStyle, textAlign: 'right' }}>
-                      <input
-                        aria-label={`Price (ex GST) of the range from ${formatRangeDate(r.startISO)}`}
-                        inputMode="decimal"
-                        value={draftPrice}
-                        onChange={(e) => setDraftPrice(e.target.value)}
-                        style={{ ...inputStyle, width: 96, textAlign: 'right' }}
-                        className="mono"
-                      />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <TextField
+                          label={`Price (ex GST) of the range from ${formatRangeDate(r.startISO)}`}
+                          hideLabel
+                          size="compact"
+                          mono
+                          inputMode="decimal"
+                          align="right"
+                          width={PRICE_WIDTH}
+                          value={draftPrice}
+                          onChange={setDraftPrice}
+                        />
+                      </div>
                     </td>
                     <td style={rowStyle} />
                     <td style={{ ...rowStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -189,18 +196,23 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
             )}
             <tr data-shot="price-range-add">
               <td style={{ ...cellStyle, verticalAlign: 'middle', borderBottom: 'none' }}>
-                <input type="date" aria-label="New range start" value={newStart} onChange={(e) => setNewStart(e.target.value)} style={dateInputStyle} className="mono" />
+                <TextField type="date" label="New range start" hideLabel size="compact" mono width={DATE_WIDTH} value={newStart} onChange={setNewStart} />
               </td>
               <td style={{ ...cellStyle, verticalAlign: 'middle', textAlign: 'right', borderBottom: 'none' }}>
-                <input
-                  aria-label="New range price (ex GST)"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value)}
-                  style={{ ...inputStyle, width: 96, textAlign: 'right' }}
-                  className="mono"
-                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <TextField
+                    label="New range price (ex GST)"
+                    hideLabel
+                    size="compact"
+                    mono
+                    inputMode="decimal"
+                    align="right"
+                    width={PRICE_WIDTH}
+                    placeholder="0.00"
+                    value={newPrice}
+                    onChange={setNewPrice}
+                  />
+                </div>
               </td>
               <td colSpan={2} style={{ ...cellStyle, verticalAlign: 'middle', textAlign: 'right', borderBottom: 'none' }}>
                 <Button variant="primary" onClick={add} style={{ minHeight: 36, padding: '0 14px', fontSize: 13, borderRadius: radius.ctl }}>

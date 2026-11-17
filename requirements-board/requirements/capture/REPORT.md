@@ -12,7 +12,7 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 | Failed recipe | 0 | 0 |
 | No recipe | 26 | 26 |
 
-685 screenshots. Items per app: admin 153, web 78, mobile 74, simulator 35.
+693 screenshots. Items per app: admin 153, web 78, mobile 74, simulator 35.
 
 ## Failed recipes (0)
 
@@ -311,9 +311,9 @@ None.
 - **US-11.1.2** Dual-format NHI validation · admin
 - **US-11.1.3** Deduplicate on NHI · web, mobile
 - **US-11.2.1** Patient billed when the Contract does not bill its holder · admin
-- **US-11.2.2** Payer on the Booking, editable to a guardian · admin, web, mobile
+- **US-11.2.2** Payer on each Procedure, editable to a guardian · admin, web, mobile
 - **US-11.2.3** Payer email or postal address required when the payer is billed · admin, mobile
-- **US-11.2.4** Warn when a child is the payer on the Booking · admin, web, mobile
+- **US-11.2.4** Warn when a child is the payer on a Procedure · admin, web, mobile
 - **US-11.4.3** Insurance and approval number on the Booking · admin, mobile
 - **US-12.1.4** Anaesthetist identity, contact and bank details · admin
 - **US-12.2.1** Outstanding balances list · web, mobile

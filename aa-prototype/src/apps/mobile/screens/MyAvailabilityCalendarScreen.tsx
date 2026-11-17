@@ -13,8 +13,8 @@ import {
   shiftMonth,
   useAvailabilityBounds,
   useAvailabilityMonth,
-  WEEKDAY_INITIALS,
 } from '../../../shared/availability'
+import { MonthHeaderRow, MonthStepButton } from '../../../shared/calendar'
 import { sessionText } from '../../../domain/outOfHours'
 
 interface MyAvailabilityCalendarScreenProps {
@@ -66,23 +66,19 @@ export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, on
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>My calendar · tap a day to change it</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <MonthButton label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}>
+            <MonthStepButton label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}>
               <ChevronLeft size={18} aria-hidden />
-            </MonthButton>
-            <MonthButton label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}>
+            </MonthStepButton>
+            <MonthStepButton label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}>
               <ChevronRight size={18} aria-hidden />
-            </MonthButton>
+            </MonthStepButton>
           </div>
         </div>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <div aria-hidden style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-            {WEEKDAY_INITIALS.map((d, i) => (
-              <span key={i} style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 600, color: neutral.mist }}>{d}</span>
-            ))}
-          </div>
+          <MonthHeaderRow />
           <div data-shot="mobile-availability-grid" aria-label={`${format(parseISO(`${month}-01`), 'MMMM yyyy')}, your sessions`} role="group" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
             {cells.map((dateISO, i) => {
               if (dateISO === null) return <span key={`pad-${i}`} aria-hidden />
@@ -196,17 +192,4 @@ function HalfBlock({ session }: { session: CalendarSession | undefined }) {
   )
 }
 
-function MonthButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      style={{ width: 44, height: 44, borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
-    >
-      {children}
-    </button>
-  )
-}
 

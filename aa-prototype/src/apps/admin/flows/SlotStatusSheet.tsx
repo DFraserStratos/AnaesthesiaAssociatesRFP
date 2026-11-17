@@ -6,6 +6,7 @@ import { addSlotStatus, editSlotStatus, useAppStore, type Actor } from '../../..
 import { resolveStatusVisual, STATUS_PALETTE } from '../../../theme/statusColours'
 import { blockFill, Button, FieldLabel, FormError, Segmented, StatusChipView, TextArea, TextField, useSurface } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
+import { Checkbox } from '../../../shared/ui'
 
 const TREATMENTS: { value: StatusTreatment; label: string }[] = [
   { value: 'solid', label: 'Solid' },
@@ -183,12 +184,8 @@ function Swatch({ token, selected, onSelect }: { token: StatusColourToken; selec
 
 function Check({ label, hint, checked, onChange, divided }: { label: string; hint: string; checked: boolean; onChange: (v: boolean) => void; divided?: boolean }) {
   return (
-    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderTop: divided === true ? `1px solid ${neutral.line}` : 'none', cursor: 'pointer' }}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: accent.base, width: 16, height: 16, marginTop: 2 }} />
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
-        <span style={{ fontSize: 12, color: neutral.mist }}>{hint}</span>
-      </span>
-    </label>
+    <Checkbox checked={checked} onChange={onChange} hint={hint} style={{ gap: 10, padding: '10px 12px', borderTop: divided === true ? `1px solid ${neutral.line}` : 'none' }}>
+      <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+    </Checkbox>
   )
 }

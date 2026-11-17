@@ -21,9 +21,9 @@ import {
   useAppStore,
   type Actor,
 } from '../../../../store'
-import { Button, FieldLabel, FormError, useSurface } from '../../../../shared'
+import { Button, FormError, useSurface } from '../../../../shared'
+import { TextField, TimeRangeFields } from '../../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
-import { assignSelectStyle } from '../../flows/AssignListFields'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle } from './tableStyles'
 import { sessionText, SESSIONS_IN_ORDER } from '../../../../domain/outOfHours'
@@ -138,23 +138,20 @@ function HorizonSheet({ open, actor, onClose }: { open: boolean; actor: Actor; o
     <Overlay open={open} onClose={onClose}>
       <div data-shot="admin-horizon-months" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader title="Schedule horizon" />
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Months ahead</FieldLabel>
-          <input
-            type="number"
-            min={HORIZON_MONTHS_MIN}
-            max={HORIZON_MONTHS_MAX}
-            step={1}
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value)
-              setConfirming(false)
-              setError(null)
-            }}
-            className="mono"
-            style={assignSelectStyle}
-          />
-        </label>
+        <TextField
+          label="Months ahead"
+          type="number"
+          min={HORIZON_MONTHS_MIN}
+          max={HORIZON_MONTHS_MAX}
+          step={1}
+          value={value}
+          onChange={(v) => {
+            setValue(v)
+            setConfirming(false)
+            setError(null)
+          }}
+          mono
+        />
         <div data-shot="horizon-preview" style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>{line}</div>
         {blocked && preview !== null && (
           <FormError message={`${preview.listsWithBookings} ${preview.listsWithBookings === 1 ? 'List' : 'Lists'} after ${longDate(preview.toEndISO)} ${preview.listsWithBookings === 1 ? 'holds' : 'hold'} Bookings. Move them first.`} />
@@ -211,15 +208,18 @@ function SessionTimesSheet({ open, actor, onClose }: { open: boolean; actor: Act
         <OverlayHeader title="Default session times" />
         {SESSIONS_IN_ORDER.map((session) => (
           <div key={session} style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-            <span className="mono" style={{ width: 88, paddingBottom: 14, fontSize: 12, fontWeight: 600, color: neutral.mist }}>{sessionText(session)}</span>
-            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>{`${sessionText(session)} start`}</FieldLabel>
-              <input type="time" value={draft[session].startTime} onChange={(e) => set(session, 'startTime', e.target.value)} style={assignSelectStyle} />
-            </label>
-            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>{`${sessionText(session)} end`}</FieldLabel>
-              <input type="time" value={draft[session].endTime} onChange={(e) => set(session, 'endTime', e.target.value)} style={assignSelectStyle} />
-            </label>
+            <span className="mono" style={{ width: 88, paddingBottom: 16, fontSize: 12, fontWeight: 600, color: neutral.mist }}>{sessionText(session)}</span>
+            <div style={{ flex: 1 }}>
+              <TimeRangeFields
+                startLabel={`${sessionText(session)} start`}
+                endLabel={`${sessionText(session)} end`}
+                value={{ start: draft[session].startTime, end: draft[session].endTime }}
+                onChange={(next) => {
+                  if (next.start !== draft[session].startTime) set(session, 'startTime', next.start)
+                  if (next.end !== draft[session].endTime) set(session, 'endTime', next.end)
+                }}
+              />
+            </div>
           </div>
         ))}
         <div style={{ fontSize: 12.5, color: neutral.slate }}>Sessions with their own times keep them.</div>

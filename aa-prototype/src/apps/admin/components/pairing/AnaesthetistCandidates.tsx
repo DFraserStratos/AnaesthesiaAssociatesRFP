@@ -97,7 +97,7 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
       <div data-shot="tier-filter">
         <Segmented label="Filter by tier" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
       </div>
-      <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" />
+      <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" fill="well" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 360, overflow: 'auto', paddingRight: 2 }}>
         {nothingInTier && (
           <div style={{ fontSize: 13, color: neutral.mist }}>

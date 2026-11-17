@@ -14,11 +14,11 @@ import { claimModifier, editModifierExplanation, restoreModifier, useAppStore, t
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { Button } from '../ui/Button'
-import { FormError } from '../ui/Field'
+import { FormError, TextArea } from '../ui/Field'
 import { TextAction } from '../ui/TextAction'
 import { NameSearchBox } from '../ui/NameSearchBox'
 import { Pill } from '../ui/Pill'
-import { StepperButton } from './ui'
+import { NumberStepper } from './ui'
 
 interface ModifierPickerSheetProps {
   open: boolean
@@ -126,7 +126,7 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
     <Overlay open={open} onClose={onClose}>
       <div data-shot="modifier-picker">
         <OverlayHeader title={editing !== undefined ? 'Modifier explanation' : 'Add a modifier'} style={{ marginBottom: 12 }} />
-        {editing === undefined && <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus />}
+        {editing === undefined && <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus fill="well" />}
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px', minHeight: 18 }} aria-live="polite">
           {status ?? (editing !== undefined ? '' : query.trim() === '' ? 'Each modifier you claim needs a short reason.' : `${count} ${count === 1 ? 'match' : 'matches'}`)}
         </div>
@@ -254,15 +254,18 @@ function ClaimForm({
   const ready = explanation.trim() !== ''
   return (
     <div data-shot="modifier-explanation" style={{ padding: '4px 10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {/* The visible word stays plain text; the field is named by ariaLabel. */}
         <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate }}>Explanation</span>
-        <textarea
+        <TextArea
+          ariaLabel="Explanation"
           value={explanation}
+          onChange={onExplanation}
           autoFocus
           rows={2}
+          resize="vertical"
           maxLength={MODIFIER_EXPLANATION_MAX}
           placeholder="A short reason, as an insurer would ask"
-          onChange={(e) => onExplanation(e.target.value)}
           onKeyDown={(e) => {
             // Enter claims (a short reason needs no new line); Shift+Enter is a new line.
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -270,26 +273,8 @@ function ClaimForm({
               if (ready) onClaim()
             }
           }}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            resize: 'vertical',
-            minHeight: 60,
-            borderRadius: radius.ctl,
-            border: `1px solid ${neutral.line}`,
-            background: neutral.bg,
-            padding: '10px 12px',
-            fontFamily: 'inherit',
-            fontSize: 15,
-            lineHeight: '21px',
-            color: neutral.ink,
-            outlineColor: accent.base,
-          }}
         />
-        <span style={{ fontSize: 11.5, color: neutral.mist, alignSelf: 'flex-end' }} className="mono">
-          {explanation.length}/{MODIFIER_EXPLANATION_MAX}
-        </span>
-      </label>
+      </div>
       {entered && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }} data-shot="modifier-units">
           <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -298,11 +283,7 @@ function ClaimForm({
               RVG: <span className="mono">{modifier.unitsAsPrinted}</span>
             </span>
           </span>
-          <StepperButton glyph="−" label="Fewer units" onClick={() => onUnits(Math.max(bounds.min, units - 1))} disabled={units <= bounds.min} />
-          <span className="mono" aria-live="polite" style={{ width: 32, textAlign: 'center', fontSize: 18, fontWeight: 700 }}>
-            {units}
-          </span>
-          <StepperButton glyph="+" label="More units" onClick={() => onUnits(units + 1)} disabled={bounds.max !== undefined && units >= bounds.max} />
+          <NumberStepper value={units} onChange={onUnits} min={bounds.min} {...(bounds.max !== undefined ? { max: bounds.max } : {})} label="units" />
         </div>
       )}
       <FormError message={refusal} />

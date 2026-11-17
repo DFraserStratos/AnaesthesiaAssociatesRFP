@@ -5,7 +5,7 @@
  * and handlers are local. Each row that uses one says "Recreated: local to ...".
  */
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, CircleDollarSign, LayoutGrid, List as ListIcon, Lock, MoreHorizontal, Repeat, RefreshCw, Share, SquarePlus, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -36,9 +36,9 @@ import {
   shiftMonth,
   useAvailabilityBounds,
   useAvailabilityMonth,
-  WEEKDAY_INITIALS,
 } from '../../../../shared/availability'
 import { formatCurrency, locationName } from '../../../../shared/format'
+import { MonthHeaderRow, MonthStepButton } from '../../../../shared/calendar'
 
 // ---------------------------------------------------------------------------
 // MobileApp.tsx: BottomTabBar
@@ -453,7 +453,7 @@ export function ColleagueCellsCopy({ dateISO, excludeId, limit, moveTargets, onM
 const isFree = (v: SlotView | undefined) => v !== undefined && isOpenSlotView(v)
 
 // ---------------------------------------------------------------------------
-// MyAvailabilityCalendarScreen.tsx: the month grid, HalfBlock, MonthButton
+// MyAvailabilityCalendarScreen.tsx: the month grid, HalfBlock, MonthStepButton
 // ---------------------------------------------------------------------------
 
 export function HalfBlockCopy({ session }: { session: CalendarSession | undefined }) {
@@ -472,20 +472,6 @@ export function HalfBlockCopy({ session }: { session: CalendarSession | undefine
         <AttentionDot style={{ position: 'absolute', top: -5, right: -5 }} />
       )}
     </span>
-  )
-}
-
-function MonthButtonCopy({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      style={{ width: 44, height: 44, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -510,20 +496,16 @@ export function MyCalendarGridCopy({ anaesthetistId, onOpenDay }: { anaesthetist
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>My calendar · tap a day to change it</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <MonthButtonCopy label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}>
+          <MonthStepButton label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}>
             <ChevronLeft size={18} aria-hidden />
-          </MonthButtonCopy>
-          <MonthButtonCopy label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}>
+          </MonthStepButton>
+          <MonthStepButton label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}>
             <ChevronRight size={18} aria-hidden />
-          </MonthButtonCopy>
+          </MonthStepButton>
         </div>
       </div>
       <div>
-        <div aria-hidden style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-          {WEEKDAY_INITIALS.map((d, i) => (
-            <span key={i} style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 600, color: neutral.mist }}>{d}</span>
-          ))}
-        </div>
+        <MonthHeaderRow />
         <div aria-label={`${monthLabel}, your sessions`} role="group" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
           {cells.map((dateISO, i) => {
             if (dateISO === null) return <span key={`pad-${i}`} aria-hidden />

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { Surgeon } from '../../../domain/types'
 import { createSurgeon, editSurgeon, useAppStore, type Actor } from '../../../store'
-import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../shared'
+import { Button, TextField, useSurface, FormError } from '../../../shared'
+import { SelectField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
-import { selectControlStyle } from './fieldChrome'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { specialtiesInOrder } from '../../../domain/specialties'
 
@@ -56,13 +56,10 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
           hint="At least one, from AA's list. Usually one."
           shot="surgeon-specialties-field"
         />
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Surgeons&apos; room</FieldLabel>
-          <select value={roomId} onChange={(e) => setRoomId(e.target.value)} style={selectControlStyle}>
-            <option value="">Choose a room</option>
-            {roomOptions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </label>
+        <SelectField label="Surgeons' room" value={roomId} onChange={setRoomId}>
+          <option value="">Choose a room</option>
+          {roomOptions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </SelectField>
         <TextField label="HPI CPN (required)" value={hpiId} onChange={setHpiId} mono placeholder="12ABCD" hint="The surgeon's unique number on the Health Provider Index, for example 12ABCD" />
         <TextField label="NZ medical registration number (optional)" value={registration} onChange={setRegistration} mono hint="For information" />
         <FormError message={error} />

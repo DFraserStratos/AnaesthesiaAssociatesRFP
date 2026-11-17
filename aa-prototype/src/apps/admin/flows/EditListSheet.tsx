@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { neutral, radius } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
 import { editList, setSlotTimes, useAppStore, useListTimes, type Actor, type ListPatch } from '../../../store'
-import { Button, FieldLabel, TextArea, FormError } from '../../../shared/ui'
+import { Button, SelectField, TextArea, FormError } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
@@ -15,16 +14,6 @@ interface EditListSheetProps {
   actor: Actor
   onClose: () => void
 }
-
-const selectStyle = {
-  minHeight: 48,
-  borderRadius: radius.ctl,
-  border: `1px solid ${neutral.line}`,
-  background: neutral.bg,
-  padding: '0 12px',
-  fontFamily: 'inherit',
-  fontSize: 15,
-} as const
 
 /**
  * Office edit of a List's hospital, surgeon and notes through `editList`, and
@@ -98,28 +87,22 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader title="Edit list" />
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Hospital</FieldLabel>
-          <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} style={selectStyle}>
-            {Object.values(hospitals).map((h) => (
-              <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
-            ))}
-          </select>
-        </label>
+        <SelectField label="Hospital" value={hospitalId} onChange={setHospitalId}>
+          {Object.values(hospitals).map((h) => (
+            <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
+          ))}
+        </SelectField>
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Surgeon</FieldLabel>
-          <SurgeonPicker
-            anaesthetistId={list.anaesthetistId}
-            value={surgeonId}
-            onChange={setSurgeonId}
-            emptyLabel="Choose a surgeon"
-            optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}
-            style={selectStyle}
-          />
-        </label>
+        <SurgeonPicker
+          label="Surgeon"
+          anaesthetistId={list.anaesthetistId}
+          value={surgeonId}
+          onChange={setSurgeonId}
+          emptyLabel="Choose a surgeon"
+          optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}
+        />
 
-        {hasSlot && <SessionTimesFields session={list.session} draft={timesDraft} defaults={defaultTimes} onChange={setTimesDraft} controlStyle={selectStyle} />}
+        {hasSlot && <SessionTimesFields session={list.session} draft={timesDraft} defaults={defaultTimes} onChange={setTimesDraft} />}
 
         <TextArea label="Notes" value={notes} onChange={setNotes} placeholder="Office annotation for this list" />
 

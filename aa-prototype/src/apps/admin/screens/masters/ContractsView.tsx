@@ -25,11 +25,10 @@ import { useAppStore, useToday, type Actor } from '../../../../store'
 import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
 import { specialtyNames } from '../../../../domain/specialties'
 import { Button, FieldLabel, Segmented } from '../../../../shared'
-import { NameSearchBox } from '../../../../shared/ui'
+import { NameSearchBox, SelectField } from '../../../../shared/ui'
 import { BILLS_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
 import { neutral, radius } from '../../../../theme/tokens'
 import { ContractPanel } from '../../flows/ContractEditSheet'
-import { selectControlStyle } from '../../flows/fieldChrome'
 import { Pill } from '../../components/MasterPills'
 import { isInteractiveRowTarget } from '../../tableChrome'
 import { EditCell, Header, Table, TextAction } from './chrome'
@@ -100,7 +99,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div data-shot="contract-search" style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Search</FieldLabel>
-          <NameSearchBox value={query} onChange={setQuery} label="Search by name, code or AA code" />
+          <NameSearchBox size="pill" width="100%" value={query} onChange={setQuery} label="Search by name, code or AA code" />
           <div data-shot="contract-result-count" style={{ fontSize: 12.5, color: neutral.slate }}>
             <span className="mono">{results.length}</span> {results.length === 1 ? 'Contract' : 'Contracts'}
             {status === 'active' ? ' active' : status === 'disabled' ? ' disabled' : ''}
@@ -121,24 +120,18 @@ export function ContractsView({ actor }: { actor: Actor }) {
             onChange={setStatus}
           />
         </div>
-        <label data-shot="contract-holder-filter" style={{ width: 210, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Holder</FieldLabel>
-          <select value={holderId} onChange={(e) => setHolder(e.target.value)} style={selectControlStyle}>
-            <option value="">Every holder</option>
-            {holderOptions.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </label>
-        <label data-shot="contract-tag-filter" style={{ width: 140, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Funding tag</FieldLabel>
-          <select value={tagId} onChange={(e) => setTagFilter(e.target.value)} style={selectControlStyle}>
-            <option value="">Every tag</option>
-            {fundingTagsInOrder(fundingTags).map((t) => (
-              <option key={t.id} value={t.id}>{t.code}</option>
-            ))}
-          </select>
-        </label>
+        <SelectField label="Holder" labelShot="contract-holder-filter" width={210} size="compact" fill="surface" value={holderId} onChange={setHolder}>
+          <option value="">Every holder</option>
+          {holderOptions.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </SelectField>
+        <SelectField label="Funding tag" labelShot="contract-tag-filter" width={140} size="compact" fill="surface" value={tagId} onChange={setTagFilter}>
+          <option value="">Every tag</option>
+          {fundingTagsInOrder(fundingTags).map((t) => (
+            <option key={t.id} value={t.id}>{t.code}</option>
+          ))}
+        </SelectField>
       </div>
 
       {results.length === 0 ? (

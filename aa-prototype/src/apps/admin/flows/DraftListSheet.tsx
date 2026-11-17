@@ -10,10 +10,10 @@ import { useEffect, useState } from 'react'
 import { neutral } from '../../../theme/tokens'
 import { createDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
 import type { ListKind, RequestSource, Session } from '../../../domain/types'
-import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared/ui'
+import { Button, FormError, Segmented, SelectField, TextField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { DRAFT_LIST, SOURCE_LABELS } from '../../../shared/scheduleTerms'
-import { assignSelectStyle, withKind } from './AssignListFields'
+import { withKind } from './AssignListFields'
 import { useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
 
@@ -106,34 +106,27 @@ export function DraftListSheet({
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>A request with no anaesthetist yet.</div>
         </div>
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Hospital</FieldLabel>
-          <select value={draft.hospitalId} onChange={(e) => update({ hospitalId: e.target.value })} style={assignSelectStyle} data-shot="draft-list-hospital">
-            <option value="" disabled>Choose a hospital</option>
-            {Object.values(hospitals).map((h) => (
-              <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
-            ))}
-          </select>
-        </label>
+        <SelectField label="Hospital" value={draft.hospitalId} onChange={(hospitalId) => update({ hospitalId })} shot="draft-list-hospital">
+          <option value="" disabled>Choose a hospital</option>
+          {Object.values(hospitals).map((h) => (
+            <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
+          ))}
+        </SelectField>
 
         {/* No anaesthetist yet, so no preference group: a plain list, by name. */}
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Surgeon</FieldLabel>
-          <select value={draft.surgeonId} onChange={(e) => update({ surgeonId: e.target.value })} style={assignSelectStyle} data-shot="draft-list-surgeon">
-            <option value="" disabled>Choose a surgeon</option>
-            {Object.values(surgeons)
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((s) => (
-                <option key={s.id} value={s.id}>{withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}</option>
-              ))}
-          </select>
-        </label>
+        <SelectField label="Surgeon" value={draft.surgeonId} onChange={(surgeonId) => update({ surgeonId })} shot="draft-list-surgeon">
+          <option value="" disabled>Choose a surgeon</option>
+          {Object.values(surgeons)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((s) => (
+              <option key={s.id} value={s.id}>{withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}</option>
+            ))}
+        </SelectField>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-            <FieldLabel>Day</FieldLabel>
-            <input type="date" value={draft.dateISO} min={today} max={horizonEnd} onChange={(e) => update({ dateISO: e.target.value })} style={assignSelectStyle} data-shot="draft-list-date" />
-          </label>
+          <div style={{ flex: 1 }}>
+            <TextField label="Day" type="date" value={draft.dateISO} min={today} max={horizonEnd} onChange={(dateISO) => update({ dateISO })} shot="draft-list-date" />
+          </div>
           <Segmented label="Session" value={draft.session} options={SESSION_OPTIONS} onChange={(session) => update({ session })} />
         </div>
 

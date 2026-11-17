@@ -190,7 +190,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
           <>
             <BackLink onClick={() => setStep('where')}>Where it goes</BackLink>
             {header}
-            <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-search" />
+            <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-search" fill="well" />
             <div style={{ fontSize: 13, color: neutral.slate }}>Free on {dayLine}</div>
             <ul data-shot="move-colleagues" aria-label={`Free on ${dayLine}`} style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', maxHeight: variant === 'web' ? 360 : undefined, overflowY: 'auto' }}>
               {targets.length === 0 && <li style={{ padding: 14, fontSize: 13, color: neutral.slate }}>No colleague is free in this session.</li>}

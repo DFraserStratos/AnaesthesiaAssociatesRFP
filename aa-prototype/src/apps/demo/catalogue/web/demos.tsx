@@ -44,7 +44,7 @@ import { procedureFee } from '../../../../shared/capture/feeContext'
 import { sessionText } from '../../../../domain/outOfHours'
 import { AvailabilityPageSwitch, Panel, WebNav, WeekStrip, type WebTab } from '../../../web/components'
 import { AccountsScreen, AvailabilityGrid, ListDetailView, ListsScreen, MyAvailabilityCalendar, type AccountsSubTab } from '../../../web/screens'
-import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable, WebSearchField } from '../../../web/screens/ListsLookback'
+import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable } from '../../../web/screens/ListsLookback'
 import { useDashboardFigures } from '../../../web/useDashboardFigures'
 import { StageHint } from '../CatalogueKit'
 import type { WebFixtures } from './fixtures'
@@ -526,11 +526,29 @@ export function SubmitListSheetDemo({ f }: F) {
 // Search and dates
 // ---------------------------------------------------------------------------
 
-export function WebSearchFieldDemo() {
+/** The Lists page's search: the shared NameSearchBox as the 38px page pill (UI unification U4). */
+function ListsSearchBox({ query, onQueryChange }: { query: string; onQueryChange: (q: string) => void }) {
+  return (
+    <NameSearchBox
+      value={query}
+      onChange={onQueryChange}
+      label="Search your Bookings"
+      placeholder="Search patient name or NHI"
+      size="pill"
+      height={38}
+      width={280}
+      fill="surface"
+      testId="web-lists-search"
+      clearLabel="Clear the search field"
+    />
+  )
+}
+
+export function ListsSearchDemo() {
   const [query, setQuery] = useState('')
   return (
     <>
-      <WebSearchField query={query} onQueryChange={setQuery} />
+      <ListsSearchBox query={query} onQueryChange={setQuery} />
       <Said text={query === '' ? null : `Query handed up: "${query}"`} />
     </>
   )
@@ -538,11 +556,15 @@ export function WebSearchFieldDemo() {
 
 export function NameSearchBoxDemo() {
   const [size, setSize] = useState<'pill' | 'field'>('pill')
+  const [fill, setFill] = useState<'surface' | 'well'>('surface')
   const [value, setValue] = useState('')
   return (
     <>
       <Knobs label="Size" value={size} options={[{ value: 'pill', label: 'pill' }, { value: 'field', label: 'field' }]} onChange={setSize} />
-      <NameSearchBox value={value} onChange={setValue} label="Search name" size={size} />
+      <Knobs label="Fill" value={fill} options={[{ value: 'surface', label: 'surface' }, { value: 'well', label: 'well' }]} onChange={setFill} />
+      <div style={{ background: fill === 'surface' ? neutral.bg : 'transparent', borderRadius: 8, padding: fill === 'surface' ? 12 : 0 }}>
+        <NameSearchBox value={value} onChange={setValue} label="Search name" size={size} fill={fill} />
+      </div>
     </>
   )
 }
@@ -553,7 +575,7 @@ export function GoToDateDemo({ f }: F) {
     <>
       <WebGoToDate anaesthetistId={f.anaesthetistId} dayISO={dayISO} onDayChange={setDayISO} />
       <Said text={dayISO === null ? null : `Picked ${dayISO}`} />
-      <StageHint>A native date input, bounded by her first and last day with work. The Lists page's To input is the same pattern.</StageHint>
+      <StageHint>The shared DateJumpInput, bounded by her first and last day with work. The Lists page's To input is the shared FilterDateInput.</StageHint>
     </>
   )
 }
@@ -631,7 +653,7 @@ export function ResultsTableDemo({ f }: F) {
       {(go) => (
         <>
           <div style={{ marginBottom: 10 }}>
-            <WebSearchField query={query} onQueryChange={setQuery} />
+            <ListsSearchBox query={query} onQueryChange={setQuery} />
           </div>
           <Wide width={1000}>
             <Panel flush>

@@ -17,10 +17,10 @@ import {
   type Actor,
   type RecurringBookingApplyResult,
 } from '../../../store'
-import { Button, FieldLabel, FormError, Segmented, TextField, useSurface } from '../../../shared'
+import { Button, FormError, Segmented, TextField, useSurface } from '../../../shared'
+import { SelectField, TimeRangeFields } from '../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { shortDay } from '../../../shared/format'
-import { selectControlStyle as selectStyle } from './fieldChrome'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { keptDetail, previewLine, resultLine, retirePreviewLine, retireResultLine, SKIPPED_DETAIL, SKIPPED_HEADING } from '../recurringBookingCopy'
 import { textActionStyle } from '../tableChrome'
@@ -222,51 +222,35 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
             <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
               A pattern of Lists for this anaesthetist, surgeon and hospital on one day and session each week, not a Booking for a patient.
             </div>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Anaesthetist</FieldLabel>
-              <select value={anaesthetistId} onChange={(e) => setAnaesthetistId(e.target.value)} style={selectStyle}>
-                <option value="">Select an anaesthetist</option>
-                {Object.values(anaesthetists).map((a) => (
-                  <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
-                ))}
-              </select>
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Day of week</FieldLabel>
-              <select value={dayOfWeek} onChange={(e) => setDayOfWeek(Number(e.target.value))} style={selectStyle}>
-                {DAYS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
-                ))}
-              </select>
-            </label>
+            <SelectField label="Anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
+              <option value="">Select an anaesthetist</option>
+              {Object.values(anaesthetists).map((a) => (
+                <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
+              ))}
+            </SelectField>
+            <SelectField label="Day of week" value={String(dayOfWeek)} onChange={(v) => setDayOfWeek(Number(v))}>
+              {DAYS.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </SelectField>
             <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]} onChange={setSession} />
             <Segmented label="Kind of List" value={kind} options={KINDS} onChange={setKind} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <FieldLabel>Start (optional)</FieldLabel>
-                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={selectStyle} />
-                </label>
-                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <FieldLabel>End (optional)</FieldLabel>
-                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={selectStyle} />
-                </label>
-              </div>
-              <span style={{ fontSize: 12, color: neutral.slate }}>Leave blank for the default session times.</span>
-            </div>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Hospital (usual)</FieldLabel>
-              <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} style={selectStyle}>
-                <option value="" disabled>Choose a hospital</option>
-                {Object.values(hospitals).map((h) => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
-                ))}
-              </select>
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Usual surgeon</FieldLabel>
-              <SurgeonPicker anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" style={selectStyle} />
-            </label>
+            <TimeRangeFields
+              optional
+              value={{ start: startTime, end: endTime }}
+              onChange={(next) => {
+                setStartTime(next.start)
+                setEndTime(next.end)
+              }}
+              hint="Leave blank for the default session times."
+            />
+            <SelectField label="Hospital (usual)" value={hospitalId} onChange={setHospitalId}>
+              <option value="" disabled>Choose a hospital</option>
+              {Object.values(hospitals).map((h) => (
+                <option key={h.id} value={h.id}>{h.name}</option>
+              ))}
+            </SelectField>
+            <SurgeonPicker label="Usual surgeon" anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" />
             <TextField label="Display note (optional)" value={notes} onChange={setNotes} placeholder="e.g. Elective ortho" />
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1 }}>

@@ -25,7 +25,6 @@
  */
 
 import { useMemo, useState } from 'react'
-import { X } from 'lucide-react'
 import type { Contract, ContractPricing, PricingKind } from '../../../domain/types'
 import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, SYSTEM_CONTRACT_EDITABLE_FIELDS, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
 import { destinationHint, destinationOf, isOpenPriceFallback } from '../../../domain/billing/fallbacks'
@@ -45,6 +44,7 @@ import {
   type Actor,
 } from '../../../store'
 import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
+import { FieldHint, SelectField } from '../../../shared/ui'
 import {
   BILLS_LABEL,
   PARTY_KIND_LABEL,
@@ -56,7 +56,6 @@ import { neutral, radius, semantic } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
 import { TextAction } from '../screens/masters/chrome'
 import { Pill } from '../components/MasterPills'
-import { selectControlStyle as selectStyle } from './fieldChrome'
 
 interface Props {
   open: boolean
@@ -293,7 +292,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
                 <TextAction onClick={() => setPickerOpen(true)} label="Choose the default RVG code">{defaultGroup !== undefined ? 'Change' : 'Choose'}</TextAction>
                 {defaultGroup !== undefined && <TextAction onClick={() => setDefaultRvgGroupId(null)} label="Clear the default RVG code">Clear</TextAction>}
               </div>
-              <Helper>Fills a Procedure's RVG code when it has none.</Helper>
+              <FieldHint>Fills a Procedure's RVG code when it has none.</FieldHint>
             </div>
           )}
         </PanelGrid>
@@ -304,19 +303,16 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
         {editing ? (
           <ReadOnlyField label="Holder" hint="Fixed once the Contract is saved.">{holder?.name ?? holderId}</ReadOnlyField>
         ) : (
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Holder</FieldLabel>
-            <select value={holderId} onChange={(e) => setHolderId(e.target.value)} style={selectStyle}>
-              <option value="">Choose the Party that holds it</option>
-              {partyGroups.map(([group, list]) => (
-                <optgroup key={group} label={group}>
-                  {list.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+          <SelectField label="Holder" value={holderId} onChange={setHolderId}>
+            <option value="">Choose the Party that holds it</option>
+            {partyGroups.map(([group, list]) => (
+              <optgroup key={group} label={group}>
+                {list.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </optgroup>
+            ))}
+          </SelectField>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <Segmented
@@ -330,26 +326,23 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
             disabled={forcedPayer || system}
           />
           {prepaid === 'yes' ? (
-            <Helper>{PREPAID_BILLS_PAYER_HELPER}</Helper>
+            <FieldHint>{PREPAID_BILLS_PAYER_HELPER}</FieldHint>
           ) : holderForcesPayer && !system ? (
-            <Helper>{CONTRACT_REFUSAL_MESSAGES.holderBillsPayer}</Helper>
+            <FieldHint>{CONTRACT_REFUSAL_MESSAGES.holderBillsPayer}</FieldHint>
           ) : null}
         </div>
         {showLinks && !system && (
           <PanelGrid>
-            <SurgeonPicker surgeons={surgeons} value={surgeonIds} onChange={setSurgeonIds} />
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Linked anaesthetist</FieldLabel>
-              <select value={anaesthetistId} onChange={(e) => setAnaesthetistId(e.target.value)} style={selectStyle}>
-                <option value="">None</option>
-                {anaesthetists.map((a) => (
-                  <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
-                ))}
-              </select>
-            </label>
+            <ChipMultiSelect label="Linked surgeons" options={surgeons} value={surgeonIds} onChange={setSurgeonIds} addLabel="Add a surgeon" />
+            <SelectField label="Linked anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
+              <option value="">None</option>
+              {anaesthetists.map((a) => (
+                <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
+              ))}
+            </SelectField>
           </PanelGrid>
         )}
-        {holder?.kind === 'hospital' && <Helper>{CONTRACT_REFUSAL_MESSAGES.noLinksOnHospital}</Helper>}
+        {holder?.kind === 'hospital' && <FieldHint>{CONTRACT_REFUSAL_MESSAGES.noLinksOnHospital}</FieldHint>}
       </PanelSection>
 
       <PanelSection title="Where it is offered">
@@ -376,15 +369,12 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
                 {fundingTagId !== '' ? <span className="mono">{masters.fundingTags[fundingTagId]?.code ?? fundingTagId}</span> : 'None'}
               </ReadOnlyField>
             ) : (
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <FieldLabel>Funding tag</FieldLabel>
-                <select value={fundingTagId} onChange={(e) => setFundingTagId(e.target.value)} style={selectStyle}>
-                  <option value="">None</option>
-                  {fundingTagsInOrder(masters.fundingTags).map((t) => (
-                    <option key={t.id} value={t.id}>{t.code}</option>
-                  ))}
-                </select>
-              </label>
+              <SelectField label="Funding tag" value={fundingTagId} onChange={setFundingTagId}>
+                <option value="">None</option>
+                {fundingTagsInOrder(masters.fundingTags).map((t) => (
+                  <option key={t.id} value={t.id}>{t.code}</option>
+                ))}
+              </SelectField>
             )}
           </div>
         </PanelGrid>
@@ -397,19 +387,13 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
         <PanelGrid>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <Segmented label="Prepaid" value={prepaid} options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} onChange={setPrepaid} disabled={editing} />
-            {editing && <Helper>{fixedAfterSave}</Helper>}
+            {editing && <FieldHint>{fixedAfterSave}</FieldHint>}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Pricing kind</FieldLabel>
-              <select value={kind} onChange={(e) => setKind(e.target.value as PricingKind)} disabled={editing} style={selectStyle}>
-                {(editing && kind === 'open' ? [...CHOOSABLE_PRICING_KINDS, 'open' as const] : CHOOSABLE_PRICING_KINDS).map((k) => (
-                  <option key={k} value={k}>{PRICING_KIND_LABEL[k]}</option>
-                ))}
-              </select>
-            </label>
-            {editing && <Helper>{fixedAfterSave}</Helper>}
-          </div>
+          <SelectField label="Pricing kind" value={kind} onChange={(v) => setKind(v as PricingKind)} disabled={editing} {...(editing ? { hint: fixedAfterSave } : {})}>
+            {(editing && kind === 'open' ? [...CHOOSABLE_PRICING_KINDS, 'open' as const] : CHOOSABLE_PRICING_KINDS).map((k) => (
+              <option key={k} value={k}>{PRICING_KIND_LABEL[k]}</option>
+            ))}
+          </SelectField>
         </PanelGrid>
         {kind === 'rvgContractRate' && !system && (
           <TextField label="Rate ($ per unit)" value={rate} onChange={setRate} mono />
@@ -424,7 +408,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
             disabled={system}
           />
         )}
-        {editing && contract.permitsRateTime && <Helper>Allows hourly rate and time billing lines on its Procedures.</Helper>}
+        {editing && contract.permitsRateTime && <FieldHint>Allows hourly rate and time billing lines on its Procedures.</FieldHint>}
         {kind === 'fixed' && !editing && (
           <PanelGrid>
             <TextField label="First price from" type="date" value={firstStart} onChange={setFirstStart} mono hint="May be in the past." />
@@ -460,10 +444,6 @@ function systemPatch(values: Partial<Record<(typeof SYSTEM_CONTRACT_EDITABLE_FIE
   return patch
 }
 
-function Helper({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 12.5, color: neutral.mist }}>{children}</div>
-}
-
 function ReadOnlyField({ label, children, hint, mono }: { label: string; children: React.ReactNode; hint?: string; mono?: boolean }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -471,56 +451,7 @@ function ReadOnlyField({ label, children, hint, mono }: { label: string; childre
       <div className={mono === true ? 'mono' : undefined} style={{ minHeight: 48, display: 'flex', alignItems: 'center', padding: '0 14px', borderRadius: radius.ctl, background: neutral.sunken, color: neutral.slate, fontSize: 15 }}>
         {children}
       </div>
-      {hint !== undefined && <Helper>{hint}</Helper>}
-    </div>
-  )
-}
-
-/** Any number of linked surgeons (OQ-105): chips for the chosen, a select to add one. */
-function SurgeonPicker({
-  surgeons,
-  value,
-  onChange,
-}: {
-  surgeons: { id: string; name: string }[]
-  value: string[]
-  onChange: (ids: string[]) => void
-}) {
-  const byId = new Map(surgeons.map((s) => [s.id, s.name]))
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <FieldLabel>Linked surgeons</FieldLabel>
-      <select
-        value=""
-        onChange={(e) => {
-          if (e.target.value !== '' && !value.includes(e.target.value)) onChange([...value, e.target.value])
-        }}
-        style={selectStyle}
-      >
-        <option value="">Add a surgeon</option>
-        {surgeons
-          .filter((s) => !value.includes(s.id))
-          .map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-      </select>
-      {value.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {value.map((id) => (
-            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 10px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.ink, fontSize: 12.5, fontWeight: 500 }}>
-              {byId.get(id) ?? id}
-              <button
-                type="button"
-                aria-label={`Remove ${byId.get(id) ?? id}`}
-                onClick={() => onChange(value.filter((v) => v !== id))}
-                style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 2, display: 'inline-flex' }}
-              >
-                <X size={14} aria-hidden />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
+      {hint !== undefined && <FieldHint>{hint}</FieldHint>}
     </div>
   )
 }

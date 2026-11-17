@@ -7,7 +7,7 @@
 
 import { accent, neutral, radius } from '../../theme/tokens'
 import type { PayerInput } from '../../store'
-import { FieldLabel, TextField } from '../ui'
+import { Checkbox, FieldLabel, TextField } from '../ui'
 import { EMPTY_ADDRESS, PostalAddressFields, type PostalAddressDraft } from './PostalAddressFields'
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Guardian', 'Benefactor', 'Family trust'] as const
@@ -37,32 +37,16 @@ export function otherPayerInput(draft: OtherPayerDraft, id?: string): PayerInput
 
 export function DifferentPayerTick({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
   return (
-    <label
-      data-shot="payer-different-tick"
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 12,
-        padding: '12px 14px',
-        borderRadius: radius.card,
-        border: `1px solid ${checked ? accent.base : neutral.line}`,
-        background: checked ? accent.tint : neutral.surface,
-        cursor: 'pointer',
-      }}
+    // The tick card; recipes click `[data-shot=payer-different-tick] input`.
+    <Checkbox
+      variant="card"
+      labelShot="payer-different-tick"
+      checked={checked}
+      onChange={onChange}
+      hint="Someone other than the patient pays: a parent, a guardian, a benefactor or a family trust."
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        style={{ width: 20, height: 20, margin: '1px 0 0', accentColor: accent.base, flex: 'none', cursor: 'pointer' }}
-      />
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>Different payer</span>
-        <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>
-          Someone other than the patient pays: a parent, a guardian, a benefactor or a family trust.
-        </span>
-      </span>
-    </label>
+      Different payer
+    </Checkbox>
   )
 }
 

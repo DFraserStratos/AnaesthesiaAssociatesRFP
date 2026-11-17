@@ -31,9 +31,19 @@ token exists.
 The rule for every shared component, new or extended: it takes a `shot` prop and emits `data-shot` on the
 element capture recipes and Playwright specs target, and passes `data-*` attributes (`data-testid`,
 `data-list-id`, `data-booking-id`, `data-validation-*` ...) through to that element. Some of today's
-components (`Button`, the `Field` parts, `Dialog`, `BottomSheet`, `MonthGrid`) do not take `shot` yet; the
-U phase that extends each one adds it. Replacing a private copy with a shared component never
+components (`Button`, `Dialog`, `BottomSheet`, `MonthGrid`) do not take `shot` yet; the U phase that
+extends each one adds it (the field parts took it in U4). Replacing a private copy with a shared component never
 drops a hook: check `git diff` for removed `data-` lines.
+
+## The fill rule and field heights
+
+Settled in U4 (questions 4, 5 and 6). A field takes the **well** fill (grey `neutral.bg`) inside a white
+sheet, card or drawer, and the **surface** fill (white) on the page or the phone canvas, so it always reads
+against what is behind it. Fields are **48px** (`size="field"`, the default) in sheets and forms; toolbars
+and in-table inputs use the one **compact 36px** size (the web Lists row keeps its 38px pair). Every
+field control carries `aa-field`, and the one rule in `theme/global.css` gives it the teal border and the
+Design Language focus ring on keyboard focus, never the browser blue. The admin calendar's crimson ring
+stays its own; buttons get theirs in U5.
 
 ## The shared components today
 
@@ -42,11 +52,20 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `Button` | `ui/Button.tsx` | Primary, secondary and danger commands | U5 (sizes, `outline`, `disabledReason`) |
 | `TextAction` | `ui/TextAction.tsx` | A teal text command inside a row or card | U5 |
 | `Pill` | `ui/Pill.tsx` | A tone label: status, kind, attention flag. `tone` neutral, success, warning, error; `size` sm, md (inline, default), lg (table, `4px 10px` 11/600); `variant` tint or outline; `leading`, `mono`, `title`, `shot`, `data-*` | U3 (done) |
-| `NameSearchBox` | `ui/NameSearchBox.tsx` | The type-ahead name search | U4 (field fill) |
-| `FieldLabel` | `ui/Field.tsx` | The label above a field | U4 |
+| `NameSearchBox` | `ui/NameSearchBox.tsx` | The one search box in all three apps: `size` field (48) or pill (36, or `height` 38 on the web Lists row); `fill` well or surface (default); `testId`, `clearLabel`, `touch` (the 44px clear on the phone), `shot`; Escape clears | U4 (done: `fill`, `testId`, `clearLabel`, `touch`, `height`; replaced `WebSearchField` and the mobile Lists input) |
+| `FieldLabel` | `ui/Field.tsx` | The 11/600 uppercase label above a field; every labelled field part draws it | U4 (done) |
+| `FieldHint` | `ui/Field.tsx` | The one quiet line under a field: 12px mist or `tone="error"`, tied by `id` and `aria-describedby`; the `hint` prop of every field part (U4) | None planned |
 | `FormError` | `ui/Field.tsx` | Every refusal: the `box` under a form, or the `inline` line beside a compact row control; always `role="alert"`; `shot` (U3) | None planned |
-| `TextField` | `ui/Field.tsx` | A labelled text, date or number input | U4 (number, time, `min`, `max`, `invalid`, `size`, `fill`) |
-| `TextArea` | `ui/Field.tsx` | A labelled multi-line input | U4 (counter) |
+| `TextField` | `ui/Field.tsx` | A labelled single-line input: `type` text, date, time, number, email, tel; `mono`, `hint`, `invalid` (`aria-invalid` and the error border), `inputMode`, `align`, `min`, `max`, `step`, `list`, `size`, `fill`, `hideLabel`, `width`, `shot`, `data-*`; defaults keep the 48px grey well | U4 (done); Phase 24 (`PriceCard` amount) |
+| `TextArea` | `ui/Field.tsx` | A multi-line input: `label` or `ariaLabel`, `hint`, a counter (`maxLength`, `cap`, `countTrimmed`), `size` compact (the rail's 60px note), `fill`, `resize`, `rows`, `shot` | U4 (done); Phase 35 (notes) |
+| `SelectField` | `ui/Field.tsx` | The one labelled native `<select>` (U4): TextField's chrome, `size` field or compact, `fill`, `hideLabel`, `width`, `hint`, `shot` on the select, `labelShot` on the wrapper, `data-*` | Phases 36, 37 (filter bars), 42 |
+| `fieldChrome` | `ui/fieldChrome.ts` | The one field chrome (U4, a plain module): `FIELD_HEIGHT` (field 48, compact 36), `FIELD_FILL` (well `neutral.bg`, surface `neutral.surface`), `FIELD_CLASS` (`aa-field`, whose one `:focus-visible` rule in `theme/global.css` gives the teal border and ring), `fieldControlStyle({ size, fill, invalid, select })` | U5 (buttons take the ring) |
+| `Checkbox` | `ui/Checkbox.tsx` | The one checkbox (U4): a native box in the action teal inside its label, `size` md 16 or lg 20 (a mobile card), `hint`, `shot`, `data-*` | None planned |
+| `Switch` | `ui/Switch.tsx` | The one on/off switch (U4): `role="switch"` and `aria-checked`, `size` sm (36x20) or lg (52x32), `label`, `description`. No product screen uses it yet | Phase 27 (approval-step toggle) |
+| `DateJumpInput` | `ui/DateFields.tsx` | The toolbar "go to this day" date (U4): Admin Day at 36, web Lists at 38 with `labelVisible`; takes only a full day inside `min` and `max` (`acceptedJumpDate`), null when cleared | None planned |
+| `FilterDateInput` | `ui/DateFields.tsx` | The filter-bar date (U4): compact and white on the page, label `above` or `inline`, `height` 36 or 38 | Phases 36, 37 |
+| `TimeRangeFields` | `ui/DateFields.tsx` | A start and an end time side by side (U4, from `SessionTimesFields`): labels, `optional`, one `hint` read with both, `size`, `fill`, `shot` | Phase 39b |
+| `useRovingRadio` | `ui/useRovingRadio.ts` | The one radio-group keyboard model (U4): one Tab stop, arrows, Home and End, disabled skipped; `selectOnMove: false` where a pick saves (the Contract rail) | None planned |
 | `Segmented` | `ui/Field.tsx` | A labelled choice between a few options | U5 |
 | `SlidingSegmentedControl` | `ui/SlidingSegmentedControl.tsx` | The segmented control with the sliding highlight | U5 (one variant per question 17) |
 | `TickBadge` | `ui/TickBadge.tsx` | The completed tick disc | None planned |
@@ -64,7 +83,12 @@ drops a hook: check `git diff` for removed `data-` lines.
 | `Dialog` | `surface/Dialog.tsx` | The centred web and Admin overlay | U2 (`useModalLayer`, `OverlayHeader`, corner X) |
 | `BottomSheet` | `surface/BottomSheet.tsx` | The phone's bottom sheet | U2 (`useModalLayer`, `OverlayHeader`, `SheetActions`) |
 | `SurfaceProvider` | `surface/SurfaceProvider.tsx` | Chooses sheet or dialog per surface; the frosted dock | U2 |
-| `MonthGrid` | `calendar/MonthGrid.tsx` | The mobile "Go to a date" month calendar | U4 (`useCalendarKeys`, `MonthHeaderRow`) |
+| `MonthGrid` | `calendar/MonthGrid.tsx` | The mobile "Go to a date" month calendar, built on `useCalendarKeys` (bounded), `MonthHeaderRow` and `MonthStepButton` | U4 (done) |
+| `useCalendarKeys` | `calendar/useCalendarKeys.ts` | The one month-calendar keyboard model (U4): a roving tab stop in the visible month, arrows by day and week, Home and End, Page Up and Down by month (Shift by year); with `bounds` a key stops at a bound, without (the admin calendar) it runs on | None planned |
+| `MonthHeaderRow` | `calendar/MonthHeaderRow.tsx` | The Monday-first weekday row, `initial` or `short`, `aria-hidden`; each calendar passes its own `style` and `cellStyle` (U4) | Phase 42 (hospital calendar) |
+| `MonthStepButton` | `calendar/MonthHeaderRow.tsx` | The phone calendars' 44px round previous and next month button (U4) | None planned |
+| `NumberStepper` | `capture/ui.tsx` | The one whole-number stepper (U4): `StepperButton` minus and plus named "Fewer" and "More {label}", `min`, `max`, the value announced; `typeable` types a value in place (Enter saves, Escape cancels) | Phases 23 (`UnitsCard`), 39b |
+| Rail parts | `contracts/railParts.tsx` (words in `railText.ts`) | The Contract chooser's parts (U4), one set for the Billing card and the step rail sheet: `RailOptionGroup` (`list` or `tiles`, on `useRovingRadio` with `selectOnMove: false`), `StepRail` and `StepMarker` (`vertical` or `compact`, `aria-current="step"`), `NoContractGroup` and `ContractGroupHeading`, `BackstopAmountField` (the typed amount at 44px) | Phase 23 (Make primary) |
 | `useModalLayer` | `surface/useModalLayer.ts` | The one modal stack (U2): one Escape closes only the top layer, focus in, trapped and back, the background inert within the closest `[data-aa-modal-scope]`, every close through the layer's one `onClose`. Dialog, BottomSheet and SidePanel use it; popovers join as `kind: 'popover'` | Phase 35 (close guard on the one `onClose`) |
 | `usePopover` | `ui/usePopover.ts` | The one popover behaviour (U2): open state, outside `pointerdown`, Escape back to the trigger, `aria-expanded` and `aria-controls` | Phase 43a (`InfoTip`) |
 | `PopoverPanel` | `ui/PopoverPanel.tsx` | The one popover panel (U2): card radius, e3, placed `end`, `fill` or `inline` | Phase 43a (`InfoTip`) |

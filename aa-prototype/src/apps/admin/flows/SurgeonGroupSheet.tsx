@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import type { SurgeonGroup } from '../../../domain/types'
 import { compareBySurname } from '../../../domain/surgeons'
 import { createSurgeonGroup, editSurgeonGroup, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
+import { Checkbox } from '../../../shared/ui'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
 /** Add or edit a surgeon group and its members (catch-up Phase 17, US-13.4.1). */
@@ -39,11 +40,10 @@ export function SurgeonGroupSheet({ group, actor, onClose }: { group?: SurgeonGr
           <legend style={{ padding: 0, marginBottom: 6 }}><FieldLabel>Members</FieldLabel></legend>
           <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, maxHeight: 240, overflowY: 'auto' }}>
             {options.map((s, i) => (
-              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', fontSize: 14, borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}`, cursor: 'pointer' }}>
-                <input type="checkbox" checked={members.includes(s.id)} onChange={() => toggle(s.id)} style={{ accentColor: accent.base, width: 16, height: 16 }} />
+              <Checkbox key={s.id} checked={members.includes(s.id)} onChange={() => toggle(s.id)} style={{ gap: 10, padding: '9px 12px', fontSize: 14, borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}` }}>
                 <span>{s.name}</span>
                 <span style={{ color: neutral.mist, fontSize: 12.5 }}>{surgeonSpecialtyLabel({ specialties }, s)}</span>
-              </label>
+              </Checkbox>
             ))}
           </div>
         </fieldset>

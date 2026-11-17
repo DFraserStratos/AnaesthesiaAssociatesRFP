@@ -20,7 +20,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 import { Pill } from '../../../shared/ui/Pill'
-import { FormError } from '../../../shared/ui'
+import { FormError, TextField } from '../../../shared/ui'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 
 export type AaFeesTab = 'invoices' | 'settings'
@@ -459,18 +459,6 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
     setMessage(res.ok ? { ok: true, text: 'Fee settings saved. They apply from the next monthly run.' } : { ok: false, text: res.message })
   }
 
-  const inputStyle: React.CSSProperties = {
-    boxSizing: 'border-box',
-    minHeight: 40,
-    borderRadius: radius.ctl,
-    border: `1px solid ${neutral.line}`,
-    background: neutral.bg,
-    padding: '0 12px',
-    fontFamily: 'inherit',
-    fontSize: 14,
-    color: neutral.ink,
-  }
-
   return (
     <div data-shot="admin-aa-fee-settings" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 680 }}>
       <section style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -493,8 +481,8 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map((item, index) => (
               <div key={item.id} data-testid={`aa-fee-item-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, alignItems: 'center' }}>
-                <input aria-label={`Fixed item ${index + 1} description`} value={item.description} onChange={(e) => update(item.id, { description: e.target.value })} style={inputStyle} />
-                <input aria-label={`Fixed item ${index + 1} amount`} value={item.amount} onChange={(e) => update(item.id, { amount: e.target.value })} className="mono" inputMode="decimal" style={{ ...inputStyle, textAlign: 'right' }} />
+                <TextField label={`Fixed item ${index + 1} description`} hideLabel size="compact" value={item.description} onChange={(v) => update(item.id, { description: v })} />
+                <TextField label={`Fixed item ${index + 1} amount`} hideLabel size="compact" mono inputMode="decimal" align="right" value={item.amount} onChange={(v) => update(item.id, { amount: v })} />
                 <button
                   type="button"
                   aria-label={`Remove ${item.description.trim() === '' ? `fixed item ${index + 1}` : item.description}`}
@@ -522,8 +510,9 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, alignItems: 'center', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
-          <label htmlFor="aa-fee-per-bcti" style={{ fontSize: 13.5, fontWeight: 600 }}>Charge per BCTI paid that month (ex GST)</label>
-          <input id="aa-fee-per-bcti" value={perBcti} onChange={(e) => { setPerBcti(e.target.value); setMessage(null) }} className="mono" inputMode="decimal" style={{ ...inputStyle, textAlign: 'right' }} />
+          {/* The visible words stay this row's own; the field carries them as its name. */}
+          <span style={{ fontSize: 13.5, fontWeight: 600 }}>Charge per BCTI paid that month (ex GST)</span>
+          <TextField label="Charge per BCTI paid that month (ex GST)" hideLabel size="compact" mono inputMode="decimal" align="right" value={perBcti} onChange={(v) => { setPerBcti(v); setMessage(null) }} />
           <span />
         </div>
 

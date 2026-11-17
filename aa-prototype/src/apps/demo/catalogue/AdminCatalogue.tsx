@@ -75,6 +75,16 @@ import {
   SurgeonPickerExample,
   WarningsToDoExample,
 } from './admin/storeExamples'
+import {
+  CheckboxExample,
+  DateJumpInputExample,
+  FieldHintExample,
+  FilterDateInputExample,
+  SelectFieldExample,
+  SwitchExample,
+  TimeRangeFieldsExample,
+} from './admin/fieldExamples'
+import { BackstopAmountFieldExample, NoContractGroupExample, RailOptionGroupExample, StepRailExample } from './railPartsExamples'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
@@ -163,7 +173,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="TabLink (AA fees)" source="apps/admin/screens/AaFeesScreen.tsx" usedIn={A} what="Route tabs for the AA fee invoices and fee settings pages." replaceWith="shadcn Tabs (as links)" note="Rebuilt on buttons with the same styles: the real one is a router Link that would leave this page.">
           <TabLinkExample />
         </CatalogueRow>
-        <CatalogueRow name="DayNav (with SortToggle)" source="apps/admin/components/DayNav.tsx" usedIn={A} what="The Day view toolbar: week and day steppers, Today, a native date input bounded by the horizon, the Roster or A to Z SortToggle and Find available." replaceWith="shadcn Button Group + ToggleGroup + Date Picker" note="Labels the glyph buttons and gives SortToggle pressed semantics.">
+        <CatalogueRow name="DayNav (with SortToggle)" source="apps/admin/components/DayNav.tsx" usedIn={A} what="The Day view toolbar: week and day steppers, Today, the shared DateJumpInput (36px, named Go to date, bounded by the horizon; UI unification U4), the Roster or A to Z SortToggle and Find available." replaceWith="shadcn Button Group + ToggleGroup + Date Picker" note="Labels the glyph buttons and gives SortToggle pressed semantics. The date input takes only a full day inside the bounds; buttons get the shared focus ring in U5.">
           <DayNavExample />
         </CatalogueRow>
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={AWM} what="A small tinted chip for a List kind or availability status, coloured from the status master." replaceWith="shadcn Badge (6 status variants)">
@@ -190,22 +200,22 @@ export function AdminCatalogue() {
         <CatalogueRow name="WarningTriangle" source="shared/warnings/WarningTriangle.tsx" usedIn={AWM} what="The warning mark on a booking, coloured by the strongest open warning." replaceWith="shadcn Tooltip + Badge" note="Its detail is reachable by keyboard once it is a Tooltip.">
           <WarningTriangleExample />
         </CatalogueRow>
-        <CatalogueRow name="NameSearchBox" source="shared/ui/NameSearchBox.tsx" usedIn={AWM} what="The one type-ahead name search box, in field and pill sizes; Escape clears it. Each caller filters its own rows." replaceWith="shadcn Input Group (search)" note="One search input instead of three.">
+        <CatalogueRow name="NameSearchBox" source="shared/ui/NameSearchBox.tsx" usedIn={AWM} what="The one search box in all three apps since UI unification U4: field (48px) and pill (36px, or 38px on the web Lists row) sizes; fill well (grey) inside a sheet, card or drawer and surface (white, the default) on the page; a clear button (clearLabel, a 44px touch target on the phone), Escape clears, testId and shot hooks. Each caller filters its own rows." replaceWith="shadcn Input Group (search)" note="WebSearchField and the mobile Lists input are gone: both Lists pages use it. The aa-field class gives it the one teal focus ring.">
           <NameSearchBoxExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractSelect (fieldChrome select)" source="shared/contracts/ContractSelect.tsx" usedIn={A} what="A native select of every active Contract grouped by holder, styled with Admin's 48px selectControlStyle." replaceWith="shadcn Select (or NativeSelect)" note="Several Admin selects are unlabelled today; this one has its label.">
+        <CatalogueRow name="ContractSelect (SelectField)" source="shared/contracts/ContractSelect.tsx" usedIn={A} what="A native select of every active Contract grouped by holder, on the shared SelectField (UI unification U4): 48px, grey well, its label above it." replaceWith="shadcn Select (or NativeSelect)" note="Its old selectStyle prop is accepted and ignored. A select without a visible label takes SelectField's hideLabel, which names it.">
           <ContractSelectExample />
         </CatalogueRow>
-        <CatalogueRow name="SurgeonPicker" source="apps/admin/components/pairing/SurgeonPicker.tsx" usedIn={A} what="A native select of surgeons with a 'Not preferred with Dr X' optgroup for the chosen anaesthetist." replaceWith="Base UI Combobox (with groups)" note="The list is long and not searchable today. Opens on an anaesthetist with a not-preferred surgeon, so the second optgroup shows.">
+        <CatalogueRow name="SurgeonPicker" source="apps/admin/components/pairing/SurgeonPicker.tsx" usedIn={A} what="A native select of surgeons with a 'Not preferred with Dr X' optgroup for the chosen anaesthetist, on the shared SelectField (UI unification U4): a label (or hideLabel), size, fill and width." replaceWith="Base UI Combobox (with groups)" note="Stays a native select (the catch-up 17 ruling). The list is long and not searchable. Opens on an anaesthetist with a not-preferred surgeon, so the second optgroup shows.">
           <SurgeonPickerExample />
         </CatalogueRow>
         <CatalogueRow name="NotPreferredWarning" source="apps/admin/components/pairing/NotPreferredWarning.tsx" usedIn={A} what="An amber callout when the chosen surgeon is not preferred with the anaesthetist, on the shared Notice; it warns, never blocks." replaceWith="shadcn Alert" note="Fed by the real useNotPreferredWarning hook for a seeded not-preferred pairing.">
           <NotPreferredWarningExample />
         </CatalogueRow>
-        <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips, for a Contract's specialties." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
+        <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips: a Contract's specialties and, since UI unification U4, its linked surgeons (the editor's private SurgeonPicker is gone). The select draws the one field chrome and its hint is the shared FieldHint." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
           <ChipMultiSelectExample />
         </CatalogueRow>
-        <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay titled by an OverlayHeader: search by code or description, every match rendered." replaceWith="Base UI Combobox + TanStack Virtual" note="The library would add combobox and listbox roles and arrow and Enter selection.">
+        <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay titled by an OverlayHeader: search by code or description, every match rendered. Its search is the shared NameSearchBox in the well fill (UI unification U4)." replaceWith="Base UI Combobox + TanStack Virtual" note="The library would add combobox and listbox roles and arrow and Enter selection.">
           <CodePickerExample />
         </CatalogueRow>
         <CatalogueRow name="Notice" source="shared/ui/Notice.tsx" usedIn={AWM} what="The one notice (UI unification U3): the ConflictCallout shell in warning, error and success, and the neutral note. A role only where the note announces; the icon is aria-hidden." replaceWith="shadcn Alert">
@@ -220,8 +230,14 @@ export function AdminCatalogue() {
         <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved. Its count is the shared CountBadge (read as 2 active), still showing 0." replaceWith="shadcn Card + Button" note="Resolve writes to the demo store. The fresh seed has no notices, so it shows its empty state.">
           <NotificationsCardExample />
         </CatalogueRow>
-        <CatalogueRow name="VacatedSessionChoice / StatusRadioGroup" source="shared/flows/VacatedSessionChoice.tsx" usedIn={AWM} what="A radio group of status chips with a roving tab stop: what the vacated session becomes after a move." replaceWith="shadcn RadioGroup" note="Already correct; swap for consistency.">
+        <CatalogueRow name="VacatedSessionChoice / StatusRadioGroup" source="shared/flows/VacatedSessionChoice.tsx" usedIn={AWM} what="A radio group of status chips: what the vacated session becomes after a move. Its keyboard is the shared useRovingRadio (UI unification U4): one Tab stop, arrows move and select, Home and End jump to the ends." replaceWith="shadcn RadioGroup" note="The same hook drives the Contract rail's answers (RailOptionGroup), where a move only focuses.">
           <VacatedChoiceExample />
+        </CatalogueRow>
+        <CatalogueRow name="RailOptionGroup" source="shared/contracts/railParts.tsx" usedIn={AWM} what="One step of the Contract chooser as a named radio group (UI unification U4): list rows with a count (the step rail sheet) or tiles with None for this List (the Billing card), a Suggested pill on the funder's path, unselectable answers dimmed. Arrow keys move focus only; Space, Enter or a click picks, because a pick saves and moves on." replaceWith="shadcn RadioGroup (card items)" note="Static options here; Phase 23 builds Make primary on it. Nothing writes to the demo data.">
+          <RailOptionGroupExample />
+        </CatalogueRow>
+        <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." replaceWith="shadcn Switch" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
+          <SwitchExample />
         </CatalogueRow>
         <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="BackLink is left out: it is a router Link.">
           <ProfileChromeExample />
@@ -253,7 +269,7 @@ export function AdminCatalogue() {
             <RvgGroupsView actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="AuditViewer" source="apps/admin/screens/AuditViewer.tsx" usedIn={A} what="The global audit feed with a filter bar (two selects, two dates), capped at 500 rows." replaceWith="TanStack Table + TanStack Virtual" note="Virtualisation or pagination replaces the 500-row cap; the date pair becomes a range picker." height={460}>
+        <CatalogueRow name="AuditViewer" source="apps/admin/screens/AuditViewer.tsx" usedIn={A} what="The global audit feed with a filter bar, capped at 500 rows. Since UI unification U4 the bar is shared parts: two SelectFields (compact, surface fill) and a FilterDateInput From and To." replaceWith="TanStack Table + TanStack Virtual" note="Virtualisation or pagination replaces the 500-row cap; the date pair becomes a range picker." height={460}>
           <Wide minWidth={980}>
             <AuditViewer />
           </Wide>
@@ -262,29 +278,41 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="forms">
-        <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="A labelled 48px text input with optional mono style and hint line. 59 uses in Admin." replaceWith="shadcn Field + Input (React Hook Form)" note="Adds aria-invalid and field-bound errors.">
+        <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled single-line input, about 77 uses in Admin: text, date, time, number, email or phone; mono; a FieldHint tied by aria-describedby; and since UI unification U4 invalid (aria-invalid and the error border), inputMode and align for amounts, min, max, step, list, size (48px field or 36px compact), fill (well or surface) and hideLabel." replaceWith="shadcn Field + Input (React Hook Form)" note="Every default keeps the old look (48px, grey well). The library would bind errors to the field.">
           <TextFieldExample />
         </CatalogueRow>
-        <CatalogueRow name="TextArea" source="shared/ui/Field.tsx" usedIn={AWM} what="A labelled multi-line text input with an optional blur handler." replaceWith="shadcn Field + Textarea">
+        <CatalogueRow name="TextArea" source="shared/ui/Field.tsx" usedIn={AWM} what="The one multi-line input: a visible label or ariaLabel, a hint, and since UI unification U4 a counter (maxLength, cap, countTrimmed), compact density (the rail's day note), fill and resize. The rail's day note, the modifier reason and the Alert the office note moved onto it." replaceWith="shadcn Field + Textarea">
           <TextAreaExample />
         </CatalogueRow>
         <CatalogueRow name="FieldLabel / FormError" source="shared/ui/Field.tsx" usedIn={AWM} what="The field label, and FormError: the role=alert refusal box under a form, or its inline line beside a compact row control (UI unification U3: the one error box)." replaceWith="shadcn Label + FieldError (Zod schema)" note="Ties each error to its field instead of one line per form.">
           <FormErrorExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, selects, segmented choices, ChipMultiSelect, SurgeonPicker, the RVG code picker and price ranges." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
+        <CatalogueRow name="FieldHint" source="shared/ui/Field.tsx" usedIn={AWM} what="The one quiet line under a field (UI unification U4): 12px mist, or error-coloured, tied to the field by id and aria-describedby. TextField, TextArea, SelectField, Checkbox and TimeRangeFields draw it from their hint prop; it also stands alone under any control." replaceWith="shadcn FieldDescription">
+          <FieldHintExample />
+        </CatalogueRow>
+        <CatalogueRow name="SelectField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled native select (UI unification U4): TextField's chrome and focus ring, size field (48px, in sheets) or compact (36px, toolbars), fill well (grey, inside white containers) or surface (white, on the page), hideLabel, width, a hint, shot on the select." replaceWith="shadcn Select (or NativeSelect)" note="Stays native: the capture recipes selectOption it, and native selects were kept by ruling.">
+          <SelectFieldExample />
+        </CatalogueRow>
+        <CatalogueRow name="Checkbox" source="shared/ui/Checkbox.tsx" usedIn={AWM} what="The one checkbox (UI unification U4): a native box in the action teal, never the browser blue, inside its label, so a click on the words toggles it and Space works. md 16px or lg 20px (a mobile card), with an optional hint." replaceWith="shadcn Checkbox" note="Replaced the hand copies: the rail's day flag, the status sheet's flags, surgeon groups, an RVG group's range, the payer tick and the Paid by offer, the colleague move sheet, Conflicts and Notifications.">
+          <CheckboxExample />
+        </CatalogueRow>
+        <CatalogueRow name="BackstopAmountField" source="shared/contracts/railParts.tsx" usedIn={AWM} what="The typed amount on No contract · Fixed price (UI unification U4): TextField's chrome at the rail's 44px, mono, a decimal keypad, aria-invalid with the hint saying why, saved on blur or Enter, with an optional inline action beside it." replaceWith="Base UI NumberField + shadcn Field" note="Local state here; in the Billing card and the step rail sheet it writes the price.">
+          <BackstopAmountFieldExample />
+        </CatalogueRow>
+        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, SelectFields (holder, linked anaesthetist, funding tag, pricing kind), segmented choices, ChipMultiSelect for specialties and linked surgeons, FieldHint lines, the RVG code picker and price ranges. All shared field parts since UI unification U4." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
           <ContractPanelExample />
         </CatalogueRow>
-        <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store.">
+        <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags (the shared Checkbox with a hint, UI unification U4) and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store.">
           <SlotStatusSheetExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="Keep Enter-commits and Escape-cancels. Saving writes to the demo store.">
+        <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted. Its in-table inputs are the shared TextField at the compact size (UI unification U4): hidden labels, mono, the price right-aligned on a decimal keypad." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="Keep Enter-commits and Escape-cancels. Saving writes to the demo store.">
           <ContractPriceRangesExample />
         </CatalogueRow>
       </LibraryGroup>
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="daypicker">
-        <CatalogueRow name="MiniCalendar (RightRail)" source="apps/admin/components/RightRail.tsx" usedIn={A} what="The rail's month calendar with roving focus, arrows, Home and End, Page Up and Down, and today in crimson." replaceWith="shadcn Calendar (react-day-picker)" note="Not exported: the row mounts the real RightRail (calendar on top; To-do, notes and Awaiting review below). Keep its key bindings. Notes stay local." height={420}>
+        <CatalogueRow name="MiniCalendar (RightRail)" source="apps/admin/components/RightRail.tsx" usedIn={A} what="The rail's month calendar with roving focus, arrows, Home and End, Page Up and Down, and today in crimson. Its keys are the shared useCalendarKeys (UI unification U4, unbounded so paging past the horizon still lands on Admin Day); its day note is the compact TextArea with a Checkbox flag." replaceWith="shadcn Calendar (react-day-picker)" note="Not exported: the row mounts the real RightRail (calendar on top; To-do, notes and Awaiting review below). Keep its key bindings and its own crimson focus ring. Notes stay local." height={420}>
           <RightRailExample />
         </CatalogueRow>
         <CatalogueRow name="HospitalCalendar" source="apps/admin/screens/masters/HospitalsView.tsx" usedIn={A} what="One hospital's month of closures and Lists: a closure opens it to change or delete, an open day adds one." replaceWith="shadcn Calendar (custom day content)" note="Not exported: the row mounts the real HospitalsView; choose Calendar. Saving a holiday writes to the demo store." height={520}>
@@ -292,13 +320,22 @@ export function AdminCatalogue() {
             <HospitalsView actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="Native date input (TextField type=date)" source="shared/ui/Field.tsx" usedIn={AWM} what="The browser's own date input, used 15 times in Admin (holidays, redate, audit range, go-to-date)." replaceWith="shadcn Date Picker (Popover + Calendar)" note="Pass the demo clock's today and the horizon as bounds.">
+        <CatalogueRow name="Native date input (TextField type=date)" source="shared/ui/Field.tsx" usedIn={AWM} what="The browser's own date input inside a sheet, about a dozen times in Admin (holidays, a new or redated List's day, recurring bookings, a Contract's first price), with min and max bounds where a day must fall inside the horizon. Toolbars use DateJumpInput and filter bars FilterDateInput." replaceWith="shadcn Date Picker (Popover + Calendar)" note="Pass the demo clock's today and the horizon as bounds.">
           <DateFieldExample />
         </CatalogueRow>
-        <CatalogueRow name="SessionTimesFields" source="apps/admin/flows/SessionTimesFields.tsx" usedIn={A} what="A session's start and end as native time inputs, with a default or own-times hint and Use default." replaceWith="React Aria TimeField (or keep native)" note="Neither Base UI nor react-day-picker has a time picker.">
+        <CatalogueRow name="DateJumpInput" source="shared/ui/DateFields.tsx" usedIn={AW} what="The toolbar control that sends a screen to a chosen day (UI unification U4): Admin Day's 36px input named Go to date and the web Lists page's 38px one with its label beside it. Only a full day inside min and max is taken (no partial years while typing); clearing it hands up null." replaceWith="shadcn Date Picker (Popover + Calendar)" note="Stays one native input, as the Playwright specs read date inputs by position. The phone keeps its Go to a date sheet.">
+          <DateJumpInputExample />
+        </CatalogueRow>
+        <CatalogueRow name="FilterDateInput" source="shared/ui/DateFields.tsx" usedIn={AW} what="The filter-bar date (UI unification U4): compact and white on the page, its label above (the Admin filter bars, as AuditViewer's From and To) or inline (the web Lists row's To, 38px)." replaceWith="shadcn Date Picker (range)" note="Phase 37's From and To build on it.">
+          <FilterDateInputExample />
+        </CatalogueRow>
+        <CatalogueRow name="SessionTimesFields" source="apps/admin/flows/SessionTimesFields.tsx" usedIn={A} what="A session's start and end with a default or own-times hint and Use default. Since UI unification U4 it renders the shared TimeRangeFields (48px, the one focus ring); its controlStyle prop is gone." replaceWith="React Aria TimeField (or keep native)" note="Neither Base UI nor react-day-picker has a time picker.">
           <SessionTimesExample />
         </CatalogueRow>
-        <CatalogueRow name="RVG anatomy datalist" source="apps/admin/screens/masters/RvgGroupsView.tsx" usedIn={A} what="RvgGroupSheet's anatomy heading: free text with the known headings suggested by a native datalist." replaceWith="Base UI Autocomplete" note="RvgGroupSheet is not exported: rebuilt from its markup and the real ANATOMY_HEADINGS. The real one opens from Add group in the RvgGroupsView row.">
+        <CatalogueRow name="TimeRangeFields" source="shared/ui/DateFields.tsx" usedIn={AWM} what="A start and an end time side by side (UI unification U4, from SessionTimesFields): two labelled native time inputs, optional labels, one hint line read with both, size and fill. Used by SessionTimesFields, the recurring booking sheet and the schedule settings." replaceWith="React Aria TimeField (or keep native)" note="Phase 39b brings it to the anaesthetist apps.">
+          <TimeRangeFieldsExample />
+        </CatalogueRow>
+        <CatalogueRow name="RVG anatomy datalist" source="apps/admin/screens/masters/RvgGroupsView.tsx" usedIn={A} what="RvgGroupSheet's anatomy heading: free text with the known headings suggested by a native datalist, through TextField's list prop since UI unification U4." replaceWith="Base UI Autocomplete" note="RvgGroupSheet is not exported: rebuilt from its markup and the real ANATOMY_HEADINGS. The real one opens from Add group in the RvgGroupsView row, whose anatomy filter is a compact SelectField.">
           <AnatomyDatalistExample />
         </CatalogueRow>
       </LibraryGroup>
@@ -318,7 +355,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={AWM} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
           <ProcedureStackExample />
         </CatalogueRow>
-        <CatalogueRow name="PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)" source="shared/flows/PayerFields.tsx, PostalAddressFields.tsx" usedIn={AWM} what="The payer form's parts, in PaidBySheet's Who pays and the add forms (U4 migrates them): the Different payer tick, then the other payer's name, relationship chips, email, NZ Post postal address and phone." replaceWith="shadcn Checkbox card, ToggleGroup and Input" note="Local state only; nothing writes to the demo data.">
+        <CatalogueRow name="PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)" source="shared/flows/PayerFields.tsx, PostalAddressFields.tsx" usedIn={AWM} what="The payer form's parts, in PaidBySheet's Who pays and the add forms: the Different payer tick (the shared Checkbox at lg, in its card, since UI unification U4), then the other payer's name, relationship chips, email, NZ Post postal address and phone, all on the shared TextField." replaceWith="shadcn Checkbox card, ToggleGroup and Input" note="Local state only; nothing writes to the demo data.">
           <PayerFieldsExample />
         </CatalogueRow>
         <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={AWM} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
@@ -326,6 +363,12 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="PartyPicker" source="shared/booking/PartyPicker.tsx" usedIn={AWM} what="Choose who an invoice goes to (catch-up Phases 22 and 22a): the Procedure's payer and the Contract's party first, then every Party, searchable by name, and with onAnotherPerson a last row, Another person, for someone who is no Party. The split's party field in PaidBySheet; Phases 38b, 39 and 39b reuse it." replaceWith="shadcn Combobox (Popover and Command)" note="Fixed options on local state; nothing writes to the demo data.">
           <PartyPickerExample />
+        </CatalogueRow>
+        <CatalogueRow name="StepRail / StepMarker" source="shared/contracts/railParts.tsx" usedIn={AWM} what="The Contract chooser's numbered steps as a nav list (UI unification U4): vertical (the desktop column, a connector line between 24px markers) or compact (three across, the phone's sheet); a tick once answered, the answer under its label, Only option where a step filled itself in, aria-current=step on the current one, and an answered step clickable to go back." replaceWith="Custom (a stepper on library primitives)" note="Static steps here. Phase 23 builds Make primary on it.">
+          <StepRailExample />
+        </CatalogueRow>
+        <CatalogueRow name="NoContractGroup / ContractGroupHeading" source="shared/contracts/railParts.tsx" usedIn={AWM} what="The No contract heading with the destination's two backstops under it, No contract · RVG then No contract · Fixed price, at the top of every Contract list (UI unification U4). Each list draws its own rows: the sheet's radio rows, the Billing card's combo options." replaceWith="Custom (a group heading in a Combobox or RadioGroup)" note="The backstops are read from the seed; the rows here are a local rebuild of the sheet's and nothing writes to the demo data.">
+          <NoContractGroupExample />
         </CatalogueRow>
         <CatalogueRow name="PaidByRow" source="shared/booking/PaidByRow.tsx" usedIn={AWM} what="Paid by in the Billing card (catch-up Phases 22 and 22a; US-08.2.3, US-11.2.2): the Procedure's payer with Patient or the relationship and the warning-tint Email or postal address needed and Under 18 pills where its Contract bills the payer; the holder where the Contract bills its holder; a split's parties, in the warning tint when it no longer fits; Payer: not billed yet with no Contract. On web and Admin a line at the card's foot, on the phone the Billing summary's last row: Change beside the payer's name opens PaidBySheet with who pays and the offer; Split on the right opens it with the split alone." replaceWith="Custom (text rows and the shared Pill)" note="Read-only examples over fixed views; the sheet opens on a real Booking.">
           <PaidByRowExample variant="line" />
@@ -351,10 +394,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="InvoiceDocument" source="apps/admin/screens/InvoiceDocument.tsx" usedIn={A} what="The invoice as a print-styled document (serif voice): the anaesthetist as supplier with their GST number, AA's agent block with the Provisional (OQ-29) pill, the holder's or the patient's layout (the BTM breakdown, cross-match strip and Your reference on the holder's), a split share's note, GST at the foot, and its rail: the Delivery card (Emailed, To post or No invoice address, with Resend or Send), Related invoices and the Xero handoff. Shown at half size." replaceWith="Custom (print-styled page)" note="Keep it out of a fixed Dialog for print isolation. Its rail actions write to the demo store." height={520}>
           <InvoiceDocumentExample />
         </CatalogueRow>
-        <CatalogueRow name="AnaesthetistCandidates" source="apps/admin/components/pairing/AnaesthetistCandidates.tsx" usedIn={A} what="The ranked anaesthetist picker: a name search, a tier filter and tiered, shuffled-within-tier rows." replaceWith="Custom on Base UI Combobox / listbox" note="Ranking is a domain rule; adds listbox semantics and arrow keys." height={420}>
+        <CatalogueRow name="AnaesthetistCandidates" source="apps/admin/components/pairing/AnaesthetistCandidates.tsx" usedIn={A} what="The ranked anaesthetist picker: a name search (the shared NameSearchBox in the well fill inside its sheet, UI unification U4), a tier filter and tiered, shuffled-within-tier rows." replaceWith="Custom on Base UI Combobox / listbox" note="Ranking is a domain rule; adds listbox semantics and arrow keys." height={420}>
           <AnaesthetistCandidatesExample />
         </CatalogueRow>
-        <CatalogueRow name="DraftListCandidates" source="apps/admin/components/pairing/DraftListCandidates.tsx" usedIn={A} what={`Who can take a ${DRAFT_LIST}: free colleagues first, not-preferred ones apart, occupied sessions linked to their List.`} replaceWith="Custom on Base UI Combobox / listbox" height={420}>
+        <CatalogueRow name="DraftListCandidates" source="apps/admin/components/pairing/DraftListCandidates.tsx" usedIn={A} what={`Who can take a ${DRAFT_LIST}: a name search (the shared NameSearchBox in the well fill, UI unification U4), free colleagues first, not-preferred ones apart, occupied sessions linked to their List.`} replaceWith="Custom on Base UI Combobox / listbox" height={420}>
           <DraftListCandidatesExample />
         </CatalogueRow>
       </LibraryGroup>

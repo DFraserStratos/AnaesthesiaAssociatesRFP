@@ -7,10 +7,9 @@
  * not-preferred choice warns in the caller, never blocks.
  */
 
-import { neutral, radius } from '../../../theme/tokens'
 import type { ListKind } from '../../../domain/types'
 import { useAppStore } from '../../../store'
-import { FieldLabel, Segmented, TextField } from '../../../shared/ui'
+import { Segmented, SelectField, TextField } from '../../../shared/ui'
 import { SurgeonPicker } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
@@ -32,18 +31,6 @@ export function assignDraftError(draft: AssignDraft): string | null {
   if (draft.surgeonId === '') return 'Choose the surgeon.'
   return null
 }
-
-export const assignSelectStyle = {
-  minHeight: 44,
-  width: '100%',
-  boxSizing: 'border-box',
-  borderRadius: radius.ctl,
-  border: `1px solid ${neutral.line}`,
-  background: neutral.bg,
-  padding: '0 12px',
-  fontFamily: 'inherit',
-  fontSize: 14,
-} as const
 
 /**
  * Every kind of List (catch-up Phase 31 supersedes Phase 28's interim "pre-op
@@ -88,28 +75,22 @@ export function AssignListFields({
   const specialties = useAppStore((s) => s.masters.specialties)
   return (
     <>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <FieldLabel>Hospital</FieldLabel>
-        <select value={draft.hospitalId} onChange={(e) => onChange({ ...draft, hospitalId: e.target.value })} style={assignSelectStyle} data-shot="assign-hospital">
-          <option value="" disabled>Choose a hospital</option>
-          {Object.values(hospitals).map((h) => (
-            <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
-          ))}
-        </select>
-      </label>
+      <SelectField label="Hospital" value={draft.hospitalId} onChange={(hospitalId) => onChange({ ...draft, hospitalId })} shot="assign-hospital">
+        <option value="" disabled>Choose a hospital</option>
+        {Object.values(hospitals).map((h) => (
+          <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
+        ))}
+      </SelectField>
       <ConflictCallout conflicts={conflicts} hospitalId={draft.hospitalId} subject={subject} shot={subject === 'Booking' ? 'phone-advice-conflict-warning' : 'assign-list-conflict-warning'} />
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <FieldLabel>Surgeon</FieldLabel>
-        <SurgeonPicker
-          anaesthetistId={anaesthetistId}
-          value={draft.surgeonId}
-          onChange={(surgeonId) => onChange({ ...draft, surgeonId })}
-          emptyLabel="Choose a surgeon"
-          optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}
-          style={assignSelectStyle}
-        />
-      </label>
+      <SurgeonPicker
+        label="Surgeon"
+        anaesthetistId={anaesthetistId}
+        value={draft.surgeonId}
+        onChange={(surgeonId) => onChange({ ...draft, surgeonId })}
+        emptyLabel="Choose a surgeon"
+        optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}
+      />
 
       <Segmented label="Kind of List" value={draft.kind} options={KIND_OPTIONS} onChange={(kind) => onChange(withKind(draft, kind, aaRoomsId))} />
 

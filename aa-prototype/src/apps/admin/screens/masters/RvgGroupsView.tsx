@@ -22,9 +22,8 @@ import { createRvgGroup, editRvgGroup, restoreRvgGroup, retireRvgGroup, useAppSt
 import { Button, FieldLabel, FormError, Segmented, TextField, useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
-import { NameSearchBox } from '../../../../shared/ui'
+import { Checkbox, NameSearchBox, SelectField } from '../../../../shared/ui'
 import { neutral, radius } from '../../../../theme/tokens'
-import { selectControlStyle } from '../../flows/fieldChrome'
 import { Pill } from '../../components/MasterPills'
 import { Header, Table, TextAction } from './chrome'
 import { cellStyle, headCellStyle, rowCellStyle } from './tableStyles'
@@ -91,7 +90,7 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div data-shot="rvg-group-search" style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Search</FieldLabel>
-          <NameSearchBox value={query} onChange={setQuery} label="Search RVG code or description" />
+          <NameSearchBox size="pill" width="100%" value={query} onChange={setQuery} label="Search RVG code or description" />
           <div style={{ fontSize: 12.5, color: neutral.slate }}>
             <span className="mono">{results.length}</span>
             {status === 'active' ? ' active' : ''} {results.length === 1 ? 'group' : 'groups'}
@@ -99,15 +98,12 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
             {query.trim() !== '' ? ` matching "${query.trim()}"` : ''}
           </div>
         </div>
-        <label style={{ width: 230, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Anatomy heading</FieldLabel>
-          <select value={anatomy} onChange={(e) => setAnatomy(e.target.value)} style={selectControlStyle}>
-            <option value="">Every heading</option>
-            {anatomyOptions.map((h) => (
-              <option key={h} value={h}>{h}</option>
-            ))}
-          </select>
-        </label>
+        <SelectField label="Anatomy heading" width={230} size="compact" fill="surface" value={anatomy} onChange={setAnatomy}>
+          <option value="">Every heading</option>
+          {anatomyOptions.map((h) => (
+            <option key={h} value={h}>{h}</option>
+          ))}
+        </SelectField>
         <div style={{ width: 200 }}>
           <Segmented
             label="Show"
@@ -221,23 +217,19 @@ function RvgGroupSheet({ group, actor, headings, onClose }: { group?: RvgGroup; 
         <OverlayHeader title={group === undefined ? 'Add an RVG group' : `Edit ${group.code} · ${group.description}`} />
         <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
           <TextField label="RVG code" value={code} onChange={setCode} mono placeholder="e.g. H3" />
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Anatomy heading</FieldLabel>
-            <input list="rvg-anatomy-headings" value={anatomy} onChange={(e) => setAnatomy(e.target.value)} placeholder="e.g. Head" style={selectControlStyle} />
-            <datalist id="rvg-anatomy-headings">
-              {headings.map((h) => <option key={h} value={h} />)}
-            </datalist>
-          </label>
+          <TextField label="Anatomy heading" list="rvg-anatomy-headings" value={anatomy} onChange={setAnatomy} placeholder="e.g. Head" />
+          <datalist id="rvg-anatomy-headings">
+            {headings.map((h) => <option key={h} value={h} />)}
+          </datalist>
         </div>
         <TextField label="Description" value={description} onChange={setDescription} placeholder="e.g. Brow lift" hint="Users find the group by its code or a word from this." />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <TextField label="Base units" value={baseUnits} onChange={setBaseUnits} mono placeholder="e.g. 5" hint="The starting figure: a whole number above 0." />
           <TextField label="Modifier units" value={modifierUnits} onChange={setModifierUnits} mono hint="Usually 0." />
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
-          <input type="checkbox" checked={hasRange} onChange={(e) => setHasRange(e.target.checked)} />
+        <Checkbox checked={hasRange} onChange={setHasRange} style={{ fontSize: 14 }}>
           The guide prints a range of base units
-        </label>
+        </Checkbox>
         {hasRange && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <TextField label="Range from" value={rangeMin} onChange={setRangeMin} mono placeholder="e.g. 10" />

@@ -139,10 +139,16 @@ export function AlertOfficeSheet({ open, actor, target, onClose }: { open: boole
               The office sees your note in its notifications and checks this {what}. It stays there until someone in the office deals with it.
             </div>
             <span data-shot="alert-office-note" style={{ display: 'contents' }}>
-              <TextArea label="Note for the office" value={note} onChange={(v) => { setNote(v); setError(null) }} placeholder="What would you like checked?" />
-            </span>
-            <span className="mono" style={{ alignSelf: 'flex-end', marginTop: -8, fontSize: 11.5, color: trimmed > OFFICE_ALERT_NOTE_MAX ? semantic.error.onTint : neutral.mist, fontVariantNumeric: 'tabular-nums' }}>
-              {trimmed}/{OFFICE_ALERT_NOTE_MAX}
+              {/* A soft limit: the counter reads in error over it, and Send stays disabled. */}
+              <TextArea
+                label="Note for the office"
+                value={note}
+                onChange={(v) => { setNote(v); setError(null) }}
+                placeholder="What would you like checked?"
+                maxLength={OFFICE_ALERT_NOTE_MAX}
+                cap={false}
+                countTrimmed
+              />
             </span>
             <FormError message={error} />
             <SheetActions

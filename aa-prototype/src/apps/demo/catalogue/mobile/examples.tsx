@@ -33,7 +33,7 @@ import { OutOfHoursMoon, useBookingSearch } from '../../../../shared/schedule'
 import { AlertOfficeSheet, MovedToYouPanel, SubmitListSheet, useBookingsMovedToMe, useMovedToMe } from '../../../../shared/flows'
 import { AvailabilityEditor, SeriesList, useAvailabilityMonth } from '../../../../shared/availability'
 import { TimesCard } from '../../../../shared/capture/TimesCard'
-import { CaptureSection, NudgeButton, StepperButton, Caption } from '../../../../shared/capture/ui'
+import { CaptureSection, NudgeButton, NumberStepper, StepperButton, Caption } from '../../../../shared/capture/ui'
 import { CompleteBar } from '../../../../shared/capture/CompleteBar'
 import { useTickingValue } from '../../../../shared/capture/useTickingValue'
 import { BookingDetailBody } from '../../../../shared/booking'
@@ -372,9 +372,27 @@ export function StepperButtonExample() {
   return (
     <div style={{ ...row, flexWrap: 'nowrap' }}>
       <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Base units</span>
-      <StepperButton glyph="−" label="One fewer unit" onClick={() => setUnits((u) => Math.max(0, u - 1))} disabled={units === 0} />
+      <StepperButton glyph="−" label="Fewer base units" onClick={() => setUnits((u) => Math.max(0, u - 1))} disabled={units === 0} />
       <span className="mono" style={{ width: 36, textAlign: 'center', fontSize: 20, fontWeight: 700 }}>{units}</span>
-      <StepperButton glyph="+" label="One more unit" onClick={() => setUnits((u) => u + 1)} />
+      <StepperButton glyph="+" label="More base units" onClick={() => setUnits((u) => u + 1)} />
+    </div>
+  )
+}
+
+export function NumberStepperExample() {
+  const [units, setUnits] = useState(2)
+  const [base, setBase] = useState(12)
+  return (
+    <div style={col}>
+      <div style={{ ...row, flexWrap: 'nowrap' }}>
+        <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Modifier units (0 to 5)</span>
+        <NumberStepper value={units} onChange={setUnits} min={0} max={5} label="modifier units" />
+      </div>
+      <div style={{ ...row, flexWrap: 'nowrap' }}>
+        <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Base units (tap to type)</span>
+        <NumberStepper value={base} onChange={setBase} min={10} max={14} label="base units" typeable={{ name: 'Base units' }} />
+      </div>
+      <span style={{ fontSize: 12.5, color: neutral.mist }}>Modifier {units} · base {base}. The base takes a typed whole number from 10 to 14.</span>
     </div>
   )
 }
@@ -402,12 +420,19 @@ export function ToggleRowExample() {
 
 export function TextFieldExample() {
   const [value, setValue] = useState('')
-  return <TextField label="Patient name" value={value} onChange={setValue} placeholder="Surname, first name" hint="As it appears on the List" />
+  const [email, setEmail] = useState('payer@')
+  const emailInvalid = email.trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  return (
+    <div style={col}>
+      <TextField label="Patient name" value={value} onChange={setValue} placeholder="Surname, first name" hint="As it appears on the List" fill="surface" />
+      <TextField label="Payer email" type="email" value={email} onChange={setEmail} invalid={emailInvalid} hint={emailInvalid ? 'Type a whole email address.' : 'Where the invoice goes.'} fill="surface" />
+    </div>
+  )
 }
 
 export function TextAreaExample() {
   const [value, setValue] = useState('')
-  return <TextArea label="Note for the office" value={value} onChange={setValue} placeholder="What should the office check?" />
+  return <TextArea label="Note for the office" value={value} onChange={setValue} placeholder="What should the office check?" maxLength={280} fill="surface" />
 }
 
 export function FormErrorExample() {

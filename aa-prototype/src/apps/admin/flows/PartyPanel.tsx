@@ -10,12 +10,12 @@ import { useMemo, useState } from 'react'
 import type { DeliveryMethod, Party, PartyKind } from '../../../domain/types'
 import { CREATABLE_PARTY_KINDS, PARTY_REFUSAL_MESSAGES, suggestCodePrefix } from '../../../domain/billing/parties'
 import { createParty, editParty, partyContractFacts, useAppStore, type Actor } from '../../../store'
-import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
+import { Button, FormError, Segmented, TextField } from '../../../shared'
+import { SelectField } from '../../../shared/ui'
 import { DELIVERY_LABEL, PARTY_KIND_LABEL } from '../../../shared/contracts'
 import { neutral } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
 import { Pill } from '../components/MasterPills'
-import { selectControlStyle as selectStyle } from './fieldChrome'
 
 interface Props {
   open: boolean
@@ -122,19 +122,11 @@ export function PartyPanel({ open, actor, party, onClose }: Props) {
           <PanelSection title="Who it is">
             <TextField label="Name" value={name} onChange={setName} hint="The short name lists and the Contract picker show." />
             <PanelGrid>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <FieldLabel>Kind</FieldLabel>
-                <select
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value as Exclude<PartyKind, 'aa'>)}
-                  disabled={kindFixed}
-                  style={selectStyle}
-                >
-                  {CREATABLE_PARTY_KINDS.map((k) => (
-                    <option key={k} value={k}>{PARTY_KIND_LABEL[k]}</option>
-                  ))}
-                </select>
-              </label>
+              <SelectField label="Kind" value={kind} onChange={(v) => setKind(v as Exclude<PartyKind, 'aa'>)} disabled={kindFixed}>
+                {CREATABLE_PARTY_KINDS.map((k) => (
+                  <option key={k} value={k}>{PARTY_KIND_LABEL[k]}</option>
+                ))}
+              </SelectField>
               <TextField
                 label="Code prefix"
                 value={shownPrefix}
@@ -150,15 +142,12 @@ export function PartyPanel({ open, actor, party, onClose }: Props) {
               <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: -6 }}>{PARTY_REFUSAL_MESSAGES.kindFixedWhileHolding}</div>
             )}
             {kind === 'hospital' && (
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <FieldLabel>Hospital</FieldLabel>
-                <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} disabled={editing && facts.holdsContracts} style={selectStyle}>
-                  <option value="">Select its hospital</option>
-                  {hospitalOptions.map((h) => (
-                    <option key={h.id} value={h.id}>{h.name}</option>
-                  ))}
-                </select>
-              </label>
+              <SelectField label="Hospital" value={hospitalId} onChange={setHospitalId} disabled={editing && facts.holdsContracts}>
+                <option value="">Select its hospital</option>
+                {hospitalOptions.map((h) => (
+                  <option key={h.id} value={h.id}>{h.name}</option>
+                ))}
+              </SelectField>
             )}
           </PanelSection>
 

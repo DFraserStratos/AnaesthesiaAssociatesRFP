@@ -19,10 +19,9 @@ import { accent, neutral } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { slotIdFor } from '../../../domain/slots'
 import { openSlotViews, useAppStore } from '../../../store'
-import { Button, FieldLabel, Segmented } from '../../../shared/ui'
+import { Button, Segmented, SelectField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { AnaesthetistCandidates, useSuggestionKey } from '../components/pairing'
-import { assignSelectStyle } from './AssignListFields'
 import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
 
 interface AvailabilityFinderSheetProps {
@@ -77,15 +76,14 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
           <div style={{ width: 260, flex: 'none' }}>
             <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }, { value: 'OOH', label: 'Out-of-hours' }]} onChange={setSession} />
           </div>
-          <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Surgeon for the List (optional)</FieldLabel>
-            <select data-shot="finder-surgeon" value={surgeonId} onChange={(e) => setSurgeonId(e.target.value)} style={assignSelectStyle}>
+          <div style={{ flex: 1 }}>
+            <SelectField label="Surgeon for the List (optional)" value={surgeonId} onChange={setSurgeonId} shot="finder-surgeon">
               <option value="">Any surgeon</option>
               {surgeonOptions.map((s) => (
                 <option key={s.id} value={s.id}>{withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}</option>
               ))}
-            </select>
-          </label>
+            </SelectField>
+          </div>
         </div>
 
         <div data-shot="finder-count" style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>

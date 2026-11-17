@@ -6,74 +6,29 @@
  */
 
 import { useMemo } from 'react'
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { listsOnDayFor, useAppStore, type BookingSearchRow } from '../../../store'
 import { ProgressPill, resolveDisplayStatus, StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { dayWithYear, locationName, longDay, nhiBadge } from '../../../shared/format'
-import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
+import { DAY_EMPTY, SEARCH_EMPTY, useLookbackBounds } from '../../../shared/schedule'
 import { sessionText } from '../../../domain/outOfHours'
-
-const pillInput = {
-  height: 38,
-  borderRadius: radius.pill,
-  border: `1px solid ${neutral.line}`,
-  background: neutral.surface,
-  fontFamily: 'inherit',
-  fontSize: 14,
-  color: neutral.ink,
-} as const
-
-
-export function WebSearchField({ query, onQueryChange }: { query: string; onQueryChange: (q: string) => void }) {
-  const [text, setText] = useFieldText(query, onQueryChange)
-  return (
-    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-      <Search size={15} aria-hidden style={{ position: 'absolute', left: 12, color: neutral.mist }} />
-      <input
-        type="search"
-        aria-label="Search your Bookings"
-        placeholder="Search patient name or NHI"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        data-testid="web-lists-search"
-        className="aa-search-field"
-        style={{ ...pillInput, width: 280, padding: text !== '' ? '0 36px 0 34px' : '0 14px 0 34px', appearance: 'none' }}
-      />
-      {text !== '' && (
-        <button
-          type="button"
-          aria-label="Clear the search field"
-          onClick={() => setText('')}
-          style={{ position: 'absolute', right: 4, width: 30, height: 30, border: 'none', background: 'none', color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: radius.pill }}
-        >
-          <X size={15} aria-hidden />
-        </button>
-      )}
-    </div>
-  )
-}
+import { DateJumpInput } from '../../../shared/ui/DateFields'
 
 export function WebGoToDate({ anaesthetistId, dayISO, onDayChange }: { anaesthetistId: string; dayISO: string | null; onDayChange: (d: string | null) => void }) {
   const bounds = useLookbackBounds(anaesthetistId)
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate }}>
-      Go to date
-      <input
-        type="date"
-        data-testid="web-lists-go-to-date"
-        value={dayISO ?? ''}
-        min={bounds.firstISO}
-        max={bounds.lastISO}
-        onChange={(e) => {
-          const v = e.target.value
-          if (v === '') onDayChange(null)
-          // Native date inputs emit partial years while typing (0002-03-13): only a day inside the bounds is taken.
-          else if (v >= bounds.firstISO && v <= bounds.lastISO) onDayChange(v)
-        }}
-        style={{ height: 38, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, padding: '0 12px', fontFamily: 'inherit', fontSize: 14, color: neutral.ink }}
-      />
-    </label>
+    // The shared jump control (UI unification U4) keeps only a full day inside the bounds.
+    <DateJumpInput
+      label="Go to date"
+      labelVisible
+      height={38}
+      testId="web-lists-go-to-date"
+      value={dayISO ?? ''}
+      min={bounds.firstISO}
+      max={bounds.lastISO}
+      onPick={onDayChange}
+    />
   )
 }
 

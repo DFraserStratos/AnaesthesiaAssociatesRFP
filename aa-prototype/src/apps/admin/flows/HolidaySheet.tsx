@@ -4,7 +4,7 @@ import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { addHospitalHoliday, deleteHospitalHoliday, editHospitalHoliday, listsFlaggedByHoliday, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, FormError, TextField, useSurface } from '../../../shared'
-import { selectControlStyle as selectStyle } from './fieldChrome'
+import { SelectField } from '../../../shared/ui'
 
 interface Props {
   open: boolean
@@ -98,15 +98,12 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
             <div style={{ fontSize: 12, color: neutral.mist }}>To close a different hospital, delete this holiday and add one there.</div>
           </div>
         ) : (
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Hospital</FieldLabel>
-            <select value={selected} onChange={(e) => setSelected(e.target.value)} style={selectStyle}>
-              <option value="">Choose a hospital</option>
-              {Object.values(hospitals).map((h) => (
-                <option key={h.id} value={h.id}>{h.name}</option>
-              ))}
-            </select>
-          </label>
+          <SelectField label="Hospital" value={selected} onChange={setSelected}>
+            <option value="">Choose a hospital</option>
+            {Object.values(hospitals).map((h) => (
+              <option key={h.id} value={h.id}>{h.name}</option>
+            ))}
+          </SelectField>
         )}
         <TextField label="Date" value={dateISO} onChange={setDateISO} type="date" />
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Planned maintenance closure" />

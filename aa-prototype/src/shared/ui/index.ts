@@ -1,6 +1,9 @@
 /** Shared UI primitives (moved from mobile in Phase 05; identical on both apps). */
 export { Button } from './Button'
-export { FieldLabel, FormError, TextField, TextArea, Segmented } from './Field'
+export { FieldLabel, FieldHint, FormError, TextField, TextArea, SelectField, Segmented, type DataAttributes } from './Field'
+export { FIELD_HEIGHT, FIELD_FILL, FIELD_CLASS, fieldControlStyle, controlStyle, selectControlStyle, type FieldSize, type FieldFill } from './fieldChrome'
+export { Checkbox, type CheckboxProps } from './Checkbox'
+export { Switch, type SwitchProps } from './Switch'
 export {
   SlidingSegmentedControl,
   type SlidingSegmentLayout,
@@ -23,3 +26,6 @@ export { visuallyHidden } from './visuallyHidden'
 export { Notice, type NoticeTone, type NoticeProps } from './Notice'
 export { ResultLine } from './ResultLine'
 export { EmptyState, type EmptyStateVariant } from './EmptyState'
+// UI unification U4: date and time parts.
+export { DateJumpInput, FilterDateInput, TimeRangeFields, acceptedJumpDate, type DateJumpInputProps, type FilterDateInputProps, type TimeRange, type TimeRangeFieldsProps, type ToolbarHeight } from './DateFields'
+export { useRovingRadio } from './useRovingRadio'

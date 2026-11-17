@@ -7,7 +7,7 @@ import { baseUnitsFor, baseUnitsShort, baseUnitsText, isRecordableBaseUnits } fr
 import { editProcedure, pickRvgGroup, useAppStore, type Actor } from '../../store'
 import { CodePickerSheet } from './CodePickerSheet'
 import { RvgCodeList, rvgSections } from './RvgCodeList'
-import { FailureNotes, StepperButton } from './ui'
+import { FailureNotes, NumberStepper } from './ui'
 
 interface RvgCodeBaseProps {
   procedure: Procedure
@@ -157,7 +157,7 @@ export function RvgCodeField({
               data-validation-fields="rvgGroupId baseUnitsSelected"
               disabled={!canCapture}
               onClick={() => setChanging(true)}
-              className="aa-rail-focus aa-rvg-chosen"
+              className="aa-rvg-chosen"
               style={{ display: 'flex', alignItems: 'center', width: '100%', minHeight: 42, boxSizing: 'border-box', textAlign: 'left', border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, borderRadius: radius.ctl, padding: canCapture ? '8px 44px 8px 12px' : '8px 12px', fontFamily: 'inherit', cursor: canCapture ? 'pointer' : 'default' }}
             >
               <CodeSummary rvgGroup={rvgGroup} />
@@ -169,7 +169,6 @@ export function RvgCodeField({
                 title="Clear"
                 data-shot="rvg-code-clear"
                 onClick={() => pick(null)}
-                className="aa-rail-focus"
                 style={{ position: 'absolute', top: '50%', right: 6, transform: 'translateY(-50%)', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: radius.pill, background: 'transparent', color: neutral.slate, cursor: 'pointer' }}
               >
                 <X size={16} aria-hidden />
@@ -313,7 +312,7 @@ function RvgTypeahead({
         data-validation-procedure-id={validationProcedureId}
         data-validation-fields="rvgGroupId baseUnitsSelected"
         placeholder="Type a code, e.g. H6a"
-        className={`aa-rail-focus${q !== '' ? ' mono' : ''}`}
+        className={`aa-field${q !== '' ? ' mono' : ''}`}
         onChange={(e) => {
           setQ(e.target.value)
           setActiveId(undefined)
@@ -387,35 +386,6 @@ function RangeUnitsRow({
   const range = rvgGroup.baseUnitsRange
   const resolved = baseUnitsFor({ procedure, group: rvgGroup })
   const value = resolved.units
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(String(value))
-  const inputRef = useRef<HTMLInputElement>(null)
-  const valueRef = useRef<HTMLButtonElement>(null)
-  // Enter and Escape both unmount the input, which can fire its blur: the
-  // first of commit or cancel wins, so a draft is never saved twice or saved
-  // after Escape.
-  const settled = useRef(false)
-  const returnFocus = useRef(false)
-
-  useEffect(() => {
-    if (editing) {
-      settled.current = false
-      inputRef.current?.select()
-    } else if (returnFocus.current) {
-      returnFocus.current = false
-      valueRef.current?.focus()
-    }
-  }, [editing])
-
-  function finish(save: boolean, refocus: boolean) {
-    if (settled.current) return
-    settled.current = true
-    returnFocus.current = refocus
-    setEditing(false)
-    const next = Number(draft.trim())
-    if (save && draft.trim() !== '' && isRecordableBaseUnits(next) && next !== value) onSelect(next)
-  }
-
   const status =
     resolved.source === 'chosen' ? `${value} chosen` : resolved.source === 'overridden' ? `${value} set manually` : `starts at ${value}`
 
@@ -427,66 +397,7 @@ function RangeUnitsRow({
           {resolved.source === 'rvgGroup' ? status : <strong style={{ color: neutral.ink }}>{status}</strong>}
         </span>
         {canCapture && (
-          <>
-            <StepperButton glyph="−" label="One fewer base unit" onClick={() => onSelect(Math.max(0, value - 1))} disabled={value <= 0} />
-            {editing ? (
-              <input
-                ref={inputRef}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                aria-label="Base units"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
-                onBlur={() => finish(true, false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') finish(true, true)
-                  if (e.key === 'Escape') {
-                    e.stopPropagation()
-                    finish(false, true)
-                  }
-                }}
-                className="mono"
-                style={{
-                  width: 48,
-                  height: 40,
-                  textAlign: 'center',
-                  fontSize: 20,
-                  fontWeight: 700,
-                  border: `1px solid ${accent.base}`,
-                  borderRadius: radius.ctl,
-                  fontFamily: 'inherit',
-                  color: neutral.ink,
-                  background: neutral.surface,
-                }}
-              />
-            ) : (
-              <button
-                ref={valueRef}
-                type="button"
-                aria-label={`Base units ${value}. Type a value`}
-                onClick={() => {
-                  setDraft(String(value))
-                  setEditing(true)
-                }}
-                className="mono"
-                style={{
-                  width: 48,
-                  height: 40,
-                  border: `1px dashed ${neutral.lineStrong}`,
-                  borderRadius: radius.ctl,
-                  background: 'transparent',
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: neutral.ink,
-                  cursor: 'text',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {value}
-              </button>
-            )}
-            <StepperButton glyph="+" label="One more base unit" onClick={() => onSelect(value + 1)} />
-          </>
+          <NumberStepper value={value} onChange={onSelect} min={0} label="base units" typeable={{ name: 'Base units', accept: isRecordableBaseUnits }} />
         )}
       </div>
       {resolved.outsideGuide && (

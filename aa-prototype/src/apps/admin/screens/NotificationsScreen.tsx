@@ -5,7 +5,7 @@ import { useMemo, useRef } from 'react'
 import { activeNotificationCount, notificationPool, type Actor, type NotificationTarget } from '../../../store'
 import { cellStyle as cellFactory, headCellStyle as headFactory, textActionStyle } from '../tableChrome'
 import { ActiveCount, NotificationText, usePoolState, useResolveWithTick } from '../components/NotificationsCard'
-import { FormError, TickBadge, TickButton } from '../../../shared/ui'
+import { Checkbox, FormError, TickBadge, TickButton } from '../../../shared/ui'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 const cellStyle = cellFactory()
@@ -56,10 +56,9 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label data-shot="admin-notifications-show-resolved" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate, cursor: 'pointer' }}>
-          <input type="checkbox" checked={showResolved} onChange={(e) => setQuery({ page: 1, resolved: e.target.checked })} />
+        <Checkbox labelShot="admin-notifications-show-resolved" checked={showResolved} onChange={(c) => setQuery({ page: 1, resolved: c })} style={{ display: 'inline-flex', gap: 6, fontSize: 13, color: neutral.slate }}>
           Show resolved
-        </label>
+        </Checkbox>
         <FormError message={error} />
       </div>
 

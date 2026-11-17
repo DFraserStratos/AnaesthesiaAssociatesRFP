@@ -12,11 +12,13 @@
  * crimson (the date sheet carries no identity colour).
  */
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
-import { addDays, addMonths, addYears, format, getDay, parseISO } from 'date-fns'
+import { useState, type CSSProperties, type ReactNode } from 'react'
+import { format, parseISO } from 'date-fns'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
-import { monthCells, monthOf, shiftMonth, WEEKDAY_INITIALS } from '../availability/monthCells'
+import { monthCells, monthOf, shiftMonth } from '../availability/monthCells'
+import { clampToBounds, useCalendarKeys } from './useCalendarKeys'
+import { MonthHeaderRow, MonthStepButton } from './MonthHeaderRow'
 
 export interface MonthGridProps {
   /** The visible month, `yyyy-MM` (controlled). */
@@ -34,60 +36,14 @@ export interface MonthGridProps {
   initialFocusISO?: string
 }
 
-const KEYS = 'ArrowLeft ArrowRight ArrowUp ArrowDown Home End PageUp PageDown Shift+PageUp Shift+PageDown'
-
-const iso = (d: Date): string => format(d, 'yyyy-MM-dd')
-
-function clamp(dateISO: string, bounds: { firstISO: string; lastISO: string }): string {
-  return dateISO < bounds.firstISO ? bounds.firstISO : dateISO > bounds.lastISO ? bounds.lastISO : dateISO
-}
-
 export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel, renderDay, onPickDay, initialFocusISO }: MonthGridProps) {
   const firstMonth = monthOf(bounds.firstISO)
   const lastMonth = monthOf(bounds.lastISO)
-  const [focusISO, setFocusISO] = useState(() => clamp(initialFocusISO ?? todayISO, bounds))
+  const [focusISO, setFocusISO] = useState(() => clampToBounds(initialFocusISO ?? todayISO, bounds))
   const [picker, setPicker] = useState(false)
   const [pickerYear, setPickerYear] = useState(() => Number(monthISO.slice(0, 4)))
-  const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const restoreFocus = useRef(false)
-
-  // Keep the tab stop inside the visible month.
-  const focusInMonth = monthOf(focusISO) === monthISO ? focusISO : clamp(`${monthISO}-01`, bounds)
-
-  useEffect(() => {
-    if (!restoreFocus.current) return
-    dayRefs.current[focusInMonth]?.focus()
-    restoreFocus.current = false
-  }, [focusInMonth, monthISO])
-
-  function moveFocus(next: string) {
-    const target = clamp(next, bounds)
-    // At a bound the key goes nowhere: leave the flag down, or a later month
-    // click would pull focus back into the grid.
-    if (target === focusInMonth) return
-    restoreFocus.current = true
-    setFocusISO(target)
-    if (monthOf(target) !== monthISO) onMonthChange(monthOf(target))
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, dateISO: string) {
-    const date = parseISO(dateISO)
-    const mondayIndex = (getDay(date) + 6) % 7
-    let next: Date
-    switch (event.key) {
-      case 'ArrowLeft': next = addDays(date, -1); break
-      case 'ArrowRight': next = addDays(date, 1); break
-      case 'ArrowUp': next = addDays(date, -7); break
-      case 'ArrowDown': next = addDays(date, 7); break
-      case 'Home': next = addDays(date, -mondayIndex); break
-      case 'End': next = addDays(date, 6 - mondayIndex); break
-      case 'PageUp': next = event.shiftKey ? addYears(date, -1) : addMonths(date, -1); break
-      case 'PageDown': next = event.shiftKey ? addYears(date, 1) : addMonths(date, 1); break
-      default: return
-    }
-    event.preventDefault()
-    moveFocus(iso(next))
-  }
+  // The shared calendar keyboard model (UI unification U4), clamped to the bounds.
+  const keys = useCalendarKeys({ monthISO, bounds, focusISO, onFocusMove: setFocusISO, onMonthChange })
 
   const title = format(parseISO(`${monthISO}-01`), 'MMMM yyyy')
   const firstYear = Number(firstMonth.slice(0, 4))
@@ -97,9 +53,9 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
   return (
     <div data-testid="month-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <RoundButton label="Previous month" disabled={monthISO <= firstMonth} onClick={() => onMonthChange(shiftMonth(monthISO, -1))}>
+        <MonthStepButton label="Previous month" disabled={monthISO <= firstMonth} onClick={() => onMonthChange(shiftMonth(monthISO, -1))}>
           <ChevronLeft size={18} aria-hidden />
-        </RoundButton>
+        </MonthStepButton>
         <button
           type="button"
           aria-expanded={picker}
@@ -113,21 +69,21 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
           {title}
           {picker ? <ChevronUp size={16} aria-hidden color={accent.base} /> : <ChevronDown size={16} aria-hidden color={accent.base} />}
         </button>
-        <RoundButton label="Next month" disabled={monthISO >= lastMonth} onClick={() => onMonthChange(shiftMonth(monthISO, 1))}>
+        <MonthStepButton label="Next month" disabled={monthISO >= lastMonth} onClick={() => onMonthChange(shiftMonth(monthISO, 1))}>
           <ChevronRight size={18} aria-hidden />
-        </RoundButton>
+        </MonthStepButton>
       </div>
 
       {picker ? (
         <div data-testid="month-grid-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <RoundButton label="Previous year" disabled={pickerYear <= firstYear} onClick={() => setPickerYear((y) => y - 1)}>
+            <MonthStepButton label="Previous year" disabled={pickerYear <= firstYear} onClick={() => setPickerYear((y) => y - 1)}>
               <ChevronLeft size={18} aria-hidden />
-            </RoundButton>
+            </MonthStepButton>
             <span className="mono" aria-live="polite" style={{ fontSize: 17, fontWeight: 700, minWidth: 56, textAlign: 'center' }}>{pickerYear}</span>
-            <RoundButton label="Next year" disabled={pickerYear >= lastYear} onClick={() => setPickerYear((y) => y + 1)}>
+            <MonthStepButton label="Next year" disabled={pickerYear >= lastYear} onClick={() => setPickerYear((y) => y + 1)}>
               <ChevronRight size={18} aria-hidden />
-            </RoundButton>
+            </MonthStepButton>
           </div>
           <div role="group" aria-label={`Months of ${pickerYear}`} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {Array.from({ length: 12 }, (_, i) => {
@@ -165,11 +121,7 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
         </div>
       ) : (
         <div>
-          <div aria-hidden style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-            {WEEKDAY_INITIALS.map((d, i) => (
-              <span key={i} style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 600, color: neutral.mist }}>{d}</span>
-            ))}
-          </div>
+          <MonthHeaderRow />
           <div
             role="group"
             aria-label={`${title}. Arrow keys move by day or week, Home and End within a week, Page Up and Page Down by month, with Shift by year.`}
@@ -198,18 +150,12 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
               return (
                 <button
                   key={dateISO}
-                  ref={(el) => {
-                    dayRefs.current[dateISO] = el
-                  }}
+                  {...keys.dayProps(dateISO)}
                   type="button"
                   data-date={dateISO}
                   aria-label={dayLabel(dateISO)}
                   aria-current={today ? 'date' : undefined}
-                  aria-keyshortcuts={KEYS}
                   disabled={!inBounds}
-                  tabIndex={dateISO === focusInMonth ? 0 : -1}
-                  onFocus={() => setFocusISO(dateISO)}
-                  onKeyDown={(e) => onKeyDown(e, dateISO)}
                   onClick={() => onPickDay(dateISO)}
                   style={style}
                 >
@@ -234,19 +180,5 @@ export function MonthGrid({ monthISO, onMonthChange, bounds, todayISO, dayLabel,
         Today
       </button>
     </div>
-  )
-}
-
-function RoundButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      style={{ width: 44, height: 44, flex: 'none', borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
-    >
-      {children}
-    </button>
   )
 }

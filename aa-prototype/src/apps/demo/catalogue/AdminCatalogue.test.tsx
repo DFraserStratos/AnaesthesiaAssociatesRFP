@@ -36,7 +36,8 @@ describe('AdminCatalogue', () => {
     for (const id of ['shadcn', 'sonner', 'tanstack', 'forms', 'daypicker', 'motion', 'custom']) {
       expect(container.querySelector(`#lib-${id}`)).not.toBeNull()
     }
-  })
+    // About 90 live rows render here (U4 added 15): give the whole page room under a loaded full run.
+  }, 20_000)
 
   it('opens the shared Overlay from its row and keeps the text local', () => {
     const { container } = renderPage()

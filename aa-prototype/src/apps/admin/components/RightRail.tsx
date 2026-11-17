@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { addDays, addMonths, addYears, format, getDay, getDaysInMonth, parseISO, startOfMonth } from 'date-fns'
+import { useEffect, useState } from 'react'
+import { addMonths, format, parseISO, startOfMonth } from 'date-fns'
 import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
@@ -10,7 +10,10 @@ import { NotificationsCard } from './NotificationsCard'
 import type { NotificationTarget } from '../../../store'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 import { hhmm, longDay } from '../../../shared/format'
+import { useCalendarKeys } from '../../../shared/calendar'
+import { monthCells, WEEKDAY_INITIALS } from '../../../shared/availability/monthCells'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { Checkbox, TextArea } from '../../../shared/ui'
 
 interface ReviewRow {
   listId: string
@@ -80,15 +83,9 @@ function Card({ children }: { children: React.ReactNode }) {
 function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate }: { monthDateISO: string; selectedDateISO: string; todayISO: string; onNavigateDate: (d: string) => void }) {
   const [visibleMonthISO, setVisibleMonthISO] = useState(() => format(startOfMonth(parseISO(monthDateISO)), 'yyyy-MM-dd'))
   const [focusedDateISO, setFocusedDateISO] = useState(selectedDateISO)
-  const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const shouldRestoreFocus = useRef(false)
   const month = startOfMonth(parseISO(visibleMonthISO))
-  const daysInMonth = getDaysInMonth(month)
-  // Monday-first: convert Sun(0)..Sat(6) to leading blanks.
-  const leading = (getDay(month) + 6) % 7
-  const cells: (number | null)[] = [...Array(leading).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
-
   const monthPrefix = format(month, 'yyyy-MM')
+  const cells = monthCells(monthPrefix)
   const weekNumber = format(parseISO(selectedDateISO), 'II')
 
   useEffect(() => {
@@ -96,58 +93,15 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
     setFocusedDateISO(selectedDateISO)
   }, [monthDateISO, selectedDateISO])
 
-  useEffect(() => {
-    if (!shouldRestoreFocus.current) return
-    const day = dayRefs.current[focusedDateISO]
-    if (day === undefined || day === null) return
-    day.focus()
-    shouldRestoreFocus.current = false
-  }, [focusedDateISO, visibleMonthISO])
-
-  function moveFocus(dateISO: string) {
-    if (dateISO === focusedDateISO) return
-    shouldRestoreFocus.current = true
-    setFocusedDateISO(dateISO)
-    setVisibleMonthISO(format(startOfMonth(parseISO(dateISO)), 'yyyy-MM-dd'))
-  }
-
-  function handleDayKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, dateISO: string) {
-    const date = parseISO(dateISO)
-    const mondayIndex = (getDay(date) + 6) % 7
-    let next: Date | undefined
-
-    switch (event.key) {
-      case 'ArrowLeft':
-        next = addDays(date, -1)
-        break
-      case 'ArrowRight':
-        next = addDays(date, 1)
-        break
-      case 'ArrowUp':
-        next = addDays(date, -7)
-        break
-      case 'ArrowDown':
-        next = addDays(date, 7)
-        break
-      case 'Home':
-        next = addDays(date, -mondayIndex)
-        break
-      case 'End':
-        next = addDays(date, 6 - mondayIndex)
-        break
-      case 'PageUp':
-        next = event.shiftKey ? addYears(date, -1) : addMonths(date, -1)
-        break
-      case 'PageDown':
-        next = event.shiftKey ? addYears(date, 1) : addMonths(date, 1)
-        break
-      default:
-        return
-    }
-
-    event.preventDefault()
-    moveFocus(format(next, 'yyyy-MM-dd'))
-  }
+  // The shared calendar keyboard model (UI unification U4). No bounds: paging past the horizon still lands on
+  // Admin Day's "Beyond the schedule horizon" (Phase 28). Its look (crimson today and selection, the
+  // `.aa-admin-calendar-day` ring) stays this calendar's own.
+  const keys = useCalendarKeys({
+    monthISO: monthPrefix,
+    focusISO: focusedDateISO,
+    onFocusMove: setFocusedDateISO,
+    onMonthChange: (m) => setVisibleMonthISO(`${m}-01`),
+  })
 
   return (
     <Card>
@@ -164,30 +118,24 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
         aria-label={`${format(month, 'MMMM yyyy')} calendar. Use arrow keys to move by day or week, Home and End to move within a week, and Page Up and Page Down to move by month. Hold Shift with Page Up or Page Down to move by year. Press Enter or Space to select a date.`}
         style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, textAlign: 'center' }}
       >
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+        {WEEKDAY_INITIALS.map((d, i) => (
           <span key={i} aria-hidden="true" style={{ fontSize: 9.5, fontWeight: 600, color: neutral.mist, padding: '3px 0' }}>{d}</span>
         ))}
-        {cells.map((d, i) => {
-          if (d === null) return <span key={`b${i}`} />
-          const iso = `${monthPrefix}-${String(d).padStart(2, '0')}`
+        {cells.map((iso, i) => {
+          if (iso === null) return <span key={`b${i}`} />
+          const d = Number(iso.slice(8))
           const isToday = iso === todayISO
           const isSelected = iso === selectedDateISO
           return (
             <button
               key={iso}
-              ref={(element) => {
-                dayRefs.current[iso] = element
-              }}
+              {...keys.dayProps(iso)}
               type="button"
               className="aa-admin-calendar-day"
               aria-current={isToday ? 'date' : undefined}
-              aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End PageUp PageDown Shift+PageUp Shift+PageDown"
               aria-label={longDay(iso)}
               aria-pressed={isSelected}
-              tabIndex={iso === focusedDateISO ? 0 : -1}
               onClick={() => onNavigateDate(iso)}
-              onFocus={() => setFocusedDateISO(iso)}
-              onKeyDown={(event) => handleDayKeyDown(event, iso)}
               style={{
                 fontSize: 11,
                 lineHeight: '24px',
@@ -250,16 +198,8 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
 
       {adding ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Add an internal note for this day"
-            autoFocus
-            style={{ width: '100%', boxSizing: 'border-box', minHeight: 60, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, padding: 10, fontFamily: 'inherit', fontSize: 12.5, resize: 'none', background: neutral.bg }}
-          />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: neutral.slate, cursor: 'pointer' }}>
-            <input type="checkbox" checked={flagged} onChange={(e) => setFlagged(e.target.checked)} /> Flag (amber)
-          </label>
+          <TextArea size="compact" ariaLabel="Internal note for this day" value={text} onChange={setText} placeholder="Add an internal note for this day" autoFocus />
+          <Checkbox checked={flagged} onChange={setFlagged} style={{ gap: 6, fontSize: 12, color: neutral.slate }}>Flag (amber)</Checkbox>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={save} disabled={text.trim() === ''} style={{ flex: 1, height: 34, borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: text.trim() === '' ? 'default' : 'pointer', opacity: text.trim() === '' ? 0.5 : 1 }}>Save note</button>
             <button type="button" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none', height: 34, padding: '0 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>

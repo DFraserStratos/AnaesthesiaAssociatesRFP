@@ -24,10 +24,10 @@ import { cellStyle as adminCell, headCellStyle as adminHead, textActionStyle } f
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ClearConflictSheet } from '../components/conflicts/ClearConflictSheet'
-import { selectControlStyle } from '../flows/fieldChrome'
 import { sessionText } from '../../../domain/outOfHours'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { Checkbox, SelectField } from '../../../shared/ui'
 
 const cellStyle = { ...adminCell(), verticalAlign: 'top' as const }
 const headCellStyle = adminHead()
@@ -40,8 +40,6 @@ const WHEN_OPTIONS: { value: WhenFilter; label: string }[] = [
   { value: 'canvas', label: 'Whole canvas' },
   { value: 'past', label: 'Include past' },
 ]
-
-const smallSelect = { ...selectControlStyle, minHeight: 36, width: 'auto', fontSize: 13, padding: '0 10px', background: neutral.surface }
 
 export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { actor: Actor; onOpenSession: (slotId: string) => void; onOpenDraftList?: (listId: string) => void }) {
   const navigate = useNavigate()
@@ -142,29 +140,28 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
 
       {/* Filters: Admin Review's chips and selects, state in the URL. */}
       <div data-shot="conflicts-filters" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-        <select aria-label="When" value={whenParam} onChange={(e) => setParam('when', e.target.value === 'today' ? null : e.target.value)} style={smallSelect}>
+        <SelectField label="When" hideLabel size="compact" fill="surface" value={whenParam} onChange={(v) => setParam('when', v === 'today' ? null : v)}>
           {WHEN_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
-        </select>
-        <select aria-label="Hospital" value={hospitalParam} onChange={(e) => setParam('hospital', e.target.value)} style={smallSelect}>
+        </SelectField>
+        <SelectField label="Hospital" hideLabel size="compact" fill="surface" value={hospitalParam} onChange={(v) => setParam('hospital', v)}>
           <option value="">Every hospital</option>
           {Object.values(masters.hospitals).map((h) => (
             <option key={h.id} value={h.id}>{h.name}</option>
           ))}
-        </select>
-        <select aria-label="Anaesthetist" value={anaesthetistParam} onChange={(e) => setParam('anaesthetist', e.target.value)} style={smallSelect}>
+        </SelectField>
+        <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" value={anaesthetistParam} onChange={(v) => setParam('anaesthetist', v)}>
           <option value="">Every anaesthetist</option>
           {Object.values(masters.anaesthetists)
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((a) => (
               <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
             ))}
-        </select>
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: neutral.slate, cursor: 'pointer' }}>
-          <input type="checkbox" checked={showCleared} onChange={(e) => setParam('cleared', e.target.checked ? '1' : null)} />
+        </SelectField>
+        <Checkbox checked={showCleared} onChange={(c) => setParam('cleared', c ? '1' : null)} style={{ display: 'inline-flex', gap: 6, fontSize: 13, color: neutral.slate }}>
           Show cleared
-        </label>
+        </Checkbox>
       </div>
 
       <ResultLine

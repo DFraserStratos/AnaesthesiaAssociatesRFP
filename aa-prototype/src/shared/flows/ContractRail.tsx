@@ -1,29 +1,28 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius } from '../../theme/tokens'
 import type { Contract, ContractId, RailAnswers, RvgGroupId } from '../../domain/types'
-import { OFFICE_TYPES_AMOUNT_MESSAGE } from '../../domain/billing/contractRail'
+import { mayTypeEnteredPrice, OFFICE_TYPES_AMOUNT_MESSAGE } from '../../domain/billing/contractRail'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import {
   contractRailFor,
   type ContractRailView,
   type RailActor,
   type RailContext,
-  type RailOption,
 } from '../../domain/billing/contractRail'
 import { isRvgKind } from '../../domain/billing/contracts'
-import { rangeInForce } from '../../domain/billing/priceRanges'
 import { railMastersOf, useAppStore } from '../../store'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { NameSearchBox } from '../ui/NameSearchBox'
-import { Pill } from '../ui/Pill'
 import { Button } from '../ui/Button'
 import { TextAction } from '../ui/TextAction'
-import { formatCurrency, parseAmount, plural } from '../format'
-import { motion } from '../../theme/motion'
+import { parseAmount } from '../format'
 import { FormError } from '../ui'
 import { Notice } from '../ui/Notice'
+import { useRovingRadio } from '../ui/useRovingRadio'
+import { BackstopAmountField, NoContractGroup, RailOptionGroup, StepRail, type RailStep } from '../contracts/railParts'
+import { backstopPriceText, contractPriceText, railBackstops, railContractLabel } from '../contracts/railText'
 
 /**
  * The step rail (catch-up Phase 20; US-04.3.8, US-04.3.9, US-04.3.2,
@@ -32,10 +31,14 @@ import { Notice } from '../ui/Notice'
  * knows nothing of the rules: three numbered steps shown from the start ("Where
  * does the invoice go?", then the step that narrows it, then the Contract by
  * typing), an answered step clickable to change it (the later ones clear), a
- * step that filled itself in reads "Only option", and one "Other price" toggle
- * onto the destination's open-price fallback. A bottom sheet on mobile, the
- * surface's Dialog on web and Admin. The interaction follows the contract
- * picker mock's step rail; nothing is shared with it.
+ * step that filled itself in reads "Only option", and the Contract list starts
+ * with a "No contract" heading holding the destination's two backstops (No
+ * contract · RVG and No contract · Fixed price, the latter with its typed
+ * amount). A bottom sheet on mobile, the surface's Dialog on web and Admin.
+ * Since 20 (9) only the creation forms open it; the Booking's Billing card is
+ * inline. Its parts (step rail, answer options, the "No contract" group, the
+ * amount field) are the Billing card's (`shared/contracts/railParts.tsx`, UI
+ * unification U4).
  */
 
 export interface ContractRailPick {
@@ -69,14 +72,6 @@ const CLOSED_VIEW: ContractRailView = { destination: { options: [], autoFilled: 
 
 const STEP_TITLE: Record<Step, string> = { 1: 'Invoice to', 2: 'Payment type', 3: 'Contract' }
 
-/** A Contract's price as a row shows it: its fixed price in force, "Prepaid" before it, or how it is priced. */
-export function contractPriceText(contract: Contract, dateISO: string): string {
-  if (contract.pricing.kind === 'open') return 'Other price'
-  if (isRvgKind(contract.pricing.kind)) return contract.pricing.kind === 'rvgAnaesthetistRate' ? 'RVG' : contract.pricing.kind === 'rvgContractRate' ? 'RVG, agreed rate' : 'RVG, discounted'
-  const range = rangeInForce(contract, dateISO)
-  const price = range === null ? 'Needs a price' : formatCurrency(range.price)
-  return contract.prepaid ? `Prepaid · ${price}` : price
-}
 
 export function ContractRail({ open, actor, context, start, currentContractId, currentEnteredPrice, onDone, onLeave, onClose }: ContractRailProps) {
   const { Overlay, variant } = useSurface()
@@ -85,7 +80,6 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
   const [editing, setEditing] = useState<Step | null>(null)
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<ContractId | undefined>(currentContractId)
-  const [otherPrice, setOtherPrice] = useState(false)
   const [amount, setAmount] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [rvgNow, setRvgNow] = useState<RvgGroupId | undefined>(undefined)
@@ -97,8 +91,6 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
     setEditing(null)
     setQuery('')
     setPicked(currentContractId)
-    const current = currentContractId !== undefined ? masters.contracts[currentContractId] : undefined
-    setOtherPrice(current?.pricing.kind === 'open')
     setAmount(currentEnteredPrice !== undefined ? currentEnteredPrice.toFixed(2) : '')
     setError(null)
     setRvgNow(undefined)
@@ -116,25 +108,22 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
   const step: Step = editing ?? (view.destination.answer === undefined ? 1 : view.narrow?.answer === undefined ? 2 : 3)
   const fallback = view.contract?.otherPrice
   const autoPick = view.contract?.autoPick
-  const rowIds = new Set(view.contract?.rows.map((r) => r.contract.id) ?? [])
-  // What is chosen: the person's pick when still on offer, else what the step filled in.
-  const chosenId: ContractId | undefined = otherPrice
-    ? fallback?.contract.id
-    : picked !== undefined && rowIds.has(picked)
-      ? picked
-      : autoPick !== undefined && !autoPick.viaOtherPrice
-        ? autoPick.contractId
-        : undefined
-  const usingOther = otherPrice || (chosenId === undefined && autoPick?.viaOtherPrice === true && step === 3)
-  const finalId = usingOther ? fallback?.contract.id : chosenId
+  const backstops = railBackstops(view.contract)
+  // The step's own Contracts; the pinned No contract · RVG is one of the backstops, listed under "No contract".
+  const listed = (view.contract?.shown ?? []).filter((r) => !r.pinned).map((r) => r.contract)
+  const pickable = new Set([...backstops.map((c) => c.id), ...(view.contract?.rows.map((r) => r.contract.id) ?? [])])
+  // What is chosen: the person's pick when still on offer, else what the step filled in (a lone Contract, or
+  // No contract · Fixed price where nothing else fits).
+  const finalId: ContractId | undefined =
+    picked !== undefined && pickable.has(picked) ? picked : step === 3 || autoPick?.viaOtherPrice !== true ? autoPick?.contractId : undefined
   const finalContract = finalId !== undefined ? masters.contracts[finalId] : undefined
+  const usingOther = finalId !== undefined && finalId === fallback?.contract.id
 
   const answer = (next: RailAnswers | undefined) => {
     setGiven(next)
     setEditing(null)
     setQuery('')
     setPicked(undefined)
-    setOtherPrice(false)
     setError(null)
   }
 
@@ -146,7 +135,10 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
   }
 
   // Other price asks for the amount (US-04.3.9) wherever this person may type it.
-  const asksAmount = usingOther && fallback?.mayTypeAmount === true
+  // Any open-priced Contract asks for its amount where this person may type it (as the Billing card does).
+  const openPriced = finalContract?.pricing.kind === 'open'
+  const mayTypeHere = openPriced && finalContract !== undefined && mayTypeEnteredPrice(actor, finalContract, masters.parties)
+  const asksAmount = mayTypeHere
   const typedAmount = asksAmount ? parseAmount(amount) : undefined
   const amountMissing = asksAmount && typedAmount === undefined
 
@@ -163,7 +155,7 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
   const stepAnswer: Record<Step, string | undefined> = {
     1: destinationLabel,
     2: narrowLabel,
-    3: finalContract !== undefined ? (usingOther ? `Other price · ${finalContract.name}` : finalContract.name) : undefined,
+    3: finalContract !== undefined ? railContractLabel(finalContract) : undefined,
   }
   // Changing an answered step clears the later ones (US-04.3.8).
   if (editing !== null) {
@@ -172,106 +164,101 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
   const stepAuto: Record<Step, boolean> = {
     1: view.destination.autoFilled,
     2: view.narrow?.autoFilled === true,
-    3: autoPick !== undefined && picked === undefined && !otherPrice && query === '',
+    3: autoPick !== undefined && picked === undefined && query === '',
   }
   const reachable = (s: Step) => s === 1 || (s === 2 && view.destination.answer !== undefined) || (s === 3 && view.narrow?.answer !== undefined)
 
-  const railItems = ([1, 2, 3] as Step[]).map((s) => (
-    <div role="listitem" key={s} style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-    <RailStepButton
-      n={s}
-      title={s === 2 && view.narrow !== undefined ? view.narrow.title : STEP_TITLE[s]}
-      answer={stepAnswer[s]}
-      auto={stepAuto[s]}
-      active={step === s}
-      done={stepAnswer[s] !== undefined && s !== step}
-      disabled={!reachable(s)}
-      compact={variant === 'mobile'}
-      onClick={() => {
-        if (s === 3) {
-          setEditing(null)
-          return
+  const railSteps: RailStep[] = ([1, 2, 3] as Step[]).map((s) => ({
+    n: s,
+    label: s === 2 && view.narrow !== undefined ? view.narrow.title : STEP_TITLE[s],
+    ...(stepAnswer[s] !== undefined ? { value: stepAnswer[s] } : {}),
+    auto: stepAuto[s],
+    // The Contract step shows its answer once there is one, as the Billing card's finished path does.
+    done: stepAnswer[s] !== undefined && (s !== step || s === 3),
+    current: step === s,
+    ...(reachable(s) && s !== step
+      ? {
+          onJump: () => {
+            if (s === 3) {
+              setEditing(null)
+              return
+            }
+            const dest = view.destination.answer as RailAnswers['destination'] | undefined
+            setGiven(s === 1 ? undefined : dest !== undefined ? { destination: dest } : undefined)
+            setPicked(undefined)
+            setQuery('')
+            setEditing(s)
+          },
         }
-        const dest = view.destination.answer as RailAnswers['destination'] | undefined
-        setGiven(s === 1 ? undefined : dest !== undefined ? { destination: dest } : undefined)
-        setPicked(undefined)
-        setOtherPrice(false)
-        setQuery('')
-        setEditing(s)
-      }}
-    />
-    </div>
-  ))
+      : {}),
+  }))
 
   let body: ReactNode
   if (step === 1) {
     body = (
-      <OptionList
-        heading="Where does the invoice go?"
+      <RailOptionGroup
+        layout="list"
+        label="Where does the invoice go?"
         options={view.destination.options}
-        current={view.destination.answer}
+        value={view.destination.answer}
         onPick={(v) => answer({ destination: v as RailAnswers['destination'] })}
       />
     )
   } else if (step === 2 && view.narrow !== undefined) {
     const dest = view.destination.answer as RailAnswers['destination']
     body = (
-      <OptionList
-        heading={view.narrow.title}
+      <RailOptionGroup
+        layout="list"
+        label={view.narrow.title}
         options={view.narrow.options}
-        current={view.narrow.answer}
+        value={view.narrow.answer}
         onPick={(v) => answer({ destination: dest, narrow: v })}
       />
     )
   } else {
     const c = view.contract
     body = (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <NameSearchBox value={query} onChange={setQuery} label="Type a name or code" placeholder="Type a name or code" autoFocus={variant !== 'mobile'} shot="contract-rail-search" />
-        <div role="radiogroup" aria-label="Contracts" style={{ display: 'flex', flexDirection: 'column', maxHeight: variant === 'mobile' ? 300 : 340, overflow: 'auto', margin: '0 -4px', padding: '0 4px' }}>
-          {(c?.shown ?? []).map(({ contract, pinned }) => (
-            <ContractRow
-              key={contract.id}
-              contract={contract}
-              priceText={contractPriceText(contract, context.listDateISO)}
-              pinned={pinned}
-              selected={!usingOther && chosenId === contract.id}
-              onPick={() => {
-                setPicked(contract.id)
-                setOtherPrice(false)
-                setError(null)
-              }}
-            />
-          ))}
-          {query.trim() !== '' && c !== undefined && c.rows.every((r) => r.pinned) && (
-            <div style={{ padding: '14px 6px', fontSize: 13.5, color: neutral.mist }}>No Contract matches "{query.trim()}".</div>
-          )}
-          {query.trim() === '' && c !== undefined && c.rows.length === 0 && (
-            <div style={{ padding: '14px 6px', fontSize: 13.5, color: neutral.mist }}>No Contract here fits this List, so its Other price is filled in.</div>
-          )}
-        </div>
-        {c !== undefined && c.rows.length > c.shown.length && (
-          <div style={{ fontSize: 12.5, color: neutral.mist }}>Showing {c.shown.length} of {c.rows.length}. Type to narrow.</div>
-        )}
-        {fallback !== undefined && (
-          <OtherPriceToggle
-            on={usingOther}
-            fallbackName={fallback.contract.name}
-            mayType={fallback.mayTypeAmount}
-            amount={amount}
-            onToggle={() => {
-              setOtherPrice(!usingOther)
-              setError(null)
-            }}
-            onAmount={setAmount}
-            invalid={asksAmount && amount.trim() !== '' && typedAmount === undefined}
-          />
-        )}
-      </div>
+      <ContractList
+        query={query}
+        onQuery={setQuery}
+        autoFocus={variant !== 'mobile'}
+        mobile={variant === 'mobile'}
+        backstops={backstops}
+        listed={listed}
+        dateISO={context.listDateISO}
+        chosenId={finalId}
+        onPick={(id) => {
+          setPicked(id)
+          setError(null)
+        }}
+        empty={
+          query.trim() !== '' && listed.length === 0
+            ? `No Contract matches "${query.trim()}".`
+            : query.trim() === '' && listed.length === 0
+              ? 'No Contract of its own fits this List.'
+              : null
+        }
+        more={c !== undefined && c.rows.length > c.shown.length ? `Showing ${c.shown.length} of ${c.rows.length}. Type to narrow.` : null}
+        amount={
+          openPriced ? (
+            mayTypeHere ? (
+              <BackstopAmountField
+                label={<span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.slate }}>Amount, ex GST</span>}
+                ariaLabel="Amount, ex GST"
+                value={amount}
+                onChange={setAmount}
+                invalid={asksAmount && amount.trim() !== '' && typedAmount === undefined}
+              />
+            ) : (
+              <div style={{ fontSize: 13, color: neutral.slate }}>{OFFICE_TYPES_AMOUNT_MESSAGE}</div>
+            )
+          ) : null
+        }
+      />
     )
   }
 
-  const outcome = finalContract !== undefined && step === 3 ? outcomeLine(finalContract, actor, usingOther, fallback?.mayTypeAmount === true, context.listDateISO) : null
+  const outcome = finalContract !== undefined && step === 3 ? outcomeLine(finalContract, actor, usingOther, mayTypeHere, context.listDateISO) : null
 
   return (
     <Overlay open={open} onClose={close} size="wide">
@@ -282,16 +269,12 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
         </div>
         {variant === 'mobile' ? (
           <>
-            <div role="list" aria-label="Steps" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
-              {railItems}
-            </div>
+            <StepRail steps={railSteps} orientation="compact" label="Steps" />
             <div>{body}</div>
           </>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '216px minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
-            <div role="list" aria-label="Steps" style={{ display: 'flex', flexDirection: 'column', gap: 4, borderRight: `1px solid ${neutral.line}`, paddingRight: 14 }}>
-              {railItems}
-            </div>
+            <StepRail steps={railSteps} orientation="vertical" label="Steps" />
             <div>{body}</div>
           </div>
         )}
@@ -350,155 +333,55 @@ function outcomeLine(contract: Contract, actor: RailActor, usingOther: boolean, 
   return `A fixed price of ${contractPriceText(contract, dateISO)}. No RVG code is needed.`
 }
 
-function RailStepButton({
-  n,
-  title,
-  answer,
-  auto,
-  active,
-  done,
-  disabled,
-  compact,
-  onClick,
-}: {
-  n: Step
-  title: string
-  answer: string | undefined
-  auto: boolean
-  active: boolean
-  done: boolean
-  disabled: boolean
-  compact: boolean
-  onClick: () => void
-}) {
-  const filled = done && !active
-  return (
-    <button
-      type="button"
-      data-shot={`contract-rail-step-${n}`}
-      aria-current={active ? 'step' : undefined}
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: compact ? 6 : 10,
-        flexDirection: compact ? 'column' : 'row',
-        textAlign: 'left',
-        border: `1px solid ${active ? accent.base : 'transparent'}`,
-        background: active ? accent.tint : 'transparent',
-        borderRadius: radius.ctl,
-        padding: compact ? '8px 8px' : '10px 10px',
-        fontFamily: 'inherit',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.55 : 1,
-        minWidth: 0,
-      }}
-    >
-      <span
-        aria-hidden
-        style={{
-          flex: 'none',
-          width: 22,
-          height: 22,
-          borderRadius: radius.pill,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 12,
-          fontWeight: 700,
-          background: filled ? accent.base : neutral.surface,
-          color: filled ? neutral.surface : active ? accent.base : neutral.mist,
-          border: `1.5px solid ${filled || active ? accent.base : neutral.lineStrong}`,
-        }}
-      >
-        {filled ? <Check size={13} strokeWidth={3} /> : n}
-      </span>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, width: '100%' }}>
-        <span style={{ fontSize: compact ? 11.5 : 12.5, color: neutral.slate, lineHeight: 1.25 }}>{title}</span>
-        <span
-          style={{
-            fontSize: compact ? 12.5 : 14,
-            fontWeight: 600,
-            color: answer !== undefined ? neutral.ink : neutral.mist,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: compact ? 'nowrap' : 'normal',
-          }}
-        >
-          {answer ?? 'Not answered'}
-        </span>
-        {auto && answer !== undefined && (
-          <span>
-            <Pill size="sm" shot="contract-rail-only-option">Only option</Pill>
-          </span>
-        )}
-      </span>
-    </button>
-  )
-}
-
-function OptionList({
-  heading,
-  options,
-  current,
+/**
+ * Step 3's list: the search (a grey well in the sheet, question 4), then one
+ * radio group with one Tab stop (`useRovingRadio`): the "No contract" heading
+ * with the destination's two backstops, then the step's own Contracts. A pick
+ * here only marks the row (the footer's "Use this Contract" sets it), so the
+ * arrows select as a native radio group does.
+ */
+function ContractList({
+  query,
+  onQuery,
+  autoFocus,
+  mobile,
+  backstops,
+  listed,
+  dateISO,
+  chosenId,
   onPick,
+  empty,
+  more,
+  amount,
 }: {
-  heading: string
-  options: readonly RailOption[]
-  current: string | undefined
-  onPick: (value: string) => void
+  query: string
+  onQuery: (q: string) => void
+  autoFocus: boolean
+  mobile: boolean
+  backstops: readonly Contract[]
+  listed: readonly Contract[]
+  dateISO: string
+  chosenId: ContractId | undefined
+  onPick: (id: ContractId) => void
+  empty: string | null
+  more: string | null
+  amount: ReactNode
 }) {
+  const all = [...backstops, ...listed]
+  const radio = useRovingRadio({ values: all.map((c) => c.id), value: chosenId, onChange: onPick })
+  const row = (c: Contract, i: number, priceText: string) => (
+    <ContractRow key={c.id} contract={c} priceText={priceText} selected={chosenId === c.id} itemProps={radio.itemProps(i)} onPick={() => onPick(c.id)} />
+  )
   return (
-    <div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: neutral.ink, marginBottom: 8 }}>{heading}</div>
-      <div role="radiogroup" aria-label={heading} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {options.map((o) => {
-          const live = o.selectable
-          const selected = o.value === current
-          return (
-            <button
-              key={o.value}
-              type="button"
-              data-rail-option={o.value}
-              disabled={!live}
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onPick(o.value)}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr auto',
-                alignItems: 'center',
-                gap: 12,
-                textAlign: 'left',
-                border: `1px solid ${selected ? accent.base : neutral.line}`,
-                background: selected ? accent.tint : neutral.surface,
-                borderRadius: radius.ctl,
-                padding: '12px 14px',
-                fontFamily: 'inherit',
-                cursor: live ? 'pointer' : 'default',
-                opacity: live ? 1 : 0.55,
-              }}
-            >
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{o.label}</span>
-                  {/* The Booking's funder marks one path (catch-up Phase 21, US-04.3.10): never a filter. */}
-                  {o.suggested === true && (
-                    <Pill size="sm" shot="rail-suggested">
-                      Suggested
-                    </Pill>
-                  )}
-                </span>
-                {o.hint !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{o.hint}</span>}
-              </span>
-              <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }} aria-label={plural(o.count, 'Contract')}>
-                {o.count}
-              </span>
-            </button>
-          )
-        })}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <NameSearchBox value={query} onChange={onQuery} label="Type a name or code" placeholder="Type a name or code" autoFocus={autoFocus} fill="well" shot="contract-rail-search" />
+      <div {...radio.groupProps} aria-label="Contracts" style={{ display: 'flex', flexDirection: 'column', maxHeight: mobile ? 300 : 340, overflow: 'auto', margin: '0 -4px', padding: '0 4px' }}>
+        <NoContractGroup backstops={backstops} renderRow={(c) => row(c, backstops.indexOf(c), backstopPriceText(c))} />
+        {listed.map((c, i) => row(c, backstops.length + i, contractPriceText(c, dateISO)))}
+        {empty !== null && <div style={{ padding: '14px 6px', fontSize: 13.5, color: neutral.mist }}>{empty}</div>}
       </div>
+      {more !== null && <div style={{ fontSize: 12.5, color: neutral.mist }}>{more}</div>}
+      {amount}
     </div>
   )
 }
@@ -506,22 +389,21 @@ function OptionList({
 function ContractRow({
   contract,
   priceText,
-  pinned,
   selected,
+  itemProps,
   onPick,
 }: {
   contract: Contract
   priceText: string
-  pinned: boolean
   selected: boolean
+  itemProps: ReturnType<ReturnType<typeof useRovingRadio>['itemProps']>
   onPick: () => void
 }) {
   return (
     <button
+      {...itemProps}
       type="button"
       data-contract-id={contract.id}
-      role="radio"
-      aria-checked={selected}
       onClick={onPick}
       style={{
         display: 'grid',
@@ -556,81 +438,17 @@ function ContractRow({
         {selected && <Check size={12} strokeWidth={3} />}
       </span>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 500, color: neutral.ink, lineHeight: 1.3 }}>{contract.name}</span>
+        <span style={{ fontSize: 14.5, fontWeight: 500, color: neutral.ink, lineHeight: 1.3 }}>{railContractLabel(contract)}</span>
         <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
           <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{contract.aaCode}</span>
           {contract.holderReference !== undefined && (
             <span className="mono" style={{ fontSize: 12, color: neutral.mist }}>{contract.holderReference}</span>
           )}
-          {pinned && <Pill size="sm" shot="contract-rail-pinned">Always first</Pill>}
         </span>
       </span>
       <span className={priceText.startsWith('$') || priceText.startsWith('Prepaid · $') ? 'mono' : undefined} style={{ fontSize: 13, fontWeight: 600, color: neutral.slate, whiteSpace: 'nowrap' }}>
         {priceText}
       </span>
     </button>
-  )
-}
-
-function OtherPriceToggle({
-  on,
-  fallbackName,
-  mayType,
-  amount,
-  onToggle,
-  onAmount,
-  invalid,
-}: {
-  on: boolean
-  fallbackName: string
-  mayType: boolean
-  amount: string
-  onToggle: () => void
-  onAmount: (v: string) => void
-  invalid: boolean
-}) {
-  return (
-    <div data-shot="contract-rail-other-price" style={{ border: `1px solid ${on ? accent.base : neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px', background: on ? accent.tint : neutral.surface }}>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        onClick={onToggle}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}
-      >
-        <span
-          aria-hidden
-          style={{ width: 36, height: 20, borderRadius: radius.pill, background: on ? accent.base : neutral.lineStrong, position: 'relative', flex: 'none', transition: `background ${motion.uiFade.duration}ms` }}
-        >
-          <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: radius.pill, background: neutral.surface, transition: `left ${motion.uiFade.duration}ms` }} />
-        </span>
-        <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600, color: on ? accent.base : neutral.ink }}>Other price</span>
-          <span style={{ fontSize: 12.5, color: neutral.slate }}>{fallbackName}, for anything no Contract here prices</span>
-        </span>
-      </button>
-      {on && (
-        <div style={{ marginTop: 10 }}>
-          {mayType ? (
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, color: neutral.slate }}>
-              Amount, ex GST
-              <input
-                data-shot="contract-rail-amount"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => onAmount(e.target.value)}
-                placeholder="0.00"
-                className="mono"
-                aria-invalid={invalid}
-                style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${invalid ? semantic.error.solid : neutral.line}`, background: neutral.surface, padding: '0 12px', fontSize: 15, color: neutral.ink, maxWidth: 200 }}
-              />
-              <span style={{ color: invalid ? semantic.error.onTint : neutral.mist }}>{invalid ? 'Type the amount in dollars and cents.' : 'Type the price for this procedure.'}</span>
-            </label>
-          ) : (
-            <div style={{ fontSize: 13, color: neutral.slate }}>{OFFICE_TYPES_AMOUNT_MESSAGE}</div>
-          )}
-        </div>
-      )}
-    </div>
   )
 }

@@ -97,10 +97,16 @@ export function MobileCatalogue() {
           <Ex.FilterChipsExample />
         </CatalogueRow>
         <CatalogueRow name="StepperButton" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={200}
-          what="The 44px round-square minus and plus buttons beside each unit count in capture."
+          what="The mockup's 44px round-square minus and plus button. Since UI unification U4 it is the button part of NumberStepper, which names and bounds it; on its own it still takes a glyph, a label and disabled."
           replaceWith="shadcn Button (icon) + Button Group"
-          note="Takes a label (catch-up Phase 21a: the B, T and M rows and the base-units row name each button).">
+          note="Takes a label (catch-up Phase 21a); NumberStepper names the pair Fewer and More. UnitsCard's rows move onto NumberStepper in Phase 23.">
           <Ex.StepperButtonExample />
+        </CatalogueRow>
+        <CatalogueRow name="NumberStepper" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={260}
+          what="The one whole-number stepper (UI unification U4): minus and plus StepperButtons around the value, named Fewer and More, disabled at min and max, the value announced politely. typeable turns the value into a button that types a number in place: Enter saves, Escape cancels, a blur saves."
+          replaceWith="Base UI NumberField"
+          note="The RVG range row's base units and the modifier picker's units use it. Local state here.">
+          <Ex.NumberStepperExample />
         </CatalogueRow>
         <CatalogueRow name="NudgeButton" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={200}
           what="The small minus 5 and plus 5 buttons that nudge a stamped start or finish time; ariaLabel names them, such as Start 5 minutes earlier."
@@ -170,9 +176,9 @@ export function MobileCatalogue() {
           <Ex.ProgressBarExample />
         </CatalogueRow>
         <CatalogueRow name="LookbackSearchRow" source="apps/mobile/screens/ListsLookback.tsx" usedIn={M} stage="mobile" height={200}
-          what="The Lists search field (patient name or NHI, with a clear button) and the calendar button beside it."
+          what="The Lists search row: the shared NameSearchBox (patient name or NHI; 48px, white on the phone canvas, the 44px touch clear, the mobile-lists-search test id) and the Go to a date button beside it."
           replaceWith="shadcn Input Group (search) + Button"
-          note="One search input instead of three (this, WebSearchField, NameSearchBox).">
+          note="Since UI unification U4 its private input is gone; the row only lays out NameSearchBox and the calendar button.">
           <Ex.LookbackSearchRowExample />
         </CatalogueRow>
         <CatalogueRow name="LookbackResults (ResultRow)" source="apps/mobile/screens/ListsLookback.tsx" usedIn={M} stage="mobile" height={420}
@@ -189,7 +195,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="ToggleRow (switch)" source="pwa/PwaDemoPanel.tsx" usedIn="Mobile (installed PWA)" stage="mobile" height={180}
           what="The hand-drawn switch on the PWA's presenter panel, such as Play the office."
           replaceWith="shadcn Switch"
-          note="Recreated: local to PwaDemoPanel.tsx.">
+          note="Recreated: local to PwaDemoPanel.tsx. Stays its own (a demo surface); product toggles use the shared Switch (UI unification U4).">
           <Ex.ToggleRowExample />
         </CatalogueRow>
         <CatalogueRow name="InstallCoach" source="pwa/InstallCoach.tsx" usedIn="Mobile (installed PWA)" stage="mobile" height={340}
@@ -217,13 +223,13 @@ export function MobileCatalogue() {
           <Ex.BookingDetailBodyExample picks={picks} />
         </CatalogueRow>
         <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={SW} stage="mobile" height={200}
-          what="A labelled input with an optional hint tied by aria-describedby."
+          what="The one labelled input, with a hint tied by aria-describedby. Since UI unification U4: invalid (aria-invalid and the error border), inputMode and align for amounts, time and number types, bounds, size, fill (surface white on the phone canvas, well grey inside a white card or sheet) and the one teal focus ring."
           replaceWith="shadcn Field + Input + Label"
-          note="Adds aria-invalid, a field-bound error and a focus ring.">
+          note="The library would bind each error to its field.">
           <Ex.TextFieldExample />
         </CatalogueRow>
         <CatalogueRow name="TextArea" source="shared/ui/Field.tsx" usedIn={SW} stage="mobile" height={200}
-          what="A labelled multi-line field, used for notes and messages in sheets."
+          what="The one multi-line field, for notes and messages in sheets: a label or ariaLabel, a hint, and since UI unification U4 a counter (maxLength), compact density, fill and resize."
           replaceWith="shadcn Field + Textarea">
           <Ex.TextAreaExample />
         </CatalogueRow>
@@ -237,15 +243,15 @@ export function MobileCatalogue() {
 
       <LibraryGroup id="daypicker">
         <CatalogueRow name="MonthGrid (LookbackDateSheet)" source="shared/calendar/MonthGrid.tsx" usedIn={M} stage="mobile" height={600}
-          what="The Go to a date month in a bottom sheet: a dot marks a day with one of her Lists, with a month and year jump panel and full keyboard support."
+          what="The Go to a date month in a bottom sheet: a dot marks a day with one of her Lists, with a month and year jump panel. Since UI unification U4 it is built from the shared calendar parts: useCalendarKeys (bounded, so a key stops at the first or last day), MonthHeaderRow and the 44px MonthStepButton."
           replaceWith="shadcn Calendar (react-day-picker)"
           note="Keeps the custom day content (dots). Adds grid roles; pass the demo clock's today and the bounds.">
           <Ex.MonthGridExample />
         </CatalogueRow>
         <CatalogueRow name="My calendar month grid" source="apps/mobile/screens/MyAvailabilityCalendarScreen.tsx" usedIn={M} stage="mobile" height={520}
-          what="Her own month: each day is an AM over PM pair of half-blocks in the session's status, with previous and next month buttons."
+          what="Her own month: each day is an AM over PM pair of half-blocks in the session's status, with previous and next month buttons. Since UI unification U4 the month buttons are the shared MonthStepButton and the weekday row the shared MonthHeaderRow."
           replaceWith="shadcn Calendar with a custom day renderer"
-          note="Recreated: local to MyAvailabilityCalendarScreen.tsx (reads her real sessions). The library gives the grid and keyboard; the half-blocks stay ours.">
+          note="Recreated: local to MyAvailabilityCalendarScreen.tsx (reads her real sessions), on the same shared parts. The library gives the grid and keyboard; the half-blocks stay ours.">
           <Ex.MyCalendarGridExample />
         </CatalogueRow>
         <CatalogueRow name="6-day date strip" source="apps/mobile/screens/AvailabilityScreen.tsx" usedIn={M} stage="mobile" height={200}

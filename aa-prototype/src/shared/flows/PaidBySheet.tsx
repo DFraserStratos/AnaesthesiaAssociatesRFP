@@ -23,14 +23,14 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import type { PostalAddress, Procedure } from '../../domain/types'
 import { cleanPostalAddress, isMinorOn, isPayerBilled, payerCounterparty, payerDetails, payerHasContact } from '../../domain/billing'
 import { formatPostalAddress } from '../../domain/billing/payer'
 import { PAYER_OFFER_PROVISIONAL, payerOfferFor } from '../../domain/billing/procedurePayer'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 import { PAYER_LOCKED_BY_PREPAYMENT, payerLockedByPrepayment, sameName, savePaidBy, useAppStore, type Actor, type PaidByChange, type PayerInput } from '../../store'
-import { Button, FormError, Notice, Pill, TextField } from '../ui'
+import { Button, Checkbox, FormError, Notice, Pill, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -203,32 +203,34 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
                 const held = lockedInOffer.has(p.id)
                 const ticked = !held && !unticked.has(p.id)
                 return (
-                  <label
+                  // The row's hooks stay on a wrapper round the tick (data-* on Checkbox would land on its input).
+                  <div
                     key={p.id}
                     data-shot="payer-offer-row"
                     data-procedure-id={p.id}
                     data-locked={held ? 'true' : undefined}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minHeight: 44, padding: '10px 12px', borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}`, cursor: held ? 'default' : 'pointer' }}
+                    style={{ borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}` }}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
+                      size="lg"
                       checked={ticked}
                       disabled={held}
-                      onChange={(e) => {
+                      onChange={(checked) => {
                         const next = new Set(unticked)
-                        if (e.target.checked) next.delete(p.id)
+                        if (checked) next.delete(p.id)
                         else next.add(p.id)
                         setUnticked(next)
                       }}
-                      style={{ width: 20, height: 20, margin: '1px 0 0', accentColor: accent.base, flex: 'none', cursor: held ? 'default' : 'pointer' }}
-                    />
-                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: held ? neutral.slate : neutral.ink }}>{`Procedure ${procedures.findIndex((q) => q.id === p.id) + 1} · ${labelOf(p)}`}</span>
-                      <span style={{ fontSize: 12.5, color: neutral.slate }}>
-                        {held ? `Keeps ${payerDetails(p.payer, patient).name}: a prepayment invoice has been raised to them for it` : `Paid by ${payerDetails(p.payer, patient).name} now`}
+                      style={{ alignItems: 'flex-start', gap: 12, minHeight: 44, padding: '10px 12px' }}
+                    >
+                      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: held ? neutral.slate : neutral.ink }}>{`Procedure ${procedures.findIndex((q) => q.id === p.id) + 1} · ${labelOf(p)}`}</span>
+                        <span style={{ fontSize: 12.5, color: neutral.slate }}>
+                          {held ? `Keeps ${payerDetails(p.payer, patient).name}: a prepayment invoice has been raised to them for it` : `Paid by ${payerDetails(p.payer, patient).name} now`}
+                        </span>
                       </span>
-                    </span>
-                  </label>
+                    </Checkbox>
+                  </div>
                 )
               })}
             </div>

@@ -16,13 +16,12 @@ import {
   useSurface,
   WarningTriangle,
 } from '../../../../shared'
-import { NameSearchBox, Pill, PopoverPanel, SlidingSegmentedControl, TickButton, usePopover } from '../../../../shared/ui'
+import { NameSearchBox, Pill, PopoverPanel, SelectField, SlidingSegmentedControl, TickButton, usePopover } from '../../../../shared/ui'
 import { VacatedSessionChoice } from '../../../../shared/flows'
 import { matchesNameQuery } from '../../../../domain/names'
 import { openWarnings, useAppStore, useToday } from '../../../../store'
 import { displayStatusLabel } from '../../../../domain/slotStatus'
 import { ANATOMY_HEADINGS } from '../../../../domain/billing/rvgGroups'
-import { selectControlStyle } from '../../../admin/flows/fieldChrome'
 import { textActionStyle } from '../../../admin/tableChrome'
 import { MASTERS_NAV, type MastersView } from '../../../admin/screens/masters/view'
 import { Pill as MasterPill } from '../../../admin/components/MasterPills'
@@ -466,15 +465,20 @@ export function NameSearchBoxExample() {
   const names = useAppStore((s) => s.masters.anaesthetists)
   const [query, setQuery] = useState('')
   const [pill, setPill] = useState('')
+  const [lists, setLists] = useState('')
   const matches = useMemo(() => Object.values(names).filter((a) => matchesNameQuery(a.name, query)).map((a) => a.name), [names, query])
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <NameSearchBox value={query} onChange={setQuery} label="Search anaesthetists" />
+      <NameSearchBox value={query} onChange={setQuery} label="Search anaesthetists" fill="well" />
       <div style={{ fontSize: 12.5, color: neutral.slate }}>
         {matches.length} match{matches.length === 1 ? '' : 'es'}: {matches.slice(0, 4).join(' · ')}
         {matches.length > 4 ? ' …' : ''}
       </div>
-      <NameSearchBox value={pill} onChange={setPill} label="Pill size" size="pill" />
+      <div style={{ background: neutral.bg, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontSize: 11.5, color: neutral.mist }}>On the page: surface fill (the default)</span>
+        <NameSearchBox value={pill} onChange={setPill} label="Pill size, 36px" size="pill" />
+        <NameSearchBox value={lists} onChange={setLists} label="Search your Bookings" placeholder="Search patient name or NHI" size="pill" height={38} width={280} clearLabel="Clear the search field" />
+      </div>
     </div>
   )
 }
@@ -482,20 +486,32 @@ export function NameSearchBoxExample() {
 export function TextFieldExample() {
   const [name, setName] = useState('Labour Day')
   const [code, setCode] = useState('H3')
+  const [price, setPrice] = useState('1,250.00')
+  const [time, setTime] = useState('07:30')
+  const priceInvalid = price.trim() !== '' && !/^\$?[\d,]+(\.\d{1,2})?$/.test(price.trim())
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Labour Day" />
       <TextField label="RVG code" value={code} onChange={setCode} mono hint="Mono variant with a hint line." />
+      <div style={{ display: 'flex', gap: 12 }}>
+        <TextField label="Price, ex GST" value={price} onChange={setPrice} mono inputMode="decimal" align="right" invalid={priceInvalid} hint={priceInvalid ? 'Type the amount in dollars and cents.' : 'Decimal keypad, right-aligned.'} />
+        <TextField label="Start" type="time" value={time} onChange={setTime} mono />
+      </div>
+      <div style={{ background: neutral.bg, borderRadius: 8, padding: 12 }}>
+        <TextField label="Compact, surface fill, hidden label" hideLabel size="compact" fill="surface" width={200} value={name} onChange={setName} />
+      </div>
     </div>
   )
 }
 
 export function TextAreaExample() {
   const [text, setText] = useState('')
+  const [note, setNote] = useState('')
   const [blurred, setBlurred] = useState(0)
   return (
-    <div>
-      <TextArea label="Internal note" value={text} onChange={setText} placeholder="Visible to the office only" onBlur={() => setBlurred((n) => n + 1)} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <TextArea label="Internal note" value={text} onChange={setText} placeholder="Visible to the office only" maxLength={140} hint="A counter under the field; the text stops at 140." onBlur={() => setBlurred((n) => n + 1)} />
+      <TextArea size="compact" ariaLabel="Internal note for this day" value={note} onChange={setNote} placeholder="compact, no visible label (the rail's day note)" />
       <Echo>{text.length} characters · blurred {blurred} time{blurred === 1 ? '' : 's'}</Echo>
     </div>
   )
@@ -507,13 +523,7 @@ export function FormErrorExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <FieldLabel>Base units (FieldLabel)</FieldLabel>
-      <input
-        aria-label="Base units"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        style={{ ...selectControlStyle, fontFamily: 'inherit' }}
-        placeholder="A whole number above 0"
-      />
+      <TextField label="Base units" hideLabel mono value={value} onChange={setValue} placeholder="A whole number above 0" invalid={error !== null} />
       <div style={{ display: 'flex', gap: 8 }}>
         <Button
           variant="pill"
@@ -543,26 +553,23 @@ export function SessionTimesExample() {
   const [draft, setDraft] = useState<TimesDraft>({ startTime: defaults.startTime, endTime: defaults.endTime })
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <SessionTimesFields session="AM" draft={draft} defaults={{ startTime: defaults.startTime, endTime: defaults.endTime }} onChange={setDraft} controlStyle={selectControlStyle} />
+      <SessionTimesFields session="AM" draft={draft} defaults={{ startTime: defaults.startTime, endTime: defaults.endTime }} onChange={setDraft} />
       <FormError message={timesDraftError(draft)} />
     </div>
   )
 }
 
-/** RvgGroupSheet's anatomy field, rebuilt from its markup: the sheet is not exported. */
+/** RvgGroupSheet's anatomy field, rebuilt from its markup (TextField with `list`): the sheet is not exported. */
 export function AnatomyDatalistExample() {
   const [anatomy, setAnatomy] = useState('')
   return (
     <div>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <FieldLabel>Anatomy heading</FieldLabel>
-        <input list="catalogue-rvg-anatomy-headings" value={anatomy} onChange={(e) => setAnatomy(e.target.value)} placeholder="e.g. Head" style={selectControlStyle} />
-        <datalist id="catalogue-rvg-anatomy-headings">
-          {ANATOMY_HEADINGS.map((h) => (
-            <option key={h} value={h} />
-          ))}
-        </datalist>
-      </label>
+      <TextField label="Anatomy heading" list="catalogue-rvg-anatomy-headings" value={anatomy} onChange={setAnatomy} placeholder="e.g. Head" />
+      <datalist id="catalogue-rvg-anatomy-headings">
+        {ANATOMY_HEADINGS.map((h) => (
+          <option key={h} value={h} />
+        ))}
+      </datalist>
       <Echo>{anatomy === '' ? 'Type or pick a heading.' : ANATOMY_HEADINGS.includes(anatomy) ? `Existing heading: ${anatomy}` : `New heading: ${anatomy}`}</Echo>
     </div>
   )
@@ -740,14 +747,11 @@ export function StatusBlockExample() {
   const [status, setStatus] = useState<string>(keys[0] ?? 'free')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <FieldLabel>Status</FieldLabel>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ ...selectControlStyle, minHeight: 36, fontSize: 13.5 }}>
-          {keys.map((k) => (
-            <option key={k} value={k}>{label(k)}</option>
-          ))}
-        </select>
-      </label>
+      <SelectField label="Status" size="compact" value={status} onChange={setStatus}>
+        {keys.map((k) => (
+          <option key={k} value={k}>{label(k)}</option>
+        ))}
+      </SelectField>
       <StatusBlock status={status} title="St George's" detail="Mr Hale · Ortho" style={{ height: 56 }} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {keys.slice(0, 6).map((k) => (
